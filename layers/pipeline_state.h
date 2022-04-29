@@ -182,6 +182,8 @@ class PIPELINE_STATE : public BASE_NODE {
     const std::shared_ptr<FragmentOutputState>
         fragment_output_state;  // VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
 
+    const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
+
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_state;
@@ -456,6 +458,7 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     VkStructureType GetCreateInfoSType() const { return create_info.graphics.sType; }
+    const VkPipelineRenderingCreateInfo *GetPipelineRenderingCreateInfo() const { return rendering_create_info; }
 
     const void *PNext() const { return create_info.graphics.pNext; }
 
