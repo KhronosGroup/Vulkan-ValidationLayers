@@ -92,6 +92,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
 
     VkCommandBufferBeginInfo cmd_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
@@ -764,7 +765,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
+TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering with mismatching mixed color/depth/stencil sample counts");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -829,7 +830,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkSampleCountFlagBits counts = {VK_SAMPLE_COUNT_2_BIT};
+    VkSampleCountFlagBits counts[2] = {VK_SAMPLE_COUNT_2_BIT, VK_SAMPLE_COUNT_2_BIT};
     auto samples_info = LvlInitStruct<VkAttachmentSampleCountInfoAMD>();
 
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>(&samples_info);
@@ -846,7 +847,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
     pipeline_rendering_info.pColorAttachmentFormats = color_formats;
 
     samples_info.colorAttachmentCount = 1;
-    samples_info.pColorAttachmentSamples = &counts;
+    samples_info.pColorAttachmentSamples = counts;
 
     auto create_info1 = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe1.InitGraphicsPipelineCreateInfo(&create_info1);
@@ -876,7 +877,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingMixedAttachmentSamples) {
 
     samples_info.colorAttachmentCount = 0;
     samples_info.pColorAttachmentSamples = nullptr;
-    samples_info.depthStencilAttachmentSamples = counts;
+    samples_info.depthStencilAttachmentSamples = counts[0];
 
     auto create_info2 = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe2.InitGraphicsPipelineCreateInfo(&create_info2);
@@ -1019,7 +1020,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     image.Init(image_create_info);
@@ -1052,6 +1053,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
         LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
     fragment_density_map.imageView = depth_image_view;
+    fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     begin_rendering_info.pNext = &fragment_density_map;
 
     m_commandBuffer->begin();
@@ -2266,7 +2268,7 @@ TEST_F(VkLayerTest, TestInheritanceRenderingInfoStencilAttachmentFormat) {
     cmd_buffer_allocate_info.commandBufferCount = 1;
 
     VkCommandBuffer secondary_cmd_buffer;
-    VkResult err = vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
+    vk::AllocateCommandBuffers(m_device->device(), &cmd_buffer_allocate_info, &secondary_cmd_buffer);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
     vk::BeginCommandBuffer(secondary_cmd_buffer, &cmd_buffer_begin_info);
@@ -2351,38 +2353,6 @@ TEST_F(VkLayerTest, CreatePipelineUsingDynamicRenderingWithoutFeature) {
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-dynamicRendering-06576");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, CreateGraphicsPipelineWithMissingMultisampleState) {
-    TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
-    }
-
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
-    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.gp_ci_.pMultisampleState = nullptr;
-    pipe.InitState();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -2556,7 +2526,10 @@ TEST_F(VkLayerTest, SecondaryCommandBufferIncompatibleRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    VkSubpassDescription subpass = {};
     auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
 
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, render_pass_ci);
@@ -2658,8 +2631,6 @@ TEST_F(VkLayerTest, SecondaryCommandBufferInvalidContents) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
 
     VkCommandBufferObj cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     VkCommandBuffer secondary_handle = cb.handle();

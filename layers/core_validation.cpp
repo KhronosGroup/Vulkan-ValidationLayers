@@ -1731,7 +1731,7 @@ bool CoreChecks::ValidatePipelineLibraryFlagsWithViewMask(const VkGraphicsPipeli
             }
             if (other_flag) {
                 if (current_pipeline) {
-                    if (lib->GetUnifiedCreateInfo().graphics.renderPass != VK_NULL_HANDLE) {
+                    if (lib->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06625",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] renderPass is VK_NULL_HANDLE and includes "
@@ -3614,8 +3614,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    if (pipeline->fragment_shader_state && pipeline->GetUnifiedCreateInfo().graphics.renderPass != VK_NULL_HANDLE &&
-        pipeline->GetUnifiedCreateInfo().graphics.pMultisampleState == nullptr &&
+    if (pipeline->fragment_shader_state && pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE &&
+        pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().pMultisampleState == nullptr &&
         IsExtEnabled(device_extensions.vk_khr_dynamic_rendering) &&
         IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         skip |= LogError(
