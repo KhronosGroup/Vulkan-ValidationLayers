@@ -431,6 +431,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       pre_raster_state(CreatePreRasterState(*this, *state_data, create_info.graphics, rpstate)),
       fragment_shader_state(CreateFragmentShaderState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
       fragment_output_state(CreateFragmentOutputState(*this, *state_data, *pCreateInfo, create_info.graphics, rpstate)),
+      rendering_create_info(LvlFindInChain<VkPipelineRenderingCreateInfo>(PNext())),
       stage_state(GetStageStates(*state_data, *this)),
       fragmentShader_writable_output_location_list(GetFSOutputLocations(stage_state)),
       active_slots(GetActiveSlots(stage_state)),
