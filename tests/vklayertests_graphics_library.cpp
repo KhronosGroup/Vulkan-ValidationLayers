@@ -889,3 +889,40 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsLinkOnly) {
     vk_testing::Pipeline lib(*m_device, lib_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, CreateGraphicsPipelineWithMissingMultisampleState) {
+    TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+        return;
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pMultisampleState-06630");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
