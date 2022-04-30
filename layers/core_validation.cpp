@@ -13033,6 +13033,48 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         }
         aggregated_cvms |= pCreateInfo->pCorrelatedViewMasks[i];
     }
+
+    const auto *fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
+    if (fragment_density_map_info) {
+        if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
+            if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
+                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapAttachment-06472"
+                               : "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471";
+                skip |= LogError(device, vuid,
+                                 "vkCreateRenderPass(): fragmentDensityMapAttachment %" PRIu32
+                                 " must be less than attachmentCount %" PRIu32 " of for this render pass.",
+                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
+            } else {
+                if (!(fragment_density_map_info->fragmentDensityMapAttachment.layout ==
+                          VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                      fragment_density_map_info->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
+                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
+                                     "vkCreateRenderPass(): Layout of fragmentDensityMapAttachment %" PRIu32 " must be equal to "
+                                     "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
+                                     fragment_density_map_info->fragmentDensityMapAttachment.attachment);
+                }
+                if (!(pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
+                          VK_ATTACHMENT_LOAD_OP_LOAD ||
+                      pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
+                          VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
+                        "vkCreateRenderPass(): FragmentDensityMapAttachment %" PRIu32 " must reference an attachment with a loadOp "
+                        "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
+                        fragment_density_map_info->fragmentDensityMapAttachment.attachment);
+                }
+                if (pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].storeOp !=
+                    VK_ATTACHMENT_STORE_OP_DONT_CARE) {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
+                        "vkCreateRenderPass(): FragmentDensityMapAttachment %" PRIu32 " must reference an attachment with a storeOp "
+                        "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
+                        fragment_density_map_info->fragmentDensityMapAttachment.attachment);
+                }
+            }
+        }
+    }
+
     LogObjectList objects(device);
 
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
@@ -13113,47 +13155,6 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                  "greater than the "
                                  "input attachment count of %u for this subpass.",
                                  attachment, i, pCreateInfo->pSubpasses[subpass].inputAttachmentCount);
-            }
-        }
-    }
-
-    // TODO - VK_EXT_fragment_density_map should be moved into generic ValidateCreateRenderPass() and given RP2 VUIDs
-    const VkRenderPassFragmentDensityMapCreateInfoEXT *fragment_density_map_info =
-        LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
-    if (fragment_density_map_info) {
-        if (fragment_density_map_info->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
-            if (fragment_density_map_info->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
-                skip |= LogError(device, "VUID-VkRenderPassCreateInfo-fragmentDensityMapAttachment-06471",
-                                 "vkCreateRenderPass(): fragmentDensityMapAttachment %u must be less than attachmentCount %u of "
-                                 "for this render pass.",
-                                 fragment_density_map_info->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
-            } else {
-                if (!(fragment_density_map_info->fragmentDensityMapAttachment.layout ==
-                          VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
-                      fragment_density_map_info->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
-                                     "vkCreateRenderPass(): Layout of fragmentDensityMapAttachment %u' must be equal to "
-                                     "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
-                                     fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
-                if (!(pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
-                          VK_ATTACHMENT_LOAD_OP_LOAD ||
-                      pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].loadOp ==
-                          VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
-                        "vkCreateRenderPass(): FragmentDensityMapAttachment %u' must reference an attachment with a loadOp "
-                        "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
-                        fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
-                if (pCreateInfo->pAttachments[fragment_density_map_info->fragmentDensityMapAttachment.attachment].storeOp !=
-                    VK_ATTACHMENT_STORE_OP_DONT_CARE) {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
-                        "vkCreateRenderPass(): FragmentDensityMapAttachment %u' must reference an attachment with a storeOp "
-                        "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-                        fragment_density_map_info->fragmentDensityMapAttachment.attachment);
-                }
             }
         }
     }
