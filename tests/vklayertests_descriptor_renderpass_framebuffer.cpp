@@ -10276,6 +10276,15 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMasks) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+    if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
+        printf("%s maxMultiviewViewCount lower than required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+
     VkSubpassDescription subpasses[2];
     subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
@@ -12185,6 +12194,14 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewOffsets) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
+    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+    if (render_pass_multiview_props.maxMultiviewViewCount < 2) {
+        printf("%s maxMultiviewViewCount lower than required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     VkSubpassDescription subpasses[2];
     subpasses[0] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
     subpasses[1] = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
@@ -12219,17 +12236,17 @@ TEST_F(VkLayerTest, RenderPassMultiViewCreateInvalidViewMask) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto render_pass_mutliview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_mutliview_props);
+    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
 
-    if (render_pass_mutliview_props.maxMultiviewViewCount >= 32) {
+    if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
         printf("%s maxMultiviewViewCount too high, skipping test.\n", kSkipPrefix);
         return;
     }
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, nullptr};
-    uint32_t viewMask = 1 << render_pass_mutliview_props.maxMultiviewViewCount;
+    uint32_t viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
     uint32_t correlationMask = 0x1u;
     VkRenderPassMultiviewCreateInfo rpmvci = {
         VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO, nullptr, 1, &viewMask, 0, nullptr, 1, &correlationMask};
@@ -12613,11 +12630,11 @@ TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
         return;
     }
 
-    auto render_pass_mutliview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_mutliview_props);
+    auto render_pass_multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
+    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&render_pass_multiview_props);
     vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
 
-    if (render_pass_mutliview_props.maxMultiviewViewCount >= 32) {
+    if (render_pass_multiview_props.maxMultiviewViewCount >= 32) {
         printf("%s maxMultiviewViewCount too high, skipping test.\n", kSkipPrefix);
         return;
     }
@@ -12637,7 +12654,7 @@ TEST_F(VkLayerTest, InvalidSubpassDescriptionViewMask) {
     auto subpass = LvlInitStruct<VkSubpassDescription2>();  //{0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr,
                                                             //nullptr, 0, nullptr};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.viewMask = 1 << render_pass_mutliview_props.maxMultiviewViewCount;
+    subpass.viewMask = 1 << render_pass_multiview_props.maxMultiviewViewCount;
 
     auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
     render_pass_ci.attachmentCount = 1;
