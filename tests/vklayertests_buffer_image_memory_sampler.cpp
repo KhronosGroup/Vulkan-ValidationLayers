@@ -15582,3 +15582,25 @@ TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TestInvalidSamplerReductionMode) {
+    TEST_DESCRIPTION("Create sampler with invalid combination of filter and reduction mode.");
+
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s is not supported, skipping test.\n", kSkipPrefix,
+               VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+        return;
+    }
+
+    VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = LvlInitStruct<VkSamplerReductionModeCreateInfo>();
+    sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
+    VkSamplerCreateInfo sampler_ci = LvlInitStruct<VkSamplerCreateInfo>(&sampler_reduction_mode_ci);
+    sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
+
+    VkSampler sampler;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-01422");
+    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
+    m_errorMonitor->VerifyFound();
+}
