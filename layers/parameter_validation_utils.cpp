@@ -3842,6 +3842,17 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                  string_VkSamplerReductionMode(sampler_reduction->reductionMode),
                                  VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
             }
+
+            if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
+                if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
+                    skip |= LogError(device, "VUID-VkSamplerCreateInfo-magFilter-01422",
+                                     "vkCreateSampler(): sampler reduction mode is %s, magFilter is %s and minFilter is %s, but "
+                                     "extension %s is not enabled.",
+                                     string_VkSamplerReductionMode(sampler_reduction->reductionMode),
+                                     string_VkFilter(pCreateInfo->magFilter), string_VkFilter(pCreateInfo->minFilter),
+                                     VK_EXT_FILTER_CUBIC_EXTENSION_NAME);
+                }
+            }
         }
 
         // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, borderColor must be a
