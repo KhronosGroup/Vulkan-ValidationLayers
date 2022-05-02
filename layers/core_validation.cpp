@@ -12510,14 +12510,24 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         // Track if attachments are used as input as well as another type
         layer_data::unordered_set<uint32_t> input_attachments;
 
-        if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
-            subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
-            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
-                           : "VUID-VkSubpassDescription-pipelineBindPoint-04952";
-            skip |= LogError(device, vuid,
-                             "%s: Pipeline bind point for pSubpasses[%d] must be VK_PIPELINE_BIND_POINT_GRAPHICS or "
-                             "VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI.",
-                             function_name, i);
+        if (!IsExtEnabled(device_extensions.vk_huawei_subpass_shading)) {
+            if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-03062"
+                               : "VUID-VkSubpassDescription-pipelineBindPoint-00844";
+                skip |= LogError(device, vuid,
+                                 "%s: Pipeline bind point for pSubpasses[%" PRIu32 "] must be VK_PIPELINE_BIND_POINT_GRAPHICS.",
+                                 function_name, i);
+            }
+        } else {
+            if (subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS &&
+                subpass.pipelineBindPoint != VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI) {
+                vuid = use_rp2 ? "VUID-VkSubpassDescription2-pipelineBindPoint-04953"
+                               : "VUID-VkSubpassDescription-pipelineBindPoint-04952";
+                skip |= LogError(device, vuid,
+                                 "%s: Pipeline bind point for pSubpasses[%" PRIu32 "] must be VK_PIPELINE_BIND_POINT_GRAPHICS or "
+                                 "VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI.",
+                                 function_name, i);
+            }
         }
 
         // Check input attachments first
