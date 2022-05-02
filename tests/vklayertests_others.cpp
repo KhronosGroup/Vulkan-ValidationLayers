@@ -13690,4 +13690,45 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
         }
     }
 }
+
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+TEST_F(VkLayerTest, MissingVideoEncodeSupport) {
+    TEST_DESCRIPTION("Test unsupported primitives generated queries");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Vulkan12Struct requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
+        printf("%s required queue family not found, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    VkCommandPoolObj command_pool(m_device, compute_queue_family_index);
+
+    VkCommandBufferObj command_buffer(m_device, &command_pool);
+    command_buffer.begin();
+
+    VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_ci.queryType = VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR;
+    query_pool_ci.queryCount = 1;
+
+    vk_testing::QueryPool query_pool;
+    query_pool.init(*m_device, query_pool_ci);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04862");
+    vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+    m_errorMonitor->VerifyFound();
+    command_buffer.end();
+}
