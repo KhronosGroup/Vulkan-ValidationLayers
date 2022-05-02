@@ -5030,6 +5030,33 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
 
 #endif  // AHB_VALIDATION_SUPPORT
 
+bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAllocateInfo) const {
+    const VkExternalMemoryHandleTypeFlags ignored_allocation = VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_BIT |
+                                                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D11_TEXTURE_KMT_BIT |
+                                                               VK_EXTERNAL_MEMORY_HANDLE_TYPE_D3D12_RESOURCE_BIT;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto import_memory_win32 = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+    if (import_memory_win32 && (import_memory_win32->handleType & ignored_allocation) != 0) {
+        return true;
+    }
+#endif
+    const auto import_memory_fd = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+    if (import_memory_fd && (import_memory_fd->handleType & ignored_allocation) != 0) {
+        return true;
+    }
+    const auto import_memory_host_pointer = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+    if (import_memory_host_pointer && (import_memory_host_pointer->handleType & ignored_allocation) != 0) {
+        return true;
+    }
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    const auto import_memory_zircon = LvlFindInChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pAllocateInfo->pNext);
+    if (import_memory_zircon && (import_memory_zircon->handleType & ignored_allocation) != 0) {
+        return true;
+    }
+#endif
+    return false;
+}
+
 bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
     bool skip = false;
@@ -5042,9 +5069,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     if (IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
         skip |= ValidateAllocateMemoryANDROID(pAllocateInfo);
     } else {
-        if (0 == pAllocateInfo->allocationSize) {
+        if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && 0 == pAllocateInfo->allocationSize) {
             skip |= LogError(device, "VUID-VkMemoryAllocateInfo-allocationSize-00638", "vkAllocateMemory: allocationSize is 0.");
-        };
+        }
     }
 
     auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
@@ -5114,7 +5141,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                     "VK_IMAGE_CREATE_DISJOINT_BIT",
                     report_data->FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
-                if ((pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
+                if (!IsZeroAllocationSizeAllowed(pAllocateInfo) &&
+                    (pAllocateInfo->allocationSize != image_state->requirements[0].size) && (imported_ahb == false)) {
                     const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                            ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
                                            : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
@@ -5136,7 +5164,8 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         } else if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
             // Dedicated VkBuffer
             auto buffer_state = Get<BUFFER_STATE>(dedicated_allocate_info->buffer);
-            if ((pAllocateInfo->allocationSize != buffer_state->requirements.size) && (imported_ahb == false)) {
+            if (!IsZeroAllocationSizeAllowed(pAllocateInfo) && (pAllocateInfo->allocationSize != buffer_state->requirements.size) &&
+                (imported_ahb == false)) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)
                                        ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
                                        : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
