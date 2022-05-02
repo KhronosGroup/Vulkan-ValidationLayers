@@ -367,7 +367,7 @@ class ValidationObject {
         DeviceExtensions device_extensions = {};
         CHECK_DISABLED disabled = {};
         CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{false};
+        bool fine_grained_locking{true};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -831,9 +831,9 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Debug_Warning,
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
-    if (context->fine_grained_locking) {
+    if (!context->fine_grained_locking) {
         context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Locking_Warning,
-                                       "Fine-grained locking is experimental, crashes or incorrect results are possible.");
+                                       "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
 }
 
