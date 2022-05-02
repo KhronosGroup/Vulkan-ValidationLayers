@@ -128,6 +128,7 @@ struct ValidateBeginQueryVuids {
     const char* vuid_graphics_support = kVUIDUndefined;
     const char* vuid_compute_support = kVUIDUndefined;
     const char* vuid_primitives_generated = kVUIDUndefined;
+    const char* vuid_video_encode_support = kVUIDUndefined;
 };
 
 struct ValidateEndQueryVuids {

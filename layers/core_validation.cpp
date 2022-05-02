@@ -11355,6 +11355,15 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                 cmd_name, report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                 string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
         }
+    } else if (query_pool_ci.queryType == VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR) {
+        if ((cb_state->command_pool->queue_flags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) == 0) {
+            skip |=
+                LogError(cb_state->commandBuffer(), vuids->vuid_video_encode_support,
+                         "%s(): queryType of queryPool is VK_QUERY_TYPE_VIDEO_ENCODE_BITSTREAM_BUFFER_RANGE_KHR, but "
+                         "the command pool the command buffer %s was allocated from does not support video encode operations (%s).",
+                         cmd_name, report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
+                         string_VkQueueFlags(cb_state->command_pool->queue_flags).c_str());
+        }
     }
 
     skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, vuids->vuid_queue_flags);
@@ -11437,6 +11446,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
             vuid_graphics_support = "VUID-vkCmdBeginQuery-queryType-00804";
             vuid_compute_support = "VUID-vkCmdBeginQuery-queryType-00805";
             vuid_primitives_generated = "VUID-vkCmdBeginQuery-queryType-06687";
+            vuid_video_encode_support = "VUID-vkCmdBeginQuery-queryType-04862";
         }
     };
     BeginQueryVuids vuids;
@@ -18628,6 +18638,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
             vuid_graphics_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00804";
             vuid_compute_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-00805";
             vuid_primitives_generated = "VUID-vkCmdBeginQueryIndexedEXT-queryType-06689";
+            vuid_video_encode_support = "VUID-vkCmdBeginQueryIndexedEXT-queryType-04862";
         }
     };
     BeginQueryIndexedVuids vuids;
