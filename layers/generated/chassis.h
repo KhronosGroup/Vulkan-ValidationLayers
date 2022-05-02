@@ -3513,7 +3513,7 @@ class ValidationObject {
         DeviceExtensions device_extensions = {};
         CHECK_DISABLED disabled = {};
         CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{false};
+        bool fine_grained_locking{true};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;

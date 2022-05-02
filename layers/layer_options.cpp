@@ -420,5 +420,5 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (config_limit_setting != 0) {
         *settings_data->duplicate_message_limit = config_limit_setting;
     }
-    *settings_data->fine_grained_locking = SetBool(config_fine_grained_locking, env_fine_grained_locking, false);
+    *settings_data->fine_grained_locking = SetBool(config_fine_grained_locking, env_fine_grained_locking, true);
 }
