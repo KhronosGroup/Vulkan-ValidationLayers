@@ -533,6 +533,23 @@
                                             }
                                         ]
                                     }
+                                },
+                                {
+                                    "key": "vma_linear_output",
+                                    "label": "Use VMA linear memory allocations for GPU-AV output buffers",
+                                    "description": "Use linear allocation algorithm",
+                                    "type": "BOOL",
+                                    "default": true,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ANY",
+                                        "settings": [
+                                            {
+                                                "key": "enables",
+                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                            }
+                                        ]
+                                    }
                                 }
                             ]
                         },

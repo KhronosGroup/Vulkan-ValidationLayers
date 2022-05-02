@@ -275,7 +275,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
-    bool use_linear_output_pool = GpuGetOption("khronos_validation.gpuav_vma_linear_output", true);
+    bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
     if (use_linear_output_pool) {
         auto output_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         output_buffer_create_info.size = output_buffer_size;

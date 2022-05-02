@@ -92,6 +92,12 @@ khronos_validation.enables =
 # Enable draw indirect checking
 #khronos_validation.validate_draw_indirect = true
 
+# Use linear vma allocator for GPU-AV output buffers
+# =====================
+# <LayerIdentifier>.gpuav_vma_linear_output
+# Use VMA linear memory allocations for GPU-AV output buffers
+#khronos_validation.vma_linear_output = true
+
 # Fine Grained Locking
 # =====================
 # <LayerIdentifier>.fine_grained_locking
