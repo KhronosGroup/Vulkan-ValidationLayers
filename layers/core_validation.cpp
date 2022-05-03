@@ -15907,19 +15907,22 @@ bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event) c
     return skip;
 }
 
-bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind *bind, const char *func_name, const char *parameter_name) const {
+bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const char *func_name, const char *parameter_name) const {
     bool skip = false;
-    if (bind) {
-        auto mem_info = Get<DEVICE_MEMORY_STATE>(bind->memory);
-        if (mem_info) {
-            if (phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
-                VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
-                skip |=
-                    LogError(bind->memory, "VUID-VkSparseMemoryBind-memory-01097",
+    auto mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    if (mem_info) {
+        if (phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
+            VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memory-01097",
                              "%s: %s memory type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.", func_name, parameter_name);
-            }
         }
     }
+
+    if (bind.size <= 0) {
+        skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01098", "%s: %s size (%" PRIu64 ") must be greater than 0.",
+                         func_name, parameter_name, bind.size);
+    }
+
     return skip;
 }
 
@@ -16076,7 +16079,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         std::stringstream parameter_name;
                         parameter_name << "pBindInfo[" << bind_idx << "].pBufferBinds[" << buffer_idx << " ].pBinds["
                                        << buffer_bind_idx << "]";
-                        ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        skip |= ValidateSparseMemoryBind(memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
                         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
                         if (mem_info) {
                             if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
@@ -16102,7 +16105,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         std::stringstream parameter_name;
                         parameter_name << "pBindInfo[" << bind_idx << "].pImageOpaqueBinds[" << image_opaque_idx << " ].pBinds["
                                        << image_opaque_bind_idx << "]";
-                        ValidateSparseMemoryBind(&memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        skip |= ValidateSparseMemoryBind(memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
                         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
                         if (mem_info) {
                             if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
