@@ -6051,7 +6051,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         if (image_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
-            if (pCreateInfo->subresourceRange.levelCount != 1) {
+            const auto normalized_subresource_range = image_state->NormalizeSubresourceRange(pCreateInfo->subresourceRange);
+            if (normalized_subresource_range.levelCount != 1) {
                 skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02571",
                                  "vkCreateImageView(): If image was created with usage containing "
                                  "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, subresourceRange.levelCount (%d) must: be 1",
