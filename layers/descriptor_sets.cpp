@@ -2299,6 +2299,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     CMD_BUFFER_STATE::CmdDrawDispatchInfo cmd_info = {};
     for (const auto &binding_req_pair : binding_req_map) {
         auto index = layout_->GetIndexFromBinding(binding_req_pair.first);
+        auto type = layout_->GetTypeFromIndex(index);
 
         // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state
         auto flags = layout_->GetDescriptorBindingFlagsFromIndex(index);
@@ -2308,22 +2309,38 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
             }
             continue;
         }
-        auto range = layout_->GetGlobalIndexRangeFromIndex(index);
-        for (uint32_t i = range.start; i < range.end; ++i) {
-            if (i >= descriptors_.size()) {
-                break;
-            }
-            const auto descriptor_class = descriptors_[i]->GetClass();
-            switch (descriptor_class) {
-            case DescriptorClass::Image:
-            case DescriptorClass::ImageSampler: {
-                auto *image_desc = static_cast<ImageDescriptor *>(descriptors_[i].get());
-                image_desc->UpdateDrawState(device_data, cb_node);
-                break;
-            }
+        switch (type) {
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+                auto range = layout_->GetGlobalIndexRangeFromIndex(index);
+                assert(range.start < descriptors_.size());
+                assert(range.end <= descriptors_.size());
+                for (uint32_t i = range.start; i < range.end; ++i) {
+                    auto *image_desc = static_cast<ImageDescriptor *>(descriptors_[i].get());
+                    image_desc->UpdateDrawState(device_data, cb_node);
+                }
+            } break;
+            case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE: {
+                auto range = layout_->GetGlobalIndexRangeFromIndex(index);
+                assert(range.start < descriptors_.size());
+                assert(range.end <= descriptors_.size());
+                for (uint32_t i = range.start; i < range.end; ++i) {
+                    const auto descriptor_class = descriptors_[i]->GetClass();
+                    switch (descriptor_class) {
+                        case DescriptorClass::Image:
+                        case DescriptorClass::ImageSampler: {
+                            auto *image_desc = static_cast<ImageDescriptor *>(descriptors_[i].get());
+                            image_desc->UpdateDrawState(device_data, cb_node);
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+            } break;
             default:
                 break;
-            }
         }
     }
 
