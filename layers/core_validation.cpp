@@ -18326,6 +18326,9 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                                                                    uint32_t groupCount, size_t dataSize, void *pData) const {
     bool skip = false;
     auto pipeline_state = Get<PIPELINE_STATE>(pipeline);
+    if (!pipeline_state) {
+        return skip;
+    }
     if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
         skip |= LogError(
             device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-03482",
