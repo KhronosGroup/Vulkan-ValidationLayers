@@ -187,7 +187,7 @@ ConfigFile::ConfigFile() : file_is_parsed_(false) {
     value_map_["khronos_validation.debug_action"] = "VK_DBG_LAYER_ACTION_DEFAULT,VK_DBG_LAYER_ACTION_LOG_MSG";
 #endif  // WIN32
     value_map_["khronos_validation.log_filename"] = "stdout";
-    value_map_["khronos_validation.fine_grained_locking"] = "false";
+    value_map_["khronos_validation.fine_grained_locking"] = "true";
 }
 
 const char *ConfigFile::GetOption(const string &option) {

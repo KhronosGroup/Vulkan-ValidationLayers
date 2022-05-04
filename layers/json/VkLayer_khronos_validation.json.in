@@ -571,7 +571,7 @@
                     "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This is an experimental feature which may cause stability problems or incorrect errors to be reported.",
                     "status": "BETA",
                     "type": "BOOL",
-                    "default": false,
+                    "default": true,
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                 }
             ]

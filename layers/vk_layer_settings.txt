@@ -96,7 +96,6 @@ khronos_validation.enables =
 # =====================
 # <LayerIdentifier>.fine_grained_locking
 # Enable fine grained locking for Core Validation, which should improve
-# performance in multithreaded applications. This is an experimental feature
-# which may cause stability problems or incorrect errors to be reported.
-khronos_validation.fine_grained_locking = false
+# performance in multithreaded applications.
+khronos_validation.fine_grained_locking = true
 
