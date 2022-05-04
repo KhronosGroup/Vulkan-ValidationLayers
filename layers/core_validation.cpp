@@ -15907,7 +15907,8 @@ bool CoreChecks::PreCallValidateGetEventStatus(VkDevice device, VkEvent event) c
     return skip;
 }
 
-bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const char *func_name, const char *parameter_name) const {
+bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDeviceSize resource_size, const char *func_name,
+                                          const char *parameter_name) const {
     bool skip = false;
     auto mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
     if (mem_info) {
@@ -15921,6 +15922,12 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, const 
     if (bind.size <= 0) {
         skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01098", "%s: %s size (%" PRIu64 ") must be greater than 0.",
                          func_name, parameter_name, bind.size);
+    }
+
+    if (resource_size <= bind.resourceOffset) {
+        skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-resourceOffset-01099",
+                         "%s: %s resourceOffset (%" PRIu64 ") must be less than the size of the resource (%" PRIu64 ").", func_name,
+                         parameter_name, bind.resourceOffset, resource_size);
     }
 
     return skip;
@@ -16074,12 +16081,14 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             for (uint32_t buffer_idx = 0; buffer_idx < bind_info.bufferBindCount; ++buffer_idx) {
                 const VkSparseBufferMemoryBindInfo &buffer_bind = bind_info.pBufferBinds[buffer_idx];
                 if (buffer_bind.pBinds) {
+                    auto buffer_state = Get<BUFFER_STATE>(buffer_bind.buffer);
                     for (uint32_t buffer_bind_idx = 0; buffer_bind_idx < buffer_bind.bindCount; ++buffer_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = buffer_bind.pBinds[buffer_bind_idx];
                         std::stringstream parameter_name;
                         parameter_name << "pBindInfo[" << bind_idx << "].pBufferBinds[" << buffer_idx << " ].pBinds["
                                        << buffer_bind_idx << "]";
-                        skip |= ValidateSparseMemoryBind(memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, "vkQueueBindSparse()",
+                                                         parameter_name.str().c_str());
                         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
                         if (mem_info) {
                             if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
@@ -16099,13 +16108,17 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             for (uint32_t image_opaque_idx = 0; image_opaque_idx < bind_info.bufferBindCount; ++image_opaque_idx) {
                 const VkSparseImageOpaqueMemoryBindInfo &image_opaque_bind = bind_info.pImageOpaqueBinds[image_opaque_idx];
                 if (image_opaque_bind.pBinds) {
+                    auto image_state = Get<IMAGE_STATE>(image_opaque_bind.image);
                     for (uint32_t image_opaque_bind_idx = 0; image_opaque_bind_idx < image_opaque_bind.bindCount;
                          ++image_opaque_bind_idx) {
                         const VkSparseMemoryBind &memory_bind = image_opaque_bind.pBinds[image_opaque_bind_idx];
                         std::stringstream parameter_name;
                         parameter_name << "pBindInfo[" << bind_idx << "].pImageOpaqueBinds[" << image_opaque_idx << " ].pBinds["
                                        << image_opaque_bind_idx << "]";
-                        skip |= ValidateSparseMemoryBind(memory_bind, "vkQueueBindSparse()", parameter_name.str().c_str());
+                        // Assuming that no multiplanar disjointed images are possible with sparse memory binding. Needs
+                        // confirmation
+                        skip |= ValidateSparseMemoryBind(memory_bind, image_state->requirements[0].size, "vkQueueBindSparse()",
+                                                         parameter_name.str().c_str());
                         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
                         if (mem_info) {
                             if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
