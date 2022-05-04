@@ -1244,6 +1244,7 @@ class AccessLogger {
 };
 
 class SemaphoreSyncState;
+class SignaledSemaphores;
 // TODO need a map from fence to submbit batch id
 class QueueBatchContext : public CommandExecutionContext {
   public:
@@ -1278,10 +1279,12 @@ class QueueBatchContext : public CommandExecutionContext {
     CommandBuffers::const_iterator begin() const { return command_buffers_.cbegin(); }
     CommandBuffers::const_iterator end() const { return command_buffers_.cend(); }
 
-    template <typename BatchInfo>
-    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state,
-                      const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &submit_info_);
+    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
     QueueBatchContext() = delete;
+
+    template <typename BatchInfo>
+    void Setup(const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info,
+               SignaledSemaphores &signaled);
 
     VulkanTypedHandle Handle() const override;
 
@@ -1295,11 +1298,13 @@ class QueueBatchContext : public CommandExecutionContext {
     template <typename BatchInfo>
     class SubmitInfoAccessor {};
     template <typename BatchInfo>
-    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info);
+    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info,
+                            SignaledSemaphores &signaled_semaphores);
     template <typename BatchInfo>
     void SetupCommandBufferInfo(const BatchInfo &batch_info);
 
-    void WaitOneSemaphore(WaitBatchMap *batch_trackbacks, VkSemaphore sem, VkPipelineStageFlags2 wait_mask);
+    void WaitOneSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask, WaitBatchMap &batch_trackbacks,
+                          SignaledSemaphores &signaled);
 
     const QueueSyncState *queue_state_ = nullptr;
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
@@ -1341,26 +1346,44 @@ class QueueSyncState {
     const VkQueueFlags queue_flags_;
 };
 
-class SemaphoreSyncState {
+class SignaledSemaphores {
   public:
-    SemaphoreSyncState() = delete;
-    SemaphoreSyncState(const SemaphoreSyncState &other) = default;
-    SemaphoreSyncState(SemaphoreSyncState &&other) = default;
-    SemaphoreSyncState &operator=(const SemaphoreSyncState &other) = default;
-    SemaphoreSyncState &operator=(SemaphoreSyncState &&other) = default;
-    SemaphoreSyncState(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state) : sem_state_(sem_state), batch_(), exec_scope_() {}
-    void Signal(const std::shared_ptr<const QueueBatchContext> &batch_, const VkSemaphoreSubmitInfo &signal_info);
+    // Is the record of a signaled semaphore, deleted when unsignaled
+    struct Signal {
+        Signal() = delete;
+        Signal(const Signal &other) = default;
+        Signal(Signal &&other) = default;
+        Signal &operator=(const Signal &other) = default;
+        Signal &operator=(Signal &&other) = default;
+        Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
+               const SyncExecScope &exec_scope_)
+            : sem_state(sem_state_), batch(batch_), exec_scope(exec_scope_) {
+            // Illegal to create a signal from no batch and an invalid semaphore... caller must assure validity
+            assert(batch);
+            assert(sem_state);
+        }
+
+        std::shared_ptr<const SEMAPHORE_STATE> sem_state;
+        std::shared_ptr<QueueBatchContext> batch;
+        // Use the SyncExecScope::valid_accesses for first access scope
+        SyncExecScope exec_scope;
+        // TODO add timeline semaphore support.
+    };
+    using SignalMap = layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
+    using iterator = SignalMap::iterator;
+    iterator begin() { return signaled_.begin(); }
+    iterator end() { return signaled_.end(); }
+
+    bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
+                         const VkSemaphoreSubmitInfo &signal_info);
+    std::shared_ptr<Signal> Unsignal(VkSemaphore);
+    void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
     void Reset();
-    const SyncExecScope &GetScope() const { return exec_scope_; }
-    const std::shared_ptr<const QueueBatchContext> &GetBatch() const { return batch_; }
-    VkSemaphore Semaphore() const { return sem_state_->semaphore(); }
 
   private:
-    std::shared_ptr<const SEMAPHORE_STATE> sem_state_;
-    std::shared_ptr<const QueueBatchContext> batch_;
-    // Use the SyncExecScope::valid_accesses for first access scope
-    SyncExecScope exec_scope_;
-    // TODO add any timeline semaphore support.
+    std::shared_ptr<Signal> GetPrev(VkSemaphore sem) const;
+    layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
+    const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
 };
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
@@ -1373,14 +1396,12 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     mutable std::atomic<ResourceUsageTag> tag_limit_{0};  // This is reserved in Validation phase, thus mutable and atomic
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
     // This is a snapshot value only
-    ResourceUsageTag GetTagLimit() const { return tag_limit_.load(); }
     AccessLogger global_access_log_;
 
     layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
-    layer_data::unordered_map<VkSemaphore, std::shared_ptr<SemaphoreSyncState>> sync_semaphores_;
-    layer_data::unordered_map<VkSemaphore, std::shared_ptr<SemaphoreSyncState>> signaled_semaphores_;
+    SignaledSemaphores signaled_semaphores_;
 
     const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
     QueueSyncState *GetQueueSyncState(VkQueue queue);
@@ -1389,8 +1410,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     template <typename Predicate>
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
 
-    std::shared_ptr<SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem);
-    std::shared_ptr<const SemaphoreSyncState> GetSemaphoreSyncState(VkSemaphore sem) const;
     std::shared_ptr<const SemaphoreSyncState> GetSignalledSemaphore(VkSemaphore sem) const;
     void SignalSemaphore(std::shared_ptr<SemaphoreSyncState> &&sem_state);
     std::shared_ptr<SemaphoreSyncState> UnsignalSemaphore(VkSemaphore sem);
@@ -1401,9 +1420,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
     std::shared_ptr<CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer);
     std::shared_ptr<const CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer) const;
-
-    const QueueBatchContext *GetQueueSubmitBatch(VkSemaphore semaphore) const;
-    void SetQueueSubmitBatch(VkSemaphore semaphore, std::shared_ptr<QueueBatchContext> batch_);
 
     void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
     void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
@@ -1760,9 +1776,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                            const VkCommandBuffer *pCommandBuffers) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer *pCommandBuffers) override;
-    void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                       const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) override;
-    void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) override;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                     VkFence fence) const override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
