@@ -2117,7 +2117,7 @@ TEST_F(VkLayerTest, UseStencilAttachmentWithIntegerFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (ImageFormatIsSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
+    if (!ImageFormatIsSupported(gpu(), VK_FORMAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL)) {
         printf("%s VK_FORMAT_S8_UINT format not supported, skipping test.\n", kSkipPrefix);
         return;
     }
@@ -2125,7 +2125,7 @@ TEST_F(VkLayerTest, UseStencilAttachmentWithIntegerFormat) {
     auto depth_stencil_resolve_properties = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_properties);
     vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
-    if (depth_stencil_resolve_properties.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) {
+    if ((depth_stencil_resolve_properties.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) == 0) {
         printf("%s VK_RESOLVE_MODE_AVERAGE_BIT not supported for VK_FORMAT_S8_UINT, skipping test.\n", kSkipPrefix);
         return;
     }
@@ -2584,6 +2584,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferIncompatibleSubpass) {
     framebuffer_ci.renderPass = render_pass.handle();
     framebuffer_ci.width = 32;
     framebuffer_ci.height = 32;
+    framebuffer_ci.layers = 1;
 
     vk_testing::Framebuffer framebuffer;
     framebuffer.init(*m_device, framebuffer_ci);

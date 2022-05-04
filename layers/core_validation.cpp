@@ -74,6 +74,7 @@
 #include "vk_layer_utils.h"
 #include "sync_utils.h"
 #include "sync_vuid_maps.h"
+#include "stateless_validation.h"
 
 // these templates are defined in buffer_validation.cpp so we need to pull in the explicit instantiations from there
 extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
@@ -1705,9 +1706,9 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
     bool current_pipeline = lib_index == -1;
     bool skip = false;
 
-    const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
-        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
-        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
+    VkGraphicsPipelineLibraryFlagsEXT flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                              VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                              VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
     constexpr int num_bits = sizeof(lib_flags) * CHAR_BIT;
     std::bitset<num_bits> flags_bits(lib_flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
@@ -1715,16 +1716,12 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
                                                   VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
     uint32_t flags_count = static_cast<uint32_t>(flags_bits.count());
     if (flags_count >= 1 && flags_count <= 2) {
+        // We start iterating at the index after lib_index to avoid duplicating checks, because the caller will iterate the same
+        // loop
         for (int i = lib_index + 1; i < static_cast<int>(link_info->libraryCount); ++i) {
             const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
-            bool other_flag = false;
-            for (const auto flag : flags) {
-                if ((lib->graphics_lib_type & flag) > 0 && (lib_flags & flag) == 0) {
-                    other_flag = true;
-                    break;
-                }
-            }
+            bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
             if (other_flag) {
                 if (current_pipeline) {
                     if (lib->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
@@ -3394,7 +3391,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
                 skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, link_info, lib_rendering_struct, pipe_index, i,
-                                                     "VUID-VkGraphicsPipelineCreateInfo-flags-06627");
+                                                     "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
             }
         }
 
@@ -3556,17 +3553,17 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     }
 
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-    auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline->PNext());
-    const VkSampleCountFlags AllVkSampleCountFlagBits = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT |
-                                                        VK_SAMPLE_COUNT_8_BIT | VK_SAMPLE_COUNT_16_BIT | VK_SAMPLE_COUNT_32_BIT |
-                                                        VK_SAMPLE_COUNT_64_BIT;
-    if (pipeline->fragment_output_state && attachment_sample_count_info &&
-        attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
-        (attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples.",
-                         pipe_index);
+    const auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline->PNext());
+    if (attachment_sample_count_info) {
+        const int num_bits = sizeof(VkSampleCountFlagBits) * CHAR_BIT;
+        std::bitset<num_bits> bits(attachment_sample_count_info->depthStencilAttachmentSamples);
+        if (pipeline->fragment_output_state && attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
+            ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits.count() > 1)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples.",
+                             pipe_index);
+        }
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) && !IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
@@ -3584,11 +3581,9 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             if (stage.writes_to_gl_layer) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] is being created with render pass, pre-rasterization shader state and "
-                                 "VkPipelineRenderingCreateInfo->viewMask (%" PRIu32
-                                 "), but shader stage %s has variables decorated with Layer built-in decoration.",
-                                 pipe_index, rendering_struct->viewMask, string_VkShaderStageFlagBits(stage.stage_flag));
-                break;
+                                 "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but "
+                                 "pMultisampleState is NULL.",
+                                 pipe_index);
             }
         }
     }
@@ -3603,7 +3598,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
                                      "shader includes InputAttachment capability.",
                                      pipe_index);
-                    break;
+                        break;
+                    }
                 }
             }
         }
@@ -7917,7 +7913,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             if (view_state->image_state->createInfo.extent.height <
                 GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
                                 rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06120"
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06121"
                                                                                        : "VUID-VkRenderingInfo-imageView-06118";
                 skip |= LogError(commandBuffer, vuid,
                                  "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
@@ -7941,7 +7937,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     if (image_state->createInfo.extent.width <
                         GetQuotientCeil(offset_x + width,
                                         rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
-                        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06121",
+                        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06120",
                                          "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                          ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
                                          "].offset.x (%" PRIu32 ") + VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
@@ -8810,8 +8806,6 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                                     "vkBeginCommandBuffer(): VkAttachmentSampleCountInfo{AMD,NV}->colorAttachmentCount[%u] must equal VkCommandBufferInheritanceRenderingInfoKHR->colorAttachmentCount[%u]",
                                         p_attachment_sample_count_info_amd->colorAttachmentCount, p_inherited_rendering_info->colorAttachmentCount);
                 }
-
-                const VkSampleCountFlags AllVkSampleCountFlagBits = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT | VK_SAMPLE_COUNT_16_BIT | VK_SAMPLE_COUNT_32_BIT | VK_SAMPLE_COUNT_64_BIT;
 
                 if ((p_inherited_rendering_info->colorAttachmentCount != 0) &&
                     (p_inherited_rendering_info->rasterizationSamples & AllVkSampleCountFlagBits) == 0) {
