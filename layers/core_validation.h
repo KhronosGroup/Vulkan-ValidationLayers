@@ -1438,7 +1438,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event) const override;
     bool PreCallValidateResetEvent(VkDevice device, VkEvent event) const override;
     bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event) const override;
-    bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, const char* func_name, const char* parameter_name) const;
+    bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, VkDeviceSize resource_size, const char* func_name,
+                                  const char* parameter_name) const;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                         VkFence fence) const override;
     bool ValidateSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo* pSignalInfo, const char* api_name) const;
