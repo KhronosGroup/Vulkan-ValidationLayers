@@ -15917,6 +15917,12 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
             skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memory-01097",
                              "%s: %s memory type has VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT bit set.", func_name, parameter_name);
         }
+
+        if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                             "%s: %s memoryOffset (%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", func_name,
+                             parameter_name, bind.memoryOffset, mem_info->alloc_info.allocationSize);
+        }
     }
 
     if (bind.size <= 0) {
@@ -16096,16 +16102,6 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                                        << buffer_bind_idx << "]";
                         skip |= ValidateSparseMemoryBind(memory_bind, buffer_state->requirements.size, "vkQueueBindSparse()",
                                                          parameter_name.str().c_str());
-                        auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                        if (mem_info) {
-                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                                skip |=
-                                    LogError(buffer_bind.buffer, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                                             "vkQueueBindSparse(): pBindInfo[%u].pBufferBinds[%u]: memoryOffset is not less than "
-                                             "the size of memory",
-                                             bind_idx, buffer_idx);
-                            }
-                        }
                     }
                 }
             }
@@ -16126,16 +16122,6 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         // confirmation
                         skip |= ValidateSparseMemoryBind(memory_bind, image_state->requirements[0].size, "vkQueueBindSparse()",
                                                          parameter_name.str().c_str());
-                        auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                        if (mem_info) {
-                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                                skip |= LogError(
-                                    image_opaque_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                                    "vkQueueBindSparse(): pBindInfo[%u].pImageOpaqueBinds[%u]: memoryOffset is not less than "
-                                    "the size of memory",
-                                    bind_idx, image_opaque_idx);
-                            }
-                        }
                     }
                 }
             }
@@ -16158,6 +16144,8 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                         const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
                         auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
                         if (mem_info) {
+                            // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
+                            // one. We also need to check memory_bind.memory
                             if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
                                 skip |=
                                     LogError(image_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
