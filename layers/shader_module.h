@@ -407,6 +407,16 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t CalcComputeSharedMemory(VkShaderStageFlagBits stage,
                                      const spirv_inst_iter &insn) const;
 
+    bool WritesToGlLayer() const {
+        return std::any_of(static_data_.builtin_decoration_list.begin(), static_data_.builtin_decoration_list.end(),
+                           [](const builtin_set &built_in) { return built_in.builtin == spv::BuiltInLayer; });
+    }
+
+    bool HasInputAttachmentCapability() const {
+        return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
+                           [](const spv::Capability &capability) { return capability == spv::CapabilityInputAttachment; });
+    }
+
   private:
     // Functions used for initialization only
     // Used to populate the shader module object
