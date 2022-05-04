@@ -14451,6 +14451,53 @@ TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindResourceOffset) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, QueueBindSparse_InvalidSparseMemoryBindSizeResourceOffset) {
+    TEST_DESCRIPTION("Test QueueBindSparse with invalid sparse memory bind size due to resource offset");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().sparseBinding) {
+        printf("%s Test requires unsupported sparseBinding feature. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferCreateInfo b_info =
+        vk_testing::Buffer::create_info(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    VkBufferObj buffer_sparse;
+    buffer_sparse.init_no_mem(*m_device, b_info);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vk_testing::DeviceMemory::alloc_info(buffer_mem_reqs.size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vk_testing::DeviceMemory buffer_mem;
+    buffer_mem.init(*m_device, buffer_mem_alloc);
+
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.memory = buffer_mem.handle();
+    // This will trigger the VUID we are testing
+    buffer_memory_bind.resourceOffset = 100;
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_info{};
+    buffer_memory_bind_info.buffer = buffer_sparse.handle();
+    buffer_memory_bind_info.bindCount = 1;
+    buffer_memory_bind_info.pBinds = &buffer_memory_bind;
+
+    VkBindSparseInfo bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 1;
+    bind_info.pBufferBinds = &buffer_memory_bind_info;
+
+    uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-size-01100");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidConditionalRenderingOffset) {
     TEST_DESCRIPTION("Begin conditional rendering with invalid offset.");
 
