@@ -15923,6 +15923,13 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
                              "%s: %s memoryOffset (%" PRIu64 ") must be less than the size of memory (%" PRIu64 ")", func_name,
                              parameter_name, bind.memoryOffset, mem_info->alloc_info.allocationSize);
         }
+
+        if ((mem_info->alloc_info.allocationSize - bind.memoryOffset) < bind.size) {
+            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-size-01102",
+                             "%s: %s size (%" PRIu64 ") must be less than or equal to the size of memory (%" PRIu64
+                             ") minus memoryOffset (%" PRIu64 ").",
+                             func_name, parameter_name, bind.size, mem_info->alloc_info.allocationSize, bind.memoryOffset);
+        }
     }
 
     if (bind.size <= 0) {
