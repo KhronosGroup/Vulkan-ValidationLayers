@@ -146,6 +146,38 @@ struct BindingNumCmp {
     }
 };
 
+cvdescriptorset::DescriptorClass cvdescriptorset::DescriptorTypeToClass(VkDescriptorType type) {
+    switch (type) {
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return PlainSampler;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            return ImageSampler;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+            return Image;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            return TexelBuffer;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+            return GeneralBuffer;
+        case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
+            return InlineUniform;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
+            return AccelerationStructure;
+        case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+            return Mutable;
+	default:
+	    break;
+    }
+    return NoDescriptorClass;
+}
+
+
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;
 using DescriptorSetLayoutDef = cvdescriptorset::DescriptorSetLayoutDef;
@@ -833,8 +865,9 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             descriptor_count = variable_count;
         }
         auto type = layout_->GetTypeFromIndex(i);
-        switch (type) {
-            case VK_DESCRIPTOR_TYPE_SAMPLER: {
+        auto descriptor_class = DescriptorTypeToClass(type);
+        switch (descriptor_class) {
+            case PlainSampler: {
                 auto immut_sampler = layout_->GetImmutableSamplerPtrFromIndex(i);
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     if (immut_sampler) {
@@ -847,7 +880,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 }
                 break;
             }
-            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
+            case ImageSampler: {
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     if (immut) {
@@ -862,51 +895,42 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 break;
             }
             // ImageDescriptors
-            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            case Image:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Image()) ImageDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            case TexelBuffer:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Texel()) TexelDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            case GeneralBuffer:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
+                    if (IsDynamicDescriptor(type)) {
+                        dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
+                    }
                     descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
+            case InlineUniform:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->InlineUniform()) InlineUniformDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+            case AccelerationStructure:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->AccelerationStructure())
                                                   AccelerationStructureDescriptor(type));
                 }
                 break;
-            case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+            case Mutable:
                 for (uint32_t di = 0; di < descriptor_count; ++di) {
                     descriptors_.emplace_back(new ((free_descriptor++)->Mutable()) MutableDescriptor());
                 }
                 break;
             default:
-                if (IsDynamicDescriptor(type) && IsBufferDescriptor(type)) {
-                    for (uint32_t di = 0; di < descriptor_count; ++di) {
-                        dynamic_offset_idx_to_descriptor_list_.push_back(descriptors_.size());
-                        descriptors_.emplace_back(new ((free_descriptor++)->Buffer()) BufferDescriptor(type));
-                    }
-                } else {
-                    assert(0);  // Bad descriptor type specified
-                }
+                assert(0);  // Bad descriptor type specified
                 break;
         }
     }
@@ -2309,10 +2333,9 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
             }
             continue;
         }
-        switch (type) {
-            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
+        switch (DescriptorTypeToClass(type)) {
+            case Image:
+            case ImageSampler: {
                 auto range = layout_->GetGlobalIndexRangeFromIndex(index);
                 assert(range.start < descriptors_.size());
                 assert(range.end <= descriptors_.size());
@@ -2321,22 +2344,13 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
                     image_desc->UpdateDrawState(device_data, cb_node);
                 }
             } break;
-            case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE: {
+            case Mutable: {
                 auto range = layout_->GetGlobalIndexRangeFromIndex(index);
                 assert(range.start < descriptors_.size());
                 assert(range.end <= descriptors_.size());
                 for (uint32_t i = range.start; i < range.end; ++i) {
-                    const auto descriptor_class = descriptors_[i]->GetClass();
-                    switch (descriptor_class) {
-                        case DescriptorClass::Image:
-                        case DescriptorClass::ImageSampler: {
-                            auto *image_desc = static_cast<ImageDescriptor *>(descriptors_[i].get());
-                            image_desc->UpdateDrawState(device_data, cb_node);
-                            break;
-                        }
-                        default:
-                            break;
-                    }
+                    auto *mutable_desc = static_cast<MutableDescriptor *>(descriptors_[i].get());
+                    mutable_desc->UpdateDrawState(device_data, cb_node);
                 }
             } break;
             default:
@@ -3103,93 +3117,109 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, co
                             is_bindless);
         }
     } else if (src->descriptor_class == DescriptorClass::Mutable) {
-        if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
-            auto *sampler_src = static_cast<const MutableDescriptor *>(src);
-            if (!immutable_) {
-                ReplaceStatePtr(set_state, sampler_state_, sampler_src->GetSharedSamplerState(), is_bindless);
-            }
-        } else if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-            auto *image_src = static_cast<const MutableDescriptor *>(src);
-            if (!immutable_) {
-                ReplaceStatePtr(set_state, sampler_state_, image_src->GetSharedSamplerState(), is_bindless);
-            }
+        auto active_class = DescriptorTypeToClass(src->active_descriptor_type);
+        switch (active_class) {
+            case PlainSampler: {
+                auto *sampler_src = static_cast<const MutableDescriptor *>(src);
+                if (!immutable_) {
+                    ReplaceStatePtr(set_state, sampler_state_, sampler_src->GetSharedSamplerState(), is_bindless);
+                }
+            } break;
+            case ImageSampler: {
+                auto *image_src = static_cast<const MutableDescriptor *>(src);
+                if (!immutable_) {
+                    ReplaceStatePtr(set_state, sampler_state_, image_src->GetSharedSamplerState(), is_bindless);
+                }
 
-            image_layout_ = image_src->GetImageLayout();
-            ReplaceStatePtr(set_state, image_view_state_, image_src->GetSharedImageViewState(), is_bindless);
-        } else if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-            auto *image_src = static_cast<const MutableDescriptor *>(src);
+                image_layout_ = image_src->GetImageLayout();
+                ReplaceStatePtr(set_state, image_view_state_, image_src->GetSharedImageViewState(), is_bindless);
+            } break;
+            case Image: {
+                auto *image_src = static_cast<const MutableDescriptor *>(src);
 
-            image_layout_ = image_src->GetImageLayout();
-            ReplaceStatePtr(set_state, image_view_state_, image_src->GetSharedImageViewState(), is_bindless);
-        } else if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-            const auto buff_desc = static_cast<const MutableDescriptor *>(src);
-            offset_ = buff_desc->GetOffset();
-            range_ = buff_desc->GetRange();
-            ReplaceStatePtr(set_state, buffer_state_, buff_desc->GetSharedBufferState(), is_bindless);
-        } else if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-            ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const MutableDescriptor *>(src)->GetSharedBufferViewState(),
-                            is_bindless);
-        } else if (src->active_descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-                   src->active_descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-            auto acc_desc = static_cast<const MutableDescriptor *>(src);
-            if (is_khr_) {
-                acc_ = acc_desc->GetAccelerationStructure();
-                ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
-                                is_bindless);
-            } else {
-                acc_nv_ = acc_desc->GetAccelerationStructureNV();
-                ReplaceStatePtr(set_state, acc_state_nv_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
-                                is_bindless);
-            }
+                image_layout_ = image_src->GetImageLayout();
+                ReplaceStatePtr(set_state, image_view_state_, image_src->GetSharedImageViewState(), is_bindless);
+            } break;
+            case GeneralBuffer: {
+                const auto buff_desc = static_cast<const MutableDescriptor *>(src);
+                offset_ = buff_desc->GetOffset();
+                range_ = buff_desc->GetRange();
+                ReplaceStatePtr(set_state, buffer_state_, buff_desc->GetSharedBufferState(), is_bindless);
+            } break;
+            case TexelBuffer: {
+                ReplaceStatePtr(set_state, buffer_view_state_,
+                                static_cast<const MutableDescriptor *>(src)->GetSharedBufferViewState(), is_bindless);
+            } break;
+            case AccelerationStructure: {
+                auto acc_desc = static_cast<const MutableDescriptor *>(src);
+                if (is_khr_) {
+                    acc_ = acc_desc->GetAccelerationStructure();
+                    ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
+                                    is_bindless);
+                } else {
+                    acc_nv_ = acc_desc->GetAccelerationStructureNV();
+                    ReplaceStatePtr(set_state, acc_state_nv_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_nv_),
+                                    is_bindless);
+                }
+
+            } break;
+            default:
+                break;
+        }
+    }
+}
+
+void cvdescriptorset::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
+    auto active_class = DescriptorTypeToClass(active_descriptor_type);
+    if (active_class == Image || active_class == ImageSampler) {
+        if (image_view_state_) {
+            dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *image_view_state_, image_layout_);
         }
     }
 }
 
 bool cvdescriptorset::MutableDescriptor::AddParent(BASE_NODE *base_node) {
     bool result = false;
-    if (active_descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
-        if (sampler_state_) {
-            result |= sampler_state_->AddParent(base_node);
-        }
-    } else if (active_descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-        if (sampler_state_) {
-            result |= sampler_state_->AddParent(base_node);
-        }
-        if (image_view_state_) {
-            result = image_view_state_->AddParent(base_node);
-        }
-    } else if (active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-        if (buffer_view_state_) {
-            result = buffer_view_state_->AddParent(base_node);
-        }
-    } else if (active_descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-        if (image_view_state_) {
-            result = image_view_state_->AddParent(base_node);
-        }
-    } else if (active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-        if (buffer_state_) {
-            result = buffer_state_->AddParent(base_node);
-        }
-    } else if (active_descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
-               active_descriptor_type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
-        if (acc_state_) {
-            result |= acc_state_->AddParent(base_node);
-        }
-        if (acc_state_nv_) {
-            result |= acc_state_nv_->AddParent(base_node);
-        }
+    auto active_class = DescriptorTypeToClass(active_descriptor_type);
+    switch (active_class) {
+        case PlainSampler:
+            if (sampler_state_) {
+                result |= sampler_state_->AddParent(base_node);
+            }
+            break;
+        case ImageSampler:
+            if (sampler_state_) {
+                result |= sampler_state_->AddParent(base_node);
+            }
+            if (image_view_state_) {
+                result = image_view_state_->AddParent(base_node);
+            }
+            break;
+        case TexelBuffer:
+            if (buffer_view_state_) {
+                result = buffer_view_state_->AddParent(base_node);
+            }
+            break;
+        case Image:
+            if (image_view_state_) {
+                result = image_view_state_->AddParent(base_node);
+            }
+            break;
+        case GeneralBuffer:
+            if (buffer_state_) {
+                result = buffer_state_->AddParent(base_node);
+            }
+            break;
+        case AccelerationStructure:
+            if (acc_state_) {
+                result |= acc_state_->AddParent(base_node);
+            }
+            if (acc_state_nv_) {
+                result |= acc_state_nv_->AddParent(base_node);
+            }
+	    break;
+	default:
+	    break;
     }
     return result;
 }
@@ -3215,33 +3245,28 @@ void cvdescriptorset::MutableDescriptor::RemoveParent(BASE_NODE *base_node) {
 }
 
 bool cvdescriptorset::MutableDescriptor::Invalid() const {
-    switch (active_descriptor_type) {
-        case VK_DESCRIPTOR_TYPE_SAMPLER:
+    switch (DescriptorTypeToClass(active_descriptor_type)) {
+        case PlainSampler:
             return !sampler_state_ || sampler_state_->Destroyed();
 
-        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        case ImageSampler:
             return !sampler_state_ || sampler_state_->Invalid() || !image_view_state_ || image_view_state_->Invalid();
 
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+        case TexelBuffer:
             return !buffer_view_state_ || buffer_view_state_->Invalid();
 
-        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+        case Image:
             return !image_view_state_ || image_view_state_->Invalid();
 
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        case GeneralBuffer:
             return !buffer_state_ || buffer_state_->Invalid();
 
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-            return !acc_state_ || acc_state_->Invalid();
-
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            return !acc_state_nv_ || acc_state_nv_->Invalid();
+        case AccelerationStructure:
+            if (is_khr_) {
+                return !acc_state_ || acc_state_->Invalid();
+            } else {
+                return !acc_state_nv_ || acc_state_nv_->Invalid();
+            }
         default:
             return false;
     }

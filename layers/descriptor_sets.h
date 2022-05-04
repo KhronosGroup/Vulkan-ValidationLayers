@@ -403,6 +403,8 @@ class DescriptorSetLayout : public BASE_NODE {
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
 enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform, AccelerationStructure, Mutable, NoDescriptorClass };
 
+DescriptorClass DescriptorTypeToClass(VkDescriptorType type);
+
 class DescriptorSet;
 
 class Descriptor {
@@ -729,6 +731,8 @@ class MutableDescriptor : public Descriptor {
       VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
       const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
       ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
+
+      void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *);
 
       bool AddParent(BASE_NODE *base_node) override;
       void RemoveParent(BASE_NODE *base_node) override;
