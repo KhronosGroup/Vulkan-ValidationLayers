@@ -4800,23 +4800,31 @@ struct CommandBufferSubmitState {
                 continue;
             }
             for (const auto &cmd_info : descriptor_set.second) {
+                // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
+                std::vector<uint32_t> dynamic_offsets;
+                layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+
                 std::string function = loc.StringFunc();
                 function += ", ";
                 function += CommandTypeString(cmd_info.cmd_type);
+                CoreChecks::DescriptorContext context{function.c_str(),
+                                                      core->GetDrawDispatchVuid(cmd_info.cmd_type),
+                                                      &cb_node,
+                                                      set_node.get(),
+                                                      cmd_info.attachments.get(),
+                                                      cmd_info.subpasses.get(),
+                                                      cmd_info.framebuffer,
+                                                      false,  // This is submit time not record time...
+                                                      dynamic_offsets,
+                                                      checked_layouts};
+
                 for (const auto &binding_info : cmd_info.binding_infos) {
                     std::string error;
-                    std::vector<uint32_t> dynamic_offsets;
-                    // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                    // This submit time not record time...
-                    const bool record_time_validate = false;
-                    layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
                     if (set_node->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
-                        checked_layouts.emplace();
+                        context.checked_layouts.emplace();
                     }
-                    skip |= core->ValidateDescriptorSetBindingData(&cb_node, set_node.get(), dynamic_offsets, binding_info,
-                                                                   cmd_info.framebuffer, cmd_info.attachments.get(),
-                                                                   cmd_info.subpasses.get(), record_time_validate, function.c_str(),
-                                                                   core->GetDrawDispatchVuid(cmd_info.cmd_type), checked_layouts);
+                    const auto *binding = set_node->GetBinding(binding_info.first);
+                    skip |= core->ValidateDescriptorSetBindingData(context, binding_info, *binding);
                 }
             }
         }
