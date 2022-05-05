@@ -898,7 +898,12 @@ class DescriptorSet : public BASE_NODE {
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
-    const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
+    const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const {
+        if (index >= descriptors_.size()) {
+            return nullptr;
+        }
+        return descriptors_[index].get();
+    }
     const Descriptor *GetDescriptorFromBinding(const uint32_t binding, const uint32_t index = 0) const {
         const auto range = GetGlobalIndexRangeFromBinding(binding);
         if ((range.start + index) >= range.end) {
