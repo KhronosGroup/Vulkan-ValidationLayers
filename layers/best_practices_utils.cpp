@@ -2564,6 +2564,9 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
                 VkImageView image_view{VK_NULL_HANDLE};
 
                 auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                if (!descriptor) {
+                    continue;
+                }
                 switch (descriptor->GetClass()) {
                     case cvdescriptorset::DescriptorClass::Image: {
                         if (const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor*>(descriptor)) {
