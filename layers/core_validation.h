@@ -512,39 +512,40 @@ class CoreChecks : public ValidationStateTracker {
                                       const PIPELINE_LAYOUT_STATE& pipeline_layout, const uint32_t layoutIndex,
                                       std::string& errorMsg) const;
 
-    bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
-                                          const std::vector<uint32_t>& dynamic_offsets,
-                                          const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
-                                          VkFramebuffer framebuffer, const std::vector<IMAGE_VIEW_STATE*>* attachments,
-                                          const std::vector<SUBPASS_INFO>* subpasses, bool record_time_validate, const char* caller,
-                                          const DrawDispatchVuid& vuids,
-                                          layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+    struct DescriptorContext {
+        const char* caller;
+        const DrawDispatchVuid& vuids;
+        const CMD_BUFFER_STATE* cb_node;
+        const cvdescriptorset::DescriptorSet* descriptor_set;
+        const std::vector<IMAGE_VIEW_STATE*>* attachments;
+        const std::vector<SUBPASS_INFO>* subpasses;
+        const VkFramebuffer framebuffer;
+        bool record_time_validate;
+        const std::vector<uint32_t>& dynamic_offsets;
+        layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
+    };
+    using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;
 
-    bool ValidateGeneralBufferDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                         const cvdescriptorset::DescriptorSet* descriptor_set,
-                                         const cvdescriptorset::BufferDescriptor& descriptor,
-                                         const std::pair<const uint32_t, DescriptorRequirement>& binding_info,
-                                         uint32_t index) const;
+    bool ValidateDescriptorSetBindingData(const DescriptorContext& context, const DescriptorBindingInfo& binding_info,
+                                          const cvdescriptorset::DescriptorBinding& binding) const;
 
-    bool ValidateImageDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                 const cvdescriptorset::DescriptorSet* descriptor_set,
-                                 const cvdescriptorset::ImageDescriptor& image_descriptor,
-                                 const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
-                                 bool record_time_validate, const std::vector<IMAGE_VIEW_STATE*>* attachments,
-                                 const std::vector<SUBPASS_INFO>* subpasses, VkFramebuffer framebuffer,
-                                 VkDescriptorType descriptor_type,
-                                 layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts) const;
+    template <typename T>
+    bool ValidateDescriptors(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, const T& binding) const;
 
-    bool ValidateTexelDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                 const cvdescriptorset::DescriptorSet* descriptor_set,
-                                 const cvdescriptorset::TexelDescriptor& texel_descriptor,
-                                 const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::BufferDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::ImageDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::ImageSamplerDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::TexelDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::AccelerationStructureDescriptor& descriptor) const;
+    bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
+                            const cvdescriptorset::SamplerDescriptor& descriptor) const;
 
-    bool ValidateAccelerationDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                        const cvdescriptorset::DescriptorSet* descriptor_set,
-                                        const cvdescriptorset::AccelerationStructureDescriptor& descriptor,
-                                        const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index) const;
-
+    // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
                                    const cvdescriptorset::DescriptorSet* descriptor_set,
                                    const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,

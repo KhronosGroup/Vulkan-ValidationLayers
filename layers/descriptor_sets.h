@@ -750,33 +750,6 @@ class MutableDescriptor : public Descriptor {
       std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
-union AnyDescriptor {
-    SamplerDescriptor sampler;
-    ImageSamplerDescriptor image_sampler;
-    ImageDescriptor image;
-    TexelDescriptor texel;
-    BufferDescriptor buffer;
-    InlineUniformDescriptor inline_uniform;
-    AccelerationStructureDescriptor accelerator_structure;
-    MutableDescriptor mutable_descriptor;
-    ~AnyDescriptor() = delete;
-};
-
-struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
-    uint8_t data[sizeof(AnyDescriptor)];
-
-    SamplerDescriptor *Sampler() { return &(reinterpret_cast<AnyDescriptor *>(this)->sampler); }
-    ImageSamplerDescriptor *ImageSampler() { return &(reinterpret_cast<AnyDescriptor *>(this)->image_sampler); }
-    ImageDescriptor *Image() { return &(reinterpret_cast<AnyDescriptor *>(this)->image); }
-    TexelDescriptor *Texel() { return &(reinterpret_cast<AnyDescriptor *>(this)->texel); }
-    BufferDescriptor *Buffer() { return &(reinterpret_cast<AnyDescriptor *>(this)->buffer); }
-    InlineUniformDescriptor *InlineUniform() { return &(reinterpret_cast<AnyDescriptor *>(this)->inline_uniform); }
-    AccelerationStructureDescriptor *AccelerationStructure() {
-        return &(reinterpret_cast<AnyDescriptor *>(this)->accelerator_structure);
-    }
-    MutableDescriptor *Mutable() { return &(reinterpret_cast<AnyDescriptor *>(this)->mutable_descriptor); }
-};
-
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below
 struct AllocateDescriptorSetsData {
     std::map<uint32_t, uint32_t> required_descriptors_by_type;
@@ -787,6 +760,81 @@ struct AllocateDescriptorSetsData {
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                  const VkCopyDescriptorSet *);
+
+class DescriptorBinding {
+  public:
+    DescriptorBinding(const VkDescriptorSetLayoutBinding &create_info, uint32_t count_, VkDescriptorBindingFlags binding_flags_)
+        : binding(create_info.binding),
+          type(create_info.descriptorType),
+          descriptor_class(DescriptorTypeToClass(type)),
+          stage_flags(create_info.stageFlags),
+          binding_flags(binding_flags_),
+          count(count_),
+          has_immutable_samplers(create_info.pImmutableSamplers != nullptr) {}
+    virtual ~DescriptorBinding() {}
+
+    virtual void AddParent(DescriptorSet *ds) = 0;
+    virtual void RemoveParent(DescriptorSet *ds) = 0;
+
+    virtual const Descriptor *GetDescriptor(const uint32_t index) const = 0;
+    virtual Descriptor *GetDescriptor(const uint32_t index) = 0;
+
+    bool IsBindless() const {
+        return (binding_flags & (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT)) != 0;
+    }
+
+    bool IsConsistent(const DescriptorBinding &other) const {
+        // A write update can overlap over following binding but bindings with descriptorCount == 0 must be skipped.
+        // Therefore we consider "consistent" a binding that should be skipped
+        if (other.count == 0) {
+            return true;
+        }
+        return type == other.type && stage_flags == other.stage_flags && binding_flags == other.binding_flags &&
+               has_immutable_samplers == other.has_immutable_samplers;
+    }
+
+    const uint32_t binding;
+    const VkDescriptorType type;
+    const DescriptorClass descriptor_class;
+    const VkShaderStageFlags stage_flags;
+    const VkDescriptorBindingFlags binding_flags;
+    const uint32_t count;
+    const bool has_immutable_samplers;
+};
+
+template <typename T>
+class DescriptorBindingImpl : public DescriptorBinding {
+  public:
+    DescriptorBindingImpl(const VkDescriptorSetLayoutBinding &create_info, uint32_t count_, VkDescriptorBindingFlags binding_flags_)
+        : DescriptorBinding(create_info, count_, binding_flags_) {
+        descriptors.reserve(count);
+    }
+    const Descriptor *GetDescriptor(const uint32_t index) const override {
+        return index < descriptors.size() ? &descriptors[index] : nullptr;
+    }
+    Descriptor *GetDescriptor(const uint32_t index) override { return index < descriptors.size() ? &descriptors[index] : nullptr; }
+
+    void AddParent(DescriptorSet *ds) override {
+        for (auto &desc : descriptors) {
+            desc.AddParent(ds);
+        }
+    }
+    void RemoveParent(DescriptorSet *ds) override {
+        for (auto &desc : descriptors) {
+            desc.RemoveParent(ds);
+        }
+    }
+    std::vector<T> descriptors;
+};
+
+using SamplerBinding = DescriptorBindingImpl<SamplerDescriptor>;
+using ImageBinding = DescriptorBindingImpl<ImageDescriptor>;
+using ImageSamplerBinding = DescriptorBindingImpl<ImageSamplerDescriptor>;
+using TexelBinding = DescriptorBindingImpl<TexelDescriptor>;
+using BufferBinding = DescriptorBindingImpl<BufferDescriptor>;
+using InlineUniformBinding = DescriptorBindingImpl<InlineUniformDescriptor>;
+using AccelerationStructureBinding = DescriptorBindingImpl<AccelerationStructureDescriptor>;
+using MutableBinding = DescriptorBindingImpl<MutableDescriptor>;
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -890,31 +938,54 @@ class DescriptorSet : public BASE_NODE {
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
+
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const {
-        if (index >= descriptors_.size()) {
-            return nullptr;
+        for (uint32_t i = 0; i < bindings_.size(); i++) {
+            auto range = layout_->GetGlobalIndexRangeFromIndex(i);
+            if (range.start <= index && index < range.end) {
+                return bindings_[i]->GetDescriptor(index - range.start);
+            }
         }
-        return descriptors_[index].get();
+        return nullptr;
     }
+    Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) {
+        for (uint32_t i = 0; i < bindings_.size(); i++) {
+            auto range = layout_->GetGlobalIndexRangeFromIndex(i);
+            if (range.start <= index && index < range.end) {
+                return bindings_[i]->GetDescriptor(index - range.start);
+            }
+        }
+        return nullptr;
+    }
+
+    const DescriptorBinding *GetBinding(uint32_t binding) const {
+        auto index = layout_->GetIndexFromBinding(binding);
+        return index < bindings_.size() ? bindings_[index].get() : nullptr;
+    }
+
+    DescriptorBinding *GetBinding(uint32_t binding) {
+        auto index = layout_->GetIndexFromBinding(binding);
+        return index < bindings_.size() ? bindings_[index].get() : nullptr;
+    }
+
     const Descriptor *GetDescriptorFromBinding(const uint32_t binding, const uint32_t index = 0) const {
-        const auto range = GetGlobalIndexRangeFromBinding(binding);
-        if ((range.start + index) >= range.end) {
-            return nullptr;
-        }
-        return descriptors_[range.start + index].get();
+        const auto *binding_data = GetBinding(binding);
+        return binding_data ? binding_data->GetDescriptor(index) : nullptr;
     }
+
+    Descriptor *GetDescriptorFromBinding(const uint32_t binding, const uint32_t index = 0) {
+        auto *binding_data = GetBinding(binding);
+        return binding_data ? binding_data->GetDescriptor(index) : nullptr;
+    }
+
     // For a given dynamic offset array, return the corresponding index into the list of descriptors in set
     const Descriptor *GetDescriptorFromDynamicOffsetIndex(const uint32_t index) const {
-        return descriptors_[dynamic_offset_idx_to_descriptor_list_.at(index)].get();
+        auto pos = dynamic_offset_idx_to_descriptor_list_.at(index);
+        return bindings_[pos.first]->GetDescriptor(pos.second);
     }
     uint64_t GetChangeCount() const { return change_count_; }
 
     const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
-
-    // Given that we are providing placement new allocation for descriptors, the deleter needs to *only* call the destructor
-    struct DescriptorDeleter {
-        void operator()(Descriptor *desc) { desc->~Descriptor(); }
-    };
 
     void Destroy() override;
 
@@ -939,14 +1010,13 @@ class DescriptorSet : public BASE_NODE {
     const std::shared_ptr<DescriptorSetLayout const> layout_;
     // NOTE: the the backing store for the descriptors must be declared *before* it so it will be destructed *after* it
     // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
-    std::vector<DescriptorBackingStore> descriptor_store_;
-    std::vector<std::unique_ptr<Descriptor, DescriptorDeleter>> descriptors_;
+    std::vector<std::unique_ptr<DescriptorBinding>> bindings_;
     const StateTracker *state_data_;
     uint32_t variable_count_;
     uint64_t change_count_;
 
     // For a given dynamic offset index in the set, map to associated index of the descriptors in the set
-    std::vector<size_t> dynamic_offset_idx_to_descriptor_list_;
+    std::vector<std::pair<uint32_t, uint32_t>> dynamic_offset_idx_to_descriptor_list_;
 
     // If this descriptor set is a push descriptor set, the descriptor
     // set writes that were last pushed.
