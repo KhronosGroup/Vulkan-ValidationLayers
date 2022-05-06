@@ -2278,7 +2278,7 @@ TEST_F(VkLayerTest, TestInheritanceRenderingInfoStencilAttachmentFormat) {
 TEST_F(VkLayerTest, CreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
     TEST_DESCRIPTION("Create pipeline with fragment shader that uses samples, but multisample state not begin set");
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
 
@@ -2308,7 +2308,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
 
     auto sample_count_info_amd = LvlInitStruct<VkAttachmentSampleCountInfoNV>();
     sample_count_info_amd.colorAttachmentCount = 1;
-    sample_count_info_amd.depthStencilAttachmentSamples = static_cast<VkSampleCountFlagBits>(0x00000400);
+    sample_count_info_amd.depthStencilAttachmentSamples = static_cast<VkSampleCountFlagBits>(0x3);
 
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>(&sample_count_info_amd);
     pipeline_rendering_info.colorAttachmentCount = 1;
@@ -3402,7 +3402,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     pipe.gp_ci_.pNext = &library_create_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06627");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5346,7 +5346,7 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     device_group_render_pass_begin_info.pDeviceRenderAreas = &render_area;
     fragment_shading_rate.pNext = &device_group_render_pass_begin_info;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06121");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06120");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
