@@ -42,30 +42,29 @@ static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *dev_da
 
 BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
     : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
+               (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
-          safe_create_info(pCreateInfo),
-          createInfo(*safe_create_info.ptr()),
-          deviceAddress(0),
-          requirements(GetMemoryRequirements(dev_data, buff)),
-          memory_requirements_checked(false) {}
+      safe_create_info(pCreateInfo),
+      createInfo(*safe_create_info.ptr()),
+      deviceAddress(0),
+      requirements(GetMemoryRequirements(dev_data, buff)),
+      memory_requirements_checked(false) {
+    resource_size = requirements.size;
+}
 
 bool BUFFER_STATE::DoesBoundMemoryOverlap(const sparse_container::range<VkDeviceSize> &src_region, const BUFFER_STATE *dst,
                                           const sparse_container::range<VkDeviceSize> &dst_region) const {
     if (Invalid() || dst->Invalid()) return false;
 
-    // None of them are sparse, we can easily check
-    if (!sparse && !dst->sparse) {
-        if (bound_memory_.begin()->first == dst->bound_memory_.begin()->first) {
-            return src_region.intersects(dst_region);
-        }
-    } else {
-        auto src_ranges = ComputeMemoryRanges(src_region);
-        auto dst_ranges = dst->ComputeMemoryRanges(dst_region);
+    auto src_ranges = ComputeMemoryRanges(src_region);
+    auto dst_ranges = dst->ComputeMemoryRanges(dst_region);
 
-        // Perf improvement potential here
-        for (const auto &src : src_ranges) {
-            for (const auto &dst : dst_ranges) {
-                if (src.first == dst.first && src.second.intersects(dst.second)) return true;
+    for (const auto &src_mem : src_ranges) {
+        auto it = dst_ranges.find(src_mem.first);
+        if (it != dst_ranges.end()) {
+            for (const auto &dst_r : it->second) {
+                auto collision = src_mem.second.bounds(dst_r.first);
+                if (collision.begin != src_mem.second.end()) return true;
             }
         }
     }
@@ -73,42 +72,40 @@ bool BUFFER_STATE::DoesBoundMemoryOverlap(const sparse_container::range<VkDevice
     return false;
 }
 
-std::vector<BUFFER_STATE::MemRange> BUFFER_STATE::ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const {
-    std::vector<MemRange> ranges;
-    auto it = bound_memory_.begin();
+BUFFER_STATE::DevMemRanges BUFFER_STATE::ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const {
+    DevMemRanges mem_ranges;
 
-    VkDeviceSize range_start = 0u;
-    VkDeviceSize range_end = range_start;
-    VkDeviceSize point = region.begin;
+    for (const auto &item : binding_map_) {
+        if (item.second.device_memory != VK_NULL_HANDLE) {
+            auto &range_map = mem_ranges[item.second.device_memory];
 
-    // Find start of range that fall inside the region
-    while (it != bound_memory_.end()) {
-        range_end += it->second.size;
-        if (range_start <= point && point <= range_end) {
-            if (range_end < point) point = range_end;
-            ranges.emplace_back(
-                MemRange{it->first, {it->second.offset + (region.begin - range_start), it->second.offset + (point - range_start)}});
-            break;
+            // Transform range from resource space to memory space
+            auto source_range = item.first;
+            source_range.begin -= item.second.resource_offset;
+            source_range.end -= item.second.resource_offset;
+            source_range.begin += item.second.memory_offset;
+            source_range.end += item.second.memory_offset;
+
+            // Adjust range to check left for merge
+            auto range = source_range;
+            range.begin = range.begin > 1 ? range.begin - 1 : 0;
+
+            auto intersecting_ranges = range_map.bounds(range);
+            if (intersecting_ranges.begin != range_map.end()) {
+                // See if we need to merge left
+                auto left = intersecting_ranges.begin;
+                if (left->first.includes(range.begin)) source_range.begin = left->first.begin;
+
+                // See if we need to merge right
+                auto right = intersecting_ranges.end;
+                if (right == range_map.end()) --right;  // Happens when range.end is greater than map's rightest value
+                if (right->first.includes(range.end)) source_range.end = right->first.end;
+            }
+
+            std::pair<sparse_container::range<VkDeviceSize>, unsigned> insert_value{source_range, 0u};
+            range_map.overwrite_range(insert_value);
         }
-        ++it;
-        range_start = range_end;
-    }
-    ++it;
-    range_start = range_end;
-    point = region.end;
-
-    // Find end
-    while (it != bound_memory_.end()) {
-        range_end += it->second.size;
-        if (range_start <= point && point <= range_end) {
-            ranges.emplace_back(MemRange{it->first, {it->second.offset, it->second.offset + (point - range_start)}});
-            break;
-        }
-
-        ranges.emplace_back(MemRange{it->first, {it->second.offset, it->second.offset + it->second.size}});
-        ++it;
-        range_start = range_end;
     }
 
-    return ranges;
+    return mem_ranges;
 }

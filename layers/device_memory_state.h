@@ -27,6 +27,7 @@
  */
 #pragma once
 #include "base_node.h"
+#include "range_vector.h"
 
 class IMAGE_STATE;
 
@@ -84,43 +85,37 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
 // Generic memory binding struct to track objects bound to objects
 struct MEM_BINDING {
+    VkDeviceMemory device_memory;
     std::shared_ptr<DEVICE_MEMORY_STATE> mem_state;
-    VkDeviceSize offset;
-    VkDeviceSize size;
+    VkDeviceSize memory_offset;
+    VkDeviceSize resource_offset;
 };
-
-inline bool operator==(MEM_BINDING a, MEM_BINDING b) NOEXCEPT {
-    return a.mem_state == b.mem_state && a.offset == b.offset && a.size == b.size;
-}
-
-namespace std {
-template <>
-struct hash<MEM_BINDING> {
-    size_t operator()(MEM_BINDING mb) const NOEXCEPT {
-        auto intermediate = hash<uint64_t>()(reinterpret_cast<uint64_t &>(mb.mem_state)) ^ hash<uint64_t>()(mb.offset);
-        return intermediate ^ hash<uint64_t>()(mb.size);
-    }
-};
-}  // namespace std
 
 // Superclass for bindable object state (currently images, buffers and acceleration structures)
 class BINDABLE : public BASE_NODE {
   protected:
-    using BoundMemoryMap = small_unordered_map<VkDeviceMemory, MEM_BINDING, 1>;
-    BoundMemoryMap bound_memory_;
+    using BindingMap = sparse_container::range_map<VkDeviceSize, MEM_BINDING>;
+    // TODO AITOR: There's a bug form multiplanar images due to not bein handled correctly. Needs fix before merge
+    BindingMap binding_map_;
 
+    // Used to know if the resource if fully bound
+    VkDeviceSize resource_size =
+        std::numeric_limits<VkDeviceSize>::max();  // Just to make sure this is set at construction of derived classes
   public:
     // Tracks external memory types creating resource
     const VkExternalMemoryHandleTypeFlags external_memory_handle;
     const bool sparse;       // Is this object being bound with sparse memory or not?
+    const bool is_sparse_resident;
     const bool unprotected;  // can't be used for protected memory
 
     template <typename Handle>
-    BINDABLE(Handle h, VulkanObjectType t, bool is_sparse, bool is_unprotected, VkExternalMemoryHandleTypeFlags handle_type)
+    BINDABLE(Handle h, VulkanObjectType t, bool is_sparse, bool is_sparse_resident, bool is_unprotected,
+             VkExternalMemoryHandleTypeFlags handle_type)
         : BASE_NODE(h, t),
-          bound_memory_{},
+          binding_map_{},
           external_memory_handle(handle_type),
           sparse(is_sparse),
+          is_sparse_resident(is_sparse_resident),
           unprotected(is_unprotected) {}
 
     virtual ~BINDABLE() {
@@ -131,34 +126,46 @@ class BINDABLE : public BASE_NODE {
 
     void Destroy() override;
 
-    // Return unordered set of memory objects that are bound
+    // Return ordered set of memory objects that are bound
     // Instead of creating a set from scratch each query, return the cached one
-    const BoundMemoryMap &GetBoundMemory() const { return bound_memory_; }
-
-    const MEM_BINDING *Binding() const {
-        return (!sparse && bound_memory_.size() == 1) ? &(bound_memory_.begin()->second) : nullptr;
-    }
-
-    const DEVICE_MEMORY_STATE *MemState() const { return Binding() ? Binding()->mem_state.get() : nullptr; }
-
-    virtual void SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset);
-    void SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size);
+    const BindingMap &GetBoundMemory() const { return binding_map_; }
 
     bool IsExternalAHB() const {
         return (external_memory_handle & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) != 0;
     }
 
+    // Kept for backwards compatibility. We should do a bigger rework on memory with current binding tracking
+    const MEM_BINDING *Binding() const {
+        return (!sparse && binding_map_.size() == 1 && binding_map_.begin()->second.mem_state) ? &(binding_map_.begin()->second)
+                                                                                               : nullptr;
+    }
+
+    // Added for backwards compatibility. We should do a bigger rework on memory with current binding tracking
+    const BindingMap &GetBindingMap() const { return binding_map_; }
+
+    // Kept for backwards compatibility. We should do a bigger rework on memory with current binding tracking
+    const DEVICE_MEMORY_STATE *MemState() const {
+        const auto *binding = Binding();
+        return binding ? binding->mem_state.get() : nullptr;
+    }
+
+    // Added for backwards compatibility. We should do a bigger rework on memory with current binding tracking
+    unsigned CountDeviceMemory(VkDeviceMemory mem) const;
+
+    // Binds a range of the resource memory [resource_offset, resource_offset + size)
+    void BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> mem_state, VkDeviceMemory mem, VkDeviceSize mem_offset,
+                         VkDeviceSize resource_offset, VkDeviceSize size);
+
+    bool FullRangeBound() const;
+
+    // Kept for backwards compatibility. We should do a bigger rework on memory with current binding tracking
     virtual VkDeviceSize GetFakeBaseAddress() const;
 
     bool Invalid() const override {
         if (Destroyed()) {
             return true;
         }
-        for (const auto &entry : bound_memory_) {
-            if (!entry.second.mem_state || entry.second.mem_state->Invalid()) {
-                return true;
-            }
-        }
-        return false;
+
+        return !FullRangeBound();
     }
 };
