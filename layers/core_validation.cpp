@@ -886,8 +886,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
 
         // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-        const auto &graphics_create_info = pPipeline->GetUnifiedCreateInfo().graphics;
-        auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(graphics_create_info.pNext);
+        auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pPipeline->PNext());
 
         if (p_attachment_sample_count_info) {
             if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
@@ -1735,8 +1734,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     // derivatives.
     if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
         std::shared_ptr<const PIPELINE_STATE> base_pipeline;
-        const auto base_handle = pipeline->BasePipeline();
-        const auto base_index = pipeline->BasePipelineIndex();
+        const auto base_handle = pipeline->BasePipeline<VkGraphicsPipelineCreateInfo>();
+        const auto base_index = pipeline->BasePipelineIndex<VkGraphicsPipelineCreateInfo>();
         if (!((base_handle != VK_NULL_HANDLE) ^ (base_index != -1))) {
             // TODO: This check is a superset of VUID-VkGraphicsPipelineCreateInfo-flags-00724 and
             // TODO: VUID-VkGraphicsPipelineCreateInfo-flags-00725
@@ -6442,13 +6441,15 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
         PIPELINE_STATE *pipeline = crtpl_state->pipe_state[i].get();
-        const auto &create_info = pipeline->GetUnifiedCreateInfo().raytracing;
-        if (create_info.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+        using CIType = layer_data::base_type<decltype(pCreateInfos)>;
+        if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
-            if (create_info.basePipelineIndex != -1) {
-                base_pipeline = crtpl_state->pipe_state[create_info.basePipelineIndex];
-            } else if (create_info.basePipelineHandle != VK_NULL_HANDLE) {
-                base_pipeline = Get<PIPELINE_STATE>(create_info.basePipelineHandle);
+            const auto bpi = pipeline->BasePipelineIndex<CIType>();
+            const auto bph = pipeline->BasePipeline<CIType>();
+            if (bpi != -1) {
+                base_pipeline = crtpl_state->pipe_state[bpi];
+            } else if (bph != VK_NULL_HANDLE) {
+                base_pipeline = Get<PIPELINE_STATE>(bph);
             }
             if (!base_pipeline || !(base_pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |= LogError(
@@ -6458,7 +6459,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                     "the base pipeline must have been created with the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag set.");
             }
         }
-        skip |= ValidateRayTracingPipeline(pipeline, pCreateInfos[i].flags, /*isKHR*/ false);
+        skip |= ValidateRayTracingPipeline(pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, /*isKHR*/ false);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateRayTracingPipelinesNV",
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
     }
@@ -6476,13 +6477,15 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
         PIPELINE_STATE *pipeline = crtpl_state->pipe_state[i].get();
-        const auto &create_info = pipeline->GetUnifiedCreateInfo().raytracing;
-        if (create_info.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+        using CIType = layer_data::base_type<decltype(pCreateInfos)>;
+        if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
-            if (create_info.basePipelineIndex != -1) {
-                base_pipeline = crtpl_state->pipe_state[create_info.basePipelineIndex];
-            } else if (create_info.basePipelineHandle != VK_NULL_HANDLE) {
-                base_pipeline = Get<PIPELINE_STATE>(create_info.basePipelineHandle);
+            const auto bpi = pipeline->BasePipelineIndex<CIType>();
+            const auto bph = pipeline->BasePipeline<CIType>();
+            if (bpi != -1) {
+                base_pipeline = crtpl_state->pipe_state[bpi];
+            } else if (bph != VK_NULL_HANDLE) {
+                base_pipeline = Get<PIPELINE_STATE>(bph);
             }
             if (!base_pipeline || !(base_pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |= LogError(
@@ -6492,9 +6495,10 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                     "the base pipeline must have been created with the VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT flag set.");
             }
         }
-        skip |= ValidateRayTracingPipeline(pipeline, pCreateInfos[i].flags, /*isKHR*/ true);
+        skip |= ValidateRayTracingPipeline(pipeline, pipeline->GetCreateInfo<CIType>(), pCreateInfos[i].flags, /*isKHR*/ true);
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos[i].flags, i, "vkCreateRayTracingPipelinesKHR",
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
+        const auto create_info = pipeline->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
         if (create_info.pLibraryInfo) {
             const std::vector<std::pair<const char *, VkPipelineCreateFlags>> vuid_map = {
                 {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04718", VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR},
@@ -6516,7 +6520,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                      "] was not created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.", i, j);
                 }
                 for (const auto &pair : vuid_map) {
-                    if (create_info.flags & pair.second) {
+                    if (pipeline->GetPipelineCreateFlags() & pair.second) {
                         if ((lib->GetPipelineCreateFlags() & pair.second) == 0) {
                             skip |= LogError(
                                 device, pair.first,
@@ -18463,7 +18467,7 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(VkCom
 }
 
 uint32_t CoreChecks::CalcTotalShaderGroupCount(const PIPELINE_STATE *pipelineState) const {
-    const auto &create_info = pipelineState->GetUnifiedCreateInfo().raytracing;
+    const auto &create_info = pipelineState->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
     uint32_t total = create_info.groupCount;
 
     if (create_info.pLibraryInfo) {
@@ -18524,7 +18528,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     if (!pipeline_state) {
         return skip;
     }
-    const auto &create_info = pipeline_state->GetUnifiedCreateInfo().raytracing;
+    const auto &create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
     if (firstGroup >= create_info.groupCount) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051",
                          "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: firstGroup must be less than the number of shader "
@@ -19210,7 +19214,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupStackSizeKHR(VkDevice de
             skip |= LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622",
                              "vkGetRayTracingShaderGroupStackSizeKHR: Pipeline must be a ray-tracing pipeline, but is a %s pipeline.",
                              GetPipelineTypeName(pipeline_state->GetPipelineType()));
-        } else if (group >= pipeline_state->GetUnifiedCreateInfo().raytracing.groupCount) {
+        } else if (group >= pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>().groupCount) {
             skip |=
                 LogError(device, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608",
                          "vkGetRayTracingShaderGroupStackSizeKHR: The value of group must be less than the number of shader groups "

@@ -345,6 +345,69 @@ void AppendDynamicStateFromSubstate(const Substate &substate, std::vector<VkDyna
     }
 }
 
+template <>
+VkPipeline PIPELINE_STATE::BasePipeline<VkGraphicsPipelineCreateInfo>() const {
+    assert(create_info.graphics.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+    return create_info.graphics.basePipelineHandle;
+}
+template <>
+VkPipeline PIPELINE_STATE::BasePipeline<VkComputePipelineCreateInfo>() const {
+    assert(create_info.compute.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+    return create_info.compute.basePipelineHandle;
+}
+template <>
+VkPipeline PIPELINE_STATE::BasePipeline<VkRayTracingPipelineCreateInfoKHR>() const {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR);
+    return create_info.raytracing.basePipelineHandle;
+}
+template <>
+VkPipeline PIPELINE_STATE::BasePipeline<VkRayTracingPipelineCreateInfoNV>() const {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV);
+    return create_info.raytracing.basePipelineHandle;
+}
+
+template <>
+int32_t PIPELINE_STATE::BasePipelineIndex<VkGraphicsPipelineCreateInfo>() const {
+    assert(create_info.graphics.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+    return create_info.graphics.basePipelineIndex;
+}
+template <>
+int32_t PIPELINE_STATE::BasePipelineIndex<VkComputePipelineCreateInfo>() const {
+    assert(create_info.compute.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+    return create_info.compute.basePipelineIndex;
+}
+template <>
+int32_t PIPELINE_STATE::BasePipelineIndex<VkRayTracingPipelineCreateInfoKHR>() const {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR);
+    return create_info.raytracing.basePipelineIndex;
+}
+template <>
+int32_t PIPELINE_STATE::BasePipelineIndex<VkRayTracingPipelineCreateInfoNV>() const {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV);
+    return create_info.raytracing.basePipelineIndex;
+}
+
+template <>
+VkShaderModule PIPELINE_STATE::PIPELINE_STATE::GetShaderModuleByCIIndex<VkGraphicsPipelineCreateInfo>(uint32_t i) {
+    assert(create_info.graphics.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+    return create_info.graphics.pStages[i].module;
+}
+template <>
+VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkComputePipelineCreateInfo>(uint32_t) {
+    assert(create_info.compute.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+    return create_info.compute.stage.module;
+}
+template <>
+VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCreateInfoKHR>(uint32_t i) {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR);
+    return create_info.raytracing.pStages[i].module;
+}
+template <>
+VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCreateInfoNV>(uint32_t i) {
+    assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV);
+    return create_info.raytracing.pStages[i].module;
+}
+
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                std::shared_ptr<const RENDER_PASS_STATE> &&rpstate,
                                std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout)
