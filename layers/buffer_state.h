@@ -53,8 +53,8 @@ class BUFFER_STATE : public BINDABLE {
                                 const sparse_container::range<VkDeviceSize> &dst_region) const;
 
   protected:
-    using MemRange = std::pair<VkDeviceMemory, sparse_container::range<VkDeviceSize>>;
-    std::vector<MemRange> ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const;
+    using DevMemRanges = std::map<VkDeviceMemory, sparse_container::range_map<VkDeviceSize, unsigned>>;
+    DevMemRanges ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const;
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {

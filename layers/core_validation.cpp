@@ -180,7 +180,17 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
     } else if (image_state->IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result |= VerifyBoundMemoryIsValid(image_state->MemState(), image_state->image(), image_state->Handle(), location);
+        const auto &binding_map = image_state->GetBindingMap();
+        if (binding_map.empty()) {
+            result |= LogError(image_state->image(), location.Vuid(),
+                               "%s: %s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
+                               location.FuncName(), report_data->FormatHandle(image_state->Handle()).c_str());
+        } else {
+            for (const auto &mem_binding : binding_map) {
+                result |= VerifyBoundMemoryIsValid(mem_binding.second.mem_state.get(), image_state->image(), image_state->Handle(),
+                                                   location);
+            }
+        }
     }
     return result;
 }
@@ -4782,7 +4792,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->IsDedicatedImage()) {
         auto image_state = Get<IMAGE_STATE>(mem_info->dedicated->handle.Cast<VkImage>());
-        if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count(mem_info->mem())))) {
+        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->mem())))) {
             LogObjectList objlist(device);
             objlist.add(pInfo->memory);
             objlist.add(mem_info->dedicated->handle);
@@ -12219,12 +12229,21 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
-                const auto *binding_i = image_data_i->Binding();
-                const auto *binding_j = image_data_j->Binding();
-                if (binding_i && binding_j && binding_i->mem_state == binding_j->mem_state &&
-                    IsRangeOverlapping(binding_i->offset, binding_i->size, binding_j->offset, binding_j->size)) {
-                    attachments[i].overlapping.emplace_back(j);
-                    attachments[j].overlapping.emplace_back(i);
+
+                const auto &binding_map_i = image_data_i->GetBindingMap();
+                const auto &binding_map_j = image_data_j->GetBindingMap();
+                if (binding_map_i.size() == 1 && binding_map_i.begin()->second.mem_state && binding_map_j.size() == 1 &&
+                    binding_map_j.begin()->second.mem_state) {
+                    auto binding_i = binding_map_i.begin();
+                    auto binding_j = binding_map_j.begin();
+
+                    if (binding_i->second.mem_state && binding_j->second.mem_state &&
+                        binding_i->second.mem_state == binding_j->second.mem_state &&
+                        IsRangeOverlapping(binding_i->second.memory_offset, binding_i->first.end - binding_i->first.begin,
+                                           binding_j->second.memory_offset, binding_j->first.end - binding_j->first.begin)) {
+                        attachments[i].overlapping.emplace_back(j);
+                        attachments[j].overlapping.emplace_back(i);
+                    }
                 }
             }
         }

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,54 +87,76 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAlloc
       fake_base_address(fake_address) {}
 
 void BINDABLE::Destroy() {
-    for (auto &item: bound_memory_) {
+    for (auto &item : binding_map_) {
         if (item.second.mem_state) {
             item.second.mem_state->RemoveParent(this);
         }
     }
-    bound_memory_.clear();
+    binding_map_.clear();
     BASE_NODE::Destroy();
 }
 
-// SetMemBinding is used to establish immutable, non-sparse binding between a single image/buffer object and memory object.
-// Corresponding valid usage checks are in ValidateSetMemBinding().
-void BINDABLE::SetMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, VkDeviceSize memory_offset) {
-    if (!mem) {
-        return;
-    }
-    assert(!sparse);
-    if (bound_memory_.size() > 0) {
-        bound_memory_.clear();
+unsigned BINDABLE::CountDeviceMemory(VkDeviceMemory mem) const {
+    unsigned count = 0u;
+
+    for (const auto &value : binding_map_) {
+        count += static_cast<unsigned>(value.second.device_memory == mem);
     }
 
-    MEM_BINDING binding = {
-        mem,
-        memory_offset,
-    };
-    binding.mem_state->AddParent(this);
-    bound_memory_.insert({mem->mem(), binding});
+    return count;
 }
 
-// For NULL mem case, clear any previous binding Else...
-// Make sure given object is in its object map
-//  IF a previous binding existed, update binding
-//  Add reference from objectInfo to memoryInfo
-//  Add reference off of object's binding info
-// Return VK_TRUE if addition is successful, VK_FALSE otherwise
-void BINDABLE::SetSparseMemBinding(std::shared_ptr<DEVICE_MEMORY_STATE> &mem, const VkDeviceSize mem_offset,
-                                   const VkDeviceSize mem_size) {
-    if (!mem) {
-        return;
+void BINDABLE::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> mem_state, VkDeviceMemory mem, VkDeviceSize mem_offset,
+                               VkDeviceSize resource_offset, VkDeviceSize size) {
+    // Since we don't know which ranges will be removed, we need to unbind everything and rebind later
+    for (auto &value : binding_map_) {
+        if (value.second.mem_state) {
+            value.second.mem_state->RemoveParent(this);
+        }
     }
-    assert(sparse);
-    MEM_BINDING sparse_binding = {mem, mem_offset, mem_size};
-    sparse_binding.mem_state->AddParent(this);
-    // Need to set mem binding for this object
-    bound_memory_.insert({mem->mem(), sparse_binding});
+
+    MEM_BINDING memory_data = {mem, mem_state, mem_offset, resource_offset};
+    std::pair<sparse_container::range<VkDeviceSize>, MEM_BINDING> item;
+    item.first = sparse_container::range<VkDeviceSize>{resource_offset, resource_offset + size};
+    item.second = memory_data;
+    binding_map_.overwrite_range(item);
+
+    for (auto &value : binding_map_) {
+        if (value.second.mem_state) {
+            value.second.mem_state->AddParent(this);
+        }
+    }
+}
+
+bool BINDABLE::FullRangeBound() const {
+    // If the resource is sparse, it either needs to be completely bound or it needs to be sparse resident
+    if (sparse && is_sparse_resident) {
+        for (const auto &binding : binding_map_) {
+            if (binding.second.device_memory != VK_NULL_HANDLE && binding.second.mem_state->Invalid()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    auto ranges = binding_map_.bounds(sparse_container::range<VkDeviceSize>{0, resource_size});
+
+    VkDeviceSize current_offset = 0u;
+    for (auto it = ranges.begin; it != ranges.end; ++it) {
+        if (current_offset != it->first.begin || !it->second.mem_state || it->second.mem_state->Invalid()) {
+            return false;
+        }
+        current_offset = it->first.end;
+    }
+
+    return current_offset == resource_size;
 }
 
 VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
-    assert(!sparse);  // not implemented yet
+    assert(!sparse);  // not implemented yet (Can now be done)
+
+    // Non sparse implementation
     const auto *binding = Binding();
-    return binding ? binding->offset + binding->mem_state->fake_base_address : 0;
+    return binding ? binding->memory_offset + binding->mem_state->fake_base_address : 0;
 }

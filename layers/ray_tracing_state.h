@@ -33,13 +33,15 @@
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
   public:
     ACCELERATION_STRUCTURE_STATE(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
-        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, 0),
+        : BINDABLE(as, kVulkanObjectTypeAccelerationStructureNV, false, false, false, 0),
           create_infoNV(ci),
           memory_requirements(GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV)),
           build_scratch_memory_requirements(
               GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV)),
           update_scratch_memory_requirements(
-              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)) {}
+              GetMemReqs(device, as, VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV)) {
+        resource_size = memory_requirements.size;
+    }
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
 
     VkAccelerationStructureNV acceleration_structure() const { return handle_.Cast<VkAccelerationStructureNV>(); }

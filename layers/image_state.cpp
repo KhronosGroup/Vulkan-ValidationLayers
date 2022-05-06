@@ -200,6 +200,7 @@ static bool SparseMetaDataRequired(const IMAGE_STATE::SparseReqs &sparse_reqs) {
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+               (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -219,11 +220,16 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       sparse_metadata_bound(false),
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
-      store_device_as_workaround(dev_data->device) {}  // TODO REMOVE WHEN encoder can be const
+      store_device_as_workaround(dev_data->device) {  // TODO REMOVE WHEN encoder can be const
+    // TODO: Correctly load resource size individually
+    // Ideally we would have memory tracking as part of the object and not inherited due to its limitations
+    resource_size = requirements[0].size;
+}
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
     : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+               (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -246,6 +252,9 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       store_device_as_workaround(dev_data->device) {  // TODO REMOVE WHEN encoder can be const
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
+    // TODO: Correctly load resource size individually
+    // Ideally we would have memory tracking as part of the object and not inherited due to its limitations
+    resource_size = requirements[0].size;
 }
 
 void IMAGE_STATE::Destroy() {
@@ -304,7 +313,7 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
     const auto binding = Binding();
     const auto other_binding = other_image_state->Binding();
     if ((create_from_swapchain == VK_NULL_HANDLE) && binding && other_binding && (binding->mem_state == other_binding->mem_state) &&
-        (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
+        (binding->memory_offset == other_binding->memory_offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
     if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain) &&
