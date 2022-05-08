@@ -16745,6 +16745,32 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
     }
 }
 
+TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
+    TEST_DESCRIPTION("Test using subgroupSizeControl feature when it's not enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        printf("%s Test requires Vulkan 1.3+, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
+    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
+    vk::GetPhysicalDeviceProperties2(gpu(), &props);
+    auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
+    subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.LateBindPipelineInfo();
+    pipe.cp_ci_.stage.pNext = &subgroup_size_control;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
+    pipe.CreateComputePipeline(true, false);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
