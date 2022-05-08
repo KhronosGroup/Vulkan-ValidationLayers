@@ -1152,12 +1152,6 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     bool skip = false;
     uint32_t total_resources = 0;
 
-    // Only currently testing for graphics and compute pipelines
-    // TODO: Add check and support for Ray Tracing pipeline VUID 03428
-    if ((stage & (VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
-        return false;
-    }
-
     const auto &rp_state = pipeline->RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->use_dynamic_rendering) {
@@ -1204,8 +1198,14 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
     }
 
     if (total_resources > phys_dev_props.limits.maxPerStageResources) {
-        const char *vuid = (stage == VK_SHADER_STAGE_COMPUTE_BIT) ? "VUID-VkComputePipelineCreateInfo-layout-01687"
-                                                                  : "VUID-VkGraphicsPipelineCreateInfo-layout-01688";
+        const char *vuid = nullptr;
+        if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+            vuid = "VUID-VkComputePipelineCreateInfo-layout-01687";
+        } else if ((stage & VK_SHADER_STAGE_ALL_GRAPHICS) == 0) {
+            vuid = "VUID-VkRayTracingPipelineCreateInfoKHR-layout-03428";
+        } else {
+            vuid = "VUID-VkGraphicsPipelineCreateInfo-layout-01688";
+        }
         skip |= LogError(pipeline->pipeline(), vuid,
                          "Invalid Pipeline CreateInfo State: Shader Stage %s exceeds component limit "
                          "VkPhysicalDeviceLimits::maxPerStageResources (%u)",
