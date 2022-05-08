@@ -3269,6 +3269,14 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, VkPipeline
                 " : The stage member of at least one element of pStages must be VK_SHADER_STAGE_RAYGEN_BIT_KHR.");
         }
     }
+    if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0 &&
+        (flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0) {
+        skip |= LogError(
+            device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-06546",
+            "vkCreateRayTracingPipelinesKHR: flags (%s) contains both VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR and "
+            "VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR bits.",
+            string_VkPipelineCreateFlags(flags).c_str());
+    }
 
     for (uint32_t group_index = 0; group_index < create_info.groupCount; group_index++) {
         const auto &group = groups[group_index];
