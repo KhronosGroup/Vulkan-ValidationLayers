@@ -12196,7 +12196,7 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
 
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
     vk::GetPhysicalDeviceFeatures2(gpu(), &pd_features2);
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
         printf("%s Required features are not supported, skipping test.\n", kSkipPrefix);
         return;
     }
@@ -12206,6 +12206,12 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
     vk::GetPhysicalDeviceProperties2(gpu(), &props);
+
+    if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        printf("%s Required shader stage not present in requiredSubgroupSizeStages, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
@@ -16673,7 +16679,7 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
     auto sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
     auto features2  = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sscf);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
         printf("%s Required features are not supported, skipping test.\n", kSkipPrefix);
         return;
     }
@@ -16682,6 +16688,12 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
     vk::GetPhysicalDeviceProperties2(gpu(), &props);
+
+    if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        printf("%s Required shader stage not present in requiredSubgroupSizeStages, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
 
@@ -16767,6 +16779,9 @@ TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
     pipe.LateBindPipelineInfo();
     pipe.cp_ci_.stage.pNext = &subgroup_size_control;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
+    if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
+    }
     pipe.CreateComputePipeline(true, false);
     m_errorMonitor->VerifyFound();
 }
