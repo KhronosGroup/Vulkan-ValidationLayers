@@ -5484,6 +5484,10 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descriptor_write.pImageInfo = &img_info;
 
+    VkRenderPass rp;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    ASSERT_VK_SUCCESS(err);
+
     // Create PSO to be used for draw-time errors below
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -5491,7 +5495,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
-    pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    pipe.CreateVKPipeline(pipeline_layout.handle(), rp);
 
     VkViewport viewport = {0, 0, kWidth, kHeight, 0, 1};
     VkRect2D scissor = {{0, 0}, {kWidth, kHeight}};
@@ -5518,9 +5522,6 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
         for (TestType test_type : test_list) {
             auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
 
-            VkRenderPass rp;
-            VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-            ASSERT_VK_SUCCESS(err);
 
             VkFramebufferCreateInfo fbci = {
                 VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &view->handle(), kWidth, kHeight, 1};
@@ -5571,10 +5572,10 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             vk::QueueWaitIdle(m_device->m_queue);
             vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
-            vk::DestroyRenderPass(m_device->device(), rp, nullptr);
         }
     };
     do_test(&image_3d, &view_2d, &other_image, &other_view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
 
