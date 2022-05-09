@@ -898,6 +898,10 @@ void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }
 
+void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info) {
+    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2, dev, &info);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(RenderPass, vk::DestroyRenderPass)
 
 void Framebuffer::init(const Device &dev, const VkFramebufferCreateInfo &info) {

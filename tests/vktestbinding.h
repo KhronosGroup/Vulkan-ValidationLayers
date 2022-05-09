@@ -844,10 +844,13 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
   public:
     RenderPass() = default;
     RenderPass(const Device &dev, const VkRenderPassCreateInfo &info) { init(dev, info); }
+    RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info) { init(dev, info); }
     ~RenderPass() NOEXCEPT;
 
     // vkCreateRenderPass()
     void init(const Device &dev, const VkRenderPassCreateInfo &info);
+    // vkCreateRenderPass2()
+    void init(const Device &dev, const VkRenderPassCreateInfo2 &info);
 };
 
 
