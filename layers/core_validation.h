@@ -217,6 +217,9 @@ class CoreChecks : public ValidationStateTracker {
     bool LogInvalidPnextMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                 const RENDER_PASS_STATE* rp2_state, const char* msg, const char* caller,
                                 const char* error_code) const;
+    bool LogInvalidDependencyMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                     const RENDER_PASS_STATE& rp2_state, const char* msg, const char* caller,
+                                     const char* error_code) const;
     bool ValidateStageMaskHost(const Location& loc, VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemRange(const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize offset, VkDeviceSize size) const;
     bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo) const;
@@ -226,6 +229,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSubpassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                       const RENDER_PASS_STATE* rp2_state, const int subpass, const char* caller,
                                       const char* error_code) const;
+    bool ValidateDependencyCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                         const RENDER_PASS_STATE& rp2_state, const uint32_t dependency, const char* caller,
+                                         const char* error_code) const;
     bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code) const;
     bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;

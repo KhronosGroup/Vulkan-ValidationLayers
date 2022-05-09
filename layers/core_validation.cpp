@@ -565,6 +565,64 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
     return skip;
 }
 
+bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
+                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state,
+                                                 const uint32_t dependency, const char *caller, const char *error_code) const {
+    bool skip = false;
+
+    const auto &primary_dep = rp1_state.createInfo.pDependencies[dependency];
+    const auto &secondary_dep = rp2_state.createInfo.pDependencies[dependency];
+
+    if (primary_dep.srcSubpass != secondary_dep.srcSubpass) {
+        std::stringstream ss;
+        ss << "First srcSubpass is " << primary_dep.srcSubpass << ", but second srcSubpass is " << secondary_dep.srcSubpass << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.dstSubpass != secondary_dep.dstSubpass) {
+        std::stringstream ss;
+        ss << "First dstSubpass is " << primary_dep.dstSubpass << ", but second dstSubpass is " << secondary_dep.dstSubpass << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.srcStageMask != secondary_dep.srcStageMask) {
+        std::stringstream ss;
+        ss << "First srcStageMask is " << string_VkPipelineStageFlags(primary_dep.srcStageMask) << ", but second srcStageMask is "
+           << string_VkPipelineStageFlags(secondary_dep.srcStageMask) << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.dstStageMask != secondary_dep.dstStageMask) {
+        std::stringstream ss;
+        ss << "First dstStageMask is " << string_VkPipelineStageFlags(primary_dep.dstStageMask) << ", but second dstStageMask is "
+           << string_VkPipelineStageFlags(secondary_dep.dstStageMask) << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.srcAccessMask != secondary_dep.srcAccessMask) {
+        std::stringstream ss;
+        ss << "First srcAccessMask is " << string_VkAccessFlags(primary_dep.srcAccessMask) << ", but second srcAccessMask is "
+           << string_VkAccessFlags(secondary_dep.srcAccessMask) << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.dstAccessMask != secondary_dep.dstAccessMask) {
+        std::stringstream ss;
+        ss << "First dstAccessMask is " << string_VkAccessFlags(primary_dep.dstAccessMask) << ", but second dstAccessMask is "
+           << string_VkAccessFlags(secondary_dep.dstAccessMask) << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.dependencyFlags != secondary_dep.dependencyFlags) {
+        std::stringstream ss;
+        ss << "First dependencyFlags are " << string_VkDependencyFlags(primary_dep.dependencyFlags)
+           << ", but second dependencyFlags are " << string_VkDependencyFlags(secondary_dep.dependencyFlags) << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+    if (primary_dep.viewOffset != secondary_dep.viewOffset) {
+        std::stringstream ss;
+        ss << "First viewOffset are " << primary_dep.viewOffset << ", but second viewOffset are " << secondary_dep.viewOffset
+           << ".";
+        skip |= LogInvalidDependencyMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+    }
+
+    return skip;
+}
+
 bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                         const RENDER_PASS_STATE *rp2_state, const char *msg, const char *caller,
                                         const char *error_code) const {
@@ -573,6 +631,16 @@ bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_P
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
                     report_data->FormatHandle(rp1_state->renderPass()).c_str(), type2_string,
                     report_data->FormatHandle(rp2_state->renderPass()).c_str(), msg);
+}
+
+bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
+                                             const RENDER_PASS_STATE &rp2_state, const char *msg, const char *caller,
+                                             const char *error_code) const {
+    LogObjectList objlist(rp1_state.renderPass());
+    objlist.add(rp2_state.renderPass());
+    return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
+                    report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
+                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), msg);
 }
 
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
@@ -607,6 +675,45 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     } else {
         for (uint32_t i = 0; i < rp1_state->createInfo.subpassCount; ++i) {
             skip |= ValidateSubpassCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
+        }
+    }
+
+    if (rp1_state->createInfo.dependencyCount != rp2_state->createInfo.dependencyCount) {
+        LogObjectList objlist(rp1_state->renderPass());
+        objlist.add(rp2_state->renderPass());
+        skip |= LogError(objlist, error_code,
+                         "%s: RenderPasses incompatible between %s w/ %s with a dependencyCount of %" PRIu32
+                         " and %s w/ %s with a dependencyCount of %" PRIu32 ".",
+                         caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(),
+                         rp1_state->createInfo.dependencyCount, type2_string,
+                         report_data->FormatHandle(rp2_state->renderPass()).c_str(), rp2_state->createInfo.dependencyCount);
+    } else {
+        for (uint32_t i = 0; i < rp1_state->createInfo.dependencyCount; ++i) {
+            skip |= ValidateDependencyCompatibility(type1_string, *rp1_state, type2_string, *rp2_state, i, caller, error_code);
+        }
+    }
+    if (rp1_state->createInfo.correlatedViewMaskCount != rp2_state->createInfo.correlatedViewMaskCount) {
+        LogObjectList objlist(rp1_state->renderPass());
+        objlist.add(rp2_state->renderPass());
+        skip |= LogError(objlist, error_code,
+                         "%s: RenderPasses incompatible between %s w/ %s with a correlatedViewMaskCount of %" PRIu32
+                         " and %s w/ %s with a correlatedViewMaskCount of %" PRIu32 ".",
+                         caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(),
+                         rp1_state->createInfo.correlatedViewMaskCount, type2_string,
+                         report_data->FormatHandle(rp2_state->renderPass()).c_str(), rp2_state->createInfo.correlatedViewMaskCount);
+    } else {
+        for (uint32_t i = 0; i < rp1_state->createInfo.correlatedViewMaskCount; ++i) {
+            if (rp1_state->createInfo.pCorrelatedViewMasks[i] != rp2_state->createInfo.pCorrelatedViewMasks[i]) {
+                LogObjectList objlist(rp1_state->renderPass());
+                objlist.add(rp2_state->renderPass());
+                skip |= LogError(objlist, error_code,
+                                 "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32
+                                 "] of %" PRIu32 " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
+                                 caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(), i,
+                                 rp1_state->createInfo.pCorrelatedViewMasks[i], type2_string,
+                                 report_data->FormatHandle(rp2_state->renderPass()).c_str(), i,
+                                 rp1_state->createInfo.pCorrelatedViewMasks[i]);
+            }
         }
     }
 
