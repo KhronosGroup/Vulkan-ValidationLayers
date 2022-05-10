@@ -5334,7 +5334,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
     do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-TEST_F(VkPositiveLayerTest, DevsimLoaderCrash) {
+TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     TEST_DESCRIPTION("Test to see if instance extensions are called during CreateInstance.");
 
     // See https://github.com/KhronosGroup/Vulkan-Loader/issues/537 for more details.
