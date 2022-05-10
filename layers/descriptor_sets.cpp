@@ -1225,7 +1225,7 @@ bool CoreChecks::ValidateImageDescriptor(const char *caller, const DrawDispatchV
                     return LogError(set, vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Image layout "
                                     "specified "
-                                    "at vkUpdateDescriptorSets or vkCmdBindDescriptorSets time "
+                                    "at vkUpdateDescriptorSet* or vkCmdBindDescriptorSet* time "
                                     "doesn't match actual image layout at time descriptor is used. See previous error callback for "
                                     "specific details.",
                                     report_data->FormatHandle(set).c_str(), caller);
