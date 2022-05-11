@@ -333,6 +333,7 @@ static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTa
     {spv::OpSubgroupAllKHR, {"OpSubgroupAllKHR", true, true, 0, 0, 0}},
     {spv::OpSubgroupAnyKHR, {"OpSubgroupAnyKHR", true, true, 0, 0, 0}},
     {spv::OpSubgroupAllEqualKHR, {"OpSubgroupAllEqualKHR", true, true, 0, 0, 0}},
+    {spv::OpGroupNonUniformRotateKHR, {"OpGroupNonUniformRotateKHR", true, true, 0, 3, 0}},
     {spv::OpSubgroupReadInvocationKHR, {"OpSubgroupReadInvocationKHR", true, true, 0, 0, 0}},
     {spv::OpTraceRayKHR, {"OpTraceRayKHR", false, false, 0, 0, 0}},
     {spv::OpExecuteCallableKHR, {"OpExecuteCallableKHR", false, false, 0, 0, 0}},

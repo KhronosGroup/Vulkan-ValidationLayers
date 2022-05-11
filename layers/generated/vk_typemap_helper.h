@@ -3004,6 +3004,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMOR
     typedef VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR Type;
 };
 
+// Map type VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR> {
+    typedef VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR Type;
+};
+
 // Map type VkDebugReportCallbackCreateInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkDebugReportCallbackCreateInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
@@ -5256,6 +5265,51 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COPY_COMMAND_TRANSFORM_INFO_QCO
     typedef VkCopyCommandTransformInfoQCOM Type;
 };
 
+// Map type VkPhysicalDeviceImageCompressionControlFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceImageCompressionControlFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_FEATURES_EXT> {
+    typedef VkPhysicalDeviceImageCompressionControlFeaturesEXT Type;
+};
+
+// Map type VkImageCompressionControlEXT to id VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT
+template <> struct LvlTypeMap<VkImageCompressionControlEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT> {
+    typedef VkImageCompressionControlEXT Type;
+};
+
+// Map type VkSubresourceLayout2EXT to id VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT
+template <> struct LvlTypeMap<VkSubresourceLayout2EXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_EXT> {
+    typedef VkSubresourceLayout2EXT Type;
+};
+
+// Map type VkImageSubresource2EXT to id VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT
+template <> struct LvlTypeMap<VkImageSubresource2EXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_EXT> {
+    typedef VkImageSubresource2EXT Type;
+};
+
+// Map type VkImageCompressionPropertiesEXT to id VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkImageCompressionPropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EXT> {
+    typedef VkImageCompressionPropertiesEXT Type;
+};
+
 // Map type VkPhysicalDevice4444FormatsFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDevice4444FormatsFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT;
@@ -5594,6 +5648,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY
     typedef VkPhysicalDeviceExternalMemoryRDMAFeaturesNV Type;
 };
 
+// Map type VkPipelinePropertiesIdentifierEXT to id VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT
+template <> struct LvlTypeMap<VkPipelinePropertiesIdentifierEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT> {
+    typedef VkPipelinePropertiesIdentifierEXT Type;
+};
+
+// Map type VkPhysicalDevicePipelinePropertiesFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDevicePipelinePropertiesFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_PROPERTIES_FEATURES_EXT> {
+    typedef VkPhysicalDevicePipelinePropertiesFeaturesEXT Type;
+};
+
 // Map type VkPhysicalDeviceExtendedDynamicState2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
@@ -5774,6 +5846,51 @@ template <> struct LvlTypeMap<VkPhysicalDeviceLinearColorAttachmentFeaturesNV> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV> {
     typedef VkPhysicalDeviceLinearColorAttachmentFeaturesNV Type;
+};
+
+// Map type VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT> {
+    typedef VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT> {
+    typedef VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT Type;
+};
+
+// Map type VkRenderPassCreationControlEXT to id VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT
+template <> struct LvlTypeMap<VkRenderPassCreationControlEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT> {
+    typedef VkRenderPassCreationControlEXT Type;
+};
+
+// Map type VkRenderPassCreationFeedbackInfoEXT to id VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT
+template <> struct LvlTypeMap<VkRenderPassCreationFeedbackInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT> {
+    typedef VkRenderPassCreationFeedbackInfoEXT Type;
+};
+
+// Map type VkRenderPassSubpassFeedbackInfoEXT to id VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT
+template <> struct LvlTypeMap<VkRenderPassSubpassFeedbackInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT> {
+    typedef VkRenderPassSubpassFeedbackInfoEXT Type;
 };
 
 // Map type VkAccelerationStructureGeometryTrianglesDataKHR to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR

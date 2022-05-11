@@ -1180,6 +1180,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (shader_subgroup_uniform_control_flow_features) {
             enabled_features.shader_subgroup_uniform_control_flow_features = *shader_subgroup_uniform_control_flow_features;
         }
+
+        const auto ray_tracing_maintenance1_features = 
+            LvlFindInChain<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(pCreateInfo->pNext);
+        if (ray_tracing_maintenance1_features) {
+            enabled_features.ray_tracing_maintenance1_features= *ray_tracing_maintenance1_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

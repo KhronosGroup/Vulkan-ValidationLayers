@@ -7122,27 +7122,27 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer 
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupBaseAlignment.");
     }
     if (width * depth * height > phys_dev_ext_props.ray_tracing_propsKHR.maxRayDispatchInvocationCount) {
-        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-width-03629",
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-width-03641",
                          "vkCmdTraceRaysKHR: width {times} height {times} depth must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayDispatchInvocationCount");
     }
     if (width > device_limits.maxComputeWorkGroupCount[0] * device_limits.maxComputeWorkGroupSize[0]) {
         skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-width-03626",
+            LogError(device, "VUID-vkCmdTraceRaysKHR-width-03638",
                      "vkCmdTraceRaysKHR: width must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[0] "
                      "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[0]");
     }
 
     if (height > device_limits.maxComputeWorkGroupCount[1] * device_limits.maxComputeWorkGroupSize[1]) {
         skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-height-03627",
+            LogError(device, "VUID-vkCmdTraceRaysKHR-height-03639",
                      "vkCmdTraceRaysKHR: height must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1] "
                      "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[1]");
     }
 
     if (depth > device_limits.maxComputeWorkGroupCount[2] * device_limits.maxComputeWorkGroupSize[2]) {
         skip |=
-            LogError(device, "VUID-vkCmdTraceRaysKHR-depth-03628",
+            LogError(device, "VUID-vkCmdTraceRaysKHR-depth-03640",
                      "vkCmdTraceRaysKHR: depth must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2] "
                      "{times} VkPhysicalDeviceLimits::maxComputeWorkGroupSize[2]");
     }

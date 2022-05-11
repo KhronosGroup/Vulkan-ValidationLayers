@@ -1795,6 +1795,13 @@ void PostCallRecordGetMemoryRemoteAddressNV(
     VkResult                                    result) override;
 
 
+void PostCallRecordGetPipelinePropertiesEXT(
+    VkDevice                                    device,
+    const VkPipelineInfoEXT*                    pPipelineInfo,
+    VkBaseOutStructure*                         pPipelineProperties,
+    VkResult                                    result) override;
+
+
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 
 void PostCallRecordCreateScreenSurfaceQNX(
