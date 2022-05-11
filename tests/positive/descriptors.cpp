@@ -1433,3 +1433,83 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
     ds.UpdateDescriptorSets();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
+    TEST_DESCRIPTION("Test using host only descriptor set in multiple threads");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s Tests requires Vulkan 1.1+, skipping test.\n", kSkipPrefix);
+        return;
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        printf("%s %s Extension not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+        return;
+    }
+
+    auto mutable_descriptor = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (mutable_descriptor.mutableDescriptorType == VK_FALSE) {
+        printf("%s mutableDescriptorType feature not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkImageObj image1(m_device);
+    VkImageObj image2(m_device);
+    image1.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image2.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+
+    VkImageView view1 = image1.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    VkImageView view2 = image2.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                       },
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE, nullptr,
+                                       VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE);
+
+    const auto &testing_thread1 = [&]() {
+        VkDescriptorImageInfo image_info = {};
+        image_info.imageView = view1;
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_set.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptor_write.pImageInfo = &image_info;
+
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    };
+    const auto &testing_thread2 = [&]() {
+        VkDescriptorImageInfo image_info = {};
+        image_info.imageView = view2;
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_set.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.dstArrayElement = 1;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptor_write.pImageInfo = &image_info;
+
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+    };
+
+    std::array<std::thread, 2> threads = {std::thread(testing_thread1), std::thread(testing_thread2)};
+    for (auto &t : threads) t.join();
+
+    m_errorMonitor->VerifyNotFound();
+}
