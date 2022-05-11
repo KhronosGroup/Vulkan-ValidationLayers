@@ -628,7 +628,8 @@ void GpuAssistedBase::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkP
     if (aborted) return;
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, cgpl_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    cgpl_state->modified_create_infos.data());
 }
 
 void GpuAssistedBase::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -640,7 +641,8 @@ void GpuAssistedBase::PostCallRecordCreateComputePipelines(VkDevice device, VkPi
     if (aborted) return;
     create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, ccpl_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE);
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                    ccpl_state->modified_create_infos.data());
 }
 
 void GpuAssistedBase::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -652,7 +654,8 @@ void GpuAssistedBase::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device,
                                                                       pPipelines, result, crtpl_state_data);
     if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                                    crtpl_state->modified_create_infos.data());
 }
 
 void GpuAssistedBase::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
@@ -665,7 +668,8 @@ void GpuAssistedBase::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
         device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result, crtpl_state_data);
     if (aborted) return;
     UtilCopyCreatePipelineFeedbackData(count, pCreateInfos, crtpl_state->modified_create_infos.data());
-    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    PostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+                                    crtpl_state->modified_create_infos.data());
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.
@@ -777,10 +781,10 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
 //     - Destroy it since it has been bound into the pipeline by now.  This is our only chance to delete it.
 //   - Track the shader in the shader_map
 //   - Save the shader binary if it contains debug code
-template <typename CreateInfo>
+template <typename CreateInfo, typename SafeCreateInfo>
 void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      const VkPipelineBindPoint bind_point) {
+                                                      const VkPipelineBindPoint bind_point, const SafeCreateInfo *pModifiedCreateInfos) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         return;

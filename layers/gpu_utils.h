@@ -188,10 +188,10 @@ class GpuAssistedBase : public ValidationStateTracker {
                                         VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos,
                                         const VkPipelineBindPoint bind_point);
-    template <typename CreateInfo>
+    template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                         const VkPipelineBindPoint bind_point);
+                                         const VkPipelineBindPoint bind_point, const SafeCreateInfo *pModifiedCreateInfos);
 
   public:
     bool aborted = false;
