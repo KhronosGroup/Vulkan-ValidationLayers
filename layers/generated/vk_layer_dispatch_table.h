@@ -665,6 +665,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdBlitImage2KHR CmdBlitImage2KHR;
     PFN_vkCmdResolveImage2KHR CmdResolveImage2KHR;
 
+    // ---- VK_KHR_ray_tracing_maintenance1 extension commands
+    PFN_vkCmdTraceRaysIndirect2KHR CmdTraceRaysIndirect2KHR;
+
     // ---- VK_KHR_maintenance4 extension commands
     PFN_vkGetDeviceBufferMemoryRequirementsKHR GetDeviceBufferMemoryRequirementsKHR;
     PFN_vkGetDeviceImageMemoryRequirementsKHR GetDeviceImageMemoryRequirementsKHR;
@@ -867,6 +870,9 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
 
+    // ---- VK_EXT_image_compression_control extension commands
+    PFN_vkGetImageSubresourceLayout2EXT GetImageSubresourceLayout2EXT;
+
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
 
@@ -912,6 +918,9 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_NV_external_memory_rdma extension commands
     PFN_vkGetMemoryRemoteAddressNV GetMemoryRemoteAddressNV;
+
+    // ---- VK_EXT_pipeline_properties extension commands
+    PFN_vkGetPipelinePropertiesEXT GetPipelinePropertiesEXT;
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     PFN_vkCmdSetPatchControlPointsEXT CmdSetPatchControlPointsEXT;

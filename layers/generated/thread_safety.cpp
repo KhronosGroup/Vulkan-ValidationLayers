@@ -5997,6 +5997,20 @@ void ThreadSafety::PostCallRecordCmdResolveImage2KHR(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordCmdTraceRaysIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectDeviceAddress) {
+    StartWriteObject(commandBuffer, "vkCmdTraceRaysIndirect2KHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdTraceRaysIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectDeviceAddress) {
+    FinishWriteObject(commandBuffer, "vkCmdTraceRaysIndirect2KHR");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordGetDeviceBufferMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkDeviceBufferMemoryRequirements*     pInfo,
@@ -8372,6 +8386,24 @@ void ThreadSafety::PostCallRecordCmdSetFragmentShadingRateEnumNV(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    StartReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
+    StartReadObject(image, "vkGetImageSubresourceLayout2EXT");
+}
+
+void ThreadSafety::PostCallRecordGetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    FinishReadObjectParentInstance(device, "vkGetImageSubresourceLayout2EXT");
+    FinishReadObject(image, "vkGetImageSubresourceLayout2EXT");
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 void ThreadSafety::PreCallRecordAcquireWinrtDisplayNV(
@@ -8647,6 +8679,21 @@ void ThreadSafety::PostCallRecordGetMemoryRemoteAddressNV(
     VkRemoteAddressNV*                          pAddress,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetMemoryRemoteAddressNV");
+}
+
+void ThreadSafety::PreCallRecordGetPipelinePropertiesEXT(
+    VkDevice                                    device,
+    const VkPipelineInfoEXT*                    pPipelineInfo,
+    VkBaseOutStructure*                         pPipelineProperties) {
+    StartReadObjectParentInstance(device, "vkGetPipelinePropertiesEXT");
+}
+
+void ThreadSafety::PostCallRecordGetPipelinePropertiesEXT(
+    VkDevice                                    device,
+    const VkPipelineInfoEXT*                    pPipelineInfo,
+    VkBaseOutStructure*                         pPipelineProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetPipelinePropertiesEXT");
 }
 
 void ThreadSafety::PreCallRecordCmdSetPatchControlPointsEXT(

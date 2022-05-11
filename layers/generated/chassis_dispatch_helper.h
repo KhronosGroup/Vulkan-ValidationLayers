@@ -839,6 +839,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdResolveImage2KHR,
     InterceptIdPreCallRecordCmdResolveImage2KHR,
     InterceptIdPostCallRecordCmdResolveImage2KHR,
+    InterceptIdPreCallValidateCmdTraceRaysIndirect2KHR,
+    InterceptIdPreCallRecordCmdTraceRaysIndirect2KHR,
+    InterceptIdPostCallRecordCmdTraceRaysIndirect2KHR,
     InterceptIdPreCallValidateGetDeviceBufferMemoryRequirementsKHR,
     InterceptIdPreCallRecordGetDeviceBufferMemoryRequirementsKHR,
     InterceptIdPostCallRecordGetDeviceBufferMemoryRequirementsKHR,
@@ -1172,6 +1175,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV,
+    InterceptIdPreCallValidateGetImageSubresourceLayout2EXT,
+    InterceptIdPreCallRecordGetImageSubresourceLayout2EXT,
+    InterceptIdPostCallRecordGetImageSubresourceLayout2EXT,
     InterceptIdPreCallValidateCmdSetVertexInputEXT,
     InterceptIdPreCallRecordCmdSetVertexInputEXT,
     InterceptIdPostCallRecordCmdSetVertexInputEXT,
@@ -1214,6 +1220,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetMemoryRemoteAddressNV,
     InterceptIdPreCallRecordGetMemoryRemoteAddressNV,
     InterceptIdPostCallRecordGetMemoryRemoteAddressNV,
+    InterceptIdPreCallValidateGetPipelinePropertiesEXT,
+    InterceptIdPreCallRecordGetPipelinePropertiesEXT,
+    InterceptIdPostCallRecordGetPipelinePropertiesEXT,
     InterceptIdPreCallValidateCmdSetPatchControlPointsEXT,
     InterceptIdPreCallRecordCmdSetPatchControlPointsEXT,
     InterceptIdPostCallRecordCmdSetPatchControlPointsEXT,
@@ -2241,6 +2250,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdResolveImage2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdResolveImage2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdResolveImage2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdTraceRaysIndirect2KHR);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdTraceRaysIndirect2KHR);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdTraceRaysIndirect2KHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceBufferMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeviceBufferMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeviceBufferMemoryRequirementsKHR);
@@ -2604,6 +2616,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetFragmentShadingRateEnumNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout2EXT);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -2672,6 +2687,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMemoryRemoteAddressNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryRemoteAddressNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryRemoteAddressNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelinePropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelinePropertiesEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelinePropertiesEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPatchControlPointsEXT);

@@ -5650,6 +5650,22 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdResolveImage2KHR(VkCommandBu
     CoreChecks::PostCallRecordCmdResolveImage2KHR(commandBuffer, pResolveImageInfo);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(VkDevice device, const VkDeviceBufferMemoryRequirements* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetDeviceBufferMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
@@ -7888,6 +7904,22 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetFragmentShadingRateEnumNV
     CoreChecks::PostCallRecordCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+}
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool CoreChecksOptickInstrumented::PreCallValidateAcquireWinrtDisplayNV(VkPhysicalDevice physicalDevice, VkDisplayKHR display) const {
     OPTICK_EVENT();
@@ -8200,6 +8232,22 @@ void CoreChecksOptickInstrumented::PreCallRecordGetMemoryRemoteAddressNV(VkDevic
 void CoreChecksOptickInstrumented::PostCallRecordGetMemoryRemoteAddressNV(VkDevice device, const VkMemoryGetRemoteAddressInfoNV* pMemoryGetRemoteAddressInfo, VkRemoteAddressNV* pAddress, VkResult result) {
     OPTICK_EVENT();
     CoreChecks::PostCallRecordGetMemoryRemoteAddressNV(device, pMemoryGetRemoteAddressInfo, pAddress, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo, VkBaseOutStructure* pPipelineProperties) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo, VkBaseOutStructure* pPipelineProperties) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetPipelinePropertiesEXT(VkDevice device, const VkPipelineInfoEXT* pPipelineInfo, VkBaseOutStructure* pPipelineProperties, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, result);
 }
 
 bool CoreChecksOptickInstrumented::PreCallValidateCmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints) const {

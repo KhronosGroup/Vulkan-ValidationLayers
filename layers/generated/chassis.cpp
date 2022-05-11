@@ -8681,6 +8681,28 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdTraceRaysIndirect2KHR(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectDeviceAddress) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdTraceRaysIndirect2KHR]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdTraceRaysIndirect2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    }
+    DispatchCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdTraceRaysIndirect2KHR]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdTraceRaysIndirect2KHR(commandBuffer, indirectDeviceAddress);
+    }
+}
+
+
 
 VKAPI_ATTR void VKAPI_CALL GetDeviceBufferMemoryRequirementsKHR(
     VkDevice                                    device,
@@ -12007,6 +12029,30 @@ VKAPI_ATTR void VKAPI_CALL CmdSetFragmentShadingRateEnumNV(
 
 
 
+VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2EXT(
+    VkDevice                                    device,
+    VkImage                                     image,
+    const VkImageSubresource2EXT*               pSubresource,
+    VkSubresourceLayout2EXT*                    pLayout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    }
+    DispatchGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetImageSubresourceLayout2EXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetImageSubresourceLayout2EXT(device, image, pSubresource, pLayout);
+    }
+}
+
+
 
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -12444,6 +12490,30 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryRemoteAddressNV(
 }
 
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPipelinePropertiesEXT(
+    VkDevice                                    device,
+    const VkPipelineInfoEXT*                    pPipelineInfo,
+    VkBaseOutStructure*                         pPipelineProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetPipelinePropertiesEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetPipelinePropertiesEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    }
+    VkResult result = DispatchGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetPipelinePropertiesEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPipelinePropertiesEXT(device, pPipelineInfo, pPipelineProperties, result);
+    }
+    return result;
+}
+
+
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    patchControlPoints) {
@@ -12747,6 +12817,8 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
         intercept->PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
     }
 }
+
+
 
 
 
@@ -13660,6 +13732,7 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdCopyImageToBuffer2KHR", {kFuncTypeDev, (void*)CmdCopyImageToBuffer2KHR}},
     {"vkCmdBlitImage2KHR", {kFuncTypeDev, (void*)CmdBlitImage2KHR}},
     {"vkCmdResolveImage2KHR", {kFuncTypeDev, (void*)CmdResolveImage2KHR}},
+    {"vkCmdTraceRaysIndirect2KHR", {kFuncTypeDev, (void*)CmdTraceRaysIndirect2KHR}},
     {"vkGetDeviceBufferMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceBufferMemoryRequirementsKHR}},
     {"vkGetDeviceImageMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageMemoryRequirementsKHR}},
     {"vkGetDeviceImageSparseMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetDeviceImageSparseMemoryRequirementsKHR}},
@@ -13832,6 +13905,7 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkSetPrivateDataEXT", {kFuncTypeDev, (void*)SetPrivateDataEXT}},
     {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
     {"vkCmdSetFragmentShadingRateEnumNV", {kFuncTypeDev, (void*)CmdSetFragmentShadingRateEnumNV}},
+    {"vkGetImageSubresourceLayout2EXT", {kFuncTypeDev, (void*)GetImageSubresourceLayout2EXT}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkAcquireWinrtDisplayNV", {kFuncTypePdev, (void*)AcquireWinrtDisplayNV}},
 #endif
@@ -13876,6 +13950,7 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdSubpassShadingHUAWEI", {kFuncTypeDev, (void*)CmdSubpassShadingHUAWEI}},
     {"vkCmdBindInvocationMaskHUAWEI", {kFuncTypeDev, (void*)CmdBindInvocationMaskHUAWEI}},
     {"vkGetMemoryRemoteAddressNV", {kFuncTypeDev, (void*)GetMemoryRemoteAddressNV}},
+    {"vkGetPipelinePropertiesEXT", {kFuncTypeDev, (void*)GetPipelinePropertiesEXT}},
     {"vkCmdSetPatchControlPointsEXT", {kFuncTypeDev, (void*)CmdSetPatchControlPointsEXT}},
     {"vkCmdSetRasterizerDiscardEnableEXT", {kFuncTypeDev, (void*)CmdSetRasterizerDiscardEnableEXT}},
     {"vkCmdSetDepthBiasEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthBiasEnableEXT}},

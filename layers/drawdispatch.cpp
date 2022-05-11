@@ -699,7 +699,7 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdTraceRaysKHR-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdTraceRaysKHR-None-02859";
         unprotected_command_buffer         = "VUID-vkCmdTraceRaysKHR-commandBuffer-02707";
-        ray_query_protected_cb              = "VUID-vkCmdTraceRaysKHR-commandBuffer-04625";
+        ray_query_protected_cb             = "VUID-vkCmdTraceRaysKHR-commandBuffer-03635";
         img_filter_cubic                   = "VUID-vkCmdTraceRaysKHR-None-02693";
         filter_cubic                       = "VUID-vkCmdTraceRaysKHR-filterCubic-02694";
         filter_cubic_min_max               = "VUID-vkCmdTraceRaysKHR-filterCubicMinmax-02695";
