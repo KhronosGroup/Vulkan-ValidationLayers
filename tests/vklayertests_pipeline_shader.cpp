@@ -257,11 +257,11 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     VkAttachmentDescription attach_desc[2] = {};
     attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
     attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach_desc[0].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc[1].format = VK_FORMAT_B8G8R8A8_UNORM;
     attach_desc[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach_desc[1].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = attach_desc;
@@ -327,7 +327,7 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = non_blending_format;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     rpci.pAttachments = &attach_desc;
@@ -6709,12 +6709,12 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         VkAttachmentDescription att[2] = {{}, {}};
         att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
         att[0].samples = test_case.color_samples;
-        att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         att[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
         att[1].samples = test_case.depth_samples;
-        att[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -6803,12 +6803,12 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         VkAttachmentDescription att[2] = {{}, {}};
         att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
         att[0].samples = test_case.color_samples;
-        att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[0].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         att[1].format = ds_format;
         att[1].samples = test_case.depth_samples;
-        att[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        att[1].initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
         att[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
