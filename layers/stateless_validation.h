@@ -1301,6 +1301,30 @@ class StatelessValidation : public ValidationObject {
                                      func_name, i);
                 }
             }
+            if (FormatIsColor(attachment_format) || FormatHasDepth(attachment_format)) {
+                if (pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06702" : "VUID-VkAttachmentDescription-format-06699";
+                    skip |= LogError(
+                        device, vuid,
+                        "%s: pCreateInfo->pAttachments[%" PRIu32
+                        "] format is %s and loadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                        func_name, i, string_VkFormat(pCreateInfo->pAttachments[i].format));
+                }
+            }
+            if (FormatHasStencil(attachment_format)) {
+                if (pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
+                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    if (!use_rp2 || !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+                        vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06703" : "VUID-VkAttachmentDescription-format-06700";
+                        skip |= LogError(device, vuid,
+                                         "%s: pCreateInfo->pAttachments[%" PRIu32
+                                         "] format is %s and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is "
+                                         "VK_IMAGE_LAYOUT_UNDEFINED.",
+                                         func_name, i, string_VkFormat(pCreateInfo->pAttachments[i].format));
+                    }
+                }
+            }
             if (use_rp2 && FormatHasStencil(attachment_format) &&
                 pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 if (attachment_description_stencil_layout) {
