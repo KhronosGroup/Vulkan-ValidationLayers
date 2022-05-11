@@ -86,7 +86,7 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAlloc
       p_driver_data(nullptr),
       fake_base_address(fake_address) {}
 
-void BINDABLE::Destroy() {
+void BINDABLE_OLD::Destroy() {
     for (auto &item : binding_map_) {
         if (item.second.mem_state) {
             item.second.mem_state->RemoveParent(this);
@@ -96,7 +96,7 @@ void BINDABLE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-unsigned BINDABLE::CountDeviceMemory(VkDeviceMemory mem) const {
+unsigned BINDABLE_OLD::CountDeviceMemory(VkDeviceMemory mem) const {
     unsigned count = 0u;
 
     for (const auto &value : binding_map_) {
@@ -106,8 +106,8 @@ unsigned BINDABLE::CountDeviceMemory(VkDeviceMemory mem) const {
     return count;
 }
 
-void BINDABLE::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> mem_state, VkDeviceMemory mem, VkDeviceSize mem_offset,
-                               VkDeviceSize resource_offset, VkDeviceSize size) {
+void BINDABLE_OLD::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceMemory mem, VkDeviceSize mem_offset,
+                                   VkDeviceSize resource_offset, VkDeviceSize size) {
     // Since we don't know which ranges will be removed, we need to unbind everything and rebind later
     for (auto &value : binding_map_) {
         if (value.second.mem_state) {
@@ -128,7 +128,7 @@ void BINDABLE::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> mem_state, V
     }
 }
 
-bool BINDABLE::FullRangeBound() const {
+bool BINDABLE_OLD::FullRangeBound() const {
     // If the resource is sparse, it either needs to be completely bound or it needs to be sparse resident
     if (sparse && is_sparse_resident) {
         for (const auto &binding : binding_map_) {
@@ -140,7 +140,7 @@ bool BINDABLE::FullRangeBound() const {
         return true;
     }
 
-    auto ranges = binding_map_.bounds(sparse_container::range<VkDeviceSize>{0, resource_size});
+    auto ranges = binding_map_.bounds(sparse_container::range<VkDeviceSize>{0, resource_size_});
 
     VkDeviceSize current_offset = 0u;
     for (auto it = ranges.begin; it != ranges.end; ++it) {
@@ -150,7 +150,7 @@ bool BINDABLE::FullRangeBound() const {
         current_offset = it->first.end;
     }
 
-    return current_offset == resource_size;
+    return current_offset == resource_size_;
 }
 
 VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
@@ -159,4 +159,51 @@ VkDeviceSize BINDABLE::GetFakeBaseAddress() const {
     // Non sparse implementation
     const auto *binding = Binding();
     return binding ? binding->memory_offset + binding->mem_state->fake_base_address : 0;
+}
+
+// template <unsigned TRACKINGS_COUNT>
+// bool BindableMemoryTracker<TRACKINGS_COUNT, false, false>::FullRangeBound() const {
+//    bool is_full_range_bound = true;
+//    switch (TRACKINGS_COUNT) {
+//        case 3:
+//            is_full_range_bound &= (bindings_[2].device_memory != VK_NULL_HANDLE)
+//        case 2:
+//            is_full_range_bound &= (bindings_[1].device_memory != VK_NULL_HANDLE)
+//        case 1:
+//            is_full_range_bound &= (bindings_[0].device_memory != VK_NULL_HANDLE)
+//            break;
+//        default:
+//            assert(true); // We can only have 1-3 planes
+//    }
+//
+//    return is_full_range_bound;
+//}
+
+// template <unsigned TRACKINGS_COUNT>
+// void BindableMemoryTracker<TRACKINGS_COUNT, false, false>::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state,
+//                                                                           VkDeviceSize mem_offset, unsigned plane_index) {
+//    if (!mem_state) return;
+//
+//    mem_state->AddParent(this);
+//    bindings_[plane_index] = {mem_state->mem(), mem_state, mem_offset, 0u};
+//}
+
+void BindableLinearMemoryTracker::BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceSize mem_offset,
+                                                  VkDeviceSize resource_offset, VkDeviceSize size) {
+    if (!mem_state) return;
+
+    binding_ = {mem_state->mem(), mem_state, mem_offset, 0u};
+}
+
+BindableMemoryTracker::DeviceMemoryState BindableLinearMemoryTracker::GetDeviceMemoryState() {
+    return binding_.mem_state ? DeviceMemoryState{binding_.mem_state} : DeviceMemoryState{};
+}
+
+BindableMemoryTracker::BoundMemoryRange BindableLinearMemoryTracker::GetBoundMemoryRange(
+    const sparse_container::range<VkDeviceSize> &range) const {
+    return binding_.device_memory != VK_NULL_HANDLE
+               ? BoundMemoryRange{BoundMemoryRange::value_type{
+                     binding_.device_memory, BoundMemoryRange::value_type::second_type{{binding_.memory_offset + range.begin,
+                                                                                        binding_.memory_offset + range.end}}}}
+               : BoundMemoryRange{};
 }

@@ -199,9 +199,9 @@ static bool SparseMetaDataRequired(const IMAGE_STATE::SparseReqs &sparse_reqs) {
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkFormatFeatureFlags2KHR ff)
-    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+    : BINDABLE_OLD(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+                   (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
+                   (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),
@@ -223,14 +223,14 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       store_device_as_workaround(dev_data->device) {  // TODO REMOVE WHEN encoder can be const
     // TODO: Correctly load resource size individually
     // Ideally we would have memory tracking as part of the object and not inherited due to its limitations
-    resource_size = requirements[0].size;
+    resource_size_ = requirements[0].size;
 }
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
-    : BINDABLE(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
-               (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
+    : BINDABLE_OLD(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
+                   (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0,
+                   (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
       shared_presentable(false),
@@ -254,7 +254,7 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
     // TODO: Correctly load resource size individually
     // Ideally we would have memory tracking as part of the object and not inherited due to its limitations
-    resource_size = requirements[0].size;
+    resource_size_ = requirements[0].size;
 }
 
 void IMAGE_STATE::Destroy() {

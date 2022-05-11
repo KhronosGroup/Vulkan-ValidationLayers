@@ -31,7 +31,7 @@
 
 class ValidationStateTracker;
 
-class BUFFER_STATE : public BINDABLE {
+class BUFFER_STATE : public BINDABLE_NEW {
   public:
     const safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &createInfo;
@@ -43,6 +43,8 @@ class BUFFER_STATE : public BINDABLE {
 
     BUFFER_STATE(BUFFER_STATE const &rh_obj) = delete;
 
+    void Destroy() override { BINDABLE_NEW::Destroy(); }
+
     VkBuffer buffer() const { return handle_.Cast<VkBuffer>(); }
 
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
@@ -53,8 +55,71 @@ class BUFFER_STATE : public BINDABLE {
                                 const sparse_container::range<VkDeviceSize> &dst_region) const;
 
   protected:
-    using DevMemRanges = std::map<VkDeviceMemory, sparse_container::range_map<VkDeviceSize, unsigned>>;
-    DevMemRanges ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const;
+    virtual BindableMemoryTracker::BoundMemoryRange GetBoundMemoryRange(
+        const sparse_container::range<VkDeviceSize> &region) const = 0;
+
+    static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *dev_data, VkBuffer buffer);
+};
+
+template <typename BindableMemoryTrackerType>
+class BUFFER_STATE_FINAL final : public BUFFER_STATE {
+  public:
+    BUFFER_STATE_FINAL(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
+        : BUFFER_STATE(dev_data, buff, pCreateInfo), bound_memory_tracker_(GetMemoryRequirements(dev_data, buff)) {}
+
+    BUFFER_STATE_FINAL(BUFFER_STATE_FINAL const &rh_obj) = delete;
+
+    virtual ~BUFFER_STATE_FINAL() {
+        // Need to unbind children nodes before ~BindableMemoryTrackerType
+        if (!Destroyed()) {
+            Destroy();
+        }
+    }
+
+    void Destroy() override {
+        auto state = bound_memory_tracker_.GetDeviceMemoryState();
+        for (auto &s : state) s->RemoveParent(this);
+
+        BUFFER_STATE::Destroy();
+    }
+
+    //---------------------------------------------------------------------------------------------------------
+    // Kept for backwards compatibility. We should do a bigger rework on memory with current binding tracking
+    const MEM_BINDING *Binding() const override { return bound_memory_tracker_.Binding(); }
+    unsigned CountDeviceMemory(VkDeviceMemory mem) const override {
+        return bound_memory_tracker_.GetDeviceMemoryHandle() == mem ? 1 : 0;
+    }
+    //---------------------------------------------------------------------------------------------------------
+
+    // Binds a range of the resource memory [resource_offset, resource_offset + size)
+    void BindMemoryRange(std::shared_ptr<DEVICE_MEMORY_STATE> &mem_state, VkDeviceMemory mem, VkDeviceSize mem_offset,
+                         VkDeviceSize resource_offset, VkDeviceSize size) override {
+        if (bound_memory_tracker_.is_sparse()) {
+            // Since we don't know which ranges will be removed, we need to unbind everything and rebind later
+            for (auto &mem : bound_memory_tracker_.GetDeviceMemoryState()) {
+                mem->RemoveParent(this);
+            }
+        }
+        bound_memory_tracker_.BindMemoryRange(mem_state, mem_offset, resource_offset, size);
+
+        if (bound_memory_tracker_.is_sparse()) {
+            for (auto &mem : bound_memory_tracker_.GetDeviceMemoryState()) {
+                mem->AddParent(this);
+            }
+        } else {
+            mem_state->AddParent(this);
+        }
+    }
+
+    BindableMemoryTracker::BoundMemoryRange GetBoundMemoryRange(
+        const sparse_container::range<VkDeviceSize> &region) const override {
+        return bound_memory_tracker_.GetBoundMemoryRange(region);
+    }
+
+    bool FullRangeBound() const override { return bound_memory_tracker_.FullRangeBound(); }
+
+  private:
+    BindableMemoryTrackerType bound_memory_tracker_;
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {

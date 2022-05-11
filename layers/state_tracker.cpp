@@ -328,7 +328,16 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                                                         VkResult result) {
     if (result != VK_SUCCESS) return;
 
-    auto buffer_state = std::make_shared<BUFFER_STATE>(this, *pBuffer, pCreateInfo);
+    std::shared_ptr<BUFFER_STATE> buffer_state;
+    if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
+        if (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) {
+            buffer_state = std::make_shared<BUFFER_STATE_FINAL<BindableSparseMemoryTracker<true>>>(this, *pBuffer, pCreateInfo);
+        } else {
+            buffer_state = std::make_shared<BUFFER_STATE_FINAL<BindableSparseMemoryTracker<false>>>(this, *pBuffer, pCreateInfo);
+        }
+    } else {
+        buffer_state = std::make_shared<BUFFER_STATE_FINAL<BindableLinearMemoryTracker>>(this, *pBuffer, pCreateInfo);
+    }
 
     if (pCreateInfo) {
         const auto *opaque_capture_address = LvlFindInChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);

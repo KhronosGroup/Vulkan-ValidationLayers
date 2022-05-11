@@ -94,7 +94,7 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
 //
-class IMAGE_STATE : public BINDABLE {
+class IMAGE_STATE : public BINDABLE_OLD {
   public:
     const safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &createInfo;
