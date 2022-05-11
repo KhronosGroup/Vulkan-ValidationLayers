@@ -12938,6 +12938,51 @@ TEST_F(VkLayerTest, FragmentDensityMappAttachmentCount) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidRenderPassAttachmentUndefinedLayout) {
+    TEST_DESCRIPTION("Create render pass with invalid attachment undefined layout.");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+    if (ds_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = ds_format;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-06699",
+                         "VUID-VkAttachmentDescription2-format-06702");
+
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-06700");
+    VkRenderPass render_pass;
+    vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ImagelessFramebufferWith3DImage) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
 
