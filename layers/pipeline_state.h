@@ -397,14 +397,14 @@ class PIPELINE_STATE : public BASE_NODE {
     template <typename CI>
     VkPipeline BasePipeline() const {
         // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(!"Not implemented");
+        assert(false && "Not implemented");
         return {};
     }
 
     template <typename CI>
     int32_t BasePipelineIndex() const {
         // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(!"Not implemented");
+        assert(false && "Not implemented");
         return {};
     }
 
@@ -412,7 +412,7 @@ class PIPELINE_STATE : public BASE_NODE {
     template <typename CI>
     VkShaderModule GetShaderModuleByCIIndex(uint32_t i) {
         // TODO this _should_ be a static_assert, but that only works on MSVC currently
-        assert(!"Not implemented");
+        assert(false && "Not implemented");
         return {};
     }
 
