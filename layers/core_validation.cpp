@@ -13971,12 +13971,15 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                      framebuffer_attachment_image_info->height);
                     }
 
-                    if (framebuffer_attachment_image_info->layerCount != subresource_range.layerCount) {
-                        skip |=
-                            LogError(pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
-                                     "%s: Image view #%u created with a subresource range with a layerCount of %u, "
-                                     "but image info #%u used to create the framebuffer had layerCount set as %u",
-                                     func_name, i, subresource_range.layerCount, i, framebuffer_attachment_image_info->layerCount);
+                    const uint32_t layerCount =
+                        image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
+                        ? image_view_state->create_info.subresourceRange.layerCount : image_create_info->extent.depth;
+                    if (framebuffer_attachment_image_info->layerCount != layerCount) {
+                        skip |= LogError(
+                            pRenderPassBeginInfo->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-03213",
+                            "%s: Image view #%" PRIu32 " created with a subresource range with a layerCount of %" PRIu32
+                            ", but image info #%" PRIu32 " used to create the framebuffer had layerCount set as %" PRIu32 "",
+                            func_name, i, layerCount, i, framebuffer_attachment_image_info->layerCount);
                     }
 
                     const VkImageFormatListCreateInfo *image_format_list_create_info =
