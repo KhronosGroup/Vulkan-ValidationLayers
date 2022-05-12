@@ -1739,12 +1739,13 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                             string_VkFormat(buffer_view_format));
         }
 
-        const VkFormatFeatureFlags2KHR format_features = buffer_view_state->format_features;
+        const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;
+        const VkFormatFeatureFlags2KHR img_format_features = buffer_view_state->img_format_features;
         const VkDescriptorType descriptor_type = descriptor_set->GetTypeFromBinding(binding);
 
         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
-            !(format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
+            !(buf_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
             auto set = descriptor_set->GetSet();
             LogObjectList objlist(set);
             objlist.add(buffer_view);
@@ -1759,7 +1760,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
 
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
             if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
-                !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
                 auto set = descriptor_set->GetSet();
                 LogObjectList objlist(set);
                 objlist.add(buffer_view);
@@ -1770,11 +1771,11 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                                 "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
                                 report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                string_VkFormatFeatureFlags2KHR(format_features).c_str());
+                                string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
             }
 
             if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
-                !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
                 auto set = descriptor_set->GetSet();
                 LogObjectList objlist(set);
                 objlist.add(buffer_view);
@@ -1785,7 +1786,7 @@ bool CoreChecks::ValidateTexelDescriptor(const char *caller, const DrawDispatchV
                                 "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
                                 report_data->FormatHandle(set).c_str(), caller, binding, index,
                                 report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                string_VkFormatFeatureFlags2KHR(format_features).c_str());
+                                string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
             }
         }
 

@@ -349,19 +349,21 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
 
     auto buffer_state = Get<BUFFER_STATE>(pCreateInfo->buffer);
 
-    VkFormatFeatureFlags2KHR buffer_features;
+    VkFormatFeatureFlags2KHR buffer_features, image_features;
     if (has_format_feature2) {
         auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
         auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, pCreateInfo->format, &fmt_props_2);
         buffer_features = fmt_props_3.bufferFeatures;
+        image_features = fmt_props_3.linearTilingFeatures;
     } else {
         VkFormatProperties format_properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, pCreateInfo->format, &format_properties);
         buffer_features = format_properties.bufferFeatures;
+        image_features = format_properties.linearTilingFeatures;
     }
 
-    Add(std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo, buffer_features));
+    Add(std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo, buffer_features, image_features));
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
