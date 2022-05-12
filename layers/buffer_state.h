@@ -61,11 +61,20 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
     const VkBufferViewCreateInfo create_info;
     std::shared_ptr<BUFFER_STATE> buffer_state;
-    const VkFormatFeatureFlags2KHR format_features;
+    // Format features that matter when accessing the buffer (OpLoad, OpStore,
+    // OpAtomicLoad, etc...)
+    const VkFormatFeatureFlags2KHR buf_format_features;
+    // Format features that matter when accessing the buffer as a image
+    // (OpImageRead, OpImageWrite, etc...)
+    const VkFormatFeatureFlags2KHR img_format_features;
 
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                      VkFormatFeatureFlags2KHR ff)
-        : BASE_NODE(bv, kVulkanObjectTypeBufferView), create_info(*ci), buffer_state(bf), format_features(ff) {}
+                      VkFormatFeatureFlags2KHR buf_ff, VkFormatFeatureFlags2KHR img_ff)
+        : BASE_NODE(bv, kVulkanObjectTypeBufferView),
+          create_info(*ci),
+          buffer_state(bf),
+          buf_format_features(buf_ff),
+          img_format_features(img_ff) {}
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.
