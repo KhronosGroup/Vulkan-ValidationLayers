@@ -75,6 +75,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/drawdispatch.cpp
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
         ${SRC_DIR}/layers/descriptor_sets.cpp
+        ${SRC_DIR}/layers/descriptor_validation.cpp
         ${SRC_DIR}/layers/buffer_validation.cpp
         ${SRC_DIR}/layers/shader_module.cpp
         ${SRC_DIR}/layers/shader_validation.cpp

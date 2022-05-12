@@ -118,6 +118,7 @@ core_validation_sources = [
   "layers/core_error_location.h",
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
+  "layers/descriptor_validation.cpp",
   "layers/drawdispatch.cpp",
   "layers/generated/corechecks_optick_instrumentation.cpp",
   "layers/generated/corechecks_optick_instrumentation.h",
