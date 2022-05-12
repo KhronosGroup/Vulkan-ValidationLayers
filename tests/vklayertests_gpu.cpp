@@ -2289,7 +2289,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     vk::DestroyInstance(test_inst, NULL);
 
+    m_errorMonitor->ExpectSuccess();
     auto set_count = properties.limits.maxBoundDescriptorSets;
+    if (inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks < set_count) {
+        printf("Max per stage inline uniform block limit too small - skipping recovery portion of this test\n");
+        return;
+    }
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
     VkDescriptorSetLayoutBinding dsl_binding[2] = {};
     dsl_binding[0].binding = 0;
@@ -2298,7 +2303,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     dsl_binding[0].stageFlags = VK_SHADER_STAGE_ALL;
     dsl_binding[1].binding = 1;
     dsl_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
-    dsl_binding[1].descriptorCount = 20;
+    dsl_binding[1].descriptorCount = set_count;
     dsl_binding[1].stageFlags = VK_SHADER_STAGE_ALL;
     VkDescriptorSetLayout *layouts{new VkDescriptorSetLayout[set_count]{}};
     VkDescriptorSetLayoutCreateInfo dsl_create_info =
@@ -2312,7 +2317,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     VkPipelineLayout pl_layout;
     pl_create_info.setLayoutCount = set_count;
     pl_create_info.pSetLayouts = layouts;
+    m_errorMonitor->VerifyNotFound();
+    // Expect error since GPU-AV cannot add debug descriptor to layout
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GPU-Assisted-Validation");
     vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, NULL, &pl_layout);
+    m_errorMonitor->VerifyFound();
+
+    // We should still be able to use the layout and create a temporary uninstrumented shader module
+    m_errorMonitor->ExpectSuccess();
     pipeline_info.layout = pl_layout;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
     m_commandBuffer->begin();
@@ -2328,11 +2340,33 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     for (uint32_t i = 0; i < set_count; i++) {
         vk::DestroyDescriptorSetLayout(m_device->handle(), layouts[i], NULL);
     }
-    m_errorMonitor->VerifyNotFound();
     data = (uint32_t *)buffer0.memory().map();
     if (*data != test_data) m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
+    *data = 0;
     buffer0.memory().unmap();
+    m_errorMonitor->VerifyNotFound();
     delete[] layouts;
+
+    // Now make sure we can still use the shader with instrumentation
+    m_errorMonitor->ExpectSuccess();
+    VkPipeline c_pipeline2;
+    // Use the sane pipeline layout
+    pipeline_info.layout = pipeline_layout.handle();
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline2);
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline2);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+    vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+    vk::DestroyPipeline(m_device->handle(), c_pipeline2, nullptr);
+    data = (uint32_t *)buffer0.memory().map();
+    if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
+    *data = 0;
+    buffer0.memory().unmap();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
