@@ -188,7 +188,6 @@ if(MAKE_C_COMPILER_ID MATCHES "Clang")
                         #      Leave off until further investigation.
                         -Wno-sign-conversion
                         -Wno-shorten-64-to-32
-                        -Wno-string-conversion
                         -Wno-implicit-int-conversion
                         -Wno-enum-enum-conversion)
 
@@ -240,9 +239,9 @@ if(MAKE_C_COMPILER_ID MATCHES "Clang")
                         #      Leave off until further investigation.
                         -Wno-sign-conversion
                         -Wno-shorten-64-to-32
-                        -Wno-string-conversion
                         -Wno-implicit-int-conversion
-                        -Wno-enum-enum-conversion)
+                        -Wno-enum-enum-conversion
+                        -Wstring-conversion)
 
 endif()
 
