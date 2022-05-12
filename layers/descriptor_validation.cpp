@@ -41,17 +41,17 @@ static std::string smart_string_VkShaderStageFlags(VkShaderStageFlags stage_flag
 
 // If our layout is compatible with bound_dsl, return true,
 //  else return false and fill in error_msg will description of what causes incompatibility
-bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *report_data, DescriptorSetLayout const *layout_dsl,
-                                                   DescriptorSetLayout const *bound_dsl, std::string *error_msg) {
+bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_dsl, const DescriptorSetLayout &bound_dsl,
+                                              std::string &error_msg) const {
     // Short circuit the detailed check.
-    if (layout_dsl->IsCompatible(bound_dsl)) return true;
+    if (layout_dsl.IsCompatible(&bound_dsl)) return true;
 
     // Do a detailed compatibility check of this lhs def (referenced by layout_dsl), vs. the rhs (layout and def)
     // Should only be run if trivial accept has failed, and in that context should return false.
-    VkDescriptorSetLayout layout_dsl_handle = layout_dsl->GetDescriptorSetLayout();
-    VkDescriptorSetLayout bound_dsl_handle = bound_dsl->GetDescriptorSetLayout();
-    DescriptorSetLayoutDef const *layout_ds_layout_def = layout_dsl->GetLayoutDef();
-    DescriptorSetLayoutDef const *bound_ds_layout_def = bound_dsl->GetLayoutDef();
+    VkDescriptorSetLayout layout_dsl_handle = layout_dsl.GetDescriptorSetLayout();
+    VkDescriptorSetLayout bound_dsl_handle = bound_dsl.GetDescriptorSetLayout();
+    DescriptorSetLayoutDef const *layout_ds_layout_def = layout_dsl.GetLayoutDef();
+    DescriptorSetLayoutDef const *bound_ds_layout_def = bound_dsl.GetLayoutDef();
 
     // Check descriptor counts
     const auto bound_total_count = bound_ds_layout_def->GetTotalDescriptorCount();
@@ -61,7 +61,7 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
                   << layout_ds_layout_def->GetTotalDescriptorCount() << " total descriptors, but "
                   << report_data->FormatHandle(bound_dsl_handle) << ", which is bound, has " << bound_total_count
                   << " total descriptors.";
-        *error_msg = error_str.str();
+        error_msg = error_str.str();
         return false;  // trivial fail case
     }
 
@@ -76,7 +76,7 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
                       << " from pipeline layout has a descriptorCount of " << layout_binding.descriptorCount << " but binding "
                       << layout_binding.binding << " for " << report_data->FormatHandle(bound_dsl_handle)
                       << ", which is bound, has a descriptorCount of " << bound_binding->descriptorCount;
-            *error_msg = error_str.str();
+            error_msg = error_str.str();
             return false;
         } else if (layout_binding.descriptorType != bound_binding->descriptorType) {
             std::stringstream error_str;
@@ -84,7 +84,7 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
                       << " from pipeline layout is type '" << string_VkDescriptorType(layout_binding.descriptorType)
                       << "' but binding " << layout_binding.binding << " for " << report_data->FormatHandle(bound_dsl_handle)
                       << ", which is bound, is type '" << string_VkDescriptorType(bound_binding->descriptorType) << "'";
-            *error_msg = error_str.str();
+            error_msg = error_str.str();
             return false;
         } else if (layout_binding.stageFlags != bound_binding->stageFlags) {
             std::stringstream error_str;
@@ -92,7 +92,7 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
                       << " from pipeline layout has stageFlags " << smart_string_VkShaderStageFlags(layout_binding.stageFlags)
                       << " but binding " << layout_binding.binding << " for " << report_data->FormatHandle(bound_dsl_handle)
                       << ", which is bound, has stageFlags " << smart_string_VkShaderStageFlags(bound_binding->stageFlags);
-            *error_msg = error_str.str();
+            error_msg = error_str.str();
             return false;
         }
     }
@@ -111,7 +111,7 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
                   << string_VkDescriptorBindingFlagsEXT(ds_layout_flags[i]) << " ) as "
                   << report_data->FormatHandle(bound_dsl_handle) << " ( "
                   << string_VkDescriptorBindingFlagsEXT(bound_layout_flags[i]) << " ), which is bound";
-        *error_msg = error_str.str();
+        error_msg = error_str.str();
         return false;
     }
 
@@ -121,8 +121,215 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
     return compatible;
 }
 
+// For given cvdescriptorset::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
+// pipelineLayout[layoutIndex]
+bool CoreChecks::VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet &descriptor_set,
+                                              const PIPELINE_LAYOUT_STATE &pipeline_layout, const uint32_t layoutIndex,
+                                              std::string &errorMsg) const {
+    auto num_sets = pipeline_layout.set_layouts.size();
+    if (layoutIndex >= num_sets) {
+        std::stringstream error_str;
+        error_str << report_data->FormatHandle(pipeline_layout.layout()) << ") only contains " << num_sets
+                  << " setLayouts corresponding to sets 0-" << num_sets - 1 << ", but you're attempting to bind set to index "
+                  << layoutIndex;
+        errorMsg = error_str.str();
+        return false;
+    }
+    if (descriptor_set.IsPushDescriptor()) return true;
+    const auto *layout_node = pipeline_layout.set_layouts[layoutIndex].get();
+    if (layout_node && (descriptor_set.GetBindingCount() > 0) && (layout_node->GetBindingCount() > 0)) {
+        return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), errorMsg);
+    } else {
+        // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
+        // here.
+        return true;
+    }
+}
+
+bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                      const uint32_t *pDynamicOffsets) const {
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    bool skip = false;
+    skip |= ValidateCmd(cb_state.get(), CMD_BINDDESCRIPTORSETS);
+    // Track total count of dynamic descriptor types to make sure we have an offset for each one
+    uint32_t total_dynamic_descriptors = 0;
+    std::string error_string = "";
+
+    auto pipeline_layout = Get<PIPELINE_LAYOUT_STATE>(layout);
+    for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
+        auto descriptor_set = Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[set_idx]);
+        if (descriptor_set) {
+            // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
+            if (!VerifySetLayoutCompatibility(*descriptor_set, *pipeline_layout, set_idx + firstSet, error_string)) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358",
+                                 "vkCmdBindDescriptorSets(): descriptorSet #%u being bound is not compatible with overlapping "
+                                 "descriptorSetLayout at index %u of "
+                                 "%s due to: %s.",
+                                 set_idx, set_idx + firstSet, report_data->FormatHandle(layout).c_str(), error_string.c_str());
+            }
+
+            auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
+            if (set_dynamic_descriptor_count) {
+                // First make sure we won't overstep bounds of pDynamicOffsets array
+                if ((total_dynamic_descriptors + set_dynamic_descriptor_count) > dynamicOffsetCount) {
+                    // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
+                    skip |=
+                        LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
+                                 "vkCmdBindDescriptorSets(): descriptorSet #%u (%s) requires %u dynamicOffsets, but only %u "
+                                 "dynamicOffsets are left in "
+                                 "pDynamicOffsets array. There must be one dynamic offset for each dynamic descriptor being bound.",
+                                 set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str(),
+                                 descriptor_set->GetDynamicDescriptorCount(), (dynamicOffsetCount - total_dynamic_descriptors));
+                    // Set the number found to the maximum to prevent duplicate messages, or subsquent descriptor sets from
+                    // testing against the "short tail" we're skipping below.
+                    total_dynamic_descriptors = dynamicOffsetCount;
+                } else {  // Validate dynamic offsets and Dynamic Offset Minimums
+                    // offset for all sets (pDynamicOffsets)
+                    uint32_t cur_dyn_offset = total_dynamic_descriptors;
+                    // offset into this descriptor set
+                    uint32_t set_dyn_offset = 0;
+                    const auto &dsl = descriptor_set->GetLayout();
+                    const auto binding_count = dsl->GetBindingCount();
+                    const auto &limits = phys_dev_props.limits;
+                    for (uint32_t i = 0; i < binding_count; i++) {
+                        const auto *binding = dsl->GetDescriptorSetLayoutBindingPtrFromIndex(i);
+                        // skip checking binding if not needed
+                        if (cvdescriptorset::IsDynamicDescriptor(binding->descriptorType) == false) {
+                            continue;
+                        }
+
+                        // If a descriptor set has only binding 0 and 2 the binding_index will be 0 and 2
+                        const uint32_t binding_index = binding->binding;
+                        const uint32_t descriptorCount = binding->descriptorCount;
+
+                        // Need to loop through each descriptor count inside the binding
+                        // if descriptorCount is zero the binding with a dynamic descriptor type does not count
+                        for (uint32_t j = 0; j < descriptorCount; j++) {
+                            const uint32_t offset = pDynamicOffsets[cur_dyn_offset];
+                            if (offset == 0) {
+                                // offset of zero is equivalent of not having the dynamic offset
+                                cur_dyn_offset++;
+                                set_dyn_offset++;
+                                continue;
+                            }
+
+                            // Validate alignment with limit
+                            if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) &&
+                                (SafeModulo(offset, limits.minUniformBufferOffsetAlignment) != 0)) {
+                                skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01971",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
+                                                 "device limit minUniformBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 cur_dyn_offset, offset, limits.minUniformBufferOffsetAlignment);
+                            }
+                            if ((binding->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) &&
+                                (SafeModulo(offset, limits.minStorageBufferOffsetAlignment) != 0)) {
+                                skip |= LogError(commandBuffer, "VUID-vkCmdBindDescriptorSets-pDynamicOffsets-01972",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is %u, but must be a multiple of "
+                                                 "device limit minStorageBufferOffsetAlignment 0x%" PRIxLEAST64 ".",
+                                                 cur_dyn_offset, offset, limits.minStorageBufferOffsetAlignment);
+                            }
+
+                            auto *descriptor = descriptor_set->GetDescriptorFromDynamicOffsetIndex(set_dyn_offset);
+                            assert(descriptor != nullptr);
+                            // Currently only GeneralBuffer are dynamic and need to be checked
+                            if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
+                                const auto *buffer_descriptor = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor);
+                                const VkDeviceSize bound_range = buffer_descriptor->GetRange();
+                                const VkDeviceSize bound_offset = buffer_descriptor->GetOffset();
+                                // NOTE: null / invalid buffers may show up here, errors are raised elsewhere for this.
+                                auto buffer_state = buffer_descriptor->GetBufferState();
+
+                                // Validate offset didn't go over buffer
+                                if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
+                                    LogObjectList objlist(commandBuffer);
+                                    objlist.add(pDescriptorSets[set_idx]);
+                                    objlist.add(buffer_descriptor->GetBuffer());
+                                    skip |=
+                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x, but must be zero since "
+                                                 "the buffer descriptor's range is VK_WHOLE_SIZE in descriptorSet #%u binding #%u "
+                                                 "descriptor[%u].",
+                                                 cur_dyn_offset, offset, set_idx, binding_index, j);
+
+                                } else if (buffer_state && (bound_range != VK_WHOLE_SIZE) &&
+                                           ((offset + bound_range + bound_offset) > buffer_state->createInfo.size)) {
+                                    LogObjectList objlist(commandBuffer);
+                                    objlist.add(pDescriptorSets[set_idx]);
+                                    objlist.add(buffer_descriptor->GetBuffer());
+                                    skip |=
+                                        LogError(objlist, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979",
+                                                 "vkCmdBindDescriptorSets(): pDynamicOffsets[%u] is 0x%x which when added to the "
+                                                 "buffer descriptor's range (0x%" PRIxLEAST64
+                                                 ") is greater than the size of the buffer (0x%" PRIxLEAST64
+                                                 ") in descriptorSet #%u binding #%u descriptor[%u].",
+                                                 cur_dyn_offset, offset, bound_range, buffer_state->createInfo.size, set_idx,
+                                                 binding_index, j);
+                                }
+                            }
+                            cur_dyn_offset++;
+                            set_dyn_offset++;
+                        }  // descriptorCount loop
+                    }      // bindingCount loop
+                    // Keep running total of dynamic descriptor count to verify at the end
+                    total_dynamic_descriptors += set_dynamic_descriptor_count;
+                }
+            }
+            if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616",
+                                 "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32
+                                 "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE.",
+                                 set_idx);
+            }
+        } else {
+            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563",
+                                 "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
+                                 "] (%s) that does not exist, and %s is not enabled.",
+                                 set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str(),
+                                 VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+            } else {
+                const auto layout_flags = pipeline_layout->CreateFlags();
+                if ((layout_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) == 0) {
+                    skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-layout-06564",
+                                     "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
+                                     "] (%s) that does not exist, and the layout was not created "
+                                     "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                                     set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
+                }
+            }
+        }
+    }
+    //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
+    if (total_dynamic_descriptors != dynamicOffsetCount) {
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
+                         "vkCmdBindDescriptorSets(): Attempting to bind %u descriptorSets with %u dynamic descriptors, but "
+                         "dynamicOffsetCount is %u. It should "
+                         "exactly match the number of dynamic descriptors.",
+                         setCount, total_dynamic_descriptors, dynamicOffsetCount);
+    }
+    // firstSet and descriptorSetCount sum must be less than setLayoutCount
+    if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
+        skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdBindDescriptorSets-firstSet-00360",
+                         "vkCmdBindDescriptorSets(): Sum of firstSet (%u) and descriptorSetCount (%u) is greater than "
+                         "VkPipelineLayoutCreateInfo::setLayoutCount "
+                         "(%zu) when pipeline layout was created",
+                         firstSet, setCount, pipeline_layout->set_layouts.size());
+    }
+
+    static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
+        std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361"),
+        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361")};
+    skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, "vkCmdBindPipeline()", bindpoint_errors);
+
+    return skip;
+}
+
 // Validate descriptor set layout create info
-bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
+static bool ValidateDescriptorSetLayoutCreateInfo(
     const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info, const bool push_descriptor_ext,
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
     const VkPhysicalDeviceVulkan12Features *core12_features, const VkPhysicalDeviceVulkan13Features *core13_features,
@@ -450,6 +657,16 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                          const VkAllocationCallbacks *pAllocator,
+                                                          VkDescriptorSetLayout *pSetLayout) const {
+    return ValidateDescriptorSetLayoutCreateInfo(
+        this, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor),
+        phys_dev_ext_props.push_descriptor_props.maxPushDescriptors, IsExtEnabled(device_extensions.vk_ext_descriptor_indexing),
+        &enabled_features.core12, &enabled_features.core13, &phys_dev_ext_props.inline_uniform_block_props,
+        &enabled_features.ray_tracing_acceleration_structure_features, &device_extensions);
 }
 
 static std::string StringDescriptorReqViewType(DescriptorReqFlags req) {
@@ -1407,10 +1624,9 @@ bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatc
 //  descriptor updates and verify that for any binding boundaries that are crossed, the next binding(s) are all consistent
 //  Consistency means that their type, stage flags, and whether or not they use immutable samplers matches
 //  If so, return true. If not, fill in error_msg and return false
-bool cvdescriptorset::VerifyUpdateConsistency(debug_report_data *report_data,
-                                              DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset,
-                                              uint32_t update_count, const char *type, const VkDescriptorSet set,
-                                              std::string *error_msg) {
+static bool VerifyUpdateConsistency(debug_report_data *report_data, DescriptorSetLayout::ConstBindingIterator current_binding,
+                                    uint32_t offset, uint32_t update_count, const char *type, const VkDescriptorSet set,
+                                    std::string *error_msg) {
     bool pass = true;
     // Verify consecutive bindings match (if needed)
     auto orig_binding = current_binding;
@@ -2330,8 +2546,8 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, ui
 
 // For the given buffer, verify that its creation parameters are appropriate for the given type
 //  If there's an error, update the error_msg string with details and return false, else return true
-bool cvdescriptorset::ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
-                                          std::string *error_code, std::string *error_msg) {
+static bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
+                                std::string *error_code, std::string *error_msg) {
     // Verify that usage bits set correctly for given type
     auto usage = buffer_node->createInfo.usage;
     const char *error_usage_bit = nullptr;
@@ -2395,7 +2611,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
         return false;
     }
     // Verify usage bits
-    if (!cvdescriptorset::ValidateBufferUsage(report_data, buffer_node.get(), type, error_code, error_msg)) {
+    if (!ValidateBufferUsage(report_data, buffer_node.get(), type, error_code, error_msg)) {
         // error_msg will have been updated by ValidateBufferUsage()
         return false;
     }
@@ -2609,7 +2825,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
                     }
                     auto buffer = bv_state->create_info.buffer;
                     auto buffer_state = Get<BUFFER_STATE>(buffer);
-                    if (!cvdescriptorset::ValidateBufferUsage(report_data, buffer_state.get(), src_type, error_code, error_msg)) {
+                    if (!ValidateBufferUsage(report_data, buffer_state.get(), src_type, error_code, error_msg)) {
                         std::stringstream error_str;
                         error_str << "Attempted copy update to texel buffer descriptor failed due to: " << error_msg->c_str();
                         *error_msg = error_str.str();
@@ -2625,7 +2841,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
                 if (!src_desc->updated) continue;
                 auto buffer_state = static_cast<const BufferDescriptor *>(src_desc)->GetBufferState();
                 if (buffer_state) {
-                    if (!cvdescriptorset::ValidateBufferUsage(report_data, buffer_state, src_type, error_code, error_msg)) {
+                    if (!ValidateBufferUsage(report_data, buffer_state, src_type, error_code, error_msg)) {
                         std::stringstream error_str;
                         error_str << "Attempted copy update to buffer descriptor failed due to: " << error_msg->c_str();
                         *error_msg = error_str.str();
@@ -3089,8 +3305,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                                   << report_data->FormatHandle(buffer) << ") has been destroyed: " << error_msg->c_str();
                         *error_msg = error_str.str();
                         return false;
-                    } else if (!cvdescriptorset::ValidateBufferUsage(report_data, buffer_state.get(), update->descriptorType,
-                                                                     error_code, error_msg)) {
+                    } else if (!ValidateBufferUsage(report_data, buffer_state.get(), update->descriptorType, error_code,
+                                                    error_msg)) {
                         std::stringstream error_str;
                         error_str << "Attempted write update to texel buffer descriptor failed due to: " << error_msg->c_str();
                         *error_msg = error_str.str();
