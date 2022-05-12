@@ -186,6 +186,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     convert_to_renderpass2.cpp
     descriptor_sets.cpp
     descriptor_sets.h
+    descriptor_validation.cpp
     buffer_validation.cpp
     buffer_validation.h
     shader_module.cpp
