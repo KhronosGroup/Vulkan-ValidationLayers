@@ -495,6 +495,14 @@ class CoreChecks : public ValidationStateTracker {
                            const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
                            const std::vector<IMAGE_VIEW_STATE*>* attachments, const std::vector<SUBPASS_INFO>* subpasses,
                            const char* caller, const DrawDispatchVuid& vuids) const;
+
+    bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSetLayout& layout_dsl,
+                                      const cvdescriptorset::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
+
+    bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet& descriptor_set,
+                                      const PIPELINE_LAYOUT_STATE& pipeline_layout, const uint32_t layoutIndex,
+                                      std::string& errorMsg) const;
+
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets,
                                           const std::pair<const uint32_t, DescriptorRequirement>& binding_info,

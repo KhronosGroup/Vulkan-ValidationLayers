@@ -432,19 +432,6 @@ class Descriptor {
     VkDescriptorType active_descriptor_type;
 };
 
-// Return true if this layout is compatible with passed in layout from a pipelineLayout,
-//   else return false and update error_msg with description of incompatibility
-bool VerifySetLayoutCompatibility(const debug_report_data *report_data, DescriptorSetLayout const *lh_ds_layout,
-                                  DescriptorSetLayout const *rh_ds_layout, std::string *error_msg);
-bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info,
-                                           const bool push_descriptor_ext, const uint32_t max_push_descriptors,
-                                           const bool descriptor_indexing_ext,
-                                           const VkPhysicalDeviceVulkan12Features *core12_features,
-                                           const VkPhysicalDeviceVulkan13Features *core13_features,
-                                           const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
-                                           const VkPhysicalDeviceAccelerationStructureFeaturesKHR *acceleration_structure_features,
-                                           const DeviceExtensions *device_extensions);
-
 // All Dynamic descriptor types
 inline bool IsDynamicDescriptor(VkDescriptorType type) {
     return ((type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) || (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC));
@@ -797,25 +784,9 @@ struct AllocateDescriptorSetsData {
     void Init(uint32_t);
     AllocateDescriptorSetsData(){};
 };
-// Helper functions for descriptor set functions that cross multiple sets
-// "Validate" will make sure an update is ok without actually performing it
-bool ValidateUpdateDescriptorSets(const debug_report_data *, const CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
-                                  const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                  const VkCopyDescriptorSet *);
-
-// Core Validation specific validation checks using DescriptorSet and DescriptorSetLayoutAccessors
-// TODO: migrate out of descriptor_set.cpp/h
-// For a particular binding starting at offset and having update_count descriptors
-// updated, verify that for any binding boundaries crossed, the update is consistent
-bool VerifyUpdateConsistency(debug_report_data *report_data, DescriptorSetLayout::ConstBindingIterator current_binding,
-                             uint32_t offset, uint32_t update_count, const char *type, const VkDescriptorSet set,
-                             std::string *error_msg);
-
-// Validate buffer descriptor update info
-bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
-                         std::string *error_code, std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
