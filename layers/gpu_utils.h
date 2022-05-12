@@ -191,7 +191,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                         const VkPipelineBindPoint bind_point, const SafeCreateInfo *pModifiedCreateInfos);
+                                         const VkPipelineBindPoint bind_point, const SafeCreateInfo &modified_create_infos);
 
   public:
     bool aborted = false;
