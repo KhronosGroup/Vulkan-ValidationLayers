@@ -5908,6 +5908,16 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  ", but VkBindBufferMemoryDeviceGroupInfo::deviceIndexCount is %" PRIu32 ".",
                                  api_name, device_group_create_info.physicalDeviceCount,
                                  bind_buffer_memory_device_group_info->deviceIndexCount);
+            } else {
+                for (uint32_t i = 0; i < bind_buffer_memory_device_group_info->deviceIndexCount; ++i) {
+                    if (bind_buffer_memory_device_group_info->pDeviceIndices[i] >= device_group_create_info.physicalDeviceCount) {
+                        skip |= LogError(buffer, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607",
+                                         "%s: The number of physical devices in the logical device is %" PRIu32
+                                         ", but VkBindBufferMemoryDeviceGroupInfo::pDeviceIndices[%" PRIu32 "] is %" PRIu32 ".",
+                                         api_name, device_group_create_info.physicalDeviceCount, i,
+                                         bind_buffer_memory_device_group_info->pDeviceIndices[i]);
+                    }
+                }
             }
         }
     }
