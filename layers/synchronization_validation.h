@@ -276,6 +276,7 @@ struct ResourceFirstAccess {
     }
 };
 
+using QueueId = uint32_t;
 class ResourceAccessState : public SyncStageAccess {
   protected:
     struct OrderingBarrier {
@@ -303,13 +304,14 @@ class ResourceAccessState : public SyncStageAccess {
         SyncStageAccessFlags access;    // TODO: Change to FlagBits when we have a None bit enum
                                         // TODO: Revisit whether this needs to support multiple reads per stage
         VkPipelineStageFlags2KHR barriers;  // all applicable barriered stages
+        VkPipelineStageFlags2KHR sync_stages;  // reads known to have happened after this
         ResourceUsageTag tag;
+        QueueId queue;
         VkPipelineStageFlags2KHR pending_dep_chain;  // Should be zero except during barrier application
                                                      // Excluded from comparison
         ReadState() = default;
         ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_, VkPipelineStageFlags2KHR barriers_,
-                  ResourceUsageTag tag_)
-            : stage(stage_), access(access_), barriers(barriers_), tag(tag_), pending_dep_chain(0) {}
+                  ResourceUsageTag tag_);
         bool operator==(const ReadState &rhs) const {
             bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) && (tag == rhs.tag);
             return same;
@@ -343,38 +345,37 @@ class ResourceAccessState : public SyncStageAccess {
 
     void Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, ResourceUsageTag tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, ResourceUsageTag tag);
+    void ClearWrite();
+    void ClearRead();
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
     void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
     void ApplyBarrier(ResourceUsageTag scope_tag, const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(ResourceUsageTag tag);
+
+    struct QueueTagPredicate {
+        QueueId queue;
+        ResourceUsageTag tag;
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+    };
+
+    struct QueuePredicate {
+        QueueId queue;
+        QueuePredicate(QueueId queue_) : queue(queue_) {}
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+    };
+    struct TagPredicate {
+        ResourceUsageTag tag;
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+    };
+
+    template <typename Pred>
+    bool ApplyQueueTagWait(Pred &&);
     bool FirstAccessInTagRange(const ResourceUsageRange &tag_range) const;
 
-    void OffsetTag(ResourceUsageTag offset) {
-        if (last_write.any()) write_tag += offset;
-        for (auto &read_access : last_reads) {
-            read_access.tag += offset;
-        }
-        for (auto &first : first_accesses_) {
-            first.tag += offset;
-        }
-    }
-    ResourceAccessState()
-        : write_barriers(~SyncStageAccessFlags(0)),
-          write_dependency_chain(0),
-          write_tag(),
-          last_write(0),
-          input_attachment_read(false),
-          last_read_stages(0),
-          read_execution_barriers(0),
-          pending_write_dep_chain(0),
-          pending_layout_transition(false),
-          pending_write_barriers(0),
-          pending_layout_ordering_(),
-          first_accesses_(),
-          first_read_stages_(0U),
-          first_write_layout_ordering_() {}
+    void OffsetTag(ResourceUsageTag offset);
+    ResourceAccessState();
 
     bool HasPendingState() const {
         return (0 != pending_layout_transition) || pending_write_barriers.any() || (0 != pending_write_dep_chain);
@@ -393,6 +394,7 @@ class ResourceAccessState : public SyncStageAccess {
     bool InSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const {
         return ReadInSourceScopeOrChain(src_exec_scope) || WriteInSourceScopeOrChain(src_exec_scope, src_access_scope);
     }
+    void SetQueueId(QueueId id);
 
   private:
     static constexpr VkPipelineStageFlags2KHR kInvalidAttachmentStage = ~VkPipelineStageFlags2KHR(0);
@@ -438,6 +440,7 @@ class ResourceAccessState : public SyncStageAccess {
     SyncStageAccessFlags write_barriers;          // union of applicable barrier masks since last write
     VkPipelineStageFlags2KHR write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they chain.
     ResourceUsageTag write_tag;
+    QueueId write_queue;
     SyncStageAccessFlags last_write;  // only the most recent write
 
     // TODO Input Attachment cleanup for multiple reads in a given stage
@@ -446,7 +449,8 @@ class ResourceAccessState : public SyncStageAccess {
 
     VkPipelineStageFlags2KHR last_read_stages;
     VkPipelineStageFlags2KHR read_execution_barriers;
-    small_vector<ReadState, 3, uint32_t> last_reads;
+    using ReadStates = small_vector<ReadState, 3, uint32_t>;
+    ReadStates last_reads;
 
     // Pending execution state to support independent parallel barriers
     VkPipelineStageFlags2KHR pending_write_dep_chain;
@@ -791,6 +795,12 @@ class AccessContext {
         kDetectAsync = 1U << 1,
         kDetectAll = (kDetectPrevious | kDetectAsync)
     };
+    struct AddressRange {
+        AccessAddressType type;
+        ResourceAccessRange range;
+        AddressRange() = default;  // the explicit constructor below isn't needed in 20, but would delete the default.
+        AddressRange(AccessAddressType type_, ResourceAccessRange range_) : type(type_), range(range_) {}
+    };
     using MapArray = std::array<ResourceAccessRangeMap, static_cast<size_t>(AccessAddressType::kTypeCount)>;
 
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
@@ -868,6 +878,9 @@ class AccessContext {
     void ResolveAccessRange(AccessAddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                             ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
                             bool recur_to_infill = true) const;
+    template <typename ResolveOp>
+    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
+                            const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
 
     void UpdateAccessState(const BUFFER_STATE &buffer, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTag tag);
@@ -897,6 +910,7 @@ class AccessContext {
     void ApplyToContext(const Action &barrier_action);
     static AccessAddressType ImageAddressType(const IMAGE_STATE &image);
 
+    void DeleteAccess(const AddressRange &address);
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, const AccessContext *external_context);
 
@@ -907,10 +921,6 @@ class AccessContext {
     const ResourceAccessRangeMap &GetAccessStateMap(AccessAddressType type) const {
         return access_state_maps_[static_cast<size_t>(type)];
     }
-    ResourceAccessRangeMap &GetLinearMap() { return GetAccessStateMap(AccessAddressType::kLinear); }
-    const ResourceAccessRangeMap &GetLinearMap() const { return GetAccessStateMap(AccessAddressType::kLinear); }
-    ResourceAccessRangeMap &GetIdealizedMap() { return GetAccessStateMap(AccessAddressType::kIdealized); }
-    const ResourceAccessRangeMap &GetIdealizedMap() const { return GetAccessStateMap(AccessAddressType::kIdealized); }
     const TrackBack *GetTrackBackFromSubpass(uint32_t subpass) const {
         if (subpass == VK_SUBPASS_EXTERNAL) {
             return src_external_;
@@ -1025,9 +1035,6 @@ class CommandExecutionContext {
         return *sync_state_;
     }
 
-    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context, CMD_TYPE cmd);
-    void ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset);
-
     ResourceUsageRange ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context);
     std::string FormatHazard(const HazardResult &hazard) const;
 
@@ -1122,6 +1129,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordDestroyEvent(VkEvent event);
 
     bool ValidateFirstUse(CommandExecutionContext *proxy_context, const char *func_name, uint32_t index) const;
+    void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context, CMD_TYPE cmd);
+    void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -1248,13 +1257,28 @@ class SignaledSemaphores;
 // TODO need a map from fence to submbit batch id
 class QueueBatchContext : public CommandExecutionContext {
   public:
-    using BatchSet = layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>>;
+    using ConstBatchSet = layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>>;
+    using BatchSet = layer_data::unordered_set<std::shared_ptr<QueueBatchContext>>;
+    static constexpr bool TruePred(const std::shared_ptr<const QueueBatchContext> &) { return true; }
     struct CmdBufferEntry {
         uint32_t index = 0;
         std::shared_ptr<const CommandBufferAccessContext> cb;
         CmdBufferEntry(uint32_t index_, std::shared_ptr<const CommandBufferAccessContext> &&cb_)
             : index(index_), cb(std::move(cb_)) {}
     };
+
+    // For Wait operations we have to
+    struct QueueWormBase {
+        std::vector<AccessContext::AddressRange> erase_list;
+        bool erase_all = true;
+    };
+
+    struct QueueWaitWorm : QueueWormBase {
+        ResourceAccessState::QueuePredicate predicate;
+        QueueWaitWorm(QueueId queue_, ResourceUsageTag tag_ = ResourceUsageRecord::kMaxIndex);
+        void operator()(AccessAddressType address_type, ResourceAccessRangeMap::value_type &access);
+    };
+
     using CommandBuffers = std::vector<CmdBufferEntry>;
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
@@ -1286,10 +1310,15 @@ class QueueBatchContext : public CommandExecutionContext {
     void Setup(const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info,
                SignaledSemaphores &signaled);
 
+    void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
+
     VulkanTypedHandle Handle() const override;
 
     template <typename BatchInfo, typename Fn>
     static void ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&func);
+
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
+    void ApplyDeviceWait();
 
   private:
     using WaitBatchMap = layer_data::unordered_map<const QueueBatchContext *, AccessContext::TrackBack *>;
@@ -1314,7 +1343,7 @@ class QueueBatchContext : public CommandExecutionContext {
 
     // Clear these after validation and import
     CommandBuffers command_buffers_;
-    BatchSet async_batches_;
+    ConstBatchSet async_batches_;
     // When null use the global logger
     AccessLogger *logger_ = nullptr;
     AccessLogger::BatchLog *batch_log_ = nullptr;
@@ -1322,8 +1351,10 @@ class QueueBatchContext : public CommandExecutionContext {
 
 class QueueSyncState {
   public:
-    QueueSyncState(const std::shared_ptr<QUEUE_STATE> &queue_state, VkQueueFlags queue_flags)
-        : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags) {}
+    constexpr static QueueId kQueueIdBase = QueueId(0);
+    constexpr static QueueId kQueueIdInvalid = ~kQueueIdBase;
+    QueueSyncState(const std::shared_ptr<QUEUE_STATE> &queue_state, VkQueueFlags queue_flags, QueueId id)
+        : submit_index_(0), queue_state_(queue_state), last_batch_(), queue_flags_(queue_flags), id_(id) {}
 
     VulkanTypedHandle Handle() const {
         if (queue_state_) {
@@ -1332,10 +1363,12 @@ class QueueSyncState {
         return VulkanTypedHandle(static_cast<VkQueue>(VK_NULL_HANDLE), kVulkanObjectTypeQueue);
     }
     std::shared_ptr<const QueueBatchContext> LastBatch() const { return last_batch_; }
+    std::shared_ptr<QueueBatchContext> LastBatch() { return last_batch_; }
     void SetLastBatch(std::shared_ptr<QueueBatchContext> &&last);
     QUEUE_STATE *GetQueueState() { return queue_state_.get(); }
     const QUEUE_STATE *GetQueueState() const { return queue_state_.get(); }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+    QueueId GetQueueId() const { return id_; }
 
     uint64_t ReserveSubmitId() const;  // Method is const but updates mutable sumbit_index atomically.
 
@@ -1344,6 +1377,7 @@ class QueueSyncState {
     std::shared_ptr<QUEUE_STATE> queue_state_;
     std::shared_ptr<QueueBatchContext> last_batch_;
     const VkQueueFlags queue_flags_;
+    QueueId id_;
 };
 
 class SignaledSemaphores {
@@ -1400,6 +1434,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
+    using QueueSyncStatesMap = layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
     SignaledSemaphores signaled_semaphores_;
 
@@ -1407,12 +1442,16 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
-    template <typename Predicate>
-    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
 
-    std::shared_ptr<const SemaphoreSyncState> GetSignalledSemaphore(VkSemaphore sem) const;
-    void SignalSemaphore(std::shared_ptr<SemaphoreSyncState> &&sem_state);
-    std::shared_ptr<SemaphoreSyncState> UnsignalSemaphore(VkSemaphore sem);
+    template <typename Predicate>
+    QueueBatchContext::ConstBatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
+    QueueBatchContext::ConstBatchSet GetQueueLastBatchSnapshot() const {
+        return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred);
+    };
+
+    template <typename Predicate>
+    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred);
+    QueueBatchContext::BatchSet GetQueueLastBatchSnapshot() { return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred); };
 
     std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
     CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
@@ -1776,6 +1815,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                            const VkCommandBuffer *pCommandBuffers) const override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                          const VkCommandBuffer *pCommandBuffers) override;
+    void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) override;
+    void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) override;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                     VkFence fence) const override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
