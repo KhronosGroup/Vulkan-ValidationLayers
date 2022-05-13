@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2021 LunarG, Inc. -->
+<!-- Copyright 2015-2022 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -81,7 +81,7 @@ In order to validate synchronization the effect of action and synchronization co
 
 ### Most Recent Access
 
-When detecting memory access hazards, synchronization validation considers only the most recent access for comparison. All prior hazards are assumed to have been reported. 
+When detecting memory access hazards, synchronization validation considers only the most recent access (MRA) for comparison. All prior hazards are assumed to have been reported.
 
 For read operations the most recent access rules apply to prior reads with execution barriers (or ordering) relative to the current read. The prior write access is only considered the most recent access if no intervening prior read has occurred that *happens-before* the current read. Consider the following sequence of access and barriers (listed in submission order) acting on the same memory address:
 
@@ -501,17 +501,26 @@ Stores:
     *   State/Access of usage. Updated on write
     *   Write barriers -- the destination stage/access pairs which are _non-hazardous_ to the last write.  Cleared on write.
     *   Memory access synchronization chain mask.  Tracks the stages for which barriers applying to the write usage. Cleared on write.
+    *   Aggregated Read Execution Barriers -- all stages in the second synchronization scope of all barriers applied to read accesses since the last write  (used for read-after-write testing). Cleared on write.
     *   Usage tag. Updated on write
+    *   Queue Id: The queue on which the access was made. Set at queue submit time.
     *   None cleared by read operations
-*   read usage  -- Per stage, All cleared on write operations.
-    *   Stage/Access of usage.  Updated on stage read
-    *   Execution (read) barriers -- the union of destination execution scopes for synchronization operations affecting this read at this stage
-    *   Usage Tag. Updated on on stage read.
+*   read usage  -- Per stage, All cleared on write operations
+    * Stage/Access of usage.  Updated on stage read
+    * Execution (read) barriers -- the union of destination execution scopes for synchronization operations affecting this read at this stage. Cleared at read operation for this stage.
+    * Sync stages -- all read stages that have synchronously executed after this stage Cleared at read operation for this stage.
+    * Queue Id: The queue on which the access was made. Set at queue submit time. 
+    * Usage Tag. Updated on on stage read
 
 Implements:
 
 *   Hazard detection functions
 *   State update/resolution operations
+*   Wait operations
+
+Queue Id and Sync stages are used for semaphore, queue, and fence wait operations, and for synchronization operation replay at queue submit time.
+
+#### ResourceAccessRangeMap 
 
 #### ResourceAccessRangeMap 
 
@@ -563,8 +572,15 @@ Stores:
 
 Implements:
 
-*   Begin/next/end operations
-*   RenderPass specific hazard check and state update operations
+Begin/next/end operations
+
+RenderPass specific hazard check and state update operations
+
+#### QueueBatchContext
+
+Contains the access and event context information for a given queue submission batch.  This includes a full copy of all accesses from earlier queue batches.  "Earlier" includes the previous batches in submission order on the same queue and batches corresponding to Semaphore wait operations.  To minimize memory footprint, only two groups of contexts are retained. The first contains the access and  event context for a given queue as of its most recent submission operation. The second group are the QueueBatchContext corresponding to the state of a queue with a signaled semaphore or fence operation which has not yet been awaited.  Batches that have neither unresolved semaphore or fence operations associated, nor are the most recently submitted, may have QueueBatchContext with lifespans of only the submit entry point call.
+
+Accesses within a QueueBatchContext are tagged with "global" (at device scope) ResourceUsageTag id's, which are atomically allocated when the batch context is created. These tags are unique and monotonically increasing across all queues for a given VkDevice. While CommandBufferAccessContext contains the access usage records for all commands and synchronization operations, the QueueBatchContext tagging information references a global usage record store.  *Note: Clean up of the global usage record store will require traversing the access contexts of the queue batch contexts to find and eliminate unreferenced usage records.  This will need to be assessed as to priority relative to other apparent memory leaks in the maintenance of unresolved/unknown signal and event states.*
 
 
 ### Range Based Operations
@@ -586,21 +602,44 @@ The ResourceAccessState is the leaf level structure at which the synchronization
 #### State Update
 
 *   Update: Record the state change based an “ordinary” memory access
-    *   Read usages: add or update the current usage to the read usage list, clearing the stage barriers and updating the stage read tag
+    *   Read usages: add or update the current usage to the read usage list, clearing the stage barriers and updating the stage read tag.  Updates the sync stages information of read stages with barriers to current read.
     *   Write usages: erase read usages, update write usage and clear write barriers and update the write tag
+    
 *   Resolve: Combine access states from different contexts
     *   If one write tag is strictly after another, the later state is preserved
     *   If the write tags match, the pre-stage read information is resolved as a union of stages accessed, with most recent usage retained if stage present in both contexts.
+    
 *   Execution Barrier
     *   Effect on read usage (per stage with usage)
         *   If the _source execution scope_ includes the stage, or intersects with the mask of barriers, the _destination execution scope_ is OR’d with the barrier mask.
     *   Effect on write usage
-        *   If the_ source execution scope_ is present in the dependency chain mask for writes, the _destination execution scope _is OR’d with the dependency chain mask. Note that if no prior _memory_ barrier has occurred since the last write, no dependency chaining will occur, and in no case is the write barrier information updated.
+        *   If the_ source execution scope_ is present in the dependency chain mask for writes, the _destination execution scope_ is OR’d with the dependency chain mask. Note that if no prior _memory_ barrier has occurred since the last write, no dependency chaining will occur, and in no case is the write barrier information updated.
 *   Memory Barrier (assumes execution barrier operation will also be applied barriers)
     *   Effect on read usage (per stage with usage)
         *   No effect, except from corresponding execution barrier
     *   Effect on write usage
-        *   If the write usage is within the _source access scope_, or if _source execution scope _intersects the write dependency chain, the write barrier is updated to include the _destination access scope, _and the write dependency chain is updated to include the _destination execution scope_..
+        *   If the write usage is within the _source access scope_, or if _source execution scope_ intersects the write dependency chain, the write barrier is updated to include the _destination access scope_, and the write dependency chain is updated to include the _destination execution scope_..
+
+* Semaphore Wait
+
+  *   Per Access (read stage/write)
+      *   For accesses *not* on waiting queue
+          *   Replace barrier/chain information with Signal/Wait effective barrier
+      *   For accesses on same queue, treat Signal/Wait barrier as a Set/Wait *event* barrier
+
+* Queue/Fence Wait
+
+  *   For read stages
+      *   Identify reads matching queue/tag of wait operation (tag for queue wait is *max* tag)
+      *   Identify all reads know to precede waited stages
+      *   Remove synchronized stages (both direct and indirect) from access state list
+  *   For write stages
+      *   Remove write access from access state if:
+          *   Write access matching queue/tag of wait operation
+          *   -OR- if there are any read stages matching the wait criteria (MRA)
+  *   If all resulting ResourceAccessState contains no accesses, delete from AccessContext.
+
+  > Note: Queue/Fence Wait operations require inspecting and updating all QueueBatchContext Access contexts, and is likely a heavyweight operation, though far less common that other state update operations.
 
 
 #### Validation / Hazard Checking
@@ -610,10 +649,11 @@ The ResourceAccessState is the leaf level structure at which the synchronization
     This test compares a stage/access against a resource access state.
 
     *   For read access
-        *   If there is a write recorded, test  stage/access flag vs. write barriers.  If there is no write barrier for stage/access, report RAW
+        *   If there is a write recorded, test  stage/access flag vs. write barriers.  If there is no write barrier for stage/access, report RAW hazard
     *   For write access
-        *    If there is a write recorded, test stage/access flag vs. write barriers.  If there is no write barrier for stage/access, report WAW
-        *   If there is no WAW found, test each per-stage read record, if any read does not have a barrier for the write access stage, report WAR.
+        *    If there have been read accesses since the last write,  test each per-stage read record, if any read does not have a barrier for the write access stage, report WAR hazard.
+        *    If there is a write recorded, and no read accesses since, test stage/access flag vs. write barriers.  If there is no write barrier for stage/access, report WAW hazard
+        > Note: Excluding WAW checks when reads after last write reflect the MRA principle discussed.  If those reads were not hazards, no WAW hazard would be possible unless a WAR hazard exists. 
     *   For accesses with Ordering Guarantees
         *   Certain operations (rasterization, load, store, clear, resolve) have guaranteed ordering at the sample level.
         *   Hazard check performed for these operations supply ordering execution and access scope masks, indicating the stages and accesses that have ordering guarantees.  If the last write (for read access) or the last write and all last reads (for write accesses) are all with the access and execution scopes, there is no hazard.
@@ -649,6 +689,10 @@ Attachment Type
 
 
 > Note: this special case is handled in validation to avoid the potential of polluting the “barrier chain” information by storing the effect of an implicit barrier in the access state. (Unclear to the designer what all the side-effects might be.)
+>
+> Note: Also the ordering guarantees only apply to accesses on the same queue.
+
+
 
 *   Layout transition hazard check
 
@@ -658,16 +702,16 @@ Attachment Type
         *   If the previous write is in the src access scope **or **the source execution scope is in the dependency chain **and** there are _any _memory barriers set then layout transition is safe,  otherwise a WAW hazard is reported.
     *   For resources with read operations
         *   If the source execution scope intersect with either the read stage flat or the per stage read barriers, the access is safe, otherwise a WAR hazard is reported.
-*   Asynchronous access hazard check
+* Asynchronous access hazard check
 
-    Compares a stage/access against the current state of a resource access, assuming asynchronous operation (such as unsynchronized sub-passes or queues)
+  Compares a stage/access against the current state of a resource access, assuming asynchronous operation (such as unsynchronized sub-passes or queues)
 
-*   For resource access with write operations
-    *   If input access is read report RRW (read racing write)
-    *   If input access is write report WRW (write racing write)
-*   For resource access with only read accesses
-    *   If input access is write, report RRW
-    *   If input access is read, report ‘no hazard’
+  *   For resource access with write operations
+      *   If input access is read report RRW (read racing write)
+      *   If input access is write report WRW (write racing write)
+  *   For resource access with only read accesses
+      *   If input access is write, report RRW
+      *   If input access is read, report ‘no hazard’
 
 
 ##  Vulkan Commands and Synchronization
@@ -858,9 +902,11 @@ vkCmdSetEvent defines the source execution scope for the matching vkCmdWaitEvent
 CmdWaitEvent uses both the source execution scope map and the usage tag to determine the _effective _source scopes.  Resource access state barrier information are _only _updated if they lie within a range of the source scope map, have not (by means of testing usage tags) been updated since the CmdSetEvent call, and (as appropriate) lie within the access scopes defined by the wait event command.
 
 
-##### Semaphore Operations
+#### Semaphore Operations
 
-**TODO/KNOWN LIMITATION:** host set event not supported in phase 1
+Semaphore Operations synchronize accesses between submitted command buffers at submission "batch" granularity. Semaphores (unlike barriers and events) can synchronize both accesses within command buffers submitted to a single queue, and (more typically) between accesses within command buffers on different queues.  Semaphores, like events, are two part synchronization operations.  The first scope of the combined operation is defined relative to the signaling queue, and includes the usual chaining of the first scopes with prior accesses and synchronization operations.  The second scope of the wait operation is applied to all accesses within the first scope of the signal operation.  For semaphores synchronizing different queues, the second scope of the combined operation *replaces* the barrier state for access imported into the QueueBatchContext.
+
+There are additional impacts to the application of barriers/event and hazard detection for accesses which are from different queues -- i.e. that are *not* in submission order.  Since barriers and events are defined only to include operations that are earlier in submission order, barriers (and event) first scopes do not include accesses performed in other queues. For those accesses, only the chaining effects of earlier synchronization operations, such as semaphore, include a given access within the first scope of a barrier. Hazard detection is also affected in that implicit ordering guarantees are not applied to accesses not in submission order.   
 
 
 ### Command Buffer Action Commands

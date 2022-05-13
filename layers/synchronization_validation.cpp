@@ -787,6 +787,8 @@ void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
     recorded_access = layer_data::make_unique<const ResourceFirstAccess>(first_access);
 }
 
+void AccessContext::DeleteAccess(const AddressRange &address) { GetAccessStateMap(address.type).erase_range(address.range); }
+
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
@@ -834,7 +836,7 @@ template <typename Action>
 void AccessContext::ForAll(Action &&action) {
     for (const auto address_type : kAddressTypes) {
         auto &accesses = GetAccessStateMap(address_type);
-        for (const auto &access : accesses) {
+        for (auto &access : accesses) {
             action(address_type, access);
         }
     }
@@ -1119,6 +1121,15 @@ void AccessContext::ResolveAccessRange(const AttachmentViewGen &view_gen, Attach
     const AccessAddressType address_type = view_gen.GetAddressType();
     for (; range_gen->non_empty(); ++range_gen) {
         ResolveAccessRange(address_type, *range_gen, barrier_action, descent_map, infill_state);
+    }
+}
+
+template <typename ResolveOp>
+void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
+                                       const ResourceAccessState *infill_state, bool recur_to_infill) {
+    for (auto address_type : kAddressTypes) {
+        from_context.ResolveAccessRange(address_type, kFullRange, resolve_op, &GetAccessStateMap(address_type), infill_state,
+                                        recur_to_infill);
     }
 }
 
@@ -2347,7 +2358,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext *proxy
     return skip;
 }
 
-void CommandExecutionContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context, CMD_TYPE cmd) {
+void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context, CMD_TYPE cmd) {
     auto *events_context = GetCurrentEventsContext();
     auto *access_context = GetCurrentAccessContext();
     const AccessContext *recorded_context = recorded_cb_context.GetCurrentAccessContext();
@@ -2363,17 +2374,12 @@ void CommandExecutionContext::RecordExecutedCommandBuffer(const CommandBufferAcc
 
     ResourceUsageRange tag_range = ImportRecordedAccessLog(recorded_cb_context);
     assert(base_tag == tag_range.begin);  // to ensure the to offset calculation agree
-    ResolveRecordedContext(*recorded_context, tag_range.begin);
+    ResolveExecutedCommandBuffer(*recorded_context, tag_range.begin);
 }
 
-void CommandExecutionContext::ResolveRecordedContext(const AccessContext &recorded_context, ResourceUsageTag offset) {
+void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
     auto tag_offset = [offset](ResourceAccessState *access) { access->OffsetTag(offset); };
-
-    auto *access_context = GetCurrentAccessContext();
-    for (auto address_type : kAddressTypes) {
-        recorded_context.ResolveAccessRange(address_type, kFullRange, tag_offset, &access_context->GetAccessStateMap(address_type),
-                                            nullptr, false);
-    }
+    GetCurrentAccessContext()->ResolveFromContext(tag_offset, recorded_context);
 }
 
 ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
@@ -3227,10 +3233,12 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                             // Other is more recent, copy in the state
                             my_read.access = other_read.access;
                             my_read.tag = other_read.tag;
+                            my_read.queue = other_read.queue;
                             my_read.pending_dep_chain = other_read.pending_dep_chain;
                             // TODO: Phase 2 -- review the state merge logic to avoid false positive from overwriting the barriers
                             //                  May require tracking more than one access per stage.
                             my_read.barriers = other_read.barriers;
+                            my_read.sync_stages = other_read.sync_stages;
                             if (my_read.stage == VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR) {
                                 // Since I'm overwriting the fragement stage read, also update the input attachment info
                                 // as this is the only stage that affects it.
@@ -3239,6 +3247,7 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
                         } else if (other_read.tag == my_read.tag) {
                             // The read tags match so merge the barriers
                             my_read.barriers |= other_read.barriers;
+                            my_read.sync_stages |= other_read.sync_stages;
                             my_read.pending_dep_chain |= other_read.pending_dep_chain;
                         }
 
@@ -3293,10 +3302,16 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering 
             for (auto &read_access : last_reads) {
                 if (read_access.stage == usage_stage) {
                     read_access.Set(usage_stage, usage_bit, 0, tag);
-                    break;
+                } else if (read_access.barriers & usage_stage) {
+                    read_access.sync_stages |= usage_stage;
                 }
             }
         } else {
+            for (auto &read_access : last_reads) {
+                if (read_access.barriers & usage_stage) {
+                    read_access.sync_stages |= usage_stage;
+                }
+            }
             last_reads.emplace_back(usage_stage, usage_bit, 0, tag);
             last_read_stages |= usage_stage;
         }
@@ -3320,15 +3335,26 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering 
 //
 // Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
 void ResourceAccessState::SetWrite(const SyncStageAccessFlags &usage_bit, const ResourceUsageTag tag) {
-    last_reads.clear();
-    last_read_stages = 0;
-    read_execution_barriers = 0;
-    input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
-
-    write_barriers = 0;
-    write_dependency_chain = 0;
+    ClearRead();
+    ClearWrite();
     write_tag = tag;
     last_write = usage_bit;
+}
+
+void ResourceAccessState::ClearWrite() {
+    read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
+    input_attachment_read = false;  // Denotes no outstanding input attachment read after the last write.
+    write_barriers.reset();
+    write_dependency_chain = VK_PIPELINE_STAGE_2_NONE;
+    last_write.reset();
+
+    write_tag = 0;
+    write_queue = QueueSyncState::kQueueIdInvalid;
+}
+
+void ResourceAccessState::ClearRead() {
+    last_reads.clear();
+    last_read_stages = VK_PIPELINE_STAGE_2_NONE;
 }
 
 // Apply the memory barrier without updating the existing barriers.  The execution barrier
@@ -3425,11 +3451,118 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     pending_write_barriers = 0;
 }
 
+bool ResourceAccessState::QueueTagPredicate::operator()(QueueId usage_queue, ResourceUsageTag usage_tag) {
+    return (queue == usage_queue) && (tag <= usage_tag);
+}
+
+bool ResourceAccessState::QueuePredicate::operator()(QueueId usage_queue, ResourceUsageTag) { return queue == usage_queue; }
+
+bool ResourceAccessState::TagPredicate::operator()(QueueId, ResourceUsageTag usage_tag) { return tag <= usage_tag; }
+
+// Return if the resulting state is "empty"
+template <typename Pred>
+bool ResourceAccessState::ApplyQueueTagWait(Pred &&queue_tag_test) {
+    VkPipelineStageFlags2KHR sync_reads = VK_PIPELINE_STAGE_2_NONE;
+
+    // Use the predicate to build a mask of the read stages we are synchronizing
+    // Use the sync_stages to also detect reads known to be before any synchronized reads (first pass)
+    uint32_t unsync_count = 0;
+    uint32_t unsync_sync_stages = 0;
+    for (auto &read_access : last_reads) {
+        if ((read_access.sync_stages | sync_reads) || queue_tag_test(read_access.queue, read_access.tag)) {
+            // If we know this stage is before any stage we syncing, or if the predicate tells us that we are waited for..
+            sync_reads |= read_access.stage;
+        } else {
+            ++unsync_count;
+            unsync_sync_stages |= read_access.sync_stages;
+        }
+    }
+
+    // This processing is not order independent, so it's possible an earlier entry in last_reads with a sync_stages
+    // including a sync_reads stage occuring later in last_reads won't be caught.  Thus we re-rinse through the list until
+    // until we catch all of them.
+    //
+    // NOTE: This could be n-squared with last_read.size(), but that tends to be very small (<3), should be okay
+    while (unsync_sync_stages & sync_reads) {  // If we found unsync stages that were later shown to be sync'd
+        unsync_count = 0;
+        unsync_sync_stages = 0;
+        for (auto &read_access : last_reads) {
+            if (read_access.sync_stages | sync_reads) {
+                sync_reads |= read_access.stage;
+            } else {
+                ++unsync_count;
+                unsync_sync_stages |= read_access.sync_stages;
+            }
+        }
+    }
+
+    if (unsync_count) {
+        if (sync_reads) {
+            // When have some remaining unsynchronized reads, we have to rewrite the last_reads array.
+            ReadStates unsync_reads;
+            unsync_reads.reserve(unsync_count);
+            VkPipelineStageFlags2KHR unsync_read_stages = VK_PIPELINE_STAGE_2_NONE;
+            for (auto &read_access : last_reads) {
+                if (0 == (read_access.stage & sync_reads)) {
+                    unsync_reads.emplace_back(read_access);
+                    unsync_read_stages |= read_access.stage;
+                }
+            }
+            last_read_stages = unsync_read_stages;
+            last_reads = std::move(unsync_reads);
+        }
+    } else {
+        // Nothing remains (or it was empty to begin with)
+        ClearRead();
+    }
+
+    bool all_clear = last_reads.size() == 0;
+    if (last_write.any()) {
+        if (queue_tag_test(write_queue, write_tag) || sync_reads) {
+            // Clear any predicated write, or any the write from any any access with synchronized reads.
+            // This could drop RAW detection, but only if the synchronized reads were RAW hazards, and given
+            // MRR approach to reporting, this is consistent with other drops, especially since fixing the
+            // RAW wit the sync_reads stages would preclude a subsequent RAW.
+            ClearWrite();
+        } else {
+            all_clear = false;
+        }
+    }
+    return all_clear;
+}
+
 bool ResourceAccessState::FirstAccessInTagRange(const ResourceUsageRange &tag_range) const {
     if (!first_accesses_.size()) return false;
     const ResourceUsageRange first_access_range = {first_accesses_.front().tag, first_accesses_.back().tag + 1};
     return tag_range.intersects(first_access_range);
 }
+
+void ResourceAccessState::OffsetTag(ResourceUsageTag offset) {
+    if (last_write.any()) write_tag += offset;
+    for (auto &read_access : last_reads) {
+        read_access.tag += offset;
+    }
+    for (auto &first : first_accesses_) {
+        first.tag += offset;
+    }
+}
+
+ResourceAccessState::ResourceAccessState()
+    : write_barriers(~SyncStageAccessFlags(0)),
+      write_dependency_chain(0),
+      write_tag(),
+      write_queue(QueueSyncState::kQueueIdInvalid),
+      last_write(0),
+      input_attachment_read(false),
+      last_read_stages(0),
+      read_execution_barriers(0),
+      pending_write_dep_chain(0),
+      pending_layout_transition(false),
+      pending_write_barriers(0),
+      pending_layout_ordering_(),
+      first_accesses_(),
+      first_read_stages_(0U),
+      first_write_layout_ordering_() {}
 
 // This should be just Bits or Index, but we don't have an invalid state for Index
 VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAccessFlags &usage_bit) const {
@@ -3443,6 +3576,17 @@ VkPipelineStageFlags2KHR ResourceAccessState::GetReadBarriers(const SyncStageAcc
     }
 
     return barriers;
+}
+
+void ResourceAccessState::SetQueueId(QueueId id) {
+    for (auto &read_access : last_reads) {
+        if (read_access.queue == QueueSyncState::kQueueIdInvalid) {
+            read_access.queue = id;
+        }
+    }
+    if (last_write.any() && (write_queue == QueueSyncState::kQueueIdInvalid)) {
+        write_queue = id;
+    }
 }
 
 bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
@@ -3494,13 +3638,24 @@ void ResourceAccessState::TouchupFirstForLayoutTransition(ResourceUsageTag tag, 
     }
 }
 
+ResourceAccessState::ReadState::ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_,
+                                          VkPipelineStageFlags2KHR barriers_, ResourceUsageTag tag_)
+    : stage(stage_),
+      access(access_),
+      barriers(barriers_),
+      sync_stages(VK_PIPELINE_STAGE_2_NONE),
+      tag(tag_),
+      queue(QueueSyncState::kQueueIdInvalid),
+      pending_dep_chain(VK_PIPELINE_STAGE_2_NONE) {}
+
 void ResourceAccessState::ReadState::Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_,
                                          VkPipelineStageFlags2KHR barriers_, ResourceUsageTag tag_) {
     stage = stage_;
     access = access_;
     barriers = barriers_;
+    sync_stages = VK_PIPELINE_STAGE_2_NONE;
     tag = tag_;
-    pending_dep_chain = 0;  // If this is a new read, we aren't applying a barrier set.
+    pending_dep_chain = VK_PIPELINE_STAGE_2_NONE;  // If this is a new read, we aren't applying a barrier set.
 }
 
 ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const {
@@ -3524,14 +3679,25 @@ std::shared_ptr<QueueSyncState> SyncValidator::GetQueueSyncStateShared(VkQueue q
     return GetMapped(queue_sync_states_, queue, []() { return std::shared_ptr<QueueSyncState>(); });
 }
 
-template <typename Predicate>
-QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &&pred) const {
-    QueueBatchContext::BatchSet batches;
-    for (const auto &queue : queue_sync_states_) {
+template <typename BatchSet, typename Predicate>
+static BatchSet GetQueueLastBatchSnapshotImpl(const SyncValidator::QueueSyncStatesMap &queues, Predicate &&pred) {
+    BatchSet snapshot;
+    for (auto &queue : queues) {
         auto batch = queue.second->LastBatch();
-        if (batch && pred(batch)) batches.emplace(std::move(batch));
+        if (batch && pred(batch)) snapshot.emplace(std::move(batch));
     }
-    return batches;
+    return snapshot;
+}
+
+template <typename Predicate>
+QueueBatchContext::ConstBatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &&pred) const {
+    return GetQueueLastBatchSnapshotImpl<QueueBatchContext::ConstBatchSet, Predicate>(queue_sync_states_,
+                                                                                      std::forward<Predicate>(pred));
+}
+
+template <typename Predicate>
+QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &&pred) {
+    return GetQueueLastBatchSnapshotImpl<QueueBatchContext::BatchSet, Predicate>(queue_sync_states_, std::forward<Predicate>(pred));
 }
 
 bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state,
@@ -4038,9 +4204,10 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     SetCommandBufferResetCallback([this](VkCommandBuffer command_buffer) -> void { ResetCommandBufferCallback(command_buffer); });
     SetCommandBufferFreeCallback([this](VkCommandBuffer command_buffer) -> void { FreeCommandBufferCallback(command_buffer); });
 
-    ForEachShared<QUEUE_STATE>([this](const std::shared_ptr<QUEUE_STATE> &queue_state) {
+    QueueId queue_id = QueueSyncState::kQueueIdBase;
+    ForEachShared<QUEUE_STATE>([this, &queue_id](const std::shared_ptr<QUEUE_STATE> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
-        std::shared_ptr<QueueSyncState> queue_sync_state = std::make_shared<QueueSyncState>(queue_state, queue_flags);
+        std::shared_ptr<QueueSyncState> queue_sync_state = std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id++);
         queue_sync_states_.emplace(std::make_pair(queue_state->Queue(), std::move(queue_sync_state)));
     });
 }
@@ -6780,7 +6947,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
-        proxy_cb_context.ResolveRecordedContext(*recorded_context, tag_range.begin);
+        proxy_cb_context.ResolveExecutedCommandBuffer(*recorded_context, tag_range.begin);
     }
 
     return skip;
@@ -6797,6 +6964,56 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
         if (!recorded_cb_context) continue;
         cb_context->RecordExecutedCommandBuffer(*recorded_cb_context, CMD_EXECUTECOMMANDS);
     }
+}
+
+void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
+    StateTracker::PostCallRecordQueueWaitIdle(queue, result);
+    if ((result != VK_SUCCESS) || (!enabled[sync_validation_queue_submit]) || (queue == VK_NULL_HANDLE)) return;
+
+    const auto queue_state = GetQueueSyncStateShared(queue);
+    if (!queue_state) return;  // Invalid queue
+    QueueId waited_queue = queue_state->GetQueueId();
+
+    // We need to go through every queue batch context and clear all accesses this wait synchronizes
+    // As usual -- two groups, the "last batch" and the signaled semaphores
+    // NOTE: Since ApplyTaggedWait crawls through every usage in every ResourceAccessState in the AccessContext of *every*
+    // QueueBatchContext, track which we've done to avoid duplicate traversals
+    QueueBatchContext::BatchSet waited;
+    for (auto &queue : queue_sync_states_) {
+        auto batch = queue.second->LastBatch();
+        if (batch) {
+            batch->ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
+            waited.emplace(batch);
+        }
+    }
+
+    for (const auto &signaled : signaled_semaphores_) {
+        auto &sem_sig = signaled.second;
+        if (sem_sig && sem_sig->batch && (waited.find(sem_sig->batch) == waited.end())) {
+            sem_sig->batch->ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
+            waited.emplace(sem_sig->batch);
+        }
+    }
+    // TODO: Update Events and Fences affected by Wait
+}
+
+void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
+    StateTracker::PostCallRecordDeviceWaitIdle(device, result);
+    for (auto &queue : queue_sync_states_) {
+        auto batch = queue.second->LastBatch();
+        if (batch) {
+            batch->ApplyDeviceWait();
+        }
+    }
+
+    auto wait_no_list = [](std::shared_ptr<QueueBatchContext> &batch) {
+        batch->ApplyDeviceWait();
+        return false;
+    };
+
+    GetQueueLastBatchSnapshot(wait_no_list);
+
+    // TODO: Update Events and Fences affected by Wait
 }
 
 struct QueueSubmitCmdState {
@@ -6844,7 +7061,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 
             // The barriers have already been applied in ValidatFirstUse
             ResourceUsageRange tag_range = batch->ImportRecordedAccessLog(*cb.cb);
-            batch->ResolveRecordedContext(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
+            batch->ResolveSubmittedCommandBuffer(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
         }
 
         for (auto &sem : layer_data::make_span(submit.pSignalSemaphores, submit.signalSemaphoreCount)) {
@@ -7065,8 +7282,32 @@ void QueueBatchContext::Setup(const std::shared_ptr<const QueueBatchContext> &pr
     SetupCommandBufferInfo(batch_info);
     SetupAccessContext(prev_batch, batch_info, signaled);
 }
+void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
+    QueueId queue_id = queue_state_->GetQueueId();
+    auto tag_queue_op = [offset, queue_id](ResourceAccessState *access) {
+        access->OffsetTag(offset);
+        access->SetQueueId(queue_id);
+    };
+    GetCurrentAccessContext()->ResolveFromContext(tag_queue_op, recorded_context);
+}
 
 VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handle(); }
+
+void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
+    QueueWaitWorm wait_worm(queue_id);
+    access_context_.ForAll(wait_worm);
+    if (wait_worm.erase_all) {
+        access_context_.Reset();
+    } else {
+        // TODO: Profiling will tell us if we need a more efficient clean up.
+        for (const auto &address : wait_worm.erase_list) {
+            access_context_.DeleteAccess(address);
+        }
+    }
+}
+
+// Clear all accesses
+void QueueBatchContext::ApplyDeviceWait() { access_context_.Reset(); }
 
 void QueueBatchContext::WaitOneSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask, WaitBatchMap &batch_trackbacks,
                                          SignaledSemaphores &signaled) {
@@ -7212,6 +7453,17 @@ void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
     tag_range_.begin = bias;
     tag_range_.end = bias + size;
     access_context_.SetStartTag(bias);
+}
+
+QueueBatchContext::QueueWaitWorm::QueueWaitWorm(QueueId queue, ResourceUsageTag tag) : predicate(queue) {}
+
+void QueueBatchContext::QueueWaitWorm::operator()(AccessAddressType address_type, ResourceAccessRangeMap::value_type &access) {
+    bool erased = access.second.ApplyQueueTagWait(predicate);
+    if (erased) {
+        erase_list.emplace_back(address_type, access.first);
+    } else {
+        erase_all = false;
+    }
 }
 
 AccessLogger::BatchLog *AccessLogger::AddBatch(const QueueSyncState *queue_state, uint64_t submit_id, uint32_t batch_id,
