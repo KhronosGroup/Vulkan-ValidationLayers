@@ -11972,8 +11972,8 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
 
     if (!(framebuffer_info->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
         // Find overlapping attachments
-        for (uint32_t i = 0; i < create_info->attachmentCount; ++i) {
-            for (uint32_t j = i + 1; j < create_info->attachmentCount; ++j) {
+        for (uint32_t i = 0; i < framebuffer_info->attachmentCount; ++i) {
+            for (uint32_t j = i + 1; j < framebuffer_info->attachmentCount; ++j) {
                 VkImageView viewi = framebuffer_info->pAttachments[i];
                 VkImageView viewj = framebuffer_info->pAttachments[j];
                 if (viewi == viewj) {
