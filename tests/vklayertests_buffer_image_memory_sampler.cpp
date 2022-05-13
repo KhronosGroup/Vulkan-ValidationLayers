@@ -15558,11 +15558,11 @@ TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
     VkDeviceMemory buffer_memory;
     vk::AllocateMemory(m_device->device(), &buffer_alloc_info, nullptr, &buffer_memory);
 
-    uint32_t device_indices[1] = {0};
+    std::vector<uint32_t> device_indices(create_device_pnext.physicalDeviceCount);
 
     VkBindBufferMemoryDeviceGroupInfo bind_buffer_memory_device_group = LvlInitStruct<VkBindBufferMemoryDeviceGroupInfo>();
     bind_buffer_memory_device_group.deviceIndexCount = 1;
-    bind_buffer_memory_device_group.pDeviceIndices = device_indices;
+    bind_buffer_memory_device_group.pDeviceIndices = device_indices.data();
 
     VkBindBufferMemoryInfo bind_buffer_info = LvlInitStruct<VkBindBufferMemoryInfo>(&bind_buffer_memory_device_group);
     bind_buffer_info.buffer = buffer.handle();
@@ -15574,6 +15574,13 @@ TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606");
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
     m_errorMonitor->VerifyFound();
+
+    bind_buffer_memory_device_group.deviceIndexCount = create_device_pnext.physicalDeviceCount;
+    device_indices[0] = create_device_pnext.physicalDeviceCount;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-pDeviceIndices-01607");
+    vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
+    m_errorMonitor->VerifyFound();
+    device_indices[0] = 0;
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -15602,7 +15609,7 @@ TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
 
     VkBindImageMemoryDeviceGroupInfo bind_image_memory_device_group = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
     bind_image_memory_device_group.deviceIndexCount = 1;
-    bind_image_memory_device_group.pDeviceIndices = device_indices;
+    bind_image_memory_device_group.pDeviceIndices = device_indices.data();
 
     VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_image_memory_device_group);
     bind_image_info.image = image.handle();
