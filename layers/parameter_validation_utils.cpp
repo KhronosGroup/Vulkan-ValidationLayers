@@ -2240,10 +2240,17 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         has_eval = true;
                     }
 
-                    skip |= validate_string(
+                    skip |= validate_required_pointer(
                         "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
-                        kVUID_Stateless_InvalidShaderStagesArray, create_info.pStages[stage_index].pName);
+                        ParameterName("pCreateInfos[%i].stage[%i].pName", ParameterName::IndexVector{i, stage_index}),
+                        create_info.pStages[stage_index].pName, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
+
+                    if (create_info.pStages[stage_index].pName) {
+                        skip |= validate_string(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
+                            kVUID_Stateless_InvalidShaderStagesArray, create_info.pStages[stage_index].pName);
+                    }
 
                     std::stringstream msg;
                     msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
