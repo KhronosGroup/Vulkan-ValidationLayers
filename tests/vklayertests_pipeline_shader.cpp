@@ -6386,6 +6386,25 @@ TEST_F(VkLayerTest, CreatePipelineUniformBlockNotProvided) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CreatePipelineNullStagepName) {
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a stage with a null pName pointer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.shader_stages_[0].pName = nullptr;
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+
 TEST_F(VkLayerTest, CreatePipelinePushConstantsNotInLayout) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a shader consuming push constants which are not provided in the pipeline layout");
