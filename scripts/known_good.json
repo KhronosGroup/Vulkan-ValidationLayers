@@ -61,7 +61,7 @@
               "-Dgtest_force_shared_crt=ON",
               "-DBUILD_SHARED_LIBS=OFF"
         ],
-        "commit": "release-1.8.1",
+        "commit": "main",
         "optional": ["tests"]
     }
   ],
