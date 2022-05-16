@@ -111,6 +111,7 @@ class IMAGE_STATE : public BINDABLE {
     static constexpr int MAX_PLANES = 3;
     using MemoryReqs = std::array<VkMemoryRequirements, MAX_PLANES>;
     const MemoryReqs requirements;
+    const VkMemoryRequirements *const memory_requirements_pointer = &requirements[0];
     std::array<bool, MAX_PLANES> memory_requirements_checked;
     using SparseReqs = std::vector<VkSparseImageMemoryRequirements>;
     const SparseReqs sparse_requirements;
@@ -204,6 +205,13 @@ class IMAGE_STATE : public BINDABLE {
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 };
+
+using IMAGE_STATE_NO_BINDING = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableNoMemoryTracker>;
+using IMAGE_STATE_LINEAR = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableLinearMemoryTracker>;
+template <bool IS_RESIDENT>
+using IMAGE_STATE_SPARSE = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableSparseMemoryTracker<IS_RESIDENT>>;
+template <unsigned PLANE_COUNT>
+using IMAGE_STATE_MULTIPLANAR = MEMORY_TRACKED_RESOURCE_STATE<IMAGE_STATE, BindableMultiplanarMemoryTracker<PLANE_COUNT>>;
 
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
