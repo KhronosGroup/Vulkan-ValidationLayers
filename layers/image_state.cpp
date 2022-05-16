@@ -303,8 +303,9 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) const {
     }
     const auto binding = Binding();
     const auto other_binding = other_image_state->Binding();
-    if ((create_from_swapchain == VK_NULL_HANDLE) && binding && other_binding && (binding->mem_state == other_binding->mem_state) &&
-        (binding->offset == other_binding->offset) && IsCreateInfoEqual(other_image_state->createInfo)) {
+    if ((create_from_swapchain == VK_NULL_HANDLE) && binding && other_binding &&
+        (binding->memory_state == other_binding->memory_state) && (binding->memory_offset == other_binding->memory_offset) &&
+        IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
     if (bind_swapchain && (bind_swapchain == other_image_state->bind_swapchain) &&
@@ -325,7 +326,7 @@ void IMAGE_STATE::SetInitialLayoutMap() {
         // ObjectBindings() is thread safe since returns by value, and once
         // the weak_ptr is successfully locked, the other image state won't
         // be freed out from under us.
-        for (auto &entry : binding->mem_state->ObjectBindings()) {
+        for (auto &entry : binding->memory_state->ObjectBindings()) {
             if (entry.first.type == kVulkanObjectTypeImage) {
                 auto base_node = entry.second.lock();
                 if (base_node) {

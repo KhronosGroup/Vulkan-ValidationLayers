@@ -37,6 +37,7 @@ class BUFFER_STATE : public BINDABLE {
     const VkBufferCreateInfo &createInfo;
     VkDeviceAddress deviceAddress;
     const VkMemoryRequirements requirements;
+    const VkMemoryRequirements *const memory_requirements_pointer = &requirements;
     bool memory_requirements_checked;
 
     BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo);
@@ -48,14 +49,11 @@ class BUFFER_STATE : public BINDABLE {
     sparse_container::range<VkDeviceAddress> DeviceAddressRange() const {
         return {deviceAddress, deviceAddress + createInfo.size};
     }
-
-    bool DoesBoundMemoryOverlap(const sparse_container::range<VkDeviceSize> &src_region, const BUFFER_STATE *dst,
-                                const sparse_container::range<VkDeviceSize> &dst_region) const;
-
-  protected:
-    using MemRange = std::pair<VkDeviceMemory, sparse_container::range<VkDeviceSize>>;
-    std::vector<MemRange> ComputeMemoryRanges(const sparse_container::range<VkDeviceSize> &region) const;
 };
+
+using BUFFER_STATE_LINEAR = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, BindableLinearMemoryTracker>;
+template <bool IS_RESIDENT>
+using BUFFER_STATE_SPARSE = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, BindableSparseMemoryTracker<IS_RESIDENT>>;
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
   public:

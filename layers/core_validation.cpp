@@ -181,7 +181,17 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
     } else if (image_state->IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result |= VerifyBoundMemoryIsValid(image_state->MemState(), image_state->image(), image_state->Handle(), location);
+        // No need to optimize this since the size will only be 3 at most
+        const auto &memory_states = image_state->GetBoundMemoryStates();
+        if (memory_states.empty()) {
+            result |= LogError(image_state->image(), location.Vuid(),
+                               "%s: %s used with no memory bound. Memory should be bound by calling vkBindImageMemory().",
+                               location.FuncName(), report_data->FormatHandle(image_state->Handle()).c_str());
+        } else {
+            for (const auto &state : memory_states) {
+                result |= VerifyBoundMemoryIsValid(state.get(), image_state->image(), image_state->Handle(), location);
+            }
+        }
     }
     return result;
 }
@@ -5156,7 +5166,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     // with non-NULL image member, then that image must already be bound to memory.
     if (mem_info->IsDedicatedImage()) {
         auto image_state = Get<IMAGE_STATE>(mem_info->dedicated->handle.Cast<VkImage>());
-        if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count(mem_info->mem())))) {
+        if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->mem())))) {
             LogObjectList objlist(device);
             objlist.add(pInfo->memory);
             objlist.add(mem_info->dedicated->handle);
@@ -5404,7 +5414,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
 
     auto image_state = Get<IMAGE_STATE>(image);
     if (image_state != nullptr) {
-        if (image_state->IsExternalAHB() && (0 == image_state->GetBoundMemory().size())) {
+        if (image_state->IsExternalAHB() && (0 == image_state->GetBoundMemoryStates().size())) {
             const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
                                    ? "VUID-vkGetImageMemoryRequirements-image-04004"
                                    : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
@@ -9461,7 +9471,7 @@ bool CoreChecks::ValidateBindAccelerationStructureMemory(VkDevice device,
     if (!as_state) {
         return skip;
     }
-    if (!as_state->GetBoundMemory().empty()) {
+    if (as_state->HasFullRangeBound()) {
         skip |=
             LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-03620",
                      "vkBindAccelerationStructureMemoryNV(): accelerationStructure must not already be backed by a memory object.");
@@ -12620,10 +12630,21 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
-                const auto *binding_i = image_data_i->Binding();
-                const auto *binding_j = image_data_j->Binding();
-                if (binding_i && binding_j && binding_i->mem_state == binding_j->mem_state &&
-                    IsRangeOverlapping(binding_i->offset, binding_i->size, binding_j->offset, binding_j->size)) {
+                // Multiplanar images need to check all resource range
+                VkDeviceSize image_i_range_end = 0u;
+                VkDeviceSize image_j_range_end = 0u;
+                for (int index = 0; index < IMAGE_STATE::MAX_PLANES; ++index) {
+                    if (image_data_i->memory_requirements_checked[index]) {
+                        image_i_range_end += image_data_i->requirements[index].size;
+                    }
+                    if (image_data_j->memory_requirements_checked[index]) {
+                        image_j_range_end += image_data_j->requirements[index].size;
+                    }
+                }
+
+                sparse_container::range<VkDeviceSize> range_i{0u, image_i_range_end};
+                sparse_container::range<VkDeviceSize> range_j{0u, image_j_range_end};
+                if (image_data_i->DoesResourceMemoryOverlap(range_i, image_data_j, range_j)) {
                     attachments[i].overlapping.emplace_back(j);
                     attachments[j].overlapping.emplace_back(i);
                 }
@@ -20230,7 +20251,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
                                  string_VkFormat(imageFormat), string_VkImageAspectFlags(aspectMask).c_str());
         }
 
-        if ((imageState->IsExternalAHB()) && (0 == imageState->GetBoundMemory().size())) {
+        if ((imageState->IsExternalAHB()) && (0 == imageState->GetBoundMemoryStates().size())) {
             skip |=
                 LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-image-01895",
                          "vkGetImageSubresourceLayout2EXT: image type is android hardware buffer but bound memory is not valid");

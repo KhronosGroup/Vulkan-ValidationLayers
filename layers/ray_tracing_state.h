@@ -51,14 +51,15 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
 
     const safe_VkAccelerationStructureCreateInfoNV create_infoNV = {};
     safe_VkAccelerationStructureInfoNV build_info;
-    bool memory_requirements_checked = false;
     const VkMemoryRequirements memory_requirements;
-    bool build_scratch_memory_requirements_checked = false;
     const VkMemoryRequirements build_scratch_memory_requirements;
-    bool update_scratch_memory_requirements_checked = false;
     const VkMemoryRequirements update_scratch_memory_requirements;
-    bool built = false;
+    const VkMemoryRequirements *const memory_requirements_pointer = &memory_requirements;
     uint64_t opaque_handle = 0;
+    bool memory_requirements_checked = false;
+    bool build_scratch_memory_requirements_checked = false;
+    bool update_scratch_memory_requirements_checked = false;
+    bool built = false;
 
   private:
     static VkMemoryRequirements GetMemReqs(VkDevice device, VkAccelerationStructureNV as,
@@ -71,6 +72,9 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
         return requirements.memoryRequirements;
     }
 };
+
+using ACCELERATION_STRUCTURE_STATE_LINEAR =
+    MEMORY_TRACKED_RESOURCE_STATE<ACCELERATION_STRUCTURE_STATE, BindableLinearMemoryTracker>;
 
 class ACCELERATION_STRUCTURE_STATE_KHR : public BASE_NODE {
   public:
