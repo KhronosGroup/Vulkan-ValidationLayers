@@ -10125,6 +10125,21 @@ struct safe_VkGraphicsPipelineLibraryCreateInfoEXT {
     VkGraphicsPipelineLibraryCreateInfoEXT const *ptr() const { return reinterpret_cast<VkGraphicsPipelineLibraryCreateInfoEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderEarlyAndLateFragmentTests;
+    safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT();
+    ~safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT();
+    void initialize(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* copy_src);
+    VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT *>(this); }
+    VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV {
     VkStructureType sType;
     void* pNext{};

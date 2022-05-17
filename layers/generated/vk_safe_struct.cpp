@@ -47337,6 +47337,62 @@ void safe_VkGraphicsPipelineLibraryCreateInfoEXT::initialize(const safe_VkGraphi
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    shaderEarlyAndLateFragmentTests(in_struct->shaderEarlyAndLateFragmentTests)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_EXT),
+    pNext(nullptr),
+    shaderEarlyAndLateFragmentTests()
+{}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    shaderEarlyAndLateFragmentTests = copy_src.shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::operator=(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderEarlyAndLateFragmentTests = copy_src.shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::~safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::initialize(const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderEarlyAndLateFragmentTests = in_struct->shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT::initialize(const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    shaderEarlyAndLateFragmentTests = copy_src->shaderEarlyAndLateFragmentTests;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV::safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV* in_struct) :
     sType(in_struct->sType),
     fragmentShadingRateEnums(in_struct->fragmentShadingRateEnums),
@@ -55286,6 +55342,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT:
             safe_pNext = new safe_VkGraphicsPipelineLibraryCreateInfoEXT(reinterpret_cast<const VkGraphicsPipelineLibraryCreateInfoEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV:
             safe_pNext = new safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV(reinterpret_cast<const VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(pNext));
             break;
@@ -56497,6 +56556,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkGraphicsPipelineLibraryCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceFragmentShadingRateEnumsFeaturesNV *>(header);

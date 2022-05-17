@@ -933,6 +933,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EARLY_AND_LATE_FRAGMENT_TESTS_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT:
@@ -1552,6 +1554,17 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
     }
 }
 
+static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
+{
+    switch (input_value)
+    {
+        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
+            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
+        default:
+            return "Unhandled VkPipelineCacheHeaderVersion";
+    }
+}
+
 static inline const char* string_VkAccessFlagBits(VkAccessFlagBits input_value)
 {
     switch (input_value)
@@ -1861,17 +1874,6 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
 #endif // VK_ENABLE_BETA_EXTENSIONS
         default:
             return "Unhandled VkObjectType";
-    }
-}
-
-static inline const char* string_VkPipelineCacheHeaderVersion(VkPipelineCacheHeaderVersion input_value)
-{
-    switch (input_value)
-    {
-        case VK_PIPELINE_CACHE_HEADER_VERSION_ONE:
-            return "VK_PIPELINE_CACHE_HEADER_VERSION_ONE";
-        default:
-            return "Unhandled VkPipelineCacheHeaderVersion";
     }
 }
 
@@ -9516,6 +9518,8 @@ static inline const char* string_VkDeviceDiagnosticsConfigFlagBitsNV(VkDeviceDia
             return "VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV";
         case VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV:
             return "VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV";
+        case VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV:
+            return "VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV";
         default:
             return "Unhandled VkDeviceDiagnosticsConfigFlagBitsNV";
     }
