@@ -295,6 +295,8 @@ static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithout
 
 static const char DECORATE_UNUSED *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
 
+static const char DECORATE_UNUSED *kVUID_Core_VkBindImageMemoryInfo_pNext_missing_VkBindImagePlaneMemoryInfo = "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo";
+
 // clang-format on
 
 #undef DECORATE_UNUSED
