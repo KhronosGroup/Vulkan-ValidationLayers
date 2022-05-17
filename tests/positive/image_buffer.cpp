@@ -1604,14 +1604,19 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Set up 3-plane binding
         VkBindImageMemoryInfo bind_info[3];
+        VkBindImagePlaneMemoryInfo plane_info[3];
         for (int plane = 0; plane < 3; plane++) {
-            bind_info[plane] = LvlInitStruct<VkBindImageMemoryInfo>();
+            plane_info[plane] = LvlInitStruct<VkBindImagePlaneMemoryInfo>();
+            bind_info[plane] = LvlInitStruct<VkBindImageMemoryInfo>(&plane_info[plane]);
             bind_info[plane].image = image;
             bind_info[plane].memoryOffset = 0;
         }
         bind_info[0].memory = p0_mem;
         bind_info[1].memory = p1_mem;
         bind_info[2].memory = p2_mem;
+        plane_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        plane_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
         m_errorMonitor->ExpectSuccess();
         vkBindImageMemory2Function(device(), 3, bind_info);
