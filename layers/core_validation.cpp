@@ -8106,14 +8106,6 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                                  "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
                                  func_name, string_VkImageLayout(pAttachment->resolveImageLayout));
             }
-
-            if (FormatIsDepthOrStencil(image_view_state->create_info.format) &&
-                !IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06131",
-                                 "%s(): VkRenderingAttachmentInfo::imageView format is %s, but resolveMode is %s.", func_name,
-                                 string_VkFormat(image_view_state->create_info.format),
-                                 string_VkResolveModeFlagBits(pAttachment->resolveMode));
-            }
         }
 
         if ((pAttachment->imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) ||
