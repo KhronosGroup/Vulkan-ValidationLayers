@@ -64,6 +64,11 @@ struct PreRasterState {
     PreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &dev_data,
                    const safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const RENDER_PASS_STATE> rp);
 
+    static inline VkShaderStageFlags ValidShaderStages() {
+        return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
+               VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TASK_BIT_NV | VK_SHADER_STAGE_MESH_BIT_NV;
+    }
+
     const PIPELINE_STATE &parent;
 
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
@@ -113,6 +118,8 @@ struct FragmentShaderState {
         }
         FragmentShaderState::SetFragmentShaderInfo(*this, dev_data, create_info);
     }
+
+    static inline VkShaderStageFlags ValidShaderStages() { return VK_SHADER_STAGE_FRAGMENT_BIT; }
 
     const PIPELINE_STATE &parent;
 
