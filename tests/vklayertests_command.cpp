@@ -10847,6 +10847,9 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     }
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageObj image2(m_device);
+    image2.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_TILING_OPTIMAL, 0);
     ASSERT_TRUE(image.initialized());
     VkBufferObj dst_buffer;
     VkMemoryPropertyFlags reqs = 0;
@@ -10955,7 +10958,7 @@ TEST_F(VkLayerTest, CopyCommands2V13) {
     auto resolve_image_info = LvlInitStruct<VkResolveImageInfo2>();
     resolve_image_info.srcImage = image.handle();
     resolve_image_info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    resolve_image_info.dstImage = image.handle();
+    resolve_image_info.dstImage = image2.handle();
     resolve_image_info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     resolve_image_info.regionCount = 1;
     resolve_image_info.pRegions = &resolve_region;
@@ -11159,4 +11162,136 @@ TEST_F(VkLayerTest, TestCommandBufferInheritanceWithInvalidDepthFormat) {
     vk::BeginCommandBuffer(secondary.handle(), &cmdbuf_bi);
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ResolveInvalidUsage) {
+    TEST_DESCRIPTION("Resolve image with missing usage flags.");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    VkFormat src_format = VK_FORMAT_R8_UNORM;
+    VkFormat dst_format = VK_FORMAT_R8_SNORM;
+
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), src_format, &formatProps);
+    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), src_format, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), dst_format, &formatProps);
+    formatProps.optimalTilingFeatures &= ~VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), dst_format, formatProps);
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 1;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj srcImage(m_device);
+    srcImage.init(&image_create_info);
+    ASSERT_TRUE(srcImage.initialized());
+
+    image_create_info.format = dst_format;
+    VkImageObj srcImage2(m_device);
+    srcImage2.init(&image_create_info);
+    ASSERT_TRUE(srcImage2.initialized());
+
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageObj invalidSrcImage(m_device);
+    invalidSrcImage.init(&image_create_info);
+    ASSERT_TRUE(invalidSrcImage.initialized());
+
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.format = src_format;
+    VkImageObj invalidSrcImage2(m_device);
+    invalidSrcImage2.init(&image_create_info);
+    ASSERT_TRUE(invalidSrcImage2.initialized());
+
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    VkImageObj dstImage(m_device);
+    dstImage.init(&image_create_info);
+    ASSERT_TRUE(dstImage.initialized());
+
+    image_create_info.format = src_format;
+    VkImageObj dstImage2(m_device);
+    dstImage2.init(&image_create_info);
+    ASSERT_TRUE(dstImage2.initialized());
+
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageObj invalidDstImage(m_device);
+    invalidDstImage.init(&image_create_info);
+    ASSERT_TRUE(invalidDstImage.initialized());
+
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.format = dst_format;
+    VkImageObj invalidDstImage2(m_device);
+    invalidDstImage2.init(&image_create_info);
+    ASSERT_TRUE(invalidDstImage2.initialized());
+
+    m_commandBuffer->begin();
+    VkImageResolve resolveRegion;
+    resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.srcSubresource.mipLevel = 0;
+    resolveRegion.srcSubresource.baseArrayLayer = 0;
+    resolveRegion.srcSubresource.layerCount = 1;
+    resolveRegion.srcOffset.x = 0;
+    resolveRegion.srcOffset.y = 0;
+    resolveRegion.srcOffset.z = 0;
+    resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.dstSubresource.mipLevel = 0;
+    resolveRegion.dstSubresource.baseArrayLayer = 0;
+    resolveRegion.dstSubresource.layerCount = 1;
+    resolveRegion.dstOffset.x = 0;
+    resolveRegion.dstOffset.y = 0;
+    resolveRegion.dstOffset.z = 0;
+    resolveRegion.extent.width = 1;
+    resolveRegion.extent.height = 1;
+    resolveRegion.extent.depth = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-06762");
+    m_commandBuffer->ResolveImage(invalidSrcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06764");
+    m_commandBuffer->ResolveImage(srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-06763");
+    m_commandBuffer->ResolveImage(invalidSrcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage2.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                  1, &resolveRegion);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06765");
+    m_commandBuffer->ResolveImage(srcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage2.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                  1, &resolveRegion);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
 }
