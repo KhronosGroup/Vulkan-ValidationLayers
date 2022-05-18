@@ -877,7 +877,8 @@ span<T> make_span(T *begin, T *end) {
 }
 
 template <typename BaseType>
-using base_type = typename std::remove_const<typename std::remove_pointer<BaseType>::type>::type;
+using base_type =
+    typename std::remove_reference<typename std::remove_const<typename std::remove_pointer<BaseType>::type>::type>::type;
 
 }  // namespace layer_data
 #endif  // LAYER_DATA_H
