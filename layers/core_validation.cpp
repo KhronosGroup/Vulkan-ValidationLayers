@@ -16765,7 +16765,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                              "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY", i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
-        if (semaphore_state && !semaphore_state->CanBeWaited()) {
+        if (semaphore_state && semaphore_state->Scope() == kSyncScopeInternal && !semaphore_state->CanBeWaited()) {
             LogObjectList objlist(queue);
             objlist.add(pPresentInfo->pWaitSemaphores[i]);
             skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
