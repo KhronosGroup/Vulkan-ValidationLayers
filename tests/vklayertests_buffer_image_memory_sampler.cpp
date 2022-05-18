@@ -2498,6 +2498,14 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         vkBindImageMemory2Function(device(), 6, bind_image_info);
         m_errorMonitor->VerifyFound();
 
+        // Try binding image_a with no plane specified
+        bind_image_info[0].pNext = nullptr;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo");
+        vkBindImageMemory2Function(device(), 1, bind_image_info);
+        m_errorMonitor->VerifyFound();
+        bind_image_info[0].pNext = (void *)&plane_memory_info[0];
+
         // Valid case of binding 2 disjoint image and normal image by removing duplicate
         m_errorMonitor->ExpectSuccess();
         vkBindImageMemory2Function(device(), 5, bind_image_info);
