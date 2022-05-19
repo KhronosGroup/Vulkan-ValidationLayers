@@ -9335,11 +9335,10 @@ VkResult DispatchGetDrmDisplayEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-    {
-        display = layer_data->Unwrap(display);
-    }
     VkResult result = layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-
+    if (VK_SUCCESS == result) {
+        *display = layer_data->WrapNew(*display);
+    }
     return result;
 }
 
@@ -9431,11 +9430,10 @@ VkResult DispatchGetWinrtDisplayNV(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-    {
-        pDisplay = layer_data->Unwrap(pDisplay);
-    }
     VkResult result = layer_data->instance_dispatch_table.GetWinrtDisplayNV(physicalDevice, deviceRelativeId, pDisplay);
-
+    if (VK_SUCCESS == result) {
+        *pDisplay = layer_data->WrapNew(*pDisplay);
+    }
     return result;
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR

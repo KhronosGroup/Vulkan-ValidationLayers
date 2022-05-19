@@ -2011,7 +2011,7 @@ VkResult DispatchGetDeferredOperationResultKHR(
             cmd_member_dict = dict(self.cmdMembers)
             cmd_info = cmd_member_dict[proto.text]
             # Handle ndo create/allocate operations
-            if cmd_info[0].iscreate:
+            if cmd_info[-1].iscreate:
                 create_ndo_code = self.generate_create_ndo_code(indent, proto, params, cmd_info)
             else:
                 create_ndo_code = ''
@@ -2074,7 +2074,7 @@ VkResult DispatchGetDeferredOperationResultKHR(
                 if self.struct_contains_ndo(type) == True:
                     islocal = True
             isdestroy = True if True in [destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']] else False
-            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']] else False
+            iscreate = (not isconst) and ispointer
             extstructs = self.registry.validextensionstructs[type] if name == 'pNext' else None
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,
