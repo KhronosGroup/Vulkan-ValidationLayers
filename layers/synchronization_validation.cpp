@@ -1666,13 +1666,12 @@ struct PipelineBarrierOp {
 };
 // The barrier operation for wait events
 struct WaitEventBarrierOp {
-    ResourceUsageTag scope_tag;
+    ResourceAccessState::EventScopeOps scope_ops;
     SyncBarrier barrier;
     bool layout_transition;
     WaitEventBarrierOp(const ResourceUsageTag scope_tag_, const SyncBarrier &barrier_, bool layout_transition_)
-        : scope_tag(scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {}
-    WaitEventBarrierOp() = default;
-    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_tag, barrier, layout_transition); }
+        : scope_ops(scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {}
+    void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_ops, barrier, layout_transition); }
 };
 
 // This functor applies a collection of barriers, updating the "pending state" in each touched memory range, and optionally
@@ -3361,14 +3360,15 @@ void ResourceAccessState::ClearRead() {
 // changes the "chaining" state, but to keep barriers independent, we defer this until all barriers
 // of the batch have been processed. Also, depending on whether layout transition happens, we'll either
 // replace the current write barriers or add to them, so accumulate to pending as well.
-void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_transition) {
+template <typename ScopeOps>
+void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition) {
     // For independent barriers we need to track what the new barriers and dependency chain *will* be when we're done
     // applying the memory barriers
     // NOTE: We update the write barrier if the write is in the first access scope or if there is a layout
-    //       transistion, under the theory of "most recent access".  If the read/write *isn't* safe
+    //       transistion, under the theory of "most recent access".  If the resource acces  *isn't* safe
     //       vs. this layout transition DetectBarrierHazard should report it.  We treat the layout
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
-    if (layout_transition || WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope)) {
+    if (layout_transition || scope.WriteInScope(barrier, *this)) {
         pending_write_barriers |= barrier.dst_access_scope;
         pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
         if (layout_transition) {
@@ -3379,53 +3379,21 @@ void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_t
     pending_layout_transition |= layout_transition;
 
     if (!pending_layout_transition) {
-        // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/writes/chains
-        // don't need to be tracked as we're just going to zero them.
+        // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
+        // don't need to be tracked as we're just going to clear them.
         for (auto &read_access : last_reads) {
             // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
-            if (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers)) {
+            if (scope.ReadInScope(barrier, read_access)) {
                 read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
             }
         }
     }
 }
 
-// Apply the tag scoped memory barrier without updating the existing barriers.  The execution barrier
-// changes the "chaining" state, but to keep barriers independent. See discussion above.
-void ResourceAccessState::ApplyBarrier(const ResourceUsageTag scope_tag, const SyncBarrier &barrier, bool layout_transition) {
-    // The scope logic for events is, if we're here, the resource usage was flagged as "in the first execution scope" at
-    // the time of the SetEvent, thus all we need check is whether the access is the same one (i.e. before the scope tag
-    // in order to know if it's in the excecution scope
-    // Notice that the layout transition sets the pending barriers *regardless*, as any lack of src_access_scope to
-    // guard against the layout transition should be reported in the detect barrier hazard phase, and we only report
-    // errors w.r.t. "most recent" accesses.
-    if (layout_transition || ((write_tag < scope_tag) && (barrier.src_access_scope & last_write).any())) {
-        pending_write_barriers |= barrier.dst_access_scope;
-        pending_write_dep_chain |= barrier.dst_exec_scope.exec_scope;
-        if (layout_transition) {
-            pending_layout_ordering_ |= OrderingBarrier(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
-        }
-    }
-    // Track layout transistion as pending as we can't modify last_write until all barriers processed
-    pending_layout_transition |= layout_transition;
-
-    if (!pending_layout_transition) {
-        // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/writes/chains
-        // don't need to be tracked as we're just going to zero them.
-        for (auto &read_access : last_reads) {
-            // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
-            // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
-            // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
-            // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
-            // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
-            // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
-            // TODO: eliminate the false positive by including write/read-stages "in scope" information in SetEvents first_scope
-            if ((read_access.tag < scope_tag) && (barrier.src_exec_scope.exec_scope & (read_access.stage | read_access.barriers))) {
-                read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
-            }
-        }
-    }
+void ResourceAccessState::ApplyBarrier(const SyncBarrier &barrier, bool layout_transition) {
+    return ApplyBarrier(UntaggedScopeOps(), barrier, layout_transition);
 }
+
 void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     if (pending_layout_transition) {
         // SetWrite clobbers the last_reads array, and thus we don't have to clear the read_state out.
@@ -3587,6 +3555,18 @@ void ResourceAccessState::SetQueueId(QueueId id) {
     if (last_write.any() && (write_queue == QueueSyncState::kQueueIdInvalid)) {
         write_queue = id;
     }
+}
+
+bool ResourceAccessState::WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope,
+                                                    SyncStageAccessFlags src_access_scope) const {
+    return (src_access_scope & last_write).any() || (write_dependency_chain & src_exec_scope);
+}
+
+bool ResourceAccessState::WriteInEventScope(const SyncStageAccessFlags &src_access_scope, ResourceUsageTag scope_tag) const {
+    // The scope logic for events is, if we're asking, the resource usage was flagged as "in the first execution scope" at
+    // the time of the SetEvent, thus all we need check is whether the access is the same one (i.e. before the scope tag
+    // in order to know if it's in the excecution scope
+    return (write_tag < scope_tag) && (src_access_scope & last_write).any();
 }
 
 bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
