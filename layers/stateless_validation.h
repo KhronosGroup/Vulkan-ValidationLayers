@@ -1024,10 +1024,11 @@ class StatelessValidation : public ValidationObject {
         }
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+            // if not null, also confirms rp2 is being used
             const auto *attachment_description_stencil_layout =
                 (use_rp2) ? LvlFindInChain<VkAttachmentDescriptionStencilLayout>(
                                 reinterpret_cast<VkAttachmentDescription2 const *>(&pCreateInfo->pAttachments[i])->pNext)
-                          : 0;
+                          : nullptr;
 
             const VkFormat attachment_format = pCreateInfo->pAttachments[i].format;
             const VkImageLayout initial_layout = pCreateInfo->pAttachments[i].initialLayout;
@@ -1045,10 +1046,10 @@ class StatelessValidation : public ValidationObject {
                                  func_name, i);
             }
             if (!separate_depth_stencil_layouts) {
-                if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
-                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+                if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                    initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                    initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
+                    initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03298"
                                    : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
                     skip |= LogError(
@@ -1198,7 +1199,7 @@ class StatelessValidation : public ValidationObject {
                                      func_name, i);
                 }
             }
-            if (use_rp2 && attachment_description_stencil_layout) {
+            if (attachment_description_stencil_layout) {
                 if (attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
                     attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
                     attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
@@ -1303,30 +1304,34 @@ class StatelessValidation : public ValidationObject {
             }
             if (FormatIsColor(attachment_format) || FormatHasDepth(attachment_format)) {
                 if (pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
-                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06702" : "VUID-VkAttachmentDescription-format-06699";
                     skip |= LogError(
                         device, vuid,
                         "%s: pCreateInfo->pAttachments[%" PRIu32
                         "] format is %s and loadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                        func_name, i, string_VkFormat(pCreateInfo->pAttachments[i].format));
+                        func_name, i, string_VkFormat(attachment_format));
                 }
             }
-            if (FormatHasStencil(attachment_format)) {
-                if (pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD &&
-                    pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                    if (!use_rp2 || !IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)) {
+            if (FormatHasStencil(attachment_format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    if (use_rp2) {
+                        skip |= LogError(device, "VUID-VkAttachmentDescription2-pNext-06704",
+                                         "%s: pCreateInfo->pAttachments[%" PRIu32
+                                         "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
+                                         "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
+                                         func_name, i);
+                    } else if (!IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)) {
                         vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06703" : "VUID-VkAttachmentDescription-format-06700";
                         skip |= LogError(device, vuid,
                                          "%s: pCreateInfo->pAttachments[%" PRIu32
                                          "] format is %s and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but initialLayout is "
                                          "VK_IMAGE_LAYOUT_UNDEFINED.",
-                                         func_name, i, string_VkFormat(pCreateInfo->pAttachments[i].format));
+                                         func_name, i, string_VkFormat(attachment_format));
                     }
                 }
-            }
-            if (use_rp2 && FormatHasStencil(attachment_format) &&
-                pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+
+                // rp2 can have seperate depth/stencil layout and need to look in pNext
                 if (attachment_description_stencil_layout) {
                     if (attachment_description_stencil_layout->stencilInitialLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                         skip |=
@@ -1335,14 +1340,6 @@ class StatelessValidation : public ValidationObject {
                                      "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
                                      "the VkAttachmentDescriptionStencilLayout::stencilInitialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
                                      func_name, i);
-                    }
-                } else {
-                    if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                        skip |= LogError(device, "VUID-VkAttachmentDescription2-pNext-06704",
-                                         "%s: pCreateInfo->pAttachments[%" PRIu32
-                                         "] format includes stencil aspect and stencilLoadOp is VK_ATTACHMENT_LOAD_OP_LOAD, but "
-                                         "the initialLayout is VK_IMAGE_LAYOUT_UNDEFINED.",
-                                         func_name, i);
                     }
                 }
             }
