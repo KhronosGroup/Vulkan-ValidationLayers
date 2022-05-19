@@ -3557,8 +3557,7 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     InitState();
 
@@ -3591,8 +3590,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3686,8 +3684,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test required extensions not available.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();

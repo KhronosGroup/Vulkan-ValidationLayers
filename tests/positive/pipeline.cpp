@@ -46,8 +46,7 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
     if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -2695,8 +2694,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping tests.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME << " not supported";
     }
 
     auto separate_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
@@ -5701,8 +5699,7 @@ TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
     if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -5778,8 +5775,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required for SPIR-V 1.3";
     }
 
     std::string cs_base = R"glsl(
@@ -6100,8 +6096,7 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
@@ -6310,8 +6305,7 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (!extended_dynamic_state_features.extendedDynamicState) {
@@ -6384,8 +6378,7 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
@@ -6535,8 +6528,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -6594,8 +6586,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -6651,8 +6642,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -6949,8 +6939,7 @@ TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
@@ -7014,12 +7003,10 @@ TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
@@ -7105,9 +7092,7 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s or %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-               VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
@@ -7248,9 +7233,7 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s or %s is not supported, skipping test.\n", kSkipPrefix, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-               VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();

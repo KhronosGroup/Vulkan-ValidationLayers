@@ -649,8 +649,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Device extensions for %s not supported\n", kSkipPrefix, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (pd_imageless_fb_features.imagelessFramebuffer != VK_TRUE) {
@@ -1012,8 +1011,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s required extensions are not supported, skipping tests.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
