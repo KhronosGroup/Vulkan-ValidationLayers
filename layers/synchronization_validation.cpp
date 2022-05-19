@@ -3381,9 +3381,21 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     if (!pending_layout_transition) {
         // Once we're dealing with a layout transition (which is modelled as a *write*) then the last reads/chains
         // don't need to be tracked as we're just going to clear them.
+        VkPipelineStageFlags2 stages_in_scope = VK_PIPELINE_STAGE_2_NONE;
+
         for (auto &read_access : last_reads) {
             // The | implements the "dependency chain" logic for this access, as the barriers field stores the second sync scope
             if (scope.ReadInScope(barrier, read_access)) {
+                // We'll apply the barrier in the next loop, because it's DRY'r to do it one place.
+                stages_in_scope |= read_access.stage;
+            }
+        }
+
+        for (auto &read_access : last_reads) {
+            if (0 != ((read_access.stage | read_access.sync_stages) & stages_in_scope)) {
+                // If this stage, or any stage known to be synchronized after it are in scope, apply the barrier to this read
+                // NOTE: Forwarding barriers to known prior stages changes the sync_stages from shallow to deep, because the
+                //       barriers used to determine sync_stages have been propagated to all known earlier stages
                 read_access.pending_dep_chain |= barrier.dst_exec_scope.exec_scope;
             }
         }
@@ -3434,33 +3446,22 @@ bool ResourceAccessState::ApplyQueueTagWait(Pred &&queue_tag_test) {
 
     // Use the predicate to build a mask of the read stages we are synchronizing
     // Use the sync_stages to also detect reads known to be before any synchronized reads (first pass)
-    uint32_t unsync_count = 0;
-    uint32_t unsync_sync_stages = 0;
     for (auto &read_access : last_reads) {
-        if ((read_access.sync_stages | sync_reads) || queue_tag_test(read_access.queue, read_access.tag)) {
+        if (queue_tag_test(read_access.queue, read_access.tag)) {
             // If we know this stage is before any stage we syncing, or if the predicate tells us that we are waited for..
             sync_reads |= read_access.stage;
-        } else {
-            ++unsync_count;
-            unsync_sync_stages |= read_access.sync_stages;
         }
     }
 
-    // This processing is not order independent, so it's possible an earlier entry in last_reads with a sync_stages
-    // including a sync_reads stage occuring later in last_reads won't be caught.  Thus we re-rinse through the list until
-    // until we catch all of them.
-    //
-    // NOTE: This could be n-squared with last_read.size(), but that tends to be very small (<3), should be okay
-    while (unsync_sync_stages & sync_reads) {  // If we found unsync stages that were later shown to be sync'd
-        unsync_count = 0;
-        unsync_sync_stages = 0;
-        for (auto &read_access : last_reads) {
-            if (read_access.sync_stages | sync_reads) {
-                sync_reads |= read_access.stage;
-            } else {
-                ++unsync_count;
-                unsync_sync_stages |= read_access.sync_stages;
-            }
+    // Now that we know the reads directly in scopejust need to go over the list again to pick up the "known earlier" stages.
+    // NOTE: sync_stages is "deep" catching all stages synchronized after it because we forward barriers
+    uint32_t unsync_count = 0;
+    for (auto &read_access : last_reads) {
+        if (0 != ((read_access.stage | read_access.sync_stages) & sync_reads)) {
+            // This is redundant in the "stage" case, but avoids a second branch to get an accurate count
+            sync_reads |= read_access.stage;
+        } else {
+            ++unsync_count;
         }
     }
 
