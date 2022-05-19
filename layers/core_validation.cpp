@@ -16048,6 +16048,55 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
     return skip;
 }
 
+// This will only be called after we are sure the image was created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
+bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, VkSparseImageMemoryBind const &bind,
+                                               uint32_t image_idx, uint32_t bind_idx) const {
+    bool skip = false;
+
+    auto const mem_info = Get<DEVICE_MEMORY_STATE>(bind.memory);
+    if (mem_info) {
+        // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
+        // one. We also need to check memory_bind.memory
+        if (bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
+            skip |= LogError(bind.memory, "VUID-VkSparseMemoryBind-memoryOffset-01101",
+                             "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "]: memoryOffset (%" PRIu64
+                             ") is not less than the size (%" PRIu64 ") of memory",
+                             bind_idx, image_idx, bind.memoryOffset, mem_info->alloc_info.allocationSize);
+        }
+    }
+
+    if (image_state) {
+        for (auto const &requirements : image_state->sparse_requirements) {
+            VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
+            if ((bind.offset.x % granularity.width) != 0) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01107",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
+                                 ") must be a multiple of the sparse image block width "
+                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32 ")) of the image",
+                                 bind_idx, image_idx, bind.offset.x, granularity.width);
+            }
+
+            if ((bind.offset.y % granularity.height) != 0) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01109",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
+                                 ") must be a multiple of the sparse image block height "
+                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32 ")) of the image",
+                                 bind_idx, image_idx, bind.offset.y, granularity.height);
+            }
+
+            if ((bind.offset.z % granularity.depth) != 0) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01111",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.z (%" PRIi32
+                                 ") must be a multiple of the sparse image block depth "
+                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image",
+                                 bind_idx, image_idx, bind.offset.z, granularity.depth);
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence) const {
     auto queue_data = Get<QUEUE_STATE>(queue);
@@ -16244,18 +16293,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 if (image_bind.pBinds) {
                     for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
                         const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
-                        auto mem_info = Get<DEVICE_MEMORY_STATE>(memory_bind.memory);
-                        if (mem_info) {
-                            // TODO: The closest one should be VUID-VkSparseImageMemoryBind-memory-01105 instead of the mentioned
-                            // one. We also need to check memory_bind.memory
-                            if (memory_bind.memoryOffset >= mem_info->alloc_info.allocationSize) {
-                                skip |=
-                                    LogError(image_bind.image, "VUID-VkSparseMemoryBind-memoryOffset-01101",
-                                             "vkQueueBindSparse(): pBindInfo[%u].pImageBinds[%u]: memoryOffset is not less than "
-                                             "the size of memory",
-                                             bind_idx, image_idx);
-                            }
-                        }
+                        skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, image_idx, image_bind_idx);
 
                         if (image_state) {
                             if (memory_bind.subresource.mipLevel >= image_state->createInfo.mipLevels) {
