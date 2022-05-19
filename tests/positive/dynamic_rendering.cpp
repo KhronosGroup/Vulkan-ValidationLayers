@@ -48,8 +48,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -133,8 +132,7 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -264,8 +262,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -342,9 +339,7 @@ TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencil
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();

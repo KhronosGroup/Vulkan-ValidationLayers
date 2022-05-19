@@ -305,18 +305,8 @@ class VkRenderFramework : public VkTestFramework {
     // After instance and physical device creation (e.g., after InitFramework), returns true if all required extensions are
     // available, false otherwise
     bool AreRequestedExtensionsEnabled() const;
-    template <typename Container>
-    bool AreRequestedExtensionsEnabled(Container &ret) const {
-        ret.clear();
-        for (const auto &ext : m_requested_extensions) {
-            // `ext` may refer to an instance or device extension
-            if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
-                ret.emplace_back(ext);
-            }
-        }
-        return ret.empty();
-    }
-
+    // if requested extensions are not supported, helper function to get string to print out
+    std::string RequestedExtensionsNotSupported() const;
 
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance

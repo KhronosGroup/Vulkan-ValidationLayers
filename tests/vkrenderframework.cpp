@@ -565,6 +565,22 @@ bool VkRenderFramework::AreRequestedExtensionsEnabled() const {
     return true;
 }
 
+std::string VkRenderFramework::RequestedExtensionsNotSupported() const {
+    std::stringstream ss;
+    bool first = true;
+    for (const auto &ext : m_requested_extensions) {
+        if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
+            if (first) {
+                first = false;
+            } else {
+                ss << ", ";
+            }
+            ss << ext;
+        }
+    }
+    return ss.str();
+}
+
 bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
     if (CanEnableInstanceExtension(ext_name)) {
         return true;

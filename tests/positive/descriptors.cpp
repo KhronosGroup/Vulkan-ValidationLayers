@@ -1131,8 +1131,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
@@ -1394,8 +1393,7 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -1446,8 +1444,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto mutable_descriptor = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();

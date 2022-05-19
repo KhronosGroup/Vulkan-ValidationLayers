@@ -58,8 +58,7 @@ ASSERT_NO_FATAL_FAILURE(InitFramework());
 
 // Check that all extensions and their dependencies were enabled successfully
 if (!AreRequestedExtensionsEnabled()) {
-    printf("%s test requires %s extensions which are not available.\n", kSkipPrefix, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    return;
+    GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
 }
 
 // Finish initializing state, including creating the VkDevice (whith extensions added) that will be used for the test

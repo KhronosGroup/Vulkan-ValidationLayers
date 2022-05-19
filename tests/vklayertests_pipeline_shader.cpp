@@ -2024,8 +2024,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -2195,8 +2194,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -2367,8 +2365,7 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
@@ -2633,8 +2630,7 @@ TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
     m_errorMonitor->ExpectSuccess();
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions not supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -12206,8 +12202,7 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -12304,8 +12299,7 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -13355,8 +13349,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -13541,9 +13534,7 @@ TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix,
-               VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
@@ -14203,8 +14194,7 @@ TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
@@ -14238,8 +14228,7 @@ TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
@@ -14503,8 +14492,7 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     m_device_extension_names.push_back(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -14595,8 +14583,7 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s not supported, skipping test.\n", kSkipPrefix, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     // Test currently crashes with valid SPIR-V
@@ -15369,8 +15356,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutWithInvalidSetLayoutFlags) {
     AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -15520,8 +15506,7 @@ TEST_F(VkLayerTest, ComputeImageLayout) {
     }
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required device extensions not available\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkCmdDispatchBaseKHR =
@@ -15688,8 +15673,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWith
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
     rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
@@ -15792,8 +15776,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -15939,8 +15922,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -16065,8 +16047,7 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingViewMaskParameter) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -16265,8 +16246,7 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16366,8 +16346,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
@@ -16425,8 +16404,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryStreams) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Required extensions are not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     auto primitives_generated_features =
@@ -16487,8 +16465,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateOps) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s required but not available\n", kSkipPrefix, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -16596,9 +16573,7 @@ TEST_F(VkLayerTest, TestSubgroupUniformControlFlow) {
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping test.\n", kSkipPrefix,
-               VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -16692,8 +16667,7 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported, skipping tests.\n", kSkipPrefix, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -16822,8 +16796,7 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
@@ -16899,8 +16872,7 @@ TEST_F(VkLayerTest, InvalidRayTracingPipelineFlags) {
         return;
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);

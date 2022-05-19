@@ -6732,8 +6732,7 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s not supported\n", kSkipPrefix, VK_NV_MESH_SHADER_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
         vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
@@ -8563,8 +8562,7 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     AddRequiredExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -9763,8 +9761,7 @@ TEST_F(VkLayerTest, BeginRenderingWithSecondaryContents) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -9859,8 +9856,7 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10082,8 +10078,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10174,8 +10169,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10250,8 +10244,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttach
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10325,8 +10318,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageV
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10406,8 +10398,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10490,8 +10481,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10567,8 +10557,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRa
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10695,8 +10684,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAt
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -11120,8 +11108,7 @@ TEST_F(VkLayerTest, TestCommandBufferInheritanceWithInvalidDepthFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {

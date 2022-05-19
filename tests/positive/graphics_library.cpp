@@ -43,14 +43,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
         return;
     }
 
-    std::vector<const char *> failed_exts;
-    if (!AreRequestedExtensionsEnabled(failed_exts)) {
-        printf("%s The following device extensions are not supported: ", kSkipPrefix);
-        for (const auto &ext : failed_exts) {
-            printf("%s ", ext);
-        }
-        printf("\n");
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
@@ -88,14 +82,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
         return;
     }
 
-    std::vector<const char *> failed_exts;
-    if (!AreRequestedExtensionsEnabled(failed_exts)) {
-        printf("%s The following device extensions are not supported: ", kSkipPrefix);
-        for (const auto &ext : failed_exts) {
-            printf("%s ", ext);
-        }
-        printf("\n");
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
@@ -145,14 +133,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
         return;
     }
 
-    std::vector<const char *> failed_exts;
-    if (!AreRequestedExtensionsEnabled(failed_exts)) {
-        printf("%s The following device extensions are not supported: ", kSkipPrefix);
-        for (const auto &ext : failed_exts) {
-            printf("%s ", ext);
-        }
-        printf("\n");
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
@@ -202,14 +184,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary
         return;
     }
 
-    std::vector<const char *> failed_exts;
-    if (!AreRequestedExtensionsEnabled(failed_exts)) {
-        printf("%s The following device extensions are not supported: ", kSkipPrefix);
-        for (const auto &ext : failed_exts) {
-            printf("%s ", ext);
-        }
-        printf("\n");
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
@@ -248,14 +224,8 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
         return;
     }
 
-    std::vector<const char *> failed_exts;
-    if (!AreRequestedExtensionsEnabled(failed_exts)) {
-        printf("%s The following device extensions are not supported: ", kSkipPrefix);
-        for (const auto &ext : failed_exts) {
-            printf("%s ", ext);
-        }
-        printf("\n");
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
