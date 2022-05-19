@@ -326,6 +326,16 @@ class ResourceAccessState : public SyncStageAccess {
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
         void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
                  ResourceUsageTag tag_);
+        bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
+        bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, ResourceUsageTag scope_tag) const {
+            // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
+            // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
+            // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
+            // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
+            // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
+            // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
+            return (tag < scope_tag) && ReadInScopeOrChain(exec_scope);
+        }
     };
 
   public:
@@ -350,8 +360,9 @@ class ResourceAccessState : public SyncStageAccess {
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
     void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
+    template <typename ScopeOps>
+    void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition);
     void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
-    void ApplyBarrier(ResourceUsageTag scope_tag, const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(ResourceUsageTag tag);
 
     struct QueueTagPredicate {
@@ -396,6 +407,28 @@ class ResourceAccessState : public SyncStageAccess {
     }
     void SetQueueId(QueueId id);
 
+    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
+    bool WriteInEventScope(const SyncStageAccessFlags &src_access_scope, ResourceUsageTag scope_tag) const;
+
+    struct UntaggedScopeOps {
+        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
+            return access.WriteInSourceScopeOrChain(barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        }
+        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
+            return read_state.ReadInScopeOrChain(barrier.src_exec_scope.exec_scope);
+        }
+    };
+    struct EventScopeOps {
+        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
+            return access.WriteInEventScope(barrier.src_access_scope, scope_tag);
+        }
+        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
+            return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_tag);
+        }
+        EventScopeOps(ResourceUsageTag event_tag) : scope_tag(event_tag) {}
+        ResourceUsageTag scope_tag;
+    };
+
   private:
     static constexpr VkPipelineStageFlags2KHR kInvalidAttachmentStage = ~VkPipelineStageFlags2KHR(0);
     bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
@@ -411,9 +444,6 @@ class ResourceAccessState : public SyncStageAccess {
     }
     bool ReadInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope) const {
         return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
-    }
-    bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const {
-        return (src_access_scope & last_write).any() || (write_dependency_chain & src_exec_scope);
     }
 
     static bool IsReadHazard(VkPipelineStageFlags2KHR stage_mask, const VkPipelineStageFlags2KHR barriers) {
