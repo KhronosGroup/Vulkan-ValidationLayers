@@ -1006,8 +1006,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
