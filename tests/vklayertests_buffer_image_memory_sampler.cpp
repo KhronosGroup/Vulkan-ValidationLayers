@@ -41,9 +41,9 @@ TEST_F(VkLayerTest, BufferExtents) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2Function = nullptr;
+    PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2KHR = nullptr;
     if (copy_commands2) {
-        vkCmdCopyBuffer2Function = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
+        vkCmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
     }
 
     const VkDeviceSize buffer_size = 2048;
@@ -63,13 +63,13 @@ TEST_F(VkLayerTest, BufferExtents) {
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+    if (copy_commands2) {
         const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-srcOffset-00113");
-        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -79,13 +79,13 @@ TEST_F(VkLayerTest, BufferExtents) {
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+    if (copy_commands2) {
         const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-dstOffset-00114");
-        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -95,13 +95,13 @@ TEST_F(VkLayerTest, BufferExtents) {
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+    if (copy_commands2) {
         const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00115");
-        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -111,13 +111,13 @@ TEST_F(VkLayerTest, BufferExtents) {
     m_errorMonitor->VerifyFound();
 
     // equivalent test using KHR_copy_commands2
-    if (copy_commands2 && vkCmdCopyBuffer2Function) {
+    if (copy_commands2) {
         const VkBufferCopy2KHR copy_info2 = {VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR, NULL, copy_info.srcOffset, copy_info.dstOffset,
                                              copy_info.size};
         const VkCopyBufferInfo2KHR copy_buffer_info2 = {
             VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR, NULL, buffer_one.handle(), buffer_two.handle(), 1, &copy_info2};
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferInfo2-size-00116");
-        vkCmdCopyBuffer2Function(m_commandBuffer->handle(), &copy_buffer_info2);
+        vkCmdCopyBuffer2KHR(m_commandBuffer->handle(), &copy_buffer_info2);
         m_errorMonitor->VerifyFound();
     }
 
@@ -8155,14 +8155,8 @@ TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
     AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
-        return;
-    }
-
-    if (!CanEnableDeviceExtension(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
-        printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping tests\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     const auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -11504,22 +11498,11 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
     TEST_DESCRIPTION("Invalid uses of VK_EXT_sampler_filter_minmax.");
 
     // Enable KHR multiplane req'd extensions
-    const bool mp_extensions = AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME) &&
-                               AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (!mp_extensions) {
-        printf("%s Instance extensions not supported for %s and %s\n", kSkipPrefix, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
-               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!CanEnableDeviceExtension(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
-        printf("%s test requires Sampler Filter MinMax extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
-    }
-
-    if (!CanEnableDeviceExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     // Enable Ycbcr Conversion Features
@@ -13389,39 +13372,24 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid flags");
 
-    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-        return;
-    }
-    if (!AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        printf("%s %s not supported\n", kSkipPrefix, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    const bool device_group_extension = CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-
-    if (!bind_memory_2_extension) {
-        printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
-    } else if (!device_group_extension) {
-        printf("%s test requires VK_KHR_device_group extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    // Check that all extensions and their dependencies were enabled successfully
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
 
-    if (bind_memory_2_extension) {
-        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-            vkBindImageMemory2Function = vk::BindImageMemory2;
-        } else {
-            vkBindImageMemory2Function =
-                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
-        }
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkBindImageMemory2Function = vk::BindImageMemory2;
+    } else {
+        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
     }
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>(nullptr);
@@ -13481,21 +13449,12 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid splitInstanceBindRegionCount");
 
-    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME) || !AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        printf("%s Missing required instance extensions\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    const bool bind_memory_2_extension = CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    const bool device_group_extension = CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-
-    if (!bind_memory_2_extension) {
-        printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
-    } else if (!device_group_extension) {
-        printf("%s test requires VK_KHR_device_group extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     uint32_t physical_device_group_count = 0;
@@ -13864,20 +13823,12 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
 TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
-    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME) || !AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        printf("%s Missing required instance extensions for %s and %s\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
-               VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!CanEnableDeviceExtension(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        printf("%s VK_KHR_DEVICE_GROUP_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-    if (!CanEnableDeviceExtension(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        printf("%s VK_KHR_BIND_MEMORY_2_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -13947,9 +13898,8 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -13998,9 +13948,8 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!CanEnableDeviceExtension(VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE_2 extension, unavailable - skipped.\n", kSkipPrefix);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
