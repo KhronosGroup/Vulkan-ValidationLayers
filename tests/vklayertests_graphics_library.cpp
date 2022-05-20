@@ -70,8 +70,7 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
@@ -316,8 +315,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
@@ -365,8 +363,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
@@ -459,8 +456,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
@@ -522,8 +518,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s Vulkan >= 1.2 required", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
