@@ -471,6 +471,11 @@ class ValidationStateTracker : public ValidationObject {
         command_buffer_free_callback.reset(new CommandBufferFreeCallback(std::forward<Fn>(fn)));
     }
 
+    void ResetCommandBufferCallbacks() {
+        command_buffer_reset_callback.reset();
+        command_buffer_free_callback.reset();
+    }
+
     using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const IMAGE_VIEW_STATE&, VkImageLayout)>;
     template <typename Fn>
     void SetSetImageViewInitialLayoutCallback(Fn&& fn) {

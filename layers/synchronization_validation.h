@@ -1173,6 +1173,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
     using StateTracker = ValidationStateTracker;
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
+    virtual ~SyncValidator() { ResetCommandBufferCallbacks(); };
 
     layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
