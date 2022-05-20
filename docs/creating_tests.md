@@ -70,7 +70,38 @@ The pattern breaks down to
 - Init Framework which creates `VkInstance`
 - Check and add Device extensions to list
 - Init State which creates the `VkDevice`
-- **Optional**: skip if test is not worth moving out without extension support
+- **Optional**: skip if test is not worth moving out without extension support (more below)
+
+### Pattern for optional extensions
+
+Sometimes it is worth checking for an extension, but still running the parts of a test if the extension is not supported
+
+
+```cpp
+AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+ASSERT_NO_FATAL_FAILURE(Init());
+
+// need to be called after InitFramework()
+const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+
+// If the optional extension has a command, it will need a vkGetDeviceProcAddr call
+PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2KHR = nullptr;
+if (copy_commands2) {
+    vkCmdCopyBuffer2KHR = (PFN_vkCmdCopyBuffer2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyBuffer2KHR");
+}
+
+// Validate core copy command
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+vk::CmdCopyBuffer( /* */ );
+m_errorMonitor->VerifyFound();
+
+// optional test using VK_KHR_copy_commands2
+if (copy_commands2) {
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    vkCmdCopyBuffer2KHR( /* */  );
+    m_errorMonitor->VerifyFound();
+}
+```
 
 ### Vulkan Version
 
