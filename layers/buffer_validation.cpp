@@ -7182,10 +7182,55 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
         if ((sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
             (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
-            // TODO: This VU also needs to ensure that the DRM index is in range and valid.
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-tiling-02271",
-                             "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must be "
-                             "VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.");
+            skip |= LogError(
+                image, "VUID-vkGetImageSubresourceLayout-tiling-02271",
+                "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask (%s) must be VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.",
+                string_VkImageAspectFlags(sub_aspect).c_str());
+        } else {
+            // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
+            assert(IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier));
+            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
+            DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_properties);
+
+            auto fmt_drm_props = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+            auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_drm_props);
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_entry->createInfo.format, &fmt_props_2);
+            std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties{fmt_drm_props.drmFormatModifierCount};
+            fmt_drm_props.pDrmFormatModifierProperties = drm_properties.data();
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_entry->createInfo.format, &fmt_props_2);
+
+            uint32_t max_plane_count = 0u;
+
+            for (auto const &drm_property : drm_properties) {
+                if (drm_format_properties.drmFormatModifier == drm_property.drmFormatModifier) {
+                    max_plane_count = drm_property.drmFormatModifierPlaneCount;
+                    break;
+                }
+            }
+
+            VkImageAspectFlagBits allowed_plane_indices[] = {
+                VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT,
+                VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT, VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT};
+
+            bool is_valid = false;
+
+            for (uint32_t i = 0u; i < max_plane_count; ++i) {
+                if (sub_aspect == allowed_plane_indices[i]) {
+                    is_valid = true;
+                    break;
+                }
+            }
+
+            if (!is_valid) {
+                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-tiling-02271",
+                                 "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask (%s) must be "
+                                 "VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT, with i being less than the "
+                                 "VkDrmFormatModifierPropertiesEXT::drmFormatModifierPlaneCount (%" PRIu32
+                                 ") associated with the image's format (%s) and "
+                                 "VkImageDrmFormatModifierPropertiesEXT::drmFormatModifier (%" PRIu64 ").",
+                                 string_VkImageAspectFlags(sub_aspect).c_str(), max_plane_count,
+                                 string_VkFormat(image_entry->createInfo.format), drm_format_properties.drmFormatModifier);
+            }
         }
     }
 
