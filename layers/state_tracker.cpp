@@ -134,10 +134,7 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
 
         if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            VkImageDrmFormatModifierPropertiesEXT drm_format_props = {
-                VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
-                nullptr,
-            };
+            VkImageDrmFormatModifierPropertiesEXT drm_format_props = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
 
             // Find the image modifier
             DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_props);
@@ -161,13 +158,11 @@ VkFormatFeatureFlags2KHR GetImageFormatFeatures(VkPhysicalDevice physical_device
                 (tiling == VK_IMAGE_TILING_LINEAR) ? fmt_props_3.linearTilingFeatures : fmt_props_3.optimalTilingFeatures;
         }
     } else if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
-                                                                       nullptr};
+        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = LvlInitStruct<VkImageDrmFormatModifierPropertiesEXT>();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image, &drm_format_properties);
 
-        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
-        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-                                                                    nullptr};
+        VkFormatProperties2 format_properties_2 = LvlInitStruct<VkFormatProperties2>();
+        VkDrmFormatModifierPropertiesListEXT drm_properties_list = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
         format_properties_2.pNext = (void *)&drm_properties_list;
         DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
         std::vector<VkDrmFormatModifierPropertiesEXT> drm_properties;
@@ -1183,7 +1178,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.shader_subgroup_uniform_control_flow_features = *shader_subgroup_uniform_control_flow_features;
         }
 
-        const auto ray_tracing_maintenance1_features = 
+        const auto ray_tracing_maintenance1_features =
             LvlFindInChain<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(pCreateInfo->pNext);
         if (ray_tracing_maintenance1_features) {
             enabled_features.ray_tracing_maintenance1_features= *ray_tracing_maintenance1_features;
