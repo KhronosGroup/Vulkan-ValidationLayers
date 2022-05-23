@@ -2938,9 +2938,11 @@ bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *produ
         assert(b_at_end || b_component < b_length);
 
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
-            skip |= LogPerformanceWarning(producer->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
-                                          "%s writes to output location %" PRIu32 ".%" PRIu32 " which is not consumed by %s",
-                                          producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
+            if (!enabled_features.core13.maintenance4) {
+                skip |= LogError(producer->vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
+                                 "%s writes to output location %" PRIu32 ".%" PRIu32 " which is not consumed by %s",
+                                 producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
+            }
             if ((b_first.first > a_first.first) || b_at_end || (a_component + 1 == a_length)) {
                 a_it++;
                 a_component = 0;
