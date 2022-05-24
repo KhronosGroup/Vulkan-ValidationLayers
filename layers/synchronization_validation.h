@@ -327,6 +327,7 @@ class ResourceAccessState : public SyncStageAccess {
         void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
                  ResourceUsageTag tag_);
         bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
+        bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
         bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, ResourceUsageTag scope_tag) const {
             // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
             // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
@@ -362,7 +363,6 @@ class ResourceAccessState : public SyncStageAccess {
     void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
     template <typename ScopeOps>
     void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition);
-    void ApplyBarrier(const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(ResourceUsageTag tag);
 
     struct QueueTagPredicate {
@@ -407,7 +407,11 @@ class ResourceAccessState : public SyncStageAccess {
     }
     void SetQueueId(QueueId id);
 
+    bool WriteInChain(VkPipelineStageFlags2KHR src_exec_scope) const;
+    bool WriteInScope(const SyncStageAccessFlags &src_access_scope) const;
     bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
+    bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
+                                        SyncStageAccessFlags src_access_scope) const;
     bool WriteInEventScope(const SyncStageAccessFlags &src_access_scope, ResourceUsageTag scope_tag) const;
 
     struct UntaggedScopeOps {
@@ -418,6 +422,18 @@ class ResourceAccessState : public SyncStageAccess {
             return read_state.ReadInScopeOrChain(barrier.src_exec_scope.exec_scope);
         }
     };
+
+    struct QueueScopeOps {
+        bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
+            return access.WriteInQueueSourceScopeOrChain(queue, barrier.src_exec_scope.exec_scope, barrier.src_access_scope);
+        }
+        bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
+            return read_state.ReadInQueueScopeOrChain(queue, barrier.src_exec_scope.exec_scope);
+        }
+        QueueScopeOps(QueueId scope_queue) : queue(scope_queue) {}
+        QueueId queue;
+    };
+
     struct EventScopeOps {
         bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
             return access.WriteInEventScope(barrier.src_access_scope, scope_tag);
@@ -616,7 +632,8 @@ class SyncOpBase {
     virtual ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const = 0;
     virtual bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                                 ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const = 0;
-    virtual void ReplayRecord(ResourceUsageTag tag, AccessContext *access_context, SyncEventsContext *events_context) const = 0;
+    virtual void ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
+                              SyncEventsContext *events_context) const = 0;
 
   protected:
     // Only non-null and valid for SyncOps within a render pass instance  WIP -- think about how to manage for non RPI calls within
@@ -629,10 +646,10 @@ class SyncOpBase {
 class SyncOpBarriers : public SyncOpBase {
   protected:
     template <typename Barriers, typename FunctorFactory>
-    static void ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, ResourceUsageTag tag,
+    static void ApplyBarriers(const Barriers &barriers, const FunctorFactory &factory, QueueId queue_id, ResourceUsageTag tag,
                               AccessContext *context);
     template <typename Barriers, typename FunctorFactory>
-    static void ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, ResourceUsageTag tag,
+    static void ApplyGlobalBarriers(const Barriers &barriers, const FunctorFactory &factory, QueueId queue_id, ResourceUsageTag tag,
                                     AccessContext *access_context);
 
     SyncOpBarriers(CMD_TYPE cmd, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkPipelineStageFlags srcStageMask,
@@ -687,7 +704,7 @@ class SyncOpPipelineBarrier : public SyncOpBarriers {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 };
 
@@ -707,7 +724,7 @@ class SyncOpWaitEvents : public SyncOpBarriers {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 
   protected:
@@ -729,7 +746,7 @@ class SyncOpResetEvent : public SyncOpBase {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 
   private:
@@ -753,7 +770,7 @@ class SyncOpSetEvent : public SyncOpBase {
 
   private:
     bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
     std::shared_ptr<const EVENT_STATE> event_;
     SyncExecScope src_exec_scope_;
@@ -771,7 +788,7 @@ class SyncOpBeginRenderPass : public SyncOpBase {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 
   protected:
@@ -793,7 +810,7 @@ class SyncOpNextSubpass : public SyncOpBase {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 
   protected:
@@ -811,7 +828,7 @@ class SyncOpEndRenderPass : public SyncOpBase {
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
-    void ReplayRecord(ResourceUsageTag recorded_tag, AccessContext *access_context,
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
                       SyncEventsContext *events_context) const override;
 
   protected:
@@ -1059,6 +1076,7 @@ class CommandExecutionContext {
     virtual SyncEventsContext *GetCurrentEventsContext() = 0;
     virtual const AccessContext *GetCurrentAccessContext() const = 0;
     virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
+    virtual QueueId GetQueueId() const = 0;
 
     const SyncValidator &GetSyncState() const {
         assert(sync_state_);
@@ -1139,12 +1157,12 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
+    QueueId GetQueueId() const override;
 
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     ResourceUsageTag RecordBeginRenderPass(CMD_TYPE cmd, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                            const std::vector<const IMAGE_VIEW_STATE *> &attachment_views);
-    void ApplyGlobalBarriersToEvents(const SyncExecScope &src, const SyncExecScope &dst);
 
     bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
     void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, ResourceUsageTag tag);
@@ -1318,6 +1336,7 @@ class QueueBatchContext : public CommandExecutionContext {
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
     const QueueSyncState *GetQueueSyncState() const { return queue_state_; }
     VkQueueFlags GetQueueFlags() const;
+    QueueId GetQueueId() const override;
 
     void SetBatchLog(AccessLogger &loggger, uint64_t sumbit_id, uint32_t batch_id);
     void ResetAccessLog() {
@@ -1443,6 +1462,8 @@ class SignaledSemaphores {
     std::shared_ptr<Signal> Unsignal(VkSemaphore);
     void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
     void Reset();
+    SignaledSemaphores() : prev_(nullptr) {}
+    SignaledSemaphores(const SignaledSemaphores &prev) : prev_(&prev) {}
 
   private:
     std::shared_ptr<Signal> GetPrev(VkSemaphore sem) const;
