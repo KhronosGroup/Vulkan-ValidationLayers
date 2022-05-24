@@ -1978,6 +1978,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_NV_external_memory", {kExtDeprecated, "VK_KHR_external_memory"}},
     {"VK_NV_external_memory_capabilities", {kExtDeprecated, "VK_KHR_external_memory_capabilities"}},
     {"VK_NV_external_memory_win32", {kExtDeprecated, "VK_KHR_external_memory_win32"}},
+    {"VK_NV_fragment_shader_barycentric", {kExtPromoted, "VK_KHR_fragment_shader_barycentric"}},
     {"VK_NV_glsl_shader", {kExtDeprecated, ""}},
     {"VK_NV_win32_keyed_mutex", {kExtPromoted, "VK_KHR_win32_keyed_mutex"}},
 };
