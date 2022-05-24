@@ -415,8 +415,6 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Float16";
          case spv::CapabilityFloat64:
             return "Float64";
-         case spv::CapabilityFragmentBarycentricNV:
-            return "FragmentBarycentricNV";
          case spv::CapabilityFragmentDensityEXT:
             return "FragmentDensityEXT";
          case spv::CapabilityFragmentMaskAMD:

@@ -276,7 +276,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
     def enumHelper(self):
         # There are some enums that share the same value in the SPIR-V header.
         # This array remove the duplicate to not print out, usually due to being the older value given
-        excludeList = ['ShaderViewportIndexLayerNV', 'ShadingRateNV']
+        excludeList = ['ShaderViewportIndexLayerNV', 'ShadingRateNV', 'FragmentBarycentricNV']
         output =  'static inline const char* string_SpvCapability(uint32_t input_value) {\n'
         output += '    switch ((spv::Capability)input_value) {\n'
         for name, enables in sorted(self.capabilities.items()):
