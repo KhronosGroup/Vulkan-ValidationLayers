@@ -385,12 +385,9 @@ VkDeviceSize IMAGE_STATE::GetFakeBaseAddress() const {
     return bind_swapchain->images[swapchain_image_index].fake_base_address;
 }
 
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const {
-    const uint32_t mip = subresource.mipLevel;
-
+VkExtent3D IMAGE_STATE::GetSubresourceExtent(VkImageAspectFlags aspect_mask, uint32_t mip_level) const {
     // Return zero extent if mip level doesn't exist
-    if (mip >= createInfo.mipLevels) {
+    if (mip_level >= createInfo.mipLevels) {
         return VkExtent3D{0, 0, 0};
     }
 
@@ -399,19 +396,19 @@ VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &sub
 
     // If multi-plane, adjust per-plane extent
     if (FormatIsMultiplane(createInfo.format)) {
-        VkExtent2D divisors = FindMultiplaneExtentDivisors(createInfo.format, subresource.aspectMask);
+        VkExtent2D divisors = FindMultiplaneExtentDivisors(createInfo.format, aspect_mask);
         extent.width /= divisors.width;
         extent.height /= divisors.height;
     }
 
     if (createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
-        extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip)));
-        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip)));
-        extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip)));
+        extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip_level)));
+        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip_level)));
+        extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip_level)));
     } else {
-        extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip));
-        extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip));
-        extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip));
+        extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip_level));
+        extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip_level));
+        extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip_level));
     }
 
     // Image arrays have an effective z extent that isn't diminished by mip level
@@ -420,6 +417,11 @@ VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &sub
     }
 
     return extent;
+}
+
+// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
+VkExtent3D IMAGE_STATE::GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const {
+    return GetSubresourceExtent(subresource.aspectMask, subresource.mipLevel);
 }
 
 static VkSamplerYcbcrConversion GetSamplerConversion(const VkImageViewCreateInfo *ci) {
