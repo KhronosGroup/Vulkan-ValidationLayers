@@ -518,6 +518,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_external_semaphore_fd{kNotEnabled};
     ExtEnabled vk_khr_external_semaphore_win32{kNotEnabled};
     ExtEnabled vk_khr_format_feature_flags2{kNotEnabled};
+    ExtEnabled vk_khr_fragment_shader_barycentric{kNotEnabled};
     ExtEnabled vk_khr_fragment_shading_rate{kNotEnabled};
     ExtEnabled vk_khr_get_memory_requirements2{kNotEnabled};
     ExtEnabled vk_khr_global_priority{kNotEnabled};
@@ -935,6 +936,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_external_semaphore, VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME}}})},
 #endif
             {VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_format_feature_flags2, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_fragment_shader_barycentric, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_fragment_shading_rate, {{
                            {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
@@ -1455,6 +1458,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
 #endif
     VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME,
+    VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME,
     VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME,
     VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME,

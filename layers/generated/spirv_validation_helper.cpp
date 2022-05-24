@@ -156,6 +156,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityFloat16, {0, &VkPhysicalDeviceVulkan12Features::shaderFloat16, nullptr, ""}},
     {spv::CapabilityFloat16, {0, nullptr, &DeviceExtensions::vk_amd_gpu_shader_half_float, ""}},
     {spv::CapabilityFloat64, {0, &VkPhysicalDeviceFeatures::shaderFloat64, nullptr, ""}},
+    {spv::CapabilityFragmentBarycentricKHR, {0, &VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR::fragmentShaderBarycentric, nullptr, ""}},
     {spv::CapabilityFragmentBarycentricNV, {0, &VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::fragmentShaderBarycentric, nullptr, ""}},
     {spv::CapabilityFragmentDensityEXT, {0, &VkPhysicalDeviceFragmentDensityMapFeaturesEXT::fragmentDensityMap, nullptr, ""}},
     {spv::CapabilityFragmentMaskAMD, {0, nullptr, &DeviceExtensions::vk_amd_shader_fragment_mask, ""}},
@@ -322,6 +323,7 @@ static const std::unordered_multimap<std::string, RequiredSpirvInfo> spirvExtens
     {"SPV_KHR_device_group", {0, nullptr, &DeviceExtensions::vk_khr_device_group, ""}},
     {"SPV_KHR_float_controls", {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {"SPV_KHR_float_controls", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls, ""}},
+    {"SPV_KHR_fragment_shader_barycentric", {0, nullptr, &DeviceExtensions::vk_khr_fragment_shader_barycentric, ""}},
     {"SPV_KHR_fragment_shading_rate", {0, nullptr, &DeviceExtensions::vk_khr_fragment_shading_rate, ""}},
     {"SPV_KHR_integer_dot_product", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
     {"SPV_KHR_integer_dot_product", {0, nullptr, &DeviceExtensions::vk_khr_shader_integer_dot_product, ""}},
@@ -415,8 +417,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Float16";
          case spv::CapabilityFloat64:
             return "Float64";
-         case spv::CapabilityFragmentBarycentricNV:
-            return "FragmentBarycentricNV";
+         case spv::CapabilityFragmentBarycentricKHR:
+            return "FragmentBarycentricKHR";
          case spv::CapabilityFragmentDensityEXT:
             return "FragmentDensityEXT";
          case spv::CapabilityFragmentMaskAMD:
