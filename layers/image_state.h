@@ -192,6 +192,7 @@ class IMAGE_STATE : public BINDABLE {
 
     void Destroy() override;
 
+    VkExtent3D GetSubresourceExtent(VkImageAspectFlags aspect_mask, uint32_t mip_level) const;
     VkExtent3D GetSubresourceExtent(const VkImageSubresourceLayers &subresource) const;
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {

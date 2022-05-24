@@ -16068,7 +16068,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
     if (image_state) {
         for (auto const &requirements : image_state->sparse_requirements) {
             VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
-            if ((bind.offset.x % granularity.width) != 0) {
+            if (SafeModulo(bind.offset.x, granularity.width) != 0) {
                 skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01107",
                                  "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
                                  ") must be a multiple of the sparse image block width "
@@ -16076,7 +16076,7 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                                  bind_idx, image_idx, bind.offset.x, granularity.width);
             }
 
-            if ((bind.offset.y % granularity.height) != 0) {
+            if (SafeModulo(bind.offset.y, granularity.height) != 0) {
                 skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01109",
                                  "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.x (%" PRIi32
                                  ") must be a multiple of the sparse image block height "
@@ -16084,12 +16084,50 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
                                  bind_idx, image_idx, bind.offset.y, granularity.height);
             }
 
-            if ((bind.offset.z % granularity.depth) != 0) {
+            if (SafeModulo(bind.offset.z, granularity.depth) != 0) {
                 skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-offset-01111",
                                  "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: offset.z (%" PRIi32
                                  ") must be a multiple of the sparse image block depth "
                                  "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32 ")) of the image",
                                  bind_idx, image_idx, bind.offset.z, granularity.depth);
+            }
+
+            VkExtent3D const subresource_extent =
+                image_state->GetSubresourceExtent(bind.subresource.aspectMask, bind.subresource.mipLevel);
+            if ((SafeModulo(bind.extent.width, granularity.width) != 0) &&
+                ((bind.extent.width + bind.offset.x) != subresource_extent.width)) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01108",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.width (%" PRIu32
+                                 ") must either be a multiple of the sparse image block width "
+                                 "(VkSparseImageFormatProperties::imageGranularity.width (%" PRIu32
+                                 ")) of the image, or else (extent.width + offset.x) (%" PRIu32
+                                 ") must equal the width of the image subresource (%" PRIu32 ")",
+                                 bind_idx, image_idx, bind.extent.width, granularity.width, bind.extent.width + bind.offset.x,
+                                 subresource_extent.width);
+            }
+
+            if ((SafeModulo(bind.extent.height, granularity.height) != 0) &&
+                ((bind.extent.height + bind.offset.y) != subresource_extent.height)) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01110",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.height (%" PRIu32
+                                 ") must either be a multiple of the sparse image block height "
+                                 "(VkSparseImageFormatProperties::imageGranularity.height (%" PRIu32
+                                 ")) of the image, or else (extent.height + offset.y) (%" PRIu32
+                                 ") must equal the height of the image subresource (%" PRIu32 ")",
+                                 bind_idx, image_idx, bind.extent.height, granularity.height, bind.extent.height + bind.offset.y,
+                                 subresource_extent.height);
+            }
+
+            if ((SafeModulo(bind.extent.depth, granularity.depth) != 0) &&
+                ((bind.extent.depth + bind.offset.z) != subresource_extent.depth)) {
+                skip |= LogError(image_state->Handle(), "VUID-VkSparseImageMemoryBind-extent-01112",
+                                 "vkQueueBindSparse(): pImageBinds[%" PRIu32 "].pBindInfo[%" PRIu32 "]: extent.depth (%" PRIu32
+                                 ") must either be a multiple of the sparse image block depth "
+                                 "(VkSparseImageFormatProperties::imageGranularity.depth (%" PRIu32
+                                 ")) of the image, or else (extent.depth + offset.z) (%" PRIu32
+                                 ") must equal the depth of the image subresource (%" PRIu32 ")",
+                                 bind_idx, image_idx, bind.extent.depth, granularity.depth, bind.extent.depth + bind.offset.z,
+                                 subresource_extent.depth);
             }
         }
     }
