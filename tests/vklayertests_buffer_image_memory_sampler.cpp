@@ -15788,3 +15788,78 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     m_errorMonitor->VerifyFound();
     image_bind.offset.z = 0u;
 }
+
+TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
+    TEST_DESCRIPTION("Try to get image subresource layout for drm image plane 3 when it only has 2");
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Try to enable 1.2 since all required extensions were promoted
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    // By this point we already know if all required device extensions are supported
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported().c_str() << " extensions not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkFormat format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    VkDrmFormatModifierPropertiesListEXT modifiers_list = LvlInitStruct<VkDrmFormatModifierPropertiesListEXT>();
+    VkFormatProperties2 format_properties = LvlInitStruct<VkFormatProperties2>(&modifiers_list);
+    vk::GetPhysicalDeviceFormatProperties2(m_device->phy().handle(), format, &format_properties);
+
+    if (modifiers_list.drmFormatModifierCount == 0) {
+        GTEST_SKIP() << "No drm format modifier found for image format VK_FORMAT_G8_B8R8_2PLANE_420_UNORM.";
+    }
+
+    std::vector<VkDrmFormatModifierPropertiesEXT> modifiers_properties(modifiers_list.drmFormatModifierCount);
+    modifiers_list.pDrmFormatModifierProperties = modifiers_properties.data();
+    vk::GetPhysicalDeviceFormatProperties2(m_device->phy().handle(), format, &format_properties);
+
+    size_t modifier_index = 0u;
+    for (; modifier_index < modifiers_properties.size(); ++modifier_index) {
+        if (modifiers_properties[modifier_index].drmFormatModifierPlaneCount < 3) {
+            break;
+        }
+    }
+
+    if (modifier_index >= modifiers_properties.size()) {
+        GTEST_SKIP() << "No drm modifier found with less than 3 planes needed for testing.";
+    }
+
+    uint64_t chosen_drm_modifier = modifiers_properties[modifier_index].drmFormatModifier;
+    VkImageDrmFormatModifierListCreateInfoEXT list_create_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+    list_create_info.drmFormatModifierCount = 1u;
+    list_create_info.pDrmFormatModifiers = &chosen_drm_modifier;
+    VkImageCreateInfo create_info = LvlInitStruct<VkImageCreateInfo>(&list_create_info);
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.format = format;
+    create_info.extent.width = 64;
+    create_info.extent.height = 64;
+    create_info.extent.depth = 1;
+    create_info.mipLevels = 1;
+    create_info.arrayLayers = 1;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageObj image{m_device};
+    image.init_no_mem(*m_device, create_info);
+    if (image.initialized() == false) {
+        GTEST_SKIP() << "Failed to create image.";
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    // Try to get layout for plane 3 when we only have 2
+    VkImageSubresource subresource{};
+    subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
+    VkSubresourceLayout layout{};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-02271");
+    vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
+    m_errorMonitor->VerifyFound();
+}
