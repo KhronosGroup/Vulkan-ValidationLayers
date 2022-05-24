@@ -15787,4 +15787,25 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.offset.z = 0u;
+
+    // Force extent.width to invalid value
+    image_bind.extent.width = granularity.width - 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01108");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.extent.width = 0u;
+
+    // Force extent.height to invalid value
+    image_bind.extent.height = granularity.height - 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01110");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.extent.height = 0u;
+
+    // Force extent.depth to invalid value
+    image_bind.extent.depth = granularity.depth - 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-extent-01112");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.extent.depth = 0u;
 }
