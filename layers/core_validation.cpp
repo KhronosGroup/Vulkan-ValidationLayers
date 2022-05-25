@@ -3078,7 +3078,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
-        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && !pipeline->ColorBlendState()) {
+        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && !pipeline->ColorBlendState() &&
+            pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
                              "vkCreateGraphicsPipelines(): Pipeline %" PRIu32
                              " has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
