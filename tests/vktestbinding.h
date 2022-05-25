@@ -285,7 +285,7 @@ class Device : public internal::Handle<VkDevice> {
 
 class Queue : public internal::Handle<VkQueue> {
   public:
-    explicit Queue(VkQueue queue, int index) : Handle(queue) { family_index_ = index; }
+    explicit Queue(VkQueue queue, uint32_t index) : Handle(queue) { family_index_ = index; }
 
     // vkQueueSubmit()
     VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
@@ -295,10 +295,10 @@ class Queue : public internal::Handle<VkQueue> {
     // vkQueueWaitIdle()
     VkResult wait();
 
-    int get_family_index() { return family_index_; }
+    uint32_t get_family_index() { return family_index_; }
 
   private:
-    int family_index_;
+    uint32_t family_index_;
 };
 
 class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
