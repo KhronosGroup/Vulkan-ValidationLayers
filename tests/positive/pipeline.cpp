@@ -6559,7 +6559,29 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     create_info.pNext = &rendering_info;
 
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.attachment = 0;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &attachment;
+    VkRenderPassCreateInfo render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, render_pass_ci);
+
+    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -6608,10 +6630,32 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.attachment = 0;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &attachment;
+    VkRenderPassCreateInfo render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, render_pass_ci);
+
     auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     // if there isn't a VkPipelineRenderingCreateInfoKHR, the driver is supposed to use safe default values
-    pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
+    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
     m_errorMonitor->VerifyNotFound();
 }
 
