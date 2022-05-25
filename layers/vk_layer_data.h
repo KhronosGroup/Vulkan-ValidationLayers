@@ -136,7 +136,7 @@ class small_vector {
     static const size_type kMaxCapacity = std::numeric_limits<size_type>::max();
     static_assert(N <= kMaxCapacity, "size must be less than size_type::max");
 
-    small_vector() : size_(0), capacity_(N) {}
+    small_vector() : size_(0), capacity_(N) { DebugUpdateWorkingStore(); }
 
     small_vector(const small_vector &other) : size_(0), capacity_(N) {
         reserve(other.size_);
@@ -154,6 +154,7 @@ class small_vector {
             large_store_ = std::move(other.large_store_);
             capacity_ = other.capacity_;
             other.capacity_ = kSmallCapacity;
+            other.DebugUpdateWorkingStore();
         } else {
             auto dest = GetWorkingStore();
             for (auto &value : other) {
@@ -164,6 +165,7 @@ class small_vector {
         }
         size_ = other.size_;
         other.size_ = 0;
+        DebugUpdateWorkingStore();
     }
 
     ~small_vector() { clear(); }
@@ -214,8 +216,10 @@ class small_vector {
                 large_store_ = std::move(other.large_store_);
                 capacity_ = other.capacity_;
                 size_ = other.size_;
+                DebugUpdateWorkingStore();
 
                 other.capacity_ = kSmallCapacity;
+                other.DebugUpdateWorkingStore();
             } else {
                 // Other is using the small_store
                 auto source = other.begin();
@@ -309,6 +313,8 @@ class small_vector {
                 working_store[i].~value_type();
             }
             large_store_ = std::move(new_store);
+            capacity_ = new_cap;
+            DebugUpdateWorkingStore();
         }
         // No shrink here.
     }
@@ -344,6 +350,7 @@ class small_vector {
         clear();
         large_store_.reset();
         capacity_ = kSmallCapacity;
+        DebugUpdateWorkingStore();
     }
 
     struct alignas(alignof(value_type)) BackingStore {
@@ -353,6 +360,13 @@ class small_vector {
     size_type capacity_;
     BackingStore small_store_[N];
     std::unique_ptr<BackingStore[]> large_store_;
+
+#ifdef NDEBUG
+    void DebugUpdateWorkingStore() {}
+#else
+    void DebugUpdateWorkingStore() { _dbg_working_store = GetWorkingStore(); }
+    value_type *_dbg_working_store;
+#endif
 };
 
 // This is a wrapper around unordered_map that optimizes for the common case
