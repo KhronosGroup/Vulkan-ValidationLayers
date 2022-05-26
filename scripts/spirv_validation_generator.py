@@ -97,10 +97,12 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         self.extensionExcludeList = []
         self.capabilityExcludeList = []
 
-        # Some SPIR-V capabilities share an enum value. Code that generates
-        # switch statements needs to know which ones so it can avoid duplicates.
+        # There are some enums that share the same value in the SPIR-V header.
+        # This array remove the duplicate to not print out, usually due to being the older value given
         self.capabilityAliasList = [
-            'FragmentBarycentricNV',
+          'ShaderViewportIndexLayerNV',
+          'ShadingRateNV',
+          'FragmentBarycentricNV',
         ]
 
         # This is a list that maps the Vulkan struct a feature field is with the internal
@@ -280,13 +282,10 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
     #
     # Creates the Enum string helpers for better error messages. Same idea of vk_enum_string_helper.h but for SPIR-V
     def enumHelper(self):
-        # There are some enums that share the same value in the SPIR-V header.
-        # This array remove the duplicate to not print out, usually due to being the older value given
-        excludeList = ['ShaderViewportIndexLayerNV', 'ShadingRateNV']
         output =  'static inline const char* string_SpvCapability(uint32_t input_value) {\n'
         output += '    switch ((spv::Capability)input_value) {\n'
         for name, enables in sorted(self.capabilities.items()):
-            if (name not in excludeList) and (name not in self.capabilityExcludeList) and (name not in self.capabilityAliasList):
+            if (name not in self.capabilityAliasList) and (name not in self.capabilityExcludeList):
                 output += '         case spv::Capability' + name + ':\n'
                 output += '            return \"' + name + '\";\n'
         output += '        default:\n'
