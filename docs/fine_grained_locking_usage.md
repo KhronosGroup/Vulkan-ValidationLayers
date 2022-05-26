@@ -7,11 +7,11 @@
 
 # Fine Grained Locking
 
-Fine grained locking is an experimental performance improvement for multithreaded workloads. It allows Vulkan calls from different threads to be validated in parallel, instead of being serialized by a global lock. Waiting on this lock causes performance problems for multi-threaded applications, and most Vulkan games are heavily multi-threaded.  This feature has been tested with 15+ released games and improves performance in almost all of them, and many improve by about 150%.
+Fine grained locking is a performance improvement for multithreaded workloads. It allows Vulkan calls from different threads to be validated in parallel, instead of being serialized by a global lock. Waiting on this lock causes performance problems for multi-threaded applications, and most Vulkan games are heavily multi-threaded.  This feature has been tested with 15+ released games and improves performance in almost all of them, and many improve by about 150%.
 
-However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock. For the first release of this feature, it is off by default and can be enabled using the instructions below. Once the new locking strategy has been proven to not cause stability problems, it will be on by default and then can be turned off for debugging.
+However, changes to locking strategy in a multi threaded program are a frequent cause of crashes, incorrect results, or deadlock. For debugging it can be disabled with the instructions below.
 
-Currently this optimization is only available for Core Validation. Best Practices, Synchronization Validation, GPU Assisted Validation and Debug Printf still always run with global locking. Support for these types of validation will be added in a future release.
+Currently this optimization is available for Core Validation, Best Practices,  GPU Assisted Validation and Debug Printf.  Synchronization Validation always runs with global locking. Support for it will be added in a future release.
 
 Thread Safety, Object Lifetime, Handle Wrapping and Stateless validation have always avoided global locking and they are thus unaffected by this feature.
 
@@ -26,7 +26,7 @@ Fine grained locking can also be enabled and configured using the [Vulkan Config
 
 ### Known Limitations
 
-Currently there is not a way to enable this setting via `VK_EXT_validation_features` or other programmatic interface. This will be addressed in a future release.
+Currently there is not a way to disable this setting via `VK_EXT_validation_features` or other programmatic interface. This will be addressed in a future release.
 
 The locking in Vulkan-ValidationLayer is not intended to provide correct results for programs that violate the thread safety guidelines described in *section 3.6 Threading Behavior* of the Vulkan specification. We will attempt to fix crash bugs in the layer resulting from insufficient external synchronization, but incorrect or inconsistent error messages will be likely. Please run Thread Safety violation to find problems like this.
 
