@@ -585,8 +585,8 @@
                     "key": "fine_grained_locking",
                     "env": "VK_LAYER_FINE_GRAINED_LOCKING",
                     "label": "Fine Grained Locking",
-                    "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This is an experimental feature which may cause stability problems or incorrect errors to be reported.",
-                    "status": "BETA",
+                    "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
+                    "status": "STABLE",
                     "type": "BOOL",
                     "default": true,
                     "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
