@@ -308,11 +308,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
         return;
     }
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
 
     if (!AreRequestedExtensionsEnabled()) {
         GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
@@ -333,17 +329,12 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     };
 
     VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
-    VkPipelineLayoutObj pipeline_layout_is(m_device, {&ds.layout_, &ds2.layout_}, {},
-                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     m_commandBuffer->begin();
-    // First bind using a layout created with independent sets, which should not trigger any error
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_is.handle(), 0,
-                              static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyNotFound();
 
-    // Now bind with a layout that was _not_ created with independent sets, which should trigger 06564
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-layout-06564");
+    // Now bind with a layout that was _not_ created with independent sets, which should trigger 06754
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
