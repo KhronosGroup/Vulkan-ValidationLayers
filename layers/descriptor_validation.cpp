@@ -290,15 +290,12 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                  "] (%s) that does not exist, and %s is not enabled.",
                                  set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str(),
                                  VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-            } else {
-                const auto layout_flags = pipeline_layout->CreateFlags();
-                if ((layout_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) == 0) {
-                    skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-layout-06564",
-                                     "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
-                                     "] (%s) that does not exist, and the layout was not created "
-                                     "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
-                                     set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
-                }
+            } else if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754",
+                                 "vkCmdBindDescriptorSets(): Attempt to bind pDescriptorSets[%" PRIu32
+                                 "] (%s) that does not exist, and the layout was not created "
+                                 "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
+                                 set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
             }
         }
     }
