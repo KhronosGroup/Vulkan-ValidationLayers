@@ -3599,8 +3599,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      "] is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
                                      "shader includes InputAttachment capability.",
                                      pipe_index);
-                        break;
-                    }
+                    break;
                 }
             }
         }
