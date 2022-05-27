@@ -67,11 +67,7 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
         return;
     }
 
-    SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
 
     if (!AreRequestedExtensionsEnabled()) {
         GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
@@ -99,7 +95,7 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     pipeline_layout_ci.pushConstantRangeCount = 0;
     pipeline_layout_ci.pPushConstantRanges = nullptr;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-flags-06562");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753");
     vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci, dsls);
     m_errorMonitor->VerifyFound();
 }

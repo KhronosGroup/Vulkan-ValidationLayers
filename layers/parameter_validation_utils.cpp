@@ -1632,16 +1632,13 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
                          pCreateInfo->setLayoutCount, device_limits.maxBoundDescriptorSets);
     }
 
-    const bool has_independent_sets = (pCreateInfo->flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0;
-    const bool graphics_pipeline_library = IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library);
-    const char *const valid_dsl_vuid = (!graphics_pipeline_library)
-                                           ? "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-06561"
-                                           : ((!has_independent_sets) ? "VUID-VkPipelineLayoutCreateInfo-flags-06562" : nullptr);
-    if (valid_dsl_vuid) {
+    if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             if (!pCreateInfo->pSetLayouts[i]) {
-                skip |=
-                    LogError(device, valid_dsl_vuid, "vkCreatePipelineLayout(): pSetLayouts[%" PRIu32 "] is VK_NULL_HANDLE.", i);
+                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-06561",
+                                 "vkCreatePipelineLayout(): pSetLayouts[%" PRIu32
+                                 "] is VK_NULL_HANDLE, but VK_EXT_graphics_pipeline_library is not enabled.",
+                                 i);
             }
         }
     }

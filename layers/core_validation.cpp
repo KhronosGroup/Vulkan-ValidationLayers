@@ -7589,6 +7589,17 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                              phys_dev_ext_props.fragment_density_map2_props.maxDescriptorSetSubsampledSamplers);
         }
     }
+
+    if (!enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+        for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
+            if (!pCreateInfo->pSetLayouts[i]) {
+                skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-graphicsPipelineLibrary-06753",
+                                 "vkCreatePipelineLayout(): pSetLayouts[%" PRIu32
+                                 "] is VK_NULL_HANDLE, but graphicsPipelineLibrary is not enabled.",
+                                 i);
+            }
+        }
+    }
     return skip;
 }
 
