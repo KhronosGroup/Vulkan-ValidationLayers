@@ -4279,3 +4279,131 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    const auto &queues = m_device->dma_queues();
+    VkQueue q0 = VK_NULL_HANDLE;
+    VkQueue q1 = VK_NULL_HANDLE;
+    uint32_t q_fam = ~0U;
+
+    const uint32_t q_count = static_cast<uint32_t>(queues.size());
+    for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
+        const auto *q0_entry = queues[q0_index];
+        q0 = q0_entry->handle();
+        q_fam = q0_entry->get_family_index();
+        for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
+            const auto *q1_entry = queues[q1_index];
+            if (q_fam == q1_entry->get_family_index()) {
+                q1 = q1_entry->handle();
+                break;
+            }
+        }
+        if (q1 != VK_NULL_HANDLE) {
+            break;
+        }
+    }
+    if (q1 == VK_NULL_HANDLE) {
+        printf("%s Test requires at least 2 TRANSFER capable queues in the same queue_family. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferObj buffer_a;
+    VkBufferObj buffer_b;
+    VkBufferObj buffer_c;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferCopy region = {0, 0, 256};
+
+    m_errorMonitor->ExpectSuccess();
+    VkCommandPoolObj pool(m_device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj cba(m_device, &pool);
+    VkCommandBufferObj cbb(m_device, &pool);
+
+    // Command Buffer A reads froms buffer A and writes to buffer B
+    cba.begin();
+    const VkCommandBuffer h_cba = cba.handle();
+    vk::CmdCopyBuffer(h_cba, buffer_a.handle(), buffer_b.handle(), 1, &region);
+    cba.end();
+
+    // Command Buffer B reads froms buffer C and writes to buffer A, but has a barrier to protect the write to A when
+    // executed on the same queue, given that commands in "queue submission order" are within the first scope of the barrier.
+    const VkCommandBuffer h_cbb = cbb.handle();
+    cbb.begin();
+
+    // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
+    // correct semaphore operations between queues.
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
+    buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_barrier.buffer = buffer_a.handle();
+    buffer_barrier.offset = 0;
+    buffer_barrier.size = 256;
+    vk::CmdPipelineBarrier(h_cbb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier,
+                           0, nullptr);
+    vk::CmdCopyBuffer(h_cbb, buffer_c.handle(), buffer_a.handle(), 1, &region);
+    cbb.end();
+
+    // Submit A and B on the same queue, to assure us the barrier *would* be sufficient given QSO
+    // This is included in a "Sucess" section, just to verify CBA and CBB are set up correctly.
+    auto submit1 = lvl_init_struct<VkSubmitInfo>();
+    submit1.commandBufferCount = 1;
+    submit1.pCommandBuffers = &h_cba;
+    vk::QueueSubmit(q0, 1, &submit1, VK_NULL_HANDLE);
+    submit1.pCommandBuffers = &h_cbb;
+    vk::QueueSubmit(q0, 1, &submit1, VK_NULL_HANDLE);
+    m_device->wait();  // DeviceWaitIdle, clearing the field for the next subcase
+    m_errorMonitor->VerifyNotFound();
+
+    // Submit A and B on the different queues. Since no semaphore is used between the queues, CB B hazards asynchronously with,
+    // CB A with A being read and written on independent queues.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
+    submit1.pCommandBuffers = &h_cba;
+    vk::QueueSubmit(q0, 1, &submit1, VK_NULL_HANDLE);
+    submit1.pCommandBuffers = &h_cbb;
+    vk::QueueSubmit(q1, 1, &submit1, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Set up the semaphore for the next two cases
+    m_errorMonitor->ExpectSuccess();
+    auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    vk_testing::Semaphore semaphore;
+    semaphore.init(*m_device, semaphore_ci);
+    VkSemaphore h_semaphore = semaphore.handle();
+
+    VkSubmitInfo submit_signal = submit1;
+    submit_signal.pCommandBuffers = &h_cba;
+    submit_signal.signalSemaphoreCount = 1;
+    submit_signal.pSignalSemaphores = &h_semaphore;
+
+    VkSubmitInfo submit_wait = submit1;
+    VkPipelineStageFlags wait_mask = 0U;  // for the next case, there is no mask to chain the semaphore to the barrier
+    submit_wait.pCommandBuffers = &h_cbb;
+    submit_wait.pWaitDstStageMask = &wait_mask;
+    submit_wait.waitSemaphoreCount = 1;
+    submit_wait.pWaitSemaphores = &h_semaphore;
+
+    m_device->wait();
+    m_errorMonitor->VerifyNotFound();
+
+    // Submit A and B on the different queues, with an ineffectual semaphore.  The wait mask is empty, thus nothing in CB B is in
+    // the second excution scope of the waited signal.
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    submit1.pCommandBuffers = &h_cba;
+    vk::QueueSubmit(q0, 1, &submit_signal, VK_NULL_HANDLE);
+    submit1.pCommandBuffers = &h_cbb;
+    vk::QueueSubmit(q1, 1, &submit_wait, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // The since second submit failed, it was skipped. So we can try again, without having to WaitDeviceIdle
+    m_errorMonitor->ExpectSuccess();
+    // Include transfers in the second execution scope of the waited signal, s.t. the PipelineBarrier in CB B can can with it.
+    wait_mask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    vk::QueueSubmit(q1, 1, &submit_wait, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+}

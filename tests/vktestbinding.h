@@ -295,7 +295,7 @@ class Queue : public internal::Handle<VkQueue> {
     // vkQueueWaitIdle()
     VkResult wait();
 
-    uint32_t get_family_index() { return family_index_; }
+    uint32_t get_family_index() const { return family_index_; }
 
   private:
     uint32_t family_index_;
