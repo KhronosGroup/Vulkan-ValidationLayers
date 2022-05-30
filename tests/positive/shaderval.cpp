@@ -2239,7 +2239,14 @@ TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
     TEST_DESCRIPTION("Write built-in PointSize within a struct");
     m_errorMonitor->ExpectSuccess();
 
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const std::string vs_src = R"asm(

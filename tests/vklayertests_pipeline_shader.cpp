@@ -4396,6 +4396,8 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
 TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
 
+    SetTargetApiVersion(VK_API_VERSION_1_0);
+
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4412,7 +4414,8 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "not consumed by fragment shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not consumed by fragment shader");
+
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
@@ -5014,7 +5017,10 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "location 0.0 which is not written by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+        std::vector<std::string>{
+            "vertex shader writes to output location 1.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors.",
+            "fragment shader consumes input location 0.0 which is not written by vertex shader"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
@@ -5048,7 +5054,10 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "location 0.1 which is not written by vertex shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, 
+        std::vector<std::string>{
+            "location 0.1 which is not written by vertex shader",
+            "vertex shader writes to output location 0.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors."});
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecision) {
@@ -5766,7 +5775,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
         uint32_t location = 0;
         if (overflow == 2) {
             vsSourceStr += "layout(location=" + std::to_string(numVec4 + 1) + ") out vec4 vn;\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numVec4; i++) {
                 vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec4 v" + std::to_string(i) + ";\n";
                 location += 1;
@@ -5908,7 +5917,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         uint32_t inLocation = 0;
         if (overflow == 2) {
             tcsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numInVec4; i++) {
                 tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
@@ -5931,7 +5940,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         uint32_t outLocation = 0;
         if (overflow == 2) {
             tcsSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut[3];\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numOutVec4; i++) {
                 tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out[3];\n";
                 outLocation += 1;
@@ -6029,7 +6038,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         uint32_t inLocation = 0;
         if (overflow == 2) {
             tesSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numInVec4; i++) {
                 tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
@@ -6052,7 +6061,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         uint32_t outLocation = 0;
         if (overflow == 2) {
             tesSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut;\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numOutVec4; i++) {
                 tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
                 outLocation += 1;
@@ -6150,7 +6159,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         uint32_t inLocation = 0;
         if (overflow == 2) {
             gsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numInVec4; i++) {
                 gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
                 inLocation += 1;
@@ -6173,7 +6182,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         uint32_t outLocation = 0;
         if (overflow == 2) {
             gsSourceStr += "layout(location=" + std::to_string(numOutVec4) + ") out vec4 vnOut;\n";
-        } else {
+        } else if (overflow == 1) {
             for (uint32_t i = 0; i < numOutVec4; i++) {
                 gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
                 outLocation += 1;
