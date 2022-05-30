@@ -1522,11 +1522,11 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageView3D) {
 
 TEST_F(VkLayerTest, FramebufferAttachmentImageInfoPNext) {
     TEST_DESCRIPTION("Begin render pass with missing framebuffer attachment");
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AddRequiredDeviceExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
-        printf("%s test requires VK_KHR_imageless_framebuffer, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());

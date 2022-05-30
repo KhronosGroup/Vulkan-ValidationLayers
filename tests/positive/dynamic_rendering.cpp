@@ -47,8 +47,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -130,8 +130,8 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -258,8 +258,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -333,8 +333,8 @@ TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencil
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
@@ -408,8 +408,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
@@ -474,8 +474,8 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {

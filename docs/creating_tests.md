@@ -57,8 +57,8 @@ AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
 ASSERT_NO_FATAL_FAILURE(InitFramework());
 
 // Check that all extensions and their dependencies were enabled successfully
-if (!AreRequestedExtensionsEnabled()) {
-    GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+if (!AreRequiredExtensionsEnabled()) {
+    GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
 }
 
 // Finish initializing state, including creating the VkDevice (whith extensions added) that will be used for the test
@@ -76,13 +76,18 @@ The pattern breaks down to
 
 Sometimes it is worth checking for an extension, but still running the parts of a test if the extension is not supported
 
-
 ```cpp
-AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 ASSERT_NO_FATAL_FAILURE(Init());
 
-// need to be called after InitFramework()
-const bool copy_commands2 = CanEnableDeviceExtension(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+// need to wait until after phyiscal device creation to know if it was enabled
+const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+
+// Check required (not optional) extensions are still supported
+if (!AreRequiredExtensionsEnabled()) {
+    GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+}
 
 // If the optional extension has a command, it will need a vkGetDeviceProcAddr call
 PFN_vkCmdCopyBuffer2KHR vkCmdCopyBuffer2KHR = nullptr;

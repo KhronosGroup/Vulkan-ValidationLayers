@@ -2023,8 +2023,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -2193,8 +2193,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -2364,8 +2364,8 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
@@ -2629,8 +2629,8 @@ TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     m_errorMonitor->ExpectSuccess();
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
@@ -9043,24 +9043,18 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (AddRequiredDeviceExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        AddRequiredDeviceExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
-        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
@@ -12196,8 +12190,8 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -12292,8 +12286,8 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -13336,13 +13330,10 @@ TEST_F(VkLayerTest, ColorBlendAdvanced) {
 TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     TEST_DESCRIPTION("Validate using VkPhysicalDeviceSampleLocationsPropertiesEXT");
 
-    if (!AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension(s); skipped.\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -13525,8 +13516,8 @@ TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
@@ -14175,14 +14166,11 @@ TEST_F(VkLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstantSet) {
 TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT but it doesn't enable geometryStreams.");
 
-    if (!AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
-        printf("%s Required instance extension(s) not supported.\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
@@ -14209,14 +14197,11 @@ TEST_F(VkLayerTest, UsingRasterizationStateStreamExtWithoutEnabled) {
 TEST_F(VkLayerTest, TestPipelineRasterizationStateStreamCreateInfoEXT) {
     TEST_DESCRIPTION("Test using TestRasterizationStateStreamCreateInfoEXT with invalid rasterizationStream.");
 
-    if (!AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
-        printf("%s Instance extension(s) not supported.\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features =
@@ -14474,8 +14459,8 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
 
     AddRequiredExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     m_device_extension_names.push_back(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -14516,7 +14501,7 @@ TEST_F(VkLayerTest, TestShaderZeroInitializeWorkgroupMemory) {
 
     AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool zero_initialize_workgroup_memory = AreRequestedExtensionsEnabled();
+    bool zero_initialize_workgroup_memory = AreRequiredExtensionsEnabled();
 
     auto zero_initialize_work_group_memory_features = LvlInitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&zero_initialize_work_group_memory_features);
@@ -14564,8 +14549,8 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     // Test currently crashes with valid SPIR-V
@@ -15126,25 +15111,18 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
     TEST_DESCRIPTION("Validate ray tracing pipeline flags match library flags.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (AddRequiredDeviceExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-        AddRequiredDeviceExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
-        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
-        AddRequiredDeviceExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-        AddRequiredDeviceExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
@@ -15335,8 +15313,8 @@ TEST_F(VkLayerTest, CreatePipelineLayoutWithInvalidSetLayoutFlags) {
 
     AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -15479,13 +15457,10 @@ TEST_F(VkLayerTest, TestUsingDisabledMultiviewFeatures) {
 TEST_F(VkLayerTest, ComputeImageLayout) {
     TEST_DESCRIPTION("Attempt to use an image with an invalid layout in a compute shader");
 
-    if (!AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        printf("%s Required instance extensions not available\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto vkCmdDispatchBaseKHR =
@@ -15650,8 +15625,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessWith
 
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     rasterization_order_features.rasterizationOrderColorAttachmentAccess = 0;
     rasterization_order_features.rasterizationOrderDepthAttachmentAccess = 0;
@@ -15753,8 +15728,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessNoSu
 
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -15899,8 +15874,8 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -16023,8 +15998,8 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingViewMaskParameter) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -16218,8 +16193,8 @@ TEST_F(VkLayerTest, DynamicSampleLocations) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -16317,8 +16292,8 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryAndDiscardEnabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
@@ -16374,8 +16349,8 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryStreams) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
     auto primitives_generated_features =
@@ -16435,8 +16410,8 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateOps) {
     // Enable KHR_fragment_shading_rate and all of its required extensions
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -16542,8 +16517,8 @@ TEST_F(VkLayerTest, TestSubgroupUniformControlFlow) {
 
     AddRequiredExtensions(VK_KHR_SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -16634,8 +16609,8 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
@@ -16761,8 +16736,8 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
@@ -16836,8 +16811,8 @@ TEST_F(VkLayerTest, InvalidRayTracingPipelineFlags) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
@@ -16946,8 +16921,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRendering) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -17007,8 +16982,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();

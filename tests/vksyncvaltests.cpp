@@ -3556,8 +3556,8 @@ TEST_F(VkLayerTest, CmdWaitEvents2KHRUsedButSynchronizaion2Disabled) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     InitState();
 
@@ -3589,8 +3589,8 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3677,14 +3677,14 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
 TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     TEST_DESCRIPTION("Verify unused descriptors are ignored and don't crash syncval if they've been destroyed.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredInstanceExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();

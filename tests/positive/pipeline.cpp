@@ -2693,7 +2693,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
-    if (!AreRequestedExtensionsEnabled()) {
+    if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME << " not supported";
     }
 
@@ -6081,8 +6081,8 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
 
     AddRequiredExtensions(VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features =
@@ -6290,8 +6290,8 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (!extended_dynamic_state_features.extendedDynamicState) {
@@ -6363,8 +6363,8 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
@@ -6513,8 +6513,8 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -6593,8 +6593,8 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -6671,8 +6671,8 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
 
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (!rasterization_order_features.rasterizationOrderColorAttachmentAccess &&
@@ -7035,8 +7035,8 @@ TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
@@ -7120,8 +7120,8 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
@@ -7260,8 +7260,8 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
@@ -7390,7 +7390,7 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AreRequestedExtensionsEnabled()) {
+    if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME << " not supported";
     }
 

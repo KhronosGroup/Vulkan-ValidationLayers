@@ -228,13 +228,12 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
 TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
     TEST_DESCRIPTION("Ensure affected API calls can be made with surfacless query extension");
 
-    if (!AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME)) {
-        printf("%s Did not find %s or its dependent extensions; skipped.\n", kSkipPrefix,
-               VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
-        return;
-    }
-
+    AddRequiredExtensions(VK_GOOGLE_SURFACELESS_QUERY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     if (IsPlatform(kMockICD)) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
@@ -795,8 +794,8 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
         return;
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";

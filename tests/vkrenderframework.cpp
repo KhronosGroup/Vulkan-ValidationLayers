@@ -545,18 +545,30 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         driver_printed = true;
     }
 
-    for (const auto &ext : m_requested_extensions) {
-        AddRequiredDeviceExtensions(ext);
+    for (const auto &ext : m_required_extensions) {
+        AddRequestedDeviceExtensions(ext);
+    }
+    for (const auto &ext : m_optional_extensions) {
+        AddRequestedDeviceExtensions(ext);
     }
 }
 
-bool VkRenderFramework::AddRequiredExtensions(const char *ext_name) {
-    m_requested_extensions.push_back(ext_name);
-    return AddRequiredInstanceExtensions(ext_name);
+void VkRenderFramework::AddRequiredExtensions(const char *ext_name) {
+    m_required_extensions.push_back(ext_name);
+    AddRequestedInstanceExtensions(ext_name);
 }
 
-bool VkRenderFramework::AreRequestedExtensionsEnabled() const {
-    for (const auto &ext : m_requested_extensions) {
+void VkRenderFramework::AddOptionalExtensions(const char *ext_name) {
+    m_optional_extensions.push_back(ext_name);
+    AddRequestedInstanceExtensions(ext_name);
+}
+
+bool VkRenderFramework::IsExtensionsEnabled(const char *ext_name) const {
+    return (CanEnableDeviceExtension(ext_name) || CanEnableInstanceExtension(ext_name));
+}
+
+bool VkRenderFramework::AreRequiredExtensionsEnabled() const {
+    for (const auto &ext : m_required_extensions) {
         // `ext` may refer to an instance or device extension
         if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
             return false;
@@ -565,10 +577,10 @@ bool VkRenderFramework::AreRequestedExtensionsEnabled() const {
     return true;
 }
 
-std::string VkRenderFramework::RequestedExtensionsNotSupported() const {
+std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
     std::stringstream ss;
     bool first = true;
-    for (const auto &ext : m_requested_extensions) {
+    for (const auto &ext : m_required_extensions) {
         if (!CanEnableDeviceExtension(ext) && !CanEnableInstanceExtension(ext)) {
             if (first) {
                 first = false;
@@ -581,7 +593,7 @@ std::string VkRenderFramework::RequestedExtensionsNotSupported() const {
     return ss.str();
 }
 
-bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
+bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     if (CanEnableInstanceExtension(ext_name)) {
         return true;
     }
@@ -601,7 +613,7 @@ bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
     if (is_instance_ext) {
         const auto &info = InstanceExtensions::get_info(ext_name);
         for (const auto &req : info.requirements) {
-            if (!AddRequiredInstanceExtensions(req.name)) {
+            if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
             }
         }
@@ -609,7 +621,7 @@ bool VkRenderFramework::AddRequiredInstanceExtensions(const char *ext_name) {
     } else {
         const auto &info = DeviceExtensions::get_info(ext_name);
         for (const auto &req : info.requirements) {
-            if (!AddRequiredInstanceExtensions(req.name)) {
+            if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
             }
         }
@@ -623,7 +635,7 @@ bool VkRenderFramework::CanEnableInstanceExtension(const std::string &inst_ext_n
                        [&inst_ext_name](const char *ext) { return inst_ext_name == ext; });
 }
 
-bool VkRenderFramework::AddRequiredDeviceExtensions(const char *dev_ext_name) {
+bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     // Check if the extension has already been added
     if (CanEnableDeviceExtension(dev_ext_name)) {
         return true;
@@ -643,7 +655,7 @@ bool VkRenderFramework::AddRequiredDeviceExtensions(const char *dev_ext_name) {
 
     const auto &info = DeviceExtensions::get_info(dev_ext_name);
     for (const auto &req : info.requirements) {
-        if (!AddRequiredDeviceExtensions(req.name)) {
+        if (!AddRequestedDeviceExtensions(req.name)) {
             return false;
         }
     }
