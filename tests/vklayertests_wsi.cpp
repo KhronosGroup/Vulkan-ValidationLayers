@@ -379,12 +379,11 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
         return;
     }
 
-    if (!AddRequiredInstanceExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-        return;
-    }
-
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
@@ -897,6 +896,8 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
         return;
     }
 
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
@@ -904,10 +905,8 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
         return;
     }
 
-    if (!AddRequiredDeviceExtensions(VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME) ||
-        !AddRequiredDeviceExtensions(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME)) {
-        printf("%s Required extensions not supported, skipping tests\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2512,18 +2511,16 @@ TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
         return;
     }
 
-    if (!AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-        printf("%s get surface capabilities2 extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
-    // keep going even control extension is not supported.
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
 
     auto image_compression_control = LvlInitStruct<VkPhysicalDeviceImageCompressionControlFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
 
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     if (image_compression_control.imageCompressionControl) {
         // disable imageCompressionControl feature;

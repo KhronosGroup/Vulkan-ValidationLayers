@@ -635,11 +635,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     TEST_DESCRIPTION("Use a 1D image view for an imageless framebuffer with base mip level > 0.");
     m_errorMonitor->ExpectSuccess();
 
-    if (!AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
-        printf("%s Instance extensions for %s not supported\n", kSkipPrefix, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
-        return;
-    }
-
+    AddRequiredExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     auto pd_imageless_fb_features = LvlInitStruct<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>();
     pd_imageless_fb_features.imagelessFramebuffer = VK_TRUE;
     auto pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pd_imageless_fb_features);
@@ -648,8 +644,8 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
         return;
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (pd_imageless_fb_features.imagelessFramebuffer != VK_TRUE) {
@@ -1009,8 +1005,8 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    if (!AreRequestedExtensionsEnabled()) {
-        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
