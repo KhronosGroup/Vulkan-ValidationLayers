@@ -319,13 +319,17 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSimplePositive) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts the relaxed type matching rules set out in 14.1.3: fundamental type must match, and "
-        "producer side must have at least as many components");
+        "Test that pipeline validation accepts the relaxed type matching rules set out in VK_KHR_maintenance4 (default in Vulkan 1.3) device extension:"
+        "fundamental type must match, and producer side must have at least as many components");
     m_errorMonitor->ExpectSuccess();
 
-    // VK 1.0.8 Specification, 14.1.3 "Additionally,..." block
-
+    SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(
