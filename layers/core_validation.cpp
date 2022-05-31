@@ -16500,6 +16500,31 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
     return skip;
 }
 
+bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const &image_state,
+                                                               VkImageSubresource const &subresource, uint32_t image_idx,
+                                                               uint32_t bind_idx) const {
+    bool skip = ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask,
+                                        "vkQueueSparseBind()", "VUID-VkSparseImageMemoryBind-subresource-01106");
+
+    if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
+        skip |=
+            LogError(image_state.Handle(), "VUID-VkSparseImageMemoryBind-subresource-01106",
+                     "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].subresource.mipLevel (%" PRIu32
+                     ") is not less than mipLevels (%" PRIu32 ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
+                     bind_idx, image_idx, subresource.mipLevel, image_state.createInfo.mipLevels, bind_idx, image_idx);
+    }
+
+    if (subresource.arrayLayer >= image_state.createInfo.arrayLayers) {
+        skip |=
+            LogError(image_state.Handle(), "VUID-VkSparseImageMemoryBind-subresource-01106",
+                     "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].subresource.arrayLayer (%" PRIu32
+                     ") is not less than arrayLayers (%" PRIu32 ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
+                     bind_idx, image_idx, subresource.arrayLayer, image_state.createInfo.arrayLayers, bind_idx, image_idx);
+    }
+
+    return skip;
+}
+
 // This will only be called after we are sure the image was created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT
 bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, VkSparseImageMemoryBind const &bind,
                                                uint32_t image_idx, uint32_t bind_idx) const {
@@ -16518,6 +16543,8 @@ bool CoreChecks::ValidateSparseImageMemoryBind(IMAGE_STATE const *image_state, V
     }
 
     if (image_state) {
+        skip |= ValidateImageSubresourceSparseImageMemoryBind(*image_state, bind.subresource, image_idx, bind_idx);
+
         for (auto const &requirements : image_state->sparse_requirements) {
             VkExtent3D const &granularity = requirements.formatProperties.imageGranularity;
             if (SafeModulo(bind.offset.x, granularity.width) != 0) {
@@ -16784,26 +16811,6 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                     for (uint32_t image_bind_idx = 0; image_bind_idx < image_bind.bindCount; ++image_bind_idx) {
                         const VkSparseImageMemoryBind &memory_bind = image_bind.pBinds[image_bind_idx];
                         skip |= ValidateSparseImageMemoryBind(image_state.get(), memory_bind, image_idx, image_bind_idx);
-
-                        if (image_state) {
-                            if (memory_bind.subresource.mipLevel >= image_state->createInfo.mipLevels) {
-                                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-subresource-01722",
-                                         "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32
-                                         "].subresource.mipLevel (%" PRIu32 ") is not less than mipLevels (%" PRIu32
-                                         ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
-                                         bind_idx, image_idx, memory_bind.subresource.mipLevel, image_state->createInfo.mipLevels,
-                                         bind_idx, image_idx);
-                            }
-                            if (memory_bind.subresource.arrayLayer >= image_state->createInfo.arrayLayers) {
-                                skip |= LogError(image_bind.image, "VUID-VkSparseImageMemoryBindInfo-subresource-01723",
-                                         "vkQueueBindSparse(): pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32
-                                         "].subresource.arrayLayer (%" PRIu32 ") is not less than arrayLayers (%" PRIu32
-                                         ") of image pBindInfo[%" PRIu32 "].pImageBinds[%" PRIu32 "].image.",
-                                         bind_idx, image_idx, memory_bind.subresource.arrayLayer,
-                                         image_state->createInfo.arrayLayers,
-                                         bind_idx, image_idx);
-                            }
-                        }
                     }
                 }
             }

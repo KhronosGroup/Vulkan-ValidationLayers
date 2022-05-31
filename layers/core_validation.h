@@ -1464,6 +1464,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetEventStatus(VkDevice device, VkEvent event) const override;
     bool ValidateSparseMemoryBind(const VkSparseMemoryBind& bind, VkDeviceSize resource_size, const char* func_name,
                                   const char* parameter_name) const;
+    bool ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const& image_state, VkImageSubresource const& subresource,
+                                                       uint32_t image_idx, uint32_t bind_idx) const;
     bool ValidateSparseImageMemoryBind(IMAGE_STATE const* image_state, VkSparseImageMemoryBind const& bind, uint32_t image_idx,
                                        uint32_t bind_idx) const;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
