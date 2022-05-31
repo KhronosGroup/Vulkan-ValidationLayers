@@ -2361,6 +2361,56 @@ bool CoreChecks::ValidateDecorations(SHADER_MODULE_STATE const *module_state) co
     return skip;
 }
 
+bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage) const {
+    bool skip = false;
+    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+        uint32_t total_shared_size = 0;
+        for (auto insn : module_state.static_data_.variable_inst) {
+            const uint32_t storage_class = insn.word(3);
+            if (storage_class == spv::StorageClassWorkgroup) {  // StorageClass Workgroup is shared memory
+                const uint32_t result_type_id = insn.word(1);
+                const auto result_type = module_state.get_def(result_type_id);
+                const auto type = module_state.get_def(result_type.word(3));
+                total_shared_size += module_state.GetTypeBytesSize(type);
+            }
+        }
+        if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
+            skip |= LogError(
+                device, "VUID-RuntimeSpirv-Workgroup-06530",
+                "Shader uses %" PRIu32
+                " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
+                total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) const {
+    bool skip = false;
+
+    for (auto insn : module_state.static_data_.variable_inst) {
+        const uint32_t storage_class = insn.word(3);
+
+        if (storage_class == spv::StorageClassWorkgroup) {
+            // If Workgroup variable is initalized, make sure the feature is enabled
+            if (insn.len() > 4 &&
+                !enabled_features.zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)
+                                       ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
+                                       : "VUID-RuntimeSpirv-OpVariable-06373";
+                skip |= LogError(
+                    device, vuid,
+                    "vkCreateShaderModule(): "
+                    "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is not enabled, "
+                    "but shader contains an OpVariable with Workgroup Storage Class with an Initializer operand.\n%s",
+                    module_state.DescribeInstruction(insn).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module_state) const {
     bool skip = false;
 
@@ -2402,31 +2452,6 @@ bool CoreChecks::ValidateTransformFeedback(SHADER_MODULE_STATE const *module_sta
             device, "VUID-RuntimeSpirv-transformFeedbackStreamsLinesTriangles-06311",
             "vkCreateGraphicsPipelines(): shader emits to %" PRIu32 " vertex streams and VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackStreamsLinesTriangles is VK_FALSE, but execution mode is not OutputPoints.",
                      emitted_streams_size);
-    }
-
-    return skip;
-}
-
-bool CoreChecks::ValidateWorkgroupInitialization(SHADER_MODULE_STATE const *src, spirv_inst_iter &insn) const {
-    bool skip = false;
-
-    const uint32_t opcode = insn.opcode();
-    if (opcode == spv::OpVariable) {
-        uint32_t storage_class = insn.word(3);
-        if (storage_class == spv::StorageClassWorkgroup) {
-            if (insn.len() > 4 &&
-                !enabled_features.zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
-                const char *vuid = IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)
-                                       ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
-                                       : "VUID-RuntimeSpirv-OpVariable-06373";
-                skip |= LogError(
-                    device, vuid,
-                    "vkCreateShaderModule(): "
-                    "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is not enabled, "
-                    "but shader contains an OpVariable with Workgroup Storage Class with an Initializer operand.\n%s",
-                    src->DescribeInstruction(insn).c_str());
-            }
-        }
     }
 
     return skip;
@@ -2758,15 +2783,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
     // The following tries to limit the number of passes through the shader module. The validation passes in here are "stateless"
     // and mainly only checking the instruction in detail for a single operation
-    uint32_t total_shared_size = 0;
     for (auto insn : *module_state) {
-        skip |= ValidateWorkgroupInitialization(module_state, insn);
         skip |= ValidateTexelOffsetLimits(module_state, insn);
         skip |= ValidateShaderCapabilitiesAndExtensions(insn);
         skip |= ValidateShaderClock(module_state, insn);
         skip |= ValidateShaderStageGroupNonUniform(module_state, pStage->stage, insn);
         skip |= ValidateMemoryScope(module_state, insn);
-        total_shared_size += module_state->CalcComputeSharedMemory(pStage->stage, insn);
 
         // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
         // disabled if VK_KHR_format_feature_flags2 is supported.
@@ -2781,13 +2803,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         }
     }
 
-    if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
-        skip |=
-            LogError(device, "VUID-RuntimeSpirv-Workgroup-06530",
-                     "Shader uses %" PRIu32
-                     " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
-                     total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
-    }
 
     skip |= ValidateTransformFeedback(module_state);
     skip |= ValidateShaderStageWritableOrAtomicDescriptor(pStage->stage, stage_state.has_writable_descriptor,
@@ -2798,6 +2813,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateExecutionModes(module_state, entrypoint, pStage->stage, pipeline);
     skip |= ValidateSpecializations(pStage);
     skip |= ValidateDecorations(module_state);
+    skip |= ValidateComputeSharedMemory(*module_state, pStage->stage);
+    skip |= ValidateVariables(*module_state);
     const auto *raster_state = pipeline->RasterizationState();
     if (check_point_size && raster_state && !raster_state->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module_state, entrypoint, pStage->stage);
