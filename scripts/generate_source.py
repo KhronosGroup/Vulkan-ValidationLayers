@@ -102,7 +102,7 @@ def main(argv):
 
             data["layer"]["api_version"] = args.generated_version
 
-            with open(json_file, 'w') as f:
+            with open(json_file, mode='w', encoding='utf-8', newline='\n') as f:
                 f.write(json.dumps(data, indent=4))
 
     # get directory where generators will run

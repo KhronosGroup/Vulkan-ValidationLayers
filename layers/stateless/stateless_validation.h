@@ -669,9 +669,10 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool ValidateRangedEnum(const char *apiName, const ParameterName &parameterName, const char *enumName, const T &valid_values,
-                            typename T::value_type value, const char *vuid) const {
+    bool ValidateRangedEnum(const char *apiName, const ParameterName &parameterName, const char *enumName, T value,
+                            const char *vuid) const {
         bool skip = false;
+        const auto valid_values = ValidParamValues<T>();
 
         if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
             skip |=
@@ -707,9 +708,10 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool ValidateRangedEnumArray(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
-                                 const char *enumName, const T &valid_values, uint32_t count, const typename T::value_type *array,
-                                 bool countRequired, bool arrayRequired) const {
+                                 const char *enumName, uint32_t count, const T *array, bool countRequired,
+                                 bool arrayRequired) const {
         bool skip_call = false;
+        const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
             skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, kVUIDUndefined,
@@ -730,9 +732,10 @@ class StatelessValidation : public ValidationObject {
 
     template <typename T>
     bool ValidateRangedEnumArray(const char *apiName, const char *vuid, const ParameterName &countName,
-                                 const ParameterName &arrayName, const char *enumName, const T &valid_values, uint32_t count,
-                                 const typename T::value_type *array, bool countRequired, bool arrayRequired) const {
+                                 const ParameterName &arrayName, const char *enumName, uint32_t count, const T *array,
+                                 bool countRequired, bool arrayRequired) const {
         bool skip_call = false;
+        const auto valid_values = ValidParamValues<T>();
 
         if ((count == 0) || (array == nullptr)) {
             skip_call |= ValidateArray(apiName, countName, arrayName, count, &array, countRequired, arrayRequired, vuid, vuid);

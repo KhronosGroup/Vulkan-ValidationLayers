@@ -6166,6 +6166,10 @@ class ValidationObject {
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
         };
+
+        template <typename T>
+        std::vector<T> ValidParamValues() const;
 };
 
 extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
+#include "valid_param_values.h"

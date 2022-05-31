@@ -2829,15 +2829,14 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
 
         const auto combiner_ops = fragment_shading_rate_state->combinerOps;
         if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
-            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
-                          combiner_ops[0]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
+            const auto enums = ValidParamValues<VkFragmentShadingRateCombinerOpKHR>();
+            if (std::find(enums.begin(), enums.end(), combiner_ops[0]) == enums.end()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567",
                                  "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
                                  "], combinerOp[0] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
                                  pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[0]));
             }
-            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
-                          combiner_ops[1]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
+            if (std::find(enums.begin(), enums.end(), combiner_ops[1]) == enums.end()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568",
                                  "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
                                  "], combinerOp[1] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
