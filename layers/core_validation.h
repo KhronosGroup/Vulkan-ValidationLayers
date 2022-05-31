@@ -601,7 +601,6 @@ class CoreChecks : public ValidationStateTracker {
                                           spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(SHADER_MODULE_STATE const* module_state, spirv_inst_iter& insn) const;
     bool ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const;
-    bool ValidateWorkgroupInitialization(SHADER_MODULE_STATE const* src, spirv_inst_iter& insn) const;
     bool ValidateShaderStageWritableOrAtomicDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor,
                                                        bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* module_state,
@@ -617,6 +616,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderResolveQCOM(SHADER_MODULE_STATE const* module_state, safe_VkPipelineShaderStageCreateInfo const* pStage,
                                    const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderSubgroupSizeControl(safe_VkPipelineShaderStageCreateInfo const* pStage) const;
+    bool ValidateComputeSharedMemory(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage) const;
     bool ValidateAtomicsTypes(SHADER_MODULE_STATE const* module_state) const;
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* module_state, spirv_inst_iter entrypoint, VkShaderStageFlagBits stage,
                                 const PIPELINE_STATE* pipeline) const;
@@ -641,6 +641,7 @@ class CoreChecks : public ValidationStateTracker {
                                         shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
     bool ValidateDecorations(SHADER_MODULE_STATE const* module_state) const;
+    bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateTransformFeedback(SHADER_MODULE_STATE const* module_state) const;
     bool ValidateShaderClock(SHADER_MODULE_STATE const* module_state, spirv_inst_iter& insn) const;
 
