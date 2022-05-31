@@ -13351,15 +13351,6 @@ TEST_F(VkLayerTest, SparseMemoryBindOffset) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseMemoryBind-memoryOffset-01101");
     vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
-
-    buffer_memory_bind.memoryOffset = 0;
-    image_memory_bind.memoryOffset = 0;
-    image_memory_bind.subresource.mipLevel = 1;
-    image_memory_bind.subresource.arrayLayer = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01722");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBindInfo-subresource-01723");
-    vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
@@ -15855,6 +15846,27 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     image_bind.extent.depth = 0u;
+
+    // Force greater mip level
+    image_bind.subresource.mipLevel = VK_REMAINING_MIP_LEVELS;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-subresource-01106");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.subresource.mipLevel = 0;
+
+    // Force greater array layer
+    image_bind.subresource.arrayLayer = VK_REMAINING_ARRAY_LAYERS;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-subresource-01106");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.subresource.arrayLayer = 0;
+
+    // Force invalid aspect mask
+    image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSparseImageMemoryBind-subresource-01106");
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+    image_bind.subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
 TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
