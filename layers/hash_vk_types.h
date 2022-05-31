@@ -23,6 +23,7 @@
 #include "hash_util.h"
 
 #include <vulkan/vulkan.h>
+#include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
 #include <vector>
 
@@ -95,6 +96,18 @@ struct hash<VkImageSubresourceRange> {
         hash_util::HashCombiner hc;
         hc << value.aspectMask << value.baseMipLevel << value.levelCount << value.baseArrayLayer << value.layerCount;
         return hc.Value();
+    }
+};
+}  // namespace std
+
+namespace std {
+template <>
+struct hash<const ExtEnabled DeviceExtensions::*> {
+  public:
+    size_t operator()(const ExtEnabled DeviceExtensions::*const &p) const noexcept {
+        static DeviceExtensions dummy_de;
+        static std::hash<uint8_t> h;
+        return h(dummy_de.*p);
     }
 };
 }  // namespace std

@@ -28,6 +28,9 @@ import os,re,sys
 from generator import *
 from common_codegen import *
 
+# NOTE: should be removed if generation scripts ever get refactored
+from parameter_validation_generator import ParameterValidationOutputGenerator
+
 # LayerFactoryGeneratorOptions - subclass of GeneratorOptions.
 #
 # Adds options used by LayerFactoryOutputGenerator objects during factory
@@ -1566,6 +1569,9 @@ static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDevice
         virtual void PreCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, void *modified_create_info) {
             PreCallRecordCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
         };
+
+        template <typename T>
+        std::vector<T> ValidParamValues() const;
 """
 
     inline_custom_source_postamble = """
@@ -1762,6 +1768,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             chassis_hdr_content += self.inline_custom_validation_class_definitions
             chassis_hdr_content += '};\n\n'
             chassis_hdr_content += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
+            chassis_hdr_content += f'\n#include "{ParameterValidationOutputGenerator.VALID_PARAM_VALUES_PATH}"'
             write(chassis_hdr_content, file=self.outFile)
         elif self.helper_header:
             self.newline()
