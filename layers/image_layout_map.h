@@ -137,9 +137,30 @@ class ImageSubresourceLayoutMap {
     }
 
     bool AnyInRange(const VkImageSubresourceRange& normalized_range,
-                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)>) const;
+            std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+        if (!encoder_.InRange(normalized_range)) {
+            return false;
+        }
+        return AnyInRange(RangeGenerator(encoder_, normalized_range), std::move(func));
+    }
+
     bool AnyInRange(const RangeGenerator& gen,
-                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)>) const;
+                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+        return AnyInRange(RangeGenerator(gen), std::move(func));
+    }
+
+    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+        for (; gen->non_empty(); ++gen) {
+            for (auto pos = layouts_.lower_bound(*gen); (pos != layouts_.end()) && (gen->intersects(pos->first)); ++pos) {
+                auto subres = encoder_.Decode(pos->first.begin);
+                if (func(subres, pos->second)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+
+    }
 
   protected:
     inline uint32_t LevelLimit(uint32_t level) const { return std::min(encoder_.Limits().mipLevel, level); }

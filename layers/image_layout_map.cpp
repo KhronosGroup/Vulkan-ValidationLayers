@@ -192,33 +192,4 @@ bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& othe
     return sparse_container::splice(layouts_, other.layouts_, LayoutEntry::Updater());
 }
 
-bool ImageSubresourceLayoutMap::AnyInRange(const VkImageSubresourceRange& normalized_range,
-                                           std::function<bool(const VkImageSubresource&, const LayoutEntry&)> func) const {
-    if (!encoder_.InRange(normalized_range)) {
-        return false;
-    }
-    for (auto range_gen = RangeGenerator(encoder_, normalized_range); range_gen->non_empty(); ++range_gen) {
-        for (auto pos = layouts_.lower_bound(*range_gen); (pos != layouts_.end()) && (range_gen->intersects(pos->first)); ++pos) {
-            auto subres = encoder_.Decode(pos->first.begin);
-            if (func(subres, pos->second)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool ImageSubresourceLayoutMap::AnyInRange(const RangeGenerator& gen,
-                                           std::function<bool(const VkImageSubresource&, const LayoutEntry&)> func) const {
-    for (auto range_gen = gen; range_gen->non_empty(); ++range_gen) {
-        for (auto pos = layouts_.lower_bound(*range_gen); (pos != layouts_.end()) && (range_gen->intersects(pos->first)); ++pos) {
-            auto subres = encoder_.Decode(pos->first.begin);
-            if (func(subres, pos->second)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 }  // namespace image_layout_map
