@@ -150,7 +150,6 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::sp
         return {};
     }
 
-    // TODO is this done correctly?
     set_layouts.reserve(num_layouts);
     for (size_t i = 0; i < num_layouts; ++i) {
         const PIPELINE_LAYOUT_STATE *used_layout = nullptr;
@@ -160,7 +159,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::sp
                     // This _could_ be the layout we're looking for
                     used_layout = layout;
 
-                    if ((layout->set_layouts[i]) && (layout->set_layouts[i]->GetBindingCount() > 0)) {
+                    if (layout->set_layouts[i]) {
                         // This is the layout we're looking for. Any subsequent ones that match must be identical to this one.
                         break;
                     }
