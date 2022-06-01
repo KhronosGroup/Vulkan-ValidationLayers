@@ -15310,9 +15310,9 @@ TEST_F(VkLayerTest, TestCompletelyOverlappingBufferCopy) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 1, &copy_info);
-    // TODO AITOR: Uncomment lines below once we correctly check memory overlap
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
-    // vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 1, &copy_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 1, &copy_info);
 
     m_commandBuffer->end();
 
@@ -15355,9 +15355,9 @@ TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
     copy_infos[2].dstOffset = 21;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
-    // TODO AITOR: Uncomment lines below once we correctly check memory overlap
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
-    // vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
@@ -16111,4 +16111,97 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
             m_errorMonitor->VerifyFound();
         }
     }
+}
+
+TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
+    TEST_DESCRIPTION("Test overlapping sparse buffers' copy with overlapping device memory");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    vk::CreateSemaphore(m_device->handle(), &s_info, nullptr, &semaphore);
+
+    VkBufferCopy copy_info;
+    copy_info.srcOffset = 0;
+    copy_info.dstOffset = 0;
+    copy_info.size = 256;
+
+    VkBufferCreateInfo b_info = vk_testing::Buffer::create_info(
+        copy_info.size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, nullptr);
+    b_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+    VkBufferObj buffer_sparse;
+    buffer_sparse.init_no_mem(*m_device, b_info);
+    VkBufferObj buffer_sparse2;
+    buffer_sparse2.init_no_mem(*m_device, b_info);
+
+    VkMemoryRequirements buffer_mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_mem_alloc =
+        vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    vk_testing::DeviceMemory buffer_mem;
+    buffer_mem.init(*m_device, buffer_mem_alloc);
+    vk_testing::DeviceMemory buffer_mem2;
+    buffer_mem2.init(*m_device, buffer_mem_alloc);
+
+    VkSparseMemoryBind buffer_memory_bind = {};
+    buffer_memory_bind.size = buffer_mem_reqs.size;
+    buffer_memory_bind.memory = buffer_mem.handle();
+
+    VkSparseBufferMemoryBindInfo buffer_memory_bind_infos[2] = {};
+    buffer_memory_bind_infos[0].buffer = buffer_sparse.handle();
+    buffer_memory_bind_infos[0].bindCount = 1;
+    buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind;
+    buffer_memory_bind_infos[1].buffer = buffer_sparse2.handle();
+    buffer_memory_bind_infos[1].bindCount = 1;
+    buffer_memory_bind_infos[1].pBinds = &buffer_memory_bind;
+
+    auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+    bind_info.bufferBindCount = 2;
+    bind_info.pBufferBinds = buffer_memory_bind_infos;
+    bind_info.signalSemaphoreCount = 1;
+    bind_info.pSignalSemaphores = &semaphore;
+
+    uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+    VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+    vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+    // Set up complete
+
+    m_commandBuffer->begin();
+    // This copy is not legal since both buffers share same device memory range, and none of them will be rebound
+    // to non overlapping device memory ranges. Reported at queue submit
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
+
+    // Submitting copy command with overlapping device memory regions
+    VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitDstStageMask = &mask;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+
+    // Wait for operations to finish before destroying anything
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroySemaphore(m_device->handle(), semaphore, nullptr);
+
+    m_errorMonitor->VerifyNotFound();
 }
