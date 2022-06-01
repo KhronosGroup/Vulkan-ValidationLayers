@@ -943,6 +943,14 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfos) const override;
 
+    template <typename RegionType>
+    void RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                             const RegionType* pRegions, CMD_TYPE cmd_type);
+    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                    const VkBufferCopy* pRegions) override;
+    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfos) override;
+    void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfos) override;
+
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
                                          const VkAllocationCallbacks* pAllocator) const override;
 
