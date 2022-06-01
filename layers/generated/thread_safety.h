@@ -109,6 +109,10 @@ public:
     }
 
     std::atomic<loader_platform_thread_id> thread;
+    // Memory pointed by api_name must be accessible whenever a host threading synchronization error happens
+    // This means that the caller of StartWrite/StartRead needs to take care of this memory
+    // Best option (which is the one we do) is to have the string statically allocated
+    std::atomic<char const *> api_name;
 
 private:
     // need to update write and read counts atomically. Writer in high
@@ -116,7 +120,7 @@ private:
     std::atomic<int64_t> writer_reader_count;
 
     // Put each lock on its own cache line to avoid false cache line sharing.
-    char padding[(-int(sizeof(std::atomic<loader_platform_thread_id>) + sizeof(std::atomic<int64_t>))) & 63];
+    char padding[(-int(sizeof(thread) + sizeof(writer_reader_count) + sizeof(api_name))) & 63];
 };
 
 
@@ -169,6 +173,7 @@ public:
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.  Record writer thread.
             use_data->thread = tid;
+            use_data->api_name = api_name;
         } else {
             if (prevCount.GetReadCount() == 0) {
                 assert(prevCount.GetWriteCount() != 0);
@@ -176,16 +181,19 @@ public:
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : %s(): object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
-                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
+                        "thread 0x%" PRIx64 " (%s()) and thread 0x%" PRIx64, api_name,
+                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed),
+                        use_data->api_name.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
                         // There is now no current use of the object.  Record writer thread.
                         use_data->thread = tid;
+                        use_data->api_name = api_name;
                     } else {
                         // There is now no current use of the object.  Record writer thread.
                         use_data->thread = tid;
+                        use_data->api_name = api_name;
                     }
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
@@ -196,16 +204,18 @@ public:
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : %s(): object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
-                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
+                        "thread 0x%" PRIx64 " (%s()) and thread 0x%" PRIx64, api_name,
+                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed),
+                        use_data->api_name.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
                         // There is now no current use of the object.  Record writer thread.
                         use_data->thread = tid;
+                        use_data->api_name = api_name;
                     } else {
                         // Continue with an unsafe use of the object.
-                        use_data->thread = tid;
+                        use_data->api_name = api_name;
                     }
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
@@ -243,16 +253,19 @@ public:
         if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.
             use_data->thread = tid;
+            use_data->api_name = api_name;
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : %s(): object of type %s is simultaneously used in "
-                "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
-                typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
+                "thread 0x%" PRIx64 " (%s()) and thread 0x%" PRIx64, api_name,
+                typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed),
+                use_data->api_name.load(std::memory_order_relaxed), (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
                 use_data->WaitForObjectIdle(false);
                 use_data->thread = tid;
+                use_data->api_name = api_name;
             }
         } else {
             // There are other readers of the object.
@@ -458,7 +471,6 @@ public:
         c_##type.CreateObject(object);                               \
     }                                                                \
     void DestroyObject(type object) {                                \
-        c_##type.DestroyObject(object);                              \
         c_##type.DestroyObject(object);                              \
     }
 
