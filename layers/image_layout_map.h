@@ -136,12 +136,17 @@ class ImageSubresourceLayoutMap {
         return encoder_.MakeVkSubresource(subres);
     }
 
+    RangeGenerator RangeGen(const VkImageSubresourceRange& subres_range) const {
+        if (encoder_.InRange(subres_range)) {
+            return (RangeGenerator(encoder_, subres_range));
+        }
+        // Return empty range generator
+        return RangeGenerator();
+    }
+
     bool AnyInRange(const VkImageSubresourceRange& normalized_range,
             std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
-        if (!encoder_.InRange(normalized_range)) {
-            return false;
-        }
-        return AnyInRange(RangeGenerator(encoder_, normalized_range), std::move(func));
+        return AnyInRange(RangeGen(normalized_range), std::move(func));
     }
 
     bool AnyInRange(const RangeGenerator& gen,
