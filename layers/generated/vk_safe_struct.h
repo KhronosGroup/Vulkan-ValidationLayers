@@ -11405,36 +11405,34 @@ struct safe_VkRenderPassCreationControlEXT {
     VkRenderPassCreationControlEXT const *ptr() const { return reinterpret_cast<VkRenderPassCreationControlEXT const *>(this); }
 };
 
-struct safe_VkRenderPassCreationFeedbackInfoEXT {
+struct safe_VkRenderPassCreationFeedbackCreateInfoEXT {
     VkStructureType sType;
     const void* pNext{};
-    uint32_t postMergeSubpassCount;
-    safe_VkRenderPassCreationFeedbackInfoEXT(const VkRenderPassCreationFeedbackInfoEXT* in_struct);
-    safe_VkRenderPassCreationFeedbackInfoEXT(const safe_VkRenderPassCreationFeedbackInfoEXT& copy_src);
-    safe_VkRenderPassCreationFeedbackInfoEXT& operator=(const safe_VkRenderPassCreationFeedbackInfoEXT& copy_src);
-    safe_VkRenderPassCreationFeedbackInfoEXT();
-    ~safe_VkRenderPassCreationFeedbackInfoEXT();
-    void initialize(const VkRenderPassCreationFeedbackInfoEXT* in_struct);
-    void initialize(const safe_VkRenderPassCreationFeedbackInfoEXT* copy_src);
-    VkRenderPassCreationFeedbackInfoEXT *ptr() { return reinterpret_cast<VkRenderPassCreationFeedbackInfoEXT *>(this); }
-    VkRenderPassCreationFeedbackInfoEXT const *ptr() const { return reinterpret_cast<VkRenderPassCreationFeedbackInfoEXT const *>(this); }
+    VkRenderPassCreationFeedbackInfoEXT* pRenderPassFeedback{};
+    safe_VkRenderPassCreationFeedbackCreateInfoEXT(const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct);
+    safe_VkRenderPassCreationFeedbackCreateInfoEXT(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src);
+    safe_VkRenderPassCreationFeedbackCreateInfoEXT& operator=(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src);
+    safe_VkRenderPassCreationFeedbackCreateInfoEXT();
+    ~safe_VkRenderPassCreationFeedbackCreateInfoEXT();
+    void initialize(const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct);
+    void initialize(const safe_VkRenderPassCreationFeedbackCreateInfoEXT* copy_src);
+    VkRenderPassCreationFeedbackCreateInfoEXT *ptr() { return reinterpret_cast<VkRenderPassCreationFeedbackCreateInfoEXT *>(this); }
+    VkRenderPassCreationFeedbackCreateInfoEXT const *ptr() const { return reinterpret_cast<VkRenderPassCreationFeedbackCreateInfoEXT const *>(this); }
 };
 
-struct safe_VkRenderPassSubpassFeedbackInfoEXT {
+struct safe_VkRenderPassSubpassFeedbackCreateInfoEXT {
     VkStructureType sType;
     const void* pNext{};
-    VkSubpassMergeStatusEXT subpassMergeStatus;
-    char description[VK_MAX_DESCRIPTION_SIZE];
-    uint32_t postMergeIndex;
-    safe_VkRenderPassSubpassFeedbackInfoEXT(const VkRenderPassSubpassFeedbackInfoEXT* in_struct);
-    safe_VkRenderPassSubpassFeedbackInfoEXT(const safe_VkRenderPassSubpassFeedbackInfoEXT& copy_src);
-    safe_VkRenderPassSubpassFeedbackInfoEXT& operator=(const safe_VkRenderPassSubpassFeedbackInfoEXT& copy_src);
-    safe_VkRenderPassSubpassFeedbackInfoEXT();
-    ~safe_VkRenderPassSubpassFeedbackInfoEXT();
-    void initialize(const VkRenderPassSubpassFeedbackInfoEXT* in_struct);
-    void initialize(const safe_VkRenderPassSubpassFeedbackInfoEXT* copy_src);
-    VkRenderPassSubpassFeedbackInfoEXT *ptr() { return reinterpret_cast<VkRenderPassSubpassFeedbackInfoEXT *>(this); }
-    VkRenderPassSubpassFeedbackInfoEXT const *ptr() const { return reinterpret_cast<VkRenderPassSubpassFeedbackInfoEXT const *>(this); }
+    VkRenderPassSubpassFeedbackInfoEXT* pSubpassFeedback{};
+    safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct);
+    safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src);
+    safe_VkRenderPassSubpassFeedbackCreateInfoEXT& operator=(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src);
+    safe_VkRenderPassSubpassFeedbackCreateInfoEXT();
+    ~safe_VkRenderPassSubpassFeedbackCreateInfoEXT();
+    void initialize(const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct);
+    void initialize(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT* copy_src);
+    VkRenderPassSubpassFeedbackCreateInfoEXT *ptr() { return reinterpret_cast<VkRenderPassSubpassFeedbackCreateInfoEXT *>(this); }
+    VkRenderPassSubpassFeedbackCreateInfoEXT const *ptr() const { return reinterpret_cast<VkRenderPassSubpassFeedbackCreateInfoEXT const *>(this); }
 };
 
 union safe_VkDeviceOrHostAddressKHR {

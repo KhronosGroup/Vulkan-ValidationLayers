@@ -52523,136 +52523,157 @@ void safe_VkRenderPassCreationControlEXT::initialize(const safe_VkRenderPassCrea
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
-safe_VkRenderPassCreationFeedbackInfoEXT::safe_VkRenderPassCreationFeedbackInfoEXT(const VkRenderPassCreationFeedbackInfoEXT* in_struct) :
+safe_VkRenderPassCreationFeedbackCreateInfoEXT::safe_VkRenderPassCreationFeedbackCreateInfoEXT(const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct) :
     sType(in_struct->sType),
-    postMergeSubpassCount(in_struct->postMergeSubpassCount)
+    pRenderPassFeedback(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-}
-
-safe_VkRenderPassCreationFeedbackInfoEXT::safe_VkRenderPassCreationFeedbackInfoEXT() :
-    sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT),
-    pNext(nullptr),
-    postMergeSubpassCount()
-{}
-
-safe_VkRenderPassCreationFeedbackInfoEXT::safe_VkRenderPassCreationFeedbackInfoEXT(const safe_VkRenderPassCreationFeedbackInfoEXT& copy_src)
-{
-    sType = copy_src.sType;
-    postMergeSubpassCount = copy_src.postMergeSubpassCount;
-    pNext = SafePnextCopy(copy_src.pNext);
-}
-
-safe_VkRenderPassCreationFeedbackInfoEXT& safe_VkRenderPassCreationFeedbackInfoEXT::operator=(const safe_VkRenderPassCreationFeedbackInfoEXT& copy_src)
-{
-    if (&copy_src == this) return *this;
-
-    if (pNext)
-        FreePnextChain(pNext);
-
-    sType = copy_src.sType;
-    postMergeSubpassCount = copy_src.postMergeSubpassCount;
-    pNext = SafePnextCopy(copy_src.pNext);
-
-    return *this;
-}
-
-safe_VkRenderPassCreationFeedbackInfoEXT::~safe_VkRenderPassCreationFeedbackInfoEXT()
-{
-    if (pNext)
-        FreePnextChain(pNext);
-}
-
-void safe_VkRenderPassCreationFeedbackInfoEXT::initialize(const VkRenderPassCreationFeedbackInfoEXT* in_struct)
-{
-    if (pNext)
-        FreePnextChain(pNext);
-    sType = in_struct->sType;
-    postMergeSubpassCount = in_struct->postMergeSubpassCount;
-    pNext = SafePnextCopy(in_struct->pNext);
-}
-
-void safe_VkRenderPassCreationFeedbackInfoEXT::initialize(const safe_VkRenderPassCreationFeedbackInfoEXT* copy_src)
-{
-    sType = copy_src->sType;
-    postMergeSubpassCount = copy_src->postMergeSubpassCount;
-    pNext = SafePnextCopy(copy_src->pNext);
-}
-
-safe_VkRenderPassSubpassFeedbackInfoEXT::safe_VkRenderPassSubpassFeedbackInfoEXT(const VkRenderPassSubpassFeedbackInfoEXT* in_struct) :
-    sType(in_struct->sType),
-    subpassMergeStatus(in_struct->subpassMergeStatus),
-    postMergeIndex(in_struct->postMergeIndex)
-{
-    pNext = SafePnextCopy(in_struct->pNext);
-    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
-        description[i] = in_struct->description[i];
+    if (in_struct->pRenderPassFeedback) {
+        pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*in_struct->pRenderPassFeedback);
     }
 }
 
-safe_VkRenderPassSubpassFeedbackInfoEXT::safe_VkRenderPassSubpassFeedbackInfoEXT() :
-    sType(VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT),
+safe_VkRenderPassCreationFeedbackCreateInfoEXT::safe_VkRenderPassCreationFeedbackCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT),
     pNext(nullptr),
-    subpassMergeStatus(),
-    postMergeIndex()
+    pRenderPassFeedback(nullptr)
 {}
 
-safe_VkRenderPassSubpassFeedbackInfoEXT::safe_VkRenderPassSubpassFeedbackInfoEXT(const safe_VkRenderPassSubpassFeedbackInfoEXT& copy_src)
+safe_VkRenderPassCreationFeedbackCreateInfoEXT::safe_VkRenderPassCreationFeedbackCreateInfoEXT(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src)
 {
     sType = copy_src.sType;
-    subpassMergeStatus = copy_src.subpassMergeStatus;
-    postMergeIndex = copy_src.postMergeIndex;
+    pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
-        description[i] = copy_src.description[i];
+    if (copy_src.pRenderPassFeedback) {
+        pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src.pRenderPassFeedback);
     }
 }
 
-safe_VkRenderPassSubpassFeedbackInfoEXT& safe_VkRenderPassSubpassFeedbackInfoEXT::operator=(const safe_VkRenderPassSubpassFeedbackInfoEXT& copy_src)
+safe_VkRenderPassCreationFeedbackCreateInfoEXT& safe_VkRenderPassCreationFeedbackCreateInfoEXT::operator=(const safe_VkRenderPassCreationFeedbackCreateInfoEXT& copy_src)
 {
     if (&copy_src == this) return *this;
 
+    if (pRenderPassFeedback)
+        delete pRenderPassFeedback;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
-    subpassMergeStatus = copy_src.subpassMergeStatus;
-    postMergeIndex = copy_src.postMergeIndex;
+    pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
-        description[i] = copy_src.description[i];
+    if (copy_src.pRenderPassFeedback) {
+        pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src.pRenderPassFeedback);
     }
 
     return *this;
 }
 
-safe_VkRenderPassSubpassFeedbackInfoEXT::~safe_VkRenderPassSubpassFeedbackInfoEXT()
+safe_VkRenderPassCreationFeedbackCreateInfoEXT::~safe_VkRenderPassCreationFeedbackCreateInfoEXT()
 {
+    if (pRenderPassFeedback)
+        delete pRenderPassFeedback;
     if (pNext)
         FreePnextChain(pNext);
 }
 
-void safe_VkRenderPassSubpassFeedbackInfoEXT::initialize(const VkRenderPassSubpassFeedbackInfoEXT* in_struct)
+void safe_VkRenderPassCreationFeedbackCreateInfoEXT::initialize(const VkRenderPassCreationFeedbackCreateInfoEXT* in_struct)
 {
+    if (pRenderPassFeedback)
+        delete pRenderPassFeedback;
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
-    subpassMergeStatus = in_struct->subpassMergeStatus;
-    postMergeIndex = in_struct->postMergeIndex;
+    pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
-    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
-        description[i] = in_struct->description[i];
+    if (in_struct->pRenderPassFeedback) {
+        pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*in_struct->pRenderPassFeedback);
     }
 }
 
-void safe_VkRenderPassSubpassFeedbackInfoEXT::initialize(const safe_VkRenderPassSubpassFeedbackInfoEXT* copy_src)
+void safe_VkRenderPassCreationFeedbackCreateInfoEXT::initialize(const safe_VkRenderPassCreationFeedbackCreateInfoEXT* copy_src)
 {
     sType = copy_src->sType;
-    subpassMergeStatus = copy_src->subpassMergeStatus;
-    postMergeIndex = copy_src->postMergeIndex;
+    pRenderPassFeedback = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
-    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
-        description[i] = copy_src->description[i];
+    if (copy_src->pRenderPassFeedback) {
+        pRenderPassFeedback = new VkRenderPassCreationFeedbackInfoEXT(*copy_src->pRenderPassFeedback);
+    }
+}
+
+safe_VkRenderPassSubpassFeedbackCreateInfoEXT::safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    pSubpassFeedback(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pSubpassFeedback) {
+        pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*in_struct->pSubpassFeedback);
+    }
+}
+
+safe_VkRenderPassSubpassFeedbackCreateInfoEXT::safe_VkRenderPassSubpassFeedbackCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT),
+    pNext(nullptr),
+    pSubpassFeedback(nullptr)
+{}
+
+safe_VkRenderPassSubpassFeedbackCreateInfoEXT::safe_VkRenderPassSubpassFeedbackCreateInfoEXT(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    pSubpassFeedback = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pSubpassFeedback) {
+        pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src.pSubpassFeedback);
+    }
+}
+
+safe_VkRenderPassSubpassFeedbackCreateInfoEXT& safe_VkRenderPassSubpassFeedbackCreateInfoEXT::operator=(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pSubpassFeedback)
+        delete pSubpassFeedback;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pSubpassFeedback = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pSubpassFeedback) {
+        pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src.pSubpassFeedback);
+    }
+
+    return *this;
+}
+
+safe_VkRenderPassSubpassFeedbackCreateInfoEXT::~safe_VkRenderPassSubpassFeedbackCreateInfoEXT()
+{
+    if (pSubpassFeedback)
+        delete pSubpassFeedback;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkRenderPassSubpassFeedbackCreateInfoEXT::initialize(const VkRenderPassSubpassFeedbackCreateInfoEXT* in_struct)
+{
+    if (pSubpassFeedback)
+        delete pSubpassFeedback;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pSubpassFeedback = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pSubpassFeedback) {
+        pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*in_struct->pSubpassFeedback);
+    }
+}
+
+void safe_VkRenderPassSubpassFeedbackCreateInfoEXT::initialize(const safe_VkRenderPassSubpassFeedbackCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    pSubpassFeedback = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pSubpassFeedback) {
+        pSubpassFeedback = new VkRenderPassSubpassFeedbackInfoEXT(*copy_src->pSubpassFeedback);
     }
 }
 
@@ -55554,11 +55575,11 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT:
             safe_pNext = new safe_VkRenderPassCreationControlEXT(reinterpret_cast<const VkRenderPassCreationControlEXT *>(pNext));
             break;
-        case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT:
-            safe_pNext = new safe_VkRenderPassCreationFeedbackInfoEXT(reinterpret_cast<const VkRenderPassCreationFeedbackInfoEXT *>(pNext));
+        case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkRenderPassCreationFeedbackCreateInfoEXT(reinterpret_cast<const VkRenderPassCreationFeedbackCreateInfoEXT *>(pNext));
             break;
-        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT:
-            safe_pNext = new safe_VkRenderPassSubpassFeedbackInfoEXT(reinterpret_cast<const VkRenderPassSubpassFeedbackInfoEXT *>(pNext));
+        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkRenderPassSubpassFeedbackCreateInfoEXT(reinterpret_cast<const VkRenderPassSubpassFeedbackCreateInfoEXT *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
@@ -56772,11 +56793,11 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT:
             delete reinterpret_cast<const safe_VkRenderPassCreationControlEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT:
-            delete reinterpret_cast<const safe_VkRenderPassCreationFeedbackInfoEXT *>(header);
+        case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkRenderPassCreationFeedbackCreateInfoEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT:
-            delete reinterpret_cast<const safe_VkRenderPassSubpassFeedbackInfoEXT *>(header);
+        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkRenderPassSubpassFeedbackCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

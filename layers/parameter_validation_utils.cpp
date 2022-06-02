@@ -8572,7 +8572,7 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
         const auto *drm_format_modifier_create_info =
             LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pInfo->pCreateInfo);
         if (drm_format_modifier_create_info) {
-            skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06776",
+            skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776",
                              "%s(): pInfo->pCreateInfo->pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.",
                              func_name);
         }
