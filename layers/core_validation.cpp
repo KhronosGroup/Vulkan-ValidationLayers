@@ -12630,23 +12630,26 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
-                // Multiplanar images need to check all resource range
-                VkDeviceSize image_i_range_end = 0u;
-                VkDeviceSize image_j_range_end = 0u;
-                for (int index = 0; index < IMAGE_STATE::MAX_PLANES; ++index) {
-                    if (image_data_i->memory_requirements_checked[index]) {
-                        image_i_range_end += image_data_i->requirements[index].size;
-                    }
-                    if (image_data_j->memory_requirements_checked[index]) {
-                        image_j_range_end += image_data_j->requirements[index].size;
-                    }
-                }
 
-                sparse_container::range<VkDeviceSize> range_i{0u, image_i_range_end};
-                sparse_container::range<VkDeviceSize> range_j{0u, image_j_range_end};
-                if (image_data_i->DoesResourceMemoryOverlap(range_i, image_data_j, range_j)) {
-                    attachments[i].overlapping.emplace_back(j);
-                    attachments[j].overlapping.emplace_back(i);
+                if (!image_data_i->sparse && !image_data_j->sparse) {
+                    // Multiplanar images need to check all resource range
+                    VkDeviceSize image_i_range_end = 0u;
+                    VkDeviceSize image_j_range_end = 0u;
+                    for (int index = 0; index < IMAGE_STATE::MAX_PLANES; ++index) {
+                        if (image_data_i->memory_requirements_checked[index]) {
+                            image_i_range_end += image_data_i->requirements[index].size;
+                        }
+                        if (image_data_j->memory_requirements_checked[index]) {
+                            image_j_range_end += image_data_j->requirements[index].size;
+                        }
+                    }
+
+                    sparse_container::range<VkDeviceSize> range_i{0u, image_i_range_end};
+                    sparse_container::range<VkDeviceSize> range_j{0u, image_j_range_end};
+                    if (image_data_i->DoesResourceMemoryOverlap(range_i, image_data_j, range_j)) {
+                        attachments[i].overlapping.emplace_back(j);
+                        attachments[j].overlapping.emplace_back(i);
+                    }
                 }
             }
         }
