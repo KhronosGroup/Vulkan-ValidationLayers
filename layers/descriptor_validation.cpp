@@ -876,9 +876,7 @@ bool CoreChecks::ValidateImageDescriptor(
     std::vector<const SAMPLER_STATE *> sampler_states;
     VkImageView image_view = image_descriptor.GetImageView();
     const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();
-    VkImageLayout image_layout = image_descriptor.GetImageLayout();
     const auto binding = binding_info.first;
-    const auto reqs = binding_info.second.reqs;
 
     if (image_descriptor.GetClass() == cvdescriptorset::DescriptorClass::ImageSampler) {
         sampler_states.emplace_back(
@@ -911,8 +909,8 @@ bool CoreChecks::ValidateImageDescriptor(
                         report_data->FormatHandle(image_view).c_str());
     }
     if (image_view) {
+        const auto reqs = binding_info.second.reqs;
         const auto &image_view_ci = image_view_state->create_info;
-        const auto *image_state = image_view_state->image_state.get();
 
         if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
             if (~reqs & (1 << image_view_ci.viewType)) {
@@ -939,6 +937,7 @@ bool CoreChecks::ValidateImageDescriptor(
         // NOTE: Submit time validation of UPDATE_AFTER_BIND image layout is not possible with the
         // image layout tracking as currently implemented, so only record_time_validation is done
         if (!disabled[image_layout_validation] && record_time_validate) {
+            VkImageLayout image_layout = image_descriptor.GetImageLayout();
             // Verify Image Layout
             // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
             // The caller provides a checked_layouts map when there are a large number of layouts to check,
@@ -1320,7 +1319,7 @@ bool CoreChecks::ValidateImageDescriptor(
                     }
                 }
             }
-
+            const auto image_state = image_view_state->image_state.get();
             if ((image_state->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) &&
                 (sampler_state->createInfo.addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
                  sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ||
