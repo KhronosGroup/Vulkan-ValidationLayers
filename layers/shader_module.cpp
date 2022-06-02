@@ -371,6 +371,9 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
                 execution_mode_inst[insn.word(1)].push_back(insn);
+                if (insn.word(2) == spv::ExecutionMode::ExecutionModeXfb) {
+                    has_xfb_execution_mode = true;
+                }
             } break;
             // Once https://github.com/KhronosGroup/SPIRV-Headers/issues/276 is added this should be derived from SPIR-V grammar
             // json

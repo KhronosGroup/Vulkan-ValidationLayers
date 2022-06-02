@@ -71,7 +71,8 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
       wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module_state.get())),
       writes_to_gl_layer(module_state->WritesToGlLayer()),
-      has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {}
+      has_input_attachment_capability(module_state->HasInputAttachmentCapability()),
+      has_xfb_execution_mode(module_state->HasXfbExecutionMode()) {}
 
 // static
 PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,

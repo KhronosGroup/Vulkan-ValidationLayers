@@ -254,6 +254,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         bool has_group_decoration = false;
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};
+        bool has_xfb_execution_mode{false};
 
         // entry point is not unqiue to single value so need multimap
         std::unordered_multimap<std::string, EntryPoint> entry_points;
@@ -416,6 +417,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         return std::any_of(static_data_.capability_list.begin(), static_data_.capability_list.end(),
                            [](const spv::Capability &capability) { return capability == spv::CapabilityInputAttachment; });
     }
+
+    bool HasXfbExecutionMode() const { return static_data_.has_xfb_execution_mode; }
 
   private:
     // Functions used for initialization only

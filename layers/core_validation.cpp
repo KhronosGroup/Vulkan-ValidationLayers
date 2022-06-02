@@ -2149,6 +2149,11 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
     if (pipeline->pre_raster_state) {
+        constexpr std::array<VkShaderStageFlagBits, 4> pre_raster_stages = {
+            VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            VK_SHADER_STAGE_GEOMETRY_BIT};
+        VkShaderStageFlagBits last_pre_raster_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+        VkShaderStageFlagBits last_pre_raster_stage_with_xfb = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
         // Each shader's stage must be unique
         for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
             if (pipeline->active_shaders & stage) {
@@ -2159,8 +2164,33 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Multiple shaders provided for stage %s",
                                      pipe_index, string_VkShaderStageFlagBits(VkShaderStageFlagBits(stage)));
                 }
+                for (const auto &state : states) {
+                    if (state.stage_flag == stage &&
+                        std::find(pre_raster_stages.begin(), pre_raster_stages.end(), stage) != pre_raster_stages.end()) {
+                        last_pre_raster_stage = state.stage_flag;
+                        if (state.has_xfb_execution_mode) {
+                            if (last_pre_raster_stage_with_xfb != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM) {
+                                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02317",
+                                                 "Invalid Pipeline CreateInfo[%" PRIu32
+                                                 "] State: both stage %s and %s use Xfb execution mode.",
+                                                 pipe_index, string_VkShaderStageFlagBits(last_pre_raster_stage_with_xfb),
+                                                 string_VkShaderStageFlagBits(state.stage_flag));
+                            }
+                            last_pre_raster_stage_with_xfb = state.stage_flag;
+                        }
+                    }
+                }
             }
         }
+        if (last_pre_raster_stage_with_xfb != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM &&
+            last_pre_raster_stage != last_pre_raster_stage_with_xfb) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02318",
+                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "] State: last pre rasterization shader stage is %s, but shader stage %s uses Xfb execution mode.",
+                             pipe_index, string_VkShaderStageFlagBits(last_pre_raster_stage_with_xfb),
+                             string_VkShaderStageFlagBits(last_pre_raster_stage));
+        }
+
         if (!enabled_features.core.geometryShader && (pipeline->active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
             skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-00704",
                              "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Geometry Shader not supported.", pipe_index);
@@ -19319,6 +19349,20 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                                          report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
                         break;
                     }
+                }
+            }
+            const auto pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            if (pipeline) {
+                bool has_xfb = false;
+                for (const auto &state : pipeline->stage_state) {
+                    if (state.has_xfb_execution_mode) {
+                        has_xfb = true;
+                        break;
+                    }
+                }
+                if (!has_xfb) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-04128",
+                                     "%s: active pipeline does not use Xfb execution mode.", cmd_name);
                 }
             }
         }
