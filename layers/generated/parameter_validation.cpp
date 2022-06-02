@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 215;
+const uint32_t GeneratedVulkanHeaderVersion = 216;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_NONE|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV|VK_ACCESS_NONE_KHR;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -219,7 +219,6 @@ const std::vector<VkLineRasterizationModeEXT> AllVkLineRasterizationModeEXTEnums
 const std::vector<VkIndirectCommandsTokenTypeNV> AllVkIndirectCommandsTokenTypeNVEnums = {VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV, VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV, };
 const std::vector<VkFragmentShadingRateNV> AllVkFragmentShadingRateNVEnums = {VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_PIXEL_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_1X2_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_2X1_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_2X2_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_2X4_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_4X2_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_1_INVOCATION_PER_4X4_PIXELS_NV, VK_FRAGMENT_SHADING_RATE_2_INVOCATIONS_PER_PIXEL_NV, VK_FRAGMENT_SHADING_RATE_4_INVOCATIONS_PER_PIXEL_NV, VK_FRAGMENT_SHADING_RATE_8_INVOCATIONS_PER_PIXEL_NV, VK_FRAGMENT_SHADING_RATE_16_INVOCATIONS_PER_PIXEL_NV, VK_FRAGMENT_SHADING_RATE_NO_INVOCATIONS_NV, };
 const std::vector<VkAccelerationStructureMotionInstanceTypeNV> AllVkAccelerationStructureMotionInstanceTypeNVEnums = {VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_STATIC_NV, VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_MATRIX_MOTION_NV, VK_ACCELERATION_STRUCTURE_MOTION_INSTANCE_TYPE_SRT_MOTION_NV, };
-const std::vector<VkSubpassMergeStatusEXT> AllVkSubpassMergeStatusEXTEnums = {VK_SUBPASS_MERGE_STATUS_MERGED_EXT, VK_SUBPASS_MERGE_STATUS_DISALLOWED_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_SIDE_EFFECTS_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_SAMPLES_MISMATCH_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_VIEWS_MISMATCH_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_ALIASING_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_DEPENDENCIES_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_INCOMPATIBLE_INPUT_ATTACHMENT_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_TOO_MANY_ATTACHMENTS_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_INSUFFICIENT_STORAGE_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_DEPTH_STENCIL_COUNT_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_RESOLVE_ATTACHMENT_REUSE_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_SINGLE_SUBPASS_EXT, VK_SUBPASS_MERGE_STATUS_NOT_MERGED_UNSPECIFIED_EXT, };
 const std::vector<VkAccelerationStructureBuildTypeKHR> AllVkAccelerationStructureBuildTypeKHREnums = {VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, };
 const std::vector<VkShaderGroupShaderKHR> AllVkShaderGroupShaderKHREnums = {VK_SHADER_GROUP_SHADER_GENERAL_KHR, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR, VK_SHADER_GROUP_SHADER_INTERSECTION_KHR, };
 
@@ -4880,13 +4879,27 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             }
         } break;
 
-        // No Validation code for VkRenderPassCreationFeedbackInfoEXT structure members  -- Covers VUID-VkRenderPassCreationFeedbackInfoEXT-sType-sType
-
-        // Validation code for VkRenderPassSubpassFeedbackInfoEXT structure members
-        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT: { // Covers VUID-VkRenderPassSubpassFeedbackInfoEXT-sType-sType
+        // Validation code for VkRenderPassCreationFeedbackCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT: { // Covers VUID-VkRenderPassCreationFeedbackCreateInfoEXT-sType-sType
             if (is_const_param) {
-                VkRenderPassSubpassFeedbackInfoEXT *structure = (VkRenderPassSubpassFeedbackInfoEXT *) header;
-                skip |= validate_ranged_enum("VkRenderPassSubpassFeedbackInfoEXT", "subpassMergeStatus", "VkSubpassMergeStatusEXT", AllVkSubpassMergeStatusEXTEnums, structure->subpassMergeStatus, "VUID-VkRenderPassSubpassFeedbackInfoEXT-subpassMergeStatus-parameter");
+                VkRenderPassCreationFeedbackCreateInfoEXT *structure = (VkRenderPassCreationFeedbackCreateInfoEXT *) header;
+                skip |= validate_required_pointer("VkRenderPassCreationFeedbackCreateInfoEXT", "pRenderPassFeedback", structure->pRenderPassFeedback, "VUID-VkRenderPassCreationFeedbackCreateInfoEXT-pRenderPassFeedback-parameter");
+
+                if (structure->pRenderPassFeedback != NULL)
+                {
+                }
+            }
+        } break;
+
+        // Validation code for VkRenderPassSubpassFeedbackCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT: { // Covers VUID-VkRenderPassSubpassFeedbackCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                VkRenderPassSubpassFeedbackCreateInfoEXT *structure = (VkRenderPassSubpassFeedbackCreateInfoEXT *) header;
+                skip |= validate_required_pointer("VkRenderPassSubpassFeedbackCreateInfoEXT", "pSubpassFeedback", structure->pSubpassFeedback, "VUID-VkRenderPassSubpassFeedbackCreateInfoEXT-pSubpassFeedback-parameter");
+
+                if (structure->pSubpassFeedback != NULL)
+                {
+                }
             }
         } break;
 
@@ -8851,9 +8864,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
     skip |= validate_struct_type("vkCreateRenderPass2", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
+        const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateRenderPass2", "pCreateInfo->pNext", "VkRenderPassCreationControlEXT, VkRenderPassCreationFeedbackInfoEXT, VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateRenderPass2", "pCreateInfo->pNext", "VkRenderPassCreationControlEXT, VkRenderPassCreationFeedbackCreateInfoEXT, VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateRenderPass2", "pCreateInfo->flags", "VkRenderPassCreateFlagBits", AllVkRenderPassCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkRenderPassCreateInfo2-flags-parameter");
 
@@ -8893,9 +8906,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2(
         {
             for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex)
             {
-                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
+                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkRenderPassCreationControlEXT, VkRenderPassSubpassFeedbackInfoEXT, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
+                skip |= validate_struct_pnext("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkRenderPassCreationControlEXT, VkRenderPassSubpassFeedbackCreateInfoEXT, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 
@@ -12164,9 +12177,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     skip |= validate_struct_type("vkCreateRenderPass2KHR", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2, true, "VUID-vkCreateRenderPass2-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
+        const VkStructureType allowed_structs_VkRenderPassCreateInfo2[] = { VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
 
-        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", "VkRenderPassCreationControlEXT, VkRenderPassCreationFeedbackInfoEXT, VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", "VkRenderPassCreationControlEXT, VkRenderPassCreationFeedbackCreateInfoEXT, VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2), allowed_structs_VkRenderPassCreateInfo2, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2-pNext-pNext", "VUID-VkRenderPassCreateInfo2-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateRenderPass2KHR", "pCreateInfo->flags", "VkRenderPassCreateFlagBits", AllVkRenderPassCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkRenderPassCreateInfo2-flags-parameter");
 
@@ -12206,9 +12219,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         {
             for (uint32_t subpassIndex = 0; subpassIndex < pCreateInfo->subpassCount; ++subpassIndex)
             {
-                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
+                const VkStructureType allowed_structs_VkSubpassDescription2[] = { VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE };
 
-                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkRenderPassCreationControlEXT, VkRenderPassSubpassFeedbackInfoEXT, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
+                skip |= validate_struct_pnext("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].pNext", ParameterName::IndexVector{ subpassIndex }), "VkFragmentShadingRateAttachmentInfoKHR, VkRenderPassCreationControlEXT, VkRenderPassSubpassFeedbackCreateInfoEXT, VkSubpassDescriptionDepthStencilResolve", pCreateInfo->pSubpasses[subpassIndex].pNext, ARRAY_SIZE(allowed_structs_VkSubpassDescription2), allowed_structs_VkSubpassDescription2, GeneratedVulkanHeaderVersion, "VUID-VkSubpassDescription2-pNext-pNext", "VUID-VkSubpassDescription2-sType-unique", false, true);
 
                 skip |= validate_flags("vkCreateRenderPass2KHR", ParameterName("pCreateInfo->pSubpasses[%i].flags", ParameterName::IndexVector{ subpassIndex }), "VkSubpassDescriptionFlagBits", AllVkSubpassDescriptionFlagBits, pCreateInfo->pSubpasses[subpassIndex].flags, kOptionalFlags, "VUID-VkSubpassDescription2-flags-parameter");
 

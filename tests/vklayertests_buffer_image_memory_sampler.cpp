@@ -15369,7 +15369,7 @@ TEST_F(VkLayerTest, ValidateDeviceImageMemoryRequirementsDrmFormatModifier) {
 
     VkMemoryRequirements2 memory_requirements = LvlInitStruct<VkMemoryRequirements2>();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06776");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776");
     vkGetDeviceImageMemoryRequirementsKHR(device(), &device_image_memory_requirements, &memory_requirements);
     m_errorMonitor->VerifyFound();
 }
