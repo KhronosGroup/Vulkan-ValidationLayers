@@ -3772,6 +3772,23 @@ bool CoreChecks::ValidateIndirectCmd(const CMD_BUFFER_STATE &cb_state, const BUF
     return skip;
 }
 
+bool CoreChecks::ValidateIndirectCountCmd(const BUFFER_STATE &count_buffer_state, VkDeviceSize count_buffer_offset,
+                                          CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller_name = CommandTypeString(cmd_type);
+
+    skip |= ValidateMemoryIsBoundToBuffer(&count_buffer_state, caller_name, vuid.indirect_count_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(&count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit,
+                                     caller_name, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.createInfo.size) {
+        skip |= LogError(count_buffer_state.buffer(), vuid.indirect_count_offset,
+                         "%s: countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
+                         caller_name, count_buffer_offset, count_buffer_state.createInfo.size);
+    }
+    return skip;
+}
+
 template <typename T1>
 bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char *VUID) const {
     bool skip = false;
