@@ -2971,6 +2971,8 @@ struct safe_VkPhysicalDeviceVulkanSC10Properties {
     uint32_t maxDescriptorSetLayoutBindings;
     uint32_t maxQueryFaultCount;
     uint32_t maxCallbackFaultCount;
+    uint32_t maxCommandPoolCommandBuffers;
+    VkDeviceSize maxCommandBufferSize;
     safe_VkPhysicalDeviceVulkanSC10Properties(const VkPhysicalDeviceVulkanSC10Properties* in_struct);
     safe_VkPhysicalDeviceVulkanSC10Properties(const safe_VkPhysicalDeviceVulkanSC10Properties& copy_src);
     safe_VkPhysicalDeviceVulkanSC10Properties& operator=(const safe_VkPhysicalDeviceVulkanSC10Properties& copy_src);
@@ -4880,6 +4882,22 @@ struct safe_VkImageDrmFormatModifierPropertiesEXT {
     VkImageDrmFormatModifierPropertiesEXT const *ptr() const { return reinterpret_cast<VkImageDrmFormatModifierPropertiesEXT const *>(this); }
 };
 
+struct safe_VkDrmFormatModifierPropertiesList2EXT {
+    VkStructureType sType;
+    void* pNext;
+    uint32_t drmFormatModifierCount;
+    VkDrmFormatModifierProperties2EXT* pDrmFormatModifierProperties;
+    safe_VkDrmFormatModifierPropertiesList2EXT(const VkDrmFormatModifierPropertiesList2EXT* in_struct);
+    safe_VkDrmFormatModifierPropertiesList2EXT(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
+    safe_VkDrmFormatModifierPropertiesList2EXT& operator=(const safe_VkDrmFormatModifierPropertiesList2EXT& copy_src);
+    safe_VkDrmFormatModifierPropertiesList2EXT();
+    ~safe_VkDrmFormatModifierPropertiesList2EXT();
+    void initialize(const VkDrmFormatModifierPropertiesList2EXT* in_struct);
+    void initialize(const safe_VkDrmFormatModifierPropertiesList2EXT* copy_src);
+    VkDrmFormatModifierPropertiesList2EXT *ptr() { return reinterpret_cast<VkDrmFormatModifierPropertiesList2EXT *>(this); }
+    VkDrmFormatModifierPropertiesList2EXT const *ptr() const { return reinterpret_cast<VkDrmFormatModifierPropertiesList2EXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceImageViewImageFormatInfoEXT {
     VkStructureType sType;
     void* pNext;
@@ -5532,6 +5550,240 @@ struct safe_VkVertexInputAttributeDescription2EXT {
     VkVertexInputAttributeDescription2EXT const *ptr() const { return reinterpret_cast<VkVertexInputAttributeDescription2EXT const *>(this); }
 };
 
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkExportFenceSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    NvSciSyncAttrList pAttributes;
+    safe_VkExportFenceSciSyncInfoNV(const VkExportFenceSciSyncInfoNV* in_struct);
+    safe_VkExportFenceSciSyncInfoNV(const safe_VkExportFenceSciSyncInfoNV& copy_src);
+    safe_VkExportFenceSciSyncInfoNV& operator=(const safe_VkExportFenceSciSyncInfoNV& copy_src);
+    safe_VkExportFenceSciSyncInfoNV();
+    ~safe_VkExportFenceSciSyncInfoNV();
+    void initialize(const VkExportFenceSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkExportFenceSciSyncInfoNV* copy_src);
+    VkExportFenceSciSyncInfoNV *ptr() { return reinterpret_cast<VkExportFenceSciSyncInfoNV *>(this); }
+    VkExportFenceSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkExportFenceSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkImportFenceSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkFence fence;
+    VkExternalFenceHandleTypeFlagBits handleType;
+    const void* handle;
+    safe_VkImportFenceSciSyncInfoNV(const VkImportFenceSciSyncInfoNV* in_struct);
+    safe_VkImportFenceSciSyncInfoNV(const safe_VkImportFenceSciSyncInfoNV& copy_src);
+    safe_VkImportFenceSciSyncInfoNV& operator=(const safe_VkImportFenceSciSyncInfoNV& copy_src);
+    safe_VkImportFenceSciSyncInfoNV();
+    ~safe_VkImportFenceSciSyncInfoNV();
+    void initialize(const VkImportFenceSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkImportFenceSciSyncInfoNV* copy_src);
+    VkImportFenceSciSyncInfoNV *ptr() { return reinterpret_cast<VkImportFenceSciSyncInfoNV *>(this); }
+    VkImportFenceSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkImportFenceSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkFenceGetSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkFence fence;
+    VkExternalFenceHandleTypeFlagBits handleType;
+    safe_VkFenceGetSciSyncInfoNV(const VkFenceGetSciSyncInfoNV* in_struct);
+    safe_VkFenceGetSciSyncInfoNV(const safe_VkFenceGetSciSyncInfoNV& copy_src);
+    safe_VkFenceGetSciSyncInfoNV& operator=(const safe_VkFenceGetSciSyncInfoNV& copy_src);
+    safe_VkFenceGetSciSyncInfoNV();
+    ~safe_VkFenceGetSciSyncInfoNV();
+    void initialize(const VkFenceGetSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkFenceGetSciSyncInfoNV* copy_src);
+    VkFenceGetSciSyncInfoNV *ptr() { return reinterpret_cast<VkFenceGetSciSyncInfoNV *>(this); }
+    VkFenceGetSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkFenceGetSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkSciSyncAttributesInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkSciSyncClientTypeNV clientType;
+    VkSciSyncPrimitiveTypeNV primitiveType;
+    safe_VkSciSyncAttributesInfoNV(const VkSciSyncAttributesInfoNV* in_struct);
+    safe_VkSciSyncAttributesInfoNV(const safe_VkSciSyncAttributesInfoNV& copy_src);
+    safe_VkSciSyncAttributesInfoNV& operator=(const safe_VkSciSyncAttributesInfoNV& copy_src);
+    safe_VkSciSyncAttributesInfoNV();
+    ~safe_VkSciSyncAttributesInfoNV();
+    void initialize(const VkSciSyncAttributesInfoNV* in_struct);
+    void initialize(const safe_VkSciSyncAttributesInfoNV* copy_src);
+    VkSciSyncAttributesInfoNV *ptr() { return reinterpret_cast<VkSciSyncAttributesInfoNV *>(this); }
+    VkSciSyncAttributesInfoNV const *ptr() const { return reinterpret_cast<VkSciSyncAttributesInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkExportSemaphoreSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    NvSciSyncAttrList pAttributes;
+    safe_VkExportSemaphoreSciSyncInfoNV(const VkExportSemaphoreSciSyncInfoNV* in_struct);
+    safe_VkExportSemaphoreSciSyncInfoNV(const safe_VkExportSemaphoreSciSyncInfoNV& copy_src);
+    safe_VkExportSemaphoreSciSyncInfoNV& operator=(const safe_VkExportSemaphoreSciSyncInfoNV& copy_src);
+    safe_VkExportSemaphoreSciSyncInfoNV();
+    ~safe_VkExportSemaphoreSciSyncInfoNV();
+    void initialize(const VkExportSemaphoreSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkExportSemaphoreSciSyncInfoNV* copy_src);
+    VkExportSemaphoreSciSyncInfoNV *ptr() { return reinterpret_cast<VkExportSemaphoreSciSyncInfoNV *>(this); }
+    VkExportSemaphoreSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkExportSemaphoreSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkImportSemaphoreSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphore semaphore;
+    VkExternalSemaphoreHandleTypeFlagBits handleType;
+    const void* handle;
+    safe_VkImportSemaphoreSciSyncInfoNV(const VkImportSemaphoreSciSyncInfoNV* in_struct);
+    safe_VkImportSemaphoreSciSyncInfoNV(const safe_VkImportSemaphoreSciSyncInfoNV& copy_src);
+    safe_VkImportSemaphoreSciSyncInfoNV& operator=(const safe_VkImportSemaphoreSciSyncInfoNV& copy_src);
+    safe_VkImportSemaphoreSciSyncInfoNV();
+    ~safe_VkImportSemaphoreSciSyncInfoNV();
+    void initialize(const VkImportSemaphoreSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkImportSemaphoreSciSyncInfoNV* copy_src);
+    VkImportSemaphoreSciSyncInfoNV *ptr() { return reinterpret_cast<VkImportSemaphoreSciSyncInfoNV *>(this); }
+    VkImportSemaphoreSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkImportSemaphoreSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkSemaphoreGetSciSyncInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphore semaphore;
+    VkExternalSemaphoreHandleTypeFlagBits handleType;
+    safe_VkSemaphoreGetSciSyncInfoNV(const VkSemaphoreGetSciSyncInfoNV* in_struct);
+    safe_VkSemaphoreGetSciSyncInfoNV(const safe_VkSemaphoreGetSciSyncInfoNV& copy_src);
+    safe_VkSemaphoreGetSciSyncInfoNV& operator=(const safe_VkSemaphoreGetSciSyncInfoNV& copy_src);
+    safe_VkSemaphoreGetSciSyncInfoNV();
+    ~safe_VkSemaphoreGetSciSyncInfoNV();
+    void initialize(const VkSemaphoreGetSciSyncInfoNV* in_struct);
+    void initialize(const safe_VkSemaphoreGetSciSyncInfoNV* copy_src);
+    VkSemaphoreGetSciSyncInfoNV *ptr() { return reinterpret_cast<VkSemaphoreGetSciSyncInfoNV *>(this); }
+    VkSemaphoreGetSciSyncInfoNV const *ptr() const { return reinterpret_cast<VkSemaphoreGetSciSyncInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkPhysicalDeviceExternalSciSyncFeaturesNV {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 sciSyncFence;
+    VkBool32 sciSyncSemaphore;
+    VkBool32 sciSyncImport;
+    VkBool32 sciSyncExport;
+    safe_VkPhysicalDeviceExternalSciSyncFeaturesNV(const VkPhysicalDeviceExternalSciSyncFeaturesNV* in_struct);
+    safe_VkPhysicalDeviceExternalSciSyncFeaturesNV(const safe_VkPhysicalDeviceExternalSciSyncFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciSyncFeaturesNV& operator=(const safe_VkPhysicalDeviceExternalSciSyncFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciSyncFeaturesNV();
+    ~safe_VkPhysicalDeviceExternalSciSyncFeaturesNV();
+    void initialize(const VkPhysicalDeviceExternalSciSyncFeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceExternalSciSyncFeaturesNV* copy_src);
+    VkPhysicalDeviceExternalSciSyncFeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceExternalSciSyncFeaturesNV *>(this); }
+    VkPhysicalDeviceExternalSciSyncFeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceExternalSciSyncFeaturesNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkExportMemorySciBufInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    NvSciBufAttrList pAttributes;
+    safe_VkExportMemorySciBufInfoNV(const VkExportMemorySciBufInfoNV* in_struct);
+    safe_VkExportMemorySciBufInfoNV(const safe_VkExportMemorySciBufInfoNV& copy_src);
+    safe_VkExportMemorySciBufInfoNV& operator=(const safe_VkExportMemorySciBufInfoNV& copy_src);
+    safe_VkExportMemorySciBufInfoNV();
+    ~safe_VkExportMemorySciBufInfoNV();
+    void initialize(const VkExportMemorySciBufInfoNV* in_struct);
+    void initialize(const safe_VkExportMemorySciBufInfoNV* copy_src);
+    VkExportMemorySciBufInfoNV *ptr() { return reinterpret_cast<VkExportMemorySciBufInfoNV *>(this); }
+    VkExportMemorySciBufInfoNV const *ptr() const { return reinterpret_cast<VkExportMemorySciBufInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkImportMemorySciBufInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkExternalMemoryHandleTypeFlagBits handleType;
+    NvSciBufObj handle;
+    safe_VkImportMemorySciBufInfoNV(const VkImportMemorySciBufInfoNV* in_struct);
+    safe_VkImportMemorySciBufInfoNV(const safe_VkImportMemorySciBufInfoNV& copy_src);
+    safe_VkImportMemorySciBufInfoNV& operator=(const safe_VkImportMemorySciBufInfoNV& copy_src);
+    safe_VkImportMemorySciBufInfoNV();
+    ~safe_VkImportMemorySciBufInfoNV();
+    void initialize(const VkImportMemorySciBufInfoNV* in_struct);
+    void initialize(const safe_VkImportMemorySciBufInfoNV* copy_src);
+    VkImportMemorySciBufInfoNV *ptr() { return reinterpret_cast<VkImportMemorySciBufInfoNV *>(this); }
+    VkImportMemorySciBufInfoNV const *ptr() const { return reinterpret_cast<VkImportMemorySciBufInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkMemoryGetSciBufInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkDeviceMemory memory;
+    VkExternalMemoryHandleTypeFlagBits handleType;
+    safe_VkMemoryGetSciBufInfoNV(const VkMemoryGetSciBufInfoNV* in_struct);
+    safe_VkMemoryGetSciBufInfoNV(const safe_VkMemoryGetSciBufInfoNV& copy_src);
+    safe_VkMemoryGetSciBufInfoNV& operator=(const safe_VkMemoryGetSciBufInfoNV& copy_src);
+    safe_VkMemoryGetSciBufInfoNV();
+    ~safe_VkMemoryGetSciBufInfoNV();
+    void initialize(const VkMemoryGetSciBufInfoNV* in_struct);
+    void initialize(const safe_VkMemoryGetSciBufInfoNV* copy_src);
+    VkMemoryGetSciBufInfoNV *ptr() { return reinterpret_cast<VkMemoryGetSciBufInfoNV *>(this); }
+    VkMemoryGetSciBufInfoNV const *ptr() const { return reinterpret_cast<VkMemoryGetSciBufInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkMemorySciBufPropertiesNV {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t memoryTypeBits;
+    safe_VkMemorySciBufPropertiesNV(const VkMemorySciBufPropertiesNV* in_struct);
+    safe_VkMemorySciBufPropertiesNV(const safe_VkMemorySciBufPropertiesNV& copy_src);
+    safe_VkMemorySciBufPropertiesNV& operator=(const safe_VkMemorySciBufPropertiesNV& copy_src);
+    safe_VkMemorySciBufPropertiesNV();
+    ~safe_VkMemorySciBufPropertiesNV();
+    void initialize(const VkMemorySciBufPropertiesNV* in_struct);
+    void initialize(const safe_VkMemorySciBufPropertiesNV* copy_src);
+    VkMemorySciBufPropertiesNV *ptr() { return reinterpret_cast<VkMemorySciBufPropertiesNV *>(this); }
+    VkMemorySciBufPropertiesNV const *ptr() const { return reinterpret_cast<VkMemorySciBufPropertiesNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkPhysicalDeviceExternalSciBufFeaturesNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkBool32 sciBufImport;
+    VkBool32 sciBufExport;
+    safe_VkPhysicalDeviceExternalSciBufFeaturesNV(const VkPhysicalDeviceExternalSciBufFeaturesNV* in_struct);
+    safe_VkPhysicalDeviceExternalSciBufFeaturesNV(const safe_VkPhysicalDeviceExternalSciBufFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciBufFeaturesNV& operator=(const safe_VkPhysicalDeviceExternalSciBufFeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciBufFeaturesNV();
+    ~safe_VkPhysicalDeviceExternalSciBufFeaturesNV();
+    void initialize(const VkPhysicalDeviceExternalSciBufFeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceExternalSciBufFeaturesNV* copy_src);
+    VkPhysicalDeviceExternalSciBufFeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceExternalSciBufFeaturesNV *>(this); }
+    VkPhysicalDeviceExternalSciBufFeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceExternalSciBufFeaturesNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
 struct safe_VkPhysicalDeviceExtendedDynamicState2FeaturesEXT {
     VkStructureType sType;
     void* pNext;
@@ -5578,4 +5830,22 @@ struct safe_VkPipelineColorWriteCreateInfoEXT {
     void initialize(const safe_VkPipelineColorWriteCreateInfoEXT* copy_src);
     VkPipelineColorWriteCreateInfoEXT *ptr() { return reinterpret_cast<VkPipelineColorWriteCreateInfoEXT *>(this); }
     VkPipelineColorWriteCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineColorWriteCreateInfoEXT const *>(this); }
+};
+
+struct safe_VkApplicationParametersEXT {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t vendorID;
+    uint32_t deviceID;
+    uint32_t key;
+    uint64_t value;
+    safe_VkApplicationParametersEXT(const VkApplicationParametersEXT* in_struct);
+    safe_VkApplicationParametersEXT(const safe_VkApplicationParametersEXT& copy_src);
+    safe_VkApplicationParametersEXT& operator=(const safe_VkApplicationParametersEXT& copy_src);
+    safe_VkApplicationParametersEXT();
+    ~safe_VkApplicationParametersEXT();
+    void initialize(const VkApplicationParametersEXT* in_struct);
+    void initialize(const safe_VkApplicationParametersEXT* copy_src);
+    VkApplicationParametersEXT *ptr() { return reinterpret_cast<VkApplicationParametersEXT *>(this); }
+    VkApplicationParametersEXT const *ptr() const { return reinterpret_cast<VkApplicationParametersEXT const *>(this); }
 };

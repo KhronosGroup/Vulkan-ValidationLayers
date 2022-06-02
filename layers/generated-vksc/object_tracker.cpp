@@ -57,7 +57,6 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeQueryPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBufferView, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImageView, error_code);
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeShaderModule, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineCache, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineLayout, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipeline, error_code);
@@ -90,7 +89,6 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeQueryPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferView);
     DestroyUndestroyedObjects(kVulkanObjectTypeImageView);
-    DestroyUndestroyedObjects(kVulkanObjectTypeShaderModule);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineCache);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineLayout);
     DestroyUndestroyedObjects(kVulkanObjectTypePipeline);
@@ -860,7 +858,7 @@ bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(
                 }
             }
             skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, "VUID-VkGraphicsPipelineCreateInfo-layout-parameter", "VUID-VkGraphicsPipelineCreateInfo-commonparent");
-            skip |= ValidateObject(pCreateInfos[index0].renderPass, kVulkanObjectTypeRenderPass, false, "VUID-VkGraphicsPipelineCreateInfo-renderPass-parameter", "VUID-VkGraphicsPipelineCreateInfo-commonparent");
+            skip |= ValidateObject(pCreateInfos[index0].renderPass, kVulkanObjectTypeRenderPass, true, "VUID-VkGraphicsPipelineCreateInfo-renderPass-parameter", "VUID-VkGraphicsPipelineCreateInfo-commonparent");
             if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
                 skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false, "VUID-VkGraphicsPipelineCreateInfo-flags-00722", "VUID-VkGraphicsPipelineCreateInfo-commonparent");
         }
@@ -3409,6 +3407,154 @@ bool ObjectLifetimes::PreCallValidateCmdSetVertexInputEXT(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetFenceSciSyncFenceNV-device-parameter", kVUIDUndefined);
+    if (pGetSciSyncHandleInfo) {
+        skip |= ValidateObject(pGetSciSyncHandleInfo->fence, kVulkanObjectTypeFence, false, "VUID-VkFenceGetSciSyncInfoNV-fence-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetFenceSciSyncObjNV-device-parameter", kVUIDUndefined);
+    if (pGetSciSyncHandleInfo) {
+        skip |= ValidateObject(pGetSciSyncHandleInfo->fence, kVulkanObjectTypeFence, false, "VUID-VkFenceGetSciSyncInfoNV-fence-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkImportFenceSciSyncFenceNV-device-parameter", kVUIDUndefined);
+    if (pImportFenceSciSyncInfo) {
+        skip |= ValidateObject(pImportFenceSciSyncInfo->fence, kVulkanObjectTypeFence, false, "VUID-VkImportFenceSciSyncInfoNV-fence-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkImportFenceSciSyncObjNV-device-parameter", kVUIDUndefined);
+    if (pImportFenceSciSyncInfo) {
+        skip |= ValidateObject(pImportFenceSciSyncInfo->fence, kVulkanObjectTypeFence, false, "VUID-VkImportFenceSciSyncInfoNV-fence-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSciSyncAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkSciSyncAttributesInfoNV*            pSciSyncAttributesInfo,
+    NvSciSyncAttrList                           pAttributes) const {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSciSyncAttributesNV-physicalDevice-parameter", kVUIDUndefined);
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetSemaphoreSciSyncObjNV-device-parameter", kVUIDUndefined);
+    if (pGetSciSyncInfo) {
+        skip |= ValidateObject(pGetSciSyncInfo->semaphore, kVulkanObjectTypeSemaphore, false, "VUID-VkSemaphoreGetSciSyncInfoNV-semaphore-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkImportSemaphoreSciSyncObjNV-device-parameter", kVUIDUndefined);
+    if (pImportSemaphoreSciSyncInfo) {
+        skip |= ValidateObject(pImportSemaphoreSciSyncInfo->semaphore, kVulkanObjectTypeSemaphore, false, "VUID-VkImportSemaphoreSciSyncInfoNV-semaphore-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetMemorySciBufNV-device-parameter", kVUIDUndefined);
+    if (pGetSciBufInfo) {
+        skip |= ValidateObject(pGetSciBufInfo->memory, kVulkanObjectTypeDeviceMemory, false, "VUID-VkMemoryGetSciBufInfoNV-memory-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalMemorySciBufPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    NvSciBufObj                                 handle,
+    VkMemorySciBufPropertiesNV*                 pMemorySciBufProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV-physicalDevice-parameter", kVUIDUndefined);
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceSciBufAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    NvSciBufAttrList                            pAttributes) const {
+    bool skip = false;
+    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkGetPhysicalDeviceSciBufAttributesNV-physicalDevice-parameter", kVUIDUndefined);
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_SCI
 
 bool ObjectLifetimes::PreCallValidateCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,

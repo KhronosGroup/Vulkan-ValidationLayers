@@ -67,6 +67,7 @@ static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
     ExtEnabled vk_feature_version_1_2{kNotEnabled};
+    ExtEnabled vk_ext_application_parameters{kNotEnabled};
     ExtEnabled vk_ext_debug_utils{kNotEnabled};
     ExtEnabled vk_ext_direct_mode_display{kNotEnabled};
     ExtEnabled vk_ext_display_surface_counter{kNotEnabled};
@@ -94,6 +95,7 @@ struct InstanceExtensions {
         static const InstanceInfoMap info_map = {
             {"VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})},
             {"VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})},
+            {VK_EXT_APPLICATION_PARAMETERS_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_application_parameters, {})},
             {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_debug_utils, {})},
             {VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_direct_mode_display, {{
                            {&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME}}})},
@@ -175,6 +177,7 @@ struct InstanceExtensions {
 };
 
 static const std::set<std::string> kInstanceExtensionNames = {
+    VK_EXT_APPLICATION_PARAMETERS_EXTENSION_NAME,
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME,
     VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME,
@@ -245,6 +248,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_swapchain{kNotEnabled};
     ExtEnabled vk_khr_swapchain_mutable_format{kNotEnabled};
     ExtEnabled vk_khr_synchronization2{kNotEnabled};
+    ExtEnabled vk_nv_external_memory_sci_buf{kNotEnabled};
+    ExtEnabled vk_nv_external_sci_sync{kNotEnabled};
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::* enabled;
@@ -330,6 +335,14 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_swapchain_mutable_format, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})},
             {VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_synchronization2, {})},
+#ifdef VK_USE_PLATFORM_SCI
+            {VK_NV_EXTERNAL_MEMORY_SCI_BUF_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_memory_sci_buf, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+            {VK_NV_EXTERNAL_SCI_SYNC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_sci_sync, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+#endif
         };
 
         return info_map;
@@ -448,6 +461,12 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME,
     VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_SCI
+    VK_NV_EXTERNAL_MEMORY_SCI_BUF_EXTENSION_NAME,
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    VK_NV_EXTERNAL_SCI_SYNC_EXTENSION_NAME,
+#endif
 };
 
 

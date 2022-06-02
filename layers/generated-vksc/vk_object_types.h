@@ -51,24 +51,23 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeQueryPool = 12,
     kVulkanObjectTypeBufferView = 13,
     kVulkanObjectTypeImageView = 14,
-    kVulkanObjectTypeShaderModule = 15,
-    kVulkanObjectTypePipelineCache = 16,
-    kVulkanObjectTypePipelineLayout = 17,
-    kVulkanObjectTypePipeline = 18,
-    kVulkanObjectTypeRenderPass = 19,
-    kVulkanObjectTypeDescriptorSetLayout = 20,
-    kVulkanObjectTypeSampler = 21,
-    kVulkanObjectTypeDescriptorSet = 22,
-    kVulkanObjectTypeDescriptorPool = 23,
-    kVulkanObjectTypeFramebuffer = 24,
-    kVulkanObjectTypeCommandPool = 25,
-    kVulkanObjectTypeSamplerYcbcrConversion = 26,
-    kVulkanObjectTypeSurfaceKHR = 27,
-    kVulkanObjectTypeSwapchainKHR = 28,
-    kVulkanObjectTypeDisplayKHR = 29,
-    kVulkanObjectTypeDisplayModeKHR = 30,
-    kVulkanObjectTypeDebugUtilsMessengerEXT = 31,
-    kVulkanObjectTypeMax = 32,
+    kVulkanObjectTypePipelineCache = 15,
+    kVulkanObjectTypePipelineLayout = 16,
+    kVulkanObjectTypePipeline = 17,
+    kVulkanObjectTypeRenderPass = 18,
+    kVulkanObjectTypeDescriptorSetLayout = 19,
+    kVulkanObjectTypeSampler = 20,
+    kVulkanObjectTypeDescriptorSet = 21,
+    kVulkanObjectTypeDescriptorPool = 22,
+    kVulkanObjectTypeFramebuffer = 23,
+    kVulkanObjectTypeCommandPool = 24,
+    kVulkanObjectTypeSamplerYcbcrConversion = 25,
+    kVulkanObjectTypeSurfaceKHR = 26,
+    kVulkanObjectTypeSwapchainKHR = 27,
+    kVulkanObjectTypeDisplayKHR = 28,
+    kVulkanObjectTypeDisplayModeKHR = 29,
+    kVulkanObjectTypeDebugUtilsMessengerEXT = 30,
+    kVulkanObjectTypeMax = 31,
     // Aliases for backwards compatibilty of "promoted" types
 } VulkanObjectType;
 
@@ -89,7 +88,6 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkQueryPool",
     "VkBufferView",
     "VkImageView",
-    "VkShaderModule",
     "VkPipelineCache",
     "VkPipelineLayout",
     "VkPipeline",
@@ -125,7 +123,6 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeQueryPool: return VK_OBJECT_TYPE_QUERY_POOL;
         case kVulkanObjectTypeBufferView: return VK_OBJECT_TYPE_BUFFER_VIEW;
         case kVulkanObjectTypeImageView: return VK_OBJECT_TYPE_IMAGE_VIEW;
-        case kVulkanObjectTypeShaderModule: return VK_OBJECT_TYPE_SHADER_MODULE;
         case kVulkanObjectTypePipelineCache: return VK_OBJECT_TYPE_PIPELINE_CACHE;
         case kVulkanObjectTypePipelineLayout: return VK_OBJECT_TYPE_PIPELINE_LAYOUT;
         case kVulkanObjectTypePipeline: return VK_OBJECT_TYPE_PIPELINE;
@@ -163,7 +160,6 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_QUERY_POOL: return kVulkanObjectTypeQueryPool;
         case VK_OBJECT_TYPE_BUFFER_VIEW: return kVulkanObjectTypeBufferView;
         case VK_OBJECT_TYPE_IMAGE_VIEW: return kVulkanObjectTypeImageView;
-        case VK_OBJECT_TYPE_SHADER_MODULE: return kVulkanObjectTypeShaderModule;
         case VK_OBJECT_TYPE_PIPELINE_CACHE: return kVulkanObjectTypePipelineCache;
         case VK_OBJECT_TYPE_PIPELINE_LAYOUT: return kVulkanObjectTypePipelineLayout;
         case VK_OBJECT_TYPE_PIPELINE: return kVulkanObjectTypePipeline;
@@ -486,16 +482,6 @@ template <> struct VkHandleInfo<VkSemaphore> {
 };
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeSemaphore> {
     typedef VkSemaphore Type;
-};
-template <> struct VkHandleInfo<VkShaderModule> {
-    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeShaderModule;
-    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_SHADER_MODULE;
-    static const char* Typename() {
-        return "VkShaderModule";
-    }
-};
-template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeShaderModule> {
-    typedef VkShaderModule Type;
 };
 template <> struct VkHandleInfo<VkSurfaceKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeSurfaceKHR;

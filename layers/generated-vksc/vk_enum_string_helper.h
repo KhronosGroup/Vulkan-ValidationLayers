@@ -94,6 +94,8 @@ static inline const char* string_VkResult(VkResult input_value)
             return "VK_ERROR_TOO_MANY_OBJECTS";
         case VK_ERROR_UNKNOWN:
             return "VK_ERROR_UNKNOWN";
+        case VK_ERROR_VALIDATION_FAILED:
+            return "VK_ERROR_VALIDATION_FAILED";
         case VK_EVENT_RESET:
             return "VK_EVENT_RESET";
         case VK_EVENT_SET:
@@ -123,6 +125,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR";
         case VK_STRUCTURE_TYPE_APPLICATION_INFO:
             return "VK_STRUCTURE_TYPE_APPLICATION_INFO";
+        case VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT:
+            return "VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT";
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2:
             return "VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2";
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT:
@@ -143,8 +147,6 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR";
         case VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO:
             return "VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO";
-        case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO:
-            return "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO";
         case VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR:
             return "VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2_KHR";
         case VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR:
@@ -269,16 +271,24 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DISPLAY_PROPERTIES_2_KHR";
         case VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_DISPLAY_SURFACE_CREATE_INFO_KHR";
+        case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT:
+            return "VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT";
         case VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT:
             return "VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT";
         case VK_STRUCTURE_TYPE_EVENT_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_EVENT_CREATE_INFO";
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO";
+        case VK_STRUCTURE_TYPE_EXPORT_FENCE_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_EXPORT_FENCE_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
             return "VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO";
+        case VK_STRUCTURE_TYPE_EXPORT_MEMORY_SCI_BUF_INFO_NV:
+            return "VK_STRUCTURE_TYPE_EXPORT_MEMORY_SCI_BUF_INFO_NV";
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO";
+        case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES:
             return "VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES";
         case VK_STRUCTURE_TYPE_EXTERNAL_FENCE_PROPERTIES:
@@ -299,6 +309,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_FENCE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_FENCE_GET_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_FENCE_GET_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_FILTER_CUBIC_IMAGE_VIEW_IMAGE_FORMAT_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2:
@@ -355,12 +367,18 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_IMPORT_FENCE_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_IMPORT_FENCE_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR";
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT:
             return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_HOST_POINTER_INFO_EXT";
+        case VK_STRUCTURE_TYPE_IMPORT_MEMORY_SCI_BUF_INFO_NV:
+            return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_SCI_BUF_INFO_NV";
         case VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO:
@@ -385,12 +403,16 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_MEMORY_FD_PROPERTIES_KHR";
         case VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_MEMORY_GET_SCI_BUF_INFO_NV:
+            return "VK_STRUCTURE_TYPE_MEMORY_GET_SCI_BUF_INFO_NV";
         case VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_MEMORY_HOST_POINTER_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO:
             return "VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO";
         case VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2:
             return "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2";
+        case VK_STRUCTURE_TYPE_MEMORY_SCI_BUF_PROPERTIES_NV:
+            return "VK_STRUCTURE_TYPE_MEMORY_SCI_BUF_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR:
@@ -447,6 +469,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2:
@@ -683,10 +709,14 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO";
         case VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT:
             return "VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SCI_SYNC_ATTRIBUTES_INFO_NV:
+            return "VK_STRUCTURE_TYPE_SCI_SYNC_ATTRIBUTES_INFO_NV";
         case VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR";
+        case VK_STRUCTURE_TYPE_SEMAPHORE_GET_SCI_SYNC_INFO_NV:
+            return "VK_STRUCTURE_TYPE_SEMAPHORE_GET_SCI_SYNC_INFO_NV";
         case VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO";
         case VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR:
@@ -695,8 +725,6 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO";
-        case VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO:
-            return "VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR:
             return "VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR";
         case VK_STRUCTURE_TYPE_SUBMIT_INFO:
@@ -959,8 +987,6 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
             return "VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION";
         case VK_OBJECT_TYPE_SEMAPHORE:
             return "VK_OBJECT_TYPE_SEMAPHORE";
-        case VK_OBJECT_TYPE_SHADER_MODULE:
-            return "VK_OBJECT_TYPE_SHADER_MODULE";
         case VK_OBJECT_TYPE_SURFACE_KHR:
             return "VK_OBJECT_TYPE_SURFACE_KHR";
         case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
@@ -1856,8 +1882,6 @@ static inline const char* string_VkQueueFlagBits(VkQueueFlagBits input_value)
             return "VK_QUEUE_GRAPHICS_BIT";
         case VK_QUEUE_PROTECTED_BIT:
             return "VK_QUEUE_PROTECTED_BIT";
-        case VK_QUEUE_SPARSE_BINDING_BIT:
-            return "VK_QUEUE_SPARSE_BINDING_BIT";
         case VK_QUEUE_TRANSFER_BIT:
             return "VK_QUEUE_TRANSFER_BIT";
         default:
@@ -2508,10 +2532,6 @@ static inline const char* string_VkPipelineCreateFlagBits(VkPipelineCreateFlagBi
 {
     switch (input_value)
     {
-        case VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT:
-            return "VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT";
-        case VK_PIPELINE_CREATE_DERIVATIVE_BIT:
-            return "VK_PIPELINE_CREATE_DERIVATIVE_BIT";
         case VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT:
             return "VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT";
         case VK_PIPELINE_CREATE_DISPATCH_BASE_BIT:
@@ -3167,33 +3187,6 @@ static inline std::string string_VkCommandPoolCreateFlags(VkCommandPoolCreateFla
     return ret;
 }
 
-static inline const char* string_VkCommandPoolResetFlagBits(VkCommandPoolResetFlagBits input_value)
-{
-    switch (input_value)
-    {
-        case VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT:
-            return "VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT";
-        default:
-            return "Unhandled VkCommandPoolResetFlagBits";
-    }
-}
-
-static inline std::string string_VkCommandPoolResetFlags(VkCommandPoolResetFlags input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCommandPoolResetFlagBits(static_cast<VkCommandPoolResetFlagBits>(1U << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkCommandPoolResetFlagBits(static_cast<VkCommandPoolResetFlagBits>(0)));
-    return ret;
-}
-
 static inline const char* string_VkCommandBufferLevel(VkCommandBufferLevel input_value)
 {
     switch (input_value)
@@ -3551,6 +3544,8 @@ static inline const char* string_VkExternalMemoryHandleTypeFlagBits(VkExternalMe
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT";
         case VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT:
             return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT";
+        case VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCI_BUF_BIT_NV:
+            return "VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCI_BUF_BIT_NV";
         default:
             return "Unhandled VkExternalMemoryHandleTypeFlagBits";
     }
@@ -3613,6 +3608,10 @@ static inline const char* string_VkExternalFenceHandleTypeFlagBits(VkExternalFen
             return "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT";
         case VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT:
             return "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT";
+        case VK_EXTERNAL_FENCE_HANDLE_TYPE_SCI_SYNC_FENCE_BIT_NV:
+            return "VK_EXTERNAL_FENCE_HANDLE_TYPE_SCI_SYNC_FENCE_BIT_NV";
+        case VK_EXTERNAL_FENCE_HANDLE_TYPE_SCI_SYNC_OBJ_BIT_NV:
+            return "VK_EXTERNAL_FENCE_HANDLE_TYPE_SCI_SYNC_OBJ_BIT_NV";
         case VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT:
             return "VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT";
         default:
@@ -3731,6 +3730,8 @@ static inline const char* string_VkExternalSemaphoreHandleTypeFlagBits(VkExterna
             return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT";
         case VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT:
             return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT";
+        case VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SCI_SYNC_OBJ_BIT_NV:
+            return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SCI_SYNC_OBJ_BIT_NV";
         case VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT:
             return "VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT";
         default:
@@ -3811,14 +3812,22 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_JUICE_PROPRIETARY";
         case VK_DRIVER_ID_MESA_LLVMPIPE:
             return "VK_DRIVER_ID_MESA_LLVMPIPE";
+        case VK_DRIVER_ID_MESA_PANVK:
+            return "VK_DRIVER_ID_MESA_PANVK";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
+        case VK_DRIVER_ID_MESA_TURNIP:
+            return "VK_DRIVER_ID_MESA_TURNIP";
+        case VK_DRIVER_ID_MESA_V3DV:
+            return "VK_DRIVER_ID_MESA_V3DV";
         case VK_DRIVER_ID_MOLTENVK:
             return "VK_DRIVER_ID_MOLTENVK";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
             return "VK_DRIVER_ID_NVIDIA_PROPRIETARY";
         case VK_DRIVER_ID_QUALCOMM_PROPRIETARY:
             return "VK_DRIVER_ID_QUALCOMM_PROPRIETARY";
+        case VK_DRIVER_ID_SAMSUNG_PROPRIETARY:
+            return "VK_DRIVER_ID_SAMSUNG_PROPRIETARY";
         case VK_DRIVER_ID_VERISILICON_PROPRIETARY:
             return "VK_DRIVER_ID_VERISILICON_PROPRIETARY";
         default:
@@ -4765,6 +4774,87 @@ static inline const char* string_VkBlendOverlapEXT(VkBlendOverlapEXT input_value
     }
 }
 
+static inline const char* string_VkFormatFeatureFlagBits2KHR(uint64_t input_value)
+{
+    switch (input_value)
+    {
+        case VK_FORMAT_FEATURE_2_BLIT_DST_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_BLIT_DST_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_BLIT_SRC_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_BLIT_SRC_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_DISJOINT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_MIDPOINT_CHROMA_SAMPLES_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_MINMAX_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT_KHR";
+        case VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT_KHR:
+            return "VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT_KHR";
+        default:
+            return "Unhandled VkFormatFeatureFlagBits2KHR";
+    }
+}
+
+static inline std::string string_VkFormatFeatureFlags2KHR(VkFormatFeatureFlags2KHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkFormatFeatureFlagBits2KHR(static_cast<uint64_t>(1ULL << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkFormatFeatureFlagBits2KHR(static_cast<uint64_t>(0)));
+    return ret;
+}
+
 static inline const char* string_VkQueueGlobalPriorityEXT(VkQueueGlobalPriorityEXT input_value)
 {
     switch (input_value)
@@ -4860,6 +4950,42 @@ static inline const char* string_VkLineRasterizationModeEXT(VkLineRasterizationM
     }
 }
 
+
+#ifdef VK_USE_PLATFORM_SCI
+
+static inline const char* string_VkSciSyncClientTypeNV(VkSciSyncClientTypeNV input_value)
+{
+    switch (input_value)
+    {
+        case VK_SCI_SYNC_CLIENT_TYPE_SIGNALER_NV:
+            return "VK_SCI_SYNC_CLIENT_TYPE_SIGNALER_NV";
+        case VK_SCI_SYNC_CLIENT_TYPE_SIGNALER_WAITER_NV:
+            return "VK_SCI_SYNC_CLIENT_TYPE_SIGNALER_WAITER_NV";
+        case VK_SCI_SYNC_CLIENT_TYPE_WAITER_NV:
+            return "VK_SCI_SYNC_CLIENT_TYPE_WAITER_NV";
+        default:
+            return "Unhandled VkSciSyncClientTypeNV";
+    }
+}
+#endif // VK_USE_PLATFORM_SCI
+
+
+#ifdef VK_USE_PLATFORM_SCI
+
+static inline const char* string_VkSciSyncPrimitiveTypeNV(VkSciSyncPrimitiveTypeNV input_value)
+{
+    switch (input_value)
+    {
+        case VK_SCI_SYNC_PRIMITIVE_TYPE_FENCE_NV:
+            return "VK_SCI_SYNC_PRIMITIVE_TYPE_FENCE_NV";
+        case VK_SCI_SYNC_PRIMITIVE_TYPE_SEMAPHORE_NV:
+            return "VK_SCI_SYNC_PRIMITIVE_TYPE_SEMAPHORE_NV";
+        default:
+            return "Unhandled VkSciSyncPrimitiveTypeNV";
+    }
+}
+#endif // VK_USE_PLATFORM_SCI
+
 static inline const char * GetPhysDevFeatureString(uint32_t index) {
     const char * IndexToPhysDevFeatureString[] = {
         "robustBufferAccess",
@@ -4926,6 +5052,7 @@ static inline bool IsDuplicatePnext(VkStructureType input_value)
 {
     switch (input_value)
     {
+        case VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT:
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT:
         case VK_STRUCTURE_TYPE_DEVICE_OBJECT_RESERVATION_CREATE_INFO:
         case VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_RESERVATION_INFO_KHR:

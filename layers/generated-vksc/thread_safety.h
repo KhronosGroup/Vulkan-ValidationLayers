@@ -337,7 +337,6 @@ public:
     counter<VkSampler> c_VkSampler;
     counter<VkSamplerYcbcrConversion> c_VkSamplerYcbcrConversion;
     counter<VkSemaphore> c_VkSemaphore;
-    counter<VkShaderModule> c_VkShaderModule;
     counter<VkSurfaceKHR> c_VkSurfaceKHR;
     counter<VkSwapchainKHR> c_VkSwapchainKHR;
 
@@ -385,7 +384,6 @@ public:
           c_VkSampler("VkSampler", kVulkanObjectTypeSampler, this),
           c_VkSamplerYcbcrConversion("VkSamplerYcbcrConversion", kVulkanObjectTypeSamplerYcbcrConversion, this),
           c_VkSemaphore("VkSemaphore", kVulkanObjectTypeSemaphore, this),
-          c_VkShaderModule("VkShaderModule", kVulkanObjectTypeShaderModule, this),
           c_VkSurfaceKHR("VkSurfaceKHR", kVulkanObjectTypeSurfaceKHR, this),
           c_VkSwapchainKHR("VkSwapchainKHR", kVulkanObjectTypeSwapchainKHR, this),
 
@@ -467,7 +465,6 @@ WRAPPER(VkRenderPass)
 WRAPPER(VkSampler)
 WRAPPER(VkSamplerYcbcrConversion)
 WRAPPER(VkSemaphore)
-WRAPPER(VkShaderModule)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
 
@@ -3149,6 +3146,83 @@ void PostCallRecordCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT*  pVertexBindingDescriptions,
     uint32_t                                    vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void PreCallRecordGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) override;
+
+void PostCallRecordGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle,
+    VkResult                                    result) override;
+
+void PreCallRecordGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) override;
+
+void PostCallRecordGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle,
+    VkResult                                    result) override;
+
+void PreCallRecordImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) override;
+
+void PostCallRecordImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo,
+    VkResult                                    result) override;
+
+void PreCallRecordImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) override;
+
+void PostCallRecordImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo,
+    VkResult                                    result) override;
+
+void PreCallRecordGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle) override;
+
+void PostCallRecordGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle,
+    VkResult                                    result) override;
+
+void PreCallRecordImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo) override;
+
+void PostCallRecordImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo,
+    VkResult                                    result) override;
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void PreCallRecordGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle) override;
+
+void PostCallRecordGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle,
+    VkResult                                    result) override;
+#endif // VK_USE_PLATFORM_SCI
 
 void PreCallRecordCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,

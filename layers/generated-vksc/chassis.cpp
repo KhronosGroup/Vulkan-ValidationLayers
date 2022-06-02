@@ -6687,6 +6687,239 @@ VKAPI_ATTR void VKAPI_CALL CmdSetVertexInputEXT(
     }
 }
 
+#ifdef VK_USE_PLATFORM_SCI
+
+VKAPI_ATTR VkResult VKAPI_CALL GetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetFenceSciSyncFenceNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFenceSciSyncFenceNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle);
+    }
+    VkResult result = DispatchGetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceSciSyncFenceNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetFenceSciSyncObjNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFenceSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle);
+    }
+    VkResult result = DispatchGetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFenceSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateImportFenceSciSyncFenceNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportFenceSciSyncFenceNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo);
+    }
+    VkResult result = DispatchImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceSciSyncFenceNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateImportFenceSciSyncObjNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportFenceSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo);
+    }
+    VkResult result = DispatchImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportFenceSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSciSyncAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkSciSyncAttributesInfoNV*            pSciSyncAttributesInfo,
+    NvSciSyncAttrList                           pAttributes) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPhysicalDeviceSciSyncAttributesNV(physicalDevice, pSciSyncAttributesInfo, pAttributes);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceSciSyncAttributesNV(physicalDevice, pSciSyncAttributesInfo, pAttributes);
+    }
+    VkResult result = DispatchGetPhysicalDeviceSciSyncAttributesNV(physicalDevice, pSciSyncAttributesInfo, pAttributes);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceSciSyncAttributesNV(physicalDevice, pSciSyncAttributesInfo, pAttributes, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle);
+    }
+    VkResult result = DispatchGetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL ImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateImportSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordImportSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo);
+    }
+    VkResult result = DispatchImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordImportSemaphoreSciSyncObjNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo, result);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VKAPI_ATTR VkResult VKAPI_CALL GetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetMemorySciBufNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetMemorySciBufNV(device, pGetSciBufInfo, pHandle);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetMemorySciBufNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetMemorySciBufNV(device, pGetSciBufInfo, pHandle);
+    }
+    VkResult result = DispatchGetMemorySciBufNV(device, pGetSciBufInfo, pHandle);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetMemorySciBufNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetMemorySciBufNV(device, pGetSciBufInfo, pHandle, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceExternalMemorySciBufPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    NvSciBufObj                                 handle,
+    VkMemorySciBufPropertiesNV*                 pMemorySciBufProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPhysicalDeviceExternalMemorySciBufPropertiesNV(physicalDevice, handleType, handle, pMemorySciBufProperties);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceExternalMemorySciBufPropertiesNV(physicalDevice, handleType, handle, pMemorySciBufProperties);
+    }
+    VkResult result = DispatchGetPhysicalDeviceExternalMemorySciBufPropertiesNV(physicalDevice, handleType, handle, pMemorySciBufProperties);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceExternalMemorySciBufPropertiesNV(physicalDevice, handleType, handle, pMemorySciBufProperties, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSciBufAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    NvSciBufAttrList                            pAttributes) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPhysicalDeviceSciBufAttributesNV(physicalDevice, pAttributes);
+        if (skip) return VK_ERROR_INITIALIZATION_FAILED;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetPhysicalDeviceSciBufAttributesNV(physicalDevice, pAttributes);
+    }
+    VkResult result = DispatchGetPhysicalDeviceSciBufAttributesNV(physicalDevice, pAttributes);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetPhysicalDeviceSciBufAttributesNV(physicalDevice, pAttributes, result);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
 
 VKAPI_ATTR void VKAPI_CALL CmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
@@ -6815,6 +7048,7 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
         intercept->PostCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
     }
 }
+
 
 // Map of intercepted ApiName to its associated function data
 #ifdef _MSC_VER
@@ -7079,6 +7313,36 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdSetStencilTestEnableEXT", {kFuncTypeDev, (void*)CmdSetStencilTestEnableEXT}},
     {"vkCmdSetStencilOpEXT", {kFuncTypeDev, (void*)CmdSetStencilOpEXT}},
     {"vkCmdSetVertexInputEXT", {kFuncTypeDev, (void*)CmdSetVertexInputEXT}},
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetFenceSciSyncFenceNV", {kFuncTypeDev, (void*)GetFenceSciSyncFenceNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetFenceSciSyncObjNV", {kFuncTypeDev, (void*)GetFenceSciSyncObjNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkImportFenceSciSyncFenceNV", {kFuncTypeDev, (void*)ImportFenceSciSyncFenceNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkImportFenceSciSyncObjNV", {kFuncTypeDev, (void*)ImportFenceSciSyncObjNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetPhysicalDeviceSciSyncAttributesNV", {kFuncTypePdev, (void*)GetPhysicalDeviceSciSyncAttributesNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetSemaphoreSciSyncObjNV", {kFuncTypeDev, (void*)GetSemaphoreSciSyncObjNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkImportSemaphoreSciSyncObjNV", {kFuncTypeDev, (void*)ImportSemaphoreSciSyncObjNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetMemorySciBufNV", {kFuncTypeDev, (void*)GetMemorySciBufNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV", {kFuncTypePdev, (void*)GetPhysicalDeviceExternalMemorySciBufPropertiesNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkGetPhysicalDeviceSciBufAttributesNV", {kFuncTypePdev, (void*)GetPhysicalDeviceSciBufAttributesNV}},
+#endif
     {"vkCmdSetPatchControlPointsEXT", {kFuncTypeDev, (void*)CmdSetPatchControlPointsEXT}},
     {"vkCmdSetRasterizerDiscardEnableEXT", {kFuncTypeDev, (void*)CmdSetRasterizerDiscardEnableEXT}},
     {"vkCmdSetDepthBiasEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthBiasEnableEXT}},

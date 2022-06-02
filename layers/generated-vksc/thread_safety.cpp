@@ -4612,6 +4612,111 @@ void ThreadSafety::PostCallRecordCmdSetVertexInputEXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
+#ifdef VK_USE_PLATFORM_SCI
+
+void ThreadSafety::PreCallRecordGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    StartReadObjectParentInstance(device, "vkGetFenceSciSyncFenceNV");
+}
+
+void ThreadSafety::PostCallRecordGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetFenceSciSyncFenceNV");
+}
+
+void ThreadSafety::PreCallRecordGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle) {
+    StartReadObjectParentInstance(device, "vkGetFenceSciSyncObjNV");
+}
+
+void ThreadSafety::PostCallRecordGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetFenceSciSyncObjNV");
+}
+
+void ThreadSafety::PreCallRecordImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    StartReadObjectParentInstance(device, "vkImportFenceSciSyncFenceNV");
+}
+
+void ThreadSafety::PostCallRecordImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkImportFenceSciSyncFenceNV");
+}
+
+void ThreadSafety::PreCallRecordImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo) {
+    StartReadObjectParentInstance(device, "vkImportFenceSciSyncObjNV");
+}
+
+void ThreadSafety::PostCallRecordImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkImportFenceSciSyncObjNV");
+}
+
+void ThreadSafety::PreCallRecordGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle) {
+    StartReadObjectParentInstance(device, "vkGetSemaphoreSciSyncObjNV");
+}
+
+void ThreadSafety::PostCallRecordGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetSemaphoreSciSyncObjNV");
+}
+
+void ThreadSafety::PreCallRecordImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo) {
+    StartReadObjectParentInstance(device, "vkImportSemaphoreSciSyncObjNV");
+}
+
+void ThreadSafety::PostCallRecordImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkImportSemaphoreSciSyncObjNV");
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void ThreadSafety::PreCallRecordGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle) {
+    StartReadObjectParentInstance(device, "vkGetMemorySciBufNV");
+}
+
+void ThreadSafety::PostCallRecordGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetMemorySciBufNV");
+}
+#endif // VK_USE_PLATFORM_SCI
+
 void ThreadSafety::PreCallRecordCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    patchControlPoints) {

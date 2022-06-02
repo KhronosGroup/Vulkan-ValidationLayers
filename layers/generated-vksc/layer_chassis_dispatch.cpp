@@ -47,6 +47,13 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+            case VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR: {
+                    safe_VkImageSwapchainCreateInfoKHR *safe_struct = reinterpret_cast<safe_VkImageSwapchainCreateInfoKHR *>(cur_pnext);
+                    if (safe_struct->swapchain) {
+                        safe_struct->swapchain = layer_data->Unwrap(safe_struct->swapchain);
+                    }
+                } break;
+
             case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO: {
                     safe_VkSamplerYcbcrConversionInfo *safe_struct = reinterpret_cast<safe_VkSamplerYcbcrConversionInfo *>(cur_pnext);
                     if (safe_struct->conversion) {
@@ -60,6 +67,13 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                         for (uint32_t index0 = 0; index0 < safe_struct->attachmentCount; ++index0) {
                             safe_struct->pAttachments[index0] = layer_data->Unwrap(safe_struct->pAttachments[index0]);
                         }
+                    }
+                } break;
+
+            case VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR: {
+                    safe_VkBindImageMemorySwapchainInfoKHR *safe_struct = reinterpret_cast<safe_VkBindImageMemorySwapchainInfoKHR *>(cur_pnext);
+                    if (safe_struct->swapchain) {
+                        safe_struct->swapchain = layer_data->Unwrap(safe_struct->swapchain);
                     }
                 } break;
 
@@ -1811,7 +1825,16 @@ VkResult DispatchCreateImage(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
-    VkResult result = layer_data->device_dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
+    safe_VkImageCreateInfo var_local_pCreateInfo;
+    safe_VkImageCreateInfo *local_pCreateInfo = NULL;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+            WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateImage(device, (const VkImageCreateInfo*)local_pCreateInfo, pAllocator, pImage);
     if (VK_SUCCESS == result) {
         *pImage = layer_data->WrapNew(*pImage);
     }
@@ -3103,6 +3126,7 @@ VkResult DispatchBindImageMemory2(
             local_pBindInfos = new safe_VkBindImageMemoryInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+                WrapPnextChainHandles(layer_data, local_pBindInfos[index0].pNext);
                 if (pBindInfos[index0].image) {
                     local_pBindInfos[index0].image = layer_data->Unwrap(pBindInfos[index0].image);
                 }
@@ -4985,6 +5009,227 @@ void DispatchCmdSetVertexInputEXT(
     layer_data->device_dispatch_table.CmdSetVertexInputEXT(commandBuffer, vertexBindingDescriptionCount, pVertexBindingDescriptions, vertexAttributeDescriptionCount, pVertexAttributeDescriptions);
 
 }
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetFenceSciSyncFenceNV(device, pGetSciSyncHandleInfo, pHandle);
+    safe_VkFenceGetSciSyncInfoNV var_local_pGetSciSyncHandleInfo;
+    safe_VkFenceGetSciSyncInfoNV *local_pGetSciSyncHandleInfo = NULL;
+    {
+        if (pGetSciSyncHandleInfo) {
+            local_pGetSciSyncHandleInfo = &var_local_pGetSciSyncHandleInfo;
+            local_pGetSciSyncHandleInfo->initialize(pGetSciSyncHandleInfo);
+            if (pGetSciSyncHandleInfo->fence) {
+                local_pGetSciSyncHandleInfo->fence = layer_data->Unwrap(pGetSciSyncHandleInfo->fence);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetFenceSciSyncFenceNV(device, (const VkFenceGetSciSyncInfoNV*)local_pGetSciSyncHandleInfo, pHandle);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkFenceGetSciSyncInfoNV*              pGetSciSyncHandleInfo,
+    void*                                       pHandle)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetFenceSciSyncObjNV(device, pGetSciSyncHandleInfo, pHandle);
+    safe_VkFenceGetSciSyncInfoNV var_local_pGetSciSyncHandleInfo;
+    safe_VkFenceGetSciSyncInfoNV *local_pGetSciSyncHandleInfo = NULL;
+    {
+        if (pGetSciSyncHandleInfo) {
+            local_pGetSciSyncHandleInfo = &var_local_pGetSciSyncHandleInfo;
+            local_pGetSciSyncHandleInfo->initialize(pGetSciSyncHandleInfo);
+            if (pGetSciSyncHandleInfo->fence) {
+                local_pGetSciSyncHandleInfo->fence = layer_data->Unwrap(pGetSciSyncHandleInfo->fence);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetFenceSciSyncObjNV(device, (const VkFenceGetSciSyncInfoNV*)local_pGetSciSyncHandleInfo, pHandle);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchImportFenceSciSyncFenceNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ImportFenceSciSyncFenceNV(device, pImportFenceSciSyncInfo);
+    safe_VkImportFenceSciSyncInfoNV var_local_pImportFenceSciSyncInfo;
+    safe_VkImportFenceSciSyncInfoNV *local_pImportFenceSciSyncInfo = NULL;
+    {
+        if (pImportFenceSciSyncInfo) {
+            local_pImportFenceSciSyncInfo = &var_local_pImportFenceSciSyncInfo;
+            local_pImportFenceSciSyncInfo->initialize(pImportFenceSciSyncInfo);
+            if (pImportFenceSciSyncInfo->fence) {
+                local_pImportFenceSciSyncInfo->fence = layer_data->Unwrap(pImportFenceSciSyncInfo->fence);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.ImportFenceSciSyncFenceNV(device, (const VkImportFenceSciSyncInfoNV*)local_pImportFenceSciSyncInfo);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchImportFenceSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportFenceSciSyncInfoNV*           pImportFenceSciSyncInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ImportFenceSciSyncObjNV(device, pImportFenceSciSyncInfo);
+    safe_VkImportFenceSciSyncInfoNV var_local_pImportFenceSciSyncInfo;
+    safe_VkImportFenceSciSyncInfoNV *local_pImportFenceSciSyncInfo = NULL;
+    {
+        if (pImportFenceSciSyncInfo) {
+            local_pImportFenceSciSyncInfo = &var_local_pImportFenceSciSyncInfo;
+            local_pImportFenceSciSyncInfo->initialize(pImportFenceSciSyncInfo);
+            if (pImportFenceSciSyncInfo->fence) {
+                local_pImportFenceSciSyncInfo->fence = layer_data->Unwrap(pImportFenceSciSyncInfo->fence);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.ImportFenceSciSyncObjNV(device, (const VkImportFenceSciSyncInfoNV*)local_pImportFenceSciSyncInfo);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetPhysicalDeviceSciSyncAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkSciSyncAttributesInfoNV*            pSciSyncAttributesInfo,
+    NvSciSyncAttrList                           pAttributes)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSciSyncAttributesNV(physicalDevice, pSciSyncAttributesInfo, pAttributes);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkSemaphoreGetSciSyncInfoNV*          pGetSciSyncInfo,
+    void*                                       pHandle)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetSemaphoreSciSyncObjNV(device, pGetSciSyncInfo, pHandle);
+    safe_VkSemaphoreGetSciSyncInfoNV var_local_pGetSciSyncInfo;
+    safe_VkSemaphoreGetSciSyncInfoNV *local_pGetSciSyncInfo = NULL;
+    {
+        if (pGetSciSyncInfo) {
+            local_pGetSciSyncInfo = &var_local_pGetSciSyncInfo;
+            local_pGetSciSyncInfo->initialize(pGetSciSyncInfo);
+            if (pGetSciSyncInfo->semaphore) {
+                local_pGetSciSyncInfo->semaphore = layer_data->Unwrap(pGetSciSyncInfo->semaphore);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetSemaphoreSciSyncObjNV(device, (const VkSemaphoreGetSciSyncInfoNV*)local_pGetSciSyncInfo, pHandle);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchImportSemaphoreSciSyncObjNV(
+    VkDevice                                    device,
+    const VkImportSemaphoreSciSyncInfoNV*       pImportSemaphoreSciSyncInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ImportSemaphoreSciSyncObjNV(device, pImportSemaphoreSciSyncInfo);
+    safe_VkImportSemaphoreSciSyncInfoNV var_local_pImportSemaphoreSciSyncInfo;
+    safe_VkImportSemaphoreSciSyncInfoNV *local_pImportSemaphoreSciSyncInfo = NULL;
+    {
+        if (pImportSemaphoreSciSyncInfo) {
+            local_pImportSemaphoreSciSyncInfo = &var_local_pImportSemaphoreSciSyncInfo;
+            local_pImportSemaphoreSciSyncInfo->initialize(pImportSemaphoreSciSyncInfo);
+            if (pImportSemaphoreSciSyncInfo->semaphore) {
+                local_pImportSemaphoreSciSyncInfo->semaphore = layer_data->Unwrap(pImportSemaphoreSciSyncInfo->semaphore);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.ImportSemaphoreSciSyncObjNV(device, (const VkImportSemaphoreSciSyncInfoNV*)local_pImportSemaphoreSciSyncInfo);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetMemorySciBufNV(
+    VkDevice                                    device,
+    const VkMemoryGetSciBufInfoNV*              pGetSciBufInfo,
+    NvSciBufObj*                                pHandle)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetMemorySciBufNV(device, pGetSciBufInfo, pHandle);
+    safe_VkMemoryGetSciBufInfoNV var_local_pGetSciBufInfo;
+    safe_VkMemoryGetSciBufInfoNV *local_pGetSciBufInfo = NULL;
+    {
+        if (pGetSciBufInfo) {
+            local_pGetSciBufInfo = &var_local_pGetSciBufInfo;
+            local_pGetSciBufInfo->initialize(pGetSciBufInfo);
+            if (pGetSciBufInfo->memory) {
+                local_pGetSciBufInfo->memory = layer_data->Unwrap(pGetSciBufInfo->memory);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetMemorySciBufNV(device, (const VkMemoryGetSciBufInfoNV*)local_pGetSciBufInfo, pHandle);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetPhysicalDeviceExternalMemorySciBufPropertiesNV(
+    VkPhysicalDevice                            physicalDevice,
+    VkExternalMemoryHandleTypeFlagBits          handleType,
+    NvSciBufObj                                 handle,
+    VkMemorySciBufPropertiesNV*                 pMemorySciBufProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceExternalMemorySciBufPropertiesNV(physicalDevice, handleType, handle, pMemorySciBufProperties);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchGetPhysicalDeviceSciBufAttributesNV(
+    VkPhysicalDevice                            physicalDevice,
+    NvSciBufAttrList                            pAttributes)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSciBufAttributesNV(physicalDevice, pAttributes);
+
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
 
 void DispatchCmdSetPatchControlPointsEXT(
     VkCommandBuffer                             commandBuffer,

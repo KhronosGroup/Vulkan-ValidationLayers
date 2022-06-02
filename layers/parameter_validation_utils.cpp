@@ -3293,6 +3293,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             const VkPipelineCreateFlags flags = pCreateInfos[i].flags;
+#if !defined(VULKANSC)
             if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
                 if (pCreateInfos[i].basePipelineIndex != -1) {
                     if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
@@ -3326,6 +3327,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
             }
+#endif
 
             if (pCreateInfos[i].pRasterizationState) {
 #if defined(VK_NV_fill_rectangle)

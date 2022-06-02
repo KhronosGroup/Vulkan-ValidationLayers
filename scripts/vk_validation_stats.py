@@ -647,8 +647,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 assert features
 
                 def isDefined(feature, edition):
-                    def getVersion(f): return int(f.replace('VK_VERSION_1_', '', 1))
-                    def isVersion(f): return f.startswith('VK_VERSION_') and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
+                    def getVersion(f): return int(re.sub(r'VK.*VERSION_1_', '', f))
+                    def isVersion(f): return (f.startswith('VK_VERSION_') or f.startswith('VKSC_VERSION_')) and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
                     def isExtension(f): return f.startswith('VK_') and not isVersion(f)
                     def isKhr(f): return f.startswith('VK_KHR_')
 

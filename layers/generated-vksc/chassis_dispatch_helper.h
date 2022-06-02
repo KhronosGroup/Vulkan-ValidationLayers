@@ -617,6 +617,27 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetVertexInputEXT,
     InterceptIdPreCallRecordCmdSetVertexInputEXT,
     InterceptIdPostCallRecordCmdSetVertexInputEXT,
+    InterceptIdPreCallValidateGetFenceSciSyncFenceNV,
+    InterceptIdPreCallRecordGetFenceSciSyncFenceNV,
+    InterceptIdPostCallRecordGetFenceSciSyncFenceNV,
+    InterceptIdPreCallValidateGetFenceSciSyncObjNV,
+    InterceptIdPreCallRecordGetFenceSciSyncObjNV,
+    InterceptIdPostCallRecordGetFenceSciSyncObjNV,
+    InterceptIdPreCallValidateImportFenceSciSyncFenceNV,
+    InterceptIdPreCallRecordImportFenceSciSyncFenceNV,
+    InterceptIdPostCallRecordImportFenceSciSyncFenceNV,
+    InterceptIdPreCallValidateImportFenceSciSyncObjNV,
+    InterceptIdPreCallRecordImportFenceSciSyncObjNV,
+    InterceptIdPostCallRecordImportFenceSciSyncObjNV,
+    InterceptIdPreCallValidateGetSemaphoreSciSyncObjNV,
+    InterceptIdPreCallRecordGetSemaphoreSciSyncObjNV,
+    InterceptIdPostCallRecordGetSemaphoreSciSyncObjNV,
+    InterceptIdPreCallValidateImportSemaphoreSciSyncObjNV,
+    InterceptIdPreCallRecordImportSemaphoreSciSyncObjNV,
+    InterceptIdPostCallRecordImportSemaphoreSciSyncObjNV,
+    InterceptIdPreCallValidateGetMemorySciBufNV,
+    InterceptIdPreCallRecordGetMemorySciBufNV,
+    InterceptIdPostCallRecordGetMemorySciBufNV,
     InterceptIdPreCallValidateCmdSetPatchControlPointsEXT,
     InterceptIdPreCallRecordCmdSetPatchControlPointsEXT,
     InterceptIdPostCallRecordCmdSetPatchControlPointsEXT,
@@ -1288,6 +1309,47 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetVertexInputEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetVertexInputEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetVertexInputEXT);
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetFenceSciSyncFenceNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetFenceSciSyncFenceNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetFenceSciSyncFenceNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetFenceSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetFenceSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetFenceSciSyncObjNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateImportFenceSciSyncFenceNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordImportFenceSciSyncFenceNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordImportFenceSciSyncFenceNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateImportFenceSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordImportFenceSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordImportFenceSciSyncObjNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetSemaphoreSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetSemaphoreSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetSemaphoreSciSyncObjNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateImportSemaphoreSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordImportSemaphoreSciSyncObjNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordImportSemaphoreSciSyncObjNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetMemorySciBufNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetMemorySciBufNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetMemorySciBufNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetPatchControlPointsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetPatchControlPointsEXT);

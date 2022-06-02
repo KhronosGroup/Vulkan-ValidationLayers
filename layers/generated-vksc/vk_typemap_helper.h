@@ -2387,6 +2387,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPE
     typedef VkImageDrmFormatModifierPropertiesEXT Type;
 };
 
+// Map type VkDrmFormatModifierPropertiesList2EXT to id VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT
+template <> struct LvlTypeMap<VkDrmFormatModifierPropertiesList2EXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT> {
+    typedef VkDrmFormatModifierPropertiesList2EXT Type;
+};
+
 // Map type VkPhysicalDeviceImageViewImageFormatInfoEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceImageViewImageFormatInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_VIEW_IMAGE_FORMAT_INFO_EXT;
@@ -2747,6 +2756,149 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPT
     typedef VkVertexInputAttributeDescription2EXT Type;
 };
 
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkExportFenceSciSyncInfoNV to id VK_STRUCTURE_TYPE_EXPORT_FENCE_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkExportFenceSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_FENCE_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_FENCE_SCI_SYNC_INFO_NV> {
+    typedef VkExportFenceSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkImportFenceSciSyncInfoNV to id VK_STRUCTURE_TYPE_IMPORT_FENCE_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkImportFenceSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_FENCE_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_FENCE_SCI_SYNC_INFO_NV> {
+    typedef VkImportFenceSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkFenceGetSciSyncInfoNV to id VK_STRUCTURE_TYPE_FENCE_GET_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkFenceGetSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_FENCE_GET_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_FENCE_GET_SCI_SYNC_INFO_NV> {
+    typedef VkFenceGetSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkSciSyncAttributesInfoNV to id VK_STRUCTURE_TYPE_SCI_SYNC_ATTRIBUTES_INFO_NV
+template <> struct LvlTypeMap<VkSciSyncAttributesInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SCI_SYNC_ATTRIBUTES_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SCI_SYNC_ATTRIBUTES_INFO_NV> {
+    typedef VkSciSyncAttributesInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkExportSemaphoreSciSyncInfoNV to id VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkExportSemaphoreSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_SCI_SYNC_INFO_NV> {
+    typedef VkExportSemaphoreSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkImportSemaphoreSciSyncInfoNV to id VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkImportSemaphoreSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_SCI_SYNC_INFO_NV> {
+    typedef VkImportSemaphoreSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkSemaphoreGetSciSyncInfoNV to id VK_STRUCTURE_TYPE_SEMAPHORE_GET_SCI_SYNC_INFO_NV
+template <> struct LvlTypeMap<VkSemaphoreGetSciSyncInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_SCI_SYNC_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_GET_SCI_SYNC_INFO_NV> {
+    typedef VkSemaphoreGetSciSyncInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkPhysicalDeviceExternalSciSyncFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceExternalSciSyncFeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_FEATURES_NV> {
+    typedef VkPhysicalDeviceExternalSciSyncFeaturesNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkExportMemorySciBufInfoNV to id VK_STRUCTURE_TYPE_EXPORT_MEMORY_SCI_BUF_INFO_NV
+template <> struct LvlTypeMap<VkExportMemorySciBufInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_SCI_BUF_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_MEMORY_SCI_BUF_INFO_NV> {
+    typedef VkExportMemorySciBufInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkImportMemorySciBufInfoNV to id VK_STRUCTURE_TYPE_IMPORT_MEMORY_SCI_BUF_INFO_NV
+template <> struct LvlTypeMap<VkImportMemorySciBufInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_SCI_BUF_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_MEMORY_SCI_BUF_INFO_NV> {
+    typedef VkImportMemorySciBufInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkMemoryGetSciBufInfoNV to id VK_STRUCTURE_TYPE_MEMORY_GET_SCI_BUF_INFO_NV
+template <> struct LvlTypeMap<VkMemoryGetSciBufInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_GET_SCI_BUF_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_GET_SCI_BUF_INFO_NV> {
+    typedef VkMemoryGetSciBufInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkMemorySciBufPropertiesNV to id VK_STRUCTURE_TYPE_MEMORY_SCI_BUF_PROPERTIES_NV
+template <> struct LvlTypeMap<VkMemorySciBufPropertiesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_SCI_BUF_PROPERTIES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_SCI_BUF_PROPERTIES_NV> {
+    typedef VkMemorySciBufPropertiesNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkPhysicalDeviceExternalSciBufFeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceExternalSciBufFeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV> {
+    typedef VkPhysicalDeviceExternalSciBufFeaturesNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
 // Map type VkPhysicalDeviceExtendedDynamicState2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
@@ -2772,6 +2924,15 @@ template <> struct LvlTypeMap<VkPipelineColorWriteCreateInfoEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT> {
     typedef VkPipelineColorWriteCreateInfoEXT Type;
+};
+
+// Map type VkApplicationParametersEXT to id VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT
+template <> struct LvlTypeMap<VkApplicationParametersEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT> {
+    typedef VkApplicationParametersEXT Type;
 };
 
 // Find an entry of the given type in the pNext chain

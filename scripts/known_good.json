@@ -59,12 +59,15 @@
         "optional": ["tests"]
     },
     {
-      "name": "VulkanSC-Headers",
-      "url": "https://gitlab.khronos.org/vulkan/Vulkan-Headers.git",
-      "sub_dir": "VulkanSC-Headers",
-      "build_dir": "VulkanSC-Headers/build",
-      "install_dir": "VulkanSC-Headers/build/install",
-      "commit": "origin/sc_main_1.2.189"
+        "name" : "VulkanSC-Headers",
+        "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
+        "sub_dir" : "VulkanSC-Headers",
+        "build_dir" : "VulkanSC-Headers/build",
+        "install_dir" : "VulkanSC-Headers/build/install",
+        "cmake_options" : [
+          "-DVulkanSC=TRUE"
+        ],
+        "commit" : "vksc1.0.10"
     }
   ],
   "install_names" : {

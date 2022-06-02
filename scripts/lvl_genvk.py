@@ -556,6 +556,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'spirv_grammar_helper.cpp',
             directory         = directory,
+            apiname           = api,
             grammar           = args.grammar)
         ]
 
@@ -567,6 +568,7 @@ def makeGenOpts(args):
             conventions       = conventions,
             filename          = 'spirv_grammar_helper.h',
             directory         = directory,
+            apiname           = api,
             grammar           = args.grammar)
         ]
 

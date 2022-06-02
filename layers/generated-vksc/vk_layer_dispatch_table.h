@@ -119,6 +119,19 @@ typedef struct VkLayerInstanceDispatchTable_ {
 
     // ---- VK_EXT_headless_surface extension commands
     PFN_vkCreateHeadlessSurfaceEXT CreateHeadlessSurfaceEXT;
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceSciSyncAttributesNV GetPhysicalDeviceSciSyncAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceExternalMemorySciBufPropertiesNV GetPhysicalDeviceExternalMemorySciBufPropertiesNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetPhysicalDeviceSciBufAttributesNV GetPhysicalDeviceSciBufAttributesNV;
+#endif // VK_USE_PLATFORM_SCI
 } VkLayerInstanceDispatchTable;
 
 // Device function pointer dispatch table
@@ -377,6 +390,31 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_EXT_vertex_input_dynamic_state extension commands
     PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
+
+    // ---- VK_NV_external_sci_sync extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetFenceSciSyncFenceNV GetFenceSciSyncFenceNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetFenceSciSyncObjNV GetFenceSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkImportFenceSciSyncFenceNV ImportFenceSciSyncFenceNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkImportFenceSciSyncObjNV ImportFenceSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetSemaphoreSciSyncObjNV GetSemaphoreSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkImportSemaphoreSciSyncObjNV ImportSemaphoreSciSyncObjNV;
+#endif // VK_USE_PLATFORM_SCI
+
+    // ---- VK_NV_external_memory_sci_buf extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkGetMemorySciBufNV GetMemorySciBufNV;
+#endif // VK_USE_PLATFORM_SCI
 
     // ---- VK_EXT_extended_dynamic_state2 extension commands
     PFN_vkCmdSetPatchControlPointsEXT CmdSetPatchControlPointsEXT;
