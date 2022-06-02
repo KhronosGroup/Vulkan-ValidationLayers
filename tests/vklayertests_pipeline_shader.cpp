@@ -17058,3 +17058,170 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TransformFeedbackWrongStage) {
+    TEST_DESCRIPTION("Use transform feedback in vertex shader while also using geometry shader.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    }
+
+    auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&transform_feedback_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!transform_feedback_features.transformFeedback) {
+        printf("%s transformFeedback feature is not supported, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string vsSource = R"(
+               OpCapability Shader
+               OpCapability TransformFeedback
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %v
+               OpExecutionMode %main Xfb
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %v "v"  ; id %8
+
+               ; Annotations
+               OpDecorate %v Location 0
+               OpDecorate %v XfbBuffer 1
+               OpDecorate %v XfbStride 32
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+          %v = OpVariable %_ptr_Output_float Output
+    %float_1 = OpConstant %float 1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpStore %v %float_1
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const std::string gsSource = R"(
+               OpCapability Geometry
+               OpCapability TransformFeedback
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %v
+               OpExecutionMode %main Xfb
+               OpExecutionMode %main Triangles
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputTriangleStrip
+               OpExecutionMode %main OutputVertices 1
+
+               ; Debug Information
+               OpSource GLSL 450
+               OpName %main "main"  ; id %4
+               OpName %v "v"  ; id %8
+
+               ; Annotations
+               OpDecorate %v Location 0
+               OpDecorate %v XfbBuffer 1
+               OpDecorate %v XfbStride 32
+
+               ; Types, variables and constants
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+%_ptr_Output_float = OpTypePointer Output %float
+          %v = OpVariable %_ptr_Output_float Output
+    %float_1 = OpConstant %float 1
+
+               ; Function main
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpStore %v %float_1
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    {
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        VkShaderObj gs(this, bindStateGeomShaderText, VK_SHADER_STAGE_GEOMETRY_BIT);
+        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&gs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+
+        const VkPipelineLayoutObj pl(m_device, {});
+
+        auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipe.InitGraphicsPipelineCreateInfo(&create_info);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02318");
+        pipe.CreateVKPipeline(pl.handle(), m_renderPass, &create_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&gs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+
+        const VkPipelineLayoutObj pl(m_device, {});
+
+        auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipe.InitGraphicsPipelineCreateInfo(&create_info);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-02317");
+        pipe.CreateVKPipeline(pl.handle(), m_renderPass, &create_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        auto vkCmdBeginTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdBeginTransformFeedbackEXT>(
+            vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT"));
+        VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddShader(&fs);
+        pipe.AddDefaultColorAttachment();
+
+        const VkPipelineLayoutObj pl(m_device, {});
+
+        auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+        pipe.InitGraphicsPipelineCreateInfo(&create_info);
+        pipe.CreateVKPipeline(pl.handle(), m_renderPass, &create_info);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
+        m_commandBuffer->begin();
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 0, nullptr, nullptr);
+        m_commandBuffer->end();
+        m_errorMonitor->VerifyFound();
+    }
+}
