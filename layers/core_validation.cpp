@@ -1520,13 +1520,24 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (pipe->active_slots.size() > 0 && !CompatForSet(pipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
         LogObjectList objlist(pipe->pipeline());
-        objlist.add(pipeline_layout->layout());
+        const auto layouts = pipe->PipelineLayoutStateUnion();
+        std::ostringstream pipe_layouts_log;
+        if (layouts.size() > 1) {
+            pipe_layouts_log << "a union of layouts [ ";
+            for (const auto &layout : layouts) {
+                objlist.add(layout->layout());
+                pipe_layouts_log << report_data->FormatHandle(layout->layout()) << " ";
+            }
+            pipe_layouts_log << "]";
+        } else {
+            pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
+        }
         objlist.add(state.pipeline_layout);
         result |= LogError(objlist, vuid.compatible_pipeline,
                            "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
                            " with bound descriptor sets, last bound with %s",
                            CommandTypeString(cmd_type), report_data->FormatHandle(pipe->pipeline()).c_str(),
-                           report_data->FormatHandle(pipeline_layout->layout()).c_str(), pipe->max_active_slot,
+                           pipe_layouts_log.str().c_str(), pipe->max_active_slot,
                            report_data->FormatHandle(state.pipeline_layout).c_str());
     }
 

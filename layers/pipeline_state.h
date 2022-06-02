@@ -302,6 +302,8 @@ class PIPELINE_STATE : public BASE_NODE {
         return merged_graphics_layout;
     }
 
+    std::vector<std::shared_ptr<const PIPELINE_LAYOUT_STATE>> PipelineLayoutStateUnion() const;
+
     const std::shared_ptr<const PIPELINE_LAYOUT_STATE> PreRasterPipelineLayoutState() const {
         if (pre_raster_state) {
             return pre_raster_state->pipeline_layout;
