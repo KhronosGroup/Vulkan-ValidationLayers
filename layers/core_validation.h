@@ -50,7 +50,10 @@ struct DrawDispatchVuid {
     const char* cubic_sampler = kVUIDUndefined;
     const char* indirect_protected_cb = kVUIDUndefined;
     const char* indirect_contiguous_memory = kVUIDUndefined;
+    const char* indirect_count_contiguous_memory = kVUIDUndefined;
     const char* indirect_buffer_bit = kVUIDUndefined;
+    const char* indirect_count_buffer_bit = kVUIDUndefined;
+    const char* indirect_count_offset = kVUIDUndefined;
     const char* viewport_count = kVUIDUndefined;
     const char* scissor_count = kVUIDUndefined;
     const char* viewport_scissor_count = kVUIDUndefined;
@@ -434,6 +437,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, CMD_TYPE cmd_type) const;
+    bool ValidateIndirectCountCmd(const BUFFER_STATE& count_buffer_state, VkDeviceSize count_buffer_offset,
+                                  CMD_TYPE cmd_type) const;
 
     template <typename T1>
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char* VUID) const;
