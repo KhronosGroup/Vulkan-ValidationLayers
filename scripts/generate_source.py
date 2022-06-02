@@ -53,6 +53,7 @@ def main(argv):
                    '-warnExtensions', 'VK_KHR_dynamic_rendering',
                    '-quiet',
                    '-api', args.api,
+                   '-defaultExtensions', args.api,
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
                                               "chassis_dispatch_helper.h",
