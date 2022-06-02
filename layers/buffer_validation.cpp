@@ -1403,7 +1403,8 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
         LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
         VkImageSubresourceRange normalized_isr = image_state->NormalizeSubresourceRange(range);
         skip |= subresource_map->AnyInRange(normalized_isr, [this, cb_node, image_state, &layout_check, layout_mismatch_msg_code,
-                                                              caller, error](const VkImageSubresource &subres, const LayoutEntry &state) {
+                                                             caller,
+                                                             error](const VkImageSubresource &subres, const LayoutEntry &state) {
             bool subres_skip = false;
             if (!layout_check.Check(state)) {
                 *error = true;
@@ -1455,25 +1456,25 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                              layout_invalid_msg_code, layout_mismatch_msg_code, error);
 }
 
-bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
-                                   const IMAGE_VIEW_STATE *image_view_state, VkImageLayout explicit_layout, const char *caller,
-                                   const char *layout_mismatch_msg_code, bool *error) const {
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE *image_view_state,
+                                   VkImageLayout explicit_layout, const char *caller, const char *layout_mismatch_msg_code,
+                                   bool *error) const {
     if (disabled[image_layout_validation]) return false;
     assert(cb_node);
-    assert(image_state);
     assert(image_view_state);
-    const auto image = image_state->image();
     bool skip = false;
 
-    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(*image_state);
+    const auto *subresource_map = cb_node->GetImageSubresourceLayoutMap(*image_view_state->image_state);
     if (subresource_map) {
         LayoutUseCheckAndMessage layout_check(explicit_layout, image_view_state->create_info.subresourceRange.aspectMask);
+        // using the pre-built range generator for the ImageView is faster than creating a new one.
         skip |= subresource_map->AnyInRange(
-            image_view_state->range_generator, [this, &layout_check, layout_mismatch_msg_code, caller, cb_node, image, error](
-                                                   const VkImageSubresource &subres, const LayoutEntry &state) {
+            image_view_state->range_generator, [this, &layout_check, layout_mismatch_msg_code, caller, cb_node, &image_view_state,
+                                                error](const VkImageSubresource &subres, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
                     *error = true;
+                    auto image = image_view_state->image_state->Handle();
                     subres_skip = LogError(cb_node->commandBuffer(), layout_mismatch_msg_code,
                                            "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
                                            "%s layout %s.",
