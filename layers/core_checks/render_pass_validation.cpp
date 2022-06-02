@@ -641,7 +641,8 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
                         }
 
                         // depth stencil attachment
-                        if ((subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) &&
+                        if (subpass.pDepthStencilAttachment &&
+                            (subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) &&
                             (subpass.pDepthStencilAttachment->attachment == i) &&
                             ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
                             skip |=
@@ -684,17 +685,19 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
                         }
 
                         // Resolve attachments
-                        for (uint32_t k = 0; k < subpass.colorAttachmentCount; k++) {
-                            const auto attachment = subpass.pResolveAttachments[k].attachment;
-                            if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
-                                ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
-                                skip |=
-                                    LogError(device, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508",
-                                             "%s(): Resolve attachment #%" PRIu32
-                                             " is not created with"
-                                             " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
-                                             " is %" PRIu32 " but must be 0 due to missing fragmentDensityOffset feature bit.",
-                                             function_name, i, fdm_offset_info->fragmentDensityOffsetCount);
+                        if (subpass.pResolveAttachments != nullptr) {
+                            for (uint32_t k = 0; k < subpass.colorAttachmentCount; k++) {
+                                const auto attachment = subpass.pResolveAttachments[k].attachment;
+                                if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) &&
+                                    ((ici.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) == 0)) {
+                                    skip |= LogError(
+                                        device, "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508",
+                                        "%s(): Resolve attachment #%" PRIu32
+                                        " is not created with"
+                                        " VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM and fragmentDensityOffsetCount"
+                                        " is %" PRIu32 " but must be 0 due to missing fragmentDensityOffset feature bit.",
+                                        function_name, i, fdm_offset_info->fragmentDensityOffsetCount);
+                                }
                             }
                         }
 
