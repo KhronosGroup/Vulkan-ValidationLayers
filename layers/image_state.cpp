@@ -320,20 +320,20 @@ void IMAGE_STATE::SetInitialLayoutMap() {
         return;
     }
     if ((createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) != 0) {
-        const auto *binding = Binding();
-        assert(binding);
         // Look for another aliasing image and point at its layout state.
         // ObjectBindings() is thread safe since returns by value, and once
         // the weak_ptr is successfully locked, the other image state won't
         // be freed out from under us.
-        for (auto &entry : binding->memory_state->ObjectBindings()) {
-            if (entry.first.type == kVulkanObjectTypeImage) {
-                auto base_node = entry.second.lock();
-                if (base_node) {
-                    auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
-                    if (other_image != this && other_image->IsCompatibleAliasing(this)) {
-                        layout_range_map = other_image->layout_range_map;
-                        break;
+        for (auto const &memory_state : GetBoundMemoryStates()) {
+            for (auto &entry : memory_state->ObjectBindings()) {
+                if (entry.first.type == kVulkanObjectTypeImage) {
+                    auto base_node = entry.second.lock();
+                    if (base_node) {
+                        auto other_image = static_cast<IMAGE_STATE *>(base_node.get());
+                        if (other_image != this && other_image->IsCompatibleAliasing(this)) {
+                            layout_range_map = other_image->layout_range_map;
+                            break;
+                        }
                     }
                 }
             }
