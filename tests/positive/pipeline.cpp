@@ -323,11 +323,22 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
         "fundamental type must match, and producer side must have at least as many components");
     m_errorMonitor->ExpectSuccess();
 
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan 1.1 is required";
     }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
+    }
+    auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&maint4features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (!maint4features.maintenance4) {
+        GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(
