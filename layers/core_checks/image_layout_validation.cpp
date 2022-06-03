@@ -371,12 +371,13 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
     return skip;
 }
 
-void CoreChecks::UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE *cb_state) {
-    for (const auto &layout_map_entry : cb_state->image_layout_map) {
+void CoreChecks::UpdateCmdBufImageLayouts(GlobalImageLayoutMap &overlay_image_layout_map) {
+    for (const auto &layout_map_entry : overlay_image_layout_map) {
         const auto *image_state = layout_map_entry.first;
         const auto &subres_map = layout_map_entry.second;
+        if (!subres_map) continue;
         auto guard = image_state->layout_range_map->WriteLock();
-        sparse_container::splice(*image_state->layout_range_map, subres_map->GetLayoutMap(), GlobalLayoutUpdater());
+        sparse_container::splice(*image_state->layout_range_map, *subres_map, sparse_container::value_precedence::prefer_source);
     }
 }
 

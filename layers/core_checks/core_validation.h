@@ -1039,7 +1039,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBarriersToImages(const Location& loc, const CMD_BUFFER_STATE* cb_state, uint32_t imageMemoryBarrierCount,
                                   const ImageBarrier* pImageMemoryBarriers) const;
 
-    void RecordQueuedQFOTransfers(CMD_BUFFER_STATE* pCB);
+    void RecordQueuedQFOTransfers(QFOTransferCBScoreboards<QFOImageTransferBarrier> &qfo_image_scoreboards,
+                                  QFOTransferCBScoreboards<QFOBufferTransferBarrier> &qfo_buffer_scoreboards);
 
     template <typename ImgBarrier>
     void TransitionImageLayouts(CMD_BUFFER_STATE* cb_state, uint32_t barrier_count, const ImgBarrier* barrier);
@@ -1118,7 +1119,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE& cb_state,
                                     GlobalImageLayoutMap& overlayLayoutMap) const;
 
-    void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE* cb_state);
+    void UpdateCmdBufImageLayouts(GlobalImageLayoutMap &overlay_image_layout_map);
 
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
                                   const VulkanTypedHandle& typed_handle, const char* api_name, const char* error_code) const;

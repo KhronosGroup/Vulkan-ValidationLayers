@@ -25,8 +25,7 @@
 #include "chassis.h"
 #include "core_checks/core_validation.h"
 
-struct CommandBufferSubmitState {
-    const CoreChecks *core;
+struct QueueSubmitState {
     const QUEUE_STATE *queue_state;
     QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
@@ -35,9 +34,9 @@ struct CommandBufferSubmitState {
     QueryMap local_query_to_state_map;
     EventToStageMap local_event_to_stage_map;
 
-    CommandBufferSubmitState(const CoreChecks *c, const char *func, const QUEUE_STATE *q) : core(c), queue_state(q) {}
+    QueueSubmitState(const QUEUE_STATE *q) : queue_state(q) {}
 
-    bool Validate(const core_error::Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
+    bool Validate(const CoreChecks *core, const core_error::Location &loc, const CMD_BUFFER_STATE &cb_state, uint32_t perf_pass) {
         bool skip = false;
         skip |= core->ValidateCmdBufImageLayouts(loc, cb_state, overlay_image_layout_map);
         auto cmd = cb_state.commandBuffer();
@@ -105,6 +104,10 @@ struct CommandBufferSubmitState {
         }
         return skip;
     }
+    void Record(CoreChecks *core) {
+        core->UpdateCmdBufImageLayouts(overlay_image_layout_map);
+        core->RecordQueuedQFOTransfers(qfo_image_scoreboards, qfo_buffer_scoreboards);
+    }
 };
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
@@ -116,7 +119,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         return true;
     }
     auto queue_state = Get<QUEUE_STATE>(queue);
-    CommandBufferSubmitState cb_submit_state(this, "vkQueueSubmit()", queue_state.get());
+    vvl::TlsGuard<QueueSubmitState> submit_state(&skip, queue_state.get());
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
 
@@ -131,7 +134,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         for (uint32_t i = 0; i < submit.commandBufferCount; i++) {
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
             if (cb_state) {
-                skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
+                skip |= submit_state->Validate(this, loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
 
                 // Validate flags for dynamic rendering
                 if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
@@ -248,7 +251,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
     }
 
     auto queue_state = Get<QUEUE_STATE>(queue);
-    CommandBufferSubmitState cb_submit_state(this, func_name, queue_state.get());
+    vvl::TlsGuard<QueueSubmitState> submit_state(&skip, queue_state.get());
     SemaphoreSubmitState sem_submit_state(this, queue,
                                           physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
 
@@ -274,7 +277,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             auto info_loc = loc.dot(Field::pCommandBufferInfos, i);
             info_loc.structure = Struct::VkCommandBufferSubmitInfo;
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBufferInfos[i].commandBuffer);
-            skip |= cb_submit_state.Validate(info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
+            skip |= submit_state->Validate(this, info_loc.dot(Field::commandBuffer), *cb_state, perf_pass);
 
             {
                 const LogObjectList objlist(queue);
@@ -345,41 +348,19 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
 
     if (result != VK_SUCCESS) return;
-    // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBuffers[i]);
-            if (cb_state) {
-                for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
-                    UpdateCmdBufImageLayouts(secondary_cmd_buffer);
-                    RecordQueuedQFOTransfers(secondary_cmd_buffer);
-                }
-                UpdateCmdBufImageLayouts(cb_state.get());
-                RecordQueuedQFOTransfers(cb_state.get());
-            }
-        }
-    }
+
+    vvl::TlsGuard<QueueSubmitState> submit_state;
+
+    submit_state->Record(this);
 }
 
 void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                     VkResult result) {
     if (result != VK_SUCCESS) return;
-    // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
-    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
-        const VkSubmitInfo2KHR *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
-            auto cb_state = GetWrite<CMD_BUFFER_STATE>(submit->pCommandBufferInfos[i].commandBuffer);
-            if (cb_state) {
-                for (auto *secondaryCmdBuffer : cb_state->linkedCommandBuffers) {
-                    UpdateCmdBufImageLayouts(secondaryCmdBuffer);
-                    RecordQueuedQFOTransfers(secondaryCmdBuffer);
-                }
-                UpdateCmdBufImageLayouts(cb_state.get());
-                RecordQueuedQFOTransfers(cb_state.get());
-            }
-        }
-    }
+
+    vvl::TlsGuard<QueueSubmitState> submit_state;
+
+    submit_state->Record(this);
 }
 
 void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
