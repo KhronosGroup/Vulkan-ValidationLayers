@@ -701,22 +701,22 @@ class CoreChecks : public ValidationStateTracker {
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const char* caller,
                                 const char* layout_mismatch_msg_code, bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE* image_view_state, VkImageLayout explicit_layout,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_VIEW_STATE& image_view_state, VkImageLayout explicit_layout,
                            const char* caller, const char* layout_mismatch_msg_code, bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
         return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
                                  layout_mismatch_msg_code, error);
     }
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state,
                            const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
