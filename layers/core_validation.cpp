@@ -1466,6 +1466,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     return skip;
 }
 
+static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
+    switch (pipelineBindPoint) {
+        case VK_PIPELINE_BIND_POINT_GRAPHICS:
+            return "graphics";
+        case VK_PIPELINE_BIND_POINT_COMPUTE:
+            return "compute";
+        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
+            return "ray-tracing";
+        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
+            return "subpass-shading";
+        default:
+            return "unknown";
+    }
+}
+
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point) const {
@@ -1478,9 +1493,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     if (nullptr == pipe) {
         return LogError(cb_node->commandBuffer(), vuid.pipeline_bound,
                         "Must not call %s on this command buffer while there is no %s pipeline bound.", function,
-                        bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                            ? "RayTracing"
-                            : bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS ? "Graphics" : "Compute");
+                        GetPipelineTypeName(bind_point));
     }
 
     bool result = false;
@@ -9055,21 +9068,6 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     skip |= CheckCommandBufferInFlight(cb_state.get(), "reset", "VUID-vkResetCommandBuffer-commandBuffer-00045");
 
     return skip;
-}
-
-static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
-    switch (pipelineBindPoint) {
-        case VK_PIPELINE_BIND_POINT_GRAPHICS:
-            return "graphics";
-        case VK_PIPELINE_BIND_POINT_COMPUTE:
-            return "compute";
-        case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return "ray-tracing";
-        case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
-            return "subpass-shading";
-        default:
-            return "unknown";
-    }
 }
 
 bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE *pipeline_state) const {
