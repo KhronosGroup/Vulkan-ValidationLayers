@@ -35,3 +35,4 @@ build-android/third_party
 *.includes
 .vscode/
 .DS_Store
+.editorconfig
