@@ -3835,6 +3835,63 @@ TEST_F(VkLayerTest, InvalidRenderingColorAttachmentFormat) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InvalidResolveModeWithNonIntegerColorFormat) {
+    TEST_DESCRIPTION("Use invalid resolve mode with non integer color format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // not int color
+    image_create_info.extent = {32, 32, 4};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageObj image(m_device);
+    image.Init(image_create_info);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageView = image_view;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;  // not allowed for format
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06129");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, InvalidResolveModeWithIntegerColorFormat) {
     TEST_DESCRIPTION("Use invalid resolve mode with integer color format");
 
@@ -4726,7 +4783,7 @@ TEST_F(VkLayerTest, TestRenderingInfoColorAttachment) {
     m_errorMonitor->VerifyFound();
 
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
-    
+
     const uint32_t max_color_attachments = m_device->phy().properties().limits.maxColorAttachments + 1;
     std::vector<VkRenderingAttachmentInfoKHR> color_attachments(max_color_attachments);
     for (auto &attachment : color_attachments) {
