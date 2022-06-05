@@ -14264,8 +14264,7 @@ TEST_F(VkLayerTest, NoUniformBufferStandardLayout10) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0 only, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     // layout(std430, set = 0, binding = 0) uniform ubo430 {
@@ -14352,8 +14351,7 @@ TEST_F(VkLayerTest, NoScalarBlockLayout10) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (DeviceValidationVersion() > VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0 only, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     // layout (scalar, set = 0, binding = 0) buffer ssbo {
@@ -16727,8 +16725,7 @@ TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
-        printf("%s Test requires Vulkan 1.3+, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
@@ -16950,8 +16947,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRendering) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
@@ -17012,8 +17008,7 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     m_errorMonitor->ExpectSuccess();
