@@ -3915,8 +3915,7 @@ TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
 
     // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        printf("%s Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     // Create Pool w/ 1 Sampler descriptor, but try to alloc Uniform Buffer

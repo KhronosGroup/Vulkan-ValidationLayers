@@ -2581,9 +2581,7 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s test requires %s and %s Extension\n", kSkipPrefix, VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     if (!image_compression_control.imageCompressionControl) {

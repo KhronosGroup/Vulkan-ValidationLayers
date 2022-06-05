@@ -41,8 +41,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     features2.features.variableMultisampleRate = VK_FALSE;
@@ -1202,8 +1201,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
     }
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
     bool fragment_density = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     bool shading_rate = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
@@ -1212,8 +1210,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
@@ -1342,16 +1339,14 @@ TEST_F(VkLayerTest, DynamicRenderingLayerCount) {
     }
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1378,16 +1373,14 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     }
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1484,12 +1477,10 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRate) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (features11.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
@@ -1563,16 +1554,14 @@ TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
     }
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -1641,8 +1630,7 @@ TEST_F(VkLayerTest, TestBeginRenderingInvalidFragmentShadingRateImage) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -1744,8 +1732,7 @@ TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1786,22 +1773,15 @@ TEST_F(VkLayerTest, TestFragmentDensityMapRenderArea) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
-    }
-
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1869,18 +1849,11 @@ TEST_F(VkLayerTest, TestFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
-    }
-
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+    if (!AreRequestedExtensionsEnabled()) {
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -1891,8 +1864,7 @@ TEST_F(VkLayerTest, TestFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&dynamic_rendering_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2020,8 +1992,7 @@ TEST_F(VkLayerTest, BeginRenderingInvalidStencilAttachmentFormat) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2069,8 +2040,7 @@ TEST_F(VkLayerTest, TestInheritanceRenderingInfoStencilAttachmentFormat) {
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2121,22 +2091,18 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithInvalidAttachmentSampleCount) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s or %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2171,14 +2137,11 @@ TEST_F(VkLayerTest, CreatePipelineUsingDynamicRenderingWithoutFeature) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s or %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2202,12 +2165,10 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -2218,8 +2179,7 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&dynamic_rendering_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2281,20 +2241,17 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s Extension %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2355,8 +2312,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferIncompatibleRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2401,8 +2357,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferIncompatibleSubpass) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2462,8 +2417,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferInvalidContents) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2501,20 +2455,17 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoDepthFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2597,20 +2548,17 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachments) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2676,20 +2624,17 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachmentCoun
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2755,20 +2700,17 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoStencilFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2851,12 +2793,10 @@ TEST_F(VkLayerTest, DynamicRenderingWithInvalidShaderLayerBuiltIn) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -2864,16 +2804,13 @@ TEST_F(VkLayerTest, DynamicRenderingWithInvalidShaderLayerBuiltIn) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (multiview_features.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (multiview_features.multiviewGeometryShader == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiviewGeometryShader , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiviewGeometryShader";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2920,20 +2857,17 @@ TEST_F(VkLayerTest, DynamicRenderingWithInputAttachmentCapability) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -2989,20 +2923,17 @@ TEST_F(VkLayerTest, InvalidRenderingInfoColorAttachmentFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3034,13 +2965,10 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3049,16 +2977,13 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
-        printf("%s Test requires (unsupported) graphicsPipelineLibrary , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
     }
     if (multiview_features.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3112,20 +3037,17 @@ TEST_F(VkLayerTest, InvalidAttachmentSampleCount) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3157,13 +3079,10 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3172,16 +3091,13 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
-        printf("%s Test requires (unsupported) graphicsPipelineLibrary , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
     }
     if (multiview_features.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3252,13 +3168,10 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto library_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
@@ -3266,12 +3179,10 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryRenderPass) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (library_features.graphicsPipelineLibrary == VK_FALSE) {
-        printf("%s Test requires (unsupported) graphicsPipelineLibrary , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) graphicsPipelineLibrary";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3324,21 +3235,17 @@ TEST_F(VkLayerTest, PipelineMissingMultisampleState) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3362,13 +3269,10 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_featuers = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3376,12 +3280,10 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachment) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (multiview_featuers.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3436,21 +3338,17 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentUsage) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3482,21 +3380,17 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentCreateFlags) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3539,13 +3433,10 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentLayerCount) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3553,12 +3444,10 @@ TEST_F(VkLayerTest, InvalidRenderingFragmentDensityMapAttachmentLayerCount) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (!multiview_features.multiview) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3604,13 +3493,10 @@ TEST_F(VkLayerTest, InvalidRenderingPNextImageView) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3618,12 +3504,10 @@ TEST_F(VkLayerTest, InvalidRenderingPNextImageView) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (!multiview_features.multiview) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3672,12 +3556,10 @@ TEST_F(VkLayerTest, InvalidRenderingRenderArea) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -3688,8 +3570,7 @@ TEST_F(VkLayerTest, InvalidRenderingRenderArea) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&dynamic_rendering_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3737,12 +3618,10 @@ TEST_F(VkLayerTest, InvalidRenderingInfoViewMask) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
@@ -3750,12 +3629,10 @@ TEST_F(VkLayerTest, InvalidRenderingInfoViewMask) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (multiview_features.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3794,21 +3671,17 @@ TEST_F(VkLayerTest, InvalidRenderingColorAttachmentFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported, skipping test.\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3900,20 +3773,17 @@ TEST_F(VkLayerTest, InvalidResolveModeWithIntegerColorFormat) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -3960,20 +3830,17 @@ TEST_F(VkLayerTest, InvalidResolveModeSamples) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4011,20 +3878,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewSamples) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4077,20 +3941,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewFormatMatch) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4143,20 +4004,17 @@ TEST_F(VkLayerTest, InvalidRenderingAttachmentImageViewLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4192,20 +4050,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4259,21 +4114,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewLayoutSeparateDepthStencil) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4327,21 +4178,17 @@ TEST_F(VkLayerTest, InvalidRenderingAttachmentImageViewShadingRateLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4379,21 +4226,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewShadingRateLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4448,21 +4291,17 @@ TEST_F(VkLayerTest, InvalidRenderingAttachmentImageViewFragmentDensityLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4499,21 +4338,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewFragmentDensityLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4566,20 +4401,17 @@ TEST_F(VkLayerTest, InvalidResolveImageViewReadOnlyOptimalLayout) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4634,14 +4466,11 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateImageView) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -4649,8 +4478,7 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateImageView) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
@@ -4693,13 +4521,11 @@ TEST_F(VkLayerTest, TestRenderingInfoColorAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -4707,8 +4533,7 @@ TEST_F(VkLayerTest, TestRenderingInfoColorAttachment) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4810,14 +4635,11 @@ TEST_F(VkLayerTest, TestRenderingInfoDepthAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -4825,8 +4647,7 @@ TEST_F(VkLayerTest, TestRenderingInfoDepthAttachment) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -4998,20 +4819,17 @@ TEST_F(VkLayerTest, InvalidRenderingRenderAreaWithDeviceGroupExt) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s is not supported; skipping\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
         auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -5048,13 +4866,11 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipeline) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -5062,8 +4878,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipeline) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -5099,14 +4914,11 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSize) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
-        printf("%s Tests requires Vulkan 1.0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
@@ -5119,12 +4931,10 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSize) {
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     if (features11.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
@@ -5173,14 +4983,11 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -5189,12 +4996,10 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (features11.multiview == VK_FALSE) {
-        printf("%s Test requires (unsupported) multiview , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
@@ -5260,13 +5065,11 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstance) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
@@ -5274,8 +5077,7 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstance) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -5363,14 +5165,11 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s Tests requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     if (!AreRequestedExtensionsEnabled()) {
-        printf("%s %s or %s not supported, skipping test\n", kSkipPrefix, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-               VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << RequestedExtensionsNotSupported() << " not supported";
     }
 
     auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2Features>();
@@ -5379,12 +5178,10 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
     if (synchronization2.synchronization2 == VK_FALSE) {
-        printf("%s Test requires (unsupported) synchronization2 , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

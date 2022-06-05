@@ -2535,8 +2535,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
 
     // Tests are designed to run without Maintenance1 which was promoted in 1.1
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        printf("%s Tests for 1.0 only, test skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Tests for 1.0 only";
     }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
