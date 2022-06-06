@@ -319,7 +319,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             'vkEnumerateInstanceVersion',
             'vkGetDeviceProcAddr',
             'vkGetInstanceProcAddr',
-            'vkGetPhysicalDeviceProcAddr',
         ]
 
         if self.helper_file_type == 'optick_instrumentation_header':
