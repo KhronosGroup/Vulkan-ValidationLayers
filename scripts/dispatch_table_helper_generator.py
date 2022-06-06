@@ -294,6 +294,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             table += 'static inline void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDispatchTable *table, PFN_vkGetInstanceProcAddr gpa) {\n'
             table += '    memset(table, 0, sizeof(*table));\n'
             table += '    // Instance function pointers\n'
+            table += '    table->GetPhysicalDeviceProcAddr = (PFN_GetPhysicalDeviceProcAddr) gpa(instance, "vk_layerGetPhysicalDeviceProcAddr");\n'
 
         stubbed_functions = dict(self.stub_list)
         for item in entries:

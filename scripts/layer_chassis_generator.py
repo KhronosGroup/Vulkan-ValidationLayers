@@ -142,7 +142,6 @@ class LayerChassisOutputGenerator(OutputGenerator):
         # Include functions here to be interecpted w/ manually implemented function bodies
         'vkGetDeviceProcAddr',
         'vkGetInstanceProcAddr',
-        'vkGetPhysicalDeviceProcAddr',
         'vkCreateDevice',
         'vkDestroyDevice',
         'vkCreateInstance',
@@ -1808,7 +1807,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
-        self.intercepts = []
+        # We need to manually add an entry for vk_layerGetPhysicalDeviceProcAddr because it isn't in the xml,
+        # but it must be queryable from vkGetInstanceProcAddr()
+        self.intercepts = [ '    {"%s", {%s, (void*)%s}},' % ("vk_layerGetPhysicalDeviceProcAddr", "kFuncTypeInst", "GetPhysicalDeviceProcAddr") ]
         self.intercept_enums = ''
         self.dispatch_vector_fcns = ''
         self.virtual_fcn_defs = ''
