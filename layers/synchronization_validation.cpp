@@ -1325,11 +1325,6 @@ bool AccessContext::ValidateResolveOperations(const CommandExecutionContext &exe
     return validate_action.GetSkip();
 }
 
-AccessContext::TrackBack *AccessContext::AddTrackBack(const AccessContext *context, const SyncBarrier &barrier) {
-    prev_.emplace_back(context, barrier);
-    return &prev_.back();
-}
-
 void AccessContext::AddAsyncContext(const AccessContext *context) { async_.emplace_back(context); }
 
 class HazardDetector {
@@ -1530,13 +1525,6 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     return DetectHazard(detector, image, subresource_range, false, options);
 }
 
-HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
-                                                     const SyncStageAccessFlags &src_stage_accesses,
-                                                     const VkImageMemoryBarrier &barrier) const {
-    auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
-    const auto src_access_scope = SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask);
-    return DetectImageBarrierHazard(image, src_exec_scope, src_access_scope, subresource_range, kDetectAll);
-}
 HazardResult AccessContext::DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const {
     return DetectImageBarrierHazard(*image_barrier.image.get(), image_barrier.barrier.src_exec_scope.exec_scope,
                                     image_barrier.barrier.src_access_scope, image_barrier.range, kDetectAll);
@@ -1667,6 +1655,15 @@ struct PipelineBarrierOp {
         : barrier(barrier_), layout_transition(layout_transition_), scope(queue_id) {}
     PipelineBarrierOp(const PipelineBarrierOp &) = default;
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope, barrier, layout_transition); }
+};
+
+// Batch barrier ops don't modify in place, and thus don't need to hold pending state, and also are *never* layout transitions.
+struct BatchBarrierOp : public PipelineBarrierOp {
+    void operator()(ResourceAccessState *access_state) const {
+        access_state->ApplyBarrier(scope, barrier, layout_transition);
+        access_state->ApplyPendingBarriers(kInvalidTag);  // There can't be any need for this tag
+    }
+    BatchBarrierOp(QueueId queue_id, const SyncBarrier &barrier_) : PipelineBarrierOp(queue_id, barrier_, false) {}
 };
 
 // The barrier operation for wait events
@@ -2875,20 +2872,18 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
     return result;
 }
 
-SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst) {
-    src_exec_scope = src;
-    src_access_scope = 0;
-    dst_exec_scope = dst;
-    dst_access_scope = 0;
-}
+SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst)
+    : src_exec_scope(src), src_access_scope(0), dst_exec_scope(dst), dst_access_scope(0) {}
+
+SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const SyncBarrier::AllAccess &)
+    : src_exec_scope(src), src_access_scope(src.valid_accesses), dst_exec_scope(dst), dst_access_scope(src.valid_accesses) {}
 
 template <typename Barrier>
-SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst) {
-    src_exec_scope = src;
-    src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask);
-    dst_exec_scope = dst;
-    dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask);
-}
+SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst)
+    : src_exec_scope(src),
+      src_access_scope(SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask)),
+      dst_exec_scope(dst),
+      dst_access_scope(SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask)) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
     const auto barrier = lvl_find_in_chain<VkMemoryBarrier2KHR>(subpass.pNext);
@@ -3310,11 +3305,18 @@ void ResourceAccessState::Update(SyncStageAccessIndex usage_index, SyncOrdering 
         // However, for purposes of barrier tracking, only one read per pipeline stage matters
         const auto usage_stage = PipelineStageBit(usage_index);
         if (usage_stage & last_read_stages) {
+            const auto not_usage_stage = ~usage_stage;
             for (auto &read_access : last_reads) {
                 if (read_access.stage == usage_stage) {
                     read_access.Set(usage_stage, usage_bit, 0, tag);
                 } else if (read_access.barriers & usage_stage) {
+                    // If the current access is barriered to this stage, mark it as "known to happen after"
                     read_access.sync_stages |= usage_stage;
+                } else {
+                    // If the current access is *NOT* barriered to this stage it needs to be cleared.
+                    // Note: this is possible because semaphores can *clear* effective barriers, so the assumption
+                    //       that sync_stages is a subset of barriers may not apply.
+                    read_access.sync_stages &= not_usage_stage;
                 }
             }
         } else {
@@ -3437,6 +3439,31 @@ void ResourceAccessState::ApplyPendingBarriers(const ResourceUsageTag tag) {
     write_barriers |= pending_write_barriers;
     pending_write_dep_chain = 0;
     pending_write_barriers = 0;
+}
+
+// Assumes signal queue != wait queue
+void ResourceAccessState::ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait) {
+    // Semaphores only guarantee the first scope of the signal is before the second scope of the wait.
+    // If any access isn't in the first scope, there are no guarantees, thus those barriers are cleared
+    assert(signal.queue != wait.queue);
+    for (auto &read_access : last_reads) {
+        if (read_access.ReadInQueueScopeOrChain(signal.queue, signal.exec_scope)) {
+            // Deflects WAR on wait queue
+            read_access.barriers = wait.exec_scope;
+        } else {
+            // Leave sync stages alone. Update method will clear unsynchronized stages on subsequent reads as needed.
+            read_access.barriers = VK_PIPELINE_STAGE_2_NONE;
+        }
+    }
+    if (WriteInQueueSourceScopeOrChain(signal.queue, signal.exec_scope, signal.valid_accesses)) {
+        // Will deflect RAW wait queue, WAW needs a chained barrier on wait queue
+        read_execution_barriers = wait.exec_scope;
+        write_barriers = wait.valid_accesses;
+    } else {
+        read_execution_barriers = VK_PIPELINE_STAGE_2_NONE;
+        write_barriers.reset();
+    }
+    write_dependency_chain = read_execution_barriers;
 }
 
 bool ResourceAccessState::QueueTagPredicate::operator()(QueueId usage_queue, ResourceUsageTag usage_tag) {
@@ -3713,6 +3740,7 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &
 bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state,
                                          const std::shared_ptr<QueueBatchContext> &batch,
                                          const VkSemaphoreSubmitInfo &signal_info) {
+    assert(batch);
     const SyncExecScope exec_scope =
         SyncExecScope::MakeSrc(batch->GetQueueFlags(), signal_info.stageMask, VK_PIPELINE_STAGE_2_HOST_BIT);
     const VkSemaphore sem = sem_state->semaphore();
@@ -3739,8 +3767,8 @@ bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_S
     return success;
 }
 
-std::shared_ptr<SignaledSemaphores::Signal> SignaledSemaphores::Unsignal(VkSemaphore sem) {
-    std::shared_ptr<Signal> unsignaled;
+std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::Unsignal(VkSemaphore sem) {
+    std::shared_ptr<const Signal> unsignaled;
     const auto found_it = signaled_.find(sem);
     if (found_it != signaled_.end()) {
         // Move the unsignaled singal out from the signaled list, but keep the shared_ptr as the caller needs the contents for
@@ -7335,35 +7363,43 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) 
 // Clear all accesses
 void QueueBatchContext::ApplyDeviceWait() { access_context_.Reset(); }
 
-void QueueBatchContext::WaitOneSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask, WaitBatchMap &batch_trackbacks,
-                                         SignaledSemaphores &signaled) {
+class ApplySemaphoreBarrierAction {
+  public:
+    ApplySemaphoreBarrierAction(const SemaphoreScope &signal, const SemaphoreScope &wait) : signal_(signal), wait_(wait) {}
+    void operator()(ResourceAccessState *access) const { access->ApplySemaphore(signal_, wait_); }
+
+  private:
+    const SemaphoreScope &signal_;
+    const SemaphoreScope wait_;
+};
+
+std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
+                                                                              SignaledSemaphores &signaled) {
     auto sem_state = sync_state_->Get<SEMAPHORE_STATE>(sem);
-    if (!sem_state) return;  // Semaphore validity is handled by CoreChecks
+    if (!sem_state) return nullptr;  // Semaphore validity is handled by CoreChecks
 
     // When signal state goes out of scope, the signal information will be dropped, as Unsignal has released ownership.
     auto signal_state = signaled.Unsignal(sem);
-    if (!signal_state) return;  // Invalid signal, skip it.
+    if (!signal_state) return nullptr;  // Invalid signal, skip it.
 
-    const auto &sem_batch = signal_state->batch;
-    assert(sem_batch);
+    assert(signal_state->batch);
 
-    const AccessContext *sem_context = sem_batch->GetCurrentAccessContext();
-
-    using TrackBackPtr = AccessContext::TrackBack *;
-    const auto trackback_insert = batch_trackbacks.emplace(sem_batch.get(), TrackBackPtr());
-    const bool inserted = trackback_insert.second;
-    const auto trackback_it = trackback_insert.first;
-
-    const SyncExecScope &sem_scope = signal_state->exec_scope;
+    const SemaphoreScope &signal_scope = signal_state->first_scope;
     const auto queue_flags = queue_state_->GetQueueFlags();
-    SyncExecScope dst_mask = SyncExecScope::MakeDst(queue_flags, wait_mask);
-    const SyncBarrier sem_barrier(sem_scope, sem_scope.valid_accesses, dst_mask, SyncStageAccessFlags());
-    if (inserted) {
-        // If this is the first time we referenced this QueueBatchContext
-        trackback_it->second = access_context_.AddTrackBack(sem_context, sem_barrier);
+    SemaphoreScope wait_scope{GetQueueId(), SyncExecScope::MakeDst(queue_flags, wait_mask)};
+    if (signal_scope.queue == wait_scope.queue) {
+        // If signal queue == wait queue, signal is treated as a memory barrier with an access scope equal to the
+        // valid accesses for the sync scope.
+        SyncBarrier sem_barrier(signal_scope, wait_scope, SyncBarrier::AllAccess());
+        const BatchBarrierOp sem_barrier_op(wait_scope.queue, sem_barrier);
+        access_context_.ResolveFromContext(sem_barrier_op, signal_state->batch->access_context_);
+    } else {
+        ApplySemaphoreBarrierAction sem_op(signal_scope, wait_scope);
+        access_context_.ResolveFromContext(sem_op, signal_state->batch->access_context_);
     }
-    assert(trackback_it->second);
-    trackback_it->second->barriers.emplace_back(sem_barrier);
+    // Cannot move from the signal state because it could be from the const global state, and C++ doesn't
+    // enforce deep constness.
+    return signal_state->batch;
 }
 
 // Accessor Traits to allow Submit and Submit2 constructors to call the same utilities
@@ -7393,28 +7429,24 @@ void QueueBatchContext::ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&f
 template <typename BatchInfo>
 void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info,
                                            SignaledSemaphores &signaled) {
-    // Create trackbacks for the access context for this batch based on the semaphores and the previous batch in this
-    // queue.
-    WaitBatchMap batch_trackbacks;
-    ForEachWaitSemaphore(batch_info, [this, &batch_trackbacks, &signaled](VkSemaphore sem, VkPipelineStageFlags2 wait_mask) {
-        WaitOneSemaphore(sem, wait_mask, batch_trackbacks, signaled);
+    // Import (resolve) the batches that are waited on, with the semaphore's effective barriers applied
+    layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>> batches_resolved;
+    ForEachWaitSemaphore(batch_info, [this, &signaled, &batches_resolved](VkSemaphore sem, VkPipelineStageFlags2 wait_mask) {
+        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(sem, wait_mask, signaled);
+        if (resolved) {
+            batches_resolved.emplace(std::move(resolved));
+        }
     });
 
-    // If there are no semaphores to the previous batch, make sure a "submit order" empty trackback is added
-    if (prev && (batch_trackbacks.find(prev.get()) == batch_trackbacks.end())) {
-        access_context_.AddTrackBack(prev->GetCurrentAccessContext(), SyncBarrier());
+    // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
+    if (prev && !layer_data::Contains(batches_resolved, prev)) {
+        access_context_.ResolveFromContext(NoopBarrierAction(), prev->access_context_);
     }
 
-    // Flatten all previous contexts into the current one (for dependency chaining reasons)
-    access_context_.ResolvePreviousAccesses();
-    access_context_.ClearTrackBacks();
-
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
-    const auto end_it = batch_trackbacks.end();
-    async_batches_ = sync_state_->GetQueueLastBatchSnapshot(
-        [&batch_trackbacks, end_it, &prev](const std::shared_ptr<const QueueBatchContext> &batch) {
-            const auto found_it = batch_trackbacks.find(batch.get());
-            return found_it == end_it && (batch != prev);
+    async_batches_ =
+        sync_state_->GetQueueLastBatchSnapshot([&batches_resolved, &prev](const std::shared_ptr<const QueueBatchContext> &batch) {
+            return (batch != prev) && !layer_data::Contains(batches_resolved, batch);
         });
     for (const auto &async_batch : async_batches_) {
         access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext());
@@ -7562,10 +7594,19 @@ AccessLogger::AccessRecord AccessLogger::operator[](ResourceUsageTag tag) const 
     return access_record;
 }
 
-std::shared_ptr<SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(VkSemaphore sem) const {
+// This is a const method, force the returned value to be const
+std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(VkSemaphore sem) const {
     std::shared_ptr<Signal> prev_state;
     if (prev_) {
         prev_state = GetMapped(prev_->signaled_, sem, [&prev_state]() { return prev_state; });
     }
     return prev_state;
+}
+
+SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_,
+                                   const std::shared_ptr<QueueBatchContext> &batch_, const SyncExecScope &exec_scope_)
+    : sem_state(sem_state_), batch(batch_), first_scope({batch->GetQueueId(), exec_scope_}) {
+    // Illegal to create a signal from no batch or an invalid semaphore... caller must assure validity
+    assert(batch);
+    assert(sem_state);
 }

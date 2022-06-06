@@ -33,12 +33,15 @@
 class AccessContext;
 class CommandBufferAccessContext;
 class CommandExecutionContext;
+class QueueBatchContext;
 class ResourceAccessState;
 struct ResourceFirstAccess;
 class SyncValidator;
 
 using ImageRangeEncoder = subresource_adapter::ImageRangeEncoder;
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
+
+using QueueId = uint32_t;
 
 enum SyncHazard {
     NONE = 0,
@@ -147,6 +150,7 @@ struct SyncExecScope {
 };
 
 struct SyncBarrier {
+    struct AllAccess {};
     SyncExecScope src_exec_scope;
     SyncStageAccessFlags src_access_scope;
     SyncExecScope dst_exec_scope;
@@ -156,6 +160,7 @@ struct SyncBarrier {
     SyncBarrier &operator=(const SyncBarrier &) = default;
 
     SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
+    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const AllAccess &);
     SyncBarrier(const SyncExecScope &src_exec, const SyncStageAccessFlags &src_access, const SyncExecScope &dst_exec,
                 const SyncStageAccessFlags &dst_access)
         : src_exec_scope(src_exec), src_access_scope(src_access), dst_exec_scope(dst_exec), dst_access_scope(dst_access) {}
@@ -179,6 +184,49 @@ struct SyncBarrier {
 };
 
 enum class AccessAddressType : uint32_t { kLinear = 0, kIdealized = 1, kMaxType = 1, kTypeCount = kMaxType + 1 };
+
+struct SemaphoreScope : SyncExecScope {
+    SemaphoreScope(QueueId qid, const SyncExecScope &exec_scope) : SyncExecScope(exec_scope), queue(qid) {}
+    SemaphoreScope() = default;
+    QueueId queue;
+};
+
+class SignaledSemaphores {
+  public:
+    // Is the record of a signaled semaphore, deleted when unsignaled
+    struct Signal {
+        Signal() = delete;
+        Signal(const Signal &other) = default;
+        Signal(Signal &&other) = default;
+        Signal &operator=(const Signal &other) = default;
+        Signal &operator=(Signal &&other) = default;
+        Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
+               const SyncExecScope &exec_scope_);
+
+        std::shared_ptr<const SEMAPHORE_STATE> sem_state;
+        std::shared_ptr<QueueBatchContext> batch;
+        // Use the SyncExecScope::valid_accesses for first access scope
+        SemaphoreScope first_scope;
+        // TODO add timeline semaphore support.
+    };
+    using SignalMap = layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
+    using iterator = SignalMap::iterator;
+    iterator begin() { return signaled_.begin(); }
+    iterator end() { return signaled_.end(); }
+
+    bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
+                         const VkSemaphoreSubmitInfo &signal_info);
+    std::shared_ptr<const Signal> Unsignal(VkSemaphore);
+    void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
+    void Reset();
+    SignaledSemaphores() : prev_(nullptr) {}
+    SignaledSemaphores(const SignaledSemaphores &prev) : prev_(&prev) {}
+
+  private:
+    std::shared_ptr<const Signal> GetPrev(VkSemaphore sem) const;
+    layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
+    const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
+};
 
 struct SyncEventState {
     enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2 };
@@ -364,6 +412,7 @@ class ResourceAccessState : public SyncStageAccess {
     template <typename ScopeOps>
     void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition);
     void ApplyPendingBarriers(ResourceUsageTag tag);
+    void ApplySemaphore(const SemaphoreScope &signal, const SemaphoreScope wait);
 
     struct QueueTagPredicate {
         QueueId queue;
@@ -883,9 +932,6 @@ class AccessContext {
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
                                           const VkImageSubresourceRange &subresource_range, DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
-                                          const SyncStageAccessFlags &src_stage_accesses,
-                                          const VkImageMemoryBarrier &barrier) const;
     HazardResult DetectImageBarrierHazard(const SyncImageMemoryBarrier &image_barrier) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
 
@@ -995,11 +1041,9 @@ class AccessContext {
     template <typename Action>
     void ForAll(Action &&action);
 
-    // For use during queue submit building up the QueueBatchContext AccessContext
-    TrackBack *AddTrackBack(const AccessContext *context, const SyncBarrier &barrier);
+    // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
     void AddAsyncContext(const AccessContext *context);
     // For use during queue submit to avoid stale pointers;
-    void ClearTrackBacks() { prev_.clear(); }
     void ClearAsyncContext(const AccessContext *context) { async_.clear(); }
 
   private:
@@ -1298,8 +1342,6 @@ class AccessLogger {
     AccessLogRangeMap access_log_map_;
 };
 
-class SemaphoreSyncState;
-class SignaledSemaphores;
 // TODO need a map from fence to submbit batch id
 class QueueBatchContext : public CommandExecutionContext {
   public:
@@ -1368,8 +1410,6 @@ class QueueBatchContext : public CommandExecutionContext {
     void ApplyDeviceWait();
 
   private:
-    using WaitBatchMap = layer_data::unordered_map<const QueueBatchContext *, AccessContext::TrackBack *>;
-
     // The BatchInfo is either the Submit or Submit2 version with traits allowing generic acces
     template <typename BatchInfo>
     class SubmitInfoAccessor {};
@@ -1379,8 +1419,8 @@ class QueueBatchContext : public CommandExecutionContext {
     template <typename BatchInfo>
     void SetupCommandBufferInfo(const BatchInfo &batch_info);
 
-    void WaitOneSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask, WaitBatchMap &batch_trackbacks,
-                          SignaledSemaphores &signaled);
+    std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
+                                                               SignaledSemaphores &signaled);
 
     const QueueSyncState *queue_state_ = nullptr;
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
@@ -1425,48 +1465,6 @@ class QueueSyncState {
     std::shared_ptr<QueueBatchContext> last_batch_;
     const VkQueueFlags queue_flags_;
     QueueId id_;
-};
-
-class SignaledSemaphores {
-  public:
-    // Is the record of a signaled semaphore, deleted when unsignaled
-    struct Signal {
-        Signal() = delete;
-        Signal(const Signal &other) = default;
-        Signal(Signal &&other) = default;
-        Signal &operator=(const Signal &other) = default;
-        Signal &operator=(Signal &&other) = default;
-        Signal(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state_, const std::shared_ptr<QueueBatchContext> &batch_,
-               const SyncExecScope &exec_scope_)
-            : sem_state(sem_state_), batch(batch_), exec_scope(exec_scope_) {
-            // Illegal to create a signal from no batch and an invalid semaphore... caller must assure validity
-            assert(batch);
-            assert(sem_state);
-        }
-
-        std::shared_ptr<const SEMAPHORE_STATE> sem_state;
-        std::shared_ptr<QueueBatchContext> batch;
-        // Use the SyncExecScope::valid_accesses for first access scope
-        SyncExecScope exec_scope;
-        // TODO add timeline semaphore support.
-    };
-    using SignalMap = layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
-    using iterator = SignalMap::iterator;
-    iterator begin() { return signaled_.begin(); }
-    iterator end() { return signaled_.end(); }
-
-    bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
-                         const VkSemaphoreSubmitInfo &signal_info);
-    std::shared_ptr<Signal> Unsignal(VkSemaphore);
-    void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
-    void Reset();
-    SignaledSemaphores() : prev_(nullptr) {}
-    SignaledSemaphores(const SignaledSemaphores &prev) : prev_(&prev) {}
-
-  private:
-    std::shared_ptr<Signal> GetPrev(VkSemaphore sem) const;
-    layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
-    const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
 };
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
