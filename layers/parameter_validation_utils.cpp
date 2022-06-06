@@ -584,16 +584,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES ||
                 current->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES) {
-                skip |= LogError(
-                    instance, "VUID-VkDeviceCreateInfo-pNext-06532",
-                    "If the pNext chain includes a VkPhysicalDeviceVulkan13Features structure, then it must not include a "
-                    "VkPhysicalDeviceDynamicRenderingFeatures, VkPhysicalDeviceImageRobustnessFeatures, "
-                    "VkPhysicalDeviceInlineUniformBlockFeatures, VkPhysicalDeviceMaintenance4Features, "
-                    "VkPhysicalDevicePipelineCreationCacheControlFeatures, VkPhysicalDevicePrivateDataFeatures, "
-                    "VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures, VkPhysicalDeviceShaderIntegerDotProductFeatures, "
-                    "VkPhysicalDeviceShaderTerminateInvocationFeatures, VkPhysicalDeviceSubgroupSizeControlFeatures, "
-                    "VkPhysicalDeviceSynchronization2Features, VkPhysicalDeviceTextureCompressionASTCHDRFeatures, or "
-                    "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures structure");
+                skip |= LogError(instance, "VUID-VkDeviceCreateInfo-pNext-06532",
+                                 "vkCreateDevice(): %s structure included in VkPhysicalDeviceVulkan13Features' pNext chain.",
+                                 string_VkStructureType(current->sType));
                 break;
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
