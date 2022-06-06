@@ -715,7 +715,8 @@ class BestPractices : public ValidationStateTracker {
                     state = std::make_shared<bp_state::ImageMultiplanar<1>>(this, img, pCreateInfo, features);
                     break;
                 default:
-                    assert("Not supported");
+                    // Not supported
+                    assert(false);
             }
         } else {
             state = std::make_shared<bp_state::ImageLinear>(this, img, pCreateInfo, features);
