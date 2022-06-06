@@ -313,6 +313,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
         return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFormatProperties2EXT;
     if (!strcmp(name, "vkGetOriginalPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)GetOriginalPhysicalDeviceFeaturesEXT;
     if (!strcmp(name, "vkSetPhysicalDeviceFeaturesEXT")) return (PFN_vkVoidFunction)SetPhysicalDeviceFeaturesEXT;
+    if (!strcmp(name, "vk_layerGetPhysicalDeviceProcAddr")) return (PFN_vkVoidFunction)GetPhysicalDeviceProcAddr;
     assert(instance);
     layer_data *instance_data = GetLayerDataPtr(instance, device_profile_api_dev_data_map);
     auto &table = instance_data->dispatch_table;
