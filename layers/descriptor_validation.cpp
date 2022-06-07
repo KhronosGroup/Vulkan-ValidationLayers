@@ -39,6 +39,29 @@ static std::string smart_string_VkShaderStageFlags(VkShaderStageFlags stage_flag
     return string_VkShaderStageFlags(stage_flags);
 }
 
+template <typename DSLayoutBindingA, typename DSLayoutBindingB>
+bool ImmutableSamplersAreEqual(const DSLayoutBindingA &b1, const DSLayoutBindingB &b2) {
+    if (b1.pImmutableSamplers == b2.pImmutableSamplers) {
+        return true;
+    } else if (b1.pImmutableSamplers && b2.pImmutableSamplers) {
+        if ((b1.descriptorType == b2.descriptorType) &&
+            ((b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) || (b1.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)) &&
+            (b1.descriptorCount == b2.descriptorCount)) {
+            for (uint32_t i = 0; i < b1.descriptorCount; ++i) {
+                if (b1.pImmutableSamplers[i] != b2.pImmutableSamplers[i]) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        // One pointer is null, the other is not
+        return false;
+    }
+}
+
 // If our layout is compatible with bound_dsl, return true,
 //  else return false and fill in error_msg will description of what causes incompatibility
 bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_dsl, const DescriptorSetLayout &bound_dsl,
@@ -68,7 +91,6 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
     for (const auto &layout_binding : layout_ds_layout_def->GetBindings()) {
-        // TODO : Do we also need to check immutable samplers?
         const auto bound_binding = bound_ds_layout_def->GetBindingInfoFromBinding(layout_binding.binding);
         if (layout_binding.descriptorCount != bound_binding->descriptorCount) {
             std::stringstream error_str;
@@ -93,6 +115,12 @@ bool CoreChecks::VerifySetLayoutCompatibility(const DescriptorSetLayout &layout_
                       << " but binding " << layout_binding.binding << " for " << report_data->FormatHandle(bound_dsl_handle)
                       << ", which is bound, has stageFlags " << smart_string_VkShaderStageFlags(bound_binding->stageFlags);
             error_msg = error_str.str();
+            return false;
+        } else if (!ImmutableSamplersAreEqual(layout_binding, *bound_binding)) {
+            error_msg = "Immutable samplers from binding " + std::to_string(layout_binding.binding) + " in pipeline layout " +
+                        report_data->FormatHandle(layout_dsl_handle) +
+                        " do not match the immutable samplers in the layout currently bound (" +
+                        report_data->FormatHandle(bound_dsl_handle) + ")";
             return false;
         }
     }
