@@ -3161,11 +3161,16 @@ TEST_F(VkLayerTest, BlitImageLayout) {
     blit_region.dstSubresource.layerCount = 1;
     blit_region.dstSubresource.mipLevel = 0;
     blit_region.srcOffsets[0] = {0, 0, 0};
-    blit_region.srcOffsets[1] = {48, 48, 1};
-    blit_region.dstOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {32, 32, 1};
+    blit_region.dstOffsets[0] = {32, 32, 0};
     blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_commandBuffer->begin();
+
+    m_errorMonitor->ExpectSuccess(kPerformanceWarningBit | kErrorBit);
+    vk::CmdBlitImage(m_commandBuffer->handle(), img_general.image(), img_general.Layout(), img_general.image(),
+                     img_general.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
+    m_errorMonitor->VerifyNotFound();
 
     // Illegal srcImageLayout
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImageLayout-00222");
