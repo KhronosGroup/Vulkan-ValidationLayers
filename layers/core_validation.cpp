@@ -13132,7 +13132,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              attachment_ref.layout);
 
                     vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-attachment-02525" : "VUID-VkRenderPassCreateInfo-pNext-01963";
-                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, function_name, vuid);
+                    // Assuming no disjoint image since there's no handle
+                    skip |= ValidateImageAspectMask(VK_NULL_HANDLE, attachment_format, aspect_mask, false, function_name, vuid);
 
                     if (attach_first_use[attachment_index]) {
                         skip |=
@@ -16561,8 +16562,9 @@ bool CoreChecks::ValidateSparseMemoryBind(const VkSparseMemoryBind &bind, VkDevi
 bool CoreChecks::ValidateImageSubresourceSparseImageMemoryBind(IMAGE_STATE const &image_state,
                                                                VkImageSubresource const &subresource, uint32_t image_idx,
                                                                uint32_t bind_idx) const {
-    bool skip = ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask,
-                                        "vkQueueSparseBind()", "VUID-VkSparseImageMemoryBind-subresource-01106");
+    bool skip =
+        ValidateImageAspectMask(image_state.image(), image_state.createInfo.format, subresource.aspectMask, image_state.disjoint,
+                                "vkQueueSparseBind()", "VUID-VkSparseImageMemoryBind-subresource-01106");
 
     if (subresource.mipLevel >= image_state.createInfo.mipLevels) {
         skip |=

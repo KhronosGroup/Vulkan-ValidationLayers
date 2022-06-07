@@ -4992,13 +4992,12 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 }
 
 // For the given format verify that the aspect masks make sense
-bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char *func_name,
-                                         const char *vuid) const {
+bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, bool is_image_disjoint,
+                                         const char *func_name, const char *vuid) const {
     bool skip = false;
-    auto image_state = Get<IMAGE_STATE>(image);
     // checks color format and (single-plane or non-disjoint)
     // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
-    if ((FormatIsColor(format)) && ((FormatIsMultiplane(format) == false) || (image_state->disjoint == false))) {
+    if ((FormatIsColor(format)) && ((FormatIsMultiplane(format) == false) || (is_image_disjoint == false))) {
         if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= LogError(
                 image, vuid,
@@ -5494,7 +5493,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         skip |= ValidateBarrierQueueFamilies(image_loc, cb_state, mem_barrier, image_data.get());
 
         skip |= ValidateImageAspectMask(image_data->image(), image_data->createInfo.format, mem_barrier.subresourceRange.aspectMask,
-                                        loc.StringFunc().c_str());
+                                        image_data->disjoint, loc.StringFunc().c_str());
 
         skip |=
             ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), image_data.get(), mem_barrier.subresourceRange);
@@ -5917,7 +5916,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         // Validate correct image aspect bits for desired formats and format consistency
-        skip |= ValidateImageAspectMask(image_state->image(), image_format, aspect_mask, "vkCreateImageView()");
+        skip |=
+            ValidateImageAspectMask(image_state->image(), image_format, aspect_mask, image_state->disjoint, "vkCreateImageView()");
 
         // Valdiate Image/ImageView type compatibility #resources-image-views-compatibility
         switch (image_type) {
