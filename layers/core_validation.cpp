@@ -4883,9 +4883,6 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                      "] has its own render pass instance that does not resume it.",
                                      submit_idx, i);
                 }
-                if (cb_state->suspendsRenderPassInstance) {
-                    suspended_render_pass_instance = true;
-                }
                 if (cb_state->resumesRenderPassInstance) {
                     if (!suspended_render_pass_instance) {
                         skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06193",
@@ -4894,6 +4891,9 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                          submit_idx, i);
                     }
                     suspended_render_pass_instance = false;
+                }
+                if (cb_state->suspendsRenderPassInstance) {
+                    suspended_render_pass_instance = true;
                 }
             }
         }
