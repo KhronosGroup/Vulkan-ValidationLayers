@@ -4156,16 +4156,26 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                     : ((dst_image_state->shared_presentable && IsExtEnabled(device_extensions.vk_khr_shared_presentable_image))
                            ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
                            : "VUID-vkCmdBlitImage-dstImageLayout-00227");
+
+        bool same_image = (src_image_state == dst_image_state);
         for (uint32_t i = 0; i < regionCount; i++) {
             const RegionType region = pRegions[i];
             bool hit_error = false;
 
+            // When performing blit from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
+            const auto &src_sub = pRegions[i].srcSubresource;
+            const auto &dst_sub = pRegions[i].dstSubresource;
+            bool same_subresource =
+                (same_image && (src_sub.mipLevel == dst_sub.mipLevel) && (src_sub.baseArrayLayer == dst_sub.baseArrayLayer));
+            VkImageLayout source_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            VkImageLayout destination_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
             vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImageLayout-00221" : "VUID-vkCmdBlitImage-srcImageLayout-00221";
-            skip |= VerifyImageLayout(*cb_node, *src_image_state, region.srcSubresource, srcImageLayout,
-                                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, func_name, invalid_src_layout_vuid, vuid, &hit_error);
+            skip |= VerifyImageLayout(*cb_node, *src_image_state, region.srcSubresource, srcImageLayout, source_optimal, func_name,
+                                      invalid_src_layout_vuid, vuid, &hit_error);
             vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImageLayout-00226" : "VUID-vkCmdBlitImage-dstImageLayout-00226";
-            skip |= VerifyImageLayout(*cb_node, *dst_image_state, region.dstSubresource, dstImageLayout,
-                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, func_name, invalid_dst_layout_vuid, vuid, &hit_error);
+            skip |= VerifyImageLayout(*cb_node, *dst_image_state, region.dstSubresource, dstImageLayout, destination_optimal,
+                                      func_name, invalid_dst_layout_vuid, vuid, &hit_error);
             skip |= ValidateImageSubresourceLayers(cb_node.get(), &region.srcSubresource, func_name, "srcSubresource", i);
             skip |= ValidateImageSubresourceLayers(cb_node.get(), &region.dstSubresource, func_name, "dstSubresource", i);
             vuid = is_2 ? "VUID-VkBlitImageInfo2-srcSubresource-01705" : "VUID-vkCmdBlitImage-srcSubresource-01705";
