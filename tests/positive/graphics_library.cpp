@@ -339,7 +339,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     VkPipelineLayoutObj pipeline_layout_empty(m_device, {&ds.layout_, &ds_empty.layout_, &ds2.layout_}, {},
                                               VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_null(m_device, {&ds.layout_, &ds_empty.layout_, &ds2.layout_}, {},
+    VkPipelineLayoutObj pipeline_layout_null(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds_empty.set_, ds2.set_};
