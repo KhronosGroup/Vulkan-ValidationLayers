@@ -208,7 +208,8 @@ std::shared_ptr<IMAGE_STATE> ValidationStateTracker::CreateImageState(VkImage im
                 state = std::make_shared<IMAGE_STATE_MULTIPLANAR<1>>(this, img, pCreateInfo, features);
                 break;
             default:
-                assert("Not supported");
+                // Not supported
+                assert(false);
         }
     } else {
         state = std::make_shared<IMAGE_STATE_LINEAR>(this, img, pCreateInfo, features);
