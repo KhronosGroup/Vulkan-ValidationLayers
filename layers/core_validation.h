@@ -877,8 +877,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkBufferView* pView) const override;
 
-    bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char* func_name,
-                                 const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
+    bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, bool is_image_disjoint,
+                                 const char* func_name, const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
 
     bool ValidateImageAcquired(IMAGE_STATE const& image_state, const char* func_name) const;
 
