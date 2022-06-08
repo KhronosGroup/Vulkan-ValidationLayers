@@ -319,8 +319,8 @@ class small_vector {
             }
             large_store_ = std::move(new_store);
             capacity_ = new_cap;
-            DebugUpdateWorkingStore();
         }
+        DebugUpdateWorkingStore();
         // No shrink here.
     }
 
@@ -965,6 +965,12 @@ class TlsGuard {
 
 template <typename T>
 thread_local optional<T> TlsGuard<T>::payload_;
+
+// Only use this if you aren't planning to use what you would have gotten from a find.
+template <typename Container, typename Key = typename Container::key_type>
+bool Contains(const Container &container, const Key &key) {
+    return container.find(key) != container.cend();
+}
 
 }  // namespace layer_data
 #endif  // LAYER_DATA_H
