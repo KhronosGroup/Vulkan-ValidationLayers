@@ -2859,7 +2859,7 @@ SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFl
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
     result.exec_scope = sync_utils::WithEarlierPipelineStages(result.expanded_mask);
-    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.exec_scope);
+    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
     return result;
 }
 
@@ -2868,7 +2868,7 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
     result.mask_param = mask_param;
     result.expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
     result.exec_scope = sync_utils::WithLaterPipelineStages(result.expanded_mask);
-    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.exec_scope);
+    result.valid_accesses = SyncStageAccess::AccessScopeByStage(result.expanded_mask);
     return result;
 }
 
