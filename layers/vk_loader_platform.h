@@ -53,7 +53,11 @@
 #define PATH_SEPARATOR ':'
 #define DIRECTORY_SYMBOL '/'
 
+#if defined(VULKANSC)
+#define VULKAN_DIR "/vulkansc/"
+#else
 #define VULKAN_DIR "/vulkan/"
+#endif
 #define VULKAN_ICDCONF_DIR "icd.d"
 #define VULKAN_ICD_DIR "icd"
 #define VULKAN_ELAYERCONF_DIR "explicit_layer.d"
