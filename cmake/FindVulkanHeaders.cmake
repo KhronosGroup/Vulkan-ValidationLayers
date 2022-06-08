@@ -59,11 +59,13 @@ if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
   find_path(VulkanHeaders_INCLUDE_DIR
       NAMES vulkan/vulkan.h
       HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
-      NO_CMAKE_FIND_ROOT_PATH)
+      NO_CMAKE_FIND_ROOT_PATH
+      NO_DEFAULT_PATH)
   find_path(VulkanRegistry_DIR
       NAMES vk.xml
       HINTS ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry
-      NO_CMAKE_FIND_ROOT_PATH)
+      NO_CMAKE_FIND_ROOT_PATH
+      NO_DEFAULT_PATH)
 else()
   # If VULKAN_HEADERS_INSTALL_DIR, or one of its variants was not specified,
   # do a normal search without hints.
