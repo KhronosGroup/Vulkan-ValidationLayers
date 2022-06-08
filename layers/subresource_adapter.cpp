@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2021 The Khronos Group Inc.
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
- * Copyright (C) 2019-2021 Google Inc.
+/* Copyright (c) 2019-2022 The Khronos Group Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
+ * Copyright (C) 2019-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -498,26 +498,25 @@ void ImageRangeGenerator::SetInitialPosAllSubres(uint32_t layer, uint32_t aspect
 }
 
 bool ImageRangeGenerator::Convert2DCompatibleTo3D() {
-    if (encoder_->Is3D()) {
-        if ((subres_range_.levelCount == 1) && ((subres_range_.baseArrayLayer > 0) || (subres_range_.layerCount > 1))) {
-            // This only valid for 2D compatible 3D images
-            // Touch up the extent and the subres to make this look like a depth extent
-            offset_.z = subres_range_.baseArrayLayer;
-            subres_range_.baseArrayLayer = 0;
-            extent_.depth = subres_range_.layerCount;
-            subres_range_.layerCount = 1;
-            return true;
-        }
+    if (encoder_->Is3D() && is_depth_sliced_) {
+        // This only valid for 2D compatible 3D images
+        // Touch up the extent and the subres to make this look like a depth extent
+        offset_.z = subres_range_.baseArrayLayer;
+        subres_range_.baseArrayLayer = 0;
+        extent_.depth = subres_range_.layerCount;
+        subres_range_.layerCount = 1;
+        return true;
     }
     return false;
 }
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
-                                         VkDeviceSize base_address)
+                                         VkDeviceSize base_address, bool is_depth_sliced)
     : encoder_(&encoder),
       subres_range_(GetRemaining(encoder.FullRange(), subres_range)),
       offset_(),
       extent_(),
-      base_address_(base_address) {
+      base_address_(base_address),
+      is_depth_sliced_(is_depth_sliced) {
 #ifndef NDEBUG
     assert(IsValid(*encoder_, subres_range_));
 #endif
@@ -541,12 +540,14 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
 }
 
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
-                                         const VkOffset3D& offset, const VkExtent3D& extent, VkDeviceSize base_address)
+                                         const VkOffset3D& offset, const VkExtent3D& extent, VkDeviceSize base_address,
+                                         bool is_depth_sliced)
     : encoder_(&encoder),
       subres_range_(GetRemaining(encoder.FullRange(), subres_range)),
       offset_(offset),
       extent_(extent),
-      base_address_(base_address) {
+      base_address_(base_address),
+      is_depth_sliced_(is_depth_sliced) {
 #ifndef NDEBUG
     assert(IsValid(*encoder_, subres_range_));
 #endif
