@@ -12658,12 +12658,18 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 }
 
                 if (!image_data_i->sparse && !image_data_j->sparse) {
-                    subresource_adapter::RangeGenerator generator_i = view_state_i->range_generator;
+                    subresource_adapter::ImageRangeGenerator generator_i{*image_data_i->fragment_encoder.get(),
+                                                                         view_state_i->create_info.subresourceRange, 0u,
+                                                                         view_state_i->IsDepthSliced()};
+
+                    subresource_adapter::ImageRangeGenerator generator_j{*image_data_j->fragment_encoder.get(),
+                                                                         view_state_j->create_info.subresourceRange, 0u,
+                                                                         view_state_j->IsDepthSliced()};
                     for (; generator_i->non_empty(); ++generator_i) {
-                        subresource_adapter::RangeGenerator generator_j = view_state_j->range_generator;
-                        for (; generator_j->non_empty(); ++generator_j) {
+                        subresource_adapter::ImageRangeGenerator generator_j_copy = generator_j;
+                        for (; generator_j_copy->non_empty(); ++generator_j_copy) {
                             sparse_container::range<VkDeviceSize> range_i{generator_i->begin, generator_i->end};
-                            sparse_container::range<VkDeviceSize> range_j{generator_j->begin, generator_j->end};
+                            sparse_container::range<VkDeviceSize> range_j{generator_j_copy->begin, generator_j_copy->end};
 
                             if (image_data_i->DoesResourceMemoryOverlap(range_i, image_data_j, range_j)) {
                                 attachments[i].overlapping.emplace_back(j);
