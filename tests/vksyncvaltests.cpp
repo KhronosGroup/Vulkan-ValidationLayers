@@ -4328,6 +4328,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
     VkCommandPoolObj pool(m_device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj cba(m_device, &pool);
     VkCommandBufferObj cbb(m_device, &pool);
+    VkCommandBufferObj cbc(m_device, &pool);
 
     // Command Buffer A reads froms buffer A and writes to buffer B
     cba.begin();
@@ -4352,6 +4353,12 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
                            0, nullptr);
     vk::CmdCopyBuffer(h_cbb, buffer_c.handle(), buffer_a.handle(), 1, &region);
     cbb.end();
+
+    // Command Buffer C does the same copy as B but without the barrier.
+    cbc.begin();
+    const VkCommandBuffer h_cbc = cbc.handle();
+    vk::CmdCopyBuffer(h_cbc, buffer_c.handle(), buffer_a.handle(), 1, &region);
+    cbc.end();
 
     // Submit A and B on the same queue, to assure us the barrier *would* be sufficient given QSO
     // This is included in a "Sucess" section, just to verify CBA and CBB are set up correctly.
@@ -4398,9 +4405,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
     // Submit A and B on the different queues, with an ineffectual semaphore.  The wait mask is empty, thus nothing in CB B is in
     // the second excution scope of the waited signal.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    submit1.pCommandBuffers = &h_cba;
     vk::QueueSubmit(q0, 1, &submit_signal, VK_NULL_HANDLE);
-    submit1.pCommandBuffers = &h_cbb;
     vk::QueueSubmit(q1, 1, &submit_wait, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -4409,5 +4414,19 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
     // Include transfers in the second execution scope of the waited signal, s.t. the PipelineBarrier in CB B can can with it.
     wait_mask = VK_PIPELINE_STAGE_TRANSFER_BIT;
     vk::QueueSubmit(q1, 1, &submit_wait, VK_NULL_HANDLE);
+
+    m_device->wait();
+
+    // Draw A and then C to verify the second access scope of the signal
+    vk::QueueSubmit(q0, 1, &submit_signal, VK_NULL_HANDLE);
+    submit_wait.pCommandBuffers = &h_cbc;
+    vk::QueueSubmit(q1, 1, &submit_wait, VK_NULL_HANDLE);
+
+    m_device->wait();
+
+    //  ... and again on the same queue
+    vk::QueueSubmit(q0, 1, &submit_signal, VK_NULL_HANDLE);
+    vk::QueueSubmit(q0, 1, &submit_wait, VK_NULL_HANDLE);
+
     m_errorMonitor->VerifyNotFound();
 }
