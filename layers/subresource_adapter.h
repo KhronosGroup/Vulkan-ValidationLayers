@@ -405,7 +405,7 @@ class ImageRangeGenerator {
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_(), base_address_(), pos_() {}
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
-                        const VkExtent3D& extent, VkDeviceSize base_address);
+                        const VkExtent3D& extent, VkDeviceSize base_address, bool is_depth_sliced);
     void SetInitialPosFullOffset(uint32_t layer, uint32_t aspect_index);
     void SetInitialPosFullWidth(uint32_t layer, uint32_t aspect_index);
     void SetInitialPosFullHeight(uint32_t layer, uint32_t aspect_index);
@@ -416,7 +416,8 @@ class ImageRangeGenerator {
     void SetInitialPosOneAspect(uint32_t layer, uint32_t aspect_index);
     void SetInitialPosAllSubres(uint32_t layer, uint32_t aspect_index);
     void SetInitialPosSomeLayers(uint32_t layer, uint32_t aspect_index);
-    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address);
+    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, VkDeviceSize base_address,
+                        bool is_depth_sliced);
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
     ImageRangeGenerator& operator++();
@@ -438,7 +439,6 @@ class ImageRangeGenerator {
 
     uint32_t mip_index_;
     uint32_t incr_mip_;
-    bool single_full_size_range_;
     uint32_t aspect_index_;
     uint32_t subres_index_;
     const ImageRangeEncoder::SubresInfo* subres_info_;
@@ -463,6 +463,8 @@ class ImageRangeGenerator {
         void Set(uint32_t y_count_, uint32_t layer_z_count_, IndexType base, IndexType span, IndexType y_step, IndexType z_step);
     };
     IncrementerState incr_state_;
+    bool single_full_size_range_;
+    bool is_depth_sliced_ = false;
 };
 
 // double wrapped map variants.. to avoid needing to templatize on the range map type.  The underlying maps are available for

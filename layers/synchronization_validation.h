@@ -854,25 +854,26 @@ class AccessContext {
 
     HazardResult DetectHazard(const BUFFER_STATE &buffer, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                              const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
-                              const VkExtent3D &extent) const;
+                              const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
+                              bool is_depth_sliced) const;
     template <typename Detector>
     HazardResult DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectHazard(Detector &detector, const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range,
-                              const VkOffset3D &offset, const VkExtent3D &extent, DetectOptions options) const;
+                              const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
+                              DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectHazard(Detector &detector, const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range,
-                              DetectOptions options) const;
+                              bool is_depth_sliced, DetectOptions options) const;
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                              const VkImageSubresourceRange &subresource_range) const;
+                              const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               SyncStageAccessIndex current_usage, SyncOrdering ordering_rule) const;
 
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, SyncOrdering ordering_rule,
-                              const VkOffset3D &offset, const VkExtent3D &extent) const;
+                              const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
                                           const SyncStageAccessFlags &src_access_scope,
                                           const VkImageSubresourceRange &subresource_range, const SyncEventState &sync_event,
