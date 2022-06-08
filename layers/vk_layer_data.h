@@ -56,12 +56,17 @@ template <typename Key, typename T>
 using map_entry = robin_hood::pair<Key, T>;
 
 // robin_hood-compatible insert_iterator (std:: uses the wrong insert method)
+// NOTE: std::iterator was deprecated in C++17, and newer versions of libstdc++ appear to mark this as such.
 template <typename T>
-class insert_iterator : public std::iterator<std::output_iterator_tag, void, void, void, void> {
-  public:
-    typedef typename T::value_type value_type;
-    typedef typename T::iterator iterator;
-    insert_iterator(T &t, iterator i) : container(&t), iter(i) {}
+struct insert_iterator {
+    using iterator_category = std::output_iterator_tag;
+    using value_type = typename T::value_type;
+    using iterator = typename T::iterator;
+    using difference_type = void;
+    using pointer = void;
+    using reference = T &;
+
+    insert_iterator(reference t, iterator i) : container(&t), iter(i) {}
 
     insert_iterator &operator=(const value_type &value) {
         auto result = container->insert(value);
@@ -85,7 +90,7 @@ class insert_iterator : public std::iterator<std::output_iterator_tag, void, voi
 
   private:
     T *container;
-    typename T::iterator iter;
+    iterator iter;
 };
 #else
 template <typename T>
