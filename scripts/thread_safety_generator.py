@@ -1632,6 +1632,12 @@ void ThreadSafety::PostCallRecordDeviceWaitIdle(
     def genType(self, typeinfo, name, alias):
         OutputGenerator.genType(self, typeinfo, name, alias)
         if self.handle_types.IsNonDispatchable(name):
+            # VkShaderModule is only kept in the Vulkan SC registry
+            # for compatibility. We avoid adding it to object types
+            # here to avoid conflicts with VK_OBJECT_TYPE_SHADER_MODULE
+            # being removed.
+            if name == 'VkShaderModule' and self.genOpts.apiname == 'vulkansc':
+                return
             self.non_dispatchable_types.add(name)
     #
     # Struct (e.g. C "struct" type) generation.

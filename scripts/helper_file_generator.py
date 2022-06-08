@@ -298,6 +298,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             if alias:
                 self.object_type_aliases.append((name,alias))
             else:
+                # VkShaderModule is only kept in the Vulkan SC registry
+                # for compatibility. We avoid adding it to object types
+                # here to avoid conflicts with VK_OBJECT_TYPE_SHADER_MODULE
+                # being removed.
+                if name == 'VkShaderModule' and self.genOpts.apiname == 'vulkansc':
+                    return
                 self.object_types.append(name)
                 self.object_guards[name] = self.featureExtraProtect
 

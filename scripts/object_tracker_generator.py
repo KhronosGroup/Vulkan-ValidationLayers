@@ -531,6 +531,12 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         if (category == 'struct' or category == 'union'):
             self.genStruct(typeinfo, name, alias)
         if category == 'handle':
+            # VkShaderModule is only kept in the Vulkan SC registry
+            # for compatibility. We avoid adding it to object types
+            # here to avoid conflicts with VK_OBJECT_TYPE_SHADER_MODULE
+            # being removed.
+            if name == 'VkShaderModule' and self.genOpts.apiname == 'vulkansc':
+                return
             self.object_types.append(name)
     #
     # Append a definition to the specified section
