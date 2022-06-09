@@ -114,6 +114,7 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     add_compile_options("/bigobj")
+    add_compile_options("/we4189")
     # Allow Windows to use multiprocessor compilation
     add_compile_options(/MP)
     # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015. The changed behavior is
