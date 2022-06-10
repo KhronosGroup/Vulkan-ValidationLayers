@@ -36,6 +36,8 @@ class CommandExecutionContext;
 class QueueBatchContext;
 class ResourceAccessState;
 struct ResourceFirstAccess;
+class SyncEventsContext;
+struct SyncEventState;
 class SyncValidator;
 
 using ImageRangeEncoder = subresource_adapter::ImageRangeEncoder;
@@ -133,6 +135,7 @@ struct HazardResult {
     void Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
              const SyncStageAccessFlags &prior_, ResourceUsageTag tag_);
     void AddRecordedAccess(const ResourceFirstAccess &first_access);
+    bool IsHazard() const { return NONE != hazard; }
 };
 
 struct SyncExecScope {
@@ -211,8 +214,12 @@ class SignaledSemaphores {
     };
     using SignalMap = layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
     using iterator = SignalMap::iterator;
+    using const_iterator = SignalMap::const_iterator;
+    using mapped_type = SignalMap::mapped_type;
     iterator begin() { return signaled_.begin(); }
+    const_iterator begin() const { return signaled_.begin(); }
     iterator end() { return signaled_.end(); }
+    const_iterator end() const { return signaled_.end(); }
 
     bool SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state, const std::shared_ptr<QueueBatchContext> &batch,
                          const VkSemaphoreSubmitInfo &signal_info);
@@ -226,87 +233,6 @@ class SignaledSemaphores {
     std::shared_ptr<const Signal> GetPrev(VkSemaphore sem) const;
     layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
     const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
-};
-
-struct SyncEventState {
-    enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2 };
-    using EventPointer = std::shared_ptr<const EVENT_STATE>;
-    using ScopeMap = sparse_container::range_map<VkDeviceSize, bool>;
-    EventPointer event;
-    CMD_TYPE last_command;  // Only Event commands are valid here.
-    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
-    CMD_TYPE unsynchronized_set;
-    VkPipelineStageFlags2KHR barriers;
-    SyncExecScope scope;
-    ResourceUsageTag first_scope_tag;
-    bool first_scope_set;
-    bool destroyed;
-    std::array<ScopeMap, static_cast<size_t>(AccessAddressType::kTypeCount)> first_scope;
-    template <typename EventPointerType>
-    SyncEventState(EventPointerType &&event_state)
-        : event(std::forward<EventPointerType>(event_state)),
-          last_command(CMD_NONE),
-          last_command_tag(0),
-          unsynchronized_set(CMD_NONE),
-          barriers(0U),
-          scope(),
-          first_scope_tag(),
-          first_scope_set(false),
-          destroyed((event_state.get() == nullptr) || event_state->Destroyed()) {}
-    SyncEventState() : SyncEventState(EventPointer()) {}
-    void ResetFirstScope();
-    const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope[static_cast<size_t>(address_type)]; }
-    IgnoreReason IsIgnoredByWait(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR srcStageMask) const;
-    bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
-};
-
-class SyncEventsContext {
-  public:
-    using Map = layer_data::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
-    using iterator = Map::iterator;
-    using const_iterator = Map::const_iterator;
-
-    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
-        const auto find_it = map_.find(event_state.get());
-        if (find_it == map_.end()) {
-            if (!event_state.get()) return nullptr;
-
-            const auto *event_plain_ptr = event_state.get();
-            auto sync_state = std::shared_ptr<SyncEventState>(new SyncEventState(event_state));
-            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
-            return insert_pair.first->second.get();
-        }
-        return find_it->second.get();
-    }
-
-    const SyncEventState *Get(const EVENT_STATE *event_state) const {
-        const auto find_it = map_.find(event_state);
-        if (find_it == map_.end()) {
-            return nullptr;
-        }
-        return find_it->second.get();
-    }
-    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
-
-    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst);
-
-    // stl style naming for range-for support
-    inline iterator begin() { return map_.begin(); }
-    inline const_iterator begin() const { return map_.begin(); }
-    inline iterator end() { return map_.end(); }
-    inline const_iterator end() const { return map_.end(); }
-
-    void Destroy(const EVENT_STATE *event_state) {
-        auto sync_it = map_.find(event_state);
-        if (sync_it != map_.end()) {
-            sync_it->second->destroyed = true;
-            map_.erase(sync_it);
-        }
-    }
-    void Clear() { map_.clear(); }
-
-  private:
-    Map map_;
 };
 
 struct ResourceFirstAccess {
@@ -370,20 +296,27 @@ class ResourceAccessState : public SyncStageAccess {
             // then the barrier access is unsafe (R/W after R)
             return (src_exec_scope & (stage | barriers)) == 0;
         }
+        bool IsReadBarrierHazard(QueueId barrier_queue, VkPipelineStageFlags2KHR src_exec_scope) const {
+            // If the read stage is not in the src sync scope
+            // *AND* not execution chained with an existing sync barrier (that's the or)
+            // then the barrier access is unsafe (R/W after R)
+            VkPipelineStageFlags2 queue_ordered_stage = (queue == barrier_queue) ? stage : VK_PIPELINE_STAGE_2_NONE;
+            return (src_exec_scope & (queue_ordered_stage | barriers)) == 0;
+        }
 
         bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
         void Set(VkPipelineStageFlags2KHR stage_, const SyncStageAccessFlags &access_, VkPipelineStageFlags2KHR barriers_,
                  ResourceUsageTag tag_);
         bool ReadInScopeOrChain(VkPipelineStageFlags2 exec_scope) const { return (exec_scope & (stage | barriers)) != 0; }
         bool ReadInQueueScopeOrChain(QueueId queue, VkPipelineStageFlags2 exec_scope) const;
-        bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, ResourceUsageTag scope_tag) const {
+        bool ReadInEventScope(VkPipelineStageFlags2 exec_scope, QueueId scope_queue, ResourceUsageTag scope_tag) const {
             // If this read is the same one we included in the set event and in scope, then apply the execution barrier...
             // NOTE: That's not really correct... this read stage might *not* have been included in the setevent, and the barriers
             // representing the chain might have changed since then (that would be an odd usage), so as a first approximation
             // we'll assume the barriers *haven't* been changed since (if the tag hasn't), and while this could be a false
             // positive in the case of Set; SomeBarrier; Wait; we'll live with it until we can add more state to the first scope
             // capture (the specific write and read stages that *were* in scope at the moment of SetEvents.
-            return (tag < scope_tag) && ReadInScopeOrChain(exec_scope);
+            return (tag < scope_tag) && ReadInQueueScopeOrChain(scope_queue, exec_scope);
         }
     };
 
@@ -399,8 +332,9 @@ class ResourceAccessState : public SyncStageAccess {
 
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR source_exec_scope,
                                      const SyncStageAccessFlags &source_access_scope) const;
-    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags2KHR source_exec_scope,
-                                     const SyncStageAccessFlags &source_access_scope, ResourceUsageTag event_tag) const;
+    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, const ResourceAccessState &scope_state,
+                                     VkPipelineStageFlags2KHR source_exec_scope, const SyncStageAccessFlags &source_access_scope,
+                                     QueueId event_queue, ResourceUsageTag event_tag) const;
 
     void Update(SyncStageAccessIndex usage_index, SyncOrdering ordering_rule, ResourceUsageTag tag);
     void SetWrite(const SyncStageAccessFlags &usage_bit, ResourceUsageTag tag);
@@ -461,7 +395,8 @@ class ResourceAccessState : public SyncStageAccess {
     bool WriteInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope, SyncStageAccessFlags src_access_scope) const;
     bool WriteInQueueSourceScopeOrChain(QueueId queue, VkPipelineStageFlags2KHR src_exec_scope,
                                         SyncStageAccessFlags src_access_scope) const;
-    bool WriteInEventScope(const SyncStageAccessFlags &src_access_scope, ResourceUsageTag scope_tag) const;
+    bool WriteInEventScope(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
+                           QueueId scope_queue, ResourceUsageTag scope_tag) const;
 
     struct UntaggedScopeOps {
         bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
@@ -485,12 +420,13 @@ class ResourceAccessState : public SyncStageAccess {
 
     struct EventScopeOps {
         bool WriteInScope(const SyncBarrier &barrier, const ResourceAccessState &access) const {
-            return access.WriteInEventScope(barrier.src_access_scope, scope_tag);
+            return access.WriteInEventScope(barrier.src_exec_scope.exec_scope, barrier.src_access_scope, scope_queue, scope_tag);
         }
         bool ReadInScope(const SyncBarrier &barrier, const ReadState &read_state) const {
-            return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_tag);
+            return read_state.ReadInEventScope(barrier.src_exec_scope.exec_scope, scope_queue, scope_tag);
         }
-        EventScopeOps(ResourceUsageTag event_tag) : scope_tag(event_tag) {}
+        EventScopeOps(QueueId qid, ResourceUsageTag event_tag) : scope_queue(qid), scope_tag(event_tag) {}
+        QueueId scope_queue;
         ResourceUsageTag scope_tag;
     };
 
@@ -561,7 +497,8 @@ class ResourceAccessState : public SyncStageAccess {
 using ResourceAccessStateFunction = std::function<void(ResourceAccessState *)>;
 using ResourceAccessStateConstFunction = std::function<void(const ResourceAccessState &)>;
 
-using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
+using ResourceAddress = VkDeviceSize;
+using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, ResourceAccessState>;
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceAccessRangeIndex = typename ResourceAccessRange::index_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
@@ -807,21 +744,25 @@ class SyncOpResetEvent : public SyncOpBase {
 class SyncOpSetEvent : public SyncOpBase {
   public:
     SyncOpSetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   VkPipelineStageFlags2KHR stageMask);
+                   VkPipelineStageFlags2KHR stageMask, const AccessContext *access_context);
     SyncOpSetEvent(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags, VkEvent event,
-                   const VkDependencyInfoKHR &dep_info);
+                   const VkDependencyInfoKHR &dep_info, const AccessContext *access_context);
     ~SyncOpSetEvent() override = default;
 
     bool Validate(const CommandBufferAccessContext &cb_context) const override;
     ResourceUsageTag Record(CommandBufferAccessContext *cb_context) const override;
     bool ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const override;
+    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
+                      SyncEventsContext *events_context) const override;
 
   private:
     bool DoValidate(const CommandExecutionContext &ex_context, const ResourceUsageTag base_tag) const;
-    void ReplayRecord(QueueId queue_id, ResourceUsageTag recorded_tag, AccessContext *access_context,
-                      SyncEventsContext *events_context) const override;
+    void DoRecord(QueueId queue_id, ResourceUsageTag recorded_tag, const std::shared_ptr<const AccessContext> &access_context,
+                  SyncEventsContext *events_context) const;
     std::shared_ptr<const EVENT_STATE> event_;
+    // The Access context of the command buffer at record set event time.
+    std::shared_ptr<const AccessContext> recorded_context_;
     SyncExecScope src_exec_scope_;
     // Note that the dep info is *not* dehandled, but retained for comparison with a future WaitEvents2
     std::shared_ptr<safe_VkDependencyInfo> dep_info_;
@@ -923,10 +864,9 @@ class AccessContext {
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, SyncOrdering ordering_rule,
                               const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced) const;
-    HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
-                                          const SyncStageAccessFlags &src_access_scope,
-                                          const VkImageSubresourceRange &subresource_range, const SyncEventState &sync_event,
-                                          DetectOptions options) const;
+    HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range,
+                                          VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope,
+                                          QueueId queue_id, const SyncEventState &sync_event, DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags2KHR src_exec_scope,
@@ -1048,12 +988,12 @@ class AccessContext {
 
   private:
     template <typename Detector>
-    HazardResult DetectHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
+    HazardResult DetectHazard(AccessAddressType type, Detector &detector, const ResourceAccessRange &range,
                               DetectOptions options) const;
     template <typename Detector>
     HazardResult DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectPreviousHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
+    HazardResult DetectPreviousHazard(AccessAddressType type, Detector &detector, const ResourceAccessRange &range) const;
     void UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTag tag);
 
@@ -1064,6 +1004,96 @@ class AccessContext {
     TrackBack *src_external_;
     TrackBack dst_external_;
     ResourceUsageTag start_tag_;
+};
+
+struct SyncEventState {
+    enum IgnoreReason { NotIgnored = 0, ResetWaitRace, Reset2WaitRace, SetRace, MissingStageBits, SetVsWait2, MissingSetEvent };
+    using EventPointer = std::shared_ptr<const EVENT_STATE>;
+    using ScopeMap = ResourceAccessRangeMap;
+    EventPointer event;
+    CMD_TYPE last_command;              // Only Event commands are valid here.
+    ResourceUsageTag last_command_tag;  // Needed to filter replay validation
+    CMD_TYPE unsynchronized_set;
+    VkPipelineStageFlags2KHR barriers;
+    SyncExecScope scope;
+    ResourceUsageTag first_scope_tag;
+    bool destroyed;
+    std::shared_ptr<const AccessContext> first_scope;
+
+    SyncEventState()
+        : event(),
+          last_command(CMD_NONE),
+          last_command_tag(0),
+          unsynchronized_set(CMD_NONE),
+          barriers(0U),
+          scope(),
+          first_scope_tag(),
+          destroyed(true) {}
+
+    SyncEventState(const SyncEventState &) = default;
+    SyncEventState(SyncEventState &&) = default;
+
+    SyncEventState(const SyncEventState::EventPointer &event_state) : SyncEventState() {
+        event = event_state;
+        destroyed = (event.get() == nullptr) || event_state->Destroyed();
+    }
+
+    void ResetFirstScope();
+    const ScopeMap &FirstScope(AccessAddressType address_type) const { return first_scope->GetAccessStateMap(address_type); }
+    IgnoreReason IsIgnoredByWait(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR srcStageMask) const;
+    bool HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope) const;
+};
+
+class SyncEventsContext {
+  public:
+    using Map = layer_data::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
+    using iterator = Map::iterator;
+    using const_iterator = Map::const_iterator;
+
+    SyncEventState *GetFromShared(const SyncEventState::EventPointer &event_state) {
+        const auto find_it = map_.find(event_state.get());
+        if (find_it == map_.end()) {
+            if (!event_state.get()) return nullptr;
+
+            const auto *event_plain_ptr = event_state.get();
+            auto sync_state = std::make_shared<SyncEventState>(event_state);
+            auto insert_pair = map_.emplace(event_plain_ptr, sync_state);
+            return insert_pair.first->second.get();
+        }
+        return find_it->second.get();
+    }
+
+    const SyncEventState *Get(const EVENT_STATE *event_state) const {
+        const auto find_it = map_.find(event_state);
+        if (find_it == map_.end()) {
+            return nullptr;
+        }
+        return find_it->second.get();
+    }
+    const SyncEventState *Get(const SyncEventState::EventPointer &event_state) const { return Get(event_state.get()); }
+
+    void ApplyBarrier(const SyncExecScope &src, const SyncExecScope &dst, ResourceUsageTag tag);
+    void ApplyTaggedWait(VkQueueFlags queue_flags, ResourceUsageTag tag);
+
+    // stl style naming for range-for support
+    inline iterator begin() { return map_.begin(); }
+    inline const_iterator begin() const { return map_.begin(); }
+    inline iterator end() { return map_.end(); }
+    inline const_iterator end() const { return map_.end(); }
+
+    void Destroy(const EVENT_STATE *event_state) {
+        auto sync_it = map_.find(event_state);
+        if (sync_it != map_.end()) {
+            sync_it->second->destroyed = true;
+            map_.erase(sync_it);
+        }
+    }
+    void Clear() { map_.clear(); }
+
+    SyncEventsContext &DeepCopy(const SyncEventsContext &from);
+
+  private:
+    Map map_;
 };
 
 class RenderPassAccessContext {
@@ -1383,6 +1413,7 @@ class QueueBatchContext : public CommandExecutionContext {
         logger_ = nullptr;
         batch_log_ = nullptr;
     }
+    void ResetEventsContext() { events_context_.Clear(); }
     ResourceUsageTag GetTagLimit() const override { return batch_log_->Size() + tag_range_.begin; }
     // begin is the tag bias  / .size() is the number of total records that should eventually be in access_log_
     ResourceUsageRange GetTagRange() const { return tag_range_; }
@@ -1489,6 +1520,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
+
+    QueueBatchContext::BatchSet GetQueueBatchSnapshot();
 
     template <typename Predicate>
     QueueBatchContext::ConstBatchSet GetQueueLastBatchSnapshot(Predicate &&pred) const;
