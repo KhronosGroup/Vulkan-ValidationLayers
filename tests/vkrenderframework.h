@@ -427,13 +427,18 @@ typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
 typedef vk_testing::AccelerationStructureKHR VkAccelerationStructurekhrObj;
 class VkCommandPoolObj : public vk_testing::CommandPool {
   public:
+    VkCommandPoolObj() : vk_testing::CommandPool(){};
+    void Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
     VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
 };
 
 class VkCommandBufferObj : public vk_testing::CommandBuffer {
   public:
+    VkCommandBufferObj() : vk_testing::CommandBuffer() {}
     VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                        VkQueueObj *queue = nullptr);
+    void Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+              VkQueueObj *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,

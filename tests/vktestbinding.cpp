@@ -490,6 +490,15 @@ void Event::cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask)
     vk::CmdResetEvent(cmd.handle(), handle(), stage_mask);
 }
 
+void Event::cmd_wait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                     const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
+                     const std::vector<VkImageMemoryBarrier> &image_barriers) {
+    VkEvent event_handle = handle();
+    vk::CmdWaitEvents(cmd.handle(), 1, &event_handle, src_stage_mask, dst_stage_mask, static_cast<uint32_t>(memory_barriers.size()),
+                      memory_barriers.data(), static_cast<uint32_t>(buffer_barriers.size()), buffer_barriers.data(),
+                      static_cast<uint32_t>(image_barriers.size()), image_barriers.data());
+}
+
 void Event::reset() { EXPECT(vk::ResetEvent(device(), handle()) == VK_SUCCESS); }
 
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
