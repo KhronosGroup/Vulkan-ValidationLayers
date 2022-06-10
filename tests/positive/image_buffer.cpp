@@ -2742,3 +2742,109 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
+    TEST_DESCRIPTION(
+        "Test no false overlap is reported with multi attachment framebuffer (attachments are slices of a 3D image). Multiple "
+        "subpasses that draw to a single slice of a 3D image");
+
+    m_errorMonitor->ExpectSuccess();
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required extensions not supported.";
+    }
+
+    constexpr unsigned depth_count = 2u;
+
+    // 3D image with 2 depths
+    auto image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_info.imageType = VK_IMAGE_TYPE_3D;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.extent = {64, 64, depth_count};
+    image_info.mipLevels = 1u;
+    image_info.arrayLayers = 1u;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageObj image_3d{m_device};
+    image_3d.init(&image_info);
+    image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // 2D image views to be used as color attchments for framebuffer
+    auto view_info = LvlInitStruct<VkImageViewCreateInfo>();
+    view_info.image = image_3d.handle();
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = image_info.format;
+    view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+    view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+    view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+    view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+    view_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView image_views[depth_count];
+    VkImageView views[depth_count] = {VK_NULL_HANDLE};
+    for (unsigned i = 0; i < depth_count; ++i) {
+        view_info.subresourceRange.baseArrayLayer = i;
+        image_views[i].init(*m_device, view_info);
+        views[i] = image_views[i].handle();
+    }
+
+    // Render pass with 2 subpasses
+    VkAttachmentReference attach[depth_count] = {};
+    VkSubpassDescription subpasses[depth_count] = {};
+
+    for (unsigned i = 0; i < depth_count; ++i) {
+        attach[i].attachment = i;
+        attach[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        subpasses[i].pColorAttachments = &attach[i];
+        subpasses[i].colorAttachmentCount = 1;
+    }
+
+    VkAttachmentDescription attach_desc[depth_count] = {};
+    for (unsigned i = 0; i < depth_count; ++i) {
+        attach_desc[i].format = image_info.format;
+        attach_desc[i].samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc[i].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attach_desc[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    auto rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.subpassCount = depth_count;
+    rp_info.pSubpasses = subpasses;
+    rp_info.attachmentCount = depth_count;
+    rp_info.pAttachments = attach_desc;
+
+    vk_testing::RenderPass renderpass;
+    renderpass.init(*m_device, rp_info);
+
+    auto fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = renderpass.handle();
+    fb_info.attachmentCount = depth_count;
+    fb_info.pAttachments = views;
+    fb_info.width = image_info.extent.width;
+    fb_info.height = image_info.extent.height;
+    fb_info.layers = 1;
+
+    vk_testing::Framebuffer framebuffer;
+    framebuffer.init(*m_device, fb_info);
+
+    auto rp_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    rp_begin_info.renderPass = renderpass.handle();
+    rp_begin_info.framebuffer = framebuffer.handle();
+    rp_begin_info.renderArea = {{0, 0}, {image_info.extent.width, image_info.extent.height}};
+
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    for (unsigned i = 0; i < (depth_count - 1); ++i) {
+        vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    }
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyNotFound();
+}
