@@ -361,6 +361,9 @@ class Event : public internal::NonDispHandle<VkEvent> {
     void set();
     void cmd_set(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
     void cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask);
+    void cmd_wait(const CommandBuffer &cmd, VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                  const std::vector<VkMemoryBarrier> &memory_barriers, const std::vector<VkBufferMemoryBarrier> &buffer_barriers,
+                  const std::vector<VkImageMemoryBarrier> &image_barriers);
     void reset();
 
     static VkEventCreateInfo create_info(VkFlags flags);
