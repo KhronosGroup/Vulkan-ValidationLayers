@@ -2325,7 +2325,7 @@ VkResult VkPipelineObj::CreateVKPipeline(VkPipelineLayout layout, VkRenderPass r
     return init_try(*m_device, *gp_ci);
 }
 
-VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
+void VkCommandBufferObj::Init(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
     m_device = device;
     if (queue) {
         m_queue = queue;
@@ -2337,6 +2337,10 @@ VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *po
     auto create_info = vk_testing::CommandBuffer::create_info(pool->handle());
     create_info.level = level;
     init(*device, create_info);
+}
+
+VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
+    Init(device, pool, level, queue);
 }
 
 void VkCommandBufferObj::PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
@@ -2527,8 +2531,12 @@ void VkCommandBufferObj::BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkD
     vk::CmdBindVertexBuffers(handle(), binding, 1, &vertexBuffer->handle(), &offset);
 }
 
-VkCommandPoolObj::VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+void VkCommandPoolObj::Init(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
     init(*device, vk_testing::CommandPool::create_info(queue_family_index, flags));
+}
+
+VkCommandPoolObj::VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags) {
+    Init(device, queue_family_index, flags);
 }
 
 bool VkDepthStencilObj::Initialized() { return m_initialized; }
