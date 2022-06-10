@@ -10950,6 +10950,11 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     TEST_DESCRIPTION(
         "Validate all required resources are bound if multiview is enabled after vkCmdBeginRenderPass and vkCmdNextSubpass");
 
+    m_errorMonitor->ExpectSuccess();
+
+    constexpr unsigned multiview_count = 2u;
+    constexpr unsigned extra_subpass_count = multiview_count - 1u;
+
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -10958,29 +10963,38 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     }
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
-    multiview_features.multiview = VK_TRUE;
-    VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&multiview_features);
+    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (multiview_features.multiview == VK_FALSE) {
+        GTEST_SKIP() << "Device does not support multiview.";
+    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkAttachmentDescription attachmentDescription = {};
     attachmentDescription.format = VK_FORMAT_R8G8B8A8_UNORM;
     attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkAttachmentReference colorAttachmentReference = {};
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachmentReference.attachment = 0;
 
-    m_renderPass_subpasses.resize(2);
-    m_renderPass_subpasses[0].colorAttachmentCount = 1;
-    m_renderPass_subpasses[0].pColorAttachments = &colorAttachmentReference;
-    m_renderPass_subpasses[1].colorAttachmentCount = 1;
-    m_renderPass_subpasses[1].pColorAttachments = &colorAttachmentReference;
+    m_renderPass_subpasses.resize(multiview_count);
+    for (unsigned i = 0; i < multiview_count; ++i) {
+        m_renderPass_subpasses[i].colorAttachmentCount = 1;
+        m_renderPass_subpasses[i].pColorAttachments = &colorAttachmentReference;
+    }
 
-    uint32_t viewMasks[] = {0x1u, 0x2u};
-    VkRenderPassMultiviewCreateInfo renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
-    renderPassMultiviewCreateInfo.subpassCount = 2;
+    uint32_t viewMasks[multiview_count] = {};
+    for (unsigned i = 0; i < multiview_count; ++i) {
+        viewMasks[i] = 1u << i;
+    }
+    auto renderPassMultiviewCreateInfo = LvlInitStruct<VkRenderPassMultiviewCreateInfo>();
+    renderPassMultiviewCreateInfo.subpassCount = multiview_count;
     renderPassMultiviewCreateInfo.pViewMasks = viewMasks;
 
     m_renderPass_info = LvlInitStruct<VkRenderPassCreateInfo>(&renderPassMultiviewCreateInfo);
@@ -10989,41 +11003,42 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     m_renderPass_info.subpassCount = m_renderPass_subpasses.size();
     m_renderPass_info.pSubpasses = m_renderPass_subpasses.data();
 
-    m_renderPass_dependencies.resize(1);
-    VkSubpassDependency &subpass_dep = m_renderPass_dependencies[0];
-    subpass_dep.srcSubpass = 0;
-    subpass_dep.dstSubpass = 1;
-    // Just using all framebuffer-space pipeline stages in order to get a reasonably large
-    //  set of bits that can be used for both src & dst
-    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                               VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    // Add all of the gfx mem access bits that correlate to the fb-space pipeline stages
-    subpass_dep.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    subpass_dep.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
-                                VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    // Must include dep_by_region bit when src & dst both include framebuffer-space stages
-    subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    m_renderPass_dependencies.resize(extra_subpass_count);
+    for (unsigned i = 0; i < m_renderPass_dependencies.size(); ++i) {
+        auto &subpass_dep = m_renderPass_dependencies[i];
+        subpass_dep.srcSubpass = i;
+        subpass_dep.dstSubpass = i + 1;
+
+        subpass_dep.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpass_dep.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+        subpass_dep.srcAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        subpass_dep.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+                                    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    }
 
     m_renderPass_info.dependencyCount = static_cast<uint32_t>(m_renderPass_dependencies.size());
     m_renderPass_info.pDependencies = m_renderPass_dependencies.data();
 
     vk::CreateRenderPass(m_device->handle(), &m_renderPass_info, nullptr, &m_renderPass);
 
-    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_create_info.extent.width = static_cast<uint32_t>(m_width);
     image_create_info.extent.height = static_cast<uint32_t>(m_height);
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 2;
+    image_create_info.arrayLayers = multiview_count;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -11031,10 +11046,11 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
                                              VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    VkFramebufferCreateInfo framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
+    auto framebufferCreateInfo = LvlInitStruct<VkFramebufferCreateInfo>();
     framebufferCreateInfo.width = static_cast<uint32_t>(m_width);
     framebufferCreateInfo.height = static_cast<uint32_t>(m_height);
     framebufferCreateInfo.layers = 1;
@@ -11054,30 +11070,45 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
     m_renderPassBeginInfo.clearValueCount = m_renderPassClearValues.size();
     m_renderPassBeginInfo.pClearValues = m_renderPassClearValues.data();
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.InitState();
-    pipe.CreateGraphicsPipeline();
+    // Pipeline not bound test
+    {
+        // No need to create individual pipelines for each subpass since we are checking no bound pipeline
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
 
-    // This bind should not be valid after we begin the renderpass
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02700");
+        m_commandBuffer->begin();
+        // This bind should not be valid after we begin the renderpass
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->VerifyNotFound();
 
-    m_commandBuffer->begin();
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02700");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    // This bind should not be valid for next subpass
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            m_errorMonitor->ExpectSuccess();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02700");
-    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-    m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
+            // This bind should not be valid for next subpass
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            m_errorMonitor->VerifyNotFound();
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02700");
+            m_commandBuffer->Draw(1, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, TestCommandBufferInheritanceWithInvalidDepthFormat) {
