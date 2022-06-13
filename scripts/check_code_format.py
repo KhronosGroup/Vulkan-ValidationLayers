@@ -198,22 +198,23 @@ def VerifyTypeAssign(target_refspec, target_files):
     test_diff = subprocess.Popen(('git', 'diff', '-U0', target_refspec, '--', test_files), stdout=subprocess.PIPE)
     stdout, stderr = test_diff.communicate()
     stdout = stdout.decode('utf-8')
-    stype_regex = re.compile('\.sType\s*=')
-    on_regex = re.compile('stype-check\s*on')
-    off_regex = re.compile('stype-check\s*off')
+    stype_regex = re.compile(r'\.sType\s*=')
+    on_regex = re.compile(r'stype-check\s*on')
+    off_regex = re.compile(r'stype-check\s*off')
     checking = True
     for line in stdout.split('\n'):
-        if checking:
-            if off_regex.search(line, re.IGNORECASE):
-                checking = False
-            elif stype_regex.search(line):
-                CPrint('ERR_MSG', "Test assigning sType instead of using LvlInitStruct")
-                CPrint('ERR_MSG', "If this is a case where LvlInitStruct cannot be used, //stype-check off can be used to turn off sType checking")
-                CPrint('CONTENT', "     '" + line + "'\n")
-                retval = 1
-        else:
-            if on_regex.search(line, re.IGNORECASE):
-                checking = True
+        if not line.startswith('-'):
+            if checking:
+                if off_regex.search(line, re.IGNORECASE):
+                    checking = False
+                elif stype_regex.search(line):
+                    CPrint('ERR_MSG', "Test assigning sType instead of using LvlInitStruct")
+                    CPrint('ERR_MSG', "If this is a case where LvlInitStruct cannot be used, //stype-check off can be used to turn off sType checking")
+                    CPrint('CONTENT', "     '" + line + "'\n")
+                    retval = 1
+            else:
+                if on_regex.search(line, re.IGNORECASE):
+                    checking = True
     return retval
 #
 #
