@@ -1220,6 +1220,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (ray_tracing_maintenance1_features) {
             enabled_features.ray_tracing_maintenance1_features= *ray_tracing_maintenance1_features;
         }
+        
+        const auto non_seamless_cube_map_features =
+            LvlFindInChain<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>(pCreateInfo->pNext);
+        if (non_seamless_cube_map_features) {
+            enabled_features.non_seamless_cube_map_features = *non_seamless_cube_map_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
