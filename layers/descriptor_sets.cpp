@@ -897,6 +897,7 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
         return;
     }
     auto acc_desc = static_cast<const AccelerationStructureDescriptor *>(src);
+    is_khr_ = acc_desc->is_khr_;
     if (is_khr_) {
         acc_ = acc_desc->acc_;
         ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
