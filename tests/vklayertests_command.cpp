@@ -11162,6 +11162,80 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
     m_commandBuffer->reset();
 
+    // Push constants
+    {
+        char const *const vsSource = R"glsl(
+        #version 450
+        layout(push_constant, std430) uniform foo {
+           mat3 m;
+        } constants;
+        void main(){
+            vec3 v3 = constants.m[0];
+        }
+    )glsl";
+
+        VkShaderObj const vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj const fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 16};
+        auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        pipeline_layout_info.pushConstantRangeCount = 1;
+        pipeline_layout_info.pPushConstantRanges = &push_constant_range;
+
+        vk_testing::PipelineLayout layout;
+        layout.init(*m_device, pipeline_layout_info, std::vector<const vk_testing::DescriptorSetLayout *>{});
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.pipeline_layout_ci_ = pipeline_layout_info;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        // Pipelines for all other subpasses
+        vk_testing::Pipeline pipelines[extra_subpass_count];
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            auto pipe_info = pipe.gp_ci_;
+            pipe_info.subpass = i + 1;
+            pipelines[i].init(*m_device, pipe_info);
+        }
+        // Set up complete
+
+        const float dummy_values[16] = {};
+        m_commandBuffer->begin();
+        // This push constants should not be counted when render pass begins
+        vk::CmdPushConstants(m_commandBuffer->handle(), layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, push_constant_range.offset,
+                             push_constant_range.size, dummy_values);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maintenance4-06425");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            m_errorMonitor->ExpectSuccess();
+
+            // This push constants should not be counted when we change subpass
+            vk::CmdPushConstants(m_commandBuffer->handle(), layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, push_constant_range.offset,
+                                 push_constant_range.size, dummy_values);
+            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
+            m_errorMonitor->VerifyNotFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-maintenance4-06425");
+            m_commandBuffer->Draw(1, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+
     m_errorMonitor->VerifyNotFound();
 }
 
