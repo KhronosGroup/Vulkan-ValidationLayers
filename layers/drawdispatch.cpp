@@ -844,10 +844,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         cubic_sampler                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708";
-        indirect_count_contiguous_memory   = "VUID-vkCmdDrawMeshTasksIndirectNV-countBuffer-02714";
         indirect_buffer_bit                = "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02709";
-        indirect_count_buffer_bit          = "VUID-vkCmdDrawMeshTasksIndirectNV-countBuffer-02715";
-        indirect_count_offset              = "VUID-vkCmdDrawMeshTasksIndirectNV-countBufferOffset-04129";
         viewport_count                     = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419";
@@ -926,6 +923,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         indirect_protected_cb              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708";
         indirect_buffer_bit                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709";
+        indirect_count_contiguous_memory   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714";
+        indirect_count_buffer_bit          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715";
+        indirect_count_offset              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBufferOffset-04129";
         viewport_count                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419";

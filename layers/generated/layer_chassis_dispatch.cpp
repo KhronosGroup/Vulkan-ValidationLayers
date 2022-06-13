@@ -221,6 +221,51 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT 
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
+                    safe_VkExportMetalBufferInfoEXT *safe_struct = reinterpret_cast<safe_VkExportMetalBufferInfoEXT *>(cur_pnext);
+                    if (safe_struct->memory) {
+                        safe_struct->memory = layer_data->Unwrap(safe_struct->memory);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_METAL_EXT 
+
+#ifdef VK_USE_PLATFORM_METAL_EXT 
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
+                    safe_VkExportMetalIOSurfaceInfoEXT *safe_struct = reinterpret_cast<safe_VkExportMetalIOSurfaceInfoEXT *>(cur_pnext);
+                    if (safe_struct->image) {
+                        safe_struct->image = layer_data->Unwrap(safe_struct->image);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_METAL_EXT 
+
+#ifdef VK_USE_PLATFORM_METAL_EXT 
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT: {
+                    safe_VkExportMetalSharedEventInfoEXT *safe_struct = reinterpret_cast<safe_VkExportMetalSharedEventInfoEXT *>(cur_pnext);
+                    if (safe_struct->semaphore) {
+                        safe_struct->semaphore = layer_data->Unwrap(safe_struct->semaphore);
+                    }
+                    if (safe_struct->event) {
+                        safe_struct->event = layer_data->Unwrap(safe_struct->event);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_METAL_EXT 
+
+#ifdef VK_USE_PLATFORM_METAL_EXT 
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT: {
+                    safe_VkExportMetalTextureInfoEXT *safe_struct = reinterpret_cast<safe_VkExportMetalTextureInfoEXT *>(cur_pnext);
+                    if (safe_struct->image) {
+                        safe_struct->image = layer_data->Unwrap(safe_struct->image);
+                    }
+                    if (safe_struct->imageView) {
+                        safe_struct->imageView = layer_data->Unwrap(safe_struct->imageView);
+                    }
+                    if (safe_struct->bufferView) {
+                        safe_struct->bufferView = layer_data->Unwrap(safe_struct->bufferView);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_METAL_EXT 
+
             default:
                 break;
         }
@@ -9379,6 +9424,28 @@ void DispatchDestroyPrivateDataSlotEXT(
 // Skip vkSetPrivateDataEXT dispatch, manually generated
 
 // Skip vkGetPrivateDataEXT dispatch, manually generated
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+void DispatchExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    safe_VkExportMetalObjectsInfoEXT var_local_pMetalObjectsInfo;
+    safe_VkExportMetalObjectsInfoEXT *local_pMetalObjectsInfo = NULL;
+    {
+        if (pMetalObjectsInfo) {
+            local_pMetalObjectsInfo = &var_local_pMetalObjectsInfo;
+            local_pMetalObjectsInfo->initialize(pMetalObjectsInfo);
+            WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo->pNext);
+        }
+    }
+    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (const VkExportMetalObjectsInfoEXT*)local_pMetalObjectsInfo);
+
+}
+#endif // VK_USE_PLATFORM_METAL_EXT
 
 void DispatchCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,

@@ -6901,6 +6901,18 @@ bool ObjectLifetimes::PreCallValidateGetPrivateDataEXT(
     return skip;
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+bool ObjectLifetimes::PreCallValidateExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkExportMetalObjectsEXT-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 bool ObjectLifetimes::PreCallValidateCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,

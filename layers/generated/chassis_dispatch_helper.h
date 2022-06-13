@@ -1172,6 +1172,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetPrivateDataEXT,
     InterceptIdPreCallRecordGetPrivateDataEXT,
     InterceptIdPostCallRecordGetPrivateDataEXT,
+    InterceptIdPreCallValidateExportMetalObjectsEXT,
+    InterceptIdPreCallRecordExportMetalObjectsEXT,
+    InterceptIdPostCallRecordExportMetalObjectsEXT,
     InterceptIdPreCallValidateCmdSetFragmentShadingRateEnumNV,
     InterceptIdPreCallRecordCmdSetFragmentShadingRateEnumNV,
     InterceptIdPostCallRecordCmdSetFragmentShadingRateEnumNV,
@@ -2613,6 +2616,11 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPrivateDataEXT);
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    BUILD_DISPATCH_VECTOR(PreCallValidateExportMetalObjectsEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordExportMetalObjectsEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordExportMetalObjectsEXT);
+#endif
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetFragmentShadingRateEnumNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetFragmentShadingRateEnumNV);

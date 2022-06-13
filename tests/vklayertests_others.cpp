@@ -1176,16 +1176,14 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "value of pCreateInfo->pNext must be NULL");
-    // Set VkMemoryAllocateInfo::pNext to a non-NULL value, when pNext must be NULL.
+    // Set VkCommandPoolCreateInfo::pNext to a non-NULL value, when pNext must be NULL.
     // Need to pick a function that has no allowed pNext structure types.
     // Expected to trigger an error with parameter_validation::validate_struct_pnext
-    VkEvent event = VK_NULL_HANDLE;
-    VkEventCreateInfo event_alloc_info = {};
-    // Zero-initialization will provide the correct sType
-    VkApplicationInfo app_info = {};
-    event_alloc_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    event_alloc_info.pNext = &app_info;
-    vk::CreateEvent(device(), &event_alloc_info, NULL, &event);
+    VkCommandPool pool = VK_NULL_HANDLE;
+    auto pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
+    auto app_info = LvlInitStruct<VkApplicationInfo>();
+    pool_ci.pNext = &app_info;
+    vk::CreateCommandPool(device(), &pool_ci, NULL, &pool);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), " chain includes a structure with unexpected VkStructureType ");

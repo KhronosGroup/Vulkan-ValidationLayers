@@ -436,7 +436,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_load_store_op_none{kNotEnabled};
     ExtEnabled vk_ext_memory_budget{kNotEnabled};
     ExtEnabled vk_ext_memory_priority{kNotEnabled};
+    ExtEnabled vk_ext_metal_objects{kNotEnabled};
     ExtEnabled vk_ext_multi_draw{kNotEnabled};
+    ExtEnabled vk_ext_non_seamless_cube_map{kNotEnabled};
     ExtEnabled vk_ext_pageable_device_local_memory{kNotEnabled};
     ExtEnabled vk_ext_pci_bus_info{kNotEnabled};
     ExtEnabled vk_ext_physical_device_drm{kNotEnabled};
@@ -763,7 +765,11 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_METAL_EXT
+            {VK_EXT_METAL_OBJECTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
+#endif
             {VK_EXT_MULTI_DRAW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_multi_draw, {})},
+            {VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_non_seamless_cube_map, {})},
             {VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pageable_device_local_memory, {{
                            {&DeviceExtensions::vk_ext_memory_priority, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME}}})},
             {VK_EXT_PCI_BUS_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pci_bus_info, {{
@@ -1354,7 +1360,11 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
     VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
     VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    VK_EXT_METAL_OBJECTS_EXTENSION_NAME,
+#endif
     VK_EXT_MULTI_DRAW_EXTENSION_NAME,
+    VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME,
     VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME,
     VK_EXT_PCI_BUS_INFO_EXTENSION_NAME,
     VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME,
