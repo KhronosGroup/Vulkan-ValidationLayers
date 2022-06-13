@@ -16205,3 +16205,30 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, NonSeamlessCubeMapNotEnabled) {
+    TEST_DESCRIPTION("Validation should catch using NON_SEAMLESS_CUBE_MAP if the feature is not enabled.");
+
+    AddRequiredExtensions(VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto non_seamless_cube_map_features = LvlInitStruct<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&non_seamless_cube_map_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    non_seamless_cube_map_features.nonSeamlessCubeMap = false;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788");
+    VkSampler sampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.flags = VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT;
+
+    vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
+    m_errorMonitor->VerifyFound();
+}
