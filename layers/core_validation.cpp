@@ -18612,6 +18612,11 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
         }
     }
 
+    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT) && (!enabled_features.non_seamless_cube_map_features.nonSeamlessCubeMap)) {
+        skip |= LogError(device, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788",
+                         "vkCreateSampler(): flags contains VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT but the "
+                         "VK_EXT_non_seamless_cube_map feature has not been enabled.");
+    }
     return skip;
 }
 
