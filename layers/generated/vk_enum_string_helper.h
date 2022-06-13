@@ -423,6 +423,22 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR";
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV:
             return "VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_NV";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT";
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT";
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR:
@@ -561,6 +577,14 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_NV";
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA:
             return "VK_STRUCTURE_TYPE_IMPORT_MEMORY_ZIRCON_HANDLE_INFO_FUCHSIA";
+        case VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT";
+        case VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT";
+        case VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT";
         case VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR:
             return "VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR";
         case VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR:
@@ -841,6 +865,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT:
@@ -4233,6 +4259,8 @@ static inline const char* string_VkSamplerCreateFlagBits(VkSamplerCreateFlagBits
 {
     switch (input_value)
     {
+        case VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT:
+            return "VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT";
         case VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT:
             return "VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT";
         case VK_SAMPLER_CREATE_SUBSAMPLED_COARSE_RECONSTRUCTION_BIT_EXT:
@@ -9543,6 +9571,47 @@ static inline std::string string_VkDeviceDiagnosticsConfigFlagsNV(VkDeviceDiagno
     return ret;
 }
 
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+static inline const char* string_VkExportMetalObjectTypeFlagBitsEXT(VkExportMetalObjectTypeFlagBitsEXT input_value)
+{
+    switch (input_value)
+    {
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT";
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT";
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT";
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT";
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT";
+        case VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT:
+            return "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT";
+        default:
+            return "Unhandled VkExportMetalObjectTypeFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkExportMetalObjectTypeFlagsEXT(VkExportMetalObjectTypeFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkExportMetalObjectTypeFlagBitsEXT(static_cast<VkExportMetalObjectTypeFlagBitsEXT>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkExportMetalObjectTypeFlagBitsEXT(static_cast<VkExportMetalObjectTypeFlagBitsEXT>(0)));
+    return ret;
+}
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 static inline const char* string_VkGraphicsPipelineLibraryFlagBitsEXT(VkGraphicsPipelineLibraryFlagBitsEXT input_value)
 {
     switch (input_value)
@@ -9977,6 +10046,13 @@ static inline bool IsDuplicatePnext(VkStructureType input_value)
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT:
         case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
         case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
+        case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT:
             return true;
         default:
             return false;

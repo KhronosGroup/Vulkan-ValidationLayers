@@ -3060,6 +3060,13 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 
 
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo);
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 
 
 
@@ -3284,6 +3291,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     void**                                      ppData);
+
 
 
 
@@ -5363,6 +5371,11 @@ class ValidationObject {
         virtual bool PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) const { return false; };
         virtual void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {};
         virtual void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {};
+#ifdef VK_USE_PLATFORM_METAL_EXT
+        virtual bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) const { return false; };
+        virtual void PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {};
+        virtual void PostCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {};
+#endif
         virtual bool PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const { return false; };
         virtual void PreCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {};
         virtual void PostCallRecordCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {};

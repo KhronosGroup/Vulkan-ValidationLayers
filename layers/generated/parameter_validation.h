@@ -2277,6 +2277,11 @@ bool PreCallValidateGetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlot                           privateDataSlot,
     uint64_t*                                   pData) const override;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool PreCallValidateExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) const override;
+#endif
 bool PreCallValidateCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,

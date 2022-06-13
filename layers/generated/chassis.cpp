@@ -12000,6 +12000,30 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(
 
 
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateExportMetalObjectsEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateExportMetalObjectsEXT(device, pMetalObjectsInfo);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordExportMetalObjectsEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    }
+    DispatchExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordExportMetalObjectsEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    }
+}
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 
 
 
@@ -12819,6 +12843,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
         intercept->PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
     }
 }
+
 
 
 
@@ -13907,6 +13932,9 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkDestroyPrivateDataSlotEXT", {kFuncTypeDev, (void*)DestroyPrivateDataSlotEXT}},
     {"vkSetPrivateDataEXT", {kFuncTypeDev, (void*)SetPrivateDataEXT}},
     {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
+#endif
     {"vkCmdSetFragmentShadingRateEnumNV", {kFuncTypeDev, (void*)CmdSetFragmentShadingRateEnumNV}},
     {"vkGetImageSubresourceLayout2EXT", {kFuncTypeDev, (void*)GetImageSubresourceLayout2EXT}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR

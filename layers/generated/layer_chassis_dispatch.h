@@ -2313,6 +2313,11 @@ void DispatchGetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlot                           privateDataSlot,
     uint64_t*                                   pData);
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void DispatchExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo);
+#endif // VK_USE_PLATFORM_METAL_EXT
 void DispatchCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,

@@ -473,6 +473,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePrivateDataSlotEXT(VkDevice devi
 static VKAPI_ATTR void VKAPI_CALL StubDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) {  };
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static VKAPI_ATTR void VKAPI_CALL StubExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {  };
+#endif // VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) {  };
 static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource, VkSubresourceLayout2EXT* pLayout) {  };
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -760,6 +763,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkDestroyVideoSessionKHR", "VK_KHR_video_queue"},
     {"vkDestroyVideoSessionParametersKHR", "VK_KHR_video_queue"},
     {"vkDisplayPowerControlEXT", "VK_EXT_display_control"},
+    {"vkExportMetalObjectsEXT", "VK_EXT_metal_objects"},
     {"vkGetAccelerationStructureBuildSizesKHR", "VK_KHR_acceleration_structure"},
     {"vkGetAccelerationStructureDeviceAddressKHR", "VK_KHR_acceleration_structure"},
     {"vkGetAccelerationStructureHandleNV", "VK_NV_ray_tracing"},
@@ -1622,6 +1626,10 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->SetPrivateDataEXT == nullptr) { table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)StubSetPrivateDataEXT; }
     table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT) gpa(device, "vkGetPrivateDataEXT");
     if (table->GetPrivateDataEXT == nullptr) { table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)StubGetPrivateDataEXT; }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT) gpa(device, "vkExportMetalObjectsEXT");
+    if (table->ExportMetalObjectsEXT == nullptr) { table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)StubExportMetalObjectsEXT; }
+#endif // VK_USE_PLATFORM_METAL_EXT
     table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV) gpa(device, "vkCmdSetFragmentShadingRateEnumNV");
     if (table->CmdSetFragmentShadingRateEnumNV == nullptr) { table->CmdSetFragmentShadingRateEnumNV = (PFN_vkCmdSetFragmentShadingRateEnumNV)StubCmdSetFragmentShadingRateEnumNV; }
     table->GetImageSubresourceLayout2EXT = (PFN_vkGetImageSubresourceLayout2EXT) gpa(device, "vkGetImageSubresourceLayout2EXT");

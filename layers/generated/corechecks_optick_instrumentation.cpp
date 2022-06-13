@@ -7888,6 +7888,24 @@ void CoreChecksOptickInstrumented::PostCallRecordGetPrivateDataEXT(VkDevice devi
     CoreChecks::PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool CoreChecksOptickInstrumented::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateExportMetalObjectsEXT(device, pMetalObjectsInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordExportMetalObjectsEXT(device, pMetalObjectsInfo);
+}
+
+#endif // VK_USE_PLATFORM_METAL_EXT
 bool CoreChecksOptickInstrumented::PreCallValidateCmdSetFragmentShadingRateEnumNV(VkCommandBuffer           commandBuffer, VkFragmentShadingRateNV                     shadingRate, const VkFragmentShadingRateCombinerOpKHR    combinerOps[2]) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdSetFragmentShadingRateEnumNV(commandBuffer, shadingRate, combinerOps);

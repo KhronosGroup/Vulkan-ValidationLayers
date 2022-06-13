@@ -8372,6 +8372,21 @@ void ThreadSafety::PostCallRecordGetPrivateDataEXT(
     FinishReadObject(privateDataSlot, "vkGetPrivateDataEXT");
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+void ThreadSafety::PreCallRecordExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
+    StartReadObjectParentInstance(device, "vkExportMetalObjectsEXT");
+}
+
+void ThreadSafety::PostCallRecordExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) {
+    FinishReadObjectParentInstance(device, "vkExportMetalObjectsEXT");
+}
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 void ThreadSafety::PreCallRecordCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,

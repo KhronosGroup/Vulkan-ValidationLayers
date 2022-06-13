@@ -5611,6 +5611,17 @@ void PostCallRecordGetPrivateDataEXT(
     VkPrivateDataSlot                           privateDataSlot,
     uint64_t*                                   pData) override;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
+void PreCallRecordExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) override;
+
+void PostCallRecordExportMetalObjectsEXT(
+    VkDevice                                    device,
+    VkExportMetalObjectsInfoEXT*                pMetalObjectsInfo) override;
+#endif // VK_USE_PLATFORM_METAL_EXT
+
 void PreCallRecordCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,
     VkFragmentShadingRateNV                     shadingRate,

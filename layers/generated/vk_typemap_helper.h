@@ -5157,6 +5157,138 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREAT
     typedef VkDeviceDiagnosticsConfigCreateInfoNV Type;
 };
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalObjectCreateInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalObjectCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT> {
+    typedef VkExportMetalObjectCreateInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalObjectsInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalObjectsInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT> {
+    typedef VkExportMetalObjectsInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalDeviceInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalDeviceInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT> {
+    typedef VkExportMetalDeviceInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalCommandQueueInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalCommandQueueInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT> {
+    typedef VkExportMetalCommandQueueInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalBufferInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalBufferInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT> {
+    typedef VkExportMetalBufferInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkImportMetalBufferInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT
+template <> struct LvlTypeMap<VkImportMetalBufferInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_BUFFER_INFO_EXT> {
+    typedef VkImportMetalBufferInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalTextureInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalTextureInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT> {
+    typedef VkExportMetalTextureInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkImportMetalTextureInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT
+template <> struct LvlTypeMap<VkImportMetalTextureInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_TEXTURE_INFO_EXT> {
+    typedef VkImportMetalTextureInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalIOSurfaceInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalIOSurfaceInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT> {
+    typedef VkExportMetalIOSurfaceInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkImportMetalIOSurfaceInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT
+template <> struct LvlTypeMap<VkImportMetalIOSurfaceInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_IO_SURFACE_INFO_EXT> {
+    typedef VkImportMetalIOSurfaceInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkExportMetalSharedEventInfoEXT to id VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT
+template <> struct LvlTypeMap<VkExportMetalSharedEventInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT> {
+    typedef VkExportMetalSharedEventInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// Map type VkImportMetalSharedEventInfoEXT to id VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT
+template <> struct LvlTypeMap<VkImportMetalSharedEventInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMPORT_METAL_SHARED_EVENT_INFO_EXT> {
+    typedef VkImportMetalSharedEventInfoEXT Type;
+};
+
+#endif // VK_USE_PLATFORM_METAL_EXT
 // Map type VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT;
@@ -5828,6 +5960,15 @@ template <> struct LvlTypeMap<VkDescriptorSetLayoutHostMappingInfoVALVE> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_HOST_MAPPING_INFO_VALVE> {
     typedef VkDescriptorSetLayoutHostMappingInfoVALVE Type;
+};
+
+// Map type VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT> {
+    typedef VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT Type;
 };
 
 // Map type VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM
