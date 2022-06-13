@@ -1388,12 +1388,8 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<boo
 }
 
 void CMD_BUFFER_STATE::UnbindResources() {
-    // Pipeline and descriptor sets
-    lastBound[BindPoint_Graphics].Reset();
-
     // Vertex and index buffers
     index_buffer_binding.reset();
-    status &= ~CBSTATUS_INDEX_BUFFER_BOUND;
     vertex_buffer_used = false;
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
 
@@ -1403,6 +1399,10 @@ void CMD_BUFFER_STATE::UnbindResources() {
     push_constant_data_update.clear();
     push_constant_pipeline_layout_set = VK_NULL_HANDLE;
 
-    // Dynamic state
-    dynamic_status = CBSTATUS_NONE;
+    // Reset status of cb to force rebinding of all resources
+    // Index buffer included
+    status = CBSTATUS_NONE;
+
+    // Pipeline and descriptor sets
+    lastBound[BindPoint_Graphics].Reset();
 }
