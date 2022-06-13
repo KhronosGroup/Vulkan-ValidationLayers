@@ -8301,8 +8301,9 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 128};
     VkPushConstantRange push_constant_range_small = {VK_SHADER_STAGE_VERTEX_BIT, 4, 4};
 
-    VkPipelineLayoutCreateInfo pipeline_layout_info{
-        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+    auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    pipeline_layout_info.pushConstantRangeCount = 1;
+    pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
     VkPipelineLayout pipeline_layout;
     vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
