@@ -11108,6 +11108,60 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
     m_commandBuffer->reset();
 
+    // Dynamic state (checking with line width)
+    {
+        // Pipeline for subpass 0
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+
+        VkDynamicState dyn_states = VK_DYNAMIC_STATE_LINE_WIDTH;
+        pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+        pipe.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        pipe.dyn_state_ci_.dynamicStateCount = 1;
+        pipe.dyn_state_ci_.pDynamicStates = &dyn_states;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        // Pipelines for all other subpasses
+        vk_testing::Pipeline pipelines[extra_subpass_count];
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            auto pipe_info = pipe.gp_ci_;
+            pipe_info.subpass = i + 1;
+            pipelines[i].init(*m_device, pipe_info);
+        }
+
+        m_commandBuffer->begin();
+        // This line width set should not be valid for next subpass
+        vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            m_errorMonitor->ExpectSuccess();
+
+            // This line width set should not be valid for next subpass
+            vk::CmdSetLineWidth(m_commandBuffer->handle(), 1.0f);
+            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
+            m_errorMonitor->VerifyNotFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+            m_commandBuffer->Draw(1, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+
     m_errorMonitor->VerifyNotFound();
 }
 
