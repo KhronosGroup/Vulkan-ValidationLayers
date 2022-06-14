@@ -2158,7 +2158,10 @@ VkResult DispatchGetDeferredOperationResultKHR(
             for param in params:
                 if param.islocal == True or self.StructWithExtensions(param.type):
                     if param.ispointer == True:
-                        wrapped_paramstext = wrapped_paramstext.replace(param.name, '(%s %s*)local_%s' % ('const', param.type, param.name))
+                        if param.isconst == True:
+                          wrapped_paramstext = wrapped_paramstext.replace(param.name, '(%s %s*)local_%s' % ('const', param.type, param.name))
+                        else:
+                          wrapped_paramstext = wrapped_paramstext.replace(param.name, '(%s*)local_%s' % (param.type, param.name))
                     else:
                         wrapped_paramstext = wrapped_paramstext.replace(param.name, '(%s %s)local_%s' % ('const', param.type, param.name))
 
