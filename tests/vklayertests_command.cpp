@@ -11236,6 +11236,89 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
     m_commandBuffer->reset();
 
+    // Descriptor sets
+    {
+        OneOffDescriptorSet descriptor_set{m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}}};
+
+        auto bci = LvlInitStruct<VkBufferCreateInfo>();
+        bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        bci.size = 8;
+        VkBufferObj buffer;
+        buffer.init(*m_device, bci);
+        VkDescriptorBufferInfo buffer_info;
+        buffer_info.buffer = buffer.handle();
+        buffer_info.offset = 0;
+        buffer_info.range = VK_WHOLE_SIZE;
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_set.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.pBufferInfo = &buffer_info;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        auto pipeline_layout_info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        pipeline_layout_info.setLayoutCount = 1;
+        pipeline_layout_info.pSetLayouts = &descriptor_set.layout_.handle();
+
+        vk_testing::PipelineLayout layout;
+        layout.init(*m_device, pipeline_layout_info, std::vector<vk_testing::DescriptorSetLayout const *>{});
+
+        VkShaderObj const vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj const fs(this, bindStateFragUniformShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.pipeline_layout_ci_ = pipeline_layout_info;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        // Pipelines for all other subpasses
+        vk_testing::Pipeline pipelines[extra_subpass_count];
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            auto pipe_info = pipe.gp_ci_;
+            pipe_info.subpass = i + 1;
+            pipelines[i].init(*m_device, pipe_info);
+        }
+        // Set up complete
+
+        m_commandBuffer->begin();
+        // This descriptor bind should not be counted when render pass begins
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02697");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            m_errorMonitor->ExpectSuccess();
+
+            // This descriptor bind should not be counted when next subpass begins
+            vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0,
+                                      1, &descriptor_set.set_, 0, nullptr);
+            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
+            m_errorMonitor->VerifyNotFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02697");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound");
+            m_commandBuffer->Draw(1, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+
     m_errorMonitor->VerifyNotFound();
 }
 
