@@ -9442,7 +9442,7 @@ void DispatchExportMetalObjectsEXT(
             WrapPnextChainHandles(layer_data, local_pMetalObjectsInfo->pNext);
         }
     }
-    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (const VkExportMetalObjectsInfoEXT*)local_pMetalObjectsInfo);
+    layer_data->device_dispatch_table.ExportMetalObjectsEXT(device, (VkExportMetalObjectsInfoEXT*)local_pMetalObjectsInfo);
 
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
