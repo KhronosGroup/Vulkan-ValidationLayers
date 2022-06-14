@@ -519,6 +519,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     bool transparent() const;
     bool copyable() const { return (format_features_ & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT); }
 
+    VkImageCreateInfo const &info() const { return create_info_; }
     VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
     VkExtent3D extent() const { return create_info_.extent; }
     VkExtent3D extent(uint32_t mip_level) const { return extent(create_info_.extent, mip_level); }

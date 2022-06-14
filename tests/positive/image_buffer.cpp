@@ -2845,6 +2845,212 @@ TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses
     }
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, CorrectSparseImageOverlapCopy) {
+    TEST_DESCRIPTION("Test correct non overlapping sparse images' copy");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "Requires unsupported sparseBinding or sparseResidencyImage2D feature.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkImageCopy copy_info{};
+    copy_info.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_info.srcSubresource.baseArrayLayer = 0;
+    copy_info.srcSubresource.layerCount = 1;
+    copy_info.srcSubresource.mipLevel = 0;
+    copy_info.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_info.dstSubresource.baseArrayLayer = 0;
+    copy_info.dstSubresource.layerCount = 1;
+    copy_info.dstSubresource.mipLevel = 0;
+    copy_info.extent = {64, 64, 1};
+
+    VkImageCreateInfo image_info = vk_testing::Image::create_info();
+    image_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_info.extent = copy_info.extent;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Sparse no-residency test
+    {
+        // 2 semaphores needed since we need to bind twice before copying
+        auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+        vk_testing::Semaphore semaphore;
+        semaphore.init(*m_device, s_info);
+        vk_testing::Semaphore semaphore2;
+        semaphore2.init(*m_device, s_info);
+
+        VkImageObj image_sparse{m_device};
+        image_sparse.init_no_mem(*m_device, image_info);
+        image_sparse.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        VkImageObj image_sparse2{m_device};
+        image_sparse2.init_no_mem(*m_device, image_info);
+        image_sparse2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        VkMemoryRequirements image_mem_reqs{};
+        vk::GetImageMemoryRequirements(device(), image_sparse.handle(), &image_mem_reqs);
+        VkMemoryAllocateInfo image_mem_alloc =
+            vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        vk_testing::DeviceMemory image_mem;
+        image_mem.init(*m_device, image_mem_alloc);
+        vk_testing::DeviceMemory image_mem2;
+        image_mem2.init(*m_device, image_mem_alloc);
+
+        VkSparseMemoryBind image_memory_bind{};
+        image_memory_bind.size = image_mem_reqs.size;
+        image_memory_bind.memory = image_mem.handle();
+
+        VkSparseImageOpaqueMemoryBindInfo image_memory_bind_infos[2] = {};
+        image_memory_bind_infos[0].image = image_sparse.handle();
+        image_memory_bind_infos[0].bindCount = 1;
+        image_memory_bind_infos[0].pBinds = &image_memory_bind;
+        image_memory_bind_infos[1].image = image_sparse2.handle();
+        image_memory_bind_infos[1].bindCount = 1;
+        image_memory_bind_infos[1].pBinds = &image_memory_bind;
+
+        auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+        bind_info.imageOpaqueBindCount = 2;
+        bind_info.pImageOpaqueBinds = image_memory_bind_infos;
+        bind_info.signalSemaphoreCount = 1;
+        bind_info.pSignalSemaphores = &semaphore.handle();
+
+        uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+        VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+        // Set up complete
+
+        m_commandBuffer->begin();
+
+        // This copy is be completely legal as long as we change the memory for image_sparse to not overlap with
+        // image_sparse2's memory on queue submission, or viceversa
+        vk::CmdCopyImage(m_commandBuffer->handle(), image_sparse.handle(), image_sparse.Layout(), image_sparse2.handle(),
+                         image_sparse2.Layout(), 1, &copy_info);
+        m_commandBuffer->end();
+
+        // Rebind buffer_mem2 so it does not overlap
+        image_memory_bind.memory = image_mem2.handle();
+        bind_info.imageOpaqueBindCount = 1;
+        bind_info.waitSemaphoreCount = 1;
+        bind_info.pWaitSemaphores = &semaphore.handle();
+        bind_info.pSignalSemaphores = &semaphore2.handle();
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+
+        // Submitting copy command with non overlapping device memory regions
+        VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &semaphore2.handle();
+        submit_info.pWaitDstStageMask = &mask;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+        // Wait for operations to finish before exiting
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+
+    m_errorMonitor->VerifyNotFound();
+
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Requires unsupported sparseResidencyImage2D feature.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->reset();
+    image_info.flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+
+    // Sparse residency test
+    {
+        // 2 semaphores needed since we need to bind twice before copying
+        auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+        vk_testing::Semaphore semaphore;
+        semaphore.init(*m_device, s_info);
+        vk_testing::Semaphore semaphore2;
+        semaphore2.init(*m_device, s_info);
+
+        VkImageObj image_sparse{m_device};
+        image_sparse.init_no_mem(*m_device, image_info);
+        image_sparse.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        VkImageObj image_sparse2{m_device};
+        image_sparse2.init_no_mem(*m_device, image_info);
+        image_sparse2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        VkMemoryRequirements image_mem_reqs{};
+        vk::GetImageMemoryRequirements(device(), image_sparse.handle(), &image_mem_reqs);
+        VkMemoryAllocateInfo image_mem_alloc =
+            vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        vk_testing::DeviceMemory image_mem;
+        image_mem.init(*m_device, image_mem_alloc);
+        vk_testing::DeviceMemory image_mem2;
+        image_mem2.init(*m_device, image_mem_alloc);
+
+        VkSparseImageMemoryBind image_memory_bind{};
+        image_memory_bind.subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+        image_memory_bind.extent = copy_info.extent;
+        image_memory_bind.memory = image_mem.handle();
+
+        VkSparseImageMemoryBindInfo image_memory_bind_infos[2] = {};
+        image_memory_bind_infos[0].image = image_sparse.handle();
+        image_memory_bind_infos[0].bindCount = 1;
+        image_memory_bind_infos[0].pBinds = &image_memory_bind;
+        image_memory_bind_infos[1].image = image_sparse2.handle();
+        image_memory_bind_infos[1].bindCount = 1;
+        image_memory_bind_infos[1].pBinds = &image_memory_bind;
+
+        auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+        bind_info.imageBindCount = 2;
+        bind_info.pImageBinds = image_memory_bind_infos;
+        bind_info.signalSemaphoreCount = 1;
+        bind_info.pSignalSemaphores = &semaphore.handle();
+
+        uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+        VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+        // Set up complete
+
+        m_commandBuffer->begin();
+
+        // This copy is be completely legal as long as we change the memory for image_sparse to not overlap with
+        // image_sparse2's memory on queue submission, or viceversa
+        vk::CmdCopyImage(m_commandBuffer->handle(), image_sparse.handle(), image_sparse.Layout(), image_sparse2.handle(),
+                         image_sparse2.Layout(), 1, &copy_info);
+        m_commandBuffer->end();
+
+        // Rebind buffer_mem2 so it does not overlap
+        image_memory_bind.memory = image_mem2.handle();
+        bind_info.imageBindCount = 1;
+        bind_info.waitSemaphoreCount = 1;
+        bind_info.pWaitSemaphores = &semaphore.handle();
+        bind_info.pSignalSemaphores = &semaphore2.handle();
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+
+        // Submitting copy command with non overlapping device memory regions
+        VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &semaphore2.handle();
+        submit_info.pWaitDstStageMask = &mask;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+        // Wait for operations to finish before exiting
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
 
     m_errorMonitor->VerifyNotFound();
 }
