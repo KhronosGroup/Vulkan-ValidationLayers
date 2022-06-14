@@ -4218,7 +4218,11 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
 TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
+    // TODO (jzulauf)
+    GTEST_SKIP() << "this test is causing a sporadic crash on nvidia 32b release. Skip until further investigation";
+
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
