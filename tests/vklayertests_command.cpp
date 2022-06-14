@@ -11401,6 +11401,90 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
     m_commandBuffer->reset();
 
+    // Index buffer
+    {
+        float const vertex_data[] = {1.0f, 0.0f};
+        VkConstantBufferObj vbo(m_device, static_cast<int>(sizeof(vertex_data)), reinterpret_cast<const void *>(vertex_data),
+                                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+        uint32_t const index_data[] = {0};
+        VkConstantBufferObj ibo(m_device, static_cast<int>(sizeof(index_data)), reinterpret_cast<const void *>(index_data),
+                                VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+        VkVertexInputBindingDescription input_binding{};
+        input_binding.binding = 0;
+        input_binding.stride = sizeof(vertex_data);
+        input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        VkVertexInputAttributeDescription input_attribs{};
+        input_attribs.binding = 0;
+        input_attribs.location = 0;
+        input_attribs.format = VK_FORMAT_R32G32_SFLOAT;
+        input_attribs.offset = 0;
+
+        char const *const vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in vec2 input0;
+        void main(){
+           gl_Position = vec4(input0.x, input0.y, 0.0f, 1.0f);
+        }
+    )glsl";
+
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+        pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+        pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+        pipe.vi_ci_.pVertexAttributeDescriptions = &input_attribs;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        // Pipelines for all other subpasses
+        vk_testing::Pipeline pipelines[extra_subpass_count];
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            auto pipe_info = pipe.gp_ci_;
+            pipe_info.subpass = i + 1;
+            pipelines[i].init(*m_device, pipe_info);
+        }
+        // Set up complete
+
+        VkDeviceSize offset = 0;
+        m_commandBuffer->begin();
+        // This index buffer bind should not be counted when render pass begins
+        vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02701");
+        m_commandBuffer->DrawIndexed(0, 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        for (unsigned i = 0; i < extra_subpass_count; ++i) {
+            m_errorMonitor->ExpectSuccess();
+
+            // This index buffer bind should not be counted when next subpass begins
+            vk::CmdBindIndexBuffer(m_commandBuffer->handle(), ibo.handle(), 0, VK_INDEX_TYPE_UINT32);
+            vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
+            vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &vbo.handle(), &offset);
+            m_errorMonitor->VerifyNotFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexed-commandBuffer-02701");
+            m_commandBuffer->DrawIndexed(0, 1, 0, 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
     m_errorMonitor->VerifyNotFound();
 }
 
