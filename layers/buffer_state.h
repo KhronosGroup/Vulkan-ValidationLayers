@@ -55,10 +55,28 @@ using BUFFER_STATE_LINEAR = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, Bindable
 template <bool IS_RESIDENT>
 using BUFFER_STATE_SPARSE = MEMORY_TRACKED_RESOURCE_STATE<BUFFER_STATE, BindableSparseMemoryTracker<IS_RESIDENT>>;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkBufferViewCreateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif
+
 class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
     const VkBufferViewCreateInfo create_info;
     std::shared_ptr<BUFFER_STATE> buffer_state;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_bufferview_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
     // Format features that matter when accessing the buffer (OpLoad, OpStore,
     // OpAtomicLoad, etc...)
     const VkFormatFeatureFlags2KHR buf_format_features;
@@ -66,13 +84,18 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
     // (OpImageRead, OpImageWrite, etc...)
     const VkFormatFeatureFlags2KHR img_format_features;
 
+
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
                       VkFormatFeatureFlags2KHR buf_ff, VkFormatFeatureFlags2KHR img_ff)
         : BASE_NODE(bv, kVulkanObjectTypeBufferView),
           create_info(*ci),
           buffer_state(bf),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+          metal_bufferview_export(GetMetalExport(ci)),
+#endif
           buf_format_features(buf_ff),
           img_format_features(img_ff) {}
+
 
     void LinkChildNodes() override {
         // Connect child node(s), which cannot safely be done in the constructor.

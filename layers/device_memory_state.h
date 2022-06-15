@@ -61,8 +61,12 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     const layer_data::optional<DedicatedBinding> dedicated;
 
     MemRange mapped_range;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_buffer_export;        // Can be used in a VkExportMetalBufferInfoEXT struct in a VkExportMetalObjectsEXT call
+#endif                                     // VK_USE_PLATFORM_METAL_EXT
     void *p_driver_data;             // Pointer to application's actual memory
     const VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
+
 
     DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,

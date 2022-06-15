@@ -119,6 +119,10 @@ class IMAGE_STATE : public BINDABLE {
     const bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
     bool get_sparse_reqs_called;          // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_bound;           // Track if sparse metadata aspect is bound to this image
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool metal_image_export = false;
+    bool metal_io_surface_export = false;
+#endif // VK_USE_PLATFORM_METAL
 
     const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
@@ -230,6 +234,9 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     const float min_lod;
     const VkFormatFeatureFlags2KHR format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_imageview_export;
+#endif // VK_USE_PLATFORM_METAL_EXT
     std::shared_ptr<IMAGE_STATE> image_state;
 
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,

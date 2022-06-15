@@ -70,6 +70,21 @@ static bool IsMultiInstance(const VkMemoryAllocateInfo *p_alloc_info, const VkMe
     return false;
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkMemoryAllocateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info,
                                          uint64_t fake_address,
                                          const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
@@ -83,6 +98,9 @@ DEVICE_MEMORY_STATE::DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAlloc
       multi_instance(IsMultiInstance(p_alloc_info, memory_heap, physical_device_count)),
       dedicated(std::move(dedicated_binding)),
       mapped_range{},
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      metal_buffer_export(GetMetalExport(p_alloc_info)),
+#endif                                 // VK_USE_PLATFORM_METAL_EXT
       p_driver_data(nullptr),
       fake_base_address(fake_address) {}
 
