@@ -12458,3 +12458,14 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     }
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+TEST_F(VkLayerTest, InvalidExtEnum) {
+    TEST_DESCRIPTION("Use an enum from an extension that is not enabled.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    m_errorMonitor->VerifyFound();
+}
