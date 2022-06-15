@@ -169,6 +169,22 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
     const auto *validation_features = LvlFindInChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
     if (validation_features) skip |= validate_validation_features(pCreateInfo, validation_features);
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
+    while (export_metal_object_info) {
+        if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) &&
+            (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT)) {
+            skip |= LogError(instance, "VUID-VkInstanceCreateInfo-pNext-06779",
+                             "vkCreateInstance(): The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
+                             "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
+                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT or "
+                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT are allowed",
+                             string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
     return skip;
 }
 
@@ -1297,6 +1313,49 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                     string_VkImageCompressionFlagsEXT(image_compression_control->flags).c_str());
             }
         }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+        auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
+        while (export_metal_object_info) {
+            if ((export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) &&
+                (export_metal_object_info->exportObjectType != VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)) {
+                skip |=
+                    LogError(device, "VUID-VkImageCreateInfo-pNext-06783",
+                             "vkCreateImage(): The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
+                             "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
+                             "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT or VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT are allowed",
+                             string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
+            }
+            export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        }
+        auto import_metal_texture_info = LvlFindInChain<VkImportMetalTextureInfoEXT>(pCreateInfo->pNext);
+        while (import_metal_texture_info) {
+            if ((import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_0_BIT) &&
+                (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                skip |=
+                    LogError(device, "VUID-VkImageCreateInfo-pNext-06784",
+                             "vkCreateImage(): The pNext chain contains a VkImportMetalTextureInfoEXT whose "
+                             "plane = %s, but only VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or VK_IMAGE_ASPECT_PLANE_2_BIT are allowed",
+                             string_VkImageAspectFlags(import_metal_texture_info->plane).c_str());
+            }
+            auto format_plane_count = FormatPlaneCount(pCreateInfo->format);
+            if ((format_plane_count <= 1) && (import_metal_texture_info->plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-06785",
+                                 "vkCreateImage(): The pNext chain contains a VkImportMetalTextureInfoEXT whose "
+                                 "plane = %s, but only VK_IMAGE_ASPECT_PLANE_0_BIT is allowed for an image created with format %s, which is not multiplaner",
+                                 string_VkImageAspectFlags(import_metal_texture_info->plane).c_str(),
+                                 string_VkFormat(pCreateInfo->format));
+            }
+            if ((format_plane_count == 2) && (import_metal_texture_info->plane == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-06786",
+                                 "vkCreateImage(): The pNext chain contains a VkImportMetalTextureInfoEXT whose "
+                                 "plane == VK_IMAGE_ASPECT_PLANE_2_BIT, which is not allowed for an image created with format %s, "
+                                 "which has only 2 planes",
+                                 string_VkFormat(pCreateInfo->format));
+            }
+            import_metal_texture_info = LvlFindInChain<VkImportMetalTextureInfoEXT>(import_metal_texture_info->pNext);
+        }
+#endif  // VK_USE_PLATFORM_METAL_EXT
     }
 
     return skip;
@@ -1364,6 +1423,11 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
                 }
             }
         }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+        skip |= ExportMetalObjectsPNextUtil(
+            VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkImageViewCreateInfo-pNext-06787",
+            "vkCreateImageView():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
+#endif  // VK_USE_PLATFORM_METAL_EXT
     }
     return skip;
 }
@@ -4118,6 +4182,60 @@ bool StatelessValidation::ValidateMutableDescriptorTypeCreateInfo(const VkDescri
     return skip;
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool StatelessValidation::ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid,
+                                                      const char *api_call, const char *sType, const void *pNext) const {
+    bool skip = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType != bit) {
+            std::stringstream message;
+            message << api_call
+                    << " The pNext chain contains a VkExportMetalObjectCreateInfoEXT whose "
+                       "exportObjectType = %s, but only VkExportMetalObjectCreateInfoEXT structs with exportObjectType of "
+                    << sType << " are allowed";
+            skip |= LogError(device, vuid, message.str().c_str(),
+                             string_VkExportMetalObjectTypeFlagBitsEXT(export_metal_object_info->exportObjectType));
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+bool StatelessValidation::manual_PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator,
+                                                                VkSemaphore *pSemaphore) const {
+    bool skip = false;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    skip |= ExportMetalObjectsPNextUtil(
+        VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT, "VUID-VkSemaphoreCreateInfo-pNext-06789",
+        "vkCreateSemaphore():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT", pCreateInfo->pNext);
+#endif  // VK_USE_PLATFORM_METAL_EXT
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent) const {
+    bool skip = false;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    skip |= ExportMetalObjectsPNextUtil(
+        VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT, "VUID-VkEventCreateInfo-pNext-06790",
+        "vkCreateEvent():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT", pCreateInfo->pNext);
+#endif  // VK_USE_PLATFORM_METAL_EXT
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 VkBufferView *pBufferView) const {
+    bool skip = false;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    skip |= ExportMetalObjectsPNextUtil(
+        VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkBufferViewCreateInfo-pNext-06782",
+        "vkCreateBufferView():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pCreateInfo->pNext);
+#endif  // VK_USE_PLATFORM_METAL_EXT
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device,
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
@@ -5847,6 +5965,11 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
                                  "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT is set, bufferDeviceAddress must be enabled.");
             }
         }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+        skip |= ExportMetalObjectsPNextUtil(
+            VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
+            "vkAllocateMemory():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pAllocateInfo->pNext);
+#endif // VK_USE_PLATFORM_METAL_EXT
     }
     return skip;
 }
@@ -8569,3 +8692,23 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice device,
+                                                                      VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const {
+    bool skip = false;
+    const VkStructureType allowed_structs_vk_export_metal_objects_info[] = {
+        VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT,
+        VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT,
+        VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT,
+    };
+    skip |= validate_struct_pnext("vkExportMetalObjectsEXT", "pMetalObjectsInfo->pNext",
+                                  "VkExportMetalBufferInfoEXT, VkExportMetalCommandQueueInfoEXT, VkExportMetalDeviceInfoEXT, "
+                                  "VkExportMetalIOSurfaceInfoEXT, VkExportMetalSharedEventInfoEXT, VkExportMetalTextureInfoEXT",
+                                  pMetalObjectsInfo->pNext, ARRAY_SIZE(allowed_structs_vk_export_metal_objects_info),
+                                  allowed_structs_vk_export_metal_objects_info, GeneratedVulkanHeaderVersion,
+                                  "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext", "VUID-VkExportMetalObjectsInfoEXT-sType-unique",
+                                  false, true);
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT

@@ -5981,6 +5981,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(
         }
     }
     skip |= validate_required_pointer("vkCreateSemaphore", "pSemaphore", pSemaphore, "VUID-vkCreateSemaphore-pSemaphore-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
     return skip;
 }
 
@@ -6048,6 +6049,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(
         }
     }
     skip |= validate_required_pointer("vkCreateEvent", "pEvent", pEvent, "VUID-vkCreateEvent-pEvent-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateEvent(device, pCreateInfo, pAllocator, pEvent);
     return skip;
 }
 
@@ -6302,6 +6304,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
         }
     }
     skip |= validate_required_pointer("vkCreateBufferView", "pView", pView, "VUID-vkCreateBufferView-pView-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateBufferView(device, pCreateInfo, pAllocator, pView);
     return skip;
 }
 
@@ -17622,6 +17625,7 @@ bool StatelessValidation::PreCallValidateExportMetalObjectsEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_ext_metal_objects)) skip |= OutputExtensionError("vkExportMetalObjectsEXT", VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
     skip |= validate_struct_type("vkExportMetalObjectsEXT", "pMetalObjectsInfo", "VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT", pMetalObjectsInfo, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECTS_INFO_EXT, true, "VUID-vkExportMetalObjectsEXT-pMetalObjectsInfo-parameter", "VUID-VkExportMetalObjectsInfoEXT-sType-sType");
+    if (!skip) skip |= manual_PreCallValidateExportMetalObjectsEXT(device, pMetalObjectsInfo);
     return skip;
 }
 
