@@ -1994,21 +1994,13 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
-            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.binding);
-            const auto descriptor_type = binding_it.GetType();
-            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
-            auto array_idx = 0;
-
-            if (binding_it.IsVariableDescriptorCount()) {
-                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
-            }
+            auto binding = descriptor_set->GetBinding(set_binding.first.binding);
+            const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
                 GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
 
-            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-                uint32_t index = i - index_range.start;
-                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+            for (uint32_t index = 0; index < binding->count; index++) {
+                const auto *descriptor = binding->GetDescriptor(index);
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
                     case DescriptorClass::Image: {
@@ -2133,20 +2125,13 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
-            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.binding);
-            const auto descriptor_type = binding_it.GetType();
-            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
-            auto array_idx = 0;
-
-            if (binding_it.IsVariableDescriptorCount()) {
-                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
-            }
+            auto binding = descriptor_set->GetBinding(set_binding.first.binding);
+            const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
                 GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
 
-            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+            for (uint32_t i = 0; i < binding->count; i++) {
+                const auto *descriptor = binding->GetDescriptor(i);
                 switch (descriptor->GetClass()) {
                     case DescriptorClass::ImageSampler:
                     case DescriptorClass::Image: {
