@@ -2587,23 +2587,19 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
 
 void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_state, const char* function_name) {
     for (auto descriptor_set : cb_state.validated_descriptor_sets) {
-        const auto& layout = *descriptor_set->GetLayout();
-
-        for (uint32_t index = 0; index < descriptor_set->GetBindingCount(); ++index) {
+        for (const auto& binding : *descriptor_set) {
             // For bindless scenarios, we should not attempt to track descriptor set state.
             // It is highly uncertain which resources are actually bound.
             // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.
-            VkDescriptorBindingFlags flags = layout.GetDescriptorBindingFlagsFromIndex(index);
-            if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
-                         VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
+            if (binding->binding_flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT |
+                                          VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT)) {
                 continue;
             }
 
-            auto index_range = layout.GetGlobalIndexRangeFromIndex(index);
-            for (uint32_t i = index_range.start; i < index_range.end; ++i) {
+            for (uint32_t i = 0; i < binding->count; ++i) {
                 VkImageView image_view{VK_NULL_HANDLE};
 
-                auto descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                auto descriptor = binding->GetDescriptor(i);
                 if (!descriptor) {
                     continue;
                 }
