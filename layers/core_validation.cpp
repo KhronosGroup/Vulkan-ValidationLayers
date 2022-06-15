@@ -1362,7 +1362,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         const auto color_blend_state = pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
         if (color_blend_state) {
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
-            if (pCB->dynamicColorWriteEnableAttachmentCount != blend_attachment_count) {
+            if (pCB->dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
                 skip |= LogError(
                     pCB->commandBuffer(), vuid.color_write_enable,
                     "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
