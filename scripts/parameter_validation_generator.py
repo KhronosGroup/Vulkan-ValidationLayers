@@ -173,6 +173,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateRayTracingPipelinesKHR',
             'vkCreateSampler',
             'vkCreateDescriptorSetLayout',
+            'vkCreateBufferView',
+            'vkCreateSemaphore',
+            'vkCreateEvent',
             'vkFreeDescriptorSets',
             'vkUpdateDescriptorSets',
             'vkBeginCommandBuffer',
@@ -277,6 +280,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetPhysicalDeviceSurfaceCapabilities2KHR',
             'vkGetPhysicalDeviceSurfaceFormats2KHR',
             'vkGetPhysicalDeviceSurfacePresentModes2EXT',
+            'vkExportMetalObjectsEXT',
             ]
 
         # Commands to ignore
