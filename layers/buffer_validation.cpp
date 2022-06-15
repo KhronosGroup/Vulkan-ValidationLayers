@@ -2927,6 +2927,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     const char *func_name = CommandTypeString(cmd_type);
     const char *vuid;
     skip = ValidateImageCopyData(regionCount, pRegions, src_image_state.get(), dst_image_state.get(), cmd_type);
+    // Need to validate we have memory bound before checking for overlaps since we need an assigned fragment_encoder for the images
+    // to get resource/memory ranges
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+               ? (is_2 ? "VUID-VkCopyImageInfo2-srcImage-01546" : "VUID-vkCmdCopyImage-srcImage-01546")
+               : (is_2 ? "VUID-VkCopyImageInfo2-srcImage-00127" : "VUID-vkCmdCopyImage-srcImage-00127");
+    skip |= ValidateMemoryIsBoundToImage(src_image_state.get(), func_name, vuid);
+    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
+               ? (is_2 ? "VUID-VkCopyImageInfo2-dstImage-01547" : "VUID-vkCmdCopyImage-dstImage-01547")
+               : (is_2 ? "VUID-VkCopyImageInfo2-dstImage-00132" : "VUID-vkCmdCopyImage-dstImage-00132");
+    skip |= ValidateMemoryIsBoundToImage(dst_image_state.get(), func_name, vuid);
 
     VkCommandBuffer command_buffer = cb_node->commandBuffer();
 
@@ -3276,14 +3286,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                      string_VkSampleCountFlagBits(dst_image_state->createInfo.samples));
     }
 
-    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
-               ? (is_2 ? "VUID-VkCopyImageInfo2-srcImage-01546" : "VUID-vkCmdCopyImage-srcImage-01546")
-               : (is_2 ? "VUID-VkCopyImageInfo2-srcImage-00127" : "VUID-vkCmdCopyImage-srcImage-00127");
-    skip |= ValidateMemoryIsBoundToImage(src_image_state.get(), func_name, vuid);
-    vuid = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion)
-               ? (is_2 ? "VUID-VkCopyImageInfo2-dstImage-01547" : "VUID-vkCmdCopyImage-dstImage-01547")
-               : (is_2 ? "VUID-VkCopyImageInfo2-dstImage-00132" : "VUID-vkCmdCopyImage-dstImage-00132");
-    skip |= ValidateMemoryIsBoundToImage(dst_image_state.get(), func_name, vuid);
     // Validate that SRC & DST images have correct usage flags set
     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-00126" : "VUID-vkCmdCopyImage-srcImage-00126";
     skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, true, vuid, func_name,
