@@ -442,6 +442,21 @@ static float GetImageViewMinLod(const VkImageViewCreateInfo* ci) {
     return (image_view_min_lod) ? image_view_min_lod->minLod : 0.0f;
 }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkImageViewCreateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci,
                                    VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : BASE_NODE(iv, kVulkanObjectTypeImageView),
@@ -460,6 +475,9 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
       min_lod(GetImageViewMinLod(ci)),
       format_features(ff),
       inherited_usage(GetInheritedUsage(ci, *im)),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      metal_imageview_export(GetMetalExport(ci)),
+#endif
       image_state(im) {}
 
 void IMAGE_VIEW_STATE::Destroy() {

@@ -1355,6 +1355,9 @@ class ValidationStateTracker : public ValidationObject {
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;
     uint32_t custom_border_color_sampler_count = 0;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    std::vector <VkExportMetalObjectTypeFlagBitsEXT> export_metal_flags;
+#endif // VK_USE_PLATFORM_METAL_EXT
 
     // VK_KHR_format_feature_flags2 changes the behavior of the
     // app/layers/spec if present. So it needs its own special boolean unlike

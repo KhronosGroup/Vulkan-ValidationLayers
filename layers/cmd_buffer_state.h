@@ -47,7 +47,9 @@ class EVENT_STATE : public BASE_NODE {
     int write_in_use;
     VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
     VkEventCreateFlags flags;
-
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool metal_event_export = false;
+#endif // VK_USE_PLATFORM_METAL_EXT
     EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_)
         : BASE_NODE(event_, kVulkanObjectTypeEvent), write_in_use(0), flags(flags_) {}
 

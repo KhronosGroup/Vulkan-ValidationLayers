@@ -1810,6 +1810,9 @@ class CoreChecks : public ValidationStateTracker {
                                            VkResult result) override;
     bool PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, VkImage image, const VkImageSubresource2EXT* pSubresource,
                                                       VkSubresourceLayout2EXT* pLayout) const override;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) const override;
+#endif // VK_USE_PLATFORM_METAL_EXT
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(

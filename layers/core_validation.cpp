@@ -20332,3 +20332,244 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool CoreChecks::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const {
+    bool skip = false;
+    const VkBaseOutStructure *metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure *>(pMetalObjectsInfo->pNext);
+    while (metal_objects_info_ptr) {
+        switch (metal_objects_info_ptr->sType) {
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT:
+                if (std::find(instance_state->export_metal_flags.begin(), instance_state->export_metal_flags.end(),
+                              VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT) == instance_state->export_metal_flags.end()) {
+                    skip |= LogError(
+                        device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791",
+                        "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalDeviceInfoEXT structure "
+                        "but instance %s did not have a "
+                        "VkExportMetalObjectCreateInfoEXT struct with exportObjectType of "
+                        "VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT in the pNext chain of its VkInstanceCreateInfo structure",
+                        report_data->FormatHandle(instance_state->instance).c_str());
+                }
+                break;
+
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT:
+                if (std::find(instance_state->export_metal_flags.begin(), instance_state->export_metal_flags.end(),
+                              VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT) ==
+                    instance_state->export_metal_flags.end()) {
+                    skip |= LogError(device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06792",
+                                     "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalCommandQueueInfoEXT structure "
+                                     "but instance %s did not have a "
+                                     "VkExportMetalObjectCreateInfoEXT struct with exportObjectType of "
+                                     "VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT in the pNext chain of its "
+                                     "VkInstanceCreateInfo structure",
+                                     report_data->FormatHandle(instance_state->instance).c_str());
+                }
+                break;
+
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
+                auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT *>(metal_objects_info_ptr);
+                auto mem_info = Get<DEVICE_MEMORY_STATE>(metal_buffer_ptr->memory);
+                if (mem_info) {
+                    if (!mem_info->metal_buffer_export) {
+                        skip |= LogError(
+                            device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06793",
+                            "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalBufferInfoEXT structure with memory = "
+                            "%s, but that memory was not allocated with a VkExportMetalObjectCreateInfoEXT whose exportObjectType "
+                            "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT in the pNext chain of the "
+                            "VkMemoryAllocateInfo structure",
+                            report_data->FormatHandle(metal_buffer_ptr->memory).c_str());
+                    }
+                }
+            } break;
+
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT: {
+                auto metal_texture_ptr = reinterpret_cast<const VkExportMetalTextureInfoEXT *>(metal_objects_info_ptr);
+                if ((metal_texture_ptr->image == VK_NULL_HANDLE && metal_texture_ptr->imageView == VK_NULL_HANDLE &&
+                     metal_texture_ptr->bufferView == VK_NULL_HANDLE) ||
+                    (metal_texture_ptr->image &&
+                     ((metal_texture_ptr->imageView != VK_NULL_HANDLE) || (metal_texture_ptr->bufferView != VK_NULL_HANDLE))) ||
+                    (metal_texture_ptr->imageView &&
+                     ((metal_texture_ptr->image != VK_NULL_HANDLE) || (metal_texture_ptr->bufferView != VK_NULL_HANDLE))) ||
+                    (metal_texture_ptr->bufferView &&
+                     ((metal_texture_ptr->image != VK_NULL_HANDLE) || (metal_texture_ptr->imageView != VK_NULL_HANDLE)))) {
+                    skip |=
+                        LogError(device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06794",
+                                 "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
+                                 "%s, imageView = %s and bufferView = %s, but exactly one of those 3 must not be VK_NULL_HANDLE",
+                                 report_data->FormatHandle(metal_texture_ptr->image).c_str(),
+                                 report_data->FormatHandle(metal_texture_ptr->imageView).c_str(),
+                                 report_data->FormatHandle(metal_texture_ptr->bufferView).c_str());
+                }
+                if (metal_texture_ptr->image) {
+                    auto image_info = Get<IMAGE_STATE>(metal_texture_ptr->image);
+                    if (image_info) {
+                        if (!image_info->metal_image_export) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06795",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
+                                "%s, but that image was not created with a VkExportMetalObjectCreateInfoEXT whose exportObjectType "
+                                "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT in the pNext chain of the "
+                                "VkImageCreateInfo structure",
+                                report_data->FormatHandle(metal_texture_ptr->image).c_str());
+                        }
+                        auto format_plane_count = FormatPlaneCount(image_info->createInfo.format);
+                        auto image_plane = metal_texture_ptr->plane;
+                        if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06799",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
+                                "%s, and plane = %s, but image was created with format %s, which is not multiplaner and plane is "
+                                "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
+                                report_data->FormatHandle(metal_texture_ptr->image).c_str(),
+                                string_VkImageAspectFlags(image_plane).c_str(), string_VkFormat(image_info->createInfo.format));
+                        }
+                        if ((format_plane_count == 2) && (image_plane == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06800",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with image = "
+                                "%s, and plane = %s, but image was created with format %s, which has exactly 2 planes and plane "
+                                "cannot"
+                                "be VK_IMAGE_ASPECT_PLANE_2_BIT",
+                                report_data->FormatHandle(metal_texture_ptr->image).c_str(),
+                                string_VkImageAspectFlags(image_plane).c_str(), string_VkFormat(image_info->createInfo.format));
+                        }
+                    }
+                }
+                if (metal_texture_ptr->imageView) {
+                    auto image_view_info = Get<IMAGE_VIEW_STATE>(metal_texture_ptr->imageView);
+                    if (image_view_info) {
+                        if (!image_view_info->metal_imageview_export) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06796",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with "
+                                "imageView = "
+                                "%s, but that image view was not created with a VkExportMetalObjectCreateInfoEXT whose "
+                                "exportObjectType "
+                                "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT in the pNext chain of the "
+                                "VkImageViewCreateInfo structure",
+                                report_data->FormatHandle(metal_texture_ptr->imageView).c_str());
+                        }
+                        auto format_plane_count = FormatPlaneCount(image_view_info->create_info.format);
+                        auto image_plane = metal_texture_ptr->plane;
+                        if (!(format_plane_count > 1) && (image_plane != VK_IMAGE_ASPECT_PLANE_0_BIT)) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06801",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with "
+                                "imageView = "
+                                "%s, and plane = %s, but imageView was created with format %s, which is not multiplaner and "
+                                "plane is "
+                                "required to be VK_IMAGE_ASPECT_PLANE_0_BIT",
+                                report_data->FormatHandle(metal_texture_ptr->imageView).c_str(),
+                                string_VkImageAspectFlags(image_plane).c_str(),
+                                string_VkFormat(image_view_info->create_info.format));
+                        }
+                        if ((format_plane_count == 2) && (image_plane == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                            skip |= LogError(device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802",
+                                             "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure "
+                                             "with imageView = "
+                                             "%s, and plane = %s, but imageView was created with format %s, which has exactly 2 "
+                                             "planes and plane "
+                                             "cannot"
+                                             "be VK_IMAGE_ASPECT_PLANE_2_BIT",
+                                             report_data->FormatHandle(metal_texture_ptr->imageView).c_str(),
+                                             string_VkImageAspectFlags(image_plane).c_str(),
+                                             string_VkFormat(image_view_info->create_info.format));
+                        }
+                    }
+                }
+                if (metal_texture_ptr->bufferView) {
+                    auto buffer_view_info = Get<BUFFER_VIEW_STATE>(metal_texture_ptr->bufferView);
+                    if (buffer_view_info) {
+                        if (!buffer_view_info->metal_bufferview_export) {
+                            skip |= LogError(
+                                device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06797",
+                                "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with "
+                                "bufferView = "
+                                "%s, but that buffer view was not created with a VkExportMetalObjectCreateInfoEXT whose "
+                                "exportObjectType "
+                                "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT in the pNext chain of the "
+                                "VkBufferViewCreateInfo structure",
+                                report_data->FormatHandle(metal_texture_ptr->bufferView).c_str());
+                        }
+                    }
+                }
+                if (metal_texture_ptr->image || metal_texture_ptr->imageView) {
+                    if ((metal_texture_ptr->plane != VK_IMAGE_ASPECT_PLANE_0_BIT) &&
+                        (metal_texture_ptr->plane != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                        (metal_texture_ptr->plane != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                        skip |= LogError(
+                            device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06798",
+                            "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalTextureInfoEXT structure with "
+                            "image = %s and imageView = "
+                            "%s, but plane = %s which is not one of  VK_IMAGE_ASPECT_PLANE_0_BIT,  VK_IMAGE_ASPECT_PLANE_1_BIT, "
+                            "or  VK_IMAGE_ASPECT_PLANE_2_BIT",
+                            report_data->FormatHandle(metal_texture_ptr->image).c_str(),
+                            report_data->FormatHandle(metal_texture_ptr->imageView).c_str(),
+                            string_VkImageAspectFlags(metal_texture_ptr->plane).c_str());
+                    }
+                }
+            } break;
+
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
+                auto metal_io_surface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT *>(metal_objects_info_ptr);
+                auto image_info = Get<IMAGE_STATE>(metal_io_surface_ptr->image);
+                if (image_info) {
+                    if (!image_info->metal_io_surface_export) {
+                        skip |= LogError(
+                            device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06803",
+                            "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalIOSurfaceInfoEXT structure with image = "
+                            "%s, but that image was not created with a VkExportMetalObjectCreateInfoEXT whose exportObjectType "
+                            "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT in the pNext chain of the "
+                            "VkImageCreateInfo structure",
+                            report_data->FormatHandle(metal_io_surface_ptr->image).c_str());
+                    }
+                }
+            } break;
+
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT: {
+                auto metal_shared_event_ptr = reinterpret_cast<const VkExportMetalSharedEventInfoEXT *>(metal_objects_info_ptr);
+                if ((metal_shared_event_ptr->event == VK_NULL_HANDLE && metal_shared_event_ptr->semaphore == VK_NULL_HANDLE) ||
+                    (metal_shared_event_ptr->event != VK_NULL_HANDLE && metal_shared_event_ptr->semaphore != VK_NULL_HANDLE)) {
+                    skip |= LogError(
+                        device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06804",
+                        "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalSharedEventInfoEXT structure with semaphore = "
+                        "%s, and event = %s, but exactly one of them must not be VK_NULL_HANDLE",
+                        report_data->FormatHandle(metal_shared_event_ptr->semaphore).c_str(),
+                        report_data->FormatHandle(metal_shared_event_ptr->event).c_str());
+                }
+
+                if (metal_shared_event_ptr->semaphore) {
+                    auto semaphore_info = Get<SEMAPHORE_STATE>(metal_shared_event_ptr->semaphore);
+                    if (semaphore_info && !(semaphore_info->metal_semaphore_export)) {
+                        skip |= LogError(
+                            device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06805",
+                            "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalSharedEventInfoEXT structure "
+                            "with semaphore = "
+                            "%s, but that semaphore was not created with a VkExportMetalObjectCreateInfoEXT whose exportObjectType "
+                            "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT in the pNext chain of the "
+                            "VkSemaphoreCreateInfo structure",
+                            report_data->FormatHandle(metal_shared_event_ptr->semaphore).c_str());
+                    }
+                }
+                if (metal_shared_event_ptr->event) {
+                    auto event_info = Get<EVENT_STATE>(metal_shared_event_ptr->event);
+                    if (event_info && !(event_info->metal_event_export)) {
+                        skip |= LogError(
+                            device, "VUID-VkExportMetalObjectsInfoEXT-pNext-06806",
+                            "ExportMetalObjectsEXT: pNext chain contains a VkExportMetalSharedEventInfoEXT structure "
+                            "with event = "
+                            "%s, but that event was not created with a VkExportMetalObjectCreateInfoEXT whose exportObjectType "
+                            "member was set to VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT in the pNext chain of the "
+                            "VkEventCreateInfo structure",
+                            report_data->FormatHandle(metal_shared_event_ptr->event).c_str());
+                    }
+                }
+            } break;
+            default:
+                break;
+        }
+        metal_objects_info_ptr = metal_objects_info_ptr->pNext;
+    }
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT

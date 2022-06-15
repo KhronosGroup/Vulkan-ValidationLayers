@@ -175,6 +175,9 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
 
     const VkSemaphoreType type;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    bool metal_semaphore_export = false;
+#endif // VK_USE_PLATFORM_METAL_EXT
 
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
