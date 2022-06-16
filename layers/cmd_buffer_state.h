@@ -182,6 +182,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     const COMMAND_POOL_STATE *command_pool;
     ValidationStateTracker *dev_data;
     bool hasDrawCmd;
+    bool hasDrawCmdInCurrentRenderPass;
     bool hasTraceRaysCmd;
     bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;

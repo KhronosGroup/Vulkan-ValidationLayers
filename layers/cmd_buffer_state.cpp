@@ -278,6 +278,7 @@ void CMD_BUFFER_STATE::Reset() {
     memset(&beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
     memset(&inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
     hasDrawCmd = false;
+    hasDrawCmdInCurrentRenderPass = false;
     hasTraceRaysCmd = false;
     hasBuildAccelerationStructureCmd = false;
     hasDispatchCmd = false;
@@ -679,6 +680,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
 
     active_subpasses = nullptr;
     active_attachments = nullptr;
+    hasDrawCmdInCurrentRenderPass = false;
 
     if (activeFramebuffer) {
         framebuffers.insert(activeFramebuffer);
@@ -750,6 +752,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     hasRenderPassInstance = true;
 
     active_attachments = nullptr;
+    hasDrawCmdInCurrentRenderPass = false;
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
@@ -968,6 +971,7 @@ void CMD_BUFFER_STATE::UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipel
 void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
     UpdateStateCmdDrawDispatchType(cmd_type, bind_point);
     hasDrawCmd = true;
+    hasDrawCmdInCurrentRenderPass = true;
 
     // Update the consumed viewport/scissor count.
     uint32_t &used = usedViewportScissorCount;
