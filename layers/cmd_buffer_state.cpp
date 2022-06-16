@@ -279,6 +279,7 @@ void CMD_BUFFER_STATE::Reset() {
     memset(&beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
     memset(&inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
     has_draw_cmd = false;
+    has_draw_cmd_in_current_render_pass = false;
     has_dispatch_cmd = false;
     has_trace_rays_cmd = false;
     has_build_as_cmd = false;
@@ -683,6 +684,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
 
     active_subpasses = nullptr;
     active_attachments = nullptr;
+    has_draw_cmd_in_current_render_pass = false;
 
     if (activeFramebuffer) {
         framebuffers.insert(activeFramebuffer);
@@ -738,7 +740,6 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     RecordCmd(cmd_type);
     begin_rendering_func_name = CommandTypeString(cmd_type);
     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
-    commands_since_begin_rendering = 0;
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
@@ -755,6 +756,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     hasRenderPassInstance = true;
 
     active_attachments = nullptr;
+    has_draw_cmd_in_current_render_pass = false;
     uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
 
     // Set cb_state->active_attachments & cb_state->attachments_view_states
@@ -980,6 +982,7 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
 // Generic function to handle state update for all CmdDraw* type functions
 void CMD_BUFFER_STATE::UpdateDrawCmd(CMD_TYPE cmd_type) {
     has_draw_cmd = true;
+    has_draw_cmd_in_current_render_pass = true;
     UpdatePipelineState(cmd_type, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // Update the consumed viewport/scissor count.
@@ -1241,12 +1244,7 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
     }
 }
 
-void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) {
-    commandCount++;
-    if (pipeline_bound) {
-        ++commands_since_begin_rendering;
-    }
-}
+void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
 
 void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits) {
     RecordCmd(cmd_type);

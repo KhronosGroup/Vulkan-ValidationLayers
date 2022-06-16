@@ -213,6 +213,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Track if certain commands have been called at least once in lifetime of the command buffer
     // primary command buffers values are set true if a secondary command buffer has a command
     bool has_draw_cmd;
+    bool has_draw_cmd_in_current_render_pass;
     bool has_dispatch_cmd;
     bool has_trace_rays_cmd;
     bool has_build_as_cmd;
@@ -220,8 +221,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submitCount;   // Number of times CB has been submitted
-    bool pipeline_bound = false;                  // True if CmdBindPipeline has been called on this command buffer, false otherwise
-    uint64_t commands_since_begin_rendering = 0;  // Number of commands since the last CmdBeginRenderingCommand
+    bool pipeline_bound = false;  // True if CmdBindPipeline has been called on this command buffer, false otherwise
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
     CBStatusFlags status;                              // Track status of various bindings on cmd buffer

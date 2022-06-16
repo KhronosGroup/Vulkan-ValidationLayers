@@ -9551,8 +9551,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                  msrtss_info->rasterizationSamples, pipeline_rasterization_samples);
             }
         }
-        if ((cb_state->commands_since_begin_rendering > 0) && cb_state->activeRenderPass &&
-            cb_state->activeRenderPass->UsesDynamicRendering() && cb_state->has_draw_cmd) {
+        if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering() &&
+            cb_state->has_draw_cmd_in_current_render_pass) {
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
             const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             const auto *last_rendering_struct =
