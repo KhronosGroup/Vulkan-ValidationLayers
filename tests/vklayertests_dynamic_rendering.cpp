@@ -1461,6 +1461,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -2701,6 +2702,7 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
@@ -2776,22 +2778,24 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    VkImageObj depthImage(m_device);
-    depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    if ((ds_format != VK_FORMAT_UNDEFINED) && IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
+        VkImageObj depthImage(m_device);
+        depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    depth_attachment.imageView = depthImageView;
+        VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        depth_attachment.imageView = depthImageView;
 
-    begin_rendering_info.colorAttachmentCount = 0;
-    begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.height = 64;
+        begin_rendering_info.colorAttachmentCount = 0;
+        begin_rendering_info.pDepthAttachment = &depth_attachment;
+        begin_rendering_info.renderArea.offset.y = 0;
+        begin_rendering_info.renderArea.extent.height = 64;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_commandBuffer->end();
 }
@@ -2801,6 +2805,7 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -2872,22 +2877,24 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     m_errorMonitor->VerifyFound();
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    VkImageObj depthImage(m_device);
-    depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    if ((ds_format != VK_FORMAT_UNDEFINED) && IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
+        VkImageObj depthImage(m_device);
+        depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    depth_attachment.imageView = depthImageView;
+        VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+        depth_attachment.imageView = depthImageView;
 
-    begin_rendering_info.colorAttachmentCount = 0;
-    begin_rendering_info.pDepthAttachment = &depth_attachment;
-    begin_rendering_info.renderArea.offset.y = 0;
-    begin_rendering_info.renderArea.extent.height = 64;
+        begin_rendering_info.colorAttachmentCount = 0;
+        begin_rendering_info.pDepthAttachment = &depth_attachment;
+        begin_rendering_info.renderArea.offset.y = 0;
+        begin_rendering_info.renderArea.extent.height = 64;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
+        m_commandBuffer->BeginRendering(begin_rendering_info);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_commandBuffer->end();
 }
@@ -3268,7 +3275,6 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidLibraryViewMask) {
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.shader_stages_ = {pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -4666,6 +4672,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewReadOnlyOptimalLayout) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -4706,7 +4713,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewReadOnlyOptimalLayout) {
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
     color_attachment.resolveImageView = resolve_image_view;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
@@ -4791,6 +4798,7 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoColorAttachment) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
@@ -6152,6 +6160,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 

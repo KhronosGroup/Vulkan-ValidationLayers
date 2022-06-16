@@ -8953,7 +8953,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -9425,7 +9426,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     AddOptionalExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -9589,9 +9590,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424");
         vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_POINT);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425");
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-polygonMode-parameter");
+        // 07425 is effectively handled by VUID-vkCmdSetPolygonModeEXT-polygonMode-parameter since it triggers when the enum is used
+        // without the extension being enabled m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+        // "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425");
         vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_FILL_RECTANGLE_NV);
         m_errorMonitor->VerifyFound();
+
         vk::CmdEndRenderPass(commandBuffer.handle());
 
         commandBuffer.end();

@@ -2663,6 +2663,9 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
 
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
