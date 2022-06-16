@@ -7757,17 +7757,11 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_create_info.mipLevels = 1;
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     image_protected.init_no_mem(*m_device, image_create_info);
-    image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
     image_protected_descriptor.init_no_mem(*m_device, image_create_info);
-    image_protected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     image_create_info.flags = 0;
     image_unprotected.init_no_mem(*m_device, image_create_info);
-    image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
     image_unprotected_descriptor.init_no_mem(*m_device, image_create_info);
-    image_unprotected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     // Create protected and unproteced memory
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
@@ -7822,6 +7816,12 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::BindImageMemory(device(), image_unprotected.handle(), memory_unprotected, 0);
     vk::BindImageMemory(device(), image_protected_descriptor.handle(), memory_protected, 0);
     vk::BindImageMemory(device(), image_unprotected_descriptor.handle(), memory_unprotected, 0);
+
+    // Change layout once memory is bound
+    image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_protected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_unprotected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     // need memory bound at image view creation time
     image_views[0] = image_protected.targetView(image_format);
