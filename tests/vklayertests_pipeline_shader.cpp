@@ -3655,6 +3655,8 @@ TEST_F(VkLayerTest, PSOViewportStateTests) {
 TEST_F(VkLayerTest, ExtensionDynamicStatesSetWOExtensionEnabled) {
     TEST_DESCRIPTION("Create a graphics pipeline with Extension dynamic states without enabling the required Extensions.");
 
+    GTEST_SKIP() << "Not possible to hit the desired failure messages given invalid enums.";
+
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -8452,7 +8454,16 @@ TEST_F(VkLayerTest, DuplicateDynamicStates) {
 TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
     TEST_DESCRIPTION("Create a pipeline with non graphics dynamic states set.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDynamicState dynamic_state = VK_DYNAMIC_STATE_MAX_ENUM;
@@ -11218,7 +11229,11 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     TEST_DESCRIPTION("Create a graphics pipeline with advanced blend when its disabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";

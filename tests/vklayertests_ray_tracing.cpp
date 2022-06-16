@@ -1147,6 +1147,7 @@ TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
 TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
 
+    AddOptionalExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
@@ -1161,6 +1162,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    const bool index_type_uint8 = IsExtensionsEnabled(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
 
     const auto vkCmdBuildAccelerationStructuresKHR =
         GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresKHR>("vkCmdBuildAccelerationStructuresKHR");
@@ -1443,7 +1446,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
         m_errorMonitor->VerifyFound();
     }
     // Invalid VetexStride and Indexdata
-    {
+    if (index_type_uint8) {
         VkAccelerationStructureGeometryKHR invalid_geometry_triangles = valid_geometry_triangles;
         invalid_geometry_triangles.geometry.triangles.vertexStride = UINT32_MAX + 1ull;
         VkAccelerationStructureBuildGeometryInfoKHR invalid_build_info_khr = build_info_khr;

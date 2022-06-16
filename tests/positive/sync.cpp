@@ -211,7 +211,11 @@ TEST_F(VkPositiveLayerTest, LayoutFromPresentWithoutAccessMemoryRead) {
     // spec, but there is no memory dependency required here, so this should
     // work without warnings.
 
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
                VK_IMAGE_TILING_OPTIMAL, 0);

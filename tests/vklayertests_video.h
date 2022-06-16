@@ -1067,6 +1067,10 @@ class VkVideoLayerTest : public VkLayerTest {
         AddRequiredExtensions(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
         AddRequiredExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
 
+        // NOTE: this appears to be required for the format that is chosen in
+        // VkVideoLayerTest.BeginCodingIncompatRefPicProfile
+        AddRequiredExtensions(VK_EXT_YCBCR_2PLANE_444_FORMATS_EXTENSION_NAME);
+
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME);
         AddOptionalExtensions(VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME);
 

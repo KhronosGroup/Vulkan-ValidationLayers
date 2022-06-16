@@ -2726,6 +2726,7 @@ TEST_F(VkLayerTest, ImageSampleCounts) {
 
 TEST_F(VkLayerTest, BlitImageFormatTypes) {
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
@@ -2918,7 +2919,8 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
                      signed_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    if (ImageFormatIsSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL)) {
+    if (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) &&
+        ImageFormatIsSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL)) {
         bool ycbcrsrc = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
         bool ycbcrdst = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
 
@@ -5495,6 +5497,8 @@ TEST_F(VkLayerTest, BufferMemoryBarrierNoBuffer) {
 TEST_F(VkLayerTest, InvalidBarriers) {
     TEST_DESCRIPTION("A variety of ways to get VK_INVALID_BARRIER ");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     // Make sure extensions for multi-planar and separate depth stencil images are enabled if possible
     AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -5502,8 +5506,13 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 required";
+    }
     if (IsPlatform(kNexusPlayer)) {
         GTEST_SKIP() << "This test should not run on Nexus Player";
     }
@@ -5515,6 +5524,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const bool separate_ds_layouts = IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    const bool video_decode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    const bool video_encode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
@@ -5848,12 +5859,13 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         img_input.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
         ASSERT_TRUE(img_input.initialized());
 
-        const struct {
+        struct BadBufferTest {
             VkImageObj &image_obj;
             VkImageLayout bad_layout;
             std::string msg_code;
-        } bad_buffer_layouts[] = {
-            // clang-format off
+        };
+        // clang-format off
+        std::vector<BadBufferTest> bad_buffer_layouts = {
             // images _without_ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
             {img_ds,       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         "VUID-VkImageMemoryBarrier-oldLayout-01208"},
             {img_xfer_src, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         "VUID-VkImageMemoryBarrier-oldLayout-01208"},
@@ -5897,72 +5909,75 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             {img_xfer_src, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
             {img_sampled,  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
             {img_input,    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
-            // clang-format on
         };
-        const uint32_t layout_count = sizeof(bad_buffer_layouts) / sizeof(bad_buffer_layouts[0]);
+        if (video_decode_queue) {
+            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"});
+            // // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"});
+            // // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"});
+        }
+        if (video_encode_queue) {
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"});
+        }
+        // clang-format on
 
-        for (uint32_t i = 0; i < layout_count; ++i) {
-            const VkImageLayout bad_layout = bad_buffer_layouts[i].bad_layout;
+        for (const auto &test : bad_buffer_layouts) {
+            const VkImageLayout bad_layout = test.bad_layout;
             // Skip layouts that require maintenance2 support
             if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
                                             (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
                 continue;
             }
-            conc_test.image_barrier_.image = bad_buffer_layouts[i].image_obj.handle();
-            const VkImageUsageFlags usage = bad_buffer_layouts[i].image_obj.usage();
+            conc_test.image_barrier_.image = test.image_obj.handle();
+            const VkImageUsageFlags usage = test.image_obj.usage();
             conc_test.image_barrier_.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                                                        ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
                                                                        : VK_IMAGE_ASPECT_COLOR_BIT;
 
             conc_test.image_barrier_.oldLayout = bad_layout;
             conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            conc_test(bad_buffer_layouts[i].msg_code);
+            conc_test(test.msg_code);
 
             conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
             conc_test.image_barrier_.newLayout = bad_layout;
-            conc_test(bad_buffer_layouts[i].msg_code);
+            conc_test(test.msg_code);
         }
 
         if (feedback_loop_layout) {
@@ -6042,11 +6057,18 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "Vulkan 1.2 required";
+    }
     const bool separate_ds_layouts = IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    const bool video_decode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    const bool video_encode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -6291,12 +6313,13 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
         img_input.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
         ASSERT_TRUE(img_input.initialized());
 
-        const struct {
+        struct BadBufferTest {
             VkImageObj &image_obj;
             VkImageLayout bad_layout;
             std::string msg_code;
-        } bad_buffer_layouts[] = {
-            // clang-format off
+        };
+        // clang-format off
+        std::vector<BadBufferTest> bad_buffer_layouts = {
             // images _without_ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
             {img_ds,       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         "VUID-VkImageMemoryBarrier2-oldLayout-01208"},
             {img_xfer_src, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,         "VUID-VkImageMemoryBarrier2-oldLayout-01208"},
@@ -6340,72 +6363,75 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
             {img_xfer_src, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier2-oldLayout-01659"},
             {img_sampled,  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier2-oldLayout-01659"},
             {img_input,    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier2-oldLayout-01659"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
-            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT
-            {img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            {img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            {img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            {img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            {img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            {img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,             "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
-            // clang-format on
         };
-        const uint32_t layout_count = sizeof(bad_buffer_layouts) / sizeof(bad_buffer_layouts[0]);
+        if (video_decode_queue) {
+            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"});
+        }
+        if (video_encode_queue) {
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"});
+            // images _without_ VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT
+            bad_buffer_layouts.push_back({img_color,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_ds,       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_xfer_src, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_xfer_dst, VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_sampled,  VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+            bad_buffer_layouts.push_back({img_input,    VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"});
+        }
+        // clang-format on
 
-        for (uint32_t i = 0; i < layout_count; ++i) {
-            const VkImageLayout bad_layout = bad_buffer_layouts[i].bad_layout;
+        for (const auto &test : bad_buffer_layouts) {
+            const VkImageLayout bad_layout = test.bad_layout;
             // Skip layouts that require maintenance2 support
             if ((maintenance2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
                                             (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
                 continue;
             }
-            conc_test.image_barrier_.image = bad_buffer_layouts[i].image_obj.handle();
-            const VkImageUsageFlags usage = bad_buffer_layouts[i].image_obj.usage();
+            conc_test.image_barrier_.image = test.image_obj.handle();
+            const VkImageUsageFlags usage = test.image_obj.usage();
             conc_test.image_barrier_.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                                                        ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
                                                                        : VK_IMAGE_ASPECT_COLOR_BIT;
 
             conc_test.image_barrier_.oldLayout = bad_layout;
             conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            conc_test(bad_buffer_layouts[i].msg_code);
+            conc_test(test.msg_code);
 
             conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
             conc_test.image_barrier_.newLayout = bad_layout;
-            conc_test(bad_buffer_layouts[i].msg_code);
+            conc_test(test.msg_code);
         }
 
         if (feedback_loop_layout) {
@@ -7098,7 +7124,12 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 TEST_F(VkLayerTest, BadIndexBufferOffset) {
     TEST_DESCRIPTION("Submit bad offsets binding the index buffer");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddRequiredExtensions(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     static const uint32_t ibo_data[3] = {0, 1, 2};
     VkConstantBufferObj ibo(m_device, sizeof(ibo_data), (const void *)&ibo_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -16010,6 +16041,8 @@ TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
 TEST_F(VkLayerTest, TestInvalidSamplerReductionMode) {
     TEST_DESCRIPTION("Create sampler with invalid combination of filter and reduction mode.");
 
+    GTEST_SKIP() << "Not possible to hit 01422 without first hitting an early return in parameter validation.";
+
     AddRequiredExtensions(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!AreRequiredExtensionsEnabled()) {
@@ -16022,6 +16055,7 @@ TEST_F(VkLayerTest, TestInvalidSamplerReductionMode) {
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
 
     VkSampler sampler;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-parameter");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-magFilter-01422");
     vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
     m_errorMonitor->VerifyFound();
@@ -16575,12 +16609,16 @@ TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
 TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkImageCreateInfo info = vk_testing::Image::create_info();
