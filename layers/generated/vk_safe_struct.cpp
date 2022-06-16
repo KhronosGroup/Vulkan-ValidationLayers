@@ -21866,7 +21866,7 @@ void safe_VkDisplayPresentInfoKHR::initialize(const safe_VkDisplayPresentInfoKHR
 
 safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct) :
     sType(in_struct->sType),
-    supported(in_struct->supported)
+    queryResultStatusSupport(in_struct->queryResultStatusSupport)
 {
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -21874,13 +21874,13 @@ safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResult
 safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR() :
     sType(VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_2_KHR),
     pNext(nullptr),
-    supported()
+    queryResultStatusSupport()
 {}
 
 safe_VkQueueFamilyQueryResultStatusProperties2KHR::safe_VkQueueFamilyQueryResultStatusProperties2KHR(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src)
 {
     sType = copy_src.sType;
-    supported = copy_src.supported;
+    queryResultStatusSupport = copy_src.queryResultStatusSupport;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -21892,7 +21892,7 @@ safe_VkQueueFamilyQueryResultStatusProperties2KHR& safe_VkQueueFamilyQueryResult
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
-    supported = copy_src.supported;
+    queryResultStatusSupport = copy_src.queryResultStatusSupport;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -21909,14 +21909,14 @@ void safe_VkQueueFamilyQueryResultStatusProperties2KHR::initialize(const VkQueue
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
-    supported = in_struct->supported;
+    queryResultStatusSupport = in_struct->queryResultStatusSupport;
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
 void safe_VkQueueFamilyQueryResultStatusProperties2KHR::initialize(const safe_VkQueueFamilyQueryResultStatusProperties2KHR* copy_src)
 {
     sType = copy_src->sType;
-    supported = copy_src->supported;
+    queryResultStatusSupport = copy_src->queryResultStatusSupport;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -22274,80 +22274,58 @@ void safe_VkVideoCapabilitiesKHR::initialize(const safe_VkVideoCapabilitiesKHR* 
 
 safe_VkPhysicalDeviceVideoFormatInfoKHR::safe_VkPhysicalDeviceVideoFormatInfoKHR(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct) :
     sType(in_struct->sType),
-    imageUsage(in_struct->imageUsage),
-    pVideoProfiles(nullptr)
+    imageUsage(in_struct->imageUsage)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pVideoProfiles)
-        pVideoProfiles = new safe_VkVideoProfilesKHR(in_struct->pVideoProfiles);
 }
 
 safe_VkPhysicalDeviceVideoFormatInfoKHR::safe_VkPhysicalDeviceVideoFormatInfoKHR() :
     sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_FORMAT_INFO_KHR),
     pNext(nullptr),
-    imageUsage(),
-    pVideoProfiles(nullptr)
+    imageUsage()
 {}
 
 safe_VkPhysicalDeviceVideoFormatInfoKHR::safe_VkPhysicalDeviceVideoFormatInfoKHR(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src)
 {
     sType = copy_src.sType;
     imageUsage = copy_src.imageUsage;
-    pVideoProfiles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pVideoProfiles)
-        pVideoProfiles = new safe_VkVideoProfilesKHR(*copy_src.pVideoProfiles);
 }
 
 safe_VkPhysicalDeviceVideoFormatInfoKHR& safe_VkPhysicalDeviceVideoFormatInfoKHR::operator=(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src)
 {
     if (&copy_src == this) return *this;
 
-    if (pVideoProfiles)
-        delete pVideoProfiles;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     imageUsage = copy_src.imageUsage;
-    pVideoProfiles = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
-    if (copy_src.pVideoProfiles)
-        pVideoProfiles = new safe_VkVideoProfilesKHR(*copy_src.pVideoProfiles);
 
     return *this;
 }
 
 safe_VkPhysicalDeviceVideoFormatInfoKHR::~safe_VkPhysicalDeviceVideoFormatInfoKHR()
 {
-    if (pVideoProfiles)
-        delete pVideoProfiles;
     if (pNext)
         FreePnextChain(pNext);
 }
 
 void safe_VkPhysicalDeviceVideoFormatInfoKHR::initialize(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct)
 {
-    if (pVideoProfiles)
-        delete pVideoProfiles;
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
     imageUsage = in_struct->imageUsage;
-    pVideoProfiles = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
-    if (in_struct->pVideoProfiles)
-        pVideoProfiles = new safe_VkVideoProfilesKHR(in_struct->pVideoProfiles);
 }
 
 void safe_VkPhysicalDeviceVideoFormatInfoKHR::initialize(const safe_VkPhysicalDeviceVideoFormatInfoKHR* copy_src)
 {
     sType = copy_src->sType;
     imageUsage = copy_src->imageUsage;
-    pVideoProfiles = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
-    if (copy_src->pVideoProfiles)
-        pVideoProfiles = new safe_VkVideoProfilesKHR(*copy_src->pVideoProfiles);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -22356,7 +22334,12 @@ void safe_VkPhysicalDeviceVideoFormatInfoKHR::initialize(const safe_VkPhysicalDe
 
 safe_VkVideoFormatPropertiesKHR::safe_VkVideoFormatPropertiesKHR(const VkVideoFormatPropertiesKHR* in_struct) :
     sType(in_struct->sType),
-    format(in_struct->format)
+    format(in_struct->format),
+    componentMapping(in_struct->componentMapping),
+    imageCreateFlags(in_struct->imageCreateFlags),
+    imageType(in_struct->imageType),
+    imageTiling(in_struct->imageTiling),
+    imageUsageFlags(in_struct->imageUsageFlags)
 {
     pNext = SafePnextCopy(in_struct->pNext);
 }
@@ -22364,13 +22347,23 @@ safe_VkVideoFormatPropertiesKHR::safe_VkVideoFormatPropertiesKHR(const VkVideoFo
 safe_VkVideoFormatPropertiesKHR::safe_VkVideoFormatPropertiesKHR() :
     sType(VK_STRUCTURE_TYPE_VIDEO_FORMAT_PROPERTIES_KHR),
     pNext(nullptr),
-    format()
+    format(),
+    componentMapping(),
+    imageCreateFlags(),
+    imageType(),
+    imageTiling(),
+    imageUsageFlags()
 {}
 
 safe_VkVideoFormatPropertiesKHR::safe_VkVideoFormatPropertiesKHR(const safe_VkVideoFormatPropertiesKHR& copy_src)
 {
     sType = copy_src.sType;
     format = copy_src.format;
+    componentMapping = copy_src.componentMapping;
+    imageCreateFlags = copy_src.imageCreateFlags;
+    imageType = copy_src.imageType;
+    imageTiling = copy_src.imageTiling;
+    imageUsageFlags = copy_src.imageUsageFlags;
     pNext = SafePnextCopy(copy_src.pNext);
 }
 
@@ -22383,6 +22376,11 @@ safe_VkVideoFormatPropertiesKHR& safe_VkVideoFormatPropertiesKHR::operator=(cons
 
     sType = copy_src.sType;
     format = copy_src.format;
+    componentMapping = copy_src.componentMapping;
+    imageCreateFlags = copy_src.imageCreateFlags;
+    imageType = copy_src.imageType;
+    imageTiling = copy_src.imageTiling;
+    imageUsageFlags = copy_src.imageUsageFlags;
     pNext = SafePnextCopy(copy_src.pNext);
 
     return *this;
@@ -22400,6 +22398,11 @@ void safe_VkVideoFormatPropertiesKHR::initialize(const VkVideoFormatPropertiesKH
         FreePnextChain(pNext);
     sType = in_struct->sType;
     format = in_struct->format;
+    componentMapping = in_struct->componentMapping;
+    imageCreateFlags = in_struct->imageCreateFlags;
+    imageType = in_struct->imageType;
+    imageTiling = in_struct->imageTiling;
+    imageUsageFlags = in_struct->imageUsageFlags;
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
@@ -22407,6 +22410,11 @@ void safe_VkVideoFormatPropertiesKHR::initialize(const safe_VkVideoFormatPropert
 {
     sType = copy_src->sType;
     format = copy_src->format;
+    componentMapping = copy_src->componentMapping;
+    imageCreateFlags = copy_src->imageCreateFlags;
+    imageType = copy_src->imageType;
+    imageTiling = copy_src->imageTiling;
+    imageUsageFlags = copy_src->imageUsageFlags;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS

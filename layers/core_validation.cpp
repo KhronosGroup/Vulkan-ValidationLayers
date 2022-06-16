@@ -3142,14 +3142,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index, rendering_struct->viewMask);
         }
 
-        if (color_blend_state && (rendering_struct->colorAttachmentCount != color_blend_state->attachmentCount)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06060",
-                             "vkCreateGraphicsPipelines() Pipeline %" PRIu32 " interface pColorBlendState->attachmentCount %" PRIu32
-                             " and "
-                             "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
-                             pipe_index, rendering_struct->colorAttachmentCount, color_blend_state->attachmentCount);
-        }
-
         for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
             const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
             if (color_format != VK_FORMAT_UNDEFINED) {

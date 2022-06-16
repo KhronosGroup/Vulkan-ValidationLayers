@@ -1055,7 +1055,8 @@ struct DeviceExtensions : public InstanceExtensions {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_KHR_VIDEO_QUEUE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_queue, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
 #endif
             {VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_vulkan_memory_model, {})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
