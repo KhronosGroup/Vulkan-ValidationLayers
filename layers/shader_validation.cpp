@@ -2955,9 +2955,13 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 
         if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
             if (!enabled_features.core13.maintenance4) {
-                skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
-                                 "%s writes to output location %" PRIu32 ".%" PRIu32 " which is not consumed by %s." \
-                                 "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors.",
+                const char *vuid = IsExtEnabled(device_extensions.vk_khr_maintenance4) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                       : "VUID-RuntimeSpirv-OpTypeVector-06816";
+                skip |= LogError(producer.vk_shader_module(), vuid,
+                                 "%s writes to output location %" PRIu32 ".%" PRIu32
+                                 " which is not consumed by %s."
+                                 "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input "
+                                 "and output vectors.",
                                  producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
             }
             if ((b_first.first > a_first.first) || b_at_end || (a_component + 1 == a_length)) {

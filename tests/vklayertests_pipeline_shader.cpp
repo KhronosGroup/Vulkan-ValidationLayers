@@ -4331,8 +4331,8 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
 TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
 
-    SetTargetApiVersion(VK_API_VERSION_1_0);
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4349,7 +4349,9 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not consumed by fragment shader");
+    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
@@ -4925,6 +4927,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
         "Test that an error is produced for location mismatches across the vertex->fragment shader interface; This should manifest "
         "as a not-written/not-consumed pair, but flushes out broken walking of the interfaces");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4951,10 +4955,11 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-        std::vector<std::string>{
-            "vertex shader writes to output location 1.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors.",
-            "fragment shader consumes input location 0.0 which is not written by vertex shader"});
+    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit,
+        std::vector<std::string>{vuid, "fragment shader consumes input location 0.0 which is not written by vertex shader"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
@@ -4962,6 +4967,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
         "Test that an error is produced for component mismatches across the vertex->fragment shader interface. It's not enough to "
         "have the same set of locations in use; matching is defined in terms of spirv variables.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4988,12 +4995,11 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<std::string>{
-            "location 0.1 which is not written by vertex shader",
-            "vertex shader writes to output location 0.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 "
-            "device extension to allow relaxed interface matching between input and output vectors."});
+
+    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      std::vector<std::string>{"location 0.1 which is not written by vertex shader", vuid});
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecision) {
@@ -13518,6 +13524,8 @@ TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
 TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
     TEST_DESCRIPTION("Test invalid shader layout in and out with different components.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -13583,9 +13591,46 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
-                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+        const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                    : "VUID-RuntimeSpirv-OpTypeVector-06816";
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
     }
+}
+
+TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
+    TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out float x[2];
+        void main(){
+           x[0] = 0; x[1] = 0;
+           gl_Position = vec4(1);
+        }
+    )glsl";
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(location=0) in float x[1];
+        layout(location=0) out vec4 color;
+        void main(){
+           color = vec4(x[0]);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    };
+    const char *vuid = IsExtensionsEnabled(VK_KHR_MAINTENANCE_4_EXTENSION_NAME) ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                                                                : "VUID-RuntimeSpirv-OpTypeVector-06816";
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuid);
 }
 
 TEST_F(VkLayerTest, SpecializationInvalidSizeMismatch) {
