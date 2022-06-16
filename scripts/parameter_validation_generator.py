@@ -262,7 +262,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetVertexInputEXT',
             'vkCmdPushConstants',
             'vkMergePipelineCaches',
-            'vkGetPhysicalDeviceVideoFormatPropertiesKHR',
             'vkCmdClearColorImage',
             'vkCmdBeginRenderPass',
             'vkCmdBeginRenderPass2KHR',

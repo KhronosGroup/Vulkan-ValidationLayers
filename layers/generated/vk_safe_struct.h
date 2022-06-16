@@ -4440,7 +4440,7 @@ struct safe_VkWin32SurfaceCreateInfoKHR {
 struct safe_VkQueueFamilyQueryResultStatusProperties2KHR {
     VkStructureType sType;
     void* pNext{};
-    VkBool32 supported;
+    VkBool32 queryResultStatusSupport;
     safe_VkQueueFamilyQueryResultStatusProperties2KHR(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct);
     safe_VkQueueFamilyQueryResultStatusProperties2KHR(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src);
     safe_VkQueueFamilyQueryResultStatusProperties2KHR& operator=(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src);
@@ -4473,7 +4473,7 @@ struct safe_VkVideoQueueFamilyProperties2KHR {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoProfileKHR {
     VkStructureType sType;
-    void* pNext{};
+    const void* pNext{};
     VkVideoCodecOperationFlagBitsKHR videoCodecOperation;
     VkVideoChromaSubsamplingFlagsKHR chromaSubsampling;
     VkVideoComponentBitDepthFlagsKHR lumaBitDepth;
@@ -4493,7 +4493,7 @@ struct safe_VkVideoProfileKHR {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkVideoProfilesKHR {
     VkStructureType sType;
-    void* pNext{};
+    const void* pNext{};
     uint32_t profileCount;
     safe_VkVideoProfileKHR* pProfiles{};
     safe_VkVideoProfilesKHR(const VkVideoProfilesKHR* in_struct);
@@ -4535,10 +4535,9 @@ struct safe_VkVideoCapabilitiesKHR {
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkPhysicalDeviceVideoFormatInfoKHR {
-    VkStructureType sType;
+     VkStructureType sType;
     void* pNext{};
     VkImageUsageFlags imageUsage;
-    safe_VkVideoProfilesKHR* pVideoProfiles{};
     safe_VkPhysicalDeviceVideoFormatInfoKHR(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct);
     safe_VkPhysicalDeviceVideoFormatInfoKHR(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src);
     safe_VkPhysicalDeviceVideoFormatInfoKHR& operator=(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src);
@@ -4556,6 +4555,11 @@ struct safe_VkVideoFormatPropertiesKHR {
     VkStructureType sType;
     void* pNext{};
     VkFormat format;
+    VkComponentMapping componentMapping;
+    VkImageCreateFlags imageCreateFlags;
+    VkImageType imageType;
+    VkImageTiling imageTiling;
+    VkImageUsageFlags imageUsageFlags;
     safe_VkVideoFormatPropertiesKHR(const VkVideoFormatPropertiesKHR* in_struct);
     safe_VkVideoFormatPropertiesKHR(const safe_VkVideoFormatPropertiesKHR& copy_src);
     safe_VkVideoFormatPropertiesKHR& operator=(const safe_VkVideoFormatPropertiesKHR& copy_src);
