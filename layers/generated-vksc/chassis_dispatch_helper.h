@@ -663,6 +663,7 @@ typedef enum InterceptId{
 
 void ValidationObject::InitObjectDispatchVectors() {
 
+#if !defined(VULKANSC)
 #define BUILD_DISPATCH_VECTOR(name) \
     init_object_dispatch_vector(InterceptId ## name, \
                                 typeid(&ValidationObject::name), \
@@ -674,7 +675,14 @@ void ValidationObject::InitObjectDispatchVectors() {
                                 typeid(&GpuAssisted::name), \
                                 typeid(&DebugPrintf::name), \
                                 typeid(&SyncValidator::name));
+#else
+#define BUILD_DISPATCH_VECTOR(name) \
+    init_object_dispatch_vector(InterceptId ## name, \
+                                typeid(&ValidationObject::name), \
+                                typeid(&StatelessValidation::name));
+#endif
 
+#if !defined(VULKANSC)
     auto init_object_dispatch_vector = [this](InterceptId id,
                                               const std::type_info& vo_typeid,
                                               const std::type_info& tt_typeid,
@@ -721,6 +729,26 @@ void ValidationObject::InitObjectDispatchVectors() {
             }
         }
     };
+#else
+    auto init_object_dispatch_vector = [this](InterceptId id,
+                                              const std::type_info& vo_typeid,
+                                              const std::type_info& tpv_typeid) {
+        for (auto item : this->object_dispatch) {
+            auto intercept_vector = &this->intercept_vectors[id];
+            switch (item->container_type) {
+            case LayerObjectTypeParameterValidation:
+                if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeInstance:
+            case LayerObjectTypeDevice:
+                break;
+            default:
+                /* Chassis codegen needs to be updated for unknown validation object type */
+                assert(0);
+            }
+        }
+    };
+#endif
 
     intercept_vectors.resize(InterceptIdCount);
 
