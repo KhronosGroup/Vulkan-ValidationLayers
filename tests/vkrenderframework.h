@@ -518,6 +518,7 @@ class VkImageObj : public vk_testing::Image {
     void Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs = 0, bool memory = true);
 
     void init(const VkImageCreateInfo *create_info);
+    void init_no_mem(const vk_testing::Device &dev, const VkImageCreateInfo &info);
 
     void InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags reqs = 0,

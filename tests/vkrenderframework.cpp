@@ -1789,6 +1789,13 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     SetLayout(image_aspect, VK_IMAGE_LAYOUT_GENERAL);
 }
 
+void VkImageObj::init_no_mem(const vk_testing::Device &dev, const VkImageCreateInfo &info) {
+    vk_testing::Image::init_no_mem(dev, info);
+    Layout(info.initialLayout);
+    m_mipLevels = info.mipLevels;
+    m_arrayLayers = info.arrayLayers;
+}
+
 VkResult VkImageObj::CopyImage(VkImageObj &src_image) {
     VkImageLayout src_image_layout, dest_image_layout;
 
