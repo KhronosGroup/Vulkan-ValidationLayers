@@ -13337,3 +13337,344 @@ TEST_F(VkLayerTest, IncompatibleRenderPass2) {
 
     m_commandBuffer->end();
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+TEST_F(VkLayerTest, ExportMetalObjects) {
+    TEST_DESCRIPTION("Test VK_EXT_metal_objects VUIDs");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (!InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    const bool ycbcr_conversion_extension = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (ycbcr_conversion_extension) {
+        auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+        ycbcr_features.samplerYcbcrConversion = VK_TRUE;
+        portability_features.pNext = &ycbcr_features;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    PFN_vkExportMetalObjectsEXT vkExportMetalObjectsEXT =
+        reinterpret_cast<PFN_vkExportMetalObjectsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkExportMetalObjectsEXT"));
+    ASSERT_TRUE(vkExportMetalObjectsEXT != nullptr);
+
+    auto metal_object_create_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+    auto instance_ci = GetInstanceCreateInfo();
+    metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
+    metal_object_create_info.pNext = instance_ci.pNext;
+    instance_ci.pNext = &metal_object_create_info;
+
+    VkInstance instance = {};
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkInstanceCreateInfo-pNext-06779");
+    vk::CreateInstance(&instance_ci, nullptr, &instance);
+    m_errorMonitor->VerifyFound();
+    metal_object_create_info.pNext = nullptr;
+
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    alloc_info.pNext = &metal_object_create_info;
+    alloc_info.allocationSize = 1024;
+    VkDeviceMemory memory;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-06780");
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
+    m_errorMonitor->VerifyFound();
+
+    VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>();
+    ici.imageType = VK_IMAGE_TYPE_2D;
+    ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+    ici.extent = {128, 128, 1};
+    ici.mipLevels = 1;
+    ici.arrayLayers = 1;
+    ici.samples = VK_SAMPLE_COUNT_1_BIT;
+    ici.tiling = VK_IMAGE_TILING_LINEAR;
+    ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    ici.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ici.pNext = &metal_object_create_info;
+    VkImage image;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06783");
+    vk::CreateImage(device(), &ici, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    auto import_metal_texture_info = LvlInitStruct<VkImportMetalTextureInfoEXT>();
+    import_metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
+    ici.pNext = &import_metal_texture_info;
+    ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06784");
+    vk::CreateImage(device(), &ici, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+    import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06785");
+    vk::CreateImage(device(), &ici, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-06786");
+    vk::CreateImage(device(), &ici, NULL, &image);
+    m_errorMonitor->VerifyFound();
+
+    uint32_t queue_family_index = 0;
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_create_info);
+    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    VkBufferView buffer_view;
+    buff_view_ci.pNext = &metal_object_create_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferViewCreateInfo-pNext-06782");
+    vk::CreateBufferView(device(), &buff_view_ci, NULL, &buffer_view);
+    m_errorMonitor->VerifyFound();
+
+    VkImageObj image_obj(m_device);
+    image_obj.Init(256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView image_view;
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image_obj.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.pNext = &metal_object_create_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-pNext-06787");
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &image_view);
+    m_errorMonitor->VerifyFound();
+
+    auto sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    sem_info.pNext = &metal_object_create_info;
+    VkSemaphore semaphore;
+    metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreCreateInfo-pNext-06789");
+    vk::CreateSemaphore(device(), &sem_info, NULL, &semaphore);
+    m_errorMonitor->VerifyFound();
+
+    auto event_info = LvlInitStruct<VkEventCreateInfo>();
+    if (portability_features.events) {
+        event_info.pNext = &metal_object_create_info;
+        VkEvent event;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkEventCreateInfo-pNext-06790");
+        vk::CreateEvent(device(), &event_info, nullptr, &event);
+        m_errorMonitor->VerifyFound();
+    }
+
+    auto export_metal_objects_info = LvlInitStruct<VkExportMetalObjectsInfoEXT>();
+    auto metal_device_info = LvlInitStruct<VkExportMetalDeviceInfoEXT>();
+    auto metal_command_queue_info = LvlInitStruct<VkExportMetalCommandQueueInfoEXT>();
+    metal_command_queue_info.queue = m_device->m_queue;
+    export_metal_objects_info.pNext = &metal_device_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    export_metal_objects_info.pNext = &metal_command_queue_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06792");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    alloc_info.pNext = nullptr;
+    VkResult err = vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
+    ASSERT_VK_SUCCESS(err);
+    auto metal_buffer_info = LvlInitStruct<VkExportMetalBufferInfoEXT>();
+    metal_buffer_info.memory = memory;
+    export_metal_objects_info.pNext = &metal_buffer_info;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06793");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+    vk::FreeMemory(device(), memory, nullptr);
+
+    auto export_metal_object_create_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+    export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+    ici.pNext = &export_metal_object_create_info;
+    VkImageObj export_image_obj(m_device);
+    export_image_obj.Init(ici);
+    vk_testing::BufferView export_buffer_view;
+    buff_view_ci.pNext = &export_metal_object_create_info;
+    export_buffer_view.init(*m_device, buff_view_ci);
+    auto metal_texture_info = LvlInitStruct<VkExportMetalTextureInfoEXT>();
+    metal_texture_info.bufferView = export_buffer_view.handle();
+    metal_texture_info.image = export_image_obj.handle();
+    metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    export_metal_objects_info.pNext = &metal_texture_info;
+
+    // Only one of image, bufferView, imageView
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06794");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    // Image not created with struct in pNext
+    metal_texture_info.bufferView = VK_NULL_HANDLE;
+    metal_texture_info.image = image_obj.handle();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06795");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    metal_texture_info.image = VK_NULL_HANDLE;
+    vk_testing::ImageView image_view_no_struct;
+    auto image_view_ci = image_obj.TargetViewCI(VK_FORMAT_B8G8R8A8_UNORM);
+    image_view_ci.image = image_obj.handle();
+    image_view_no_struct.init(*m_device, image_view_ci);
+    metal_texture_info.imageView = image_view_no_struct.handle();
+    // ImageView not created with struct in pNext
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06796");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    buff_view_ci.pNext = nullptr;
+    vk_testing::BufferView buffer_view_no_struct;
+    buffer_view_no_struct.init(*m_device, buff_view_ci);
+    metal_texture_info.imageView = VK_NULL_HANDLE;
+    metal_texture_info.bufferView = buffer_view_no_struct.handle();
+    // BufferView not created with struct in pNext
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06797");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    metal_texture_info.bufferView = VK_NULL_HANDLE;
+    metal_texture_info.image = export_image_obj.handle();
+    metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
+    // metal_texture_info.plane not plane 0, 1 or 2
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06798");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkImageObj single_plane_export_image_obj(m_device);
+    single_plane_export_image_obj.Init(ici);
+    metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    metal_texture_info.image = single_plane_export_image_obj.handle();
+    // metal_texture_info.plane not plane_0 for single plane image
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06799");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    image_view_ci.pNext = &export_metal_object_create_info;
+    export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+    vk_testing::ImageView single_plane_export_image_view;
+    single_plane_export_image_view.init(*m_device, image_view_ci);
+    metal_texture_info.image = VK_NULL_HANDLE;
+    metal_texture_info.imageView = single_plane_export_image_view.handle();
+    // metal_texture_info.plane not plane_0 for single plane imageView
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06801");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    auto metal_iosurface_info = LvlInitStruct<VkExportMetalIOSurfaceInfoEXT>();
+    metal_iosurface_info.image = image_obj.handle();
+    export_metal_objects_info.pNext = &metal_iosurface_info;
+    // metal_iosurface_info.image not created with struct in pNext
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06803");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    auto metal_shared_event_info = LvlInitStruct<VkExportMetalSharedEventInfoEXT>();
+    export_metal_objects_info.pNext = &metal_shared_event_info;
+    // metal_shared_event_info event and semaphore both VK_NULL_HANDLE
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06804");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    sem_info.pNext = nullptr;
+    vk_testing::Semaphore semaphore_no_struct;
+    semaphore_no_struct.init(*m_device, sem_info);
+    metal_shared_event_info.semaphore = semaphore_no_struct.handle();
+    export_metal_objects_info.pNext = &metal_shared_event_info;
+    // Semaphore not created with struct in pNext
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06805");
+    vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    m_errorMonitor->VerifyFound();
+
+    if (portability_features.events) {
+        event_info.pNext = nullptr;
+        vk_testing::Event event_no_struct;
+        event_no_struct.init(*m_device, event_info);
+        metal_shared_event_info.event = event_no_struct.handle();
+        metal_shared_event_info.semaphore = VK_NULL_HANDLE;
+        // Event not created with struct in pNext
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06806");
+        vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        m_errorMonitor->VerifyFound();
+    }
+
+    const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    if (ImageFormatIsSupported(gpu(), mp_format)) {
+        export_metal_object_create_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        export_metal_object_create_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+        ici.format = mp_format;
+        ici.tiling = VK_IMAGE_TILING_OPTIMAL;
+        ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        ici.pNext = &export_metal_object_create_info;
+        VkImageObj mp_image_obj(m_device);
+        mp_image_obj.init(&ici);
+
+        metal_texture_info.bufferView = VK_NULL_HANDLE;
+        metal_texture_info.imageView = VK_NULL_HANDLE;
+        metal_texture_info.image = mp_image_obj.handle();
+        metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
+        export_metal_objects_info.pNext = &metal_texture_info;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06800");
+        vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        m_errorMonitor->VerifyFound();
+
+        if (ycbcr_conversion_extension) {
+            PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionKHR =
+                reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+                    vk::GetDeviceProcAddr(m_device->device(), "vkCreateSamplerYcbcrConversionKHR"));
+            PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionKHR =
+                reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
+                    vk::GetDeviceProcAddr(m_device->device(), "vkDestroySamplerYcbcrConversionKHR"));
+            VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+            ycbcr_create_info.format = mp_format;
+            ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+            ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+            ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                            VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+            ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+            ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+            ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+            ycbcr_create_info.forceExplicitReconstruction = false;
+
+            VkSamplerYcbcrConversion conversion;
+            err = vkCreateSamplerYcbcrConversionKHR(m_device->device(), &ycbcr_create_info, nullptr, &conversion);
+            ASSERT_VK_SUCCESS(err);
+
+            VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+            ycbcr_info.conversion = conversion;
+            ycbcr_info.pNext = &export_metal_object_create_info;
+            ivci.image = mp_image_obj.handle();
+            ivci.format = mp_format;
+            ivci.pNext = &ycbcr_info;
+            vk_testing::ImageView mp_image_view;
+            mp_image_view.init(*m_device, ivci);
+            metal_texture_info.image = VK_NULL_HANDLE;
+            metal_texture_info.imageView = mp_image_view.handle();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkExportMetalObjectsInfoEXT-pNext-06802");
+            vkExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+            m_errorMonitor->VerifyFound();
+            vkDestroySamplerYcbcrConversionKHR(m_device->device(), conversion, nullptr);
+        }
+    }
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
