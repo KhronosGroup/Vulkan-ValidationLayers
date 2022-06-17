@@ -3312,13 +3312,26 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                                                                        GPLValidInfo{});
         const auto gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pipeline->PNext());
         if (gpl_info) {
+            if ((gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                    VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0) {
+                if (!pipeline->PipelineLayoutState()) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06642",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "] is a graphics library created with %s state, but does not have a valid layout specified.",
+                                     pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str());
+                }
+            }
+
             if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) &&
                 !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) {
-                pre_raster_flags.first = pipeline->pre_raster_state->pipeline_layout->CreateFlags();
+                pre_raster_flags.first =
+                    (pipeline->pre_raster_state->pipeline_layout) ? pipeline->pre_raster_state->pipeline_layout->CreateFlags() : 0;
                 pre_raster_flags.second = {GPLInitInfo::from_gpl_info, pipeline->PreRasterPipelineLayoutState().get()};
             } else if ((gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) &&
                        !(gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT)) {
-                fs_flags.first = pipeline->fragment_shader_state->pipeline_layout->CreateFlags();
+                fs_flags.first = (pipeline->fragment_shader_state->pipeline_layout)
+                                     ? pipeline->fragment_shader_state->pipeline_layout->CreateFlags()
+                                     : 0;
                 fs_flags.second = {GPLInitInfo::from_gpl_info, pipeline->FragmentShaderPipelineLayoutState().get()};
             }
         }
