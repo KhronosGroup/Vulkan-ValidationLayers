@@ -45,7 +45,7 @@ The Validation Layer can also be enabled and configured using vkconfig. See the 
 ## Layer Controls
 Layer behavior is controlled through either a layer settings file or an extension.
 The layer settings file allows a user to control various layer features and behaviors by providing easily modifiable settings.
-The Vulkan Validation Features extension provides layer controls, while the Vulkan Debug Utils extension profides methods of
+The Vulkan Validation Features extension provides layer controls, while the Vulkan Debug Utils extension provides methods of
 accessing and controlling feedback from the layers:
 
 | Extension                 | Description                       |
