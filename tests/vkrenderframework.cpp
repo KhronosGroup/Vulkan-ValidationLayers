@@ -2018,10 +2018,9 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
 
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
-VkShaderObj::VkShaderObj(VkRenderFramework *framework, const std::string source, VkShaderStageFlagBits stage,
-                         const spv_target_env env, SpvSourceType source_type, const VkSpecializationInfo *spec_info,
-                         char const *name, bool debug)
-    : m_framework(*framework), m_device(*(framework->DeviceObj())) {
+VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
+                         SpvSourceType source_type, const VkSpecializationInfo *spec_info, char const *name, bool debug)
+    : m_framework(*framework), m_device(*(framework->DeviceObj())), m_source(source), m_spv_env(env) {
     m_stage_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     m_stage_info.flags = 0;
     m_stage_info.stage = stage;
@@ -2029,15 +2028,15 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const std::string source,
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = spec_info;
     if (source_type == SPV_SOURCE_GLSL) {
-        InitFromGLSL(source.c_str(), debug, env);
+        InitFromGLSL(debug);
     } else if (source_type == SPV_SOURCE_ASM) {
-        InitFromASM(source, env);
+        InitFromASM();
     }
 }
 
-bool VkShaderObj::InitFromGLSL(const char *shader_code, bool debug, const spv_target_env env) {
+bool VkShaderObj::InitFromGLSL(bool debug) {
     std::vector<uint32_t> spv;
-    m_framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, shader_code, spv, debug, env);
+    m_framework.GLSLtoSPV(&m_device.props.limits, m_stage_info.stage, m_source, spv, debug, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -2051,13 +2050,12 @@ bool VkShaderObj::InitFromGLSL(const char *shader_code, bool debug, const spv_ta
 // Because shaders are currently validated at pipeline creation time, there are test cases that might fail shader module creation
 // due to supplying an invalid/unknown SPIR-V capability/operation. This is called after VkShaderObj creation when tests are found
 // to crash on a CI device
-VkResult VkShaderObj::InitFromGLSLTry(const char *shader_code, bool debug, const spv_target_env env,
-                                      const VkDeviceObj *custom_device) {
+VkResult VkShaderObj::InitFromGLSLTry(bool debug, const VkDeviceObj *custom_device) {
     std::vector<uint32_t> spv;
     // 99% of tests just use the framework's VkDevice, but this allows for tests to use custom device object
     // Can't set at contructor time since all reference members need to be initialized then.
     VkPhysicalDeviceLimits limits = (custom_device) ? custom_device->props.limits : m_device.props.limits;
-    m_framework.GLSLtoSPV(&limits, m_stage_info.stage, shader_code, spv, debug, env);
+    m_framework.GLSLtoSPV(&limits, m_stage_info.stage, m_source, spv, debug, m_spv_env);
 
     VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -2068,9 +2066,9 @@ VkResult VkShaderObj::InitFromGLSLTry(const char *shader_code, bool debug, const
     return result;
 }
 
-bool VkShaderObj::InitFromASM(const std::string &spv_source, const spv_target_env env) {
+bool VkShaderObj::InitFromASM() {
     vector<uint32_t> spv;
-    m_framework.ASMtoSPV(env, 0, spv_source.data(), spv);
+    m_framework.ASMtoSPV(m_spv_env, 0, m_source, spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -2081,9 +2079,9 @@ bool VkShaderObj::InitFromASM(const std::string &spv_source, const spv_target_en
     return VK_NULL_HANDLE != handle();
 }
 
-VkResult VkShaderObj::InitFromASMTry(const std::string &spv_source, const spv_target_env spv_env) {
+VkResult VkShaderObj::InitFromASMTry() {
     vector<uint32_t> spv;
-    m_framework.ASMtoSPV(spv_env, 0, spv_source.data(), spv);
+    m_framework.ASMtoSPV(m_spv_env, 0, m_source, spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = LvlInitStruct<VkShaderModuleCreateInfo>();
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
@@ -2099,9 +2097,9 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromGLSL(VkRenderFramework &fram
                                                          const std::string &code, const char *entry_point,
                                                          const VkSpecializationInfo *spec_info, const spv_target_env spv_env,
                                                          bool debug) {
-    auto shader =
-        layer_data::make_unique<VkShaderObj>(&framework, "", stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point, debug);
-    if (VK_SUCCESS == shader->InitFromGLSLTry(code.c_str(), debug, spv_env)) {
+    auto shader = layer_data::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info,
+                                                       entry_point, debug);
+    if (VK_SUCCESS == shader->InitFromGLSLTry(debug)) {
         return shader;
     }
     return {};
@@ -2111,8 +2109,9 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromGLSL(VkRenderFramework &fram
 std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework &framework, VkShaderStageFlagBits stage,
                                                         const std::string &code, const char *entry_point,
                                                         const VkSpecializationInfo *spec_info, const spv_target_env spv_env) {
-    auto shader = layer_data::make_unique<VkShaderObj>(&framework, "", stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
-    if (VK_SUCCESS == shader->InitFromASMTry(code.c_str(), spv_env)) {
+    auto shader =
+        layer_data::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
+    if (VK_SUCCESS == shader->InitFromASMTry()) {
         return shader;
     }
     return {};

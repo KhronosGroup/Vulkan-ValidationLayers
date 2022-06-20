@@ -63,7 +63,7 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     // "Structure id 2 decorated as Block for variable in Uniform storage class
     // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                   OpCapability Shader
                   OpMemoryModel Logical GLSL450
                   OpEntryPoint Vertex %main "main"
@@ -130,7 +130,7 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
     // must follow standard uniform buffer layout rules: member 0 is an array
     // with stride 4 not satisfying alignment to 16"
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %main "main"
@@ -202,7 +202,7 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
     // "Structure id 2 decorated as Block for variable in Uniform storage class
     // must follow standard uniform buffer layout rules: member 1 at offset 4 is not aligned to 16"
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                   OpCapability Shader
                   OpMemoryModel Logical GLSL450
                   OpEntryPoint Vertex %main "main"
@@ -293,7 +293,7 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
     pipe.InitState();
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyNotFound();
@@ -319,7 +319,7 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.cs_.reset(new VkShaderObj(this, csSource.str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyNotFound();
@@ -362,7 +362,8 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
         )";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+        helper.cs_.reset(
+            new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
@@ -413,8 +414,8 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeSpecConstantUnder) {
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
-                                         &specialization_info));
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                         SPV_SOURCE_ASM, &specialization_info));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
@@ -452,7 +453,8 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
         )";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+        helper.cs_.reset(
+            new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
@@ -510,8 +512,8 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstant) {
     specialization_info.pData = &data;
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM,
-                                         &specialization_info));
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                         SPV_SOURCE_ASM, &specialization_info));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
@@ -559,7 +561,8 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
         )";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
+        helper.cs_.reset(
+            new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
@@ -583,7 +586,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
 
     // compute shader using a non-semantic extended instruction set.
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                    OpCapability Shader
                    OpExtension "SPV_KHR_non_semantic_info"
    %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
@@ -908,7 +911,7 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    const std::string LoosePointSizeWrite = R"(
+    const char *LoosePointSizeWrite = R"(
                                        OpCapability Shader
                                   %1 = OpExtInstImport "GLSL.std.450"
                                        OpMemoryModel Logical GLSL450
@@ -1016,7 +1019,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
     )glsl";
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
 
-    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry()) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -1052,10 +1055,10 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
            gl_Position = vec4(float(gl_BaseVertex));
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource, false, SPV_ENV_VULKAN_1_1)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(false)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -1105,10 +1108,10 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
            gl_Position = vec4(float(gl_BaseVertex));
         }
     )glsl";
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
     // make sure using SPIR-V 1.3 as extension is core and not needed in Vulkan then
-    if (VK_SUCCESS == vs.InitFromGLSLTry(vsSource, false, SPV_ENV_VULKAN_1_1)) {
+    if (VK_SUCCESS == vs.InitFromGLSLTry(false)) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
@@ -1795,7 +1798,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                OpCapability Int64
                OpCapability PhysicalStorageBufferAddresses
                OpCapability Shader

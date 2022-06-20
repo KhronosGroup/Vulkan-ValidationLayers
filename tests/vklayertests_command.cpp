@@ -6142,7 +6142,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     vk::CreateRenderPass(test_device.handle(), &rp_info, nullptr, &renderpass);
     VkPipelineObj pipeline(&test_device);
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(bindStateVertShaderText, false, SPV_ENV_VULKAN_1_0, &test_device);
+    vs.InitFromGLSLTry(false, &test_device);
     pipeline.AddShader(&vs);
     pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass);
     m_renderPassBeginInfo.renderPass = renderpass;
