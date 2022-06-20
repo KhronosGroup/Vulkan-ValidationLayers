@@ -812,8 +812,8 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
-    vs.InitFromGLSLTry(bindStateVertShaderText, false, SPV_ENV_VULKAN_1_0, &test_device);
-    fs.InitFromGLSLTry(bindStateFragShaderText, false, SPV_ENV_VULKAN_1_0, &test_device);
+    vs.InitFromGLSLTry(false, &test_device);
+    fs.InitFromGLSLTry(false, &test_device);
 
     // Set polygonMode=FILL. No error is expected
     m_errorMonitor->ExpectSuccess();
@@ -1284,7 +1284,8 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
             }
             tes_src << "}";
 
-            tes = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, tes_src.str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT));
+            tes = std::unique_ptr<VkShaderObj>(
+                new VkShaderObj(this, tes_src.str().c_str(), VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT));
             pipe.AddShader(tes.get());
             pipe.AddShader(&tcs);
             pipe.SetTessellation(&tsci);
@@ -1305,7 +1306,7 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
                     }
                 })";
 
-            geom = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, geom_src.str(), VK_SHADER_STAGE_GEOMETRY_BIT));
+            geom = std::unique_ptr<VkShaderObj>(new VkShaderObj(this, geom_src.str().c_str(), VK_SHADER_STAGE_GEOMETRY_BIT));
             pipe.AddShader(geom.get());
         }
 
@@ -1552,7 +1553,7 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const std::string fsSource = R"(
+    const char *fsSource = R"(
                    OpCapability Shader
                    OpMemoryModel Logical GLSL450
                    OpEntryPoint Fragment %main "main"
@@ -2063,8 +2064,10 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_v");
-        VkShaderObj const fs(this, vert_first, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_f");
+        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_v");
+        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -2074,8 +2077,10 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_v");
-        VkShaderObj const fs(this, frag_first, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_f");
+        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_v");
+        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -2172,8 +2177,10 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
 
     // Vertex entry point first
     {
-        VkShaderObj const vs(this, vert_first, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_v");
-        VkShaderObj const fs(this, vert_first, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_f");
+        VkShaderObj const vs(this, vert_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_v");
+        VkShaderObj const fs(this, vert_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -2183,8 +2190,10 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
 
     // Fragment entry point first
     {
-        VkShaderObj const vs(this, frag_first, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_v");
-        VkShaderObj const fs(this, frag_first, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr, "main_f");
+        VkShaderObj const vs(this, frag_first.c_str(), VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_v");
+        VkShaderObj const fs(this, frag_first.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, nullptr,
+                             "main_f");
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
@@ -2446,7 +2455,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    std::string const fs_src = R"(
+    const char *fs_src = R"(
                OpCapability Shader
                OpCapability Int8
           %1 = OpExtInstImport "GLSL.std.450"
@@ -2521,7 +2530,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt16) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    std::string const fs_src = R"(
+    const char *fs_src = R"(
                OpCapability Shader
                OpCapability Int16
           %1 = OpExtInstImport "GLSL.std.450"
@@ -2576,7 +2585,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt32) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    std::string const fs_src = R"(
+    const char *fs_src = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -2650,7 +2659,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    std::string const fs_src = R"(
+    const char *fs_src = R"(
                OpCapability Shader
                OpCapability Int64
           %1 = OpExtInstImport "GLSL.std.450"
@@ -3264,7 +3273,8 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
@@ -3281,7 +3291,8 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
@@ -3298,7 +3309,8 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
@@ -3315,7 +3327,8 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
@@ -3332,7 +3345,8 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 )" + source_body;
 
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_.reset(new VkShaderObj(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
+            helper.cs_.reset(
+                new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
@@ -5653,7 +5667,7 @@ TEST_F(VkPositiveLayerTest, SpecializationUnused) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // layout (constant_id = 2) const int a = 3;
-    std::string cs_src = R"(
+    const char *cs_src = R"(
                OpCapability Shader
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %main "main"
@@ -6189,7 +6203,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
 
-    const std::string empty_shader = R"glsl(
+    const char *empty_shader = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
         void main() {}
@@ -6406,7 +6420,7 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     m_errorMonitor->ExpectSuccess();
 
     // Make sure compute pipeline has a compute shader stage set
-    const std::string csSource = R"(
+    const char *csSource = R"(
                   OpCapability Shader
                   OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
@@ -6449,7 +6463,7 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
-    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
@@ -6804,7 +6818,7 @@ TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const std::string fs_src = R"glsl(
+    const char *fs_src = R"glsl(
         #version 450
         void main(){ }
     )glsl";

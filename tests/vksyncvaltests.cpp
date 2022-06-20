@@ -1388,7 +1388,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
     descriptor_set.UpdateDescriptorSets();
 
     // Dispatch
-    std::string csSource = R"glsl(
+    const char *csSource = R"glsl(
         #version 450
         layout(set=0, binding=0) uniform foo { float x; } ub0;
         layout(set=0, binding=1) uniform sampler2D cis1;

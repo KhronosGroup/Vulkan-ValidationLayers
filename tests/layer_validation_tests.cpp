@@ -3261,12 +3261,12 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
         }
 
-        VkShaderObj rgen_shader(this, test.rgen_shader_source, VK_SHADER_STAGE_RAYGEN_BIT_NV);
-        VkShaderObj ahit_shader(this, test.ahit_shader_source, VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-        VkShaderObj chit_shader(this, test.chit_shader_source, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-        VkShaderObj miss_shader(this, test.miss_shader_source, VK_SHADER_STAGE_MISS_BIT_NV);
-        VkShaderObj intr_shader(this, test.intr_shader_source, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-        VkShaderObj call_shader(this, test.call_shader_source, VK_SHADER_STAGE_CALLABLE_BIT_NV);
+        VkShaderObj rgen_shader(this, test.rgen_shader_source.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV);
+        VkShaderObj ahit_shader(this, test.ahit_shader_source.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+        VkShaderObj chit_shader(this, test.chit_shader_source.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+        VkShaderObj miss_shader(this, test.miss_shader_source.c_str(), VK_SHADER_STAGE_MISS_BIT_NV);
+        VkShaderObj intr_shader(this, test.intr_shader_source.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+        VkShaderObj call_shader(this, test.call_shader_source.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_NV);
 
         VkPipelineShaderStageCreateInfo stage_create_infos[6] = {};
         stage_create_infos[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();

@@ -2872,7 +2872,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithInputAttachmentCapability) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const std::string fsSource = R"(
+    const char *fsSource = R"(
                OpCapability Shader
                OpCapability InputAttachment
           %1 = OpExtInstImport "GLSL.std.450"

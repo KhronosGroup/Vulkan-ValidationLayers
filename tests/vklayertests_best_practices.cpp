@@ -1236,7 +1236,7 @@ TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const std::string spv_source = R"(
+    const char *spv_source = R"(
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
