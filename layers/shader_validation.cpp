@@ -3497,7 +3497,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
                          phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups);
         }
         if ((stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
-            if (SafeModulo(required_subgroup_size_features->requiredSubgroupSize, local_size_x) != 0) {
+            if (SafeModulo(local_size_x, required_subgroup_size_features->requiredSubgroupSize) != 0) {
                 skip |= LogError(
                     module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-pNext-02757",
                     "Local workgroup size x (%" PRIu32

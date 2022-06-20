@@ -16682,7 +16682,7 @@ TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
             #version 450
             layout(local_size_x=
         )glsl";
-        csSource << subgroup_properties.maxSubgroupSize - 1;
+        csSource << subgroup_properties.maxSubgroupSize + 1;
         csSource << R"glsl(, local_size_y=1, local_size_z=1) in;
             void main(){
             if (gl_GlobalInvocationID.x >= 0) { return; }
