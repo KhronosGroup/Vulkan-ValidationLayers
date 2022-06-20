@@ -1572,3 +1572,99 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
+    TEST_DESCRIPTION("Test for clearing a RenderPass with non-zero clearValueCount without any VK_ATTACHMENT_LOAD_OP_CLEAR");
+
+    // Setup necessary objects correctly
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Bigger size to avoid small allocation best practices warning
+    const unsigned int w = 1920;
+    const unsigned int h = 1080;
+
+    // Setup Image
+    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.extent = {w, h, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImageObj image(m_device);
+    image.init(&image_info);
+
+    const auto image_view = image.targetView(image_info.format);
+
+    // Setup RenderPass
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // Specify that we do nothing with the contents of the attached image
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.format = image_info.format;
+
+    VkAttachmentReference ar{};
+    ar.attachment = 0;
+    ar.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkSubpassDescription spd{};
+    spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    spd.colorAttachmentCount = 1;
+    spd.pColorAttachments = &ar;
+
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &spd;
+
+    vk_testing::RenderPass rp(*m_device, rp_info);
+
+    // Setup Framebuffer
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.width = w;
+    fb_info.height = h;
+    fb_info.layers = 1;
+    fb_info.renderPass = rp.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &image_view;
+
+    vk_testing::Framebuffer fb(*m_device, fb_info);
+
+    m_commandBuffer->begin();
+
+    // Create a useless VkClearValue
+    VkClearValue cv{};
+    cv.color = VkClearColorValue{};
+    std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 0.0f);
+
+    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    begin_info.clearValueCount = 1;  // Pass one clearValue, in conflict with attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE
+    begin_info.pClearValues = &cv;
+    begin_info.renderPass = rp.handle();
+    begin_info.renderArea.extent.width = w;
+    begin_info.renderArea.extent.height = h;
+    begin_info.framebuffer = fb.handle();
+
+    // Setup finished
+    m_errorMonitor->VerifyNotFound();
+
+    // TEST :
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_ClearValueWithoutLoadOpClear);
+
+    // This should give a warning
+    m_commandBuffer->BeginRenderPass(begin_info);
+
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
