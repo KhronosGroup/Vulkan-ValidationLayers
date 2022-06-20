@@ -1697,6 +1697,29 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                                           pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
             }
         }
+
+        // Check if renderpass has at least one VK_ATTACHMENT_LOAD_OP_CLEAR
+
+        bool clearing = false;
+
+        for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
+            const auto& attachment = rp_state->createInfo.pAttachments[att];
+
+            if (attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+                clearing = true;
+                break;
+            }
+        }
+
+        // Check if there are ClearValues passed to BeginRenderPass even though no attachments will be cleared
+        if (!clearing && pRenderPassBegin->clearValueCount > 0) {
+            // Flag as warning because nothing will happen per spec, and pClearValues will be ignored
+            skip |= LogWarning(
+                device, kVUID_BestPractices_ClearValueWithoutLoadOpClear,
+                "This render pass does not have VkRenderPassCreateInfo.pAttachments->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR "
+                "but VkRenderPassBeginInfo.clearValueCount > 0. VkRenderPassBeginInfo.pClearValues will be ignored and no "
+                "attachments will be cleared");
+        }
     }
 
     return skip;
