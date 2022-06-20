@@ -1936,11 +1936,17 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00865",
                          "VUID-VkSubpassDependency2-srcSubpass-03085");
 
-    // Logically later source stages in self dependency
-    dependency = {0, 0, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, 0};
+    // srcStage contains framebuffer space, and dstStage contains non-framebuffer space
+    dependency = {0,
+                  0,
+                  VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                  VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                  0,
+                  0,
+                  0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00867",
-                         "VUID-VkSubpassDependency2-srcSubpass-03087");
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-06809",
+                         "VUID-VkSubpassDependency2-srcSubpass-06810");
 
     // framebuffer space stages in self dependency with region bit
     dependency = {0, 0, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, 0, 0, 0};

@@ -10344,6 +10344,11 @@ static bool HasNonFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR in
                         VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) != 0;
 }
 
+static bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags2KHR inflags) {
+    return (inflags & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                       VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) != 0;
+}
+
 // transient helper struct for checking parts of VUID 02285
 struct RenderPassDepState {
     using Location = core_error::Location;
@@ -12823,16 +12828,17 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                                  "Dependency %u specifies a self-dependency for subpass %u with a non-zero view mask, but does not "
                                  "specify VK_DEPENDENCY_VIEW_LOCAL_BIT.",
                                  i, dependency.srcSubpass);
-            } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) ||
-                        HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask)) &&
-                       (sync_utils::GetGraphicsPipelineStageLogicalOrdinal(latest_src_stage) >
-                        sync_utils::GetGraphicsPipelineStageLogicalOrdinal(earliest_dst_stage))) {
-                vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-03087" : "VUID-VkSubpassDependency-srcSubpass-00867";
-                skip |= LogError(
-                    device, vuid,
-                    "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
-                    i, sync_utils::StringPipelineStageFlags(latest_src_stage).c_str(),
-                    sync_utils::StringPipelineStageFlags(earliest_dst_stage).c_str());
+            } else if (HasFramebufferStagePipelineStageFlags(dependency.srcStageMask) &&
+                       HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask)) {
+                vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-06810" : "VUID-VkSubpassDependency-srcSubpass-06809";
+                skip |= LogError(device, vuid,
+                                 "Dependency %" PRIu32
+                                 " specifies a self-dependency from a stage (%s) that accesses framebuffer space (%s) to a stage "
+                                 "(%s) that accesses non-framebuffer space (%s).",
+                                 i, sync_utils::StringPipelineStageFlags(latest_src_stage).c_str(),
+                                 string_VkPipelineStageFlags(dependency.srcStageMask).c_str(),
+                                 sync_utils::StringPipelineStageFlags(earliest_dst_stage).c_str(),
+                                 string_VkPipelineStageFlags(dependency.dstStageMask).c_str());
             } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
                        (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
                        ((dependency.dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) == 0)) {
