@@ -218,8 +218,6 @@ struct shader_struct_member {
     std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
 };
 
-struct shader_module_used_operators;
-
 struct SHADER_MODULE_STATE : public BASE_NODE {
     struct EntryPoint {
         uint32_t offset;  // into module to get OpEntryPoint instruction
@@ -391,7 +389,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // State tracking helpers for collecting interface information
     void IsSpecificDescriptorType(const spirv_inst_iter &id_it, bool is_storage_buffer, bool is_check_writable,
-                                  interface_var &out_interface_var, shader_module_used_operators &used_operators) const;
+                                  interface_var &out_interface_var) const;
     std::vector<std::pair<DescriptorSlot, interface_var>> CollectInterfaceByDescriptorSlot(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const spirv_inst_iter &entrypoint) const;
