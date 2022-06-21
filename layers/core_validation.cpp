@@ -6366,7 +6366,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bind
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        sprintf(api_name, "vkBindBufferMemory2() pBindInfos[%u]", i);
+        snprintf(api_name, sizeof(api_name), "vkBindBufferMemory2() pBindInfos[%u]", i);
         skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset,
                                          pBindInfos[i].pNext, api_name);
     }
@@ -6379,7 +6379,7 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
     bool skip = false;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
+        snprintf(api_name, sizeof(api_name), "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
         skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset,
                                          pBindInfos[i].pNext, api_name);
     }
@@ -15994,7 +15994,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (bind_image_mem_2 == true) {
-            sprintf(error_prefix, "%s pBindInfos[%u]", api_name, i);
+            snprintf(error_prefix, sizeof(error_prefix), "%s pBindInfos[%u]", api_name, i);
         }
 
         const VkBindImageMemoryInfo &bind_info = pBindInfos[i];
@@ -17139,14 +17139,14 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         std::string error_string = "";
         char str[1024];
         // Here's the first part of the message:
-        sprintf(str, "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n", func_name,
-                string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
+        snprintf(str, sizeof(str), "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n",
+                 func_name, string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
         error_string += str;
         for (int i = 0; i < 32; i++) {
             // Build up the rest of the message:
             if ((1 << i) & capabilities.supportedTransforms) {
                 const char *new_str = string_VkSurfaceTransformFlagBitsKHR(static_cast<VkSurfaceTransformFlagBitsKHR>(1 << i));
-                sprintf(str, "    %s\n", new_str);
+                snprintf(str, sizeof(str), "    %s\n", new_str);
                 error_string += str;
             }
         }
@@ -17163,14 +17163,14 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         std::string error_string = "";
         char str[1024];
         // Here's the first part of the message:
-        sprintf(str, "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n", func_name,
-                string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
+        snprintf(str, sizeof(str), "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n",
+                 func_name, string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
         error_string += str;
         for (int i = 0; i < 32; i++) {
             // Build up the rest of the message:
             if ((1 << i) & capabilities.supportedCompositeAlpha) {
                 const char *new_str = string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << i));
-                sprintf(str, "    %s\n", new_str);
+                snprintf(str, sizeof(str), "    %s\n", new_str);
                 error_string += str;
             }
         }
