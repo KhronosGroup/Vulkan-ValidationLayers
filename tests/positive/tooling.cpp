@@ -48,8 +48,7 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping test case.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     m_errorMonitor->ExpectSuccess();

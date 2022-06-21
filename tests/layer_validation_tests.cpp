@@ -2579,8 +2579,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         this, m_instance_extension_names, m_device_extension_names, gpu_assisted ? &validation_features : nullptr, m_errorMonitor);
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     std::array<const char *, 2> required_device_extensions = {
