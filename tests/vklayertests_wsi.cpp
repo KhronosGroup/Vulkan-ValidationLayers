@@ -563,27 +563,28 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with non-binary semaphore");
 
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "surface extensions not supported, skipping test";
     }
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
-        return;
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto features2 = GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore feature not supported.";
     }
+
+    auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
+    GetPhysicalDeviceProperties2(timeline_semaphore_props);
+    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
+        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_TRUE(InitSwapchain());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
@@ -591,16 +592,12 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>(&semaphore_type_create_info);
 
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-semaphore-03265");
     uint32_t image_i;
-    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &image_i);
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore.handle(), VK_NULL_HANDLE, &image_i);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
@@ -608,44 +605,36 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
 
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-
-    bool extension_dependency_satisfied = false;
-    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-        extension_dependency_satisfied = true;
-    }
-
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "surface extensions not supported, skipping test";
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto features2 = GetPhysicalDeviceFeatures2(timeline_semaphore_features);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        GTEST_SKIP() << "timelineSemaphore not supported.";
     }
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
+    GetPhysicalDeviceProperties2(timeline_semaphore_props);
+    if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
+        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
     }
 
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     ASSERT_TRUE(InitSwapchain());
 
@@ -1386,9 +1375,10 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     m_errorMonitor->VerifyFound();
 
     uint32_t pdev_group_count = 0;
-    std::vector<VkPhysicalDeviceGroupProperties> group_props;
     VkResult err = vk::EnumeratePhysicalDeviceGroups(instance(), &pdev_group_count, nullptr);
-    group_props.resize(pdev_group_count);
+    // TODO: initialization can be removed once https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4138 merges
+    std::vector<VkPhysicalDeviceGroupProperties> group_props(pdev_group_count,
+                                                             {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     err = vk::EnumeratePhysicalDeviceGroups(instance(), &pdev_group_count, &group_props[0]);
 
     auto tgt = gpu();
@@ -1534,18 +1524,17 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 TEST_F(VkLayerTest, DisplayPlaneSurface) {
     TEST_DESCRIPTION("Create and use VkDisplayKHR objects to test VkDisplaySurfaceCreateInfoKHR.");
 
-    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME) && InstanceExtensionSupported(VK_KHR_DISPLAY_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR SURFACE and DISPLAY extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AddSurfaceInstanceExtension()) {
+        GTEST_SKIP() << "Surface extension not supported";
     }
+    AddRequiredExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
 
-    if (InitSurface()) {
-        printf("%s failed to create surface.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!InitSurface()) {
+        GTEST_SKIP() << "Failed to create surface.  Skipping.";
     }
 
     // Load all VK_KHR_display functions
@@ -1572,8 +1561,7 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     uint32_t plane_prop_count = 0;
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, nullptr);
     if (plane_prop_count == 0) {
-        printf("%s test requires at least 1 supported display plane property.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires at least 1 supported display plane property.  Skipping.";
     }
     std::vector<VkDisplayPlanePropertiesKHR> display_plane_props(plane_prop_count);
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, display_plane_props.data());
@@ -1845,31 +1833,24 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
 TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Surface extensions not supported, skipping test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
-        return;
-    }
-    m_device_extension_names.push_back(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t current_buffer;
-    VkSemaphore image_acquired;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired, VK_NULL_HANDLE,
+    vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
+    ASSERT_TRUE(image_acquired.initialized());
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired.handle(), VK_NULL_HANDLE,
                             &current_buffer);
 
     m_commandBuffer->begin();
@@ -1892,7 +1873,7 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
 
     VkPresentInfoKHR present = LvlInitStruct<VkPresentInfoKHR>(&display_present_info);
     present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores = &image_acquired;
+    present.pWaitSemaphores = &image_acquired.handle();
     present.pSwapchains = &m_swapchain;
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
@@ -2076,14 +2057,10 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
 TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
     TEST_DESCRIPTION("Test for getting swapchain images count and presenting before getting swapchain images.");
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Surface extensions not supported, skipping test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSurface());
@@ -2091,17 +2068,22 @@ TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present, skipping test";
     }
     InitSwapchainInfo();
+
+    VkImageFormatProperties img_format_props;
+    vk::GetPhysicalDeviceImageFormatProperties(gpu(), m_surface_formats[0].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_format_props);
+    VkExtent2D img_ext = {std::min(m_surface_capabilities.maxImageExtent.width, img_format_props.maxExtent.width),
+                          std::min(m_surface_capabilities.maxImageExtent.height, img_format_props.maxExtent.height)};
 
     VkSwapchainCreateInfoKHR swapchain_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
     swapchain_info.surface = m_surface;
     swapchain_info.minImageCount = m_surface_capabilities.minImageCount;
     swapchain_info.imageFormat = m_surface_formats[0].format;
     swapchain_info.imageColorSpace = m_surface_formats[0].colorSpace;
-    swapchain_info.imageExtent = m_surface_capabilities.currentExtent;
+    swapchain_info.imageExtent = img_ext;
     swapchain_info.imageArrayLayers = 1;
     swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;

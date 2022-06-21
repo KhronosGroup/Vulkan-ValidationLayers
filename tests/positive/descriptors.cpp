@@ -1255,7 +1255,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = format;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1280,7 +1280,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     image_create_info.arrayLayers = 3;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     image_create_info.flags = 0;
 
     VkImageObj image(m_device);
@@ -1351,14 +1351,20 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     layout_binding.pImmutableSamplers = nullptr;
     const VkDescriptorSetLayoutObj descriptor_set_layout(m_device, {layout_binding});
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    const VkDescriptorSetLayoutObj descriptor_set_layout2(m_device, {layout_binding});
 
-    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout, &descriptor_set_layout});
+    const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout, &descriptor_set_layout2});
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
+    OneOffDescriptorSet descriptor_set2(m_device,
+                                        {
+                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        });
     VkDescriptorImageInfo image_info = {};
     image_info.sampler = sampler.handle();
     image_info.imageView = image_view.handle();
@@ -1370,8 +1376,10 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.pImageInfo = &image_info;
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
-
-    m_errorMonitor->ExpectSuccess();
+    descriptor_write.dstSet = descriptor_set2.set_;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
@@ -1379,12 +1387,10 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                              &descriptor_set.set_, 0, nullptr);
+                              &descriptor_set2.set_, 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {

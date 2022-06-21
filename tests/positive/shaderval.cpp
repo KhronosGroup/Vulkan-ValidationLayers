@@ -273,14 +273,14 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
         // Both structs by themselves are 16 bytes less than the max
         shared X {
             vec4 x1[)glsl";
-    csSource << (max_shared_vec4 - 2);
+    csSource << (max_shared_vec4 - 16);
     csSource << R"glsl(];
             vec4 x2;
         };
 
         shared Y {
             int y1[)glsl";
-    csSource << (max_shared_ints - 8);
+    csSource << (max_shared_ints - 4);
     csSource << R"glsl(];
             int y2;
         };
@@ -296,7 +296,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
     pipe.InitState();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
@@ -1771,6 +1770,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     // Add binding for images
     current_bindings.push_back({1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
 
+    // NOTE: this fails on new mesa drivers with ACO compilers
     if (atomic_float2_features.shaderSharedFloat32AtomicMinMax == VK_TRUE) {
         current_shader = cs_image_32_min.c_str();
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);

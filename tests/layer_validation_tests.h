@@ -263,6 +263,18 @@ class VkLayerTest : public VkRenderFramework {
     VkCommandBufferObj *CommandBuffer();
     void OOBRayTracingShadersTestBody(bool gpu_assisted);
 
+    template <typename Features>
+    VkPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2(Features &feature_query) {
+        auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&feature_query);
+        return GetPhysicalDeviceFeatures2(features2);
+    }
+
+    template <typename Properties>
+    VkPhysicalDeviceProperties2 GetPhysicalDeviceProperties2(Properties &props_query) {
+        auto props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props_query);
+        return GetPhysicalDeviceProperties2(props2);
+    }
+
   protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
@@ -281,6 +293,12 @@ class VkLayerTest : public VkRenderFramework {
 
     VkLayerTest();
 };
+
+template <>
+VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2 &feature_query);
+
+template <>
+VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2);
 
 class VkPositiveLayerTest : public VkLayerTest {
   public:
@@ -672,9 +690,7 @@ struct CreateNVRayTracingPipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        test.Monitor().ExpectSuccess(message_flag_mask);
         ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
-        test.Monitor().VerifyNotFound();
     }
 };
 
@@ -766,8 +782,13 @@ class BarrierQueueFamilyTestHelper : public BarrierQueueFamilyBase {
     void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
 
     void operator()(std::string img_err, std::string buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, bool positive = false,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
+                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
+                    Modifier mod = Modifier::NONE);
+
+    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
+                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
+        (*this)("", "", src, dst, queue_family_index, mod);
+    }
 
     VkImageMemoryBarrier image_barrier_;
     VkBufferMemoryBarrier buffer_barrier_;
@@ -780,8 +801,13 @@ class Barrier2QueueFamilyTestHelper : public BarrierQueueFamilyBase {
     void Init(std::vector<uint32_t> *families, bool image_memory = true, bool buffer_memory = true);
 
     void operator()(std::string img_err, std::string buf_err = "", uint32_t src = VK_QUEUE_FAMILY_IGNORED,
-                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, bool positive = false,
-                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE);
+                    uint32_t dst = VK_QUEUE_FAMILY_IGNORED, uint32_t queue_family_index = kInvalidQueueFamily,
+                    Modifier mod = Modifier::NONE);
+
+    void operator()(uint32_t src = VK_QUEUE_FAMILY_IGNORED, uint32_t dst = VK_QUEUE_FAMILY_IGNORED,
+                    uint32_t queue_family_index = kInvalidQueueFamily, Modifier mod = Modifier::NONE) {
+        (*this)("", "", src, dst, queue_family_index, mod);
+    }
 
     VkImageMemoryBarrier2KHR image_barrier_;
     VkBufferMemoryBarrier2KHR buffer_barrier_;

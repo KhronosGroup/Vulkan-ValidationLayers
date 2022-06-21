@@ -5093,9 +5093,9 @@ bool StatelessValidation::PreCallValidateCreateInstance(
     skip |= validate_struct_type("vkCreateInstance", "pCreateInfo", "VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true, "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkInstanceCreateInfo[] = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT };
+        const VkStructureType allowed_structs_VkInstanceCreateInfo[] = { VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_METAL_OBJECT_CREATE_INFO_EXT, VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, VK_STRUCTURE_TYPE_VALIDATION_FLAGS_EXT, static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT) };
 
-        skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkExportMetalObjectCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkInstanceCreateInfo), allowed_structs_VkInstanceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", false, true);
+        skip |= validate_struct_pnext("vkCreateInstance", "pCreateInfo->pNext", "VkDebugReportCallbackCreateInfoEXT, VkDebugUtilsMessengerCreateInfoEXT, VkExportMetalObjectCreateInfoEXT, VkValidationFeaturesEXT, VkValidationFlagsEXT, VkInstanceLayerSettingsEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkInstanceCreateInfo), allowed_structs_VkInstanceCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkInstanceCreateInfo-pNext-pNext", "VUID-VkInstanceCreateInfo-sType-unique", false, true);
 
         skip |= validate_flags("vkCreateInstance", "pCreateInfo->flags", "VkInstanceCreateFlagBits", AllVkInstanceCreateFlagBits, pCreateInfo->flags, kOptionalFlags, "VUID-VkInstanceCreateInfo-flags-parameter");
 

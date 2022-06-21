@@ -1153,6 +1153,32 @@ uint32_t VkLayerTest::DeviceValidationVersion() {
     return std::min(m_target_api_version, physDevProps().apiVersion);
 }
 
+template <>
+VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDeviceFeatures2 &features2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    } else {
+        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+        assert(vkGetPhysicalDeviceFeatures2KHR);
+        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    }
+    return features2;
+}
+
+template <>
+VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysicalDeviceProperties2 &props2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vk::GetPhysicalDeviceProperties2(gpu(), &props2);
+    } else {
+        auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
+        assert(vkGetPhysicalDeviceProperties2KHR);
+        vkGetPhysicalDeviceProperties2KHR(gpu(), &props2);
+    }
+    return props2;
+}
+
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
@@ -2366,17 +2392,14 @@ BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyI
     return qf;
 }
 
-void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive,
+void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst,
                                               uint32_t queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
     const bool has_img_err = img_err.size() > 0;
     const bool has_buf_err = buf_err.size() > 0;
+    bool positive = !has_img_err && !has_buf_err;
     if (has_img_err) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
     if (has_buf_err) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
-    if (!(has_img_err || has_buf_err)) {
-        monitor.ExpectSuccess();
-        positive = true;
-    }
 
     image_barrier_.srcQueueFamilyIndex = src;
     image_barrier_.dstQueueFamilyIndex = dst;
@@ -2405,19 +2428,24 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
         }
     }
 
-    if (positive) {
-        monitor.VerifyNotFound();
-    } else {
+    if (!positive) {
         monitor.VerifyFound();
     }
     context_->Reset();
 };
 
-void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive,
+void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst,
                                                uint32_t queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
-    if (img_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
-    if (buf_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
+    bool positive = true;
+    if (img_err.length()) {
+        monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
+        positive = false;
+    }
+    if (buf_err.length()) {
+        monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
+        positive = false;
+    }
 
     image_barrier_.srcQueueFamilyIndex = src;
     image_barrier_.dstQueueFamilyIndex = dst;
@@ -2451,9 +2479,7 @@ void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string 
         }
     }
 
-    if (positive) {
-        monitor.VerifyNotFound();
-    } else {
+    if (!positive) {
         monitor.VerifyFound();
     }
     context_->Reset();

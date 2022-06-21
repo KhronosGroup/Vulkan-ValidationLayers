@@ -1507,14 +1507,14 @@ TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
     TEST_DESCRIPTION("Ensure it doesn't crash and trigger error msg when rasterizerDiscardEnable = true");
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkAttachmentDescription att[1] = {{}};
     att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
     att[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    att[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -1527,8 +1527,8 @@ TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
     rpi.pAttachments = att;
     rpi.subpassCount = 1;
     rpi.pSubpasses = &sp;
-    VkRenderPass rp;
-    vk::CreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
+    vk_testing::RenderPass rp(*m_device, rpi);
+    ASSERT_TRUE(rp.initialized());
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -1536,16 +1536,13 @@ TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
     pipe.gp_ci_.pMultisampleState = nullptr;
     pipe.gp_ci_.pDepthStencilState = nullptr;
     pipe.gp_ci_.pColorBlendState = nullptr;
-    pipe.gp_ci_.renderPass = rp;
+    pipe.gp_ci_.renderPass = rp.handle();
 
-    m_errorMonitor->ExpectSuccess();
     // Skip the test in NexusPlayer. The driver crashes when pViewportState, pMultisampleState, pDepthStencilState, pColorBlendState
     // are NULL.
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
@@ -3742,6 +3739,7 @@ TEST_F(VkPositiveLayerTest, ReadShaderClock) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer doesn't conflict with memory requirements.");
 
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
@@ -3749,20 +3747,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
         return;
     }
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3836,6 +3822,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import Depth/Stencil");
 
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
@@ -3843,21 +3830,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
         return;
     }
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3947,26 +3921,11 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer Buffers can be queried for mem requirements while unbound.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
         printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
-    }
-
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
         return;
     }
 
@@ -4038,22 +3997,11 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
     TEST_DESCRIPTION("Verify VkBuffers can export to an AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4113,22 +4061,11 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     TEST_DESCRIPTION("Verify VkImages can export to an AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4201,6 +4138,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
@@ -4208,21 +4146,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
         return;
     }
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4329,6 +4254,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
 TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import AHB with external format");
 
+    AddRequiredExtensions(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
@@ -4336,21 +4262,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
         return;
     }
 
-    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
-        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
-        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
-        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
-        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
-               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4883,23 +4796,20 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
     TEST_DESCRIPTION("Create image and imageView using VK_EXT_image_drm_format_modifier");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);  // for extension dependencies
+    AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
 
     if (IsPlatform(kMockICD)) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, skipping tests";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (!DeviceExtensionSupported(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
-        printf("%s VK_EXT_image_drm_format_modifier is not supported but required. Skipping\n", kSkipPrefix);
-        return;
-    }
-
-    m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // we just hope that one of these formats supports modifiers
@@ -5369,7 +5279,17 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     for (const auto &ext : InstanceExtensions::get_info_map()) {
         // Add all "real" instance extensions
         if (InstanceExtensionSupported(ext.first.c_str())) {
-            m_instance_extension_names.emplace_back(ext.first.c_str());
+            bool version_required = false;
+            for (const auto &req : ext.second.requirements) {
+                std::string name(req.name);
+                if (name.find("VK_VERSION") != std::string::npos) {
+                    version_required = true;
+                    break;
+                }
+            }
+            if (!version_required) {
+                m_instance_extension_names.emplace_back(ext.first.c_str());
+            }
         }
     }
 
@@ -6042,26 +5962,26 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     TEST_DESCRIPTION("Test CmdSetVertexInputEXT");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vertex_input_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    auto extdyn_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(&extdyn_features);
+    auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
 
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        printf("%s Feature vertexInputDynamicState is not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Feature vertexInputDynamicState is not supported.";
+    }
+    if (!extdyn_features.extendedDynamicState) {
+        GTEST_SKIP() << "Feature extendedDynamicState is not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -6069,6 +5989,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
 
     auto vkCmdSetVertexInputEXT =
         reinterpret_cast<PFN_vkCmdSetVertexInputEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetVertexInputEXT"));
+    ASSERT_NE(vkCmdSetVertexInputEXT, nullptr);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();

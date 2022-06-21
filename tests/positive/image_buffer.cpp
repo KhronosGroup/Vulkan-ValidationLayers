@@ -1970,25 +1970,21 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image  between device group");
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    printf(
-        "%s According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
-        "skipping test\n",
-        kSkipPrefix);
-    return;
+    GTEST_SKIP()
+        << "According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
+           "skipping test";
 #endif
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "surface extensions not supported, skipping test";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "swapchain extensions not supported, skipping test";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -1997,16 +1993,14 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 
     if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
         // Seeing the same crash as the Android comment above
-        printf("%s This test should not be run on the RADV driver\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not be run on the RADV driver";
     }
 
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
-        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "physical_device_group_count is 0, skipping test";
     }
 
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
@@ -2046,11 +2040,11 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     image_create_info.pNext = &image_swapchain_create_info;
 
     VkImage peer_image;
-    vk::CreateImage(device(), &image_create_info, NULL, &peer_image);
+    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &peer_image));
 
     auto bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
-    bind_devicegroup_info.deviceIndexCount = 2;
-    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
+    std::array<uint32_t, 1> deviceIndices = {{0}};
+    bind_devicegroup_info.deviceIndexCount = static_cast<uint32_t>(deviceIndices.size());
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
@@ -2112,82 +2106,80 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
-
-    vk::DestroyImage(m_device->device(), peer_image, NULL);
-    DestroySwapchain();
 }
 
 TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Surface extensions not supported, skipping CmdCopySwapchainImage test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
     uint32_t image_index, image_count;
     PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
         (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
-    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, NULL);
-    VkImage *swapchainImages = (VkImage *)malloc(image_count * sizeof(VkImage));
-    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages);
-    VkFenceCreateInfo fenceci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
-    VkFence fence;
-    VkResult ret = vk::CreateFence(m_device->device(), &fenceci, nullptr, &fence);
-    ASSERT_VK_SUCCESS(ret);
-    ret = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence, &image_index);
-    ASSERT_VK_SUCCESS(ret);
+    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
+    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
+    auto fenceci = LvlInitStruct<VkFenceCreateInfo>();
+    vk_testing::Fence fence(*m_device, fenceci);
+    ASSERT_VK_SUCCESS(
+        vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index));
     VkAttachmentDescription attach[] = {
-        {0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        {0, m_surface_formats[0].format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
     VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
 
     VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
-    VkRenderPass rp1, rp2;
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = attach;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    vk_testing::RenderPass rp1(*m_device, rpci);
+    ASSERT_TRUE(rp1.initialized());
 
-    ret = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp1);
-    ASSERT_VK_SUCCESS(ret);
     attach[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    ret = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp2);
-    VkImageViewCreateInfo ivci = {
-        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        nullptr,
-        0,
-        swapchainImages[image_index],
-        VK_IMAGE_VIEW_TYPE_2D,
-        VK_FORMAT_B8G8R8A8_UNORM,
-        {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
-         VK_COMPONENT_SWIZZLE_IDENTITY},
-        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-    };
-    VkImageView view;
-    ret = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
-    ASSERT_VK_SUCCESS(ret);
-    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp1, 1, &view, 32, 32, 1};
-    VkFramebuffer fb1, fb2;
-    ret = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb1);
-    fci.renderPass = rp2;
-    ret = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb2);
-    ASSERT_VK_SUCCESS(ret);
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp1, fb1, {{0, 0}, {32, 32}}, 0, nullptr};
+    vk_testing::RenderPass rp2(*m_device, rpci);
+    ASSERT_TRUE(rp2.initialized());
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = swapchainImages[image_index];
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = m_surface_formats[0].format;
+    ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                       VK_COMPONENT_SWIZZLE_IDENTITY};
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk_testing::ImageView view(*m_device, ivci);
+    ASSERT_TRUE(view.initialized());
+    auto fci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fci.renderPass = rp1.handle();
+    fci.attachmentCount = 1;
+    fci.pAttachments = &view.handle();
+    fci.width = 1;
+    fci.height = 1;
+    fci.layers = 1;
+    vk_testing::Framebuffer fb1(*m_device, fci);
+    ASSERT_TRUE(fb1.initialized());
+    fci.renderPass = rp2.handle();
+    vk_testing::Framebuffer fb2(*m_device, fci);
+    ASSERT_TRUE(fb2.initialized());
+    VkRenderPassBeginInfo rpbi = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp1.handle(), fb1.handle(), {{0, 0}, {1, 1}}, 0, nullptr};
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
-    rpbi.framebuffer = fb2;
-    rpbi.renderPass = rp2;
+    rpbi.framebuffer = fb2.handle();
+    rpbi.renderPass = rp2.handle();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 
@@ -2215,21 +2207,10 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
-    vk::ResetFences(m_device->device(), 1, &fence);
-    m_errorMonitor->ExpectSuccess();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
-    m_errorMonitor->VerifyNotFound();
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
-
-    free(swapchainImages);
-    vk::DestroyFramebuffer(m_device->device(), fb1, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp1, NULL);
-    vk::DestroyFramebuffer(m_device->device(), fb2, NULL);
-    vk::DestroyRenderPass(m_device->device(), rp2, NULL);
-    vk::DestroyFence(m_device->device(), fence, NULL);
-    vk::DestroyImageView(m_device->device(), view, NULL);
-    DestroySwapchain();
+    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, UINT64_MAX);
+    vk::ResetFences(m_device->device(), 1, &fence.handle());
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
+    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, UINT64_MAX);
 }
 
 TEST_F(VkPositiveLayerTest, SubresourceLayout) {

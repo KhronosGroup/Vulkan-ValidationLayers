@@ -43,9 +43,12 @@ namespace {
         }                                                                                   \
     } while (0)
 
-#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func)            \
-    cls::~cls() NOEXCEPT {                                         \
-        if (initialized()) destroy_func(device(), handle(), NULL); \
+#define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func) \
+    cls::~cls() NOEXCEPT {                              \
+        if (initialized()) {                            \
+            destroy_func(device(), handle(), NULL);     \
+            handle_ = VK_NULL_HANDLE;                   \
+        }                                               \
     }
 
 #define STRINGIFY(x) #x
@@ -316,7 +319,7 @@ void Device::init_queues(const VkDeviceCreateInfo &info) {
         for (uint32_t queue_i = 0; queue_i < queue_create_info.queueCount; ++queue_i) {
             // TODO: Need to add support for separate MEMMGR and work queues,
             // including synchronization
-            VkQueue queue;
+            VkQueue queue = VK_NULL_HANDLE;
             vk::GetDeviceQueue(handle(), queue_family_i, queue_i, &queue);
 
             // Store single copy of the queue object that will self destruct
@@ -538,6 +541,13 @@ VkMemoryRequirements Buffer::memory_requirements() const {
 
 void Buffer::bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
     EXPECT(vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset) == VK_SUCCESS);
+}
+
+void Buffer::bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset) {
+    if (!internal_mem_.initialized()) {
+        internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props));
+    }
+    bind_memory(internal_mem_, mem_offset);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
@@ -907,8 +917,15 @@ void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass, dev, &info);
 }
 
-void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info) {
-    NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2, dev, &info);
+void RenderPass::init(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr) {
+    if (!khr) {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateRenderPass2, dev, &info);
+    } else {
+        auto vkCreateRenderPass2KHR =
+            reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(dev.handle(), "vkCreateRenderPass2KHR"));
+        ASSERT_NE(vkCreateRenderPass2KHR, nullptr);
+        NON_DISPATCHABLE_HANDLE_INIT(vkCreateRenderPass2KHR, dev, &info);
+    }
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(RenderPass, vk::DestroyRenderPass)
