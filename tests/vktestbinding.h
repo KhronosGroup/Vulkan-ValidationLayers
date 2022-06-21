@@ -113,7 +113,7 @@ class Handle {
         handle_ = handle;
     }
 
-  private:
+  protected:
     T handle_;
 };
 
@@ -303,6 +303,8 @@ class Queue : public internal::Handle<VkQueue> {
 
 class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
   public:
+    DeviceMemory() = default;
+    DeviceMemory(const Device &dev, const VkMemoryAllocateInfo &info) { init(dev, info); }
     ~DeviceMemory() NOEXCEPT;
 
     // vkAllocateMemory()
@@ -324,10 +326,9 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
 class Fence : public internal::NonDispHandle<VkFence> {
   public:
-    ~Fence() NOEXCEPT;
-
     Fence() = default;
     Fence(const Device &dev, const VkFenceCreateInfo &info) { init(dev, info); }
+    ~Fence() NOEXCEPT;
 
     // vkCreateFence()
     void init(const Device &dev, const VkFenceCreateInfo &info);
@@ -342,6 +343,8 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
 class Semaphore : public internal::NonDispHandle<VkSemaphore> {
   public:
+    Semaphore() = default;
+    Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
     ~Semaphore() NOEXCEPT;
 
     // vkCreateSemaphore()
@@ -374,6 +377,8 @@ class Event : public internal::NonDispHandle<VkEvent> {
 
 class QueryPool : public internal::NonDispHandle<VkQueryPool> {
   public:
+    QueryPool() = default;
+    QueryPool(const Device &dev, const VkQueryPoolCreateInfo &info) { init(dev, info); }
     ~QueryPool() NOEXCEPT;
 
     // vkCreateQueryPool()
@@ -433,6 +438,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
     // vkBindObjectMemory()
     void bind_memory(const DeviceMemory &mem, VkDeviceSize mem_offset);
+    // Bind to internal_mem_ reference
+    void bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkDeviceSize mem_offset);
 
     const VkBufferCreateInfo &create_info() const { return create_info_; }
     static VkBufferCreateInfo create_info(VkDeviceSize size, VkFlags usage, const std::vector<uint32_t> *queue_families = nullptr);
@@ -698,7 +705,8 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
 class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
   public:
     PipelineLayout() NOEXCEPT : NonDispHandle() {}
-    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info, const std::vector<const DescriptorSetLayout *> &layouts) {
+    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info,
+                   const std::vector<const DescriptorSetLayout *> &layouts = {}) {
         init(dev, info, layouts);
     }
     ~PipelineLayout() NOEXCEPT;
@@ -853,13 +861,13 @@ class RenderPass : public internal::NonDispHandle<VkRenderPass> {
   public:
     RenderPass() = default;
     RenderPass(const Device &dev, const VkRenderPassCreateInfo &info) { init(dev, info); }
-    RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info) { init(dev, info); }
+    RenderPass(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr = false) { init(dev, info, khr); }
     ~RenderPass() NOEXCEPT;
 
     // vkCreateRenderPass()
     void init(const Device &dev, const VkRenderPassCreateInfo &info);
     // vkCreateRenderPass2()
-    void init(const Device &dev, const VkRenderPassCreateInfo2 &info);
+    void init(const Device &dev, const VkRenderPassCreateInfo2 &info, bool khr = false);
 };
 
 

@@ -127,15 +127,14 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
-        printf("%s VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateFragShaderText);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
     auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
@@ -149,7 +148,6 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
     pipe.InitFragmentLibInfo(1, &stage_ci);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -252,10 +250,6 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
         auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
         fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
         fs_ci.pCode = fs_spv.data();
-        {
-            std::ofstream out("/tmp/frag.spv", std::ios::binary | std::ios::out);
-            out.write(reinterpret_cast<const char *>(fs_spv.data()), fs_spv.size() * sizeof(decltype(fs_spv)::value_type));
-        }
 
         auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
         stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;

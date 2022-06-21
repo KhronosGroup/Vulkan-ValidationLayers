@@ -2612,7 +2612,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         LvlFindInChain<VkPipelineViewportDepthClipControlCreateInfoEXT>(viewport_state.pNext);
 
                     if (!physical_device_features.multiViewport) {
-                        if (!has_dynamic_viewport_with_count && (viewport_state.viewportCount != 1)) {
+                        if (!has_dynamic_viewport_with_count && (viewport_state.viewportCount > 1)) {
                             skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
                                              "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
                                              "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->viewportCount (=%" PRIu32
@@ -2620,7 +2620,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              i, viewport_state.viewportCount);
                         }
 
-                        if (!has_dynamic_scissor_with_count && (viewport_state.scissorCount != 1)) {
+                        if (!has_dynamic_scissor_with_count && (viewport_state.scissorCount > 1)) {
                             skip |= LogError(device, "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217",
                                              "vkCreateGraphicsPipelines: The VkPhysicalDeviceFeatures::multiViewport feature is "
                                              "disabled, but pCreateInfos[%" PRIu32 "].pViewportState->scissorCount (=%" PRIu32
@@ -3881,13 +3881,6 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
             }
         }
         if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
-            if (!IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax)) {
-                skip |= LogError(device, "VUID-VkSamplerCreateInfo-pNext-06726",
-                                 "vkCreateSampler(): sampler reduction mode is %s, but extension %s is not enabled.",
-                                 string_VkSamplerReductionMode(sampler_reduction->reductionMode),
-                                 VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
-            }
-
             if (!IsExtEnabled(device_extensions.vk_ext_filter_cubic)) {
                 if (pCreateInfo->magFilter == VK_FILTER_CUBIC_EXT || pCreateInfo->minFilter == VK_FILTER_CUBIC_EXT) {
                     skip |= LogError(device, "VUID-VkSamplerCreateInfo-magFilter-01422",

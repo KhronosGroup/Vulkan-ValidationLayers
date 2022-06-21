@@ -1987,22 +1987,18 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
 TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->ExpectSuccess();
 
     const auto format_ds = FindSupportedDepthStencilFormat(gpu());
     if (!format_ds) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No Depth + Stencil format found. Skipped.";
     }
     const auto format_dp = FindSupportedDepthOnlyFormat(gpu());
     if (!format_dp) {
-        printf("%s No only Depth format found. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No only Depth format found. Skipped.";
     }
     const auto format_st = FindSupportedStencilOnlyFormat(gpu());
     if (!format_st) {
-        printf("%s No only Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No only Stencil format found. Skipped.";
     }
 
     VkDepthStencilObj image_ds(m_device), image_dp(m_device), image_st(m_device);
@@ -2112,32 +2108,18 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_ds.pipeline_);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
 
     m_renderPassBeginInfo.renderPass = rp_dp.handle();
     m_renderPassBeginInfo.framebuffer = fb_dp.handle();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_dp.pipeline_);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
 
     m_renderPassBeginInfo.renderPass = rp_st.handle();
     m_renderPassBeginInfo.framebuffer = fb_st.handle();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_st.pipeline_);
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    m_commandBuffer->EndRenderPass();
-
-    m_commandBuffer->end();
 }
 
 
@@ -2374,8 +2356,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2529,18 +2510,9 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     m_renderPassBeginInfo.renderPass = rp.handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
-
-    // Positive test for ordering rules between load and input attachment usage
-    m_errorMonitor->ExpectSuccess();
-    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-
-    // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
-    m_commandBuffer->EndRenderPass();
-    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->VerifyFound();
 
     // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
@@ -2821,8 +2793,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (IsPlatform(kPixel3) || IsPlatform(kPixel3aXL)) {
-        printf("%s Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Temporarily disabling on Pixel 3 and Pixel 3a XL due to driver crash";
     }
 
     // overall set up:
@@ -3104,7 +3075,6 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-        m_errorMonitor->ExpectSuccess();
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
@@ -3112,7 +3082,6 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
-        m_errorMonitor->VerifyNotFound();
         // expect this error because 2 subpasses could try to do the store operation
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
         // ... and this one because the store could happen during a shader read from another subpass
@@ -3121,8 +3090,6 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         m_errorMonitor->VerifyFound();
 
         m_commandBuffer->end();
-
-        m_errorMonitor->VerifyFound();
     }
 
     // try again with correct dependencies to make subpass 3 depend on 1 & 2
@@ -3195,8 +3162,6 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         vk::CmdEndRenderPass(m_commandBuffer->handle());
 
         m_commandBuffer->end();
-
-        m_errorMonitor->VerifyNotFound();
     }
 }
 

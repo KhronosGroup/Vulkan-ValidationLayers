@@ -984,6 +984,12 @@ TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    auto discard_rect_props = LvlInitStruct<VkPhysicalDeviceDiscardRectanglePropertiesEXT>();
+    GetPhysicalDeviceProperties2(discard_rect_props);
+    if (discard_rect_props.maxDiscardRectangles < 1) {
+        GTEST_SKIP() << "maxDiscardRectangles property is less than 1.";
+    }
+
     bool has_features = false;
     const char* missing_feature_string = nullptr;
     auto self = this;
@@ -991,9 +997,9 @@ TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
                                 this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
                                 &missing_feature_string, true, false, true));
     if (!has_features) {
-        printf("%s\n", missing_feature_string);
-        return;
+        GTEST_SKIP() << missing_feature_string;
     }
+
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);

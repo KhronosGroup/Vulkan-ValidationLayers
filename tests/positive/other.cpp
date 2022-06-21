@@ -346,18 +346,18 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
 TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
 
-    if (!CreateNVRayTracingPipelineHelper::InitInstanceExtensions(*this, m_instance_extension_names)) {
-        return;
+    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
-    if (!CreateNVRayTracingPipelineHelper::InitDeviceExtensions(*this, m_device_extension_names)) {
-        return;
+    auto rtnv_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+    GetPhysicalDeviceProperties2(rtnv_props);
+    if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
+        GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";
     }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto ignore_update = [](CreateNVRayTracingPipelineHelper &helper) {};

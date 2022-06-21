@@ -105,8 +105,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
     if (version < VK_API_VERSION_1_2) {
-        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required, skipping test.";
     }
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -125,8 +124,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -134,10 +132,13 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
+    pipe.SetDepthStencil(&ds_state);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -188,6 +189,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.pDepthAttachment = &depth_attachment;
     begin_rendering_info.pStencilAttachment = &depth_attachment;
+    begin_rendering_info.layerCount = 1;
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
@@ -473,12 +475,15 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
 
     pipe1.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info1);
 
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
     pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
+    pipe2.SetDepthStencil(&ds_state);
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
@@ -521,6 +526,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
         pipe3.AddDefaultColorAttachment();
         pipe3.SetViewport(m_viewports);
         pipe3.SetScissor(m_scissors);
+        pipe3.SetDepthStencil(&ds_state);
 
         pipeline_rendering_info.colorAttachmentCount = 0;
         pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
@@ -551,6 +557,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     depth_stencil_attachment.imageView = depthStencilImageView;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
     m_commandBuffer->begin();
 
     // Mismatching color attachment count
@@ -670,12 +677,15 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
     ASSERT_TRUE(depthStencilFormat != 0);
 
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
     pipe2.AddShader(&fs);
     pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
+    pipe2.SetDepthStencil(&ds_state);
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
@@ -696,6 +706,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     pipe3.AddDefaultColorAttachment();
     pipe3.SetViewport(m_viewports);
     pipe3.SetScissor(m_scissors);
+    pipe3.SetDepthStencil(&ds_state);
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
@@ -727,6 +738,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     depth_stencil_attachment.imageView = depthStencilImageView;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.layerCount = 1;
     m_commandBuffer->begin();
 
     // Mismatching color samples
@@ -861,6 +873,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
     ASSERT_TRUE(depthStencilFormat != 0);
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     VkPipelineObj pipe2(m_device);
     pipe2.AddShader(&vs);
@@ -868,6 +881,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     pipe2.AddDefaultColorAttachment();
     pipe2.SetViewport(m_viewports);
     pipe2.SetScissor(m_scissors);
+    pipe2.SetDepthStencil(&ds_state);
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.pColorAttachmentFormats = nullptr;
@@ -890,6 +904,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     pipe3.AddDefaultColorAttachment();
     pipe3.SetViewport(m_viewports);
     pipe3.SetScissor(m_scissors);
+    pipe3.SetDepthStencil(&ds_state);
 
     pipeline_rendering_info.colorAttachmentCount = 0;
     pipeline_rendering_info.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
@@ -924,6 +939,7 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     // Mismatching color samples
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
     m_commandBuffer->BeginRendering(begin_rendering_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.handle());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-colorAttachmentCount-06185");
@@ -976,12 +992,14 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    auto fdm_features = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>(&fdm_features);
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering , skipping";
+    }
+    if (!fdm_features.fragmentDensityMapNonSubsampledImages) {
+        GTEST_SKIP() << "fragmentDensityMapNonSubsampledImages not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -989,10 +1007,13 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
+    pipe.SetDepthStencil(&ds_state);
 
     VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
@@ -1013,10 +1034,10 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = depth_format;
-    image_create_info.extent = {64, 64, 4};
+    image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1034,9 +1055,8 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    VkImageView depth_image_view;
-    err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &depth_image_view);
-    ASSERT_VK_SUCCESS(err);
+    VkImageView depth_image_view = image.targetView(ivci);
+    ASSERT_NE(depth_image_view, VK_NULL_HANDLE);
 
     VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -1190,8 +1210,8 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
@@ -1199,11 +1219,11 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
+    if (!IsExtensionsEnabled(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME)) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    bool fragment_density = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    bool shading_rate = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    bool fragment_density = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    bool shading_rate = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -1230,7 +1250,7 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
     image_create_info.extent = {64, 64, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1456,14 +1476,14 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
 TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRate) {
     TEST_DESCRIPTION("Test BeginRenderingInfo with FragmentShadingRateAttachment.");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -1504,7 +1524,8 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRate) {
 
     VkImageObj image(m_device);
     image.init(&image_ci);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2);
+    VkImageView image_view =
+        image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     auto fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
     fragment_shading_rate.imageView = image_view;
@@ -1590,9 +1611,7 @@ TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_errorMonitor->VerifyNotFound();
 
     render_area.offset.x = 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06083");
@@ -1604,8 +1623,6 @@ TEST_F(VkLayerTest, TestDeviceGroupRenderPassBeginInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06084");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, TestBeginRenderingInvalidFragmentShadingRateImage) {
@@ -1616,6 +1633,10 @@ TEST_F(VkLayerTest, TestBeginRenderingInvalidFragmentShadingRateImage) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -3003,7 +3024,6 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     color_blend_state_create_info.attachmentCount = 1;
     color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
 
-    m_errorMonitor->ExpectSuccess();
     CreatePipelineHelper lib(*this);
     lib.cb_ci_ = color_blend_state_create_info;
     lib.InitInfo();
@@ -3011,7 +3031,6 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib.InitState();
     lib.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 
     graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
     library_create_info.libraryCount = 1;
@@ -3023,6 +3042,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     pipe.gp_ci_.pNext = &library_create_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -3734,7 +3754,7 @@ TEST_F(VkLayerTest, InvalidResolveModeWithNonIntegerColorFormat) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // not int color
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
@@ -3791,7 +3811,7 @@ TEST_F(VkLayerTest, InvalidResolveModeWithIntegerColorFormat) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UINT;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -3896,7 +3916,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewSamples) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UINT;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -3959,7 +3979,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewFormatMatch) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UINT;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4068,7 +4088,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewLayout) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4132,7 +4152,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewLayoutSeparateDepthStencil) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4260,7 +4280,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewShadingRateLayout) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4437,7 +4457,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewReadOnlyOptimalLayout) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4481,6 +4501,10 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateImageView) {
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -4563,7 +4587,7 @@ TEST_F(VkLayerTest, TestRenderingInfoColorAttachment) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -4927,8 +4951,13 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSize) {
     SetTargetApiVersion(VK_API_VERSION_1_0);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    }
 
     if (DeviceValidationVersion() != VK_API_VERSION_1_0) {
         GTEST_SKIP() << "Tests for 1.0 only";
@@ -4943,11 +4972,11 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSize) {
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&dynamic_rendering_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&features11);
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>(&dynamic_rendering_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&multiview_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
-    if (features11.multiview == VK_FALSE) {
+    if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
@@ -4965,7 +4994,7 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSize) {
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_LINEAR, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
     fragment_shading_rate.imageView = image_view;
@@ -4996,8 +5025,13 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Skipping on AMD proprietary driver pending further investigation.";
+    }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
@@ -5008,11 +5042,11 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
-    auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>(&dynamic_rendering_features);
-    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeaturesKHR>(&dynamic_rendering_features);
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
-    if (features11.multiview == VK_FALSE) {
+    if (multiview_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
@@ -5030,7 +5064,7 @@ TEST_F(VkLayerTest, TestBeginRenderingFragmentShadingRateAttachmentSizeWithDevic
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                VK_IMAGE_TILING_LINEAR, 0);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
     fragment_shading_rate.imageView = image_view;

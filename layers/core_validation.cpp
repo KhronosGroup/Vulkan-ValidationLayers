@@ -18528,6 +18528,23 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
             num_samplers, phys_dev_props.limits.maxSamplerAllocationCount);
     }
 
+    const auto sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+    if (sampler_reduction && sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+        if ((api_version >= VK_API_VERSION_1_2) && !enabled_features.core12.samplerFilterMinmax) {
+            skip |= LogError(
+                device, "VUID-VkSamplerCreateInfo-pNext-06726",
+                "vkCreateSampler(): VkSamplerReductionModeCreateInfo is included in the pNext chain, samplerFilterMinmax is not "
+                "enabled, and VkSamplerReductionModeCreateInfo::reductionMode (%s) != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.",
+                string_VkSamplerReductionMode(sampler_reduction->reductionMode));
+        } else if ((api_version < VK_API_VERSION_1_2) && !IsExtEnabled(device_extensions.vk_ext_sampler_filter_minmax)) {
+            // NOTE: technically this VUID is only if the corresponding _feature_ is not enabled, and only if on api_version
+            // >= 1.2, but there doesn't appear to be a similar VUID for when api_version < 1.2
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-pNext-06726",
+                             "vkCreateSampler(): sampler reduction mode is %s, but extension %s is not enabled.",
+                             string_VkSamplerReductionMode(sampler_reduction->reductionMode),
+                             VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+        }
+    }
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {
         const VkSamplerYcbcrConversionInfo *conversion_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if (conversion_info != nullptr) {
@@ -18556,8 +18573,7 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                 }
             }
             // At this point there is a known sampler YCbCr conversion enabled
-            const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
-            if (sampler_reduction != nullptr) {
+            if (sampler_reduction) {
                 if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
                     skip |= LogError(device, "VUID-VkSamplerCreateInfo-None-01647",
                                      "A sampler YCbCr Conversion is being used creating this sampler so the sampler reduction mode "

@@ -1404,6 +1404,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
     rpci.pAttachments = &attach_desc;
 
@@ -2283,14 +2284,26 @@ void VkPipelineObj::InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo 
         m_vp_state.viewportCount = m_viewports.size();
         m_vp_state.pViewports = m_viewports.data();
     } else {
-        MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+        if (std::find(m_dynamic_state_enables.cbegin(), m_dynamic_state_enables.cend(), VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) ==
+            m_dynamic_state_enables.cend()) {
+            MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+            m_vp_state.viewportCount = 1;
+        } else {
+            m_vp_state.viewportCount = 0;
+        }
+        m_vp_state.pViewports = nullptr;
     }
 
     if (m_scissors.size() > 0) {
         m_vp_state.scissorCount = m_scissors.size();
         m_vp_state.pScissors = m_scissors.data();
     } else {
-        MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+        if (std::find(m_dynamic_state_enables.cbegin(), m_dynamic_state_enables.cend(), VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT) ==
+            m_dynamic_state_enables.cend()) {
+            MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+        }
+        m_vp_state.scissorCount = 1;
+        m_vp_state.pScissors = nullptr;
     }
 
     memset(&m_pd_state, 0, sizeof(m_pd_state));

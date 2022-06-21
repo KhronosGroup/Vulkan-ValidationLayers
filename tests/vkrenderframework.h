@@ -98,7 +98,7 @@ class ErrorMonitor {
         DefaultIgnore,
     };
 
-    ErrorMonitor(Behavior = Behavior::DefaultIgnore);
+    ErrorMonitor(Behavior = Behavior::DefaultSuccess);
 
     ~ErrorMonitor() NOEXCEPT;
 
@@ -554,6 +554,33 @@ class VkImageObj : public vk_testing::Image {
     std::array<std::array<uint32_t, 16>, 16> Read();
 
     VkImage image() const { return handle(); }
+
+    VkImageViewCreateInfo TargetViewCI(VkFormat format) const {
+        auto ci = LvlInitStruct<VkImageViewCreateInfo>();
+        ci.format = format;
+        ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ci.components.r = VK_COMPONENT_SWIZZLE_R;
+        ci.components.g = VK_COMPONENT_SWIZZLE_G;
+        ci.components.b = VK_COMPONENT_SWIZZLE_B;
+        ci.components.a = VK_COMPONENT_SWIZZLE_A;
+        ci.subresourceRange = {
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            0,                          // base mip level
+            VK_REMAINING_MIP_LEVELS,    // level count
+            0,                          // base array layer
+            VK_REMAINING_ARRAY_LAYERS,  // layer count
+        };
+        ci.flags = 0;
+        return ci;
+    }
+
+    VkImageView targetView(VkImageViewCreateInfo ci) {
+        if (!m_targetView.initialized()) {
+            ci.image = handle();
+            m_targetView.init(*m_device, ci);
+        }
+        return m_targetView.handle();
+    }
 
     VkImageView targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, uint32_t baseMipLevel = 0,
                            uint32_t levelCount = VK_REMAINING_MIP_LEVELS, uint32_t baseArrayLayer = 0,
