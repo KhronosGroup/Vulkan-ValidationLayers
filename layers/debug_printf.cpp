@@ -276,7 +276,7 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string forma
                 parsed_strings.push_back(substring);
 
                 // Continue with a comma separated list
-                sprintf(tempstring, ", %s", specifier.c_str());
+                snprintf(tempstring, sizeof(tempstring), ", %s", specifier.c_str());
                 substring.string = tempstring;
                 for (int i = 0; i < (count - 1); i++) {
                     parsed_strings.push_back(substring);
