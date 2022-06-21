@@ -228,8 +228,7 @@ TEST_F(VkLayerTest, DestroyInstanceHandleLeak) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!IsPlatform(kMockICD)) {
         // This test leaks a device (on purpose) and should not be run on a real driver
-        printf("%s This test only runs on the mock ICD\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test only runs on the mock ICD";
     }
     const auto ici = GetInstanceCreateInfo();
 

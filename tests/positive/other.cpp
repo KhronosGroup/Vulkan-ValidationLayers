@@ -235,9 +235,8 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD)) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and

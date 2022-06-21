@@ -77,8 +77,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping test case.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // Force a non-success success code by only asking for a subset of query results

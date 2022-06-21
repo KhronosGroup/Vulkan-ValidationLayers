@@ -4952,8 +4952,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =

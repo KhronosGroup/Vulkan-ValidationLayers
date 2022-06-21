@@ -5957,8 +5957,7 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -6545,8 +6544,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =

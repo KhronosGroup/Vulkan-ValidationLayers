@@ -4967,8 +4967,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
     texel_buffer_alignment_features.texelBufferAlignment = VK_TRUE;
 
@@ -11011,8 +11010,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
@@ -11076,8 +11074,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
@@ -11121,8 +11118,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
@@ -11243,8 +11239,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
@@ -11583,8 +11578,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s MockICD does not support the necessary memory type, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
 
     // Find a memory type that includes the device coherent memory property
@@ -13008,10 +13002,8 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
 
     if (!fsrProperties.layeredShadingRateAttachments) {
         if (IsPlatform(kMockICD) || DeviceSimulation()) {
-            printf(
-                "%s DevSim doesn't correctly advertise format support for fragment shading rate attachments, skipping some "
-                "tests.\n",
-                kSkipPrefix);
+            GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't correctly advertise format support for fragment shading "
+                            "rate attachments";
         } else {
             VkImageObj image2(m_device);
             image2.Init(VkImageObj::ImageCreateInfo2D(128, 128, 1, 2, VK_FORMAT_R8_UINT,

@@ -169,8 +169,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -252,8 +251,7 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PRIVATE_DATA_EXTENSION_NAME)) {
@@ -1306,8 +1304,7 @@ TEST_F(VkLayerTest, LeakAnObject) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!IsPlatform(kMockICD)) {
         // This test leaks a fence (on purpose) and should not be run on a real driver
-        printf("%s This test only runs on the mock ICD\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test only runs on the mock ICD";
     }
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
@@ -3427,8 +3424,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     // Test takes magnitude of time longer for devsim and slows down testing
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // Calls AllocateCommandBuffers
@@ -3956,8 +3952,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -7337,8 +7332,7 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     }
 
     if (IsPlatform(kMockICD)) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
     bool idfm_extensions = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
     idfm_extensions = idfm_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -9761,8 +9755,7 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s DevSim doesn't support Vulkan 1.1+, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't support Vulkan 1.1+";
     }
 
     const char *vertex_source = R"spirv(

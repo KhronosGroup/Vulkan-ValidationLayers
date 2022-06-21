@@ -1079,8 +1079,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
     // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
     // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -2024,8 +2023,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD or devsim, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -2554,8 +2552,7 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
 
     // need real device to produce output to check
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     // glslang currenlty turned the GLSL to

@@ -54,8 +54,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
@@ -528,8 +527,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -745,8 +743,7 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
     if (IsPlatform(kGalaxyS10)) {
@@ -921,8 +918,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -1825,8 +1821,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -1993,8 +1988,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
         return;
     }
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -2110,8 +2104,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
                                                                               m_device_extension_names, &features, m_errorMonitor);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
@@ -2448,8 +2441,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%s GPU-Assisted printf test requires a driver that can draw.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
     uint32_t qfi = 0;
@@ -2741,8 +2733,7 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     InitDebugPrintfFramework();
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
