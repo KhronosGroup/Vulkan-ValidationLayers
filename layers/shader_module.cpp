@@ -1177,6 +1177,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
             while (++insn, (insn.opcode() != spv::OpFunctionEnd) && !found_write) {
                 switch (insn.opcode()) {
                     case spv::OpAccessChain:
+                    case spv::OpInBoundsAccessChain:
                         if (insn.word(3) == target_id) {
                             if (type == spv::OpMemberDecorate) {
                                 // Get the target member of the struct
@@ -1319,7 +1320,8 @@ struct shader_module_used_operators {
                     load_members.emplace(insn.word(2), insn.word(3));
                     break;
                 }
-                case spv::OpAccessChain: {
+                case spv::OpAccessChain:
+                case spv::OpInBoundsAccessChain: {
                     if (insn.len() == 4) {
                         // If it is for struct, the length is only 4.
                         // 2: AccessChain id, 3: object id
@@ -1377,8 +1379,8 @@ static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32
 // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
 // atomic operation, matching images to samplers, etc
 void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it, bool is_storage_buffer, bool is_check_writable,
-                                                   interface_var &out_interface_var,
-                                                   shader_module_used_operators &used_operators) const {
+                                                   interface_var &out_interface_var) const {
+    shader_module_used_operators used_operators;
     uint32_t type_id = id_it.word(1);
     uint32_t id = id_it.word(2);
 
@@ -1541,7 +1543,6 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
 std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
     layer_data::unordered_set<uint32_t> const &accessible_ids) const {
     std::vector<std::pair<DescriptorSlot, interface_var>> out;
-    shader_module_used_operators operators;
 
     for (auto id : accessible_ids) {
         auto insn = get_def(id);
@@ -1560,7 +1561,7 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
             v.type_id = insn.word(1);
 
             IsSpecificDescriptorType(insn, insn.word(3) == spv::StorageClassStorageBuffer,
-                                     !(d.flags & decoration_set::nonwritable_bit), v, operators);
+                                     !(d.flags & decoration_set::nonwritable_bit), v);
             out.emplace_back(DescriptorSlot{set, binding}, v);
         }
     }
@@ -1582,7 +1583,8 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
                 store_members.insert(insn.word(1));  // object id or AccessChain id
                 break;
             }
-            case spv::OpAccessChain: {
+            case spv::OpAccessChain:
+            case spv::OpInBoundsAccessChain: {
                 // 2: AccessChain id, 3: object id
                 if (insn.word(3)) accesschain_members.emplace(insn.word(2), insn.word(3));
                 break;
