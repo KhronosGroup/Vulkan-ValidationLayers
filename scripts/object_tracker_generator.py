@@ -181,6 +181,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkCmdBuildAccelerationStructuresIndirectKHR',
             'vkBuildAccelerationStructuresKHR',
             'vkCreateRayTracingPipelinesKHR',
+            'vkExportMetalObjectsEXT'
             ]
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
         # which is translated here into a good VU.  Saves ~40 checks.
@@ -1008,7 +1009,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             (pre_call_validate, pre_call_record, post_call_record) = self.generate_wrapping_code(cmdinfo.elem)
 
             feature_extra_protect = cmddata.extra_protect
-            if (feature_extra_protect is not None):
+            if (feature_extra_protect is not None and not (cmdname in self.no_autogen_list and 'object_tracker.cpp' in self.genOpts.filename)):
                 self.appendSection('command', '')
                 self.appendSection('command', '#ifdef '+ feature_extra_protect)
                 self.prototypes += [ '#ifdef %s' % feature_extra_protect ]
@@ -1089,6 +1090,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     self.appendSection('command', post_call_record)
                     self.appendSection('command', '}')
 
-            if (feature_extra_protect is not None):
+            if (feature_extra_protect is not None and not (cmdname in self.no_autogen_list and 'object_tracker.cpp' in self.genOpts.filename)):
                 self.appendSection('command', '#endif // '+ feature_extra_protect)
                 self.prototypes += [ '#endif' ]

@@ -1163,3 +1163,56 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device
         }
     }
 }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+bool ObjectLifetimes::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkExportMetalObjectsEXT-device-parameter", kVUIDUndefined);
+
+    const VkBaseOutStructure *metal_objects_info_ptr = reinterpret_cast<const VkBaseOutStructure *>(pMetalObjectsInfo->pNext);
+    while (metal_objects_info_ptr) {
+        switch (metal_objects_info_ptr->sType) {
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT: {
+                auto metal_command_queue_ptr = reinterpret_cast<const VkExportMetalCommandQueueInfoEXT *>(metal_objects_info_ptr);
+                skip |= ValidateObject(metal_command_queue_ptr->queue, kVulkanObjectTypeQueue, false,
+                                       "VUID-VkExportMetalCommandQueueInfoEXT-queue-parameter", kVUIDUndefined);
+            } break;
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
+                auto metal_buffer_ptr = reinterpret_cast<const VkExportMetalBufferInfoEXT *>(metal_objects_info_ptr);
+                skip |= ValidateObject(metal_buffer_ptr->memory, kVulkanObjectTypeDeviceMemory, false,
+                                       "VUID-VkExportMetalBufferInfoEXT-memory-parameter", kVUIDUndefined);
+            } break;
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT: {
+                auto metal_texture_ptr = reinterpret_cast<const VkExportMetalTextureInfoEXT *>(metal_objects_info_ptr);
+                skip |= ValidateObject(metal_texture_ptr->image, kVulkanObjectTypeImage, true,
+                                       "VUID-VkExportMetalTextureInfoEXT-image-parameter",
+                                       "VUID-VkExportMetalTextureInfoEXT-commonparent");
+                skip |= ValidateObject(metal_texture_ptr->imageView, kVulkanObjectTypeImageView, true,
+                                       "VUID-VkExportMetalTextureInfoEXT-imageView-parameter",
+                                       "VUID-VkExportMetalTextureInfoEXT-commonparent");
+                skip |= ValidateObject(metal_texture_ptr->bufferView, kVulkanObjectTypeBufferView, true,
+                                       "VUID-VkExportMetalTextureInfoEXT-bufferView-parameter",
+                                       "VUID-VkExportMetalTextureInfoEXT-commonparent");
+            } break;
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT: {
+                auto metal_iosurface_ptr = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT *>(metal_objects_info_ptr);
+                skip |= ValidateObject(metal_iosurface_ptr->image, kVulkanObjectTypeImage, false,
+                                       "VUID-VkExportMetalIOSurfaceInfoEXT-image-parameter", kVUIDUndefined);
+            } break;
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT: {
+                auto metal_shared_event_ptr = reinterpret_cast<const VkExportMetalSharedEventInfoEXT *>(metal_objects_info_ptr);
+                skip |= ValidateObject(metal_shared_event_ptr->semaphore, kVulkanObjectTypeSemaphore, true,
+                                       "VUID-VkExportMetalSharedEventInfoEXT-semaphore-parameter",
+                                       "VUID-VkExportMetalSharedEventInfoEXT-commonparent");
+                skip |= ValidateObject(metal_shared_event_ptr->event, kVulkanObjectTypeEvent, true,
+                                       "VUID-VkExportMetalSharedEventInfoEXT-event-parameter",
+                                       "VUID-VkExportMetalSharedEventInfoEXT-commonparent");
+
+            } break;
+            default:
+                break;
+        }
+        metal_objects_info_ptr = metal_objects_info_ptr->pNext;
+    }
+    return skip;
+}
+#endif  //  VK_USE_PLATFORM_METAL_EXT
