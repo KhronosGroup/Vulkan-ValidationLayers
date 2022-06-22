@@ -16232,3 +16232,21 @@ TEST_F(VkLayerTest, NonSeamlessCubeMapNotEnabled) {
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
+    TEST_DESCRIPTION("Try to change layout of non sparse image with no memory bound.");
+
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkImageCreateInfo info = vk_testing::Image::create_info();
+    info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageObj image{m_device};
+    image.init_no_mem(*m_device, info);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-image-01932");
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    m_errorMonitor->VerifyFound();
+}
