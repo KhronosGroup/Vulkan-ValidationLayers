@@ -824,7 +824,7 @@ class DescriptorBindingImpl : public DescriptorBinding {
             desc.RemoveParent(ds);
         }
     }
-    std::vector<T> descriptors;
+    small_vector<T, 1, uint32_t> descriptors;
 };
 
 using SamplerBinding = DescriptorBindingImpl<SamplerDescriptor>;
