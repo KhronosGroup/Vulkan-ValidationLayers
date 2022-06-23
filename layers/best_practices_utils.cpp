@@ -1718,8 +1718,20 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                 device, kVUID_BestPractices_ClearValueWithoutLoadOpClear,
                 "This render pass does not have VkRenderPassCreateInfo.pAttachments->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR "
                 "but VkRenderPassBeginInfo.clearValueCount > 0. VkRenderPassBeginInfo.pClearValues will be ignored and no "
-                "attachments will be cleared");
+                "attachments will be cleared.");
         }
+
+        // Check if there are more clearValues than attachments
+        if(pRenderPassBegin->clearValueCount > rp_state->createInfo.attachmentCount) {
+            // Flag as warning because the overflowing clearValues will be ignored and could even be undefined on certain platforms.
+            // This could signal a bug and there seems to be no reason for this to happen on purpose.
+            skip |= LogWarning(
+                device, kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount,
+                "This render pass has VkRenderPassBeginInfo.clearValueCount > VkRenderPassCreateInfo.attachmentCount "
+                "(%" PRIu32 " > %" PRIu32 ") and as such the clearValues that do not have a corresponding attachment will be ignored.",
+                pRenderPassBegin->clearValueCount, rp_state->createInfo.attachmentCount);
+        }
+
     }
 
     return skip;

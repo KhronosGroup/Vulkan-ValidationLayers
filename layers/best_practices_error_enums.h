@@ -129,6 +129,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SemaphoreCount = "UNASSIG
 static const char DECORATE_UNUSED *kVUID_BestPractices_EmptyDescriptorPool =
     "UNASSIGNED-BestPractices-EmptyDescriptorPool";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
