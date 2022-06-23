@@ -3197,12 +3197,9 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
 TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool support_8_bit = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
@@ -3212,13 +3209,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
         printf("%s Extension %s and %s are not supported.\n", kSkipPrefix, VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
                VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
         return;
-    } else if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) == false) {
-        // need for all shaders, but not guaranteed from driver to have support
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-        return;
     } else {
-        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
         if (support_8_bit == true) {
             m_device_extension_names.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
         }
