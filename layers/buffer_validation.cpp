@@ -2393,18 +2393,6 @@ void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     }
 }
 
-// Returns true if [x, xoffset] and [y, yoffset] overlap
-static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, uint32_t end_offset) {
-    bool result = false;
-    uint32_t intersection_min = std::max(static_cast<uint32_t>(start), static_cast<uint32_t>(end));
-    uint32_t intersection_max = std::min(static_cast<uint32_t>(start) + start_offset, static_cast<uint32_t>(end) + end_offset);
-
-    if (intersection_max > intersection_min) {
-        result = true;
-    }
-    return result;
-}
-
 template <typename RegionType>
 static bool RegionIntersectsBlit(const RegionType *region0, const RegionType *region1, VkImageType type, bool is_multiplane) {
     bool result = false;
@@ -4094,6 +4082,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= ValidateCmd(cb_node.get(), cmd_type);
     }
     if (cb_node && src_image_state && dst_image_state) {
+        bool const are_images_sparse = src_image_state->sparse || dst_image_state->sparse;
         const char *vuid;
         std::string loc_head = std::string(func_name);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImage-00233" : "VUID-vkCmdBlitImage-srcImage-00233";
@@ -4431,13 +4420,43 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
 
             // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
             // must not overlap in memory
-            if (srcImage == dstImage) {
+            if (!skip && !are_images_sparse && src_image_state->fragment_encoder && dst_image_state->fragment_encoder) {
+                VkImageSubresourceRange subresource_range = {region.srcSubresource.aspectMask, region.srcSubresource.mipLevel, 1,
+                                                             region.srcSubresource.baseArrayLayer,
+                                                             region.srcSubresource.layerCount};
+                VkExtent3D blit_extent{static_cast<uint32_t>(pRegions[i].srcOffsets[1].x - pRegions[i].srcOffsets[0].x),
+                                       static_cast<uint32_t>(pRegions[i].srcOffsets[1].y - pRegions[i].srcOffsets[0].y),
+                                       static_cast<uint32_t>(pRegions[i].srcOffsets[1].z - pRegions[i].srcOffsets[0].z)};
+                subresource_adapter::ImageRangeGenerator src_generator{
+                    *src_image_state->fragment_encoder.get(), subresource_range, pRegions[i].srcOffsets[0], blit_extent, 0, false};
                 for (uint32_t j = 0; j < regionCount; j++) {
-                    if (RegionIntersectsBlit(&region, &pRegions[j], src_image_state->createInfo.imageType,
-                                             FormatIsMultiplane(src_format))) {
-                        vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
-                        skip |= LogError(cb_node->commandBuffer(), vuid,
-                                         "%s: pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", func_name, i, j);
+                    subresource_range = {pRegions[j].dstSubresource.aspectMask, pRegions[j].dstSubresource.mipLevel, 1,
+                                         pRegions[j].dstSubresource.baseArrayLayer, pRegions[j].dstSubresource.layerCount};
+                    subresource_adapter::ImageRangeGenerator dst_generator{*dst_image_state->fragment_encoder.get(),
+                                                                           subresource_range,
+                                                                           pRegions[j].dstOffsets[0],
+                                                                           blit_extent,
+                                                                           0,
+                                                                           false};
+                    auto src_generator_copy = src_generator;
+                    bool overlap_found = false;
+                    for (; src_generator_copy->non_empty(); ++src_generator_copy) {
+                        auto src_region = sparse_container::range<VkDeviceSize>{src_generator_copy->begin, src_generator_copy->end};
+                        auto dst_generator_copy = dst_generator;
+                        for (; dst_generator_copy->non_empty(); ++dst_generator_copy) {
+                            auto dst_region =
+                                sparse_container::range<VkDeviceSize>{dst_generator_copy->begin, dst_generator_copy->end};
+                            if (src_image_state->DoesResourceMemoryOverlap(src_region, dst_image_state.get(), dst_region)) {
+                                vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
+                                skip |= LogError(cb_node->commandBuffer(), vuid,
+                                                 "%s: pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "] dst.", func_name,
+                                                 i, j);
+                                overlap_found = true;
+                                break;
+                            }
+                        }
+
+                        if (overlap_found) break;
                     }
                 }
             }
@@ -4469,16 +4488,93 @@ bool CoreChecks::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, con
 
 template <typename RegionType>
 void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions,
-                                    VkFilter filter) {
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions, VkFilter filter,
+                                    CMD_TYPE cmd_type) {
     auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
 
-    // Make sure that all image slices are updated to correct layout
-    for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_node->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        cb_node->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+    if (src_image_state && dst_image_state) {
+        if (src_image_state->sparse || dst_image_state->sparse) {
+            bool const is_2 = (cmd_type == CMD_BLITIMAGE2KHR || cmd_type == CMD_BLITIMAGE2);
+            char const *const vuid = is_2 ? "VUID-VkBlitImageInfo2-pRegions-00217" : "VUID-vkCmdBlitImage-pRegions-00217";
+            char const *func_name = CommandTypeString(cmd_type);
+
+            // TODO: Once fragment_encoder is constant, we can just store the resource ranges instead of the data to generate the
+            // ImageRangeGenerator
+            struct GeneratorCreatorHelper {
+                GeneratorCreatorHelper(VkImageSubresourceRange const &sub_range, VkOffset3D const &offset, VkExtent3D const &extent)
+                    : subresource_range(sub_range), offset(offset), extent(extent) {}
+                VkImageSubresourceRange subresource_range;
+                VkOffset3D offset;
+                VkExtent3D extent;
+            };
+            std::vector<GeneratorCreatorHelper> src_helpers;
+            std::vector<GeneratorCreatorHelper> dst_helpers;
+
+            for (uint32_t i = 0; i < regionCount; i++) {
+                auto const &region = pRegions[i];
+                VkExtent3D const &extent{static_cast<uint32_t>(region.srcOffsets[1].x - region.srcOffsets[0].x),
+                                         static_cast<uint32_t>(region.srcOffsets[1].y - region.srcOffsets[0].y),
+                                         static_cast<uint32_t>(region.srcOffsets[1].z - region.srcOffsets[0].z)};
+
+                // Source resource ranges
+                VkImageSubresourceRange subresource_range = {region.srcSubresource.aspectMask, region.srcSubresource.mipLevel, 1,
+                                                             region.srcSubresource.baseArrayLayer,
+                                                             region.srcSubresource.layerCount};
+                src_helpers.emplace_back(subresource_range, region.srcOffsets[0], extent);
+
+                // Destination resource ranges
+                subresource_range = {region.dstSubresource.aspectMask, region.dstSubresource.mipLevel, 1,
+                                     region.dstSubresource.baseArrayLayer, region.dstSubresource.layerCount};
+                dst_helpers.emplace_back(subresource_range, region.dstOffsets[0], extent);
+            }
+
+            auto queue_submit_validation = [this, src_image_state, dst_image_state, src_helpers, dst_helpers, commandBuffer, vuid,
+                                            func_name](const ValidationStateTracker &device_data,
+                                                       const class QUEUE_STATE &queue_state,
+                                                       const CMD_BUFFER_STATE &cb_state) -> bool {
+                if (!src_image_state->fragment_encoder || !dst_image_state->fragment_encoder) return false;
+
+                bool skip = false;
+                for (auto const &src : src_helpers) {
+                    subresource_adapter::ImageRangeGenerator src_generator{
+                        *src_image_state->fragment_encoder.get(), src.subresource_range, src.offset, src.extent, 0, false};
+                    for (auto const &dst : dst_helpers) {
+                        auto src_generator_copy = src_generator;
+                        subresource_adapter::ImageRangeGenerator dst_generator{
+                            *dst_image_state->fragment_encoder.get(), dst.subresource_range, dst.offset, dst.extent, 0, false};
+
+                        bool overlap_found = false;
+                        for (; src_generator_copy->non_empty(); ++src_generator_copy) {
+                            for (; dst_generator->non_empty(); ++dst_generator) {
+                                sparse_container::range<VkDeviceSize> src_resource_range{src_generator_copy->begin,
+                                                                                         src_generator_copy->end};
+                                sparse_container::range<VkDeviceSize> dst_resource_range{dst_generator->begin, dst_generator->end};
+                                if (src_image_state->DoesResourceMemoryOverlap(src_resource_range, dst_image_state.get(),
+                                                                               dst_resource_range)) {
+                                    skip |=
+                                        LogError(commandBuffer, vuid,
+                                                 "%s(): Detected overlap between source and dest regions in memory.", func_name);
+                                    overlap_found = true;
+                                    break;
+                                }
+                            }
+
+                            if (overlap_found) break;
+                        }
+                    }
+                }
+                return skip;
+            };
+            cb_node->queue_submit_functions.emplace_back(queue_submit_validation);
+        }
+
+        // Make sure that all image slices are updated to correct layout
+        for (uint32_t i = 0; i < regionCount; ++i) {
+            cb_node->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
+            cb_node->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        }
     }
 }
 
@@ -4487,21 +4583,22 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
                                            const VkImageBlit *pRegions, VkFilter filter) {
     StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions, filter);
-    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
+                       CMD_BLITIMAGE);
 }
 
 void CoreChecks::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter);
+                       pBlitImageInfo->filter, CMD_BLITIMAGE2KHR);
 }
 
 void CoreChecks::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter);
+                       pBlitImageInfo->filter, CMD_BLITIMAGE2);
 }
 
 GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
