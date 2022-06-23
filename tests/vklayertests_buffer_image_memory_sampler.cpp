@@ -3417,6 +3417,13 @@ TEST_F(VkLayerTest, BlitImageOverlap) {
     VkImageObj image_2D(m_device);
     image_2D.init(&ci);
     ASSERT_TRUE(image_2D.initialized());
+    image_2D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image_2D_shared_mem{m_device};
+    image_2D_shared_mem.init_no_mem(*m_device, ci);
+    ASSERT_TRUE(image_2D_shared_mem.initialized());
+    image_2D_shared_mem.bind_memory(image_2D.Image::memory(), 0u);
+    image_2D_shared_mem.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageBlit blit_region = {};
     blit_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -3439,7 +3446,209 @@ TEST_F(VkLayerTest, BlitImageOverlap) {
                      &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-pRegions-00217");
+    vk::CmdBlitImage(m_commandBuffer->handle(), image_2D.image(), image_2D.Layout(), image_2D_shared_mem.image(),
+                     image_2D_shared_mem.Layout(), 1, &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, SparseImageOverlapBlit) {
+    TEST_DESCRIPTION("Test overlapping sparse images' blit");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    if (!m_device->phy().features().sparseBinding) {
+        GTEST_SKIP() << "Requires unsupported sparseBinding or sparseResidencyImage2D feature.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkExtent3D extent{64, 64, 1};
+
+    VkImageBlit blit_info{};
+    blit_info.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_info.srcSubresource.baseArrayLayer = 0;
+    blit_info.srcSubresource.layerCount = 1;
+    blit_info.srcSubresource.mipLevel = 0;
+    blit_info.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit_info.dstSubresource.baseArrayLayer = 0;
+    blit_info.dstSubresource.layerCount = 1;
+    blit_info.dstSubresource.mipLevel = 0;
+
+    blit_info.srcOffsets[0] = {0, 0, 0};
+    blit_info.srcOffsets[1] = {31, 31, 1};
+    blit_info.dstOffsets[0] = {15, 15, 0};
+    blit_info.dstOffsets[1] = {46, 46, 1};
+
+    VkImageCreateInfo image_info = vk_testing::Image::create_info();
+    image_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_info.extent = extent;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // Sparse no-residency test
+    {
+        auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+        vk_testing::Semaphore semaphore;
+        semaphore.init(*m_device, s_info);
+
+        VkImageObj image_sparse{m_device};
+        image_sparse.init_no_mem(*m_device, image_info);
+        image_sparse.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        VkImageObj image_sparse2{m_device};
+        image_sparse2.init_no_mem(*m_device, image_info);
+        image_sparse2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        VkMemoryRequirements image_mem_reqs{};
+        vk::GetImageMemoryRequirements(device(), image_sparse.handle(), &image_mem_reqs);
+        VkMemoryAllocateInfo image_mem_alloc =
+            vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        vk_testing::DeviceMemory image_mem;
+        image_mem.init(*m_device, image_mem_alloc);
+
+        VkSparseMemoryBind image_memory_bind{};
+        image_memory_bind.size = image_mem_reqs.size;
+        image_memory_bind.memory = image_mem.handle();
+
+        VkSparseImageOpaqueMemoryBindInfo image_memory_bind_infos[2] = {};
+        image_memory_bind_infos[0].image = image_sparse.handle();
+        image_memory_bind_infos[0].bindCount = 1;
+        image_memory_bind_infos[0].pBinds = &image_memory_bind;
+        image_memory_bind_infos[1].image = image_sparse2.handle();
+        image_memory_bind_infos[1].bindCount = 1;
+        image_memory_bind_infos[1].pBinds = &image_memory_bind;
+
+        auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+        bind_info.imageOpaqueBindCount = 2;
+        bind_info.pImageOpaqueBinds = image_memory_bind_infos;
+        bind_info.signalSemaphoreCount = 1;
+        bind_info.pSignalSemaphores = &semaphore.handle();
+
+        uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+        VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+        // Set up complete
+
+        m_commandBuffer->begin();
+
+        // Blit not legal since we won't update the bound device memory for either of the images
+        vk::CmdBlitImage(m_commandBuffer->handle(), image_sparse.handle(), image_sparse.Layout(), image_sparse2.handle(),
+                         image_sparse2.Layout(), 1, &blit_info, VK_FILTER_NEAREST);
+        m_commandBuffer->end();
+
+        m_errorMonitor->VerifyNotFound();
+
+        // Submitting blit command with overlapping device memory regions
+        VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &semaphore.handle();
+        submit_info.pWaitDstStageMask = &mask;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-pRegions-00217");
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->ExpectSuccess();
+        // Wait for operations to finish before exiting
+        vk::QueueWaitIdle(m_device->m_queue);
+        m_errorMonitor->VerifyNotFound();
+    }
+
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        GTEST_SKIP() << "Requires unsupported sparseResidencyImage2D feature.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    m_commandBuffer->reset();
+    image_info.flags |= VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+
+    // Sparse residency test
+    {
+        auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+        vk_testing::Semaphore semaphore;
+        semaphore.init(*m_device, s_info);
+
+        VkImageObj image_sparse{m_device};
+        image_sparse.init_no_mem(*m_device, image_info);
+        image_sparse.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        VkImageObj image_sparse2{m_device};
+        image_sparse2.init_no_mem(*m_device, image_info);
+        image_sparse2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        VkMemoryRequirements image_mem_reqs{};
+        vk::GetImageMemoryRequirements(device(), image_sparse.handle(), &image_mem_reqs);
+        VkMemoryAllocateInfo image_mem_alloc =
+            vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        vk_testing::DeviceMemory image_mem;
+        image_mem.init(*m_device, image_mem_alloc);
+
+        VkSparseImageMemoryBind image_memory_bind{};
+        image_memory_bind.subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+        image_memory_bind.extent = extent;
+        image_memory_bind.memory = image_mem.handle();
+
+        VkSparseImageMemoryBindInfo image_memory_bind_infos[2] = {};
+        image_memory_bind_infos[0].image = image_sparse.handle();
+        image_memory_bind_infos[0].bindCount = 1;
+        image_memory_bind_infos[0].pBinds = &image_memory_bind;
+        image_memory_bind_infos[1].image = image_sparse2.handle();
+        image_memory_bind_infos[1].bindCount = 1;
+        image_memory_bind_infos[1].pBinds = &image_memory_bind;
+
+        auto bind_info = LvlInitStruct<VkBindSparseInfo>();
+        bind_info.imageBindCount = 2;
+        bind_info.pImageBinds = image_memory_bind_infos;
+        bind_info.signalSemaphoreCount = 1;
+        bind_info.pSignalSemaphores = &semaphore.handle();
+
+        uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
+        VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
+
+        vk::QueueBindSparse(sparse_queue, 1, &bind_info, VK_NULL_HANDLE);
+        // Set up complete
+
+        m_commandBuffer->begin();
+
+        // Blit not legal since we won't update the bound device memory for either of the images
+        vk::CmdBlitImage(m_commandBuffer->handle(), image_sparse.handle(), image_sparse.Layout(), image_sparse2.handle(),
+                         image_sparse2.Layout(), 1, &blit_info, VK_FILTER_NEAREST);
+        m_commandBuffer->end();
+
+        m_errorMonitor->VerifyNotFound();
+
+        // Submitting blit command with overlapping device memory regions
+        VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>();
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &semaphore.handle();
+        submit_info.pWaitDstStageMask = &mask;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-pRegions-00217");
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->ExpectSuccess();
+        // Wait for operations to finish before exiting
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, MiscBlitImageTests) {
