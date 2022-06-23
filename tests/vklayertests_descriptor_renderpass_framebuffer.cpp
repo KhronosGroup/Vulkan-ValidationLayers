@@ -6317,23 +6317,21 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     VkResult err;
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    // Enable Sampler YCbCr Conversion
+    auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    if (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
+        auto vkGetPhysicalDeviceFeatures2FunctionKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+        ASSERT_TRUE(vkGetPhysicalDeviceFeatures2FunctionKHR != nullptr);
+        auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
+        vkGetPhysicalDeviceFeatures2FunctionKHR(gpu(), &features2);
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(InitState());
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
@@ -6380,14 +6378,9 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
         }
     }
 
-    if (!mp_extensions) {
+    if (!ycbcr_features.samplerYcbcrConversion) {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
     } else {
-        OneOffDescriptorSet descriptor_set(m_device,
-                                           {
-                                               {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                           });
-
         VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
         VkImageObj image_obj(m_device);
         VkFormatProperties format_props;
@@ -6413,19 +6406,57 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
             image_obj.init(&image_ci);
             ASSERT_TRUE(image_obj.initialized());
 
-            VkImageView image_view = image_obj.targetView(mp_format, VK_IMAGE_ASPECT_COLOR_BIT);
+            auto vkCreateSamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR"));
+            auto vkDestroySamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
+                vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR"));
+            ASSERT_NE(vkCreateSamplerYcbcrConversionKHR, nullptr);
+            ASSERT_NE(vkDestroySamplerYcbcrConversionKHR, nullptr);
+
+            auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+            ycbcr_create_info.format = mp_format;
+            ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+            ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+            ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                            VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+            ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+            ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+            ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+            ycbcr_create_info.forceExplicitReconstruction = false;
+
+            VkSamplerYcbcrConversion conversion = VK_NULL_HANDLE;
+            vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+            ASSERT_NE(conversion, VK_NULL_HANDLE);
+
+            VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+            ycbcr_info.conversion = conversion;
+
+            auto image_view_ci = image_obj.TargetViewCI(mp_format);
+            image_view_ci.pNext = &ycbcr_info;
+            auto image_view = image_obj.targetView(image_view_ci);
 
             VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-            VkSampler sampler;
-            err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
-            ASSERT_VK_SUCCESS(err);
+            sampler_ci.pNext = &ycbcr_info;
+            vk_testing::Sampler sampler(*m_device, sampler_ci);
+            ASSERT_TRUE(sampler.initialized());
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-sampler-01564");
-            descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            OneOffDescriptorSet descriptor_set(
+                m_device, {
+                              {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
+                          });
+
+            // 01564 appears to be impossible to hit due to the following check in descriptor_validation.cpp:
+            // if (sampler && !desc->IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) ...
+            //   - !desc->IsImmutableSampler() will cause 02738; IOW, multi-plane conversion _requires_ an immutable sampler
+            //   - !desc->IsImmutableSampler() must be removed for 01564 to get hit, but it's not clear whether or not this is
+            //   correct based on the comments in the code
+
+            // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-sampler-01564");
+            descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             descriptor_set.UpdateDescriptorSets();
-            m_errorMonitor->VerifyFound();
+            // m_errorMonitor->VerifyFound();
 
-            vk::DestroySampler(m_device->device(), sampler, NULL);
+            vkDestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
         }
     }
 }
