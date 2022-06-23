@@ -2480,6 +2480,27 @@ bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state,
     return skip;
 }
 
+// Temporary data of a OpVariable when validating it.
+// If found useful in another location, can move out to the header
+struct VariableInstInfo {
+    bool has_8bit = false;
+    bool has_16bit = false;
+};
+
+// easier to use recursion to traverse the OpTypeStruct
+static void GetVariableInfo(const SHADER_MODULE_STATE &module_state, const spirv_inst_iter &insn, VariableInstInfo &info) {
+    if (insn.opcode() == spv::OpTypeFloat || insn.opcode() == spv::OpTypeInt) {
+      const uint32_t bit_width = insn.word(2);
+      info.has_8bit |= (bit_width == 8);
+      info.has_16bit |= (bit_width == 16);
+    } else if (insn.opcode() == spv::OpTypeStruct) {
+        for (uint32_t i = 2; i < insn.len(); i++) {
+            const auto &base_insn = GetBaseTypeIter(module_state, insn.word(i));
+            GetVariableInfo(module_state, base_insn, info);
+        }
+    }
+}
+
 bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) const {
     bool skip = false;
 
@@ -2500,6 +2521,63 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
                     "but shader contains an OpVariable with Workgroup Storage Class with an Initializer operand.\n%s",
                     module_state.DescribeInstruction(insn).c_str());
             }
+        }
+
+        const auto type_pointer = module_state.get_def(insn.word(1));
+        const auto type = module_state.get_def(type_pointer.word(3));
+        // type will either be a float, int, or struct and if struct need to traverse it
+        VariableInstInfo info;
+        GetVariableInfo(module_state, type, info);
+
+        if (info.has_8bit) {
+           if (!enabled_features.core12.storageBuffer8BitAccess &&
+             (storage_class == spv::StorageClassStorageBuffer ||  storage_class == spv::StorageClassShaderRecordBufferKHR || storage_class == spv::StorageClassPhysicalStorageBuffer)) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-storageBuffer8BitAccess-06328",
+                                "vkCreateShaderModule(): storageBuffer8BitAccess is not enabled, but shader contains an 8-bit "
+                                "OpVariable with %s Storage Class.\n%s",
+                                StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+           }
+           if (!enabled_features.core12.uniformAndStorageBuffer8BitAccess && storage_class == spv::StorageClassUniform) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329",
+                                "vkCreateShaderModule(): uniformAndStorageBuffer8BitAccess is not enabled, but shader contains an "
+                                "8-bit OpVariable with Uniform Storage Class.\n%s",
+                                module_state.DescribeInstruction(insn).c_str());
+           }
+           if (!enabled_features.core12.storagePushConstant8 && storage_class == spv::StorageClassPushConstant) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-storagePushConstant8-06330",
+                                "vkCreateShaderModule(): storagePushConstant8 is not enabled, but shader contains an 8-bit "
+                                "OpVariable with PushConstant Storage Class.\n%s",
+                                module_state.DescribeInstruction(insn).c_str());
+           }
+        }
+
+        if (info.has_16bit) {
+          if (!enabled_features.core11.storageBuffer16BitAccess &&
+             (storage_class == spv::StorageClassStorageBuffer ||  storage_class == spv::StorageClassShaderRecordBufferKHR || storage_class == spv::StorageClassPhysicalStorageBuffer)) {
+              skip |= LogError(device, "VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",
+                               "vkCreateShaderModule(): storageBuffer16BitAccess is not enabled, but shader contains an 16-bit "
+                               "OpVariable with %s Storage Class.\n%s",
+                               StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+           }
+           if (!enabled_features.core11.uniformAndStorageBuffer16BitAccess && storage_class == spv::StorageClassUniform) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",
+                                "vkCreateShaderModule(): uniformAndStorageBuffer16BitAccess is not enabled, but shader contains an "
+                                "16-bit OpVariable with Uniform Storage Class.\n%s",
+                                module_state.DescribeInstruction(insn).c_str());
+           }
+           if (!enabled_features.core11.storagePushConstant16 && storage_class == spv::StorageClassPushConstant) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-storagePushConstant16-06333",
+                                "vkCreateShaderModule(): storagePushConstant16 is not enabled, but shader contains an 16-bit "
+                                "OpVariable with PushConstant Storage Class.\n%s",
+                                module_state.DescribeInstruction(insn).c_str());
+           }
+           if (!enabled_features.core11.storageInputOutput16 &&
+             (storage_class == spv::StorageClassInput || storage_class == spv::StorageClassOutput)) {
+               skip |= LogError(device, "VUID-RuntimeSpirv-storageInputOutput16-06334",
+                                "vkCreateShaderModule(): storageInputOutput16 is not enabled, but shader contains an 16-bit "
+                                "OpVariable with %s Storage Class.\n%s",
+                                StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+           }
         }
     }
 

@@ -189,6 +189,7 @@ struct builtin_set {
     builtin_set(uint32_t offset, spv::BuiltIn builtin) : offset(offset), builtin(builtin) {}
 };
 
+// Contains all the details for a OpTypeStruct
 struct shader_struct_member {
     uint32_t offset;
     uint32_t size;                                 // A scalar size or a struct size. Not consider array
@@ -197,6 +198,8 @@ struct shader_struct_member {
     std::vector<uint32_t> array_block_size;        // When index increases, how many data increases.
                                              // e.g : array[2][3][4] -> {12,4,1}, it means if the first index increases one, the
                                              // array gets 12 data. If the second index increases one, the array gets 4 data.
+
+    // OpTypeStruct can have OpTypeStruct inside it so need to track the struct-in-struct chain
     std::vector<shader_struct_member> struct_members;  // If the data is not a struct, it's empty.
     shader_struct_member *root;
 

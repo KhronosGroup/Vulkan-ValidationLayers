@@ -10995,37 +10995,22 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
     }
 }
 
-TEST_F(VkLayerTest, Storage8and16bit) {
-    TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
+TEST_F(VkLayerTest, Storage8and16bitCapability) {
+    TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage not having feature bits required for SPIR-V capability");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    bool support_8_bit = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
-    bool support_16_bit = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    // Prevent extra errors for not having the support for the SPV extensions
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
 
-    if ((support_8_bit == false) && (support_16_bit == false)) {
-        printf("%s Extension %s and %s are not supported.\n", kSkipPrefix, VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
-               VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
-        return;
-    } else if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME) == false) {
-        // need for all shaders, but not guaranteed from driver to have support
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-        return;
-    } else {
-        m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
-        if (support_8_bit == true) {
-            m_device_extension_names.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
-        }
-        if (support_16_bit == true) {
-            m_device_extension_names.push_back(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
-        }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     // Need to explicitly turn off shaderInt16 as test will try to add and easier if all test have off
@@ -11056,11 +11041,11 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer8BitAccess
+                vector<string>{"VUID-RuntimeSpirv-storageBuffer8BitAccess-06328",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",        // Int8
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});      // StorageBuffer8BitAccess
         }
     }
-
     // uniformAndStorageBuffer8BitAccess
     {
         char const *vsSource = R"glsl(
@@ -11083,8 +11068,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer8BitAccess
+                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                  // Int8
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                // UniformAndStorageBuffer8BitAccess
         }
     }
 
@@ -11112,7 +11098,8 @@ TEST_F(VkLayerTest, Storage8and16bit) {
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
             CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                              vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int8
+                                              vector<string>{"VUID-RuntimeSpirv-storagePushConstant8-06330",  // feature
+                                                             "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Int8
                                                              "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant8
         }
     }
@@ -11129,7 +11116,7 @@ TEST_F(VkLayerTest, Storage8and16bit) {
                gl_Position = vec4(float(a) * 0.0);
             }
         )glsl";
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
         m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
@@ -11139,8 +11126,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+                vector<string>{"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});       // StorageBuffer16BitAccess
         }
     }
 
@@ -11166,8 +11154,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                 // UniformAndStorageBuffer16BitAccess
         }
     }
 
@@ -11183,7 +11172,7 @@ TEST_F(VkLayerTest, Storage8and16bit) {
                gl_Position = vec4(float(a) * 0.0);
             }
         )glsl";
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
         m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
@@ -11196,8 +11185,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+                vector<string>{"VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Float16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});    // StoragePushConstant16
         }
     }
 
@@ -11235,9 +11225,11 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Float16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
+                               "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Float16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});   // StorageInputOutput16 frag
         }
     }
 
@@ -11263,8 +11255,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageBuffer16BitAccess
+                vector<string>{"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});       // StorageBuffer16BitAccess
         }
     }
 
@@ -11290,8 +11283,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // UniformAndStorageBuffer16BitAccess
+                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                 // UniformAndStorageBuffer16BitAccess
         }
     }
 
@@ -11307,7 +11301,7 @@ TEST_F(VkLayerTest, Storage8and16bit) {
                gl_Position = vec4(float(a) * 0.0);
             }
         )glsl";
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
         m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
@@ -11320,8 +11314,9 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StoragePushConstant16
+                vector<string>{"VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Int16
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});    // StoragePushConstant16
         }
     }
 
@@ -11359,9 +11354,11 @@ TEST_F(VkLayerTest, Storage8and16bit) {
             };
             CreatePipelineHelper::OneshotTest(
                 *this, set_info, kErrorBit,
-                vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091",    // Int16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",    // StorageInputOutput16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});  // StorageInputOutput16 frag
+                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
+                               "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Int16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
+                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});   // StorageInputOutput16 frag
         }
     }
 }

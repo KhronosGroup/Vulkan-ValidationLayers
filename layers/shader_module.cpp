@@ -1896,7 +1896,7 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
     } else if (opcode == spv::OpTypeMatrix) {
         const auto& column_type = get_def(iter.word(2));
         return GetBaseType(column_type);
-    } else if (opcode == spv::OpTypeArray) {
+    } else if (opcode == spv::OpTypeArray || opcode == spv::OpTypeRuntimeArray) {
         const auto& element_type = get_def(iter.word(2));
         return GetBaseType(element_type);
     } else if (opcode == spv::OpTypePointer) {
