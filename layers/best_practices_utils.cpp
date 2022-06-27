@@ -1731,7 +1731,6 @@ bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Re
                 "(%" PRIu32 " > %" PRIu32 ") and as such the clearValues that do not have a corresponding attachment will be ignored.",
                 pRenderPassBegin->clearValueCount, rp_state->createInfo.attachmentCount);
         }
-
     }
 
     return skip;
@@ -1774,16 +1773,13 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* functi
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks &funcs, const char* function_name,
-                                       std::shared_ptr<bp_state::Image> &state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                       uint32_t array_layer, uint32_t mip_level) {
-    if (VendorCheckEnabled(kBPVendorArm)) {
-        funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
-                            const ValidationStateTracker&, const QUEUE_STATE&, const CMD_BUFFER_STATE&) -> bool {
-            ValidateImageInQueue(function_name, *state, usage, array_layer, mip_level);
-            return false;
-        });
-    }
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
+                                       IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
+    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker&, const QUEUE_STATE&,
+                                                                                const CMD_BUFFER_STATE&) -> bool {
+        ValidateImageInQueue(function_name, *state, usage, array_layer, mip_level);
+        return false;
+    });
 }
 
 void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const bp_state::Image& image,
@@ -1863,6 +1859,15 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
 void BestPractices::ValidateImageInQueue(const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                          uint32_t array_layer, uint32_t mip_level) {
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage);
+
+    // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
+    if (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
+        usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE) {
+        LogWarning(device, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad,
+                   "Trying to load an attachment with LOAD_OP_LOAD that was previously stored with STORE_OP_DONT_CARE. This may "
+                   "result in undefined behaviour.");
+    }
+
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
         ValidateImageInQueueArmImg(function_name, state, last_usage, usage, array_layer, mip_level);
     }

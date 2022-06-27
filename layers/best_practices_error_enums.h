@@ -130,6 +130,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_EmptyDescriptorPool =
     "UNASSIGNED-BestPractices-EmptyDescriptorPool";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueWithoutLoadOpClear = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueWithoutLoadOpClear";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearValueCountHigherThanAttachmentCount = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-ClearValueCountHigherThanAttachmentCount";
+static const char DECORATE_UNUSED *kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad = "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-StoreOpDontCareThenLoadOpLoad";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
