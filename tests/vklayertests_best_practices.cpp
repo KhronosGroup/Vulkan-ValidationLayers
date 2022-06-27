@@ -1772,3 +1772,125 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
 
     m_commandBuffer->end();
 }
+
+TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
+    TEST_DESCRIPTION("Test for storing an attachment with STORE_OP_DONT_CARE then loading with LOAD_OP_LOAD");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Setup necessary objects correctly
+    m_errorMonitor->ExpectSuccess();
+
+    const unsigned int w = 100;
+    const unsigned int h = 100;
+
+    // Setup Image
+    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.extent = {w, h, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImageObj image(m_device);
+    image.init(&image_info);
+
+    const auto image_view = image.targetView(image_info.format);
+
+    // Setup first RenderPass
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;        // Clearing as only modification
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;  // Dont care even though we will load afterwards
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.format = image_info.format;
+
+    VkAttachmentReference ar{};
+    ar.attachment = 0;
+    ar.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription spd{};
+    spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    spd.colorAttachmentCount = 1;
+    spd.pColorAttachments = &ar;
+
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &spd;
+
+    vk_testing::RenderPass rp1(*m_device, rp_info);
+
+    // Setup second RenderPass
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;  // Loading even though was stored with dont care
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+    vk_testing::RenderPass rp2(*m_device, rp_info);
+
+    // Setup Framebuffer
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.width = w;
+    fb_info.height = h;
+    fb_info.layers = 1;
+    fb_info.renderPass = rp1.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &image_view;
+
+    vk_testing::Framebuffer fb(*m_device, fb_info);
+
+    m_commandBuffer->begin();
+
+    // All white
+    VkClearValue cv;
+    cv.color = VkClearColorValue{};
+    std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
+
+    // Begin first renderpass
+    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    begin_info.clearValueCount = 1;
+    begin_info.pClearValues = &cv;
+    begin_info.renderPass = rp1.handle();
+    begin_info.renderArea.extent.width = w;
+    begin_info.renderArea.extent.height = h;
+    begin_info.framebuffer = fb.handle();
+
+    m_commandBuffer->BeginRenderPass(begin_info);
+
+    m_commandBuffer->EndRenderPass();
+
+    // Begin second renderpass
+    begin_info.clearValueCount = 0;
+    begin_info.pClearValues = nullptr;
+    begin_info.renderPass = rp2.handle();
+
+    m_commandBuffer->BeginRenderPass(begin_info);
+
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    // Setup finished
+    m_errorMonitor->VerifyNotFound();
+
+    // TEST :
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad);
+
+    // This should give a warning
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
+}
