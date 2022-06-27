@@ -1597,7 +1597,7 @@ static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDevice
         // Check for recognized device extensions
         if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceWarnExtensionNames)) {
             layer_data->LogWarning(layer_data->device, kVUIDUndefined,
-                    "Device Extension %s support is incomplete, incorrect results are possible.",
+                    "Device Extension %s validation support is incomplete, incorrect results are possible.",
                     pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
