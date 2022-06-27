@@ -171,6 +171,8 @@ class Image : public IMAGE_STATE {
         return last_usage;
     }
 
+    IMAGE_SUBRESOURCE_USAGE_BP GetUsage(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level]; }
+
   private:
     void SetupUsages() {
         usages_.resize(createInfo.arrayLayers);
