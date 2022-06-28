@@ -812,7 +812,12 @@ struct DecodedTemplateUpdate {
  */
 class DescriptorSet : public BASE_NODE {
   public:
-    using BindingVector = std::vector<std::unique_ptr<DescriptorBinding>>;
+    // Given that we are providing placement new allocation for descriptors, the deleter needs to *only* call the destructor
+    struct BindingDeleter {
+        void operator()(DescriptorBinding *binding) { binding->~DescriptorBinding(); }
+    };
+    using BindingPtr = std::unique_ptr<DescriptorBinding, BindingDeleter>;
+    using BindingVector = std::vector<BindingPtr>;
     using BindingIterator = BindingVector::iterator;
     using ConstBindingIterator = BindingVector::const_iterator;
     using StateTracker = ValidationStateTracker;
@@ -1009,14 +1014,37 @@ class DescriptorSet : public BASE_NODE {
     }
 
   private:
+    union AnyBinding {
+        SamplerBinding sampler;
+        ImageSamplerBinding image_sampler;
+        ImageBinding image;
+        TexelBinding texel;
+        BufferBinding buffer;
+        InlineUniformBinding inline_uniform;
+        AccelerationStructureBinding accelerator_structure;
+        MutableBinding mutable_binding;
+        ~AnyBinding() = delete;
+    };
+
+    struct alignas(alignof(AnyBinding)) BindingBackingStore {
+        uint8_t data[sizeof(AnyBinding)];
+    };
+
+    template <typename T>
+    std::unique_ptr<T, BindingDeleter> MakeBinding(BindingBackingStore *location, const VkDescriptorSetLayoutBinding &create_info,
+                                                   uint32_t descriptor_count, VkDescriptorBindingFlags flags) {
+        return std::unique_ptr<T, BindingDeleter>(new (reinterpret_cast<T *>(location)) T(create_info, descriptor_count, flags));
+    }
+
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
     bool some_update_;  // has any part of the set ever been updated?
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> layout_;
-    // NOTE: the the backing store for the descriptors must be declared *before* it so it will be destructed *after* it
+    // NOTE: the the backing store for the bindings must be declared *before* it so it will be destructed *after* it
     // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
-    std::vector<std::unique_ptr<DescriptorBinding>> bindings_;
+    std::vector<BindingBackingStore> bindings_store_;
+    std::vector<BindingPtr> bindings_;
     const StateTracker *state_data_;
     uint32_t variable_count_;
     uint64_t change_count_;
