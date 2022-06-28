@@ -426,6 +426,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
 
     auto as_ci = LvlInitStruct<VkAccelerationStructureCreateInfoNV>();
     as_ci.info = LvlInitStruct<VkAccelerationStructureInfoNV>();
+    as_ci.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
     as_ci.info.instanceCount = 0;
     as_ci.info.geometryCount = 1;
     as_ci.info.pGeometries = &geometry;
