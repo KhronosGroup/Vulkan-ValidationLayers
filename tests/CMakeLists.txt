@@ -100,8 +100,7 @@ set(COMMON_CPP
     vksyncvaltests.cpp
     vkrenderframework.cpp
     vktestbinding.cpp
-    vktestframework.cpp
-    test_environment.cpp)
+    vktestframework.cpp)
 
 if(NOT TARGET vulkan)
     set(
