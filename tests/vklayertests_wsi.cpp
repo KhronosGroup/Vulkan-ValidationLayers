@@ -701,8 +701,8 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     // in "issue" section of VK_KHR_android_surface it talks how querying support is not needed on Android
     // The validation layers currently don't validate this VUID for Android surfaces
-    if (std::find(instance_extensions_.begin(), instance_extensions_.end(), VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) !=
-        instance_extensions_.end()) {
+    if (std::find(m_instance_extension_names.begin(), m_instance_extension_names.end(), VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) !=
+        m_instance_extension_names.end()) {
         printf("%s Test does not run on Android Surface, skipping test\n", kSkipPrefix);
         return;
     }

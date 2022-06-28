@@ -338,7 +338,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
     m_errorMonitor->ExpectSuccess();
-    app_info_.apiVersion = 0U;
+    m_app_info.apiVersion = 0U;
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->VerifyNotFound();
 }

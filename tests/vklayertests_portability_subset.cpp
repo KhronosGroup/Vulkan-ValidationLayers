@@ -20,7 +20,7 @@ class VkPortabilitySubsetTest : public VkLayerTest {
   public:
     void InitPortabilitySubsetFramework() {
         // VK_KHR_portability_subset extension dependencies
-        instance_extensions_.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        m_instance_extension_names.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
         InitFramework(m_errorMonitor, nullptr);
     }

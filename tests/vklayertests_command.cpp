@@ -9364,7 +9364,7 @@ TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
         return;
     }
 
-    VkFormat render_format = VkTestFramework::GetFormat(instance_, m_device);
+    VkFormat render_format = VkTestFramework::GetFormat(m_instance, m_device);
 
     // Set format features from being found
     VkFormatProperties formatProps;

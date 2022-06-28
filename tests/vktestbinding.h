@@ -80,7 +80,6 @@ class CommandPool;
 
 std::vector<VkLayerProperties> GetGlobalLayers();
 std::vector<VkExtensionProperties> GetGlobalExtensions();
-std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName);
 
 namespace internal {
 

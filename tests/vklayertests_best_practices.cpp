@@ -1050,11 +1050,11 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties is working as expected");
 
     // Vulkan 1.1 required to test vkGetPhysicalDeviceQueueFamilyProperties2
-    app_info_.apiVersion = VK_API_VERSION_1_1;
+    m_app_info.apiVersion = VK_API_VERSION_1_1;
     // VK_KHR_get_physical_device_properties2 required to test vkGetPhysicalDeviceQueueFamilyProperties2KHR
-    instance_extensions_.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    m_instance_extension_names.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-    const vk_testing::PhysicalDevice phys_device_obj(gpu_);
+    const vk_testing::PhysicalDevice phys_device_obj(m_gpu);
 
     std::vector<VkQueueFamilyProperties> queue_family_props;
 
@@ -1093,7 +1093,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     TEST_DESCRIPTION("Check that GetPhysicalDeviceQueueFamilyProperties generates appropriate query warning");
 
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-    const vk_testing::PhysicalDevice phys_device_obj(gpu_);
+    const vk_testing::PhysicalDevice phys_device_obj(m_gpu);
 
     std::vector<VkQueueFamilyProperties> queue_family_props(1);
     uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());

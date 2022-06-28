@@ -4361,7 +4361,7 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
 TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
 
-    app_info_.apiVersion = VK_API_VERSION_1_2;
+    m_app_info.apiVersion = VK_API_VERSION_1_2;
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     std::vector<const char *> exts = {
@@ -4915,8 +4915,8 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     VkInstance instance;
 
     VkInstanceCreateInfo ici = LvlInitStruct<VkInstanceCreateInfo>();
-    ici.enabledLayerCount = instance_layers_.size();
-    ici.ppEnabledLayerNames = instance_layers_.data();
+    ici.enabledLayerCount = m_instance_layers.size();
+    ici.ppEnabledLayerNames = m_instance_layers.data();
 
     auto dbgUtils0 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     auto dbgUtils1 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>(&dbgUtils0);

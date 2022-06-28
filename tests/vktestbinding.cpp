@@ -133,14 +133,7 @@ std::vector<VkLayerProperties> GetGlobalLayers() {
 /*
  * Return list of Global extensions provided by the ICD / Loader
  */
-std::vector<VkExtensionProperties> GetGlobalExtensions() { return GetGlobalExtensions(nullptr); }
-
-/*
- * Return list of Global extensions provided by the specified layer
- * If pLayerName is NULL, will return extensions implemented by the loader /
- * ICDs
- */
-std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
+std::vector<VkExtensionProperties> GetGlobalExtensions() {
     VkResult err;
     uint32_t extension_count;
     std::vector<VkExtensionProperties> extensions;

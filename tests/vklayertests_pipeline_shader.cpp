@@ -15894,14 +15894,14 @@ TEST_F(VkLayerTest, InvalidPipelineRenderingParameters) {
 
     VkFormat depth_format = VK_FORMAT_X8_D24_UNORM_PACK32;
 
-    if (ImageFormatAndFeaturesSupported(gpu_, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
+    if (ImageFormatAndFeaturesSupported(m_gpu, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
                                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         depth_format = VK_FORMAT_D32_SFLOAT;
     }
 
     VkFormat stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
 
-    if (ImageFormatAndFeaturesSupported(gpu_, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
+    if (ImageFormatAndFeaturesSupported(m_gpu, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
                                         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         stencil_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     }

@@ -3699,7 +3699,7 @@ TEST_F(VkLayerTest, ApiVersion1_1AndNegativeViewport) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    vk_testing::PhysicalDevice physical_device(gpu_);
+    vk_testing::PhysicalDevice physical_device(m_gpu);
     VkPhysicalDeviceFeatures features = physical_device.features();
     vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
     const char *extension_names[1] = {VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME};

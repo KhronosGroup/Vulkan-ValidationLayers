@@ -289,10 +289,10 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageS
 }
 
 VkRenderFramework::VkRenderFramework()
-    : instance_(NULL),
-      m_device(NULL),
+    : m_instance(VK_NULL_HANDLE),
+      m_device(nullptr),
       m_commandPool(VK_NULL_HANDLE),
-      m_commandBuffer(NULL),
+      m_commandBuffer(nullptr),
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_surface(VK_NULL_HANDLE),
@@ -312,7 +312,7 @@ VkRenderFramework::VkRenderFramework()
       m_clear_via_load_op(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
-      m_depthStencil(NULL) {
+      m_depthStencil(nullptr) {
     m_framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
     m_renderPass_info = LvlInitStruct<VkRenderPassCreateInfo>();
     m_renderPassBeginInfo = LvlInitStruct<VkRenderPassBeginInfo>();
@@ -327,13 +327,13 @@ VkRenderFramework::VkRenderFramework()
 VkRenderFramework::~VkRenderFramework() { ShutdownFramework(); }
 
 VkPhysicalDevice VkRenderFramework::gpu() {
-    EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
-    return gpu_;
+    EXPECT_NE((VkInstance)VK_NULL_HANDLE, m_instance);  // Invalid to request gpu before instance exists
+    return m_gpu;
 }
 
-VkPhysicalDeviceProperties VkRenderFramework::physDevProps() {
-    EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
-    return physDevProps_;
+VkPhysicalDeviceProperties VkRenderFramework::PhysicalDeviceProps() {
+    EXPECT_NE((VkPhysicalDevice)VK_NULL_HANDLE, m_gpu);  // Invalid to request physical device properties before gpu
+    return m_physcial_device_props;
 }
 
 // Return true if layer name is found and spec+implementation values are >= requested values
@@ -357,24 +357,27 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
 
-    const auto extensions = vk_testing::GetGlobalExtensions();
+    // Don't fill extensions until first time it is needed incase not ready at init time
+    if (m_supported_instance_extensions.empty()) {
+        m_supported_instance_extensions = vk_testing::GetGlobalExtensions();
+    }
 
     const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
         return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
                extension.specVersion >= spec_version;
     };
 
-    return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
+    return std::any_of(m_supported_instance_extensions.begin(), m_supported_instance_extensions.end(), IsTheQueriedExtension);
 }
 
 // Enable device profile as last layer on stack overriding devsim if there, or return if not available
 bool VkRenderFramework::EnableDeviceProfileLayer() {
     if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
         if (VkTestFramework::m_devsim_layer) {
-            assert(0 == strncmp(instance_layers_.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
-            instance_layers_.back() = "VK_LAYER_LUNARG_device_profile_api";
+            assert(0 == strncmp(m_instance_layers.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
+            m_instance_layers.back() = "VK_LAYER_LUNARG_device_profile_api";
         } else {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+            m_instance_layers.push_back("VK_LAYER_LUNARG_device_profile_api");
         }
     } else {
         printf("             Did not find VK_LAYER_LUNARG_device_profile_api layer; skipped.\n");
@@ -385,27 +388,17 @@ bool VkRenderFramework::EnableDeviceProfileLayer() {
 
 // Return true if instance exists and extension name is in the list
 bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
-    if (!instance_) return false;
+    if (!m_instance) return false;
 
-    return std::any_of(instance_extensions_.begin(), instance_extensions_.end(),
+    return std::any_of(m_instance_extension_names.begin(), m_instance_extension_names.end(),
                        [ext_name](const char *e) { return 0 == strncmp(ext_name, e, VK_MAX_EXTENSION_NAME_SIZE); });
 }
 // Return true if extension name is found and spec value is >= requested spec value
 bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
-    if (!instance_ || !gpu_) {
-        EXPECT_NE((VkInstance)0, instance_);  // Complain, not cool without an instance
-        EXPECT_NE((VkPhysicalDevice)0, gpu_);
+    if (!m_instance || !m_gpu) {
+        EXPECT_NE((VkInstance)VK_NULL_HANDLE, m_instance);  // Complain, not cool without an instance
+        EXPECT_NE((VkPhysicalDevice)VK_NULL_HANDLE, m_gpu);
         return false;
-    }
-
-    const vk_testing::PhysicalDevice device_obj(gpu_);
-
-    const auto enabled_layers = instance_layers_;  // assumes instance_layers_ contains enabled layers
-
-    auto extensions = device_obj.extensions();
-    for (const auto &layer : enabled_layers) {
-        const auto layer_extensions = device_obj.extensions(layer);
-        extensions.insert(extensions.end(), layer_extensions.begin(), layer_extensions.end());
     }
 
     const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
@@ -413,7 +406,7 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
                extension.specVersion >= spec_version;
     };
 
-    return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
+    return std::any_of(m_supported_device_extensions.begin(), m_supported_device_extensions.end(), IsTheQueriedExtension);
 }
 
 // Return true if device is created and extension name is found in the list
@@ -436,18 +429,18 @@ bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
     return {
         VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        &debug_reporter_.debug_create_info_,
+        &m_debug_reporter.debug_create_info_,
         0,
-        &app_info_,
-        static_cast<uint32_t>(instance_layers_.size()),
-        instance_layers_.data(),
-        static_cast<uint32_t>(instance_extensions_.size()),
-        instance_extensions_.data(),
+        &m_app_info,
+        static_cast<uint32_t>(m_instance_layers.size()),
+        m_instance_layers.data(),
+        static_cast<uint32_t>(m_instance_extension_names.size()),
+        m_instance_extension_names.data(),
     };
 }
 
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
-    ASSERT_EQ((VkInstance)0, instance_);
+    ASSERT_EQ((VkInstance)VK_NULL_HANDLE, m_instance);
 
     const auto LayerNotSupportedWithReporting = [](const char *layer) {
         if (InstanceLayerSupported(layer))
@@ -457,7 +450,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
             return true;
         }
     };
-    const auto ExtensionNotSupportedWithReporting = [](const char *extension) {
+    const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
         if (InstanceExtensionSupported(extension))
             return false;
         else {
@@ -470,11 +463,11 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
     if (print_driver_info && !driver_printed &&
         InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        instance_extensions_.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
-    RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
+    RemoveIf(m_instance_layers, LayerNotSupportedWithReporting);
+    RemoveIf(m_instance_extension_names, ExtensionNotSupportedWithReporting);
 
     auto ici = GetInstanceCreateInfo();
 
@@ -490,22 +483,22 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         ici.pNext = instance_pnext;
     }
 
-    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &m_instance));
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
     // Choose a physical device
     uint32_t gpu_count = 0;
-    const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, nullptr);
+    const VkResult err = vk::EnumeratePhysicalDevices(m_instance, &gpu_count, nullptr);
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
     ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
     std::vector<VkPhysicalDevice> phys_devices(gpu_count);
-    vk::EnumeratePhysicalDevices(instance_, &gpu_count, phys_devices.data());
+    vk::EnumeratePhysicalDevices(m_instance, &gpu_count, phys_devices.data());
 
     const int phys_device_index = VkTestFramework::m_phys_device_index;
     if ((phys_device_index >= 0) && (phys_device_index < static_cast<int>(gpu_count))) {
-        gpu_ = phys_devices[phys_device_index];
-        vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+        m_gpu = phys_devices[phys_device_index];
+        vk::GetPhysicalDeviceProperties(m_gpu, &m_physcial_device_props);
         m_gpu_index = phys_device_index;
     } else {
         // Specify a "physical device priority" with larger values meaning higher priority.
@@ -517,28 +510,37 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         device_type_rank[VK_PHYSICAL_DEVICE_TYPE_OTHER] = 0;
 
         // Initialize physical device and properties with first device found
-        gpu_ = phys_devices[0];
+        m_gpu = phys_devices[0];
         m_gpu_index = 0;
-        vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
+        vk::GetPhysicalDeviceProperties(m_gpu, &m_physcial_device_props);
 
         // See if there are any higher priority devices found
         for (size_t i = 1; i < phys_devices.size(); ++i) {
             VkPhysicalDeviceProperties tmp_props;
             vk::GetPhysicalDeviceProperties(phys_devices[i], &tmp_props);
-            if (device_type_rank[tmp_props.deviceType] > device_type_rank[physDevProps_.deviceType]) {
-                physDevProps_ = tmp_props;
-                gpu_ = phys_devices[i];
+            if (device_type_rank[tmp_props.deviceType] > device_type_rank[m_physcial_device_props.deviceType]) {
+                m_physcial_device_props = tmp_props;
+                m_gpu = phys_devices[i];
                 m_gpu_index = i;
             }
         }
     }
 
-    debug_reporter_.Create(instance_);
+    // Get the supported device extensions once here
+    const vk_testing::PhysicalDevice device_obj(m_gpu);
+    const auto enabled_layers = m_instance_layers;  // assumes m_instance_layers contains enabled layers
+    m_supported_device_extensions = device_obj.extensions();
+    for (const auto &layer : enabled_layers) {
+        const auto layer_extensions = device_obj.extensions(layer);
+        m_supported_device_extensions.insert(m_supported_device_extensions.end(), layer_extensions.begin(), layer_extensions.end());
+    }
+
+    m_debug_reporter.Create(m_instance);
 
     if (print_driver_info && !driver_printed) {
         auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
         auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+        vk::GetPhysicalDeviceProperties2(m_gpu, &physical_device_properties2);
         printf("Driver Name = %s\n", driver_properties.driverName);
         printf("Driver Info = %s\n", driver_properties.driverInfo);
 
@@ -668,10 +670,10 @@ bool VkRenderFramework::CanEnableDeviceExtension(const std::string &dev_ext_name
 }
 
 void VkRenderFramework::ShutdownFramework() {
-    debug_reporter_.error_monitor_.Reset();
+    m_debug_reporter.error_monitor_.Reset();
 
     // Nothing to shut down without a VkInstance
-    if (!instance_) return;
+    if (!m_instance) return;
 
     delete m_commandBuffer;
     m_commandBuffer = nullptr;
@@ -695,17 +697,17 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_device;
     m_device = nullptr;
 
-    debug_reporter_.Destroy(instance_);
+    m_debug_reporter.Destroy(m_instance);
 
-    vk::DestroyInstance(instance_, nullptr);
-    instance_ = NULL;  // In case we want to re-initialize
+    vk::DestroyInstance(m_instance, nullptr);
+    m_instance = VK_NULL_HANDLE;  // In case we want to re-initialize
 }
 
-ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
+ErrorMonitor &VkRenderFramework::Monitor() { return m_debug_reporter.error_monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
     if (NULL == m_device) {
-        VkDeviceObj *temp_device = new VkDeviceObj(0, gpu_, m_device_extension_names);
+        VkDeviceObj *temp_device = new VkDeviceObj(0, m_gpu, m_device_extension_names);
         *features = temp_device->phy().features();
         delete (temp_device);
     } else {
@@ -723,7 +725,7 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
+        return (!vk_gpu_table.find(platform)->second.compare(PhysicalDeviceProps().deviceName));
     }
 }
 
@@ -734,12 +736,12 @@ bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
         // Assumes api version 1.2+
         auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
         auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+        vk::GetPhysicalDeviceProperties2(m_gpu, &physical_device_properties2);
         return (driver_properties.driverID == driver_id);
     }
 }
 
-void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
+void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = m_physcial_device_props; }
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
@@ -755,12 +757,12 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
 
-    m_device = new VkDeviceObj(0, gpu_, m_device_extension_names, features, create_device_pnext);
+    m_device = new VkDeviceObj(0, m_gpu, m_device_extension_names, features, create_device_pnext);
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
 
-    m_render_target_fmt = VkTestFramework::GetFormat(instance_, m_device);
+    m_render_target_fmt = VkTestFramework::GetFormat(m_instance, m_device);
 
     m_lineWidth = 1.0f;
 

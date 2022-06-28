@@ -241,7 +241,7 @@ const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table
 
 class VkRenderFramework : public VkTestFramework {
   public:
-    VkInstance instance() { return instance_; }
+    VkInstance instance() { return m_instance; }
     VkDevice device() { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu();
@@ -249,10 +249,10 @@ class VkRenderFramework : public VkTestFramework {
     const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
     ErrorMonitor &Monitor();
-    VkPhysicalDeviceProperties physDevProps();
+    VkPhysicalDeviceProperties PhysicalDeviceProps();
 
     static bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
-    static bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
+    bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
 
     VkInstanceCreateInfo GetInstanceCreateInfo() const;
     void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
@@ -324,16 +324,14 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
 
-    DebugReporter debug_reporter_;
-    ErrorMonitor *m_errorMonitor = &debug_reporter_.error_monitor_;  // compatibility alias name
+    DebugReporter m_debug_reporter;
+    ErrorMonitor *m_errorMonitor = &m_debug_reporter.error_monitor_;  // compatibility alias name
 
-    VkApplicationInfo app_info_;
-    std::vector<const char *> instance_layers_;
-    std::vector<const char *> instance_extensions_;
-    std::vector<const char *> &m_instance_extension_names = instance_extensions_;  // compatibility alias name
-    VkInstance instance_;
-    VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
-    VkPhysicalDeviceProperties physDevProps_;
+    VkApplicationInfo m_app_info;
+    std::vector<const char *> m_instance_layers;
+    VkInstance m_instance;
+    VkPhysicalDevice m_gpu = VK_NULL_HANDLE;
+    VkPhysicalDeviceProperties m_physcial_device_props;
 
     uint32_t m_gpu_index;
     VkDeviceObj *m_device;
@@ -395,8 +393,13 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_required_extensions;
     // Optional extensions to try and enable at device creation time
     std::vector<const char *> m_optional_extensions;
+    // instance extensions to enable
+    std::vector<const char *> m_instance_extension_names;
     // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
+    // List of extensions that are supported by the instance/device
+    std::vector<VkExtensionProperties> m_supported_instance_extensions;
+    std::vector<VkExtensionProperties> m_supported_device_extensions;
 
   private:
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the

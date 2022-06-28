@@ -45,7 +45,7 @@ TEST_F(VkLayerTest, InstanceExtensionDependencies) {
     ASSERT_TRUE(InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME));  // Driver should always provide dependencies
 
     Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
-    instance_extensions_.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     const auto ici = GetInstanceCreateInfo();
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
@@ -69,7 +69,7 @@ TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
         printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
         return;
     }
-    instance_extensions_.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
     auto ici = GetInstanceCreateInfo();
 
@@ -103,7 +103,7 @@ TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
         printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
         return;
     }
-    instance_extensions_.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
     auto ici = GetInstanceCreateInfo();
 
@@ -151,7 +151,7 @@ TEST_F(VkLayerTest, InstanceBadValidationFlags) {
         printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME);
         return;
     }
-    instance_extensions_.push_back(VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME);
 
     auto ici = GetInstanceCreateInfo();
 

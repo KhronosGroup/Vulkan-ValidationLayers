@@ -1029,33 +1029,33 @@ VkLayerTest::VkLayerTest() {
     // TODO: not quite sure why most of this is here instead of in super
 
     // Add default instance extensions to the list
-    instance_extensions_.push_back(debug_reporter_.debug_extension_name);
+    m_instance_extension_names.push_back(m_debug_reporter.debug_extension_name);
 
-    instance_layers_.push_back(kValidationLayerName);
+    m_instance_layers.push_back(kValidationLayerName);
 
     if (VkTestFramework::m_devsim_layer) {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
+            m_instance_layers.push_back("VK_LAYER_LUNARG_device_simulation");
         } else {
             VkTestFramework::m_devsim_layer = false;
             printf("             Did not find VK_LAYER_LUNARG_device_simulation layer so it will not be enabled.\n");
         }
     } else {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+            m_instance_layers.push_back("VK_LAYER_LUNARG_device_profile_api");
     }
 
     if (InstanceLayerSupported(kSynchronization2LayerName)) {
-        instance_layers_.push_back(kSynchronization2LayerName);
+        m_instance_layers.push_back(kSynchronization2LayerName);
     }
 
-    app_info_.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info_.pNext = NULL;
-    app_info_.pApplicationName = "layer_tests";
-    app_info_.applicationVersion = 1;
-    app_info_.pEngineName = "unittest";
-    app_info_.engineVersion = 1;
-    app_info_.apiVersion = VK_API_VERSION_1_0;
+    m_app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    m_app_info.pNext = NULL;
+    m_app_info.pApplicationName = "layer_tests";
+    m_app_info.applicationVersion = 1;
+    m_app_info.pEngineName = "unittest";
+    m_app_info.engineVersion = 1;
+    m_app_info.apiVersion = VK_API_VERSION_1_0;
 
     // Find out what version the instance supports and record the default target instance
     auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
@@ -1064,7 +1064,7 @@ VkLayerTest::VkLayerTest() {
     } else {
         m_instance_api_version = VK_API_VERSION_1_0;
     }
-    m_target_api_version = app_info_.apiVersion;
+    m_target_api_version = m_app_info.apiVersion;
 }
 
 void VkLayerTest::AddSurfaceExtension() {
@@ -1111,17 +1111,17 @@ uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
     if (target_api_version <= m_instance_api_version) {
         m_target_api_version = target_api_version;
-        app_info_.apiVersion = m_target_api_version;
+        m_app_info.apiVersion = m_target_api_version;
     } else {
         m_target_api_version = m_instance_api_version;
-        app_info_.apiVersion = m_target_api_version;
+        m_app_info.apiVersion = m_target_api_version;
     }
     return m_target_api_version;
 }
 
 uint32_t VkLayerTest::DeviceValidationVersion() {
     // The validation layers assume the version we are validating to is the apiVersion unless the device apiVersion is lower
-    return std::min(m_target_api_version, physDevProps().apiVersion);
+    return std::min(m_target_api_version, PhysicalDeviceProps().apiVersion);
 }
 
 template <>
