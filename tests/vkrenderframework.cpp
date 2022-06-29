@@ -430,6 +430,18 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
 bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    return {
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        &debug_reporter_.debug_create_info_,
+        VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+        &app_info_,
+        static_cast<uint32_t>(instance_layers_.size()),
+        instance_layers_.data(),
+        static_cast<uint32_t>(instance_extensions_.size()),
+        instance_extensions_.data(),
+    };
+#else
     return {
         VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         &debug_reporter_.debug_create_info_,
@@ -440,6 +452,7 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
         static_cast<uint32_t>(instance_extensions_.size()),
         instance_extensions_.data(),
     };
+#endif
 }
 
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
@@ -469,6 +482,10 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         instance_extensions_.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    instance_extensions_.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+    
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
 
