@@ -1259,6 +1259,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDescriptorSetHostMappingVALVE,
     InterceptIdPreCallRecordGetDescriptorSetHostMappingVALVE,
     InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE,
+    InterceptIdPreCallValidateGetShaderModuleIdentifierEXT,
+    InterceptIdPreCallRecordGetShaderModuleIdentifierEXT,
+    InterceptIdPostCallRecordGetShaderModuleIdentifierEXT,
+    InterceptIdPreCallValidateGetShaderModuleCreateInfoIdentifierEXT,
+    InterceptIdPreCallRecordGetShaderModuleCreateInfoIdentifierEXT,
+    InterceptIdPostCallRecordGetShaderModuleCreateInfoIdentifierEXT,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2735,6 +2741,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetHostMappingVALVE);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetHostMappingVALVE);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetHostMappingVALVE);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderModuleIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderModuleIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderModuleIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderModuleCreateInfoIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderModuleCreateInfoIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderModuleCreateInfoIdentifierEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);
