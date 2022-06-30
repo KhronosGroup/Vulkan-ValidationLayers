@@ -4503,6 +4503,11 @@ struct QSTestContext {
     void CopyCToA() { vk::CmdCopyBuffer(current_cb->handle(), buffer_c.handle(), buffer_a.handle(), 1, &region); }
     void CopyCToB() { vk::CmdCopyBuffer(current_cb->handle(), buffer_c.handle(), buffer_b.handle(), 1, &region); }
 
+    void CopyGeneral(const VkImageObj& from, const VkImageObj& to, const VkImageCopy& region) {
+        vk::CmdCopyImage(current_cb->handle(), from.handle(), VK_IMAGE_LAYOUT_GENERAL, to.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                         &region);
+    };
+
     VkBufferMemoryBarrier InitBufferBarrier(const VkBufferObj& buffer);
     void TransferBarrier(const VkBufferObj& buffer);
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
@@ -4782,4 +4787,60 @@ TEST_F(VkSyncValTest, SyncQSBufferEvents) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
     test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    QSTestContext test(m_device);
+    if (!test.Valid()) {
+        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family.";
+    }
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+
+    VkImageObj image_a(m_device);
+    image_a.Init(image_ci);
+    ASSERT_TRUE(image_a.initialized());
+    image_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageObj image_b(m_device);
+    image_b.Init(image_ci);
+    ASSERT_TRUE(image_b.initialized());
+    image_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageSubresourceLayers all_layers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{128, 128, 1};  // <-- image type is 2D
+    VkImageCopy full_region = {all_layers, zero_offset, all_layers, zero_offset, full_extent};
+
+    test.BeginA();
+    test.CopyGeneral(image_a, image_b, full_region);
+    test.End();
+
+    test.BeginB();
+    image_a.ImageMemoryBarrier(test.current_cb, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_NONE, VK_ACCESS_NONE,
+                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE);
+    test.End();
+
+    // We're going to do the copy first, then use the skip on fail, to test three different ways...
+    test.Submit0Signal(test.cba);
+
+    // First asynchronously fail -- the pipeline barrier in B shouldn't work on queue 1
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ ");
+    test.Submit1(test.cbb);
+    m_errorMonitor->VerifyFound();
+
+    // Next synchronously fail -- the pipeline barrier in B shouldn't work on queue 1
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    m_errorMonitor->VerifyFound();
+
+    // Then prove qso works (note that with the failure, the semaphore hasn't been waited, nor the layout changed)
+    m_errorMonitor->ExpectSuccess();
+    test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    m_errorMonitor->VerifyNotFound();
 }
