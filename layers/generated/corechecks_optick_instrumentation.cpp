@@ -8480,6 +8480,38 @@ void CoreChecksOptickInstrumented::PostCallRecordGetDescriptorSetHostMappingVALV
     CoreChecks::PostCallRecordGetDescriptorSetHostMappingVALVE(device, descriptorSet, ppData);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule, VkShaderModuleIdentifierEXT* pIdentifier) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule, VkShaderModuleIdentifierEXT* pIdentifier) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule, VkShaderModuleIdentifierEXT* pIdentifier) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetShaderModuleIdentifierEXT(device, shaderModule, pIdentifier);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, VkShaderModuleIdentifierEXT* pIdentifier) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, VkShaderModuleIdentifierEXT* pIdentifier) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo, VkShaderModuleIdentifierEXT* pIdentifier) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);

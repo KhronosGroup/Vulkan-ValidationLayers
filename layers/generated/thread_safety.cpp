@@ -8914,6 +8914,36 @@ void ThreadSafety::PostCallRecordGetDescriptorSetHostMappingVALVE(
     FinishReadObject(descriptorSet, "vkGetDescriptorSetHostMappingVALVE");
 }
 
+void ThreadSafety::PreCallRecordGetShaderModuleIdentifierEXT(
+    VkDevice                                    device,
+    VkShaderModule                              shaderModule,
+    VkShaderModuleIdentifierEXT*                pIdentifier) {
+    StartReadObjectParentInstance(device, "vkGetShaderModuleIdentifierEXT");
+    StartReadObject(shaderModule, "vkGetShaderModuleIdentifierEXT");
+}
+
+void ThreadSafety::PostCallRecordGetShaderModuleIdentifierEXT(
+    VkDevice                                    device,
+    VkShaderModule                              shaderModule,
+    VkShaderModuleIdentifierEXT*                pIdentifier) {
+    FinishReadObjectParentInstance(device, "vkGetShaderModuleIdentifierEXT");
+    FinishReadObject(shaderModule, "vkGetShaderModuleIdentifierEXT");
+}
+
+void ThreadSafety::PreCallRecordGetShaderModuleCreateInfoIdentifierEXT(
+    VkDevice                                    device,
+    const VkShaderModuleCreateInfo*             pCreateInfo,
+    VkShaderModuleIdentifierEXT*                pIdentifier) {
+    StartReadObjectParentInstance(device, "vkGetShaderModuleCreateInfoIdentifierEXT");
+}
+
+void ThreadSafety::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(
+    VkDevice                                    device,
+    const VkShaderModuleCreateInfo*             pCreateInfo,
+    VkShaderModuleIdentifierEXT*                pIdentifier) {
+    FinishReadObjectParentInstance(device, "vkGetShaderModuleCreateInfoIdentifierEXT");
+}
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
