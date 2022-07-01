@@ -1381,10 +1381,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
 TEST_F(VkPositiveLayerTest, CreateSurface) {
     TEST_DESCRIPTION("Create and destroy a surface without ever creating a swapchain");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CreateSurface  test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -2894,16 +2891,11 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
     TEST_DESCRIPTION("Try using special format props on a swapchain image");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -2999,16 +2991,12 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
 TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
     TEST_DESCRIPTION("Try using special format props on a swapchain image");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4535,16 +4523,12 @@ void main() {
 TEST_F(VkPositiveLayerTest, InitSwapchain) {
     TEST_DESCRIPTION("Make sure InitSwapchain is not producing anying invalid usage");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -4559,7 +4543,7 @@ TEST_F(VkPositiveLayerTest, InitSwapchain) {
 TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     TEST_DESCRIPTION("Try destroying a swapchain which has multiple images");
 
-    if (!AddSurfaceInstanceExtension()) return;
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Check for VK_KHR_get_memory_requirements2 extension
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
@@ -4569,7 +4553,9 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
         return;
     }
 
-    if (!AddSwapchainDeviceExtension()) return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSwapchain()) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
@@ -4632,10 +4618,7 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping ProtectedSwapchainImageColorAttachment test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -4646,9 +4629,8 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping ProtectedSwapchainImageColorAttachment test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =

@@ -510,9 +510,11 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
 TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     TEST_DESCRIPTION("Test for usage of Presentation Modes");
 
-    AddSurfaceInstanceExtension();
+    AddSurfaceExtension();
     InitBestPracticesFramework(kEnableArmValidation);
-    AddSwapchainDeviceExtension();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     InitState();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");

@@ -873,7 +873,6 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
         }
     }
 #endif
-
     return (m_surface == VK_NULL_HANDLE) ? false : true;
 }
 

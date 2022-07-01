@@ -44,16 +44,11 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
         return;
     }
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -909,9 +904,11 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
 TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     TEST_DESCRIPTION("Test for usage of triple buffering");
 
-    AddSurfaceInstanceExtension();
+    AddSurfaceExtension();
     InitBestPracticesFramework();
-    AddSwapchainDeviceExtension();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     InitState();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
@@ -975,9 +972,11 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
 TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     TEST_DESCRIPTION("Test for correct swapchain creation");
 
-    AddSurfaceInstanceExtension();
+    AddSurfaceExtension();
     InitBestPracticesFramework();
-    AddSwapchainDeviceExtension();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     InitState();
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
@@ -1139,16 +1138,11 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
 TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
     TEST_DESCRIPTION("Pass an 'incorrect' count to the second GetSwapchainImagesKHR call");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1435,9 +1429,11 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     TEST_DESCRIPTION("Test creating fifo relaxed swapchain");
 
-    AddSurfaceInstanceExtension();
+    AddSurfaceExtension();
     InitBestPracticesFramework();
-    AddSwapchainDeviceExtension();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     InitState();
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);

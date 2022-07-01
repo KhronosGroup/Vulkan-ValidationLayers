@@ -10459,11 +10459,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with retired swapchain");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -10474,9 +10470,8 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
         m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     }
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -10519,6 +10514,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
 
+    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
     DestroySwapchain();
 }
 
