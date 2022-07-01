@@ -1875,16 +1875,11 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -1977,14 +1972,12 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    if (!AddSurfaceInstanceExtension()) {
-        GTEST_SKIP() << "surface extensions not supported, skipping test";
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        GTEST_SKIP() << "swapchain extensions not supported, skipping test";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -2110,9 +2103,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 }
 
 TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
-    if (!AddSurfaceInstanceExtension()) {
-        GTEST_SKIP() << "Surface extensions not supported, skipping CmdCopySwapchainImage test";
-    }
+    AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -2258,10 +2249,7 @@ TEST_F(VkPositiveLayerTest, SubresourceLayout) {
 TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -2291,9 +2279,8 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
         return;
     }
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures =

@@ -25,8 +25,6 @@ const char *kEnableAMDValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD"
 // disabled for now
 #ifdef AMD_LONG_RUNNING_TEST
 TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
-    
-
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
 
@@ -621,10 +619,12 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
-    AddSurfaceInstanceExtension();
+    AddSurfaceExtension();
 
     InitBestPracticesFramework(kEnableAMDValidation);
-    AddSwapchainDeviceExtension();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
 
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitViewport());

@@ -367,10 +367,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
 TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
     TEST_DESCRIPTION("Test if physical device supports surface.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -695,16 +692,11 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
 TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     TEST_DESCRIPTION("Test acquiring swapchain images.");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -835,16 +827,12 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
 TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
     TEST_DESCRIPTION("Test waiting on swapchain image with a fence.");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));

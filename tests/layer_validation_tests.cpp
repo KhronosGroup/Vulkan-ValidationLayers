@@ -1067,73 +1067,44 @@ VkLayerTest::VkLayerTest() {
     m_target_api_version = app_info_.apiVersion;
 }
 
-bool VkLayerTest::AddSurfaceInstanceExtension() {
+void VkLayerTest::AddSurfaceExtension() {
     m_enableWSI = true;
-    if (!InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_SURFACE_EXTENSION_NAME);
-        return false;
-    }
-    instance_extensions_.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-
     bool bSupport = false;
+    // Instance Extensions
+    AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    if (!InstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-        return false;
-    }
-    instance_extensions_.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
     bSupport = true;
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
-    if (!InstanceExtensionSupported(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-        return false;
-    }
-    instance_extensions_.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
     bSupport = true;
+#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
+    (void)bSupport;
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (!InstanceExtensionSupported(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        return false;
-    }
     auto temp_dpy = XOpenDisplay(NULL);
     if (temp_dpy) {
-        instance_extensions_.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        AddRequiredExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         bSupport = true;
         XCloseDisplay(temp_dpy);
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (!InstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-        return false;
-    }
     if (!bSupport) {
         auto temp_xcb = xcb_connect(NULL, NULL);
         if (temp_xcb) {
-            instance_extensions_.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-            bSupport = true;
+            AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             xcb_disconnect(temp_xcb);
         }
     }
 #endif
 
-    if (bSupport) return true;
-    printf("%s No platform's surface extension supported\n", kSkipPrefix);
-    return false;
-}
-
-bool VkLayerTest::AddSwapchainDeviceExtension() {
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-        printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        return false;
-    }
-    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    return true;
+    // Device extensions
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
 uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
