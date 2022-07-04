@@ -1450,14 +1450,13 @@ class ValidationStateTracker : public ValidationObject {
       public:
         void Free(VkDeviceSize fake_address){};  // Define the interface just in case we ever need to be cleverer.
         VkDeviceSize Alloc(VkDeviceSize size) {
-            const auto alloc = free_;
-            assert(std::numeric_limits<VkDeviceSize>::max() - size >= free_);  //  776.722963 days later...
-            free_ = free_ + size;
+            const auto alloc = free_.fetch_add(size);
+            assert(std::numeric_limits<VkDeviceSize>::max() - size >= alloc);  //  776.722963 days later...
             return alloc;
         }
 
       private:
-        VkDeviceSize free_ = 1U << 20; // start at 1mb to leave room for a NULL address
+        std::atomic<VkDeviceSize> free_{1U << 20};  // start at 1mb to leave room for a NULL address
     };
     FakeAllocator fake_memory;
 };
