@@ -1687,12 +1687,6 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageOpaqueBinds[j].image);
                 auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state) {
-                    // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-01895
-                    if (!image_state->fragment_encoder) {
-                        image_state->fragment_encoder =
-                            layer_data::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
-                    }
                     image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset,
                                             sparse_binding.resourceOffset, sparse_binding.size);
                 }
@@ -1707,12 +1701,6 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                 auto image_state = Get<IMAGE_STATE>(bind_info.pImageBinds[j].image);
                 auto mem_state = Get<DEVICE_MEMORY_STATE>(sparse_binding.memory);
                 if (image_state) {
-                    // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-01895
-                    if (!image_state->fragment_encoder) {
-                        image_state->fragment_encoder =
-                            layer_data::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
-                    }
                     image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset, offset, size);
                 }
             }

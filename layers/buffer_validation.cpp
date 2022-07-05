@@ -2405,6 +2405,40 @@ static bool RangesIntersect(int32_t start, uint32_t start_offset, int32_t end, u
     return result;
 }
 
+// Returns true if source area of first vkImageCopy/vkImageCopy2KHR region intersects dest area of second region
+// It is assumed that these are copy regions within a single image (otherwise no possibility of collision)
+template <typename RegionType>
+static bool RegionIntersects(const RegionType *region0, const RegionType *region1, VkImageType type, bool is_multiplane) {
+    bool result = false;
+
+    // Separate planes within a multiplane image cannot intersect
+    if (is_multiplane && (region0->srcSubresource.aspectMask != region1->dstSubresource.aspectMask)) {
+        return result;
+    }
+
+    if ((region0->srcSubresource.mipLevel == region1->dstSubresource.mipLevel) &&
+        (RangesIntersect(region0->srcSubresource.baseArrayLayer, region0->srcSubresource.layerCount,
+                         region1->dstSubresource.baseArrayLayer, region1->dstSubresource.layerCount))) {
+        result = true;
+        switch (type) {
+            case VK_IMAGE_TYPE_3D:
+                result &= RangesIntersect(region0->srcOffset.z, region0->extent.depth, region1->dstOffset.z, region1->extent.depth);
+                // fall through
+            case VK_IMAGE_TYPE_2D:
+                result &=
+                    RangesIntersect(region0->srcOffset.y, region0->extent.height, region1->dstOffset.y, region1->extent.height);
+                // fall through
+            case VK_IMAGE_TYPE_1D:
+                result &= RangesIntersect(region0->srcOffset.x, region0->extent.width, region1->dstOffset.x, region1->extent.width);
+                break;
+            default:
+                // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
+                assert(false);
+        }
+    }
+    return result;
+}
+
 template <typename RegionType>
 static bool RegionIntersectsBlit(const RegionType *region0, const RegionType *region1, VkImageType type, bool is_multiplane) {
     bool result = false;
@@ -2885,10 +2919,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     auto cb_node = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
-    VkFormat const src_format = src_image_state->createInfo.format;
-    VkFormat const dst_format = dst_image_state->createInfo.format;
-    bool const are_images_sparse = (src_image_state->sparse || dst_image_state->sparse);
-    bool const is_2 = (cmd_type == CMD_COPYIMAGE2KHR || cmd_type == CMD_COPYIMAGE2);
+    const VkFormat src_format = src_image_state->createInfo.format;
+    const VkFormat dst_format = dst_image_state->createInfo.format;
+    const bool is_2 = (cmd_type == CMD_COPYIMAGE2KHR || cmd_type == CMD_COPYIMAGE2);;
     bool skip = false;
 
     const char *func_name = CommandTypeString(cmd_type);
@@ -3140,42 +3173,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                              func_name, i, region.dstOffset.z, dst_copy_extent.depth, subresource_extent.depth);
         }
 
-        // We will only check for overlaps, if we are sure that the ranges of the memory are valid and a fragment encoder is present
-        if (!skip && !are_images_sparse && src_image_state->fragment_encoder && dst_image_state->fragment_encoder) {
-            // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
-            // must not overlap in memory
-            VkImageSubresourceRange subresource_range = {region.srcSubresource.aspectMask, region.srcSubresource.mipLevel, 1,
-                                                         region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount};
-            subresource_adapter::ImageRangeGenerator src_generator{
-                *src_image_state->fragment_encoder.get(), subresource_range, pRegions[i].srcOffset, pRegions[i].extent, 0, false};
-
+        // The union of all source regions, and the union of all destination regions, specified by the elements of regions,
+        // must not overlap in memory
+        if (src_image_state->image() == dst_image_state->image()) {
             for (uint32_t j = 0; j < regionCount; j++) {
-                subresource_range = {pRegions[j].dstSubresource.aspectMask, pRegions[j].dstSubresource.mipLevel, 1,
-                                     pRegions[j].dstSubresource.baseArrayLayer, pRegions[j].dstSubresource.layerCount};
-                subresource_adapter::ImageRangeGenerator dst_generator{*dst_image_state->fragment_encoder.get(),
-                                                                       subresource_range,
-                                                                       pRegions[j].dstOffset,
-                                                                       pRegions[i].extent,
-                                                                       0,
-                                                                       false};
-                // Once we find an overlap between both regions, we are done checking those 2 regions
-                // Mainly so we don't spam the error message due to how we iterate
-                bool overlap_found = false;
-                auto src_generator_copy = src_generator;
-                for (; src_generator_copy->non_empty(); ++src_generator_copy) {
-                    auto src_region = sparse_container::range<VkDeviceSize>{src_generator_copy->begin, src_generator_copy->end};
-                    auto dst_generator_copy = dst_generator;
-                    for (; dst_generator_copy->non_empty(); ++dst_generator_copy) {
-                        auto dst_region = sparse_container::range<VkDeviceSize>{dst_generator_copy->begin, dst_generator_copy->end};
-                        if (src_image_state->DoesResourceMemoryOverlap(src_region, dst_image_state.get(), dst_region)) {
-                            vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
-                            skip |=
-                                LogError(command_buffer, vuid, "%s: pRegion[%u] src overlaps with pRegions[%u].", func_name, i, j);
-                            overlap_found = true;
-                            break;
-                        }
-                    }
-                    if (overlap_found) break;
+                if (RegionIntersects(&region, &pRegions[j], src_image_state->createInfo.imageType,
+                                     FormatIsMultiplane(src_format))) {
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
+                    skip |= LogError(command_buffer, vuid, "%s: pRegion[%u] src overlaps with pRegions[%u].", func_name, i, j);
                 }
             }
         }
@@ -3369,90 +3374,11 @@ bool CoreChecks::PreCallValidateCmdCopyImage2(VkCommandBuffer commandBuffer, con
                                 CMD_COPYIMAGE2);
 }
 
-template <typename RegionType>
-void CoreChecks::RecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImage dstImage, uint32_t regionCount,
-                                    const RegionType *pRegions, CMD_TYPE cmd_type) {
-    auto src_image_state = Get<IMAGE_STATE>(srcImage);
-    auto dst_image_state = Get<IMAGE_STATE>(dstImage);
-    bool const is_2 = (cmd_type == CMD_COPYIMAGE2KHR || cmd_type == CMD_COPYIMAGE2);
-    char const *const vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
-    const char *func_name = CommandTypeString(cmd_type);
-
-    if (src_image_state->sparse || dst_image_state->sparse) {
-        // TODO: Once fragment_encoder is constant, we can just store the resource ranges instead of the data to generate the
-        // ImageRangeGenerator
-        struct GeneratorCreatorHelper {
-            GeneratorCreatorHelper(VkImageSubresourceRange const &sub_range, VkOffset3D const &offset, VkExtent3D const &extent)
-                : subresource_range(sub_range), offset(offset), extent(extent) {}
-            VkImageSubresourceRange subresource_range;
-            VkOffset3D offset;
-            VkExtent3D extent;
-        };
-        std::vector<GeneratorCreatorHelper> src_helpers;
-        std::vector<GeneratorCreatorHelper> dst_helpers;
-
-        for (uint32_t i = 0; i < regionCount; i++) {
-            auto const &region = pRegions[i];
-
-            // Source resource ranges
-            VkImageSubresourceRange subresource_range = {region.srcSubresource.aspectMask, region.srcSubresource.mipLevel, 1,
-                                                         region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount};
-            src_helpers.emplace_back(subresource_range, region.srcOffset, region.extent);
-
-            // Destination resource ranges
-            subresource_range = {region.dstSubresource.aspectMask, region.dstSubresource.mipLevel, 1,
-                                 region.dstSubresource.baseArrayLayer, region.dstSubresource.layerCount};
-            dst_helpers.emplace_back(subresource_range, region.dstOffset, region.extent);
-        }
-
-        auto queue_submit_validation = [this, src_image_state, dst_image_state, src_helpers, dst_helpers, commandBuffer, vuid,
-                                        func_name](const ValidationStateTracker &device_data, const class QUEUE_STATE &queue_state,
-                                                   const CMD_BUFFER_STATE &cb_state) -> bool {
-            if (!src_image_state->fragment_encoder || !dst_image_state->fragment_encoder) return false;
-
-            bool skip = false;
-            for (auto const &src : src_helpers) {
-                subresource_adapter::ImageRangeGenerator src_generator{
-                    *src_image_state->fragment_encoder.get(), src.subresource_range, src.offset, src.extent, 0, false};
-                for (auto const &dst : dst_helpers) {
-                    auto src_generator_copy = src_generator;
-                    subresource_adapter::ImageRangeGenerator dst_generator{
-                        *dst_image_state->fragment_encoder.get(), dst.subresource_range, dst.offset, dst.extent, 0, false};
-
-                    // Once we find an overlap between both regions, we are done checking those 2 regions
-                    // Mainly so we don't spam the error message due to how we iterate
-                    bool overlap_found = false;
-                    for (; src_generator_copy->non_empty(); ++src_generator_copy) {
-                        for (; dst_generator->non_empty(); ++dst_generator) {
-                            sparse_container::range<VkDeviceSize> src_resource_range{src_generator_copy->begin,
-                                                                                     src_generator_copy->end};
-                            sparse_container::range<VkDeviceSize> dst_resource_range{dst_generator->begin, dst_generator->end};
-                            if (src_image_state->DoesResourceMemoryOverlap(src_resource_range, dst_image_state.get(),
-                                                                           dst_resource_range)) {
-                                skip |= LogError(commandBuffer, vuid,
-                                                 "%s(): Detected overlap between source and dest regions in memory.", func_name);
-                                overlap_found = true;
-                                break;
-                            }
-                        }
-                        if (overlap_found) break;
-                    }
-                }
-            }
-            return skip;
-        };
-
-        auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-        cb_node->queue_submit_functions.emplace_back(queue_submit_validation);
-    }
-}
-
 void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions);
-    RecordCmdCopyImage(commandBuffer, srcImage, dstImage, regionCount, pRegions, CMD_COPYIMAGE);
     auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(dstImage);
@@ -3464,10 +3390,7 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
     }
 }
 
-void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo, CMD_TYPE cmd_type) {
-    RecordCmdCopyImage(commandBuffer, pCopyImageInfo->srcImage, pCopyImageInfo->dstImage, pCopyImageInfo->regionCount,
-                       pCopyImageInfo->pRegions, cmd_type);
-
+void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
     auto cb_node = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto src_image_state = Get<IMAGE_STATE>(pCopyImageInfo->srcImage);
     auto dst_image_state = Get<IMAGE_STATE>(pCopyImageInfo->dstImage);
@@ -3483,12 +3406,12 @@ void CoreChecks::RecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopy
 
 void CoreChecks::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo) {
     StateTracker::PreCallRecordCmdCopyImage2KHR(commandBuffer, pCopyImageInfo);
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2KHR);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
 }
 
 void CoreChecks::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo) {
     StateTracker::PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
-    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo, CMD_COPYIMAGE2);
+    RecordCmdCopyImage2(commandBuffer, pCopyImageInfo);
 }
 
 // Returns true if sub_rect is entirely contained within rect
