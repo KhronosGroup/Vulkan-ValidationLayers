@@ -151,23 +151,24 @@ This small class handles checking all things to VUID and are ultimately what wil
 
 The few common patterns that will cover 99% of cases are:
 
-- For checking a call invokes an VUID error
+- **By default**, all Vulkan API calls are expected to succeed. In the past, one would have to "wrap" API calls in `ExpectSuccess`/`VerifyNotFound` to ensure an API call did not trigger any errors. This is no longer the case. e.g.,
+```cpp
+// m_errorMonitor->ExpectSuccess(); <- implicit
+vk::CreateSampler(m_device->device(), &sci, nullptr, &samplers[0]);
+// m_errorMonitor->VerifyNoutFound(); <- implicit
+```
+The `ExpectSuccess` and `VerifyNotFound` calls are now implicit.
+- For checking a call that invokes a VUID error
 ```cpp
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
+// The following API call is expected to trigger 01646 and _only_ 01646
 vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
 m_errorMonitor->VerifyFound();
-```
 
-- For making sure there is no error (positive test)
-```cpp
-// This should be the first call in the test to ensure there are no "silent failures" during test setup
-m_errorMonitor->ExpectSuccess();
-...
-vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
-...
-m_errorMonitor->VerifyNotFound();
-```
+// All calls after m_errorMonitor->VerifyFound() are expected to not trigger any errors. e.g., the following API call should succeed with no validation errors being triggered.
+vk::CreateImage(m_device->device(), &ci, nullptr, &mp_image);
 
+```
 - When it is possible another VUID will be triggered that you are not testing. This usually happens due to making something invalid can cause a chain effect causing other things to be invalid as well.
     - Note: If the `SetUnexpectedError` is never called it will not fail the test
 ```cpp
@@ -189,13 +190,42 @@ m_errorMonitor->VerifyFound();
 - When a VUID is dependent on an extension being present
     - Note: The start of the test might already have a boolean that checks for extension support
 ```cpp
-const char* vuid = DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-vkCmdCopyImage-dstImage-01733" : "VUID-vkCmdCopyImage-dstImage-01733";
+const char* vuid = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ? "VUID-vkCmdCopyImage-dstImage-01733" : "VUID-vkCmdCopyImage-dstImage-01733";
 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
 m_commandBuffer->CopyImage(image_2.image(), VK_IMAGE_LAYOUT_GENERAL, image_1.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 m_errorMonitor->VerifyFound();
 ```
 
-> Note: It is general good practice to only have one Vulkan function between the m_errorMontior calls to ensure the test is only applied to the single function call being tested
+- There should be a single Vulkan function between m_errorMontior calls to ensure the test is only applied to the single function call being tested.
+- Keep it simple. Try to make each test as small and concise as possible.
+- Avoid testing VUIDs in "batches" such as:
+```cpp
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferBeginInfo-flags-06003");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-colorAttachmentCount-06004");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-variableMultisampleRate-06005");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008");
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009");
+...
+vk::BeginCommandBuffer(secondary_cmd_buffer, &cmd_buffer_begin_info);
+m_errorMonitor->VerifyFound();
+```
+If there is a problem with one of these checks later on, this method makes it difficult and more
+time-consuming to figure out _which_ check is problematic. It also makes it difficult to understand
+which Vulkan parameter/setting triggered which error. It should be relatively obvious to
+tell which line(s) of code caused a validation error to be triggered (and if it isn't, comments should be
+used to make it obvious).
+- Make it clear how the VUID you're testing is triggered. e.g.,
+```cpp
+// Try to get layout for plane 3 when we only have 2
+VkImageSubresource subresource{};
+subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
+VkSubresourceLayout layout{};
+m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-tiling-02271");
+vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
+m_errorMonitor->VerifyFound();
+```
+Here it is obvious that the `aspectMask` parameter is the cause of 02271.
 
 ## Device Profiles API
 
@@ -205,8 +235,7 @@ There are times a test writer will want to test a case where an implementation r
 Here is an example of how To enable it to allow overriding format features (limits are the same idea, just different function names):
 ```cpp
 if (!EnableDeviceProfileLayer()) {
-    printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-    return;
+    GTEST_SKIP() << "Failed to enable device profile layer.";
 }
 
 ASSERT_NO_FATAL_FAILURE(Init());
@@ -216,8 +245,7 @@ PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDevice
 
 // Load required functions
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-    printf("%s Failed to device profile layer.\n", kSkipPrefix);
-    return;
+    GTEST_SKIP() << "Failed to device profile layer.";
 }
 ```
 
@@ -234,8 +262,7 @@ If you are in need of `VkFormatProperties3` the following is an example how to u
 PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
 PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-    printf("%s Failed to device profile layer.\n", kSkipPrefix);
-    return;
+    GTEST_SKIP() << "Failed to device profile layer.";
 }
 
 auto fmt_props_3 = LvlInitStruct<VkFormatProperties3>();
@@ -265,8 +292,7 @@ PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT 
 
 // Load required functions
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-    printf("%s Failed to device profile layer.\n", kSkipPrefix);
-    return;
+    GTEST_SKIP() << "Failed to device profile layer.";
 }
 
 VkPhysicalDeviceProperties props;
