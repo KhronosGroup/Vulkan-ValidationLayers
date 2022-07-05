@@ -866,7 +866,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     depth.attachment = VK_ATTACHMENT_UNUSED;  // Avoids triggering 01418
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                         "VUID-VkSubpassDescription-pColorAttachments-01417", "VUID-VkSubpassDescription2-pColorAttachments-03069");
+                         "VUID-VkSubpassDescription-pColorAttachments-06868",
+                         "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     depth.attachment = 3;
     attachments[subpass.pColorAttachments[1].attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
@@ -877,7 +878,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
                          "VUID-VkSubpassDescription-pDepthStencilAttachment-01418",
-                         "VUID-VkSubpassDescription2-pDepthStencilAttachment-03071");
+                         "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     attachments[subpass.pDepthStencilAttachment->attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
     subpass.colorAttachmentCount = (uint32_t)color.size();
@@ -2749,7 +2750,7 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
         // if grid size is different
         m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521");
         m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
-        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-subpass-00757");
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
         pipe.CreateGraphicsPipeline();
         m_errorMonitor->VerifyFound();
         pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;

@@ -1226,6 +1226,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (non_seamless_cube_map_features) {
             enabled_features.non_seamless_cube_map_features = *non_seamless_cube_map_features;
         }
+
+        const auto multisampled_render_to_single_sampled_features =
+            LvlFindInChain<VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT>(pCreateInfo->pNext);
+        if (multisampled_render_to_single_sampled_features) {
+            enabled_features.multisampled_render_to_single_sampled_features = *multisampled_render_to_single_sampled_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

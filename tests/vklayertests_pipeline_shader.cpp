@@ -4004,7 +4004,7 @@ TEST_F(VkLayerTest, NumSamplesMismatch) {
     pipe.AddDefaultColorAttachment();
     pipe.SetMSAA(&pipe_ms_state_ci);
 
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-subpass-00757");
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
     pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
 
     m_commandBuffer->begin();
@@ -6559,7 +6559,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
 
     std::vector<TestCase> test_cases = {
         {VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_4_BIT, VK_FALSE, VK_FALSE, 1, true,
-         "VUID-VkGraphicsPipelineCreateInfo-subpass-00757"},
+         "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853"},
         {VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_8_BIT, VK_FALSE, VK_FALSE, 4, false,
          "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationTableEnable-01405"},
         {VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_8_BIT, VK_FALSE, VK_FALSE, 2, true,
@@ -6577,7 +6577,7 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
         {VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_4_BIT, VK_FALSE, VK_FALSE, 1, true,
          "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415"},
         {VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_8_BIT, VK_FALSE, VK_FALSE, 1, true,
-         "VUID-VkGraphicsPipelineCreateInfo-subpass-00757"}};
+         "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853"}};
 
     for (const auto &test_case : test_cases) {
         VkAttachmentDescription att[2] = {{}, {}};
@@ -6730,7 +6730,8 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
         };
 
         if (!test_case.positiveTest) {
-            CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-subpass-00757");
+            CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit,
+                                              "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
         } else {
             CreatePipelineHelper::OneshotTest(*this, break_samples, kErrorBit);
         }

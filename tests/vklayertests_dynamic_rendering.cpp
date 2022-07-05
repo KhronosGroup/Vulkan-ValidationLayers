@@ -1464,7 +1464,7 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.pDepthAttachment = &depth_attachment;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06070");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
@@ -3922,7 +3922,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewSamples) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06133");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06864");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
@@ -3985,7 +3985,7 @@ TEST_F(VkLayerTest, InvalidResolveImageViewFormatMatch) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06134");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06865");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
