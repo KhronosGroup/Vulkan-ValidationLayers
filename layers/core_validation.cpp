@@ -2571,7 +2571,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         };
 
         if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples))) {
+              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+              (enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled))) {
             uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pipeline));
             uint32_t subpass_num_samples = 0;
 
@@ -2586,7 +2587,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             // subpass_num_samples is 0 when the subpass has no attachments or if all attachments are VK_ATTACHMENT_UNUSED.
             // Only validate the value of subpass_num_samples if the subpass has attachments that are not VK_ATTACHMENT_UNUSED.
             if (subpass_num_samples && (!IsPowerOfTwo(subpass_num_samples) || (subpass_num_samples != raster_samples))) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853",
                                  "vkCreateGraphicsPipelines: pCreateInfo[%" PRIu32
                                  "].pMultisampleState->rasterizationSamples (%u) "
                                  "does not match the number of samples of the RenderPass color and/or depth attachment.",
@@ -8041,7 +8042,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     }
 
     if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-          IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples))) {
+          IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+          (enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled))) {
         uint32_t first_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
             if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
@@ -8051,7 +8053,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                                     : first_sample_count_attachment;
                 if (first_sample_count_attachment != image_view->samples) {
                     skip |=
-                        LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                        LogError(commandBuffer, "VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857",
                                  "%s(): Color attachment ref %" PRIu32
                                  " has sample count %s, whereas first used color "
                                  "attachment ref has sample count %" PRIu32 ".",
@@ -8068,7 +8070,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                                 ? static_cast<uint32_t>(image_view->samples)
                                                 : first_sample_count_attachment;
             if (first_sample_count_attachment != image_view->samples) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857",
                                  "%s(): Depth attachment ref has sample count %s, whereas first used color "
                                  "attachment ref has sample count %" PRIu32 ".",
                                  func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
@@ -8081,7 +8083,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                                 ? static_cast<uint32_t>(image_view->samples)
                                                 : first_sample_count_attachment;
             if (first_sample_count_attachment != image_view->samples) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06070",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-multisampledRenderToSingleSampled-06857",
                                  "%s(): Stencil attachment ref has sample count %s, whereas another "
                                  "attachment ref has sample count %" PRIu32 ".",
                                  func_name, string_VkSampleCountFlagBits(image_view->samples), (first_sample_count_attachment));
@@ -8689,7 +8691,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         auto resolve_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->resolveImageView);
         if (resolve_view_state && (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE) &&
             (resolve_view_state->samples != VK_SAMPLE_COUNT_1_BIT)) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06133",
+            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06864",
                              "%s(): resolveImageView sample count must have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s", func_name,
                              string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
         }
@@ -8722,7 +8724,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
             }
 
             if (resolve_view_state && (image_view_state->create_info.format != resolve_view_state->create_info.format)) {
-                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06134",
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06865",
                                  "%s(): resolveImageView format (%s) and ImageView format (%s) must have the same VkFormat",
                                  func_name, string_VkFormat(resolve_view_state->create_info.format),
                                  string_VkFormat(image_view_state->create_info.format));
@@ -13423,18 +13425,24 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                     VkSampleCountFlagBits current_sample_count = pCreateInfo->pAttachments[attachment_index].samples;
                     if (last_sample_count_attachment != VK_ATTACHMENT_UNUSED) {
-                        VkSampleCountFlagBits last_sample_count =
-                            pCreateInfo->pAttachments[subpass.pColorAttachments[last_sample_count_attachment].attachment].samples;
-                        if (current_sample_count != last_sample_count) {
-                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-03069"
-                                           : "VUID-VkSubpassDescription-pColorAttachments-01417";
-                            skip |= LogError(
-                                device, vuid,
-                                "%s: Subpass %u attempts to render to color attachments with inconsistent sample counts."
-                                "Color attachment ref %u has sample count %s, whereas previous color attachment ref %u has "
-                                "sample count %s.",
-                                function_name, i, j, string_VkSampleCountFlagBits(current_sample_count),
-                                last_sample_count_attachment, string_VkSampleCountFlagBits(last_sample_count));
+                        if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
+                              IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+                              ((enabled_features.multisampled_render_to_single_sampled_features
+                                   .multisampledRenderToSingleSampled) && use_rp2))) {
+                            VkSampleCountFlagBits last_sample_count =
+                                pCreateInfo->pAttachments[subpass.pColorAttachments[last_sample_count_attachment].attachment]
+                                    .samples;
+                            if (current_sample_count != last_sample_count) {
+                                vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
+                                               : "VUID-VkSubpassDescription-pColorAttachments-06868";
+                                skip |= LogError(
+                                    device, vuid,
+                                    "%s: Subpass %u attempts to render to color attachments with inconsistent sample counts."
+                                    "Color attachment ref %u has sample count %s, whereas previous color attachment ref %u has "
+                                    "sample count %s.",
+                                    function_name, i, j, string_VkSampleCountFlagBits(current_sample_count),
+                                    last_sample_count_attachment, string_VkSampleCountFlagBits(last_sample_count));
+                            }
                         }
                     }
                     last_sample_count_attachment = j;
@@ -13467,8 +13475,10 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
                         if (!IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) &&
                             !IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) &&
+                            !(use_rp2 &&
+                              enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
                             current_sample_count != depth_stencil_sample_count) {
-                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pDepthStencilAttachment-03071"
+                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
                                            : "VUID-VkSubpassDescription-pDepthStencilAttachment-01418";
                             skip |= LogError(device, vuid,
                                              "%s:  Subpass %u attempts to render to use a depth/stencil attachment with sample "
