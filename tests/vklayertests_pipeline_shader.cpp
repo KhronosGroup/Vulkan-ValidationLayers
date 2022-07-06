@@ -2638,8 +2638,7 @@ TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
     }
 
     if (format == VK_FORMAT_UNDEFINED) {
-        printf("%s Cannot find suitable format, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot find suitable format, skipping.";
     }
 
     const char vsSource[] = R"glsl(
@@ -2670,11 +2669,11 @@ TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
     image.Init(32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     ASSERT_TRUE(image.initialized());
 
-    VkSampler sampler;
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    ASSERT_VK_SUCCESS(vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler));
+    auto sampler_ci = SafeSaneSamplerCreateInfo();
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image.targetView(format), sampler,
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image.targetView(format), sampler.handle(),
                                                      VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -9860,7 +9859,7 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
     {
         char const *vsSource = R"glsl(
             #version 450
-            layout(set=0, binding=0, rgba8) uniform image2D si0;
+            layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
                   imageAtomicExchange(si0, ivec2(0), 1);
             }
@@ -9914,7 +9913,7 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
     {
         char const *fsSource = R"glsl(
             #version 450
-            layout(set=0, binding=0, rgba8) uniform image2D si0;
+            layout(set=0, binding=0, r32f) uniform image2D si0;
             void main() {
                   imageAtomicExchange(si0, ivec2(0), 1);
             }
@@ -12057,8 +12056,7 @@ TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
     compute_create_info.stage = cs.GetStageCreateInfo();
     compute_create_info.layout = pipeline_layout.handle();
 
-    VkPipeline test_pipeline;
-    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &test_pipeline);
+    vk_testing::Pipeline test_pipeline(*m_device, compute_create_info);
 
     {
         compute_create_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -12069,13 +12067,12 @@ TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (test_pipeline != VK_NULL_HANDLE) {
-        compute_create_info.basePipelineHandle = test_pipeline;
+    if (test_pipeline.initialized()) {
+        compute_create_info.basePipelineHandle = test_pipeline.handle();
         compute_create_info.basePipelineIndex = 1;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-00699");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-flags-00700");
-        VkPipeline pipeline;
-        vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &compute_create_info, nullptr, &pipeline);
+        vk_testing::Pipeline pipeline(*m_device, compute_create_info);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -12218,11 +12215,11 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
 TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     TEST_DESCRIPTION("Use subgroup size control features when they are not enabled");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -12240,8 +12237,7 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
 
     if (props11.subgroupSize == 0) {
-        printf("%s subgroupSize is 0, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "subgroupSize is 0, skipping test.";
     }
 
     std::stringstream csSource;
@@ -13293,8 +13289,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     vk::GetPhysicalDeviceProperties2(gpu(), &phys_props);
 
     if (sample_locations.variableSampleLocations) {
-        printf("%s VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations is supported, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations is supported, skipping.";
     }
 
     PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT vkGetPhysicalDeviceMultisamplePropertiesEXT =
@@ -13312,6 +13307,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
@@ -13323,31 +13319,31 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     rpci.attachmentCount = 1;
     rpci.pAttachments = &attach_desc;
 
-    VkRenderPass render_pass;
-    vk::CreateRenderPass(device(), &rpci, NULL, &render_pass);
+    vk_testing::RenderPass render_pass(*m_device, rpci);
+    ASSERT_TRUE(render_pass.initialized());
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     VkFramebufferCreateInfo framebuffer_info = LvlInitStruct<VkFramebufferCreateInfo>();
-    framebuffer_info.renderPass = render_pass;
+    framebuffer_info.renderPass = render_pass.handle();
     framebuffer_info.attachmentCount = 1;
     framebuffer_info.pAttachments = &image_view;
     framebuffer_info.width = 32;
     framebuffer_info.height = 32;
     framebuffer_info.layers = 1;
 
-    VkFramebuffer framebuffer;
-    vk::CreateFramebuffer(m_device->handle(), &framebuffer_info, nullptr, &framebuffer);
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_info);
+    ASSERT_TRUE(framebuffer.initialized());
 
-    VkMultisamplePropertiesEXT multisample_prop = {};
+    auto multisample_prop = LvlInitStruct<VkMultisamplePropertiesEXT>();
     vkGetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height;
 
     if (valid_count == 0) {
-        printf("%s multisample properties are not supported, skipping.\n", kSkipPrefix);
+        printf("multisample properties are not supported.\n");
         return;
     }
 
@@ -13367,7 +13363,7 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
     pipe.InitInfo();
     pipe.InitState();
     pipe.gp_ci_.pNext = &sample_locations_state;
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.gp_ci_.renderPass = render_pass.handle();
     pipe.CreateGraphicsPipeline();
 
     VkClearValue clear_value;
@@ -13393,8 +13389,8 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
         0.0f;  // Invalid, VkRenderPassSampleLocationsBeginInfoEXT wont match VkPipelineSampleLocationsStateCreateInfoEXT
 
     VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>(&render_pass_sample_locations);
-    begin_info.renderPass = render_pass;
-    begin_info.framebuffer = framebuffer;
+    begin_info.renderPass = render_pass.handle();
+    begin_info.framebuffer = framebuffer.handle();
     begin_info.renderArea.extent.width = 32;
     begin_info.renderArea.extent.height = 32;
     begin_info.renderArea.offset.x = 0;

@@ -7203,21 +7203,18 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
 
     // Don't bind memory.
     {
-        VkBuffer buffer{};
+        vk_testing::Buffer buffer;
         {
-            auto vkCreateBuffer = (PFN_vkCreateBuffer)vk::GetDeviceProcAddr(m_device->device(), "vkCreateBuffer");
-            ASSERT_TRUE(vkCreateBuffer != nullptr);
-
             auto info = LvlInitStruct<VkBufferCreateInfo>();
             info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
             info.size = 4;
-            vkCreateBuffer(m_device->device(), &info, nullptr, &buffer);
+            buffer.init_no_mem(*m_device, info);
         }
 
         VkDeviceSize const offsets[1]{};
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02364");
-        vkCmdBindTransformFeedbackBuffersEXT(m_commandBuffer->handle(), 0, 1, &buffer, offsets, nullptr);
+        vkCmdBindTransformFeedbackBuffersEXT(m_commandBuffer->handle(), 0, 1, &buffer.handle(), offsets, nullptr);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -8429,8 +8426,8 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     auto sampler_ci = LvlInitStruct<VkSamplerCreateInfo>();
     sampler_ci.minFilter = VK_FILTER_CUBIC_EXT;
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
-    VkSampler sampler;
-    vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+    ASSERT_TRUE(sampler.initialized());
 
     static const char fs_src[] = R"glsl(
         #version 450
@@ -8449,7 +8446,7 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
     g_pipe.InitState();
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, imageView, sampler.handle());
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -8991,8 +8988,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
     ds_pool_ci.flags = 0;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    VkDescriptorPool ds_pool;
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &ds_pool);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+    ASSERT_TRUE(ds_pool.initialized());
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 0;
@@ -9006,7 +9003,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
     VkDescriptorSet descriptorSet;
     VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptorSet);
 
@@ -9126,8 +9123,8 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
     renderPassCreateInfo.subpassCount = 1;
     renderPassCreateInfo.pSubpasses = &subpassDescription;
 
-    VkRenderPass renderPass;
-    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, nullptr, &renderPass);
+    vk_testing::RenderPass renderPass(*m_device, renderPassCreateInfo);
+    ASSERT_TRUE(renderPass.initialized());
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -9151,12 +9148,12 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
     framebufferCreateInfo.width = 32;
     framebufferCreateInfo.height = 32;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = renderPass;
+    framebufferCreateInfo.renderPass = renderPass.handle();
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &imageView;
 
-    VkFramebuffer framebuffer = VK_NULL_HANDLE;
-    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    vk_testing::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
+    ASSERT_TRUE(framebuffer.initialized());
 
     // Start no RenderPass
     m_commandBuffer->begin();
@@ -9174,8 +9171,8 @@ TEST_F(VkLayerTest, InvalidClearColorAttachmentsWithMultiview) {
     clear_rect.rect.extent.height = 32;
 
     VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
-    render_pass_begin_info.renderPass = renderPass;
-    render_pass_begin_info.framebuffer = framebuffer;
+    render_pass_begin_info.renderPass = renderPass.handle();
+    render_pass_begin_info.framebuffer = framebuffer.handle();
     render_pass_begin_info.renderArea.extent.width = 32;
     render_pass_begin_info.renderArea.extent.height = 32;
 
@@ -9354,6 +9351,7 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
 
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, rpci);
+    ASSERT_TRUE(render_pass.initialized());
 
     VkImageObj image(m_device);
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -9366,8 +9364,8 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
     fbci.width = 32;
     fbci.height = 32;
     fbci.layers = 1;
-    VkFramebuffer framebuffer;
-    vk::CreateFramebuffer(device(), &fbci, nullptr, &framebuffer);
+    vk_testing::Framebuffer framebuffer(*m_device, fbci);
+    ASSERT_TRUE(framebuffer.initialized());
 
     PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
         (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBeginConditionalRenderingEXT");
@@ -9388,7 +9386,7 @@ TEST_F(VkLayerTest, InvalidEndConditionalRendering) {
 
     VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbi.renderPass = render_pass.handle();
-    rpbi.framebuffer = framebuffer;
+    rpbi.framebuffer = framebuffer.handle();
     rpbi.renderArea = {{0, 0}, {32, 32}};
     rpbi.clearValueCount = 1;
     rpbi.pClearValues = &clear_value;

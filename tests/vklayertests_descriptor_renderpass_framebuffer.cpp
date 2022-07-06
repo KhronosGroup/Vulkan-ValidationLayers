@@ -10395,14 +10395,11 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -10431,26 +10428,26 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &swapchain);
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    ASSERT_TRUE(semaphore.initialized());
 
     VkAcquireNextImageInfoKHR acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;
     acquire_info.timeout = std::numeric_limits<uint64_t>::max();
-    acquire_info.semaphore = semaphore;
+    acquire_info.semaphore = semaphore.handle();
     acquire_info.fence = VK_NULL_HANDLE;
     acquire_info.deviceMask = 0x1;
 
     uint32_t dummy;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-swapchain-01285");
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore, VK_NULL_HANDLE, &dummy);
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore.handle(), VK_NULL_HANDLE,
+                            &dummy);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-swapchain-01675");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroySwapchainKHR(device(), swapchain, nullptr);
-    DestroySwapchain();
+    vk::DestroySwapchainKHR(m_device->device(), swapchain, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidDeviceGroupRenderArea) {
@@ -10511,7 +10508,7 @@ TEST_F(VkLayerTest, RenderPassBeginNullValues) {
     TEST_DESCRIPTION("Test invalid null entries for clear color");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto rpbi = m_renderPassBeginInfo;
@@ -10777,27 +10774,23 @@ TEST_F(VkLayerTest, AccelerationStructureBindings) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_structure_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(acc_structure_props);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t maxBlocks = acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
     if (maxBlocks > 4096) {
-        printf(
-            "Too large of a maximum number of per stage descriptor update after bind for acceleration structures, skipping "
-            "tests\n");
-        return;
+        GTEST_SKIP() << "Too large of a maximum number of per stage descriptor update after bind for acceleration structures, "
+                        "skipping tests";
+    }
+    if (maxBlocks < 1) {
+        GTEST_SKIP() << "Test requires maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1";
     }
 
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
@@ -10815,17 +10808,15 @@ TEST_F(VkLayerTest, AccelerationStructureBindings) {
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
 
-    vk_testing::DescriptorSetLayout ds_layout;
-    VkDescriptorSetLayout dsl_handle = ds_layout.handle();
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &dsl_handle);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    ASSERT_TRUE(ds_layout.initialized());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &dsl_handle;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-    VkPipelineLayout pipeline_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -10833,26 +10824,23 @@ TEST_F(VkLayerTest, AccelerationStructureBindingsNV) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
 
     AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(ray_tracing_props);
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     uint32_t maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
     if (maxBlocks > 4096) {
-        printf("Too large of a maximum number of descriptor set acceleration structures, skipping tests\n");
-        return;
+        GTEST_SKIP() << "Too large of a maximum number of descriptor set acceleration structures, skipping tests";
+    }
+    if (maxBlocks < 1) {
+        GTEST_SKIP() << "Test requires maxDescriptorSetAccelerationStructures >= 1";
     }
 
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
@@ -10870,17 +10858,15 @@ TEST_F(VkLayerTest, AccelerationStructureBindingsNV) {
     ds_layout_ci.bindingCount = dslb_vec.size();
     ds_layout_ci.pBindings = dslb_vec.data();
 
-    vk_testing::DescriptorSetLayout ds_layout;
-    VkDescriptorSetLayout dsl_handle = ds_layout.handle();
-    vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, nullptr, &dsl_handle);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+    ASSERT_TRUE(ds_layout.initialized());
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
     pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &dsl_handle;
+    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
 
-    VkPipelineLayout pipeline_layout;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02381");
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_ci, nullptr, &pipeline_layout);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
     m_errorMonitor->VerifyFound();
 }
 
