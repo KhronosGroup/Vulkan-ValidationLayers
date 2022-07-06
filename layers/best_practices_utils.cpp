@@ -1480,6 +1480,17 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
     return skip;
 }
 
+void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer,
+                                                    const VkCommandBufferBeginInfo* pBeginInfo) {
+    StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
+
+    auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    if (cb) return;
+
+    cb->num_submits = 0;
+    cb->is_one_time_submit = (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) != 0;
+}
+
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                                       const VkCommandBufferBeginInfo* pBeginInfo) const {
     bool skip = false;
@@ -1489,12 +1500,22 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                       "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
     }
 
-    if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorNVIDIA)) {
+    if (VendorCheckEnabled(kBPVendorArm)) {
         if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
             skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
-                                          "%s %s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
-                                          "For best performance on Mali and NVIDIA GPUs, consider setting ONE_TIME_SUBMIT by default.",
-                                          VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorNVIDIA));
+                                          "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
+                                          "For best performance on Mali GPUs, consider setting ONE_TIME_SUBMIT by default.",
+                                          VendorSpecificTag(kBPVendorArm));
+        }
+    }
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        auto cb = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        if (cb->num_submits == 1 && !cb->is_one_time_submit) {
+            skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
+                                          "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT was not set "
+                                          "and the command buffer has only been submitted once. "
+                                          "For best performance on NVIDIA GPUs, use ONE_TIME_SUBMIT.",
+                                          VendorSpecificTag(kBPVendorNVIDIA));
         }
     }
 
@@ -5261,6 +5282,7 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
             for (auto &func : cb->queue_submit_functions) {
                 func(*this, *queue_state, *cb);
             }
+            cb->num_submits++;
         }
     }
 }

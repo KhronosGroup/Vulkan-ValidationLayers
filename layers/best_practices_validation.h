@@ -328,8 +328,9 @@ class CommandBuffer : public CMD_BUFFER_STATE {
                   const COMMAND_POOL_STATE* pool);
 
     RenderPassState render_pass_state;
-
     CommandBufferStateNV nv;
+    uint64_t num_submits = 0;
+    bool is_one_time_submit = false;
 };
 
 class DescriptorPool : public DESCRIPTOR_POOL_STATE {
@@ -447,6 +448,8 @@ class BestPractices : public ValidationStateTracker {
                                         VkFence fence) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                      VkFence fence) const override;
+    void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer,
+                                         const VkCommandBufferBeginInfo* pBeginInfo) override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const override;
