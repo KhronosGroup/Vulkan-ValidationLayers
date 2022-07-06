@@ -1191,7 +1191,6 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
 
     m_errorMonitor->ExpectSuccess();
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {

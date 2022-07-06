@@ -13999,11 +13999,9 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
 TEST_F(VkLayerTest, InvalidCreateImageQueueFamilies) {
     TEST_DESCRIPTION("Checks for invalid queue families in ImageCreateInfo.");
 
-    bool get_physical_device_properties2 = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (get_physical_device_properties2) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
+    const bool get_physical_device_properties2 = IsExtensionsEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     uint32_t queue_families[2] = {0, 0};
 
