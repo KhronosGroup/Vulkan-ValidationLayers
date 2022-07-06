@@ -522,31 +522,24 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
 
     InitGpuAssistedFramework(false);
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
     }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    m_device_extension_names.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
 
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    if (IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
+        ;
         robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>(&multi_draw_features);
     }
 
@@ -1993,13 +1986,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     InitGpuAssistedFramework(false);
     if (IsPlatform(kGalaxyS10)) {
         printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
@@ -2008,6 +1995,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -2745,28 +2735,18 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     TEST_DESCRIPTION("Test debug printf in mesh and task shaders.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     InitDebugPrintfFramework();
-    std::vector<const char *> required_device_extensions = {VK_NV_MESH_SHADER_EXTENSION_NAME,
-                                                            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
-    }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
