@@ -55,7 +55,9 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
     bool EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq);
 
-    void Retire(bool notify_queue = true);
+    void Retire();
+
+    void Retire(const QUEUE_STATE *queue_state, uint64_t seq);
 
     void Reset();
 
@@ -225,6 +227,7 @@ struct CB_SUBMISSION {
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<FENCE_STATE> fence;
+    uint64_t seq{0};
     uint32_t perf_submit_pass{0};
 
     void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_node) { cbs.emplace_back(std::move(cb_node)); }
