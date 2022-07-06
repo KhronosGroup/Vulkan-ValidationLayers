@@ -257,12 +257,10 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
 
     if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
-        printf("%s workgroupMemoryExplicitLayout feature not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
     }
 
     const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
-    const uint32_t max_shared_ints = max_shared_memory_size / 4;
     const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
 
     std::stringstream csSource;
@@ -273,21 +271,13 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
         // Both structs by themselves are 16 bytes less than the max
         shared X {
             vec4 x1[)glsl";
-    csSource << (max_shared_vec4 - 16);
+    csSource << (max_shared_vec4 - 1);
     csSource << R"glsl(];
             vec4 x2;
         };
 
-        shared Y {
-            int y1[)glsl";
-    csSource << (max_shared_ints - 4);
-    csSource << R"glsl(];
-            int y2;
-        };
-
         void main() {
             x2.x = 0.0f; // prevent dead-code elimination
-            y2 = 0;
         }
     )glsl";
 
@@ -2132,11 +2122,11 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
 TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     TEST_DESCRIPTION("Test task and mesh shader");
 
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -2149,8 +2139,7 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
     vkGetPhysicalDeviceFeatures2(gpu(), &features2);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
-        printf("%s Test requires (unsupported) meshShader and taskShader features, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) meshShader and taskShader features, skipping test.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2164,11 +2153,8 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
     if ((vulkan11_props.subgroupSupportedStages & VK_SHADER_STAGE_TASK_BIT_NV) == 0) {
-        printf(
-            "%s VkPhysicalDeviceVulkan11Properties::subgroupSupportedStages does not include VK_SHADER_STAGE_TASK_BIT_NV, skipping "
-            "test.\n",
-            kSkipPrefix);
-        return;
+        GTEST_SKIP() << "%s VkPhysicalDeviceVulkan11Properties::subgroupSupportedStages does not include "
+                        "VK_SHADER_STAGE_TASK_BIT_NV, skipping test.";
     }
 
     static const char taskShaderText[] = R"glsl(

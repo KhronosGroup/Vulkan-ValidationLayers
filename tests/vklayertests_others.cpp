@@ -2536,47 +2536,47 @@ TEST_F(VkLayerTest, StageMaskHost) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkEvent event;
     VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event(*m_device, event_create_info);
+    ASSERT_TRUE(event.initialized());
 
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-01149");
-    vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_HOST_BIT);
+    vk::CmdSetEvent(m_commandBuffer->handle(), event.handle(), VK_PIPELINE_STAGE_HOST_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent-stageMask-01153");
-    vk::CmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_HOST_BIT);
+    vk::CmdResetEvent(m_commandBuffer->handle(), event.handle(), VK_PIPELINE_STAGE_HOST_BIT);
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore(*m_device, semaphore_create_info);
+    ASSERT_TRUE(semaphore.initialized());
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
 
     // Signal the semaphore so the next test can wait on it.
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &semaphore;
+    submit_info.pSignalSemaphores = &semaphore.handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyNotFound();
 
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyEvent(m_device->device(), event, nullptr);
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+    // Need to ensure semaphore is not in use before the test ends and it gets destroyed
+    vk::QueueWaitIdle(m_device->m_queue);
 }
 
 TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
@@ -11180,6 +11180,9 @@ TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
     vk::QueueSubmit(other, 1, &waitSubmitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    // Need to ensure semaphores are not in use before destroying them
+    vk::QueueWaitIdle(m_device->m_queue);
 }
 
 TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
@@ -11708,17 +11711,17 @@ TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
     if (khr_acceleration_structure) {
         {
             query_pool_ci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR;
-            VkQueryPool query_pool;
-            vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+            vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+            ASSERT_TRUE(query_pool.initialized());
 
             m_commandBuffer->begin();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04728");
-            vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+            vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
             m_errorMonitor->VerifyFound();
 
             if (ext_transform_feedback) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
-                vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0, 0);
+                vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
                 m_errorMonitor->VerifyFound();
             }
             m_commandBuffer->end();
@@ -11726,17 +11729,17 @@ TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
 
         {
             query_pool_ci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR;
-            VkQueryPool query_pool;
-            vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+            vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+            ASSERT_TRUE(query_pool.initialized());
 
             m_commandBuffer->begin();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04728");
-            vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+            vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
             m_errorMonitor->VerifyFound();
 
             if (ext_transform_feedback) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04728");
-                vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0, 0);
+                vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
                 m_errorMonitor->VerifyFound();
             }
             m_commandBuffer->end();
@@ -11744,17 +11747,17 @@ TEST_F(VkLayerTest, ValidateBeginQueryQueryPoolType) {
     }
     if (nv_ray_tracing) {
         query_pool_ci.queryType = VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_NV;
-        VkQueryPool query_pool;
-        vk::CreateQueryPool(device(), &query_pool_ci, nullptr, &query_pool);
+        vk_testing::QueryPool query_pool(*m_device, query_pool_ci);
+        ASSERT_TRUE(query_pool.initialized());
 
         m_commandBuffer->begin();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryType-04729");
-        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool.handle(), 0, 0);
         m_errorMonitor->VerifyFound();
 
         if (ext_transform_feedback) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQueryIndexedEXT-queryType-04729");
-            vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool, 0, 0, 0);
+            vkCmdBeginQueryIndexedEXT(m_commandBuffer->handle(), query_pool.handle(), 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
         m_commandBuffer->end();
@@ -11828,11 +11831,16 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(bda_features);
+    if (!bda_features.bufferDeviceAddress) {
+        GTEST_SKIP() << "bufferDeviceAddress not enabled.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
@@ -11847,6 +11855,7 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
     VkBufferObj buffer_no_mem;
     buffer_no_mem.init_no_mem(*m_device, buffer_ci);
+    ASSERT_TRUE(buffer_no_mem.initialized());
 
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_ci);
@@ -11855,8 +11864,7 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     device_address_info.buffer = buffer_no_mem.handle();
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
     if (device_address == 0) {
-        printf("%s Failed to get device address, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to get device address, skipping test.";
     }
 
     auto as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
@@ -13129,6 +13137,9 @@ TEST_F(VkLayerTest, TestMultipleQueuesWaitingOnSemaphore) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
     vk::QueueSubmit(other, 1, &wait_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    // Need to ensure semaphore is not in use before the test ends and it gets destroyed
+    vk::QueueWaitIdle(m_device->m_queue);
 }
 
 TEST_F(VkLayerTest, IncompatibleRenderPass) {
