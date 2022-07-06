@@ -45,29 +45,28 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     // Lock required for queue / semaphore operations, but not for command buffer
     // processing above.
     auto guard = WriteLock();
-    const uint64_t next_seq = seq_ + submissions_.size() + 1;
+    submission.seq = seq_ + submissions_.size() + 1;
     bool retire_early = false;
     for (auto &wait : submission.wait_semaphores) {
-        wait.semaphore->EnqueueWait(this, next_seq, wait.payload);
+        wait.semaphore->EnqueueWait(this, submission.seq, wait.payload);
         wait.semaphore->BeginUse();
     }
 
     for (auto &signal : submission.signal_semaphores) {
-        if (signal.semaphore->EnqueueSignal(this, next_seq, signal.payload)) {
+        if (signal.semaphore->EnqueueSignal(this, submission.seq, signal.payload)) {
             retire_early = true;
         }
         signal.semaphore->BeginUse();
     }
 
     if (submission.fence) {
-        if (submission.fence->EnqueueSignal(this, next_seq)) {
+        if (submission.fence->EnqueueSignal(this, submission.seq)) {
             retire_early = true;
         }
         submission.fence->BeginUse();
     }
-
     submissions_.emplace_back(std::move(submission));
-    return retire_early ? next_seq : 0;
+    return retire_early ? submission.seq : 0;
 }
 
 bool QUEUE_STATE::HasWait(VkSemaphore semaphore, VkFence fence) const {
@@ -160,7 +159,7 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
         }
 
         if (submission->fence) {
-            submission->fence->Retire(false);
+            submission->fence->Retire(this, submission->seq);
             submission->fence->EndUse();
         }
     }
@@ -183,23 +182,36 @@ bool FENCE_STATE::EnqueueSignal(QUEUE_STATE *queue_state, uint64_t next_seq) {
     return false;
 }
 
-void FENCE_STATE::Retire(bool notify_queue) {
+// Retire from a non-queue operation, such as vkWaitForFences()
+void FENCE_STATE::Retire() {
     QUEUE_STATE *q = nullptr;
     uint64_t seq = 0;
     {
         // Hold the lock only while updating members, but not
         // while calling QUEUE_STATE::Retire()
         auto guard = WriteLock();
-        if (scope_ == kSyncScopeInternal) {
-            q = queue_;
-            seq = seq_;
+        if (state_ == FENCE_INFLIGHT) {
+            if (scope_ == kSyncScopeInternal) {
+                q = queue_;
+                seq = seq_;
+            }
+            queue_ = nullptr;
+            seq_ = 0;
+            state_ = FENCE_RETIRED;
         }
+    }
+    if (q) {
+        q->Retire(seq);
+    }
+}
+
+// Retire from a queue operation
+void FENCE_STATE::Retire(const QUEUE_STATE *queue_state, uint64_t seq) {
+    auto guard = WriteLock();
+    if (state_ == FENCE_INFLIGHT && queue_ != nullptr && queue_ == queue_state && seq_ == seq) {
         queue_ = nullptr;
         seq_ = 0;
         state_ = FENCE_RETIRED;
-    }
-    if (q && notify_queue) {
-        q->Retire(seq);
     }
 }
 
