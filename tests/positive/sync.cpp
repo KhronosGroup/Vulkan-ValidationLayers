@@ -2077,3 +2077,94 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+struct FenceSemRaceData {
+    VkDevice device;
+    VkSemaphore sem;
+    bool *bailout;
+    uint64_t wait_value;
+    uint64_t timeout;
+    uint32_t iterations;
+};
+
+void WaitTimelineSem(FenceSemRaceData *data) {
+    uint64_t wait_value = data->wait_value;
+    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data->device, "vkWaitSemaphoresKHR"));
+    auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+    wait_info.semaphoreCount = 1;
+    wait_info.pSemaphores = &data->sem;
+    wait_info.pValues = &wait_value;
+
+    for (uint32_t i = 0; i < data->iterations; i++, wait_value++) {
+        fpWaitSemaphores(data->device, &wait_info, data->timeout);
+        if (*data->bailout) {
+            break;
+        }
+    }
+}
+
+TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
+    vk_testing::Fence fence(*m_device, fence_ci);
+    auto fence_handle = fence.handle();
+
+    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    timeline_ci.initialValue = 0;
+
+    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+    vk_testing::Semaphore sem(*m_device, sem_ci);
+    auto sem_handle = sem.handle();
+
+    uint64_t signal_value = 1;
+    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &sem_handle;
+
+    bool bailout = false;
+    struct FenceSemRaceData data;
+    data.device = m_device->device();
+    data.sem = sem.handle();
+    data.wait_value = signal_value;
+    data.iterations = 100000;
+    data.timeout = 1000000000;
+    data.bailout = &bailout;
+    std::thread thread(WaitTimelineSem, &data);
+
+    m_errorMonitor->SetBailout(&bailout);
+
+    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
+        m_errorMonitor->ExpectSuccess();
+        auto err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence_handle);
+        m_errorMonitor->VerifyNotFound();
+        ASSERT_VK_SUCCESS(err);
+
+        m_errorMonitor->ExpectSuccess();
+        err = fence.wait(data.timeout);
+        m_errorMonitor->VerifyNotFound();
+        ASSERT_VK_SUCCESS(err);
+
+        m_errorMonitor->ExpectSuccess();
+        err = vk::ResetFences(m_device->device(), 1, &fence_handle);
+        m_errorMonitor->VerifyNotFound();
+        ASSERT_VK_SUCCESS(err);
+    }
+    m_errorMonitor->SetBailout(nullptr);
+
+    thread.join();
+}
