@@ -34,6 +34,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_che
     VkLayerSettingsEXT bp_settings{static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
                                    &bp_vendor_all_setting_val};
     features_.pNext = &bp_settings;
+
     InitFramework(m_errorMonitor, &features_);
 }
 
@@ -1658,7 +1659,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Setup necessary objects correctly
-    m_errorMonitor->ExpectSuccess();
 
     // Bigger size to avoid small allocation best practices warning
     const unsigned int w = 1920;
@@ -1731,7 +1731,8 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     std::fill(std::begin(cv[1].color.float32), std::begin(cv[1].color.float32) + 4, 0.0f);
 
     VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
-    begin_info.clearValueCount = 2;  // Pass 2 clearValues, in conflict with VkRenderPassCreateInfo.attachmentCount == 2 meaning the second clearValue will be ignored
+    begin_info.clearValueCount = 2;  // Pass 2 clearValues, in conflict with VkRenderPassCreateInfo.attachmentCount == 1 meaning the
+                                     // second clearValue will be ignored
     begin_info.pClearValues = cv;
     begin_info.renderPass = rp.handle();
     begin_info.renderArea.extent.width = w;
@@ -1739,7 +1740,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     begin_info.framebuffer = fb.handle();
 
     // Setup finished
-    m_errorMonitor->VerifyNotFound();
 
     // TEST :
 
