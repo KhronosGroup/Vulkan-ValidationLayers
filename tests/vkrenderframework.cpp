@@ -52,7 +52,7 @@ ErrorMonitor::ErrorMonitor(Behavior behavior) : behavior_(behavior) {
 ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
 
 void ErrorMonitor::MonitorReset() {
-    message_flags_ = 0;
+    message_flags_ = kErrorBit;  // catch all errors anyway
     bailout_ = NULL;
     message_found_ = VK_FALSE;
     failure_message_strings_.clear();
