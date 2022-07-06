@@ -455,6 +455,13 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 #endif
 }
 
+inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
+    auto disable = GetEnvironment("VK_LAYER_TESTS_DISABLE_CORE_VALIDATION");
+    if (disable == "false" || disable == "0" || disable == "FALSE") {       // default is to change nothing, unless flag is correctly specified
+        features.disabledValidationFeatureCount = 0;  // remove all disables to get all validation messages
+    }
+}
+
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
@@ -490,6 +497,14 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
 
     auto ici = GetInstanceCreateInfo();
+
+    // If is validation features then check for disabled validation
+
+    auto bos = reinterpret_cast<VkBaseOutStructure *>(instance_pnext);
+    if (instance_pnext && bos->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
+        auto features = reinterpret_cast<VkValidationFeaturesEXT *>(instance_pnext);
+        CheckDisableCoreValidation(*features);
+    }
 
     // concatenate pNexts
     void *last_pnext = nullptr;
