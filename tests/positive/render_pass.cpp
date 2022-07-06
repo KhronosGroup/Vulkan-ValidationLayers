@@ -640,8 +640,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     pd_imageless_fb_features.imagelessFramebuffer = VK_TRUE;
     auto pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&pd_imageless_fb_features);
     if (!InitFrameworkAndRetrieveFeatures(pd_features2)) {
-        printf("%s Failed to initialize physical device and query features\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to initialize physical device and query features";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -649,8 +648,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     }
 
     if (pd_imageless_fb_features.imagelessFramebuffer != VK_TRUE) {
-        printf("%s VkPhysicalDeviceImagelessFramebufferFeaturesKHR::imagelessFramebuffer feature not supported\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceImagelessFramebufferFeaturesKHR::imagelessFramebuffer feature not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -665,6 +663,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     VkAttachmentDescription attachment_desc = {};
     attachment_desc.format = formats[0];
     attachment_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachment_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     VkAttachmentReference attachment_ref = {};
     attachment_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -703,6 +702,7 @@ TEST_F(VkPositiveLayerTest, ImagelessFramebufferNonZeroBaseMip) {
     fb_ci.pAttachments = nullptr;
     fb_ci.renderPass = rp.handle();
     vk_testing::Framebuffer fb(*m_device, fb_ci);
+    ASSERT_TRUE(fb.initialized());
 
     auto image_ci = LvlInitStruct<VkImageCreateInfo>();
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
