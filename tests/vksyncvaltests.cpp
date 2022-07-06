@@ -2549,7 +2549,6 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         image_input.handle(),
         full_subresource_range,
     };
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE_AFTER_WRITE");
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u, nullptr, 0u,
                            nullptr, 1u, &wawBarrier);
     m_errorMonitor->VerifyNotFound();
