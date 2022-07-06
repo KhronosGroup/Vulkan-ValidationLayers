@@ -326,6 +326,12 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) co
     return out.str();
 }
 
+bool CommandExecutionContext::ValidForSyncOps() const {
+    bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
+    assert(valid);
+    return valid;
+}
+
 // NOTE: the attachement read flag is put *only* in the access scope and not in the exect scope, since the ordering
 //       rules apply only to this specific access for this stage, and not the stage as a whole. The ordering detection
 //       also reflects this special case for read hazard detection (using access instead of exec scope)
@@ -2347,13 +2353,12 @@ void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
 }
 
 // The is the recorded cb context
-bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext *proxy_context, const char *func_name,
+bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, const char *func_name,
                                                   uint32_t index) const {
-    assert(proxy_context);
-    SyncEventsContext *const events_context = proxy_context->GetCurrentEventsContext();
-    AccessContext *const access_context = proxy_context->GetCurrentAccessContext();
-    const QueueId queue_id = proxy_context->GetQueueId();
-    const ResourceUsageTag base_tag = proxy_context->GetTagLimit();
+    if (!exec_context.ValidForSyncOps()) return false;
+
+    const QueueId queue_id = exec_context.GetQueueId();
+    const ResourceUsageTag base_tag = exec_context.GetTagLimit();
     bool skip = false;
     ResourceUsageRange tag_range = {0, 0};
     const AccessContext *recorded_context = GetCurrentAccessContext();
@@ -2369,42 +2374,35 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext *proxy
                                      string_SyncHazard(hazard.hazard), index, report_data->FormatHandle(recorded_handle).c_str(),
                                      FormatUsage(*hazard.recorded_access).c_str(), exec_context.FormatHazard(hazard).c_str());
     };
-    const ReplayTrackbackBarriersAction *replay_context = nullptr;
     for (const auto &sync_op : sync_ops_) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
         tag_range.end = sync_op.tag + 1;
-        skip |= sync_op.sync_op->ReplayValidate(sync_op.tag, *this, base_tag, proxy_context);
+        skip |= sync_op.sync_op->ReplayValidate(sync_op.tag, *this, base_tag, exec_context);
 
-        hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *access_context, replay_context);
+        // We're allowing for the ReplayRecord to modify the exec_context (e.g. for Renderpass operations), so
+        // we need to fetch the current access context each time
+        hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *exec_context.GetCurrentAccessContext());
         if (hazard.hazard) {
-            skip |= log_msg(hazard, *proxy_context, func_name, index);
+            skip |= log_msg(hazard, exec_context, func_name, index);
         }
         // NOTE: Add call to replay validate here when we add support for syncop with non-trivial replay
         // Record the barrier into the proxy context.
-        sync_op.sync_op->ReplayRecord(queue_id, base_tag + sync_op.tag, access_context, events_context);
-        replay_context = sync_op.sync_op->GetReplayTrackback();
+        sync_op.sync_op->ReplayRecord(exec_context, base_tag + sync_op.tag);
         tag_range.begin = tag_range.end;
     }
 
-    // Renderpasses may not cross command buffer boundaries
-    assert(replay_context == nullptr);
-
     // and anything after the last syncop
     tag_range.end = ResourceUsageRecord::kMaxIndex;
-    hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *access_context, replay_context);
+    hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *exec_context.GetCurrentAccessContext());
     if (hazard.hazard) {
-        skip |= log_msg(hazard, *proxy_context, func_name, index);
+        skip |= log_msg(hazard, exec_context, func_name, index);
     }
 
     return skip;
 }
 
 void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_cb_context) {
-    SyncEventsContext *const events_context = GetCurrentEventsContext();
-    AccessContext *const access_context = GetCurrentAccessContext();
-    const QueueId queue_id = GetQueueId();
-
     const AccessContext *recorded_context = recorded_cb_context.GetCurrentAccessContext();
     assert(recorded_context);
 
@@ -2413,7 +2411,7 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
     for (const auto &sync_op : recorded_cb_context.GetSyncOps()) {
         // we update the range to any include layout transition first use writes,
         // as they are stored along with the source scope (as effective barrier) when recorded
-        sync_op.sync_op->ReplayRecord(queue_id, base_tag + sync_op.tag, access_context, events_context);
+        sync_op.sync_op->ReplayRecord(*this, base_tag + sync_op.tag);
     }
 
     ResourceUsageRange tag_range = ImportRecordedAccessLog(recorded_cb_context);
@@ -2464,25 +2462,14 @@ void CommandBufferAccessContext::RecordSyncOp(SyncOpPointer &&sync_op) {
     auto tag = sync_op->Record(this);
     // As renderpass operations can have side effects on the command buffer access context,
     // update the sync operation to record these if any.
-    if (current_renderpass_context_) {
-        const auto &rpc = *current_renderpass_context_;
-        sync_op->SetReplayContext(rpc.GetCurrentSubpass(), rpc.GetReplayContext());
-    }
     sync_ops_.emplace_back(tag, std::move(sync_op));
 }
 
 class HazardDetectFirstUse {
   public:
-    HazardDetectFirstUse(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range,
-                         const ReplayTrackbackBarriersAction *replay_barrier)
-        : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range), replay_barrier_(replay_barrier) {}
+    HazardDetectFirstUse(const ResourceAccessState &recorded_use, QueueId queue_id, const ResourceUsageRange &tag_range)
+        : recorded_use_(recorded_use), queue_id_(queue_id), tag_range_(tag_range) {}
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        if (replay_barrier_) {
-            // Intentional copy to apply the replay barrier
-            auto access = pos->second;
-            (*replay_barrier_)(&access);
-            return access.DetectHazard(recorded_use_, queue_id_, tag_range_);
-        }
         return pos->second.DetectHazard(recorded_use_, queue_id_, tag_range_);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag) const {
@@ -2493,21 +2480,19 @@ class HazardDetectFirstUse {
     const ResourceAccessState &recorded_use_;
     const QueueId queue_id_;
     const ResourceUsageRange &tag_range_;
-    const ReplayTrackbackBarriersAction *replay_barrier_;
 };
 
 // This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which
 // hazards will be detected
 HazardResult AccessContext::DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
-                                                 const AccessContext &access_context,
-                                                 const ReplayTrackbackBarriersAction *replay_barrier) const {
+                                                 const AccessContext &access_context) const {
     HazardResult hazard;
     for (const auto address_type : kAddressTypes) {
         const auto &recorded_access_map = GetAccessStateMap(address_type);
         for (const auto &recorded_access : recorded_access_map) {
             // Cull any entries not in the current tag range
             if (!recorded_access.second.FirstAccessInTagRange(tag_range)) continue;
-            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range, replay_barrier);
+            HazardDetectFirstUse detector(recorded_access.second, queue_id, tag_range);
             hazard = access_context.DetectHazard(address_type, detector, recorded_access.first, DetectOptions::kDetectAll);
             if (hazard.hazard) break;
         }
@@ -2834,12 +2819,8 @@ RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_sta
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
     // Add this for all subpasses here so that they exsist during next subpass validation
     subpass_contexts_.reserve(rp_state_->createInfo.subpassCount);
-    replay_context_ = std::make_shared<ReplayRenderpassContext>();
-    auto &replay_subpass_contexts = replay_context_->subpass_contexts;
-    replay_subpass_contexts.reserve(rp_state_->createInfo.subpassCount);
     for (uint32_t pass = 0; pass < rp_state_->createInfo.subpassCount; pass++) {
         subpass_contexts_.emplace_back(pass, queue_flags, rp_state_->subpass_dependencies, subpass_contexts_, external_context);
-        replay_subpass_contexts.emplace_back(queue_flags, rp_state_->subpass_dependencies[pass], replay_subpass_contexts);
     }
     attachment_views_ = CreateAttachmentViewGen(render_area, attachment_views);
 }
@@ -6082,19 +6063,6 @@ bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineSt
     return has_barrier;
 }
 
-void SyncOpBase::SetReplayContext(uint32_t subpass, ReplayContextPtr &&replay) {
-    subpass_ = subpass;
-    replay_context_ = std::move(replay);
-}
-
-const ReplayTrackbackBarriersAction *SyncOpBase::GetReplayTrackback() const {
-    if (replay_context_) {
-        assert(subpass_ < replay_context_->subpass_contexts.size());
-        return &replay_context_->subpass_contexts[subpass_];
-    }
-    return nullptr;
-}
-
 SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
@@ -6239,20 +6207,21 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
 }
 
 ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) const {
-    auto *access_context = cb_context->GetCurrentAccessContext();
-    auto *events_context = cb_context->GetCurrentEventsContext();
-    const QueueId queue_id = cb_context->GetQueueId();
     const auto tag = cb_context->NextCommandTag(cmd_type_);
-    ReplayRecord(queue_id, tag, access_context, events_context);
+    ReplayRecord(*cb_context, tag);
     return tag;
 }
 
-void SyncOpPipelineBarrier::ReplayRecord(QueueId queue_id, const ResourceUsageTag tag, AccessContext *access_context,
-                                         SyncEventsContext *events_context) const {
+void SyncOpPipelineBarrier::ReplayRecord(CommandExecutionContext &exec_context, const ResourceUsageTag tag) const {
     SyncOpPipelineBarrierFunctorFactory factory;
     // Pipeline barriers only have a single barrier set, unlike WaitEvents2
     assert(barriers_.size() == 1);
     const auto &barrier_set = barriers_[0];
+    if (!exec_context.ValidForSyncOps()) return;
+
+    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    const auto queue_id = exec_context.GetQueueId();
     ApplyBarriers(barrier_set.buffer_memory_barriers, factory, queue_id, tag, access_context);
     ApplyBarriers(barrier_set.image_memory_barriers, factory, queue_id, tag, access_context);
     ApplyGlobalBarriers(barrier_set.memory_barriers, factory, queue_id, tag, access_context);
@@ -6266,7 +6235,7 @@ void SyncOpPipelineBarrier::ReplayRecord(QueueId queue_id, const ResourceUsageTa
 }
 
 bool SyncOpPipelineBarrier::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                           ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
+                                           ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
     // No Validation for replay, as the layout transition accesses are checked directly, and the src*Mask ordering is captured
     // with first access information.
     return false;
@@ -6635,23 +6604,20 @@ struct SyncOpWaitEventsFunctorFactory {
 
 ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
-    auto *access_context = cb_context->GetCurrentAccessContext();
-    const QueueId queue_id = cb_context->GetQueueId();
-    assert(access_context);
-    if (!access_context) return tag;
-    auto *events_context = cb_context->GetCurrentEventsContext();
-    assert(events_context);
-    if (!events_context) return tag;
 
-    ReplayRecord(queue_id, tag, access_context, events_context);
+    ReplayRecord(*cb_context, tag);
     return tag;
 }
 
-void SyncOpWaitEvents::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                    SyncEventsContext *events_context) const {
+void SyncOpWaitEvents::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
     // Unlike PipelineBarrier, WaitEvent is *not* limited to accesses within the current subpass (if any) and thus needs to import
     // all accesses. Can instead import for all first_scopes, or a union of them, if this becomes a performance/memory issue,
     // but with no idea of the performance of the union, nor of whether it even matters... take the simplest approach here,
+    if (!exec_context.ValidForSyncOps()) return;
+    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    const QueueId queue_id = exec_context.GetQueueId();
+
     access_context->ResolvePreviousAccesses();
 
     size_t barrier_set_index = 0;
@@ -6692,8 +6658,8 @@ void SyncOpWaitEvents::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, Acce
 }
 
 bool SyncOpWaitEvents::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                      ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
-    return DoValidate(*exec_context, base_tag);
+                                      ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
+    return DoValidate(exec_context, base_tag);
 }
 
 bool SyncValidator::PreCallValidateCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
@@ -6788,23 +6754,19 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
 
 ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) const {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
-    auto *events_context = cb_context->GetCurrentEventsContext();
-    auto *access_context = cb_context->GetCurrentAccessContext();
-    const QueueId queue_id = cb_context->GetQueueId();
-    assert(events_context);
-    if (access_context && events_context) {
-        ReplayRecord(queue_id, tag, access_context, events_context);
-    }
+    ReplayRecord(*cb_context, tag);
     return tag;
 }
 
 bool SyncOpResetEvent::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                      ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
-    return DoValidate(*exec_context, base_tag);
+                                      ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
+    return DoValidate(exec_context, base_tag);
 }
 
-void SyncOpResetEvent::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                    SyncEventsContext *events_context) const {
+void SyncOpResetEvent::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
+    if (!exec_context.ValidForSyncOps()) return;
+    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+
     auto *sync_event = events_context->GetFromShared(event_);
     if (!sync_event) return;  // Core, Lifetimes, or Param check needs to catch invalid events.
 
@@ -6848,9 +6810,8 @@ bool SyncOpSetEvent::Validate(const CommandBufferAccessContext &cb_context) cons
     return DoValidate(cb_context, ResourceUsageRecord::kMaxIndex);
 }
 bool SyncOpSetEvent::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                    ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
-    assert(exec_context);
-    return DoValidate(*exec_context, base_tag);
+                                    ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
+    return DoValidate(exec_context, base_tag);
 }
 
 bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, const ResourceUsageTag base_tag) const {
@@ -6926,10 +6887,14 @@ ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) 
     return tag;
 }
 
-void SyncOpSetEvent::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                  SyncEventsContext *events_context) const {
+void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
     // Create a copy of the current context, and merge in the state snapshot at record set event time
     // Note: we mustn't change the recorded context copy, as a given CB could be submitted more than once (in generaL)
+    if (!exec_context.ValidForSyncOps()) return;
+    SyncEventsContext *events_context = exec_context.GetCurrentEventsContext();
+    AccessContext *access_context = exec_context.GetCurrentAccessContext();
+    const QueueId queue_id = exec_context.GetQueueId();
+
     auto merged_context = std::make_shared<AccessContext>(*access_context);
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(queue_id, tag), *recorded_context_);
     DoRecord(queue_id, tag, merged_context, events_context);
@@ -7034,12 +6999,11 @@ ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_co
 }
 
 bool SyncOpBeginRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                           ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
+                                           ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
     return false;
 }
 
-void SyncOpBeginRenderPass::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                         SyncEventsContext *events_context) const {}
+void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
 
 SyncOpNextSubpass::SyncOpNextSubpass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo)
@@ -7066,7 +7030,7 @@ ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_contex
 }
 
 bool SyncOpNextSubpass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                       ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
+                                       ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
     return false;
 }
 
@@ -7078,8 +7042,7 @@ SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd_type, const SyncValidator 
     }
 }
 
-void SyncOpNextSubpass::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                     SyncEventsContext *events_context) const {}
+void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
 
 bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
     bool skip = false;
@@ -7095,12 +7058,11 @@ ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_cont
 }
 
 bool SyncOpEndRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
-                                         ResourceUsageTag base_tag, CommandExecutionContext *exec_context) const {
+                                         ResourceUsageTag base_tag, CommandExecutionContext &exec_context) const {
     return false;
 }
 
-void SyncOpEndRenderPass::ReplayRecord(QueueId queue_id, ResourceUsageTag tag, AccessContext *access_context,
-                                       SyncEventsContext *events_context) const {}
+void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
 
 void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
@@ -7137,7 +7099,7 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
         const auto *recorded_context = recorded_cb_context->GetCurrentAccessContext();
         assert(recorded_context);
-        skip |= recorded_cb_context->ValidateFirstUse(&proxy_cb_context, "vkCmdExecuteCommands", cb_index);
+        skip |= recorded_cb_context->ValidateFirstUse(proxy_cb_context, "vkCmdExecuteCommands", cb_index);
 
         // The barriers have already been applied in ValidatFirstUse
         ResourceUsageRange tag_range = proxy_cb_context.ImportRecordedAccessLog(*recorded_cb_context);
@@ -7235,7 +7197,7 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
             //  For each submit in the batch...
             for (const auto &cb : *batch) {
                 if (cb.cb->GetTagLimit() == 0) continue;  // Skip empty CB's
-                skip |= cb.cb->ValidateFirstUse(batch.get(), "vkQueueSubmit", cb.index);
+                skip |= cb.cb->ValidateFirstUse(*batch.get(), "vkQueueSubmit", cb.index);
 
                 // The barriers have already been applied in ValidatFirstUse
                 ResourceUsageRange tag_range = batch->ImportRecordedAccessLog(*cb.cb);
@@ -7439,48 +7401,6 @@ SyncEventsContext &SyncEventsContext::DeepCopy(const SyncEventsContext &from) {
         map_.emplace(event.first, std::make_shared<SyncEventState>(*event.second));
     }
     return *this;
-}
-
-ReplayTrackbackBarriersAction::ReplayTrackbackBarriersAction(VkQueueFlags queue_flags,
-                                                             const SubpassDependencyGraphNode &subpass_dep,
-                                                             const std::vector<ReplayTrackbackBarriersAction> &replay_contexts) {
-    bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
-    trackback_barriers.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
-    for (const auto &prev_dep : subpass_dep.prev) {
-        const auto prev_pass = prev_dep.first->pass;
-        const auto &prev_barriers = prev_dep.second;
-        trackback_barriers.emplace_back(&replay_contexts[prev_pass], queue_flags, prev_barriers);
-    }
-    if (has_barrier_from_external) {
-        // Store the barrier from external with the reat, but save pointer for "by subpass" lookups.
-        trackback_barriers.emplace_back(nullptr, queue_flags, subpass_dep.barrier_from_external);
-    }
-}
-
-void ReplayTrackbackBarriersAction::operator()(ResourceAccessState *access) const {
-    if (trackback_barriers.size() == 1) {
-        trackback_barriers[0](access);
-    } else {
-        ResourceAccessState resolved;
-        for (const auto &trackback : trackback_barriers) {
-            ResourceAccessState access_copy = *access;
-            trackback(&access_copy);
-            resolved.Resolve(access_copy);
-        }
-        *access = resolved;
-    }
-}
-
-ReplayTrackbackBarriersAction::TrackbackBarriers::TrackbackBarriers(
-    const ReplayTrackbackBarriersAction *source_subpass_, VkQueueFlags queue_flags_,
-    const std::vector<const VkSubpassDependency2 *> &subpass_dependencies_)
-    : Base(source_subpass_, queue_flags_, subpass_dependencies_) {}
-
-void ReplayTrackbackBarriersAction::TrackbackBarriers::operator()(ResourceAccessState *access) const {
-    if (source_subpass) {
-        (*source_subpass)(access);
-    }
-    access->ApplyBarriersImmediate(barriers);
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state)
