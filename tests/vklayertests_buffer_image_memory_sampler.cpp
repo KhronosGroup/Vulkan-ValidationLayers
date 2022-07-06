@@ -4044,18 +4044,16 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
 TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBuffer buffer;
-    VkDeviceMemory buffer_mem;
-    VkMemoryRequirements mem_reqs;
-
     auto buf_info = lvl_init_struct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VkResult err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Buffer buffer;
+    buffer.init_no_mem(*m_device, buf_info);
+    ASSERT_TRUE(buffer.initialized());
 
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
     auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
@@ -4063,15 +4061,14 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &buffer_mem);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DeviceMemory buffer_mem(*m_device, alloc_info);
+    ASSERT_TRUE(buffer_mem.initialized());
 
-    err = vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
 
     m_commandBuffer->begin();
     auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
-    buf_barrier.buffer = buffer;
+    buf_barrier.buffer = buffer.handle();
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
 
@@ -4085,12 +4082,10 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
+    vk::FreeMemory(m_device->handle(), buffer_mem.handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
-
-    vk::DestroyBuffer(m_device->handle(), buffer, NULL);
 }
 
 TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
@@ -13344,9 +13339,14 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
 TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
     TEST_DESCRIPTION("Bind image memory with VkBindImageMemoryDeviceGroupInfo but invalid splitInstanceBindRegionCount");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -13709,10 +13709,14 @@ TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
 TEST_F(VkLayerTest, InvalidBindIMageMemoryDeviceGroupInfo) {
     TEST_DESCRIPTION("Checks for invalid BindIMageMemoryDeviceGroupInfo.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan >= 1.1 required";
+    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }

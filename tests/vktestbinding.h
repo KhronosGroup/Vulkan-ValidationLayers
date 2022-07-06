@@ -355,6 +355,8 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
 
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
+    Event() = default;
+    Event(const Device &dev, const VkEventCreateInfo &info) { init(dev, info); }
     ~Event() NOEXCEPT;
 
     // vkCreateEvent()
@@ -390,10 +392,14 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
     static VkQueryPoolCreateInfo create_info(VkQueryType type, uint32_t slot_count);
 };
 
+struct NoMemT {};
+static constexpr NoMemT no_mem{};
+
 class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
     explicit Buffer() : NonDispHandle() {}
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info); }
+    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
 
     ~Buffer() NOEXCEPT;
@@ -507,6 +513,7 @@ class Image : public internal::NonDispHandle<VkImage> {
   public:
     explicit Image() : NonDispHandle(), format_features_(0) {}
     explicit Image(const Device &dev, const VkImageCreateInfo &info) : format_features_(0) { init(dev, info); }
+    explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : format_features_(0) { init_no_mem(dev, info); }
 
     ~Image() NOEXCEPT;
 
@@ -754,6 +761,8 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
 
 class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
   public:
+    DescriptorPool() = default;
+    DescriptorPool(const Device &dev, const VkDescriptorPoolCreateInfo &info) { init(dev, info); }
     ~DescriptorPool() NOEXCEPT;
 
     // Descriptor sets allocated from this pool will need access to the original
