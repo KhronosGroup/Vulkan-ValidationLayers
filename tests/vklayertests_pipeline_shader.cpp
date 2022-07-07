@@ -4996,60 +4996,6 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
             "device extension to allow relaxed interface matching between input and output vectors."});
 }
 
-TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecision) {
-    TEST_DESCRIPTION("Test that the RelaxedPrecision decoration is validated to match");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    char const *vsSource = R"glsl(
-        #version 450
-        layout(location=0) out mediump float x;
-        void main() { gl_Position = vec4(0); x = 1.0; }
-    )glsl";
-    char const *fsSource = R"glsl(
-        #version 450
-        layout(location=0) in highp float x;
-        layout(location=0) out vec4 color;
-        void main() { color = vec4(x); }
-    )glsl";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "differ in precision");
-}
-
-TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByPrecisionBlock) {
-    TEST_DESCRIPTION("Test that the RelaxedPrecision decoration is validated to match");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    char const *vsSource = R"glsl(
-        #version 450
-        out block { layout(location=0) mediump float x; };
-        void main() { gl_Position = vec4(0); x = 1.0; }
-    )glsl";
-    char const *fsSource = R"glsl(
-        #version 450
-        in block { layout(location=0) highp float x; };
-        layout(location=0) out vec4 color;
-        void main() { color = vec4(x); }
-    )glsl";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "differ in precision");
-}
-
 TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
     TEST_DESCRIPTION("Test that a warning is produced for a vertex attribute which is not consumed by the vertex shader");
 
