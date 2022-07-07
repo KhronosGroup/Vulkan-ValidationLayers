@@ -244,8 +244,8 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures(VkPhysicalDevice physicalDe
 
 static const VkLayerProperties device_profile_api_LayerProps = {
     "VK_LAYER_LUNARG_device_profile_api",
-    VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION),  // specVersion
-    1,                                         // implementationVersion
+    VK_HEADER_VERSION_COMPLETE,             // specVersion
+    1,                                      // implementationVersion
     "LunarG device profile api Layer",
 };
 
