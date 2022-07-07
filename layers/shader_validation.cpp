@@ -3036,11 +3036,6 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                                  a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
                                  b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
-            if (a_it->second.is_relaxed_precision != b_it->second.is_relaxed_precision) {
-                skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Decoration mismatch on location %" PRIu32 ".%" PRIu32 ": %s and %s stages differ in precision",
-                                 a_first.first, a_first.second, producer_stage->name, consumer_stage->name);
-            }
             uint32_t a_remaining = a_length - a_component;
             uint32_t b_remaining = b_length - b_component;
             if (a_remaining == b_remaining) {  // Sizes match so we can advance both a_it and b_it
