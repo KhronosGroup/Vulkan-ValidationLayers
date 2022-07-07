@@ -10090,10 +10090,10 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     auto rt_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&rt_pipeline_features);
-    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
-                                        false, false, &features2)) {
-        return;
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =

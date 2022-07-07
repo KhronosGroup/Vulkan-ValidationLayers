@@ -6081,9 +6081,8 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
 TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
-                                        false, true)) {
-        return;
+    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
 
     m_errorMonitor->ExpectSuccess();

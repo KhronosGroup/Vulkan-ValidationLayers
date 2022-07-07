@@ -1188,10 +1188,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHan
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
-                                        /*need_gpu_validation=*/true)) {
-        return;
+    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
         reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
@@ -1273,10 +1273,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
-                                        /*need_gpu_validation=*/true)) {
-        return;
+    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
         reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
@@ -1368,10 +1368,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
-                                        /*need_gpu_validation=*/true)) {
-        return;
+    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
         reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
@@ -1484,10 +1484,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
 TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresState) {
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
-                                        /*need_gpu_validation=*/true, /*need_push_descriptors=*/true)) {
-        return;
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
         reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(

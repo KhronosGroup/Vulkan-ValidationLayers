@@ -10600,29 +10600,12 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
 TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    if (!InitFrameworkForRayTracingTest(this, false, false)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
-                                        false, true)) {
-        return;
-    }
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_3_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    } else {
-        printf("%s Descriptor Indexing or Maintenance3 Extension not supported, skipping tests\n", kSkipPrefix);
-        return;
-    }
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        return;
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkDescriptorSetLayoutBinding binding = {};
