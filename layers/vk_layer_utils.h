@@ -306,7 +306,7 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
 extern "C" {
 #endif
 
-#define VK_LAYER_API_VERSION VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION)
+#define VK_LAYER_API_VERSION VK_HEADER_VERSION_COMPLETE
 
 typedef enum VkStringErrorFlagBits {
     VK_STRING_ERROR_NONE = 0x00000000,

@@ -124,7 +124,7 @@ def main():
             for line in infile:
                 line = line.replace('@RELATIVE_LAYER_BINARY@',
                                     relative_path_prefix + layer_lib_name)
-                line = line.replace('@VK_VERSION@', '1.1.' + vk_version)
+                line = line.replace('@VK_VERSION@', '1.3.' + vk_version)
                 json_out_file.write(line)
 
 if __name__ == '__main__':
