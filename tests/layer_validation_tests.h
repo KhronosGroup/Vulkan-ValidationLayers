@@ -894,11 +894,8 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code = "");
 
-bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
-                                    std::vector<const char *> &instance_extension_names,
-                                    std::vector<const char *> &device_extension_names, void *user_data,
-                                    bool need_gpu_validation = false, bool need_push_descriptors = false,
-                                    bool deferred_state_init = false, VkPhysicalDeviceFeatures2KHR *features2 = nullptr);
+bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, bool need_gpu_validation = false,
+                                    VkPhysicalDeviceFeatures2KHR *features2 = nullptr, bool mockicd_valid = false);
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
                                                     VkGeometryNV *geometry, VkDeviceSize offset = 0);

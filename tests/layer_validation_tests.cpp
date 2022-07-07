@@ -2445,11 +2445,9 @@ void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string 
     context_->Reset();
 };
 
-bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
-                                    std::vector<const char *> &instance_extension_names,
-                                    std::vector<const char *> &device_extension_names, void *user_data, bool need_gpu_validation,
-                                    bool need_push_descriptors, bool deferred_state_init, VkPhysicalDeviceFeatures2KHR *features2) {
-    renderFramework->AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, bool need_gpu_validation,
+                                    VkPhysicalDeviceFeatures2KHR *features2, bool mockicd_valid) {
+    framework->AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeatureDisableEXT disables[] = {
@@ -2464,45 +2462,43 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
 
     VkValidationFeaturesEXT *enabled_features = need_gpu_validation ? &features : nullptr;
 
-    renderFramework->AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    if (isKHR) {
-        renderFramework->AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-        renderFramework->AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    framework->AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    if (is_khr) {
+        framework->AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
     } else {
-        renderFramework->AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    }
-    if (need_push_descriptors) {
-        renderFramework->AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        framework->AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     }
 
-    if (!renderFramework->AreRequiredExtensionsEnabled()) {
+    // TODO - Should be moved to after InitFramework to allow more tests to run
+    // more info https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4284#issuecomment-1179405071
+    if (!framework->AreRequiredExtensionsEnabled()) {
         printf("%s %s device extension not supported, skipping test\n", kSkipPrefix,
-               renderFramework->RequiredExtensionsNotSupported().c_str());
+               framework->RequiredExtensionsNotSupported().c_str());
         return false;
     }
 
-    renderFramework->InitFramework(user_data, enabled_features);
+    framework->InitFramework(&framework->Monitor(), enabled_features);
 
-    if (renderFramework->IsPlatform(kMockICD) || renderFramework->DeviceSimulation()) {
+    if (!mockicd_valid && (framework->IsPlatform(kMockICD) || framework->DeviceSimulation())) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return false;
     }
 
+
     if (features2) {
         // extension enabled as dependency of RT extension
         auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-            vk::GetInstanceProcAddr(renderFramework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
+            vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2KHR"));
         assert(vkGetPhysicalDeviceFeatures2KHR);
-        vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), features2);
+        vkGetPhysicalDeviceFeatures2KHR(framework->gpu(), features2);
     }
-    if (!deferred_state_init) renderFramework->InitState(nullptr, features2);
     return true;
 }
 
