@@ -1069,38 +1069,36 @@ VkLayerTest::VkLayerTest() {
 
 void VkLayerTest::AddSurfaceExtension() {
     m_enableWSI = true;
-    bool bSupport = false;
+    bool bHasXlib = false;
     // Instance Extensions
     AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     AddRequiredExtensions(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-    bSupport = true;
 #endif
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     AddRequiredExtensions(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-    bSupport = true;
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR)
-    (void)bSupport;
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     auto temp_dpy = XOpenDisplay(NULL);
     if (temp_dpy) {
         AddRequiredExtensions(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        bSupport = true;
+        bHasXlib = true;
         XCloseDisplay(temp_dpy);
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (!bSupport) {
+    if (!bHasXlib) {
         auto temp_xcb = xcb_connect(NULL, NULL);
         if (temp_xcb) {
             AddRequiredExtensions(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
             xcb_disconnect(temp_xcb);
         }
     }
+#else
+    (void)bHasXlib;
 #endif
 
     // Device extensions
