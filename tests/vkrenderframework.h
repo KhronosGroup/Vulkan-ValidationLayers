@@ -154,6 +154,7 @@ class ErrorMonitor {
     bool AllDesiredMsgsFound() const;
     void DumpFailureMsgs() const;
     void MonitorReset();
+    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }
 
     VkFlags message_flags_;
     std::unordered_multiset<std::string> desired_message_strings_;
@@ -161,7 +162,7 @@ class ErrorMonitor {
     std::vector<std::string> ignore_message_strings_;
     std::vector<std::string> allowed_message_strings_;
     std::vector<std::string> other_messages_;
-    test_platform_thread_mutex mutex_;
+    mutable std::mutex mutex_;
     bool *bailout_;
     bool message_found_;
     Behavior behavior_;
