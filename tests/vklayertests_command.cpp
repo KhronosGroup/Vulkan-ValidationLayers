@@ -7191,7 +7191,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
         info.size = 4;
-        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
         VkBufferObj const buffer_obj(*m_device, info);
 
         VkDeviceSize const offsets[1]{};
@@ -7219,6 +7219,10 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02364");
         vkCmdBindTransformFeedbackBuffersEXT(m_commandBuffer->handle(), 0, 1, &buffer, offsets, nullptr);
         m_errorMonitor->VerifyFound();
+
+        auto vkDestroyBuffer = (PFN_vkDestroyBuffer)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyBuffer");
+        ASSERT_TRUE(vkDestroyBuffer != nullptr);
+        vkDestroyBuffer(m_device->handle(), buffer, nullptr);
     }
 }
 
@@ -7304,7 +7308,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
         auto info = LvlInitStruct<VkBufferCreateInfo>();
         // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
         info.size = 4;
-        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
         VkBufferObj const buffer_obj(*m_device, info);
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372");
@@ -7418,7 +7422,7 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
                 auto info = LvlInitStruct<VkBufferCreateInfo>();
                 // info.usage = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
                 info.size = 4;
-                m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-parameter");
+                m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-usage-requiredbitmask");
                 VkBufferObj const buffer_obj(*m_device, info);
 
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380");
