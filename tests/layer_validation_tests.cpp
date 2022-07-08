@@ -184,21 +184,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
 }
 
 #if GTEST_IS_THREADSAFE
-extern "C" void *AddToCommandBuffer(void *arg) {
-    struct thread_data_struct *data = (struct thread_data_struct *)arg;
-
+void AddToCommandBuffer(ThreadTestData *data) {
     for (int i = 0; i < 80000; i++) {
         vk::CmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         if (*data->bailout) {
             break;
         }
     }
-    return NULL;
 }
 
-extern "C" void *UpdateDescriptor(void *arg) {
-    struct thread_data_struct *data = (struct thread_data_struct *)arg;
-
+void UpdateDescriptor(ThreadTestData *data) {
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.buffer = data->buffer;
     buffer_info.offset = 0;
@@ -217,21 +212,17 @@ extern "C" void *UpdateDescriptor(void *arg) {
             break;
         }
     }
-    return NULL;
 }
 
 #endif  // GTEST_IS_THREADSAFE
 
-extern "C" void *ReleaseNullFence(void *arg) {
-    struct thread_data_struct *data = (struct thread_data_struct *)arg;
-
+void ReleaseNullFence(ThreadTestData *data) {
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
         if (*data->bailout) {
             break;
         }
     }
-    return NULL;
 }
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
