@@ -269,6 +269,17 @@ struct NoopBarrierAction {
     const bool layout_transition = false;
 };
 
+static void InitSubpassContexts(VkQueueFlags queue_flags, const RENDER_PASS_STATE &rp_state, const AccessContext *external_context,
+                                std::vector<AccessContext> &subpass_contexts) {
+    const auto &create_info = rp_state.createInfo;
+    // Add this for all subpasses here so that they exsist during next subpass validation
+    subpass_contexts.clear();
+    subpass_contexts.reserve(create_info.subpassCount);
+    for (uint32_t pass = 0; pass < create_info.subpassCount; pass++) {
+        subpass_contexts.emplace_back(pass, queue_flags, rp_state.subpass_dependencies, subpass_contexts, external_context);
+    }
+}
+
 // NOTE: Make sure the proxy doesn't outlive from, as the proxy is pointing directly to access contexts owned by from.
 CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccessContext &from, AsProxyContext dummy)
     : CommandBufferAccessContext(from.sync_state_) {
@@ -325,6 +336,7 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) co
     out << ", " << FormatUsage(hazard.tag) << ")";
     return out.str();
 }
+
 
 bool CommandExecutionContext::ValidForSyncOps() const {
     bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
@@ -2364,6 +2376,8 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
     const AccessContext *recorded_context = GetCurrentAccessContext();
     assert(recorded_context);
     HazardResult hazard;
+    ReplayGuard replay_guard(exec_context, *this);
+
     auto log_msg = [this](const HazardResult &hazard, const CommandExecutionContext &exec_context, const char *func_name,
                           uint32_t index) {
         const auto handle = exec_context.Handle();
@@ -2382,7 +2396,7 @@ bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_
 
         // We're allowing for the ReplayRecord to modify the exec_context (e.g. for Renderpass operations), so
         // we need to fetch the current access context each time
-        hazard = recorded_context->DetectFirstUseHazard(queue_id, tag_range, *exec_context.GetCurrentAccessContext());
+        hazard = exec_context.DetectFirstUseHazard(tag_range);
         if (hazard.hazard) {
             skip |= log_msg(hazard, exec_context, func_name, index);
         }
@@ -2422,6 +2436,10 @@ void CommandBufferAccessContext::RecordExecutedCommandBuffer(const CommandBuffer
 void CommandBufferAccessContext::ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
     auto tag_offset = [offset](ResourceAccessState *access) { access->OffsetTag(offset); };
     GetCurrentAccessContext()->ResolveFromContext(tag_offset, recorded_context);
+}
+
+HazardResult CommandBufferAccessContext::DetectFirstUseHazard(const ResourceUsageRange &tag_range) {
+    return current_replay_->GetCurrentAccessContext()->DetectFirstUseHazard(GetQueueId(), tag_range, *GetCurrentAccessContext());
 }
 
 ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const CommandBufferAccessContext &recorded_context) {
@@ -2817,11 +2835,8 @@ RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_sta
                                                  const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                                  const AccessContext *external_context)
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
-    // Add this for all subpasses here so that they exsist during next subpass validation
-    subpass_contexts_.reserve(rp_state_->createInfo.subpassCount);
-    for (uint32_t pass = 0; pass < rp_state_->createInfo.subpassCount; pass++) {
-        subpass_contexts_.emplace_back(pass, queue_flags, rp_state_->subpass_dependencies, subpass_contexts_, external_context);
-    }
+    // Add this for all subpasses here so that they exist during next subpass validation
+    InitSubpassContexts(queue_flags, rp_state, external_context, subpass_contexts_);
     attachment_views_ = CreateAttachmentViewGen(render_area, attachment_views);
 }
 void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barrier_tag, const ResourceUsageTag load_tag) {
@@ -6206,7 +6221,7 @@ void SyncOpBarriers::ApplyGlobalBarriers(const Barriers &barriers, const Functor
     }
 }
 
-ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpPipelineBarrier::Record(CommandBufferAccessContext *cb_context) {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
     ReplayRecord(*cb_context, tag);
     return tag;
@@ -6602,7 +6617,7 @@ struct SyncOpWaitEventsFunctorFactory {
     SyncEventState *sync_event;
 };
 
-ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpWaitEvents::Record(CommandBufferAccessContext *cb_context) {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
 
     ReplayRecord(*cb_context, tag);
@@ -6752,7 +6767,7 @@ bool SyncOpResetEvent::DoValidate(const CommandExecutionContext &exec_context, c
     return skip;
 }
 
-ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpResetEvent::Record(CommandBufferAccessContext *cb_context) {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
     ReplayRecord(*cb_context, tag);
     return tag;
@@ -6876,7 +6891,7 @@ bool SyncOpSetEvent::DoValidate(const CommandExecutionContext &exec_context, con
     return skip;
 }
 
-ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpSetEvent::Record(CommandBufferAccessContext *cb_context) {
     const auto tag = cb_context->NextCommandTag(cmd_type_);
     auto *events_context = cb_context->GetCurrentEventsContext();
     const QueueId queue_id = cb_context->GetQueueId();
@@ -6935,7 +6950,7 @@ void SyncOpSetEvent::DoRecord(QueueId queue_id, ResourceUsageTag tag, const std:
 SyncOpBeginRenderPass::SyncOpBeginRenderPass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
                                              const VkRenderPassBeginInfo *pRenderPassBegin,
                                              const VkSubpassBeginInfo *pSubpassBeginInfo)
-    : SyncOpBase(cmd_type) {
+    : SyncOpBase(cmd_type), rp_context_(nullptr) {
     if (pRenderPassBegin) {
         rp_state_ = sync_state.Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
         renderpass_begin_info_ = safe_VkRenderPassBeginInfo(pRenderPassBegin);
@@ -6991,11 +7006,16 @@ bool SyncOpBeginRenderPass::Validate(const CommandBufferAccessContext &cb_contex
     return skip;
 }
 
-ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) const {
-    // TODO PHASE2 need to have a consistent way to record to either command buffer or queue contexts
+ResourceUsageTag SyncOpBeginRenderPass::Record(CommandBufferAccessContext *cb_context) {
     assert(rp_state_.get());
     if (nullptr == rp_state_.get()) return cb_context->NextCommandTag(cmd_type_);
-    return cb_context->RecordBeginRenderPass(cmd_type_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
+    const ResourceUsageTag begin_tag =
+        cb_context->RecordBeginRenderPass(cmd_type_, *rp_state_.get(), renderpass_begin_info_.renderArea, attachments_);
+
+    // Note: this state update must be after RecordBeginRenderPass as there is no current render pass until that function runs
+    rp_context_ = cb_context->GetCurrentRenderPassContext();
+
+    return begin_tag;
 }
 
 bool SyncOpBeginRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const CommandBufferAccessContext &recorded_context,
@@ -7003,7 +7023,15 @@ bool SyncOpBeginRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const 
     return false;
 }
 
-void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
+void SyncOpBeginRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
+    // Need to update the exec_contexts state (which for RenderPass operations *must* be a QueueBatchContext, as
+    // render pass operations are not allowed in secondary command buffers.
+    const QueueId queue_id = exec_context.GetQueueId();
+    assert(queue_id != QueueSyncState::kQueueIdInvalid);  // Renderpass replay only valid at submit (not exec) time
+    if (queue_id == QueueSyncState::kQueueIdInvalid) return;
+
+    exec_context.BeginRenderPassReplay(*this, tag);
+}
 
 SyncOpNextSubpass::SyncOpNextSubpass(CMD_TYPE cmd_type, const SyncValidator &sync_state,
                                      const VkSubpassBeginInfo *pSubpassBeginInfo, const VkSubpassEndInfo *pSubpassEndInfo)
@@ -7025,7 +7053,7 @@ bool SyncOpNextSubpass::Validate(const CommandBufferAccessContext &cb_context) c
     return skip;
 }
 
-ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpNextSubpass::Record(CommandBufferAccessContext *cb_context) {
     return cb_context->RecordNextSubpass(cmd_type_);
 }
 
@@ -7042,7 +7070,9 @@ SyncOpEndRenderPass::SyncOpEndRenderPass(CMD_TYPE cmd_type, const SyncValidator 
     }
 }
 
-void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
+void SyncOpNextSubpass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
+    exec_context.NextSubpassReplay();
+}
 
 bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context) const {
     bool skip = false;
@@ -7053,7 +7083,7 @@ bool SyncOpEndRenderPass::Validate(const CommandBufferAccessContext &cb_context)
     return skip;
 }
 
-ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) const {
+ResourceUsageTag SyncOpEndRenderPass::Record(CommandBufferAccessContext *cb_context) {
     return cb_context->RecordEndRenderPass(cmd_type_);
 }
 
@@ -7062,7 +7092,9 @@ bool SyncOpEndRenderPass::ReplayValidate(ResourceUsageTag recorded_tag, const Co
     return false;
 }
 
-void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {}
+void SyncOpEndRenderPass::ReplayRecord(CommandExecutionContext &exec_context, ResourceUsageTag tag) const {
+    exec_context.EndRenderPassReplay();
+}
 
 void SyncValidator::PreCallRecordCmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR pipelineStage,
                                                           VkBuffer dstBuffer, VkDeviceSize dstOffset, uint32_t marker) {
@@ -7404,7 +7436,11 @@ SyncEventsContext &SyncEventsContext::DeepCopy(const SyncEventsContext &from) {
 }
 
 QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state)
-    : CommandExecutionContext(&sync_state), queue_state_(&queue_state), tag_range_(0, 0), batch_log_(nullptr) {}
+    : CommandExecutionContext(&sync_state),
+      queue_state_(&queue_state),
+      tag_range_(0, 0),
+      current_access_context_(&access_context_),
+      batch_log_(nullptr) {}
 
 template <typename BatchInfo>
 void QueueBatchContext::Setup(const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info,
@@ -7439,6 +7475,58 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) 
 void QueueBatchContext::ApplyDeviceWait() {
     access_context_.Reset();
     events_context_.ApplyTaggedWait(GetQueueFlags(), ResourceUsageRecord::kMaxIndex);
+}
+
+HazardResult QueueBatchContext::DetectFirstUseHazard(const ResourceUsageRange &tag_range) {
+    // Queue batch handling requires dealing with renderpass state and picking the correct access context
+    if (rp_replay_) {
+        return rp_replay_.replay_context->DetectFirstUseHazard(GetQueueId(), tag_range, *current_access_context_);
+    }
+    return current_replay_->GetCurrentAccessContext()->DetectFirstUseHazard(GetQueueId(), tag_range, access_context_);
+}
+
+void QueueBatchContext::BeginRenderPassReplay(const SyncOpBeginRenderPass &begin_op, const ResourceUsageTag tag) {
+    current_access_context_ = rp_replay_.Begin(GetQueueFlags(), begin_op, access_context_);
+    current_access_context_->ResolvePreviousAccesses();
+}
+
+void QueueBatchContext::NextSubpassReplay() {
+    current_access_context_ = rp_replay_.Next();
+    current_access_context_->ResolvePreviousAccesses();
+}
+
+void QueueBatchContext::EndRenderPassReplay() {
+    rp_replay_.End(access_context_);
+    current_access_context_ = &access_context_;
+}
+
+AccessContext *QueueBatchContext::RenderPassReplayState::Begin(VkQueueFlags queue_flags, const SyncOpBeginRenderPass &begin_op_,
+                                                               const AccessContext &external_context) {
+    Reset();
+
+    begin_op = &begin_op_;
+    subpass = 0;
+
+    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
+    assert(rp_context);
+    replay_context = &rp_context->GetContexts()[0];
+
+    InitSubpassContexts(queue_flags, *rp_context->GetRenderPassState(), &external_context, subpass_contexts);
+    return &subpass_contexts[0];
+}
+
+AccessContext *QueueBatchContext::RenderPassReplayState::Next() {
+    subpass++;
+
+    const RenderPassAccessContext *rp_context = begin_op->GetRenderPassAccessContext();
+
+    replay_context = &rp_context->GetContexts()[subpass];
+    return &subpass_contexts[subpass];
+}
+
+void QueueBatchContext::RenderPassReplayState::End(AccessContext &external_context) {
+    external_context.ResolveChildContexts(subpass_contexts);
+    Reset();
 }
 
 class ApplySemaphoreBarrierAction {
