@@ -824,7 +824,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsCallback(VkDebugUtilsMessageSeverityFla
                                                   const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
 
 #if GTEST_IS_THREADSAFE
-struct thread_data_struct {
+struct ThreadTestData {
     VkCommandBuffer commandBuffer;
     VkDevice device;
     VkEvent event;
@@ -834,11 +834,11 @@ struct thread_data_struct {
     bool *bailout;
 };
 
-extern "C" void *AddToCommandBuffer(void *arg);
-extern "C" void *UpdateDescriptor(void *arg);
+void AddToCommandBuffer(ThreadTestData *);
+void UpdateDescriptor(ThreadTestData *);
 #endif  // GTEST_IS_THREADSAFE
 
-extern "C" void *ReleaseNullFence(void *arg);
+void ReleaseNullFence(ThreadTestData *);
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);

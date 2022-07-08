@@ -1341,7 +1341,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     VkBufferObj buffer;
     buffer.init(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    struct thread_data_struct data;
+    ThreadTestData data;
     data.device = device();
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
@@ -1351,10 +1351,10 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    std::thread thread(UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, &data);
     // Update descriptors from this thread at the same time.
 
-    struct thread_data_struct data2;
+    ThreadTestData data2;
     data2.device = device();
     data2.descriptorSet = normal_descriptor_set.set_;
     data2.binding = 1;

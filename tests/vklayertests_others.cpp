@@ -3440,7 +3440,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     err = vk::ResetEvent(device(), event);
     ASSERT_VK_SUCCESS(err);
 
-    struct thread_data_struct data;
+    ThreadTestData data;
     data.commandBuffer = commandBuffer.handle();
     data.event = event;
     bool bailout = false;
@@ -3449,7 +3449,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     // First do some correct operations using multiple threads.
     // Add many entries to command buffer from another thread.
-    std::thread thread1(AddToCommandBuffer, (void *)&data);
+    std::thread thread1(AddToCommandBuffer, &data);
     // Make non-conflicting calls from this thread at the same time.
     for (int i = 0; i < 80000; i++) {
         uint32_t count;
@@ -3459,7 +3459,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     // Then do some incorrect operations using multiple threads.
     // Add many entries to command buffer from another thread.
-    std::thread thread2(AddToCommandBuffer, (void *)&data);
+    std::thread thread2(AddToCommandBuffer, &data);
     // Add many entries to command buffer from this thread at the same time.
     AddToCommandBuffer(&data);
 
@@ -3493,7 +3493,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     VkBufferObj buffer;
     buffer.init(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    struct thread_data_struct data;
+    ThreadTestData data;
     data.device = device();
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
@@ -3503,10 +3503,10 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    std::thread thread(UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, &data);
     // Update descriptors from this thread at the same time.
 
-    struct thread_data_struct data2;
+    ThreadTestData data2;
     data2.device = device();
     data2.descriptorSet = normal_descriptor_set.set_;
     data2.binding = 1;
@@ -3569,7 +3569,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     VkBufferObj buffer;
     buffer.init(*m_device, 256, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
-    struct thread_data_struct data;
+    ThreadTestData data;
     data.device = device();
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
@@ -3579,10 +3579,10 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    std::thread thread(UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, &data);
     // Update descriptors from this thread at the same time.
 
-    struct thread_data_struct data2;
+    ThreadTestData data2;
     data2.device = device();
     data2.descriptorSet = normal_descriptor_set.set_;
     data2.binding = 1;
