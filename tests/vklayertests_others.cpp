@@ -3413,8 +3413,6 @@ TEST_F(VkLayerTest, QueueForwardProgressFenceWait) {
 
 #if GTEST_IS_THREADSAFE
 TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
-    test_platform_thread thread;
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
 
@@ -3451,21 +3449,21 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
     // First do some correct operations using multiple threads.
     // Add many entries to command buffer from another thread.
-    test_platform_thread_create(&thread, AddToCommandBuffer, (void *)&data);
+    std::thread thread1(AddToCommandBuffer, (void *)&data);
     // Make non-conflicting calls from this thread at the same time.
     for (int i = 0; i < 80000; i++) {
         uint32_t count;
         vk::EnumeratePhysicalDevices(instance(), &count, NULL);
     }
-    test_platform_thread_join(thread, NULL);
+    thread1.join();
 
     // Then do some incorrect operations using multiple threads.
     // Add many entries to command buffer from another thread.
-    test_platform_thread_create(&thread, AddToCommandBuffer, (void *)&data);
+    std::thread thread2(AddToCommandBuffer, (void *)&data);
     // Add many entries to command buffer from this thread at the same time.
     AddToCommandBuffer(&data);
 
-    test_platform_thread_join(thread, NULL);
+    thread2.join();
     commandBuffer.end();
 
     m_errorMonitor->SetBailout(NULL);
@@ -3477,7 +3475,6 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
 
 TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     TEST_DESCRIPTION("Two threads updating the same descriptor set, expected to generate a threading error");
-    test_platform_thread thread;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR : vkUpdateDescriptorSets");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
@@ -3506,7 +3503,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    test_platform_thread_create(&thread, UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, (void *)&data);
     // Update descriptors from this thread at the same time.
 
     struct thread_data_struct data2;
@@ -3518,7 +3515,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    thread.join();
 
     m_errorMonitor->SetBailout(NULL);
 
@@ -3527,7 +3524,6 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
 
 TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     TEST_DESCRIPTION("Two threads updating the same UAB descriptor set, expected not to generate a threading error");
-    test_platform_thread thread;
     m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -3583,7 +3579,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    test_platform_thread_create(&thread, UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, (void *)&data);
     // Update descriptors from this thread at the same time.
 
     struct thread_data_struct data2;
@@ -3595,7 +3591,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    thread.join();
 
     m_errorMonitor->SetBailout(NULL);
 

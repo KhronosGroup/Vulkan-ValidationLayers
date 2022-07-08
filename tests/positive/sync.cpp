@@ -1708,7 +1708,6 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
 }
 
 TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
-    test_platform_thread thread;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
 
@@ -1722,11 +1721,11 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
 
     // Call vk::DestroyFence of VK_NULL_HANDLE repeatedly using multiple threads.
     // There should be no validation error from collision of that non-object.
-    test_platform_thread_create(&thread, ReleaseNullFence, (void *)&data);
+    std::thread thread(ReleaseNullFence, (void *)&data);
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(m_device->device(), VK_NULL_HANDLE, NULL);
     }
-    test_platform_thread_join(thread, NULL);
+    thread.join();
 
     m_errorMonitor->SetBailout(NULL);
 
