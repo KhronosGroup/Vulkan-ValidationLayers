@@ -7568,7 +7568,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
     // Turns m_commandBuffer into a unprotected command buffer without passing in a VkCommandPoolCreateFlags
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkCommandPoolObj protectedCommandPool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_PROTECTED_BIT);
     VkCommandBufferObj protectedCommandBuffer(m_device, &protectedCommandPool);

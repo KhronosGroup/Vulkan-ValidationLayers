@@ -615,7 +615,6 @@ TEST_F(VkLayerTest, SparseResidencyFlagMissing) {
 
 TEST_F(VkLayerTest, InvalidMemoryMapping) {
     TEST_DESCRIPTION("Attempt to map memory in a number of incorrect ways");
-    VkResult err;
     bool pass;
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -632,8 +631,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     buf_info.pQueueFamilyIndices = NULL;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     buf_info.flags = 0;
-    err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer));
 
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
     VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
@@ -649,35 +647,34 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         vk::DestroyBuffer(m_device->device(), buffer, NULL);
         return;
     }
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem));
 
     uint8_t *pData;
     // Attempt to map memory size 0 is invalid
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00680");
-    err = vk::MapMemory(m_device->device(), mem, 0, 0, 0, (void **)&pData);
+    vk::MapMemory(m_device->device(), mem, 0, 0, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
-    err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    // m_errorMonitor->ExpectSuccess();
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
+    // m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00678");
-    m_errorMonitor->SetUnexpectedError("VUID-vkMapMemory-size-00681");
-    err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
+    vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
     // Unmap the memory to avoid re-map error
     vk::UnmapMemory(m_device->device(), mem);
     // overstep offset with VK_WHOLE_SIZE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
-    err = vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
+    vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep offset w/o VK_WHOLE_SIZE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
-    err = vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
+    vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00681");
-    err = vk::MapMemory(m_device->device(), mem, 1, allocation_size, 0, (void **)&pData);
+    vk::MapMemory(m_device->device(), mem, 1, allocation_size, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUnmapMemory-memory-00689");
@@ -685,8 +682,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     m_errorMonitor->VerifyFound();
 
     // Now map memory and cause errors due to flushing invalid ranges
-    err = vk::MapMemory(m_device->device(), mem, 4 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 4 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData));
     VkMappedMemoryRange mmr = LvlInitStruct<VkMappedMemoryRange>();
     mmr.memory = mem;
     mmr.offset = atom_size;  // Error b/c offset less than offset of mapped mem
@@ -696,8 +692,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
     // Now flush range that oversteps mapped range
     vk::UnmapMemory(m_device->device(), mem);
-    err = vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
     mmr.offset = atom_size;
     mmr.size = 4 * atom_size;  // Flushing bounds exceed mapped bounds
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00685");
@@ -706,8 +701,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
     // Now flush range with VK_WHOLE_SIZE that oversteps offset
     vk::UnmapMemory(m_device->device(), mem);
-    err = vk::MapMemory(m_device->device(), mem, 2 * atom_size, 4 * atom_size, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 2 * atom_size, 4 * atom_size, 0, (void **)&pData));
     mmr.offset = atom_size;
     mmr.size = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00686");
@@ -718,8 +712,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     if (atom_size > 3) {
         // Now with an offset NOT a multiple of the device limit
         vk::UnmapMemory(m_device->device(), mem);
-        err = vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
         mmr.offset = 3;  // Not a multiple of atom_size
         mmr.size = VK_WHOLE_SIZE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-offset-00687");
@@ -728,8 +721,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
         // Now with a size NOT a multiple of the device limit
         vk::UnmapMemory(m_device->device(), mem);
-        err = vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size, 0, (void **)&pData));
         mmr.offset = atom_size;
         mmr.size = 2 * atom_size + 1;  // Not a multiple of atom_size
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01390");
@@ -738,8 +730,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
         // Now with VK_WHOLE_SIZE and a mapping that does not end at a multiple of atom_size nor at the end of the memory.
         vk::UnmapMemory(m_device->device(), mem);
-        err = vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData);
-        ASSERT_VK_SUCCESS(err);
+        ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, 4 * atom_size + 1, 0, (void **)&pData));
         mmr.offset = atom_size;
         mmr.size = VK_WHOLE_SIZE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-01389");

@@ -1606,6 +1606,7 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -1621,13 +1622,16 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
         vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
+    VkPhysicalDeviceMultiviewFeatures multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features =
+        LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(&multiview_features);
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&fdm_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
 
     if (fdm_features.fragmentDensityMap != VK_TRUE) {
-        printf("%s requires fragmentDensityMap feature.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "requires fragmentDensityMap feature";
+    } else if (multiview_features.multiview != VK_TRUE) {
+        GTEST_SKIP() << "requires multiview feature";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -1637,6 +1641,7 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     VkAttachmentReference ref = {0, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
     VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = {VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT,
@@ -1656,13 +1661,13 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
 
     auto vkCreateRenderPass2KHR =
         reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
-    VkResult err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp));
 
     VkImageObj image(m_device);
     image.InitNoLayout(image.ImageCreateInfo2D(32, 32, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                                VK_IMAGE_TILING_OPTIMAL, 0));
-    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 2,
+                                             VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
     fb_info.renderPass = rp;
@@ -1675,28 +1680,20 @@ TEST_F(VkLayerTest, InvalidFragmentDensityMapLayerCount) {
     VkFramebuffer fb;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02747");
-    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
-    if (err == VK_SUCCESS) {
-        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
-    }
 
     vk::DestroyRenderPass(m_device->device(), rp, NULL);
     rp = {};
 
-    // Set viewMask to non-zero
+    // Set viewMask to non-zero - requires multiview
     subpass.viewMask = 0x10;
-    err = vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_VK_SUCCESS(vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp));
     fb_info.renderPass = rp;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-renderPass-02746");
-    err = vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
+    vk::CreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
-    if (err == VK_SUCCESS) {
-        vk::DestroyFramebuffer(m_device->device(), fb, NULL);
-    }
-
     vk::DestroyRenderPass(m_device->device(), rp, NULL);
 }
 
