@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <thread>
 
 #include "vk_layer_logging.h"
 
@@ -136,83 +136,5 @@ static inline const char *vk_result_string(VkResult err) {
 static inline void test_error_callback(const char *expr, const char *file, unsigned int line, const char *function) {
     ADD_FAILURE_AT(file, line) << "Assertion: `" << expr << "'";
 }
-
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
-/* Linux-specific common code: */
-
-#include <pthread.h>
-
-// Threads:
-typedef pthread_t test_platform_thread;
-
-static inline int test_platform_thread_create(test_platform_thread *thread, void *(*func)(void *), void *data) {
-    pthread_attr_t thread_attr;
-    pthread_attr_init(&thread_attr);
-    return pthread_create(thread, &thread_attr, func, data);
-}
-static inline int test_platform_thread_join(test_platform_thread thread, void **retval) { return pthread_join(thread, retval); }
-
-// Thread IDs:
-typedef pthread_t test_platform_thread_id;
-static inline test_platform_thread_id test_platform_get_thread_id() { return pthread_self(); }
-
-// Thread mutex:
-typedef pthread_mutex_t test_platform_thread_mutex;
-static inline void test_platform_thread_create_mutex(test_platform_thread_mutex *pMutex) { pthread_mutex_init(pMutex, NULL); }
-static inline void test_platform_thread_lock_mutex(test_platform_thread_mutex *pMutex) { pthread_mutex_lock(pMutex); }
-static inline void test_platform_thread_unlock_mutex(test_platform_thread_mutex *pMutex) { pthread_mutex_unlock(pMutex); }
-static inline void test_platform_thread_delete_mutex(test_platform_thread_mutex *pMutex) { pthread_mutex_destroy(pMutex); }
-typedef pthread_cond_t test_platform_thread_cond;
-static inline void test_platform_thread_init_cond(test_platform_thread_cond *pCond) { pthread_cond_init(pCond, NULL); }
-static inline void test_platform_thread_cond_wait(test_platform_thread_cond *pCond, test_platform_thread_mutex *pMutex) {
-    pthread_cond_wait(pCond, pMutex);
-}
-static inline void test_platform_thread_cond_broadcast(test_platform_thread_cond *pCond) { pthread_cond_broadcast(pCond); }
-
-#elif defined(_WIN32)  // defined(__linux__)
-// Threads:
-typedef HANDLE test_platform_thread;
-static inline int test_platform_thread_create(test_platform_thread *thread, void *(*func)(void *), void *data) {
-    DWORD threadID;
-    *thread = CreateThread(NULL,  // default security attributes
-                           0,     // use default stack size
-                           (LPTHREAD_START_ROUTINE)func,
-                           data,        // thread function argument
-                           0,           // use default creation flags
-                           &threadID);  // returns thread identifier
-    return (*thread != NULL);
-}
-static inline int test_platform_thread_join(test_platform_thread thread, void **retval) {
-    return WaitForSingleObject(thread, INFINITE);
-}
-
-// Thread IDs:
-typedef DWORD test_platform_thread_id;
-static test_platform_thread_id test_platform_get_thread_id() { return GetCurrentThreadId(); }
-
-// Thread mutex:
-typedef CRITICAL_SECTION test_platform_thread_mutex;
-static void test_platform_thread_create_mutex(test_platform_thread_mutex *pMutex) { InitializeCriticalSection(pMutex); }
-static void test_platform_thread_lock_mutex(test_platform_thread_mutex *pMutex) { EnterCriticalSection(pMutex); }
-static void test_platform_thread_unlock_mutex(test_platform_thread_mutex *pMutex) { LeaveCriticalSection(pMutex); }
-static void test_platform_thread_delete_mutex(test_platform_thread_mutex *pMutex) { DeleteCriticalSection(pMutex); }
-typedef CONDITION_VARIABLE test_platform_thread_cond;
-static void test_platform_thread_init_cond(test_platform_thread_cond *pCond) { InitializeConditionVariable(pCond); }
-static void test_platform_thread_cond_wait(test_platform_thread_cond *pCond, test_platform_thread_mutex *pMutex) {
-    SleepConditionVariableCS(pCond, pMutex, INFINITE);
-}
-static void test_platform_thread_cond_broadcast(test_platform_thread_cond *pCond) { WakeAllConditionVariable(pCond); }
-#else                  // defined(_WIN32)
-
-#error The "test_common.h" file must be modified for this OS.
-
-// NOTE: In order to support another OS, an #elif needs to be added (above the
-// "#else // defined(_WIN32)") for that OS, and OS-specific versions of the
-// contents of this file must be created.
-
-// NOTE: Other OS-specific changes are also needed for this OS.  Search for
-// files with "WIN32" in it, as a quick way to find files that must be changed.
-
-#endif  // defined(_WIN32)
 
 #endif  // TEST_COMMON_H

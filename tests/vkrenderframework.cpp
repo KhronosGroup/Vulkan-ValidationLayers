@@ -42,14 +42,13 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
 }
 
 ErrorMonitor::ErrorMonitor(Behavior behavior) : behavior_(behavior) {
-    test_platform_thread_create_mutex(&mutex_);
     MonitorReset();
     if (behavior_ == Behavior::DefaultSuccess) {
         ExpectSuccess(kErrorBit);
     }
 }
 
-ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
+ErrorMonitor::~ErrorMonitor() NOEXCEPT {}
 
 void ErrorMonitor::MonitorReset() {
     message_flags_ = kErrorBit;
@@ -63,9 +62,8 @@ void ErrorMonitor::MonitorReset() {
 }
 
 void ErrorMonitor::Reset() {
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     MonitorReset();
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
@@ -75,30 +73,27 @@ void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *cons
         VerifyNotFound();
     }
 
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     desired_message_strings_.insert(msgString);
     message_flags_ |= msgFlags;
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     allowed_message_strings_.emplace_back(msg);
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::SetUnexpectedError(const char *const msg) {
     if (NeedCheckSuccess()) {
         VerifyNotFound();
     }
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     ignore_message_strings_.emplace_back(msg);
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
     VkBool32 result = VK_FALSE;
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     if (bailout_ != nullptr) {
         *bailout_ = true;
     }
@@ -143,8 +138,6 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
             other_messages_.push_back(errorString);
         }
     }
-
-    test_platform_thread_unlock_mutex(&mutex_);
     return result;
 }
 
@@ -157,16 +150,14 @@ bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
 bool ErrorMonitor::AllDesiredMsgsFound() const { return desired_message_strings_.empty(); }
 
 void ErrorMonitor::SetError(const char *const errorString) {
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     message_found_ = true;
     failure_message_strings_.insert(errorString);
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::SetBailout(bool *bailout) {
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     bailout_ = bailout;
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::DumpFailureMsgs() const {
@@ -181,33 +172,34 @@ void ErrorMonitor::DumpFailureMsgs() const {
 
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
     // Match ANY message matching specified type
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     desired_message_strings_.insert("");
     message_flags_ = message_flag_mask;
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 void ErrorMonitor::VerifyFound() {
-    test_platform_thread_lock_mutex(&mutex_);
-    // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
-    if (!AllDesiredMsgsFound()) {
-        DumpFailureMsgs();
-        for (const auto &desired_msg : desired_message_strings_) {
-            ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
-        }
-    } else if (GetOtherFailureMsgs().size() > 0) {
-        // Fail test case for any unexpected errors
+    {
+        // the lock must be released before the ExpectSuccess call at the end
+        auto guard = Lock();
+        // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
+        if (!AllDesiredMsgsFound()) {
+            DumpFailureMsgs();
+            for (const auto &desired_msg : desired_message_strings_) {
+                ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
+            }
+        } else if (GetOtherFailureMsgs().size() > 0) {
+            // Fail test case for any unexpected errors
 #if defined(ANDROID)
-        // This will get unexpected errors into the adb log
-        for (auto msg : other_messages_) {
-            __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
-        }
+            // This will get unexpected errors into the adb log
+            for (auto msg : other_messages_) {
+                __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
+            }
 #else
-        ADD_FAILURE() << "Received unexpected error(s).";
+            ADD_FAILURE() << "Received unexpected error(s).";
 #endif
+        }
+        MonitorReset();
     }
-    MonitorReset();
-    test_platform_thread_unlock_mutex(&mutex_);
 
     if (behavior_ == Behavior::DefaultSuccess) {
         ExpectSuccess();
@@ -215,7 +207,7 @@ void ErrorMonitor::VerifyFound() {
 }
 
 void ErrorMonitor::VerifyNotFound() {
-    test_platform_thread_lock_mutex(&mutex_);
+    auto guard = Lock();
     // ExpectSuccess() configured us to match anything. Any error is a failure.
     if (AnyDesiredMsgFound()) {
         DumpFailureMsgs();
@@ -234,7 +226,6 @@ void ErrorMonitor::VerifyNotFound() {
 #endif
     }
     MonitorReset();
-    test_platform_thread_unlock_mutex(&mutex_);
 }
 
 bool ErrorMonitor::IgnoreMessage(string const &msg) const {

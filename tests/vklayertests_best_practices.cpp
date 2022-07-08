@@ -1296,7 +1296,6 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
 #if GTEST_IS_THREADSAFE
 TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     TEST_DESCRIPTION("Two threads updating the same UAB descriptor set, expected not to generate a threading error");
-    test_platform_thread thread;
     m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -1352,7 +1351,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     m_errorMonitor->SetBailout(data.bailout);
 
     // Update descriptors from another thread.
-    test_platform_thread_create(&thread, UpdateDescriptor, (void *)&data);
+    std::thread thread(UpdateDescriptor, (void *)&data);
     // Update descriptors from this thread at the same time.
 
     struct thread_data_struct data2;
@@ -1364,7 +1363,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
 
     UpdateDescriptor(&data2);
 
-    test_platform_thread_join(thread, NULL);
+    thread.join();
 
     m_errorMonitor->SetBailout(NULL);
 
