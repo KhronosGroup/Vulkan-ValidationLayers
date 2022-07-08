@@ -3741,11 +3741,17 @@ TEST_F(VkLayerTest, InvalidResolveModeWithNonIntegerColorFormat) {
     image.Init(image_create_info);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    VkImageObj resolve_image(m_device);
+    resolve_image.Init(image_create_info);
+    VkImageView resolve_image_view = resolve_image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageView = image_view;
     color_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;  // not allowed for format
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = resolve_image_view;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
@@ -3798,11 +3804,17 @@ TEST_F(VkLayerTest, InvalidResolveModeWithIntegerColorFormat) {
     image.Init(image_create_info);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
 
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    VkImageObj resolve_image(m_device);
+    resolve_image.Init(image_create_info);
+    VkImageView resolve_image_view = resolve_image.targetView(VK_FORMAT_R8G8B8A8_UINT);
+
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageView = image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_MAX_BIT;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = resolve_image_view;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
@@ -3851,6 +3863,7 @@ TEST_F(VkLayerTest, InvalidResolveModeSamples) {
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     color_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.resolveImageView = image_view;
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.colorAttachmentCount = 1;
@@ -4575,9 +4588,15 @@ TEST_F(VkLayerTest, TestRenderingInfoColorAttachment) {
     image.Init(image_create_info);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    VkImageObj resolve_image(m_device);
+    resolve_image.Init(image_create_info);
+    VkImageView resolve_image_view = resolve_image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
     VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     color_attachment.imageView = invalid_image_view;
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.resolveImageView = resolve_image_view;
 
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.layerCount = 1;

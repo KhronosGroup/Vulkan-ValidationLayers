@@ -2109,6 +2109,22 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE &&
+        IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+        const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
+        if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
+            if (msrtss_info->rasterizationSamples != pipeline->MultisampleState()->rasterizationSamples) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854",
+                                 "vkCreateGraphicsPipelines(): VkMultisampledRenderToSingleSampledInfoEXT in the pNext chain of "
+                                 "pipelines[%" PRIu32 "] subpass index %" PRIu32
+                                 "'s VkSubpassDescription2 has a rasterizationSamples of (%" PRIu32
+                                 ") which is not equal to  pMultisampleState.rasterizationSamples which is (%" PRIu32 ").",
+                                 pipe_index, subpass, msrtss_info->rasterizationSamples,
+                                 pipeline->MultisampleState()->rasterizationSamples);
+            }
+        }
+    }
+
     if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE && pipeline->fragment_shader_state) {
         if (subpass_desc && subpass_desc->pDepthStencilAttachment != nullptr && pipeline->DepthStencilState()) {
             if (IsImageLayoutStencilReadOnly(subpass_desc->pDepthStencilAttachment->layout)) {
@@ -8409,7 +8425,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     }
 
     for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
-        skip |= ValidateRenderingAttachmentInfo(commandBuffer, &pRenderingInfo->pColorAttachments[j], func_name);
+        skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo,  &pRenderingInfo->pColorAttachments[j], func_name);
 
         if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
             auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
@@ -8488,7 +8504,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     }
 
     if (pRenderingInfo->pDepthAttachment) {
-        skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo->pDepthAttachment, func_name);
+        skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo, pRenderingInfo->pDepthAttachment, func_name);
 
         if (pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
             auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
@@ -8539,7 +8555,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
     }
 
     if (pRenderingInfo->pStencilAttachment != nullptr) {
-        skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo->pStencilAttachment, func_name);
+        skip |= ValidateRenderingAttachmentInfo(commandBuffer, pRenderingInfo, pRenderingInfo->pStencilAttachment, func_name);
 
         if (pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
             auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
@@ -8623,6 +8639,52 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                          pRenderingInfo->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+        const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
+        const auto msrtss_samples = (msrtss_info) ? msrtss_info->rasterizationSamples : VK_SAMPLE_COUNT_1_BIT;
+        for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+            if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
+                const auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
+                skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, image_view_state, msrtss_samples, "Color",
+                                                                     func_name);
+            }
+        }
+        if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
+            const auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
+            skip |=
+                ValidateMultisampledRenderToSingleSampleView(commandBuffer, depth_view_state, msrtss_samples, "Depth", func_name);
+        }
+        if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
+            const auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
+            skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, stencil_view_state, msrtss_samples, "Stencil",
+                                                                 func_name);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
+                                                              const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view_state,
+                                                              VkSampleCountFlagBits expected_samples, const char *attachment_type,
+                                                              const char *func_name) const {
+    bool skip = false;
+    const auto image_view = image_view_state->Handle();
+    if (image_view_state->samples != expected_samples) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06858",
+                         "%s(): VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples is %s, but %s attachment's imageView (%s) was created with %s",
+                         func_name, string_VkSampleCountFlagBits(expected_samples), attachment_type,
+                         report_data->FormatHandle(image_view).c_str(), string_VkSampleCountFlagBits(image_view_state->samples));
+    }
+    IMAGE_STATE *image_state = image_view_state->image_state.get();
+    if ((image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) &&
+        !(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06859",
+                         "%s(): %s attachment %s was created with VK_SAMPLE_COUNT_1_BIT but "
+                         "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT was not set in "
+                         "pImageCreateInfo.flags when the image used to create the imageView (%s) was created",
+                         func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
+                         report_data->FormatHandle(image_state->image()).c_str());
+    }
     return skip;
 }
 
@@ -8635,7 +8697,7 @@ bool CoreChecks::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
     return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERING);
 }
 
-bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingAttachmentInfo *pAttachment,
+bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo, const VkRenderingAttachmentInfo *pAttachment,
                                                  const char *func_name) const {
     bool skip = false;
 
@@ -8683,9 +8745,46 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
         }
 
         if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06132",
-                             "%s(): Image sample count must not have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s", func_name,
-                             string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
+            if (!IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06132",
+                                 "%s(): Image sample count must not have a VK_SAMPLE_COUNT_1_BIT for Resolve Mode %s", func_name,
+                                 string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
+            } else {
+                const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
+                if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06861",
+                                     "%s(): imageView %s must not have a VK_SAMPLE_COUNT_1_BIT when resolveMode is %s", func_name,
+                                     report_data->FormatHandle(pAttachment->imageView).c_str(),
+                                     string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
+                }
+                if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
+                    (pAttachment->resolveImageView != VK_NULL_HANDLE)) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06863",
+                                     "%s(): If resolve mode is not VK_RESOLVE_MODE_NONE and the pNext chain of VkRenderingInfo "
+                                     "includes a VkMultisampledRenderToSingleSampledInfoEXT structure with the "
+                                     "multisampledRenderToSingleSampledEnable field equal to VK_TRUE, and imageView has a sample "
+                                     "count of VK_SAMPLE_COUNT_1_BIT, resolveImageView must be VK_NULL_HANDLE, but it is %s",
+                                     func_name, report_data->FormatHandle(pAttachment->resolveImageView).c_str());
+                }
+            }
+        }
+
+        if (pAttachment->resolveMode != VK_RESOLVE_MODE_NONE && pAttachment->resolveImageView == VK_NULL_HANDLE) {
+            if (!IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06860",
+                             "%s(): If resolve mode (%s) is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE",
+                             func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
+            } else {
+                const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
+                if (!msrtss_info || !msrtss_info->multisampledRenderToSingleSampledEnable) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingAttachmentInfo-imageView-06862",
+                                     "%s(): If resolve mode (%s) is not VK_RESOLVE_MODE_NONE, and there is no "
+                                     "VkMultisampledRenderToSingleSampledInfoEXT with multisampledRenderToSingleSampledEnable "
+                                     "field equal to VK_TRUE, resolveImageView must not be VK_NULL_HANDLE",
+                                     func_name, string_VkResolveModeFlags(pAttachment->resolveMode).c_str());
+                }
+            }
         }
 
         auto resolve_view_state = Get<IMAGE_VIEW_STATE>(pAttachment->resolveImageView);
@@ -9243,6 +9342,20 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
         if (cb_state->transform_feedback_active) {
             skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-None-02323", "vkCmdBindPipeline(): transform feedback is active.");
+        }
+        if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
+            const auto rendering_info = cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info;
+            const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(rendering_info.pNext);
+            const auto pipeline_rasterization_samples = pipeline_state->MultisampleState()->rasterizationSamples;
+            if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
+                (msrtss_info->rasterizationSamples != pipeline_rasterization_samples)) {
+                skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06856",
+                                 "vkCmdBindPipeline(): A VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain of "
+                                 "VkRenderingInfo passed to vkCmdBeginRendering has a rasterizationSamples of (%" PRIu32
+                                 ") which is not equal to pMultisampleState.rasterizationSamples used to create the pipeline, "
+                                 "which is (%" PRIu32 ").",
+                                 msrtss_info->rasterizationSamples, pipeline_rasterization_samples);
+            }
         }
         if ((cb_state->commands_since_begin_rendering > 0) && cb_state->activeRenderPass &&
             cb_state->activeRenderPass->UsesDynamicRendering() && cb_state->hasDrawCmd) {
@@ -13094,6 +13207,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2 &subpass = pCreateInfo->pSubpasses[i];
+        const auto ms_render_to_single_sample = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass.pNext);
+        const auto subpass_depth_stencil_resolve = LvlFindInChain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
         std::vector<uint8_t> attachment_uses(pCreateInfo->attachmentCount);
         std::vector<VkImageLayout> attachment_layouts(pCreateInfo->attachmentCount);
 
@@ -13356,6 +13471,130 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                          "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
                                          function_name, error_type.c_str(), string_VkFormat(attachment_format));
                     }
+
+                    if (use_rp2 &&
+                        enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled &&
+                        ms_render_to_single_sample && ms_render_to_single_sample->multisampledRenderToSingleSampledEnable) {
+                        const auto depth_stencil_attachment =
+                            pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment];
+                        const auto depth_stencil_sample_count = depth_stencil_attachment.samples;
+                        const auto depth_stencil_format = depth_stencil_attachment.format;
+                        if ((depth_stencil_sample_count == VK_SAMPLE_COUNT_1_BIT) &&
+                            (!subpass_depth_stencil_resolve ||
+                             (subpass_depth_stencil_resolve->pDepthStencilResolveAttachment != VK_NULL_HANDLE &&
+                              subpass_depth_stencil_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED))) {
+                            std::stringstream message;
+                            message << function_name << ": Subpass " << i
+                                    << " has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                       "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                       "VK_TRUE and pDepthStencilAttachment has a sample count of VK_SAMPLE_COUNT_1_BIT ";
+                            if (!subpass_depth_stencil_resolve) {
+                                message << "but there is no VkSubpassDescriptionDepthStencilResolve in the pNext chain of "
+                                           "the VkSubpassDescription2 struct for this subpass";
+                            } else {
+                                message << "but the pSubpassResolveAttachment member of the "
+                                           "VkSubpassDescriptionDepthStencilResolve in the pNext chain of "
+                                           "the VkSubpassDescription2 struct for this subpass is not NULL, and its attachment "
+                                           "is not VK_ATTACHMENT_UNUSED";
+                            }
+                            skip |= LogError(device, "VUID-VkSubpassDescription2-pNext-06871", "%s", message.str().c_str());
+                        }
+                        if (subpass_depth_stencil_resolve) {
+                            if (subpass_depth_stencil_resolve->depthResolveMode == VK_RESOLVE_MODE_NONE &&
+                                subpass_depth_stencil_resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE) {
+                                std::stringstream message;
+                                message << function_name << ": Subpass " << i
+                                        << " has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                           "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                           "VK_TRUE and there is also a VkSubpassDescriptionDepthStencilResolve struct in the "
+                                           "pNext "
+                                           "chain whose depthResolveMode and stencilResolveMode members are both "
+                                           "VK_RESOLVE_MODE_NONE";
+                                skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06873", "%s",
+                                                 message.str().c_str());
+                            }
+                            if (FormatHasDepth(depth_stencil_format)) {
+                                if (subpass_depth_stencil_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE &&
+                                    !(subpass_depth_stencil_resolve->depthResolveMode &
+                                      phys_dev_props_core12.supportedDepthResolveModes)) {
+                                    skip |= LogError(
+                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06874",
+                                        "%s:  Subpass %" PRIu32
+                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                        "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                        "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
+                                        "chain with a depthResolveMode (%s) that is not in "
+                                        "VkPhysicalDeviceDepthStencilResolveProperties::supportedDepthResolveModes (%s) or "
+                                        "VK_RESOLVE_MODE_NONE",
+                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode),
+                                        string_VkResolveModeFlags(phys_dev_props_core12.supportedDepthResolveModes).c_str());
+                                }
+                            }
+                            if (FormatHasStencil(depth_stencil_format)) {
+                                if (subpass_depth_stencil_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE &&
+                                    !(subpass_depth_stencil_resolve->stencilResolveMode &
+                                      phys_dev_props_core12.supportedStencilResolveModes)) {
+                                    skip |= LogError(
+                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06875",
+                                        "%s:  Subpass %" PRIu32
+                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                        "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                        "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
+                                        "chain with a stencilResolveMode (%s) that is not in "
+                                        "VkPhysicalDeviceDepthStencilResolveProperties::supportedStencilResolveModes (%s) or "
+                                        "VK_RESOLVE_MODE_NONE",
+                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
+                                        string_VkResolveModeFlags(phys_dev_props_core12.supportedStencilResolveModes).c_str());
+                                }
+                            }
+                            if (FormatIsDepthAndStencil(depth_stencil_format)) {
+                                if (phys_dev_props_core12.independentResolve == VK_FALSE &&
+                                    phys_dev_props_core12.independentResolveNone == VK_FALSE &&
+                                    (subpass_depth_stencil_resolve->stencilResolveMode !=
+                                     subpass_depth_stencil_resolve->depthResolveMode)) {
+                                    skip |= LogError(
+                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06876",
+                                        "%s:  Subpass %" PRIu32
+                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                        "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                        "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
+                                        "chain with a stencilResolveMode (%s) that is not identical to depthResolveMode (%s) "
+                                        "even though VkPhysicalDeviceDepthStencilResolveProperties::independentResolve and "
+                                        "VkPhysicalDeviceDepthStencilResolveProperties::independentResolveNone are both VK_FALSE,",
+                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode));
+                                }
+                                if (phys_dev_props_core12.independentResolve == VK_FALSE &&
+                                    phys_dev_props_core12.independentResolveNone == VK_TRUE &&
+                                    ((subpass_depth_stencil_resolve->stencilResolveMode !=
+                                      subpass_depth_stencil_resolve->depthResolveMode) &&
+                                     ((subpass_depth_stencil_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) &&
+                                      (subpass_depth_stencil_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE)))) {
+                                    skip |= LogError(
+                                        device, "VUID-VkSubpassDescriptionDepthStencilResolve-pNext-06877",
+                                        "%s:  Subpass %" PRIu32
+                                        " has a pDepthStencilAttachment with format %s and has a "
+                                        "VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                        "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                        "VK_TRUE and a VkSubpassDescriptionDepthStencilResolve in the VkSubpassDescription2 pNext "
+                                        "chain with a stencilResolveMode (%s) that is not identical to depthResolveMode (%s) and "
+                                        "neither of them is VK_RESOLVE_MODE_NONE, "
+                                        "even though VkPhysicalDeviceDepthStencilResolveProperties::independentResolve == VK_FALSE "
+                                        "and "
+                                        "VkPhysicalDeviceDepthStencilResolveProperties::independentResolveNone == VK_TRUE",
+                                        function_name, i, string_VkFormat(depth_stencil_format),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->stencilResolveMode),
+                                        string_VkResolveModeFlagBits(subpass_depth_stencil_resolve->depthResolveMode));
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Check for valid imageLayout
@@ -13424,6 +13663,21 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                              attachment_ref.layout);
 
                     VkSampleCountFlagBits current_sample_count = pCreateInfo->pAttachments[attachment_index].samples;
+                    if (use_rp2 &&
+                        enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled &&
+                        ms_render_to_single_sample && ms_render_to_single_sample->multisampledRenderToSingleSampledEnable) {
+                        if (current_sample_count != VK_SAMPLE_COUNT_1_BIT &&
+                            current_sample_count != ms_render_to_single_sample->rasterizationSamples) {
+                            skip |= LogError(device, "VUID-VkSubpassDescription2-pNext-06870",
+                                             "%s:  Subpass %u has a VkMultisampledRenderToSingleSampledInfoEXT struct in its "
+                                             "VkSubpassDescription2 pNext chain with multisampledRenderToSingleSampled set to "
+                                             "VK_TRUE and rasterizationSamples set to %s "
+                                             "but color attachment ref %u has a sample count of %s.",
+                                             function_name, i,
+                                             string_VkSampleCountFlagBits(ms_render_to_single_sample->rasterizationSamples), j,
+                                             string_VkSampleCountFlagBits(current_sample_count));
+                        }
+                    }
                     if (last_sample_count_attachment != VK_ATTACHMENT_UNUSED) {
                         if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
                               IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
