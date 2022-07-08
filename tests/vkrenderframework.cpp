@@ -51,7 +51,7 @@ ErrorMonitor::ErrorMonitor(Behavior behavior) : behavior_(behavior) {
 ErrorMonitor::~ErrorMonitor() NOEXCEPT {}
 
 void ErrorMonitor::MonitorReset() {
-    message_flags_ = 0;
+    message_flags_ = kErrorBit;
     bailout_ = NULL;
     message_found_ = VK_FALSE;
     failure_message_strings_.clear();
@@ -659,9 +659,6 @@ bool VkRenderFramework::CanEnableDeviceExtension(const std::string &dev_ext_name
 }
 
 void VkRenderFramework::ShutdownFramework() {
-    // TODO this needs to be moved to the end of this function
-    debug_reporter_.error_monitor_.Reset();
-
     // Nothing to shut down without a VkInstance
     if (!instance_) return;
 
@@ -692,9 +689,8 @@ void VkRenderFramework::ShutdownFramework() {
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
 
-    // TODO: this needs to be added to catch resources that are not cleaned up at the end of the test
-    // debug_reporter_.error_monitor_.VerifyNotFound();
-    // debug_reporter_.error_monitor_.Reset();
+    debug_reporter_.error_monitor_.VerifyNotFound();
+    debug_reporter_.error_monitor_.Reset();
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
