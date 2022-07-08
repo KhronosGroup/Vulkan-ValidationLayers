@@ -11822,20 +11822,15 @@ TEST_F(VkLayerTest, NotSupportProvokingVertexModePerPipeline) {
     TEST_DESCRIPTION(
         "Test using different VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT but it doesn't support provokingVertexModePerPipeline.");
 
-    bool inst_ext = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (inst_ext) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported, skipping tests\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported, skipping tests\n", kSkipPrefix, VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
-        return;
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto provoking_vertex_properties = LvlInitStruct<VkPhysicalDeviceProvokingVertexPropertiesEXT>();
@@ -12380,13 +12375,13 @@ TEST_F(VkLayerTest, ShaderAtomicInt64) {
 
 TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     TEST_DESCRIPTION("Create a graphics pipeline with advanced blend when its disabled");
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
 
     VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced =
         LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
