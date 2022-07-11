@@ -702,6 +702,8 @@ void VkRenderFramework::ShutdownFramework() {
         DestroySwapchain();
     }
 
+    DestroySwapchain();
+
     // reset the driver
     delete m_device;
     m_device = nullptr;
