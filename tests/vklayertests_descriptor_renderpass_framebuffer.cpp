@@ -4423,6 +4423,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetYcbcr) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImageView(m_device->device(), image_view, NULL);
+    vkDestroySamplerYcbcrConversionFunction(m_device->device(), conversion, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
