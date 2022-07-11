@@ -466,8 +466,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
 TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     TEST_DESCRIPTION("Resume and suspend at vkCmdBeginRendering time");
 
-    m_errorMonitor->ExpectSuccess();
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -571,6 +569,5 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
     submit.pCommandBuffers = cbs.data();
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
-
-    m_errorMonitor->VerifyNotFound();
+    vk::QueueWaitIdle(m_device->m_queue);
 }
