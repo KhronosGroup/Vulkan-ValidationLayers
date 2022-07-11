@@ -202,6 +202,8 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
+
+    vk::DestroyImageView(m_device->device(), depth_image_view, nullptr);
 }
 
 TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
