@@ -508,6 +508,7 @@ struct CreatePipelineHelper {
     // TDB -- add control for optional and/or additional initialization
     void InitInfo();
     void InitState();
+    void InitPipelineCache();
     void LateBindPipelineInfo();
     VkResult CreateGraphicsPipeline(bool implicit_destroy = true, bool do_late_bind = true);
 
@@ -581,6 +582,7 @@ struct CreateComputePipelineHelper {
     // TDB -- add control for optional and/or additional initialization
     void InitInfo();
     void InitState();
+    void InitPipelineCache();
     void LateBindPipelineInfo();
     VkResult CreateComputePipeline(bool implicit_destroy = true, bool do_late_bind = true);
 
@@ -657,6 +659,7 @@ struct CreateNVRayTracingPipelineHelper {
     void InitPipelineCacheInfo();
     void InitInfo(bool isKHR = false);
     void InitState();
+    void InitPipelineCache();
     void LateBindPipelineInfo(bool isKHR = false);
     VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
     VkResult CreateKHRRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
