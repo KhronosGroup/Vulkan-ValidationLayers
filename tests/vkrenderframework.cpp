@@ -695,6 +695,11 @@ void VkRenderFramework::ShutdownFramework() {
 
     debug_reporter_.Destroy(instance_);
 
+    if (m_surface != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance_, m_surface, nullptr);
+        m_surface = VK_NULL_HANDLE;
+    }
+
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
 
