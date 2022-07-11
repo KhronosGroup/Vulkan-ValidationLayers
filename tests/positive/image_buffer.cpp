@@ -1763,6 +1763,8 @@ TEST_F(VkPositiveLayerTest, TestFormatCompatibility) {
     VkImage image;
     vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
     m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyImage(m_device->device(), image, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
