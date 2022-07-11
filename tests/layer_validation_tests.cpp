@@ -1836,7 +1836,6 @@ void CreatePipelineHelper::InitFragmentOutputLibInfo(void *p_next) {
 }
 
 void CreatePipelineHelper::InitState() {
-    VkResult err;
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
@@ -1846,7 +1845,14 @@ void CreatePipelineHelper::InitState() {
     pipeline_layout_ =
         VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    InitPipelineCache();
+}
+
+void CreatePipelineHelper::InitPipelineCache() {
+    if (pipeline_cache_ != VK_NULL_HANDLE) {
+        vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
+    }
+    VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1925,7 +1931,6 @@ void CreateComputePipelineHelper::InitInfo() {
 }
 
 void CreateComputePipelineHelper::InitState() {
-    VkResult err;
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
@@ -1934,7 +1939,14 @@ void CreateComputePipelineHelper::InitState() {
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    InitPipelineCache();
+}
+
+void CreateComputePipelineHelper::InitPipelineCache() {
+    if (pipeline_cache_ != VK_NULL_HANDLE) {
+        vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
+    }
+    VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -2208,13 +2220,19 @@ void CreateNVRayTracingPipelineHelper::InitInfo(bool isKHR) {
 }
 
 void CreateNVRayTracingPipelineHelper::InitState() {
-    VkResult err;
     descriptor_set_.reset(new OneOffDescriptorSet(layer_test_.DeviceObj(), dsl_bindings_));
     ASSERT_TRUE(descriptor_set_->Initialized());
 
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_});
 
-    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    InitPipelineCache();
+}
+
+void CreateNVRayTracingPipelineHelper::InitPipelineCache() {
+    if (pipeline_cache_ != VK_NULL_HANDLE) {
+        vk::DestroyPipelineCache(layer_test_.device(), pipeline_cache_, nullptr);
+    }
+    VkResult err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
