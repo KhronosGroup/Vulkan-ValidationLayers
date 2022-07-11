@@ -1820,6 +1820,9 @@ TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
     VkFramebuffer framebuffer;
     vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
     m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
+    vk::DestroyImageView(m_device->handle(), view, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
