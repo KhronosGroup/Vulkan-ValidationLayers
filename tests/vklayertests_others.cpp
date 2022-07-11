@@ -11828,19 +11828,32 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&as_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (as_features.accelerationStructure == VK_FALSE) {
+        printf("%s accelerationStructure feature is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
     assert(vkCmdCopyAccelerationStructureKHR != nullptr);
-
-    auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    assert(vkGetBufferDeviceAddressKHR != nullptr);
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -11851,22 +11864,12 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
     VkBufferObj buffer;
     buffer.init(*m_device, buffer_ci);
 
-    VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
-    device_address_info.buffer = buffer_no_mem.handle();
-    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
-    if (device_address == 0) {
-        printf("%s Failed to get device address, skipping test.\n", kSkipPrefix);
-        return;
-    }
-
     auto as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     as_create_info.buffer = buffer_no_mem.handle();
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    as_create_info.deviceAddress = device_address;
 
     vk_testing::AccelerationStructureKHR invalid_as(*m_device, as_create_info);
 
-    device_address_info.buffer = buffer.handle();
     as_create_info.buffer = buffer.handle();
     vk_testing::AccelerationStructureKHR valid_as(*m_device, as_create_info);
 
