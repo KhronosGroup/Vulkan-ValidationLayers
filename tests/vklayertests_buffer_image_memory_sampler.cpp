@@ -13548,6 +13548,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
     vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
+
+    vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, DedicatedAllocationBufferWithInvalidFlags) {
