@@ -9245,7 +9245,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         if (cb_state->transform_feedback_active) {
             skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-None-02323", "vkCmdBindPipeline(): transform feedback is active.");
         }
-        if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering && cb_state->hasDrawCmd) {
+        if ((cb_state->commands_since_begin_rendering > 0) && cb_state->activeRenderPass &&
+            cb_state->activeRenderPass->use_dynamic_rendering && cb_state->hasDrawCmd) {
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
             const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             const auto *last_rendering_struct =

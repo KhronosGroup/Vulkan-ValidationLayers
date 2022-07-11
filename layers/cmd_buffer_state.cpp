@@ -734,6 +734,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     RecordCmd(cmd_type);
     begin_rendering_func_name = CommandTypeString(cmd_type);
     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(pRenderingInfo);
+    commands_since_begin_rendering = 0;
 
     auto chained_device_group_struct = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
     if (chained_device_group_struct) {
@@ -1215,7 +1216,12 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
     }
 }
 
-void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
+void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) {
+    commandCount++;
+    if (pipeline_bound) {
+        ++commands_since_begin_rendering;
+    }
+}
 
 void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits) {
     RecordCmd(cmd_type);
