@@ -351,7 +351,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<VkImageView> m_framebuffer_attachments;
 
     // WSI items
-    VkSurfaceKHR m_surface;
+    VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     Display *m_surface_dpy;
     Window m_surface_window;
