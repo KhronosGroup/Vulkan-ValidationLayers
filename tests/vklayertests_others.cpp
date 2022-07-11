@@ -11949,6 +11949,9 @@ TEST_F(VkLayerTest, DestroyActiveQueryPool) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyQueryPool-queryPool-00793");
     vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
     m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
