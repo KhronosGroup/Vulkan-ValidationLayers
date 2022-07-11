@@ -8205,6 +8205,12 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
                          68, dummy_values);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout_small, nullptr);
 }
 
 TEST_F(VkLayerTest, VerifyVertextBinding) {
