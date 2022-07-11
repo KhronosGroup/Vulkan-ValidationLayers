@@ -11273,6 +11273,8 @@ TEST_F(VkLayerTest, WaitEventsDifferentQueues) {
                       nullptr, 0, nullptr, 1, &image_memory_barrier);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
+
+    vk::DestroyEvent(m_device->handle(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidColorWriteEnableFeature) {
