@@ -216,6 +216,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submitCount;   // Number of times CB has been submitted
+    bool pipeline_bound = false;                  // True if CmdBindPipeline has been called on this command buffer, false otherwise
+    uint64_t commands_since_begin_rendering = 0;  // Number of commands since the last CmdBeginRenderingCommand
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
     CBStatusFlags status;                              // Track status of various bindings on cmd buffer
@@ -518,6 +520,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t GetDynamicStencilResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 3; }
 
     bool RasterizationDisabled() const;
+    inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
+        lastBound[bind_point].pipeline_state = pipe_state;
+        pipeline_bound = true;
+    }
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

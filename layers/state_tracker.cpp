@@ -2494,8 +2494,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
             }
         }
     }
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    cb_state->lastBound[lv_bind_point].pipeline_state = pipe_state.get();
+    cb_state->BindPipeline(ConvertToLvlBindPoint(pipelineBindPoint), pipe_state.get());
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
     }
