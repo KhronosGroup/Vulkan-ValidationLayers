@@ -2203,6 +2203,7 @@ TEST_F(VkLayerTest, InvalidQueueFamilyIndex) {
     m_errorMonitor->ExpectSuccess();
     vk::CreateBuffer(second_device, &buffCI, NULL, &buffer);
     m_errorMonitor->VerifyNotFound();
+    vk::DestroyBuffer(second_device, buffer, nullptr);
     vk::DestroyDevice(second_device, nullptr);
 }
 
@@ -7268,6 +7269,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
 
             m_errorMonitor->VerifyNotFound();
 
+            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
             vk::DestroySemaphore(m_device->device(), binary_sem, nullptr);
             vk::DestroySemaphore(m_device->device(), timeline_sem, nullptr);
         }
