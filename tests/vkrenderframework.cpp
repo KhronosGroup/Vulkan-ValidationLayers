@@ -676,9 +676,7 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_depthStencil;
     m_depthStencil = nullptr;
 
-    if (m_device && m_device->device() != VK_NULL_HANDLE) {
-        DestroySwapchain();
-    }
+    DestroySwapchain();
 
     DestroySwapchain();
 
@@ -977,7 +975,9 @@ void VkRenderFramework::DestroySwapchain() {
         vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
         m_surface = VK_NULL_HANDLE;
     }
-    vk::DeviceWaitIdle(device());
+    if (m_device && (m_device->device() != VK_NULL_HANDLE)) {
+        vk::DeviceWaitIdle(device());
+    }
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     if (m_surface_dpy != nullptr) {
         // Ignore BadDrawable errors we seem to get during shutdown.

@@ -704,16 +704,14 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     }
 #endif
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    m_errorMonitor->ExpectSuccess();
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface, skipping test";
     }
     InitSwapchainInfo();
 
@@ -734,11 +732,9 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
             break;
         }
     }
-    m_errorMonitor->VerifyNotFound();
 
     if (!found) {
-        printf("%s All queues support surface present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "%s All queues support surface present, skipping test";
     }
     float queue_priority = 1.0f;
     auto queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();

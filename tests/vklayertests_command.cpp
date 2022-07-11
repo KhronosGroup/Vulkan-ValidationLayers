@@ -8148,8 +8148,8 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-    VkPipelineLayout pipeline_layout;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout);
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_info);
+    ASSERT_TRUE(pipeline_layout.initialized());
 
     CreatePipelineHelper g_pipe(*this);
     g_pipe.InitInfo();
@@ -8159,8 +8159,8 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
 
     pipeline_layout_info.pPushConstantRanges = &push_constant_range_small;
-    VkPipelineLayout pipeline_layout_small;
-    vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_info, NULL, &pipeline_layout_small);
+    vk_testing::PipelineLayout pipeline_layout_small(*m_device, pipeline_layout_info);
+    ASSERT_TRUE(pipeline_layout_small.initialized());
 
     CreatePipelineHelper g_pipe_small_range(*this);
     g_pipe_small_range.InitInfo();
@@ -8196,21 +8196,17 @@ TEST_F(VkLayerTest, DrawWithoutUpdatePushConstants) {
     // m_errorMonitor->VerifyFound();
 
     // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-maintenance4-06425");
-    // vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
-    // vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-    // m_errorMonitor->VerifyFound();
+    // vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_small.handle(), VK_SHADER_STAGE_VERTEX_BIT, 4, 4,
+    // dummy_values); vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0); m_errorMonitor->VerifyFound();
 
     m_errorMonitor->ExpectSuccess();
-    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32,
-                         68, dummy_values);
+    vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(),
+                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32, 68, dummy_values);
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_errorMonitor->VerifyNotFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout_small, nullptr);
 }
 
 TEST_F(VkLayerTest, VerifyVertextBinding) {
