@@ -532,14 +532,16 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     return result;
 }
 
+// NOTE: Do _not_ skip the dispatch call when destroying a device. Whether or not there was a validation error,
+//       the loader will destroy the device, and know nothing about future references to this device making it
+//       impossible for the caller to use this device handle further. IOW, this is our _only_ chance to (potentially)
+//       dispatch the driver's DestroyDevice function.
 VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(device);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
-    bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->ReadLock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyDevice(device, pAllocator);
-        if (skip) return;
+        (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyDevice(device, pAllocator);
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
