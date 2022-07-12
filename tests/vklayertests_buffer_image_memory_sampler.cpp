@@ -12807,7 +12807,6 @@ TEST_F(VkLayerTest, CreateImageViewIncompatibleFormat) {
     imgViewInfo.format = imageInfo.format;
     CreateImageViewTest(*this, &imgViewInfo, {});
 
-    imageInfo.flags |= VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
     VkImageObj mut_compat_image(m_device);
     mut_compat_image.init(&imageInfo);
     ASSERT_TRUE(mut_compat_image.initialized());
