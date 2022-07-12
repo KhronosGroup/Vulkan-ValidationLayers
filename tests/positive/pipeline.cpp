@@ -2886,6 +2886,11 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
     m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyRenderPass(device(), render_pass_separate, nullptr);
+    vk::DestroyRenderPass(device(), render_pass_combined, nullptr);
+    vk::DestroyFramebuffer(device(), framebuffer_separate, nullptr);
+    vk::DestroyFramebuffer(device(), framebuffer_combined, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
@@ -7171,6 +7176,10 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     vk::DestroyBuffer(device(), buffer2, nullptr);
     vk::DestroyBuffer(device(), buffer3, nullptr);
 
+    vk::FreeMemory(device(), memory1, nullptr);
+    vk::FreeMemory(device(), memory2, nullptr);
+    vk::FreeMemory(device(), memory3, nullptr);
+
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -7304,6 +7313,9 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyBuffer(device(), buffer3, nullptr);
+
+    vk::FreeMemory(device(), memory1, nullptr);
+    vk::FreeMemory(device(), memory3, nullptr);
 
     m_errorMonitor->VerifyNotFound();
 }

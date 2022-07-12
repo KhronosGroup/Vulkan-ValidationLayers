@@ -573,4 +573,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
 
     m_errorMonitor->VerifyNotFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
 }

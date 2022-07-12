@@ -1040,5 +1040,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
 
     VkRenderPass render_pass;
     vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
+
+    vk::DestroyRenderPass(device(), render_pass, nullptr);
     m_errorMonitor->VerifyNotFound();
 }
