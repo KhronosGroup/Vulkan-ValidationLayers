@@ -4600,6 +4600,9 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
         vkBindImageMemory2KHR(m_device->device(), 1, &bind_info);
     }
     DestroySwapchain();
+    for (auto &image : images) {
+        vk::DestroyImage(m_device->device(), image, nullptr);
+    }
     m_errorMonitor->VerifyNotFound();
 }
 
