@@ -399,11 +399,15 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     ~Buffer() NOEXCEPT;
 
     // vkCreateBuffer()
-    void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props);
+    void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
     void init(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info, 0); }
     void init(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props,
               VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, const std::vector<uint32_t> &queue_families = {}) {
         init(dev, create_info(size, usage, &queue_families), mem_props);
+    }
+    void init(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props, VkBufferUsageFlags usage,
+              void *alloc_info_pnext) {
+        init(dev, create_info(size, usage), mem_props, alloc_info_pnext);
     }
     void init(const Device &dev, VkDeviceSize size) { init(dev, size, 0); }
     void init_as_src(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,

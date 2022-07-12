@@ -500,10 +500,13 @@ VkResult QueryPool::results(uint32_t first, uint32_t count, size_t size, void *d
 
 NON_DISPATCHABLE_HANDLE_DTOR(Buffer, vk::DestroyBuffer)
 
-void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props) {
+void Buffer::init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     init_no_mem(dev, info);
 
-    internal_mem_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props));
+    auto alloc_info = DeviceMemory::get_resource_alloc_info(dev, memory_requirements(), mem_props);
+    alloc_info.pNext = alloc_info_pnext;
+    internal_mem_.init(dev, alloc_info);
+
     bind_memory(internal_mem_, 0);
 }
 
