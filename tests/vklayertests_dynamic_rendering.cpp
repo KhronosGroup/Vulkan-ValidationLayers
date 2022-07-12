@@ -178,13 +178,11 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
                                    VK_COMPONENT_SWIZZLE_IDENTITY},
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
-    VkImageView depth_image_view;
-    err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &depth_image_view);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::ImageView depth_image_view(*m_device, ivci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    depth_attachment.imageView = depth_image_view;
+    depth_attachment.imageView = depth_image_view.handle();
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.pDepthAttachment = &depth_attachment;
