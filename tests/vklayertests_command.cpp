@@ -11398,3 +11398,229 @@ TEST_F(VkLayerTest, DynamicRenderingInSecondaryCommandBuffers) {
     secondary.Draw(3, 1, 0, 0);
     secondary.end();
 }
+
+TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) {
+    TEST_DESCRIPTION(
+        "Test incompatible fragment shading rate attachments "
+        "calling CmdExecuteCommands");
+
+    // Enable KHR_fragment_shading_rate
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    auto pd_properties = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
+    GetPhysicalDeviceProperties2(pd_properties);
+
+    // Create a render pass without a Fragment Shading Rate attachment
+    auto col_attach = LvlInitStruct<VkAttachmentDescription2>();
+    col_attach.format = VK_FORMAT_R8G8B8A8_UNORM;
+    col_attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    col_attach.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    col_attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription2 subpass_no_fsr = LvlInitStruct<VkSubpassDescription2>();
+
+    VkRenderPassCreateInfo2 rcpi_no_fsr = LvlInitStruct<VkRenderPassCreateInfo2KHR>();
+    rcpi_no_fsr.attachmentCount = 1;
+    rcpi_no_fsr.pAttachments = &col_attach;
+    rcpi_no_fsr.subpassCount = 1;
+    rcpi_no_fsr.pSubpasses = &subpass_no_fsr;
+
+    vk_testing::RenderPass rp_no_fsr(*m_device, rcpi_no_fsr, true);
+
+    // Create 2 render passes with fragment shading rate attachments with
+    // differing shadingRateAttachmentTexelSize values
+    VkAttachmentReference2 fsr_attach_1 = LvlInitStruct<VkAttachmentReference2>();
+    fsr_attach_1.layout = VK_IMAGE_LAYOUT_GENERAL;
+    fsr_attach_1.attachment = 0;
+
+    VkExtent2D texel_size_1 = {8, 8};
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment_1 = LvlInitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    fsr_attachment_1.shadingRateAttachmentTexelSize = texel_size_1;
+    fsr_attachment_1.pFragmentShadingRateAttachment = &fsr_attach_1;
+    VkSubpassDescription2 fsr_subpass_1 = LvlInitStruct<VkSubpassDescription2>(&fsr_attachment_1);
+
+    VkAttachmentReference2 fsr_attach_2 = LvlInitStruct<VkAttachmentReference2>();
+    fsr_attach_2.layout = VK_IMAGE_LAYOUT_GENERAL;
+    fsr_attach_2.attachment = 0;
+
+    VkExtent2D texel_size_2 = {32, 32};
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment_2 = LvlInitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    fsr_attachment_2.shadingRateAttachmentTexelSize = texel_size_2;
+    fsr_attachment_2.pFragmentShadingRateAttachment = &fsr_attach_2;
+
+    VkSubpassDescription2 fsr_subpass_2 = LvlInitStruct<VkSubpassDescription2>(&fsr_attachment_2);
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2KHR rpci_fsr_1 = LvlInitStruct<VkRenderPassCreateInfo2KHR>();
+    rpci_fsr_1.subpassCount = 1;
+    rpci_fsr_1.pSubpasses = &fsr_subpass_1;
+    rpci_fsr_1.attachmentCount = 1;
+    rpci_fsr_1.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass rp_fsr_1(*m_device, rpci_fsr_1, true);
+    ASSERT_TRUE(rp_fsr_1.initialized());
+
+    VkRenderPassCreateInfo2KHR rpci_fsr_2 = LvlInitStruct<VkRenderPassCreateInfo2KHR>();
+    rpci_fsr_2.subpassCount = 1;
+    rpci_fsr_2.pSubpasses = &fsr_subpass_2;
+    rpci_fsr_2.attachmentCount = 1;
+    rpci_fsr_2.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass rp_fsr_2(*m_device, rpci_fsr_2, true);
+    ASSERT_TRUE(rp_fsr_2.initialized());
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    // Create a frame buffer with a render pass with FSR attachment
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = rp_fsr_1.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &imageView;
+    fb_info.width = 32;
+    fb_info.height = 32;
+    fb_info.layers = 1;
+
+    vk_testing::Framebuffer framebuffer_fsr;
+    framebuffer_fsr.init(*m_device, fb_info);
+
+    // Create a frame buffer with a render pass without FSR attachment
+    VkFramebufferCreateInfo fb_info_0 = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info_0.renderPass = rp_no_fsr.handle();
+    fb_info_0.attachmentCount = 1;
+    fb_info_0.pAttachments = &imageView;
+    fb_info_0.width = 32;
+    fb_info_0.height = 32;
+    fb_info_0.layers = 1;
+
+    vk_testing::Framebuffer framebuffer_no_fsr;
+    framebuffer_no_fsr.init(*m_device, fb_info_0);
+
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    // Inheritance info without FSR attachment
+    const VkCommandBufferInheritanceInfo cmdbuff_ii_no_fsr = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        rp_no_fsr.handle(),
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi_no_fsr = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                                   nullptr,  // pNext
+                                                   VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii_no_fsr};
+    cmdbuff__bi_no_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+    // Render pass begin info for no FSR attachment
+    const VkRenderPassBeginInfo rp_bi_no_fsr{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                             nullptr,  // pNext
+                                             rp_no_fsr.handle(),
+                                             framebuffer_no_fsr.handle(),
+                                             {{0, 0}, {32, 32}},
+                                             0,
+                                             nullptr};
+
+    // Inheritance info with FSR attachment
+    const VkCommandBufferInheritanceInfo cmdbuff_ii_fsr = {
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+        nullptr,  // pNext
+        rp_fsr_2.handle(),
+        0,  // subpass
+        VK_NULL_HANDLE,
+    };
+
+    VkCommandBufferBeginInfo cmdbuff__bi_fsr = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                                nullptr,  // pNext
+                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, &cmdbuff_ii_fsr};
+    cmdbuff__bi_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+    // Render pass begin info with FSR attachment
+    const VkRenderPassBeginInfo rp_bi_fsr{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                          nullptr,  // pNext
+                                          rp_fsr_1.handle(),
+                                          framebuffer_fsr.handle(),
+                                          {{0, 0}, {32, 32}},
+                                          0,
+                                          nullptr};
+
+    // Test case where primary command buffer does not have an FSR attachment but
+    // secondary command buffer does.
+    {
+        secondary.begin(&cmdbuff__bi_fsr);
+        secondary.end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(rp_bi_no_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+    secondary.reset();
+
+    // Test case where primary command buffer has FSR attachment but secondary
+    // command buffer does not.
+    {
+        secondary.begin(&cmdbuff__bi_no_fsr);
+        secondary.end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+    secondary.reset();
+
+    // Test case where both command buffers have FSR attachments but they are
+    // incompatible.
+    {
+        secondary.begin(&cmdbuff__bi_fsr);
+        secondary.end();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(rp_bi_fsr, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+        vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    m_commandBuffer->reset();
+    secondary.reset();
+}
