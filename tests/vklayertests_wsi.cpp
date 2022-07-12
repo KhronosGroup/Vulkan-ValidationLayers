@@ -350,7 +350,9 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    // peer_image is a presentable image and controlled by the implementation
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyImage(m_device->device(), peer_image, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidSwapchainImageParams) {
