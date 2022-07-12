@@ -252,8 +252,8 @@ class VkRenderFramework : public VkTestFramework {
     ErrorMonitor &Monitor();
     VkPhysicalDeviceProperties physDevProps();
 
-    static bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
-    static bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
+    bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
+    bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
 
     VkInstanceCreateInfo GetInstanceCreateInfo() const;
     void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
@@ -324,6 +324,9 @@ class VkRenderFramework : public VkTestFramework {
   protected:
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
+
+    std::vector<VkLayerProperties> available_layers_; // allow caching of available layers
+    std::vector<VkExtensionProperties> available_extensions_; // allow caching of available instance extensions
 
     DebugReporter debug_reporter_;
     ErrorMonitor *m_errorMonitor = &debug_reporter_.error_monitor_;  // compatibility alias name

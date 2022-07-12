@@ -330,9 +330,12 @@ VkPhysicalDeviceProperties VkRenderFramework::physDevProps() {
 // Return true if layer name is found and spec+implementation values are >= requested values
 bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
                                                const uint32_t impl_version) {
-    const auto layers = vk_testing::GetGlobalLayers();
 
-    for (const auto &layer : layers) {
+    if (available_layers_.empty()) {
+        available_layers_ = vk_testing::GetGlobalLayers();
+    }
+
+    for (const auto &layer : available_layers_) {
         if (0 == strncmp(layer_name, layer.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
             return layer.specVersion >= spec_version && layer.implementationVersion >= impl_version;
         }
@@ -348,14 +351,16 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
     if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
 
-    const auto extensions = vk_testing::GetGlobalExtensions();
+    if (available_extensions_.empty()) {
+        available_extensions_ = vk_testing::GetGlobalExtensions();
+    }
 
     const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
         return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
                extension.specVersion >= spec_version;
     };
 
-    return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
+    return std::any_of(available_extensions_.begin(), available_extensions_.end(), IsTheQueriedExtension);
 }
 
 // Enable device profile as last layer on stack overriding devsim if there, or return if not available
@@ -440,7 +445,7 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
     ASSERT_EQ((VkInstance)0, instance_);
 
-    const auto LayerNotSupportedWithReporting = [](const char *layer) {
+    const auto LayerNotSupportedWithReporting = [this](const char *layer) {
         if (InstanceLayerSupported(layer))
             return false;
         else {
@@ -448,7 +453,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
             return true;
         }
     };
-    const auto ExtensionNotSupportedWithReporting = [](const char *extension) {
+    const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
         if (InstanceExtensionSupported(extension))
             return false;
         else {
