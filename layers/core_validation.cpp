@@ -570,6 +570,38 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
                                        error_code);
     }
 
+    // Find Fragment Shading Rate attachment entries in render passes if they
+    // exist.
+    const auto fsr1 = LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(
+        primary_desc.pNext);
+    const auto fsr2 = LvlFindInChain<VkFragmentShadingRateAttachmentInfoKHR>(
+        secondary_desc.pNext);
+
+    if (fsr1 && fsr2) {
+      if ((fsr1->shadingRateAttachmentTexelSize.width !=
+           fsr2->shadingRateAttachmentTexelSize.width) ||
+          (fsr1->shadingRateAttachmentTexelSize.height !=
+           fsr2->shadingRateAttachmentTexelSize.height)) {
+        std::stringstream ss;
+          ss << "Shading rate attachment texel sizes do not match (width is " << fsr1->shadingRateAttachmentTexelSize.width << " and "
+             << fsr2->shadingRateAttachmentTexelSize.width << ", height is " << fsr1->shadingRateAttachmentTexelSize.height << " and "
+             << fsr1->shadingRateAttachmentTexelSize.height << ".";
+        skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string, rp2_state, ss.str().c_str(), caller, error_code);
+      }
+    } else if (fsr1) {
+      skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string,
+                                     rp2_state, "The first uses a fragment "
+                                                "shading rate attachment while "
+                                                "the second one does not.",
+                                     caller, error_code);
+    } else if (fsr2) {
+      skip |= LogInvalidPnextMessage(type1_string, rp1_state, type2_string,
+                                     rp2_state, "The second uses a fragment "
+                                                "shading rate attachment while "
+                                                "the first one does not.",
+                                     caller, error_code);
+    }
+
     return skip;
 }
 
