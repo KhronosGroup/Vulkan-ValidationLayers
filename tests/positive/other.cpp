@@ -768,7 +768,6 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
 
     vk::DestroySemaphore(device(), submit_semaphore, nullptr);
     vk::DestroySemaphore(device(), acquire_semaphore, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
@@ -895,6 +894,4 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
 
     vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
-
-    DestroySwapchain();
 }

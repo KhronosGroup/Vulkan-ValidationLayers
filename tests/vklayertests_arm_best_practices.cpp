@@ -568,7 +568,6 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
     ASSERT_VK_SUCCESS(err)
-    DestroySwapchain();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {

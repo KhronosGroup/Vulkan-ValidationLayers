@@ -955,7 +955,6 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
     ASSERT_VK_SUCCESS(err)
-    DestroySwapchain();
 }
 
 TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
@@ -1031,8 +1030,6 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     m_errorMonitor->ExpectSuccess(kWarningBit);
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
-
-    DestroySwapchain();
 }
 
 TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {

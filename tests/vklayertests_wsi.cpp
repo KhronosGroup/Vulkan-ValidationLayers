@@ -221,8 +221,6 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
         vk::CreateImage(device(), &image_create_info, NULL, &image);
         m_errorMonitor->VerifyFound();
     }
-
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
@@ -457,7 +455,9 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-physicalDeviceCount-01429");
     vk::CreateSwapchainKHR(device(), &create_info_bad_flags, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
-    DestroySwapchain();
+
+    // No valid swapchain
+    m_swapchain = VK_NULL_HANDLE;
 }
 
 TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
@@ -480,8 +480,6 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
         vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &dummy);
         m_errorMonitor->VerifyFound();
     }
-
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
@@ -525,8 +523,6 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
         vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
         m_errorMonitor->VerifyFound();
     }
-
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
@@ -624,7 +620,6 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
@@ -663,7 +658,6 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
 
     // Cleanup
     vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
@@ -685,8 +679,6 @@ TEST_F(VkLayerTest, GetSwapchainImageAndTryDestroy) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyImage-image-04882");
     vk::DestroyImage(device(), images.at(0), nullptr);
     m_errorMonitor->VerifyFound();
-
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainNotSupported) {
@@ -835,7 +827,6 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
 
     // Cleanup
     vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
@@ -946,7 +937,6 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
     m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
@@ -1001,7 +991,6 @@ TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
     m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
@@ -1101,7 +1090,6 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
     m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyNotFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
@@ -1152,7 +1140,6 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276");
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
@@ -1247,7 +1234,6 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSwapchainCreateInfoKHR-imageUsage-01384");
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     m_errorMonitor->VerifyFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, InvalidDeviceMask) {
@@ -1424,7 +1410,6 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-deviceMask-01291");
     vk::AcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
     m_errorMonitor->VerifyFound();
-    DestroySwapchain();
 
     // Test VkDeviceGroupSubmitInfo
     VkDeviceGroupSubmitInfo device_group_submit_info = LvlInitStruct<VkDeviceGroupSubmitInfo>();
@@ -1612,7 +1597,6 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->SetUnexpectedError("VUID-VkSwapchainCreateInfoKHR-preTransform-01279");
     InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR);
     m_errorMonitor->VerifyFound();
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, DeviceGroupSubmitInfoSemaphoreCount) {
@@ -1743,7 +1727,6 @@ TEST_F(VkLayerTest, SwapchainAcquireImageWithSignaledSemaphore) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(device(), semaphore, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
@@ -1897,7 +1880,6 @@ TEST_F(VkLayerTest, PresentIdWait) {
     vkWaitForPresentKHR(device(), swapchain2, 5, UINT64_MAX);
     m_errorMonitor->VerifyFound();
 
-    DestroySwapchain();
     vk::DestroySwapchainKHR(m_device->device(), swapchain2, nullptr);
     vk::DestroySwapchainKHR(m_device->device(), swapchain3, nullptr);
     vk::DestroySurfaceKHR(instance(), surface2, nullptr);
@@ -1957,8 +1939,6 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkWaitForPresentKHR-presentWait-06234");
     vkWaitForPresentKHR(device(), m_swapchain, 1, UINT64_MAX);
     m_errorMonitor->VerifyFound();
-
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
@@ -2326,7 +2306,6 @@ TEST_F(VkLayerTest, UseSwapchainImageBeforeWait) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroySemaphore(device(), acquire_semaphore, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {

@@ -1927,15 +1927,14 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    VkImage image_from_swapchain;
-    vk::CreateImage(device(), &image_create_info, NULL, &image_from_swapchain);
+    vk_testing::Image image_from_swapchain(*m_device, image_create_info);
 
     auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = 0;
 
     auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
-    bind_info.image = image_from_swapchain;
+    bind_info.image = image_from_swapchain.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -1958,12 +1957,9 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     m_commandBuffer->begin();
 
     m_errorMonitor->ExpectSuccess();
-    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain,
+    vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyNotFound();
-
-    vk::DestroyImage(m_device->device(), image_from_swapchain, NULL);
-    DestroySwapchain();
 }
 
 TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
@@ -2436,7 +2432,6 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     vk::QueuePresentKHR(m_device->m_queue, &present);
     m_errorMonitor->VerifyNotFound();
 
-    DestroySwapchain();
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
