@@ -1927,7 +1927,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    vk_testing::Image image_from_swapchain(*m_device, image_create_info);
+    vk_testing::Image image_from_swapchain(*m_device, image_create_info, vk_testing::no_mem);
 
     auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
     bind_swapchain_info.swapchain = m_swapchain;
@@ -2033,8 +2033,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    VkImage peer_image;
-    ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, nullptr, &peer_image));
+    vk_testing::Image peer_image(*m_device, image_create_info, vk_testing::no_mem);
 
     auto bind_devicegroup_info = LvlInitStruct<VkBindImageMemoryDeviceGroupInfo>();
     std::array<uint32_t, 1> deviceIndices = {{0}};
@@ -2048,7 +2047,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     bind_swapchain_info.imageIndex = 0;
 
     auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
-    bind_info.image = peer_image;
+    bind_info.image = peer_image.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -2096,7 +2095,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {10, 10, 1};
-    vk::CmdCopyImage(m_commandBuffer->handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image,
+    vk::CmdCopyImage(m_commandBuffer->handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
