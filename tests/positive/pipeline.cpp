@@ -4587,7 +4587,7 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     int i = 0;
     m_errorMonitor->ExpectSuccess();
     for (auto &image : images) {
-        image.init(*m_device, image_create_info);
+        image.init_no_mem(*m_device, image_create_info);
         auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
         bind_swapchain_info.swapchain = m_swapchain;
         bind_swapchain_info.imageIndex = i++;
