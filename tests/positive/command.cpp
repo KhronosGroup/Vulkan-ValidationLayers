@@ -1078,6 +1078,8 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     do {
         res = vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 4, 0);
     } while (res != VK_SUCCESS);
+
+    vk::QueueWaitIdle(m_device->m_queue);
 }
 
 TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
