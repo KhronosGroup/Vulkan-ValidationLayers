@@ -103,6 +103,7 @@ class IMAGE_STATE : public BINDABLE {
     const uint64_t ahb_format;           // External Android format, if provided
     const VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers, and aspects
     const VkSwapchainKHR create_from_swapchain;
+    const bool owned_by_swapchain;
     std::shared_ptr<SWAPCHAIN_NODE> bind_swapchain;
     uint32_t swapchain_image_index;
     const VkFormatFeatureFlags2KHR format_features;
