@@ -684,6 +684,10 @@ void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
     if (!instance_) return;
 
+    if (m_device && m_device->device() != VK_NULL_HANDLE) {
+        vk::DeviceWaitIdle(device());
+    }
+
     delete m_commandBuffer;
     m_commandBuffer = nullptr;
     delete m_commandPool;
@@ -697,10 +701,6 @@ void VkRenderFramework::ShutdownFramework() {
 
     delete m_depthStencil;
     m_depthStencil = nullptr;
-
-    if (m_device && m_device->device() != VK_NULL_HANDLE) {
-        DestroySwapchain();
-    }
 
     DestroySwapchain();
 
@@ -991,15 +991,14 @@ int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
 #endif
 
 void VkRenderFramework::DestroySwapchain() {
-    if (m_swapchain != VK_NULL_HANDLE) {
-        vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
-        m_swapchain = VK_NULL_HANDLE;
+    if (m_device && m_device->device() != VK_NULL_HANDLE) {
+        vk::DeviceWaitIdle(device());
+        if (m_swapchain != VK_NULL_HANDLE) {
+            vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
+            m_swapchain = VK_NULL_HANDLE;
+        }
     }
-    if (m_surface != VK_NULL_HANDLE) {
-        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
-        m_surface = VK_NULL_HANDLE;
-    }
-    vk::DeviceWaitIdle(device());
+
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     if (m_surface_dpy != nullptr) {
         // Ignore BadDrawable errors we seem to get during shutdown.
@@ -1018,6 +1017,11 @@ void VkRenderFramework::DestroySwapchain() {
         m_surface_xcb_conn = nullptr;
     }
 #endif
+
+    if (m_surface != VK_NULL_HANDLE) {
+        vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
+        m_surface = VK_NULL_HANDLE;
+    }
 }
 
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }

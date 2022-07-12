@@ -1060,12 +1060,11 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
 
-    VkQueryPool query_pool;
-    vk::CreateQueryPool(device(), &query_pool_create_info, nullptr, &query_pool);
+    vk_testing::QueryPool query_pool(*m_device, query_pool_create_info);
 
     m_commandBuffer->begin();
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
-    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool.handle(), 0, 1);
+    vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool.handle(), 0);
     m_commandBuffer->end();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -1077,10 +1076,8 @@ TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     uint8_t data[out_data_size];
     VkResult res;
     do {
-        res = vk::GetQueryPoolResults(m_device->device(), query_pool, 0, 1, out_data_size, &data, 4, 0);
+        res = vk::GetQueryPoolResults(m_device->device(), query_pool.handle(), 0, 1, out_data_size, &data, 4, 0);
     } while (res != VK_SUCCESS);
-
-    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {

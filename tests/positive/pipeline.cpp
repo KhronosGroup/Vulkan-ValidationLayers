@@ -2985,7 +2985,6 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
     // teardown
     vk::DestroyImageView(device(), image_view, nullptr);
     vk::DestroyFramebuffer(device(), framebuffer, nullptr);
-    DestroySwapchain();
 }
 
 TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
@@ -4583,25 +4582,21 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     image_swapchain_create_info.swapchain = m_swapchain;
 
     image_create_info.pNext = &image_swapchain_create_info;
-    std::array<VkImage, 3> images;
+    std::array<vk_testing::Image, 3> images;
 
     m_errorMonitor->ExpectSuccess();
     for (auto &image : images) {
-        vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+        image.init(*m_device, image_create_info);
         auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
         bind_swapchain_info.swapchain = m_swapchain;
         bind_swapchain_info.imageIndex = 0;
 
         auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
-        bind_info.image = image;
+        bind_info.image = image.handle();
         bind_info.memory = VK_NULL_HANDLE;
         bind_info.memoryOffset = 0;
 
         vkBindImageMemory2KHR(m_device->device(), 1, &bind_info);
-    }
-    DestroySwapchain();
-    for (auto &image : images) {
-        vk::DestroyImage(m_device->device(), image, nullptr);
     }
     m_errorMonitor->VerifyNotFound();
 }
@@ -4772,7 +4767,6 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
 
-    DestroySwapchain();
     m_errorMonitor->VerifyNotFound();
 }
 
