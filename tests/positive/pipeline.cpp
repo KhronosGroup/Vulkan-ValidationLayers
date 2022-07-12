@@ -4582,14 +4582,15 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     image_swapchain_create_info.swapchain = m_swapchain;
 
     image_create_info.pNext = &image_swapchain_create_info;
-    std::array<vk_testing::Image, 3> images;
+    std::vector<vk_testing::Image> images(m_surface_capabilities.minImageCount);
 
+    int i = 0;
     m_errorMonitor->ExpectSuccess();
     for (auto &image : images) {
         image.init(*m_device, image_create_info);
         auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
         bind_swapchain_info.swapchain = m_swapchain;
-        bind_swapchain_info.imageIndex = 0;
+        bind_swapchain_info.imageIndex = i++;
 
         auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>(&bind_swapchain_info);
         bind_info.image = image.handle();
