@@ -898,7 +898,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, b
                                     VkPhysicalDeviceFeatures2KHR *features2 = nullptr, bool mockicd_valid = false);
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
-                                                    VkGeometryNV *geometry, VkDeviceSize offset = 0);
+                                                    VkGeometryNV *geometry, VkDeviceSize offset = 0, bool buffer_device_address = false);
 
 void print_android(const char *c);
 #endif  // VKLAYERTEST_H
