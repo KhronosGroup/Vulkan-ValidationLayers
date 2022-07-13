@@ -1332,6 +1332,9 @@ TEST_F(VkLayerTest, LeakAnObject) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
+
+    vk::DestroyFence(leaky_device, leaked_fence, nullptr);
+    vk::DestroyDevice(leaky_device, nullptr);
 }
 
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
