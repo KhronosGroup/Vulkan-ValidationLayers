@@ -635,7 +635,8 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
 
     const VkDevice &dev() const { return device(); }
 
-    void create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo = NULL);
+    void create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo = NULL,
+                               bool buffer_device_address = false);
 
   private:
     VkAccelerationStructureInfoNV info_;
@@ -658,7 +659,8 @@ class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationSt
 
     const VkDevice &dev() const { return device(); }
 
-    void create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo = NULL);
+    void create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo = NULL,
+                               bool buffer_device_address = false);
 
   private:
     VkAccelerationStructureCreateInfoKHR info_;

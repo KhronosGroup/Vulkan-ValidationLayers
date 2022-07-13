@@ -2476,15 +2476,12 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, b
         framework->AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
     }
 
-    // TODO - Should be moved to after InitFramework to allow more tests to run
-    // more info https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4284#issuecomment-1179405071
+    framework->InitFramework(&framework->Monitor(), enabled_features);
     if (!framework->AreRequiredExtensionsEnabled()) {
         printf("%s %s device extension not supported, skipping test\n", kSkipPrefix,
                framework->RequiredExtensionsNotSupported().c_str());
         return false;
     }
-
-    framework->InitFramework(&framework->Monitor(), enabled_features);
 
     if (!mockicd_valid && (framework->IsPlatform(kMockICD) || framework->DeviceSimulation())) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
@@ -2503,11 +2500,19 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, b
 }
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
-                                                    VkGeometryNV *geometry, VkDeviceSize offset) {
-    vbo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
-    ibo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+                                                    VkGeometryNV *geometry, VkDeviceSize offset, bool buffer_device_address) {
+    VkBufferUsageFlags usage =
+        VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    void *alloc_pnext = nullptr;
+    if (buffer_device_address) {
+        usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        alloc_pnext = &alloc_flags;
+    }
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    vbo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
+    ibo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
 
     const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
     const std::vector<uint32_t> indicies = {0, 1, 2};

@@ -5911,31 +5911,31 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    VkPhysicalDeviceFeatures2KHR features2 = {};
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&ray_tracing_features);
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
-    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acc_struct_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
     if (ray_query_features.rayQuery == VK_FALSE && ray_tracing_features.rayTracingPipeline == VK_FALSE) {
         printf("%s Both of the required features rayQuery and rayTracing are not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
     as_create_info.buffer = buffer.handle();
     as_create_info.createFlags = 0;
     as_create_info.offset = 0;
@@ -6011,17 +6011,15 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
     TEST_DESCRIPTION("Validate acceleration structure creation replay feature.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+    auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acc_struct_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
@@ -6029,8 +6027,11 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
     assert(vkGetBufferDeviceAddressKHR != nullptr);
 
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj buffer;
-    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
 
     VkBufferDeviceAddressInfo device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     device_address_info.buffer = buffer.handle();
@@ -8097,14 +8098,16 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!InitFrameworkForRayTracingTest(this, true)) {
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkBuffer buffer;
     VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
@@ -8113,7 +8116,9 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -8185,28 +8190,29 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->end();
+    vk::DestroyBuffer(device(), buffer, nullptr);
+    vk::FreeMemory(device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     TEST_DESCRIPTION("Validate vkCmdTraceRaysIndirectKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&ray_tracing_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+ 
     if (ray_tracing_features.rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
         printf("%s rayTracingIndirectTraceRays not supported, skipping tests\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     VkBuffer buffer;
     VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
@@ -8215,7 +8221,9 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
-    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&alloc_flags);
     alloc_info.allocationSize = 4096;
     VkDeviceMemory mem;
     err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
@@ -8289,6 +8297,8 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
         m_errorMonitor->VerifyFound();
     }
     m_commandBuffer->end();
+    vk::DestroyBuffer(device(), buffer, nullptr);
+    vk::FreeMemory(device(), mem, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
@@ -8339,9 +8349,10 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
     accel_features.accelerationStructureHostCommands = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&accel_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
     if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -8365,7 +8376,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     VkBufferObj vbo;
     VkBufferObj ibo;
     VkGeometryNV geometryNV;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometryNV);
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometryNV, 0, true);
 
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     VkBufferObj buffer;
@@ -8407,9 +8418,10 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     VkBufferObj bot_level_as_scratch;
     VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
-    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
-    bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch, &create_info);
+    bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch, &create_info, true);
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
                                                      bot_level_as_scratch.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -8513,8 +8525,9 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     }
     // Invalid dst buffer
     {
-        auto buffer_ci = VkBufferObj::create_info(
-            4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+        auto buffer_ci =
+            VkBufferObj::create_info(4096, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                               VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
         VkBufferObj invalid_buffer;
         invalid_buffer.init_no_mem(*m_device, buffer_ci);
         as_create_info.buffer = invalid_buffer.handle();
@@ -8583,8 +8596,10 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     // Buffer is missing VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR usage flag
     {
         VkBufferObj bad_usage_buffer;
+        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
         bad_usage_buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+                              VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
         VkBufferDeviceAddressInfo addr_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, bad_usage_buffer.handle()};
         auto addr = vkGetBufferDeviceAddressKHR(m_device->handle(), &addr_info);
         pGeometry[0].geometry.triangles.vertexData.deviceAddress = addr;
@@ -8598,10 +8613,11 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     {
         VkBufferObj bad_scratch;
         VkBufferCreateInfo bad_create_info = LvlInitStruct<VkBufferCreateInfo>();
-        bad_create_info.usage =
-            VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        bad_create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
+                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         bad_create_info.size = acc_struct_properties.minAccelerationStructureScratchOffsetAlignment;
-        bot_level_as.create_scratch_buffer(*m_device, &bad_scratch, &bad_create_info);
+        bot_level_as.create_scratch_buffer(*m_device, &bad_scratch, &bad_create_info, true);
         VkBufferDeviceAddressInfo bad_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
         bad_device_address_info.buffer = bad_scratch.handle();
         VkDeviceAddress bad_device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &bad_device_address_info);
@@ -8626,7 +8642,8 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
     accel_features.accelerationStructureHostCommands = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&accel_features);
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
     if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -8647,7 +8664,7 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     auto ibo = layer_data::make_unique<VkBufferObj>();
     VkGeometryNV geometryNV;
     const VkDeviceSize kBufferOffset = 256;
-    GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometryNV, kBufferOffset);
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometryNV, kBufferOffset, true);
 
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
     VkBufferObj buffer;
@@ -8688,9 +8705,10 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
 
     auto bot_level_as_scratch = layer_data::make_unique<VkBufferObj>();
     VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
-    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     create_info.size = std::max<VkDeviceSize>(acc_struct_properties.minAccelerationStructureScratchOffsetAlignment, kBufferOffset) * 2;
-    bot_level_as->create_scratch_buffer(*m_device, bot_level_as_scratch.get(), &create_info);
+    bot_level_as->create_scratch_buffer(*m_device, bot_level_as_scratch.get(), &create_info, true);
 
     address_info.buffer = bot_level_as_scratch->handle();
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &address_info);
@@ -12143,10 +12161,13 @@ TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate CmdCopyMemoryToAccelerationStructureKHR with dst buffer not bound to memory");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+    auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
@@ -12159,8 +12180,15 @@ TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
 
+    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
+    assert(vkDestroyAccelerationStructureKHR != nullptr);
+
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     VkBufferObj src_buffer;
-    src_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    src_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, &alloc_flags);
 
     VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 1024;
@@ -12187,6 +12215,7 @@ TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
     vkCmdCopyMemoryToAccelerationStructureKHR(m_commandBuffer->handle(), &copy_info);
     m_commandBuffer->end();
     m_errorMonitor->VerifyFound();
+    vkDestroyAccelerationStructureKHR(m_device->handle(), as, nullptr);
 }
 
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenCurrentRenderPassAndDescriptorSets) {
@@ -12953,7 +12982,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
 TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     TEST_DESCRIPTION(
         "Test that objects created with deferred operations are recorded once the operation has successfully completed.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
@@ -12962,8 +12991,8 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     }
 
     // Needed for Ray Tracing
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
     if (!ray_tracing_features.rayTracingPipeline) {

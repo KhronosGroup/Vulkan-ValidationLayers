@@ -10085,13 +10085,16 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
 
 TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     auto rt_pipeline_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     rt_pipeline_features.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&rt_pipeline_features);
     if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
