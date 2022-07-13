@@ -738,7 +738,10 @@ bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
         // Assumes api version 1.2+
         auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
         auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-        vk::GetPhysicalDeviceProperties2(gpu_, &physical_device_properties2);
+        auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
+            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
+        assert(vkGetPhysicalDeviceProperties2KHR);
+        vkGetPhysicalDeviceProperties2KHR(gpu_, &physical_device_properties2);
         return (driver_properties.driverID == driver_id);
     }
 }
