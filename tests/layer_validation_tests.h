@@ -176,6 +176,14 @@ static const char bindStateFragUniformShaderText[] = R"glsl(
     }
 )glsl";
 
+static char const bindStateFragSubpassLoadInputText[] = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        void main() {
+           vec4 color = subpassLoad(x);
+        }
+    )glsl";
+
 // Static arrays helper
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
@@ -498,6 +506,7 @@ struct CreatePipelineHelper {
     void InitViewportInfo();
     void InitDynamicStateInfo();
     void InitShaderInfo();
+    void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
     void InitRasterizationInfo();
     void InitLineRasterizationInfo();
     void InitBlendStateInfo();
