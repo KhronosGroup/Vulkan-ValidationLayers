@@ -16825,65 +16825,6 @@ TEST_F(VkLayerTest, InvalidRayTracingPipelineFlags) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
-    TEST_DESCRIPTION("Create graphics pipeline with invalid depth stencil state for subpass that uses read only image layout.");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
-
-    VkAttachmentDescription attachment = {};
-    attachment.flags = 0;
-    attachment.format = ds_format;
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
-    VkAttachmentReference dsAttachRef = {};
-    dsAttachRef.attachment = 0;
-    dsAttachRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.pDepthStencilAttachment = &dsAttachRef;
-
-    VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
-    rp_ci.attachmentCount = 1;
-    rp_ci.pAttachments = &attachment;
-    rp_ci.subpassCount = 1;
-    rp_ci.pSubpasses = &subpass;
-
-    vk_testing::RenderPass render_pass;
-    render_pass.init(*m_device, rp_ci);
-
-    auto ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
-    ds.depthWriteEnable = VK_TRUE;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.InitState();
-    pipe.LateBindPipelineInfo();
-    pipe.gp_ci_.renderPass = render_pass.handle();
-    pipe.gp_ci_.pDepthStencilState = &ds;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06039");
-    pipe.CreateGraphicsPipeline(true, false);
-    m_errorMonitor->VerifyFound();
-
-    ds.depthWriteEnable = VK_FALSE;
-    ds.front.failOp = VK_STENCIL_OP_ZERO;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06040");
-    pipe.CreateGraphicsPipeline(true, false);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, CreateGraphicsPipelineDynamicRendering) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
