@@ -5144,8 +5144,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -5186,17 +5185,15 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     memory_info.allocationSize = mem_reqs.size + mem_reqs.alignment;  // save room for offset
     bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
-        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
         AHardwareBuffer_release(ahb);
         vk::DestroyBuffer(m_device->device(), buffer, nullptr);
-        return;
+        GTEST_SKIP() << "No invalid memory type index could be found";
     }
 
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkResult result = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
     if ((memory == VK_NULL_HANDLE) || (result != VK_SUCCESS)) {
-        printf("%s This test failed to allocate memory for importing\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test failed to allocate memory for importing";
     }
 
     if (mem_reqs.alignment > 1) {
@@ -5214,6 +5211,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
 
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
+    AHardwareBuffer_release(ahb);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImportBufferHandleType) {
