@@ -3093,7 +3093,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
         LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
-    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+    GetPhysicalDeviceProperties2(pd_props2);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     VkPipelineVertexInputDivisorStateCreateInfoEXT pvids_ci = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
@@ -3185,7 +3185,7 @@ TEST_F(VkLayerTest, VertexAttributeDivisorDisabled) {
     VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT pdvad_props =
         LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&pdvad_props);
-    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+    GetPhysicalDeviceProperties2(pd_props2);
 
     VkVertexInputBindingDivisorDescriptionEXT vibdd = {};
     vibdd.binding = 0;
