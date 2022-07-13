@@ -1650,9 +1650,11 @@ void CreatePipelineHelper::InitDynamicStateInfo() {
     // during late bind
 }
 
-void CreatePipelineHelper::InitShaderInfo() {
-    vs_.reset(new VkShaderObj(&layer_test_, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT));
-    fs_.reset(new VkShaderObj(&layer_test_, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
+void CreatePipelineHelper::InitShaderInfo() { ResetShaderInfo(bindStateVertShaderText, bindStateFragShaderText); }
+
+void CreatePipelineHelper::ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text) {
+    vs_.reset(new VkShaderObj(&layer_test_, vertex_shader_text, VK_SHADER_STAGE_VERTEX_BIT));
+    fs_.reset(new VkShaderObj(&layer_test_, fragment_shader_text, VK_SHADER_STAGE_FRAGMENT_BIT));
     // We shouldn't need a fragment shader but add it to be able to run on more devices
     shader_stages_ = {vs_->GetStageCreateInfo(), fs_->GetStageCreateInfo()};
 }
