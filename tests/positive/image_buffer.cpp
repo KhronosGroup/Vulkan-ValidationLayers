@@ -1862,6 +1862,8 @@ TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
     m_errorMonitor->ExpectSuccess();
     vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyNotFound();
+
+    vk::FreeMemory(m_device->device(), memory, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
