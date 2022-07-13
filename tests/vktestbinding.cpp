@@ -916,4 +916,51 @@ void Framebuffer::init(const Device &dev, const VkFramebufferCreateInfo &info) {
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Framebuffer, vk::DestroyFramebuffer)
+
+void SamplerYcbcrConversion::init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr) {
+    if (!khr) {
+        NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSamplerYcbcrConversion, dev, &info);
+    } else {
+        auto vkCreateSamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkCreateSamplerYcbcrConversionKHR>(
+            vk::GetDeviceProcAddr(dev.handle(), "vkCreateSamplerYcbcrConversionKHR"));
+        ASSERT_NE(vkCreateSamplerYcbcrConversionKHR, nullptr);
+        NON_DISPATCHABLE_HANDLE_INIT(vkCreateSamplerYcbcrConversionKHR, dev, &info);
+    }
+}
+
+VkSamplerYcbcrConversionInfo SamplerYcbcrConversion::ConversionInfo() {
+    VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
+    ycbcr_info.conversion = handle();
+    return ycbcr_info;
+}
+
+// static
+VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo(VkFormat format) {
+    auto ycbcr_create_info = LvlInitStruct<VkSamplerYcbcrConversionCreateInfo>();
+    ycbcr_create_info.format = format;
+    ycbcr_create_info.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    ycbcr_create_info.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    ycbcr_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                    VK_COMPONENT_SWIZZLE_IDENTITY};
+    ycbcr_create_info.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
+    ycbcr_create_info.forceExplicitReconstruction = false;
+    return ycbcr_create_info;
+}
+
+SamplerYcbcrConversion::~SamplerYcbcrConversion() NOEXCEPT {
+    if (initialized()) {
+        if (khr_) {
+            vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);
+        } else {
+            auto vkDestroySamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(
+                vk::GetDeviceProcAddr(device(), "vkDestroySamplerYcbcrConversionKHR"));
+            assert(vkDestroySamplerYcbcrConversionKHR != nullptr);
+            vkDestroySamplerYcbcrConversionKHR(device(), handle(), nullptr);
+        }
+        handle_ = VK_NULL_HANDLE;
+    }
+}
+
 }  // namespace vk_testing

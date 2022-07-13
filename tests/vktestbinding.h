@@ -889,6 +889,25 @@ class Framebuffer : public internal::NonDispHandle<VkFramebuffer> {
     void init(const Device &dev, const VkFramebufferCreateInfo &info);
 };
 
+class SamplerYcbcrConversion : public internal::NonDispHandle<VkSamplerYcbcrConversion> {
+  public:
+    SamplerYcbcrConversion() = default;
+    SamplerYcbcrConversion(const Device &dev, VkFormat format, bool khr) : khr_(khr) {
+        init(dev, DefaultConversionInfo(format), khr);
+    }
+    SamplerYcbcrConversion(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr) : khr_(khr) {
+        init(dev, info, khr);
+    }
+    ~SamplerYcbcrConversion() NOEXCEPT;
+
+    void init(const Device &dev, const VkSamplerYcbcrConversionCreateInfo &info, bool khr);
+    VkSamplerYcbcrConversionInfo ConversionInfo();
+
+    static VkSamplerYcbcrConversionCreateInfo DefaultConversionInfo(VkFormat format);
+
+    bool khr_ = false;
+};
+
 inline VkMemoryAllocateInfo DeviceMemory::alloc_info(VkDeviceSize size, uint32_t memory_type_index) {
     VkMemoryAllocateInfo info = LvlInitStruct<VkMemoryAllocateInfo>();
     info.allocationSize = size;
