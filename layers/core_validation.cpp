@@ -2116,14 +2116,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
     if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE && pipeline->fragment_shader_state) {
         if (subpass_desc && subpass_desc->pDepthStencilAttachment != nullptr && pipeline->DepthStencilState()) {
-            if (IsImageLayoutDepthReadOnly(subpass_desc->pDepthStencilAttachment->layout)  && pipeline->DepthStencilState()
-                    ->depthWriteEnable != VK_FALSE) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06039",
-                                 "Invalid Pipeline CreateInfo[%" PRIu32
-                                 "] State: VkPipelineDepthStencilStateCreateInfo::depthWriteEnable is VK_TRUE, while the layout of "
-                                 "the depth aspect of the depth/stencil attachment in the render pass is %s.",
-                                 pipe_index, string_VkImageLayout(subpass_desc->pDepthStencilAttachment->layout));
-            }
             if (IsImageLayoutStencilReadOnly(subpass_desc->pDepthStencilAttachment->layout)) {
                 std::stringstream msg;
                 if (pipeline->DepthStencilState()->front.failOp != VK_STENCIL_OP_KEEP) {
@@ -2154,14 +2146,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     if (!msg.str().empty()) msg << ", ";
                     msg << "VkPipelineDepthStencilStateCreateInfo::back.depthFailOp is "
                         << string_VkStencilOp(pipeline->DepthStencilState()->front.depthFailOp);
-                }
-                if (!msg.str().empty()) {
-                    skip |=
-                        LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06040",
-                                 "Invalid Pipeline CreateInfo[%" PRIu32
-                                 "] State: %s, while the layout of "
-                                 "the stencil aspect of the depth/stencil attachment in the render pass is %s.",
-                                 pipe_index, msg.str().c_str(), string_VkImageLayout(subpass_desc->pDepthStencilAttachment->layout));
                 }
             }
         }
