@@ -1301,8 +1301,6 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
-    GTEST_SKIP() << "This test always fails, fix needed";
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!IsPlatform(kMockICD)) {
         // This test leaks a fence (on purpose) and should not be run on a real driver
@@ -1334,6 +1332,11 @@ TEST_F(VkLayerTest, LeakAnObject) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
     vk::DestroyDevice(leaky_device, nullptr);
     m_errorMonitor->VerifyFound();
+
+    // There's no way we can destroy the fence at this point. Even though DestroyDevice failed, the loader has already removed
+    // references to the device
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-00378");
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-ObjectTracker-ObjectLeak");
 }
 
 TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
