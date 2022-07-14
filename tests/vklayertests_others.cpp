@@ -5202,14 +5202,14 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
 
     if (mem_reqs.alignment > 1) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
-        vk::BindBufferMemory(device(), buffer, memory.handle(), 1);
+        vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 1);
         m_errorMonitor->VerifyFound();
     }
 
     VkDeviceSize buffer_offset = (mem_reqs.size - 1) & ~(mem_reqs.alignment - 1);
     if (buffer_offset > 0) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-size-01037");
-        vk::BindBufferMemory(device(), buffer, memory.handle(), buffer_offset);
+        vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), buffer_offset);
         m_errorMonitor->VerifyFound();
     }
 
@@ -11642,6 +11642,7 @@ TEST_F(VkLayerTest, BeginQueryTypeTransformFeedbackStream) {
         "Call CmdBeginQuery with query type transform feedback stream when transformFeedbackQueries is not supported.");
 
     AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -11652,7 +11653,7 @@ TEST_F(VkLayerTest, BeginQueryTypeTransformFeedbackStream) {
         LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
     VkPhysicalDeviceProperties2 phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
 
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
     if (transform_feedback_props.transformFeedbackQueries) {
         printf("%s Transform feedback queries are supported, skipping test\n", kSkipPrefix);
         return;
