@@ -9962,8 +9962,6 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    vk::DestroySampler(m_device->device(), sampler.handle(), nullptr);
 }
 
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
