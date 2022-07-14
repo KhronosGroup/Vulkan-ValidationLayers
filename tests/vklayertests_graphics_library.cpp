@@ -1080,3 +1080,45 @@ TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, PreRasterWithFS) {
+    TEST_DESCRIPTION("Create a library with no FS state, but an FS");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    // The library is not created with fragment shader state, and therefore cannot have a fragment shader
+    stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitPreRasterLibInfo(1, &stage_ci);
+    pipe.InitState();
+
+    // 00727 basically says the same thing as 06894, but in the context of mesh shaders rather than pipeline libraries
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00727");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
