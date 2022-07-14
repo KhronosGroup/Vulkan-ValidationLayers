@@ -389,17 +389,17 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     message_limit.append(".duplicate_message_limit");
     fine_grained_locking.append(".fine_grained_locking");
     std::string list_of_config_enables = getLayerOption(enable_key.c_str());
-    std::string list_of_env_enables = GetLayerEnvVar("VK_LAYER_ENABLES");
+    std::string list_of_env_enables = GetEnvironment("VK_LAYER_ENABLES");
     std::string list_of_config_disables = getLayerOption(disable_key.c_str());
-    std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
+    std::string list_of_env_disables = GetEnvironment("VK_LAYER_DISABLES");
     std::string list_of_config_filter_ids = getLayerOption(filter_msg_key.c_str());
-    std::string list_of_env_filter_ids = GetLayerEnvVar("VK_LAYER_MESSAGE_ID_FILTER");
+    std::string list_of_env_filter_ids = GetEnvironment("VK_LAYER_MESSAGE_ID_FILTER");
     std::string list_of_config_stypes = getLayerOption(stypes_key.c_str());
-    std::string list_of_env_stypes = GetLayerEnvVar("VK_LAYER_CUSTOM_STYPE_LIST");
+    std::string list_of_env_stypes = GetEnvironment("VK_LAYER_CUSTOM_STYPE_LIST");
     std::string config_message_limit = getLayerOption(message_limit.c_str());
-    std::string env_message_limit = GetLayerEnvVar("VK_LAYER_DUPLICATE_MESSAGE_LIMIT");
+    std::string env_message_limit = GetEnvironment("VK_LAYER_DUPLICATE_MESSAGE_LIMIT");
     std::string config_fine_grained_locking = getLayerOption(fine_grained_locking.c_str());
-    std::string env_fine_grained_locking = GetLayerEnvVar("VK_LAYER_FINE_GRAINED_LOCKING");
+    std::string env_fine_grained_locking = GetEnvironment("VK_LAYER_FINE_GRAINED_LOCKING");
 
 #if defined(_WIN32)
     std::string env_delimiter = ";";
