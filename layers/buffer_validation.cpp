@@ -5913,13 +5913,16 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // Validate VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT state, if view/image formats differ
         if ((image_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) && (image_format != view_format)) {
             if (FormatIsMultiplane(image_format)) {
-                VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
-                if (view_format != compat_format) {
+                const VkFormat compat_format = FindMultiplaneCompatibleFormat(image_format, aspect_mask);
+                auto image_class = FormatCompatibilityClass(compat_format);
+                auto view_class = FormatCompatibilityClass(view_format);
+                // Need to only check if one is NONE to handle edge case both are NONE
+                if ((image_class != view_class) || (image_class == FORMAT_COMPATIBILITY_CLASS::NONE)) {
                     // View format must match the multiplane compatible format
                     std::stringstream ss;
                     ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
                        << " is not compatible with plane " << GetPlaneIndex(aspect_mask) << " of underlying image format "
-                       << string_VkFormat(image_format) << ", must be " << string_VkFormat(compat_format) << ".";
+                       << string_VkFormat(image_format) << ", must be compatible with " << string_VkFormat(compat_format) << ".";
                     skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01586", "%s", ss.str().c_str());
                 }
             } else if (!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT)) {
