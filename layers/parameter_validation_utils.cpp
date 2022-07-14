@@ -4208,8 +4208,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
         }
 
         if (mutable_descriptor_type) {
-            ValidateMutableDescriptorTypeCreateInfo(*pCreateInfo, *mutable_descriptor_type,
-                                                    "vkDescriptorSetLayoutCreateInfo");
+            skip |=
+                ValidateMutableDescriptorTypeCreateInfo(*pCreateInfo, *mutable_descriptor_type, "vkDescriptorSetLayoutCreateInfo");
         }
     }
     if (pCreateInfo) {
