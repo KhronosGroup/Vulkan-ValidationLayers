@@ -4467,8 +4467,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -4627,10 +4626,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
         m_errorMonitor->VerifyFound();
         reset_mem();
     } else {
+        AHardwareBuffer_release(ahb);
+        reset_mem();
+        reset_img();
         // ERROR: AHardwareBuffer_allocate() with MIPMAP_COMPLETE fails. It returns -12, NO_MEMORY.
         // The problem seems to happen in Pixel 2, not Pixel 3.
-        printf("%s AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE not supported, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE not supported";
     }
 
     // Dedicated allocation with mis-matched dimension
@@ -11578,6 +11579,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
     TEST_DESCRIPTION("Test CmdSetDiscardRectangleEXT with invalid offsets in pDiscardRectangles");
 
     AddRequiredExtensions(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -11589,14 +11591,13 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTOffsets) {
 
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
     phys_dev_props_2.pNext = &discard_rectangle_properties;
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
 
     auto fpCmdSetDiscardRectangleEXT =
         (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
 
     if (discard_rectangle_properties.maxDiscardRectangles == 0) {
-        printf("%s Discard rectangles are not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Discard rectangles are not supported";
     }
 
     VkRect2D discard_rectangles = {};
