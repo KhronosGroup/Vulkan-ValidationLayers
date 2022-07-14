@@ -951,7 +951,7 @@ VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo
 
 SamplerYcbcrConversion::~SamplerYcbcrConversion() NOEXCEPT {
     if (initialized()) {
-        if (khr_) {
+        if (!khr_) {
             vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);
         } else {
             auto vkDestroySamplerYcbcrConversionKHR = reinterpret_cast<PFN_vkDestroySamplerYcbcrConversionKHR>(

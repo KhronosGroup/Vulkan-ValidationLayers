@@ -9926,9 +9926,7 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
 
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkSampler sampler;
-    VkResult err = vk::CreateSampler(m_device->device(), &sci, nullptr, &sampler);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Sampler sampler(*m_device, sci);
 
     VkImageView view = test_image.targetView(image_info.format);
 
@@ -9944,7 +9942,7 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -9965,7 +9963,7 @@ TEST_F(VkLayerTest, IllegalAddressModeWithCornerSampledNV) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
-    vk::DestroySampler(m_device->device(), sampler, nullptr);
+    vk::DestroySampler(m_device->device(), sampler.handle(), nullptr);
 }
 
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
@@ -9981,10 +9979,9 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
-        printf("samplerYcbcrConversion not supported, skipping test\n");
-        return;
+        GTEST_SKIP() << "SamplerYcbcrConversion not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -10008,8 +10005,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     // Verify formats
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT);
     if (!supported) {
-        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Multiplane image format not supported";
     }
 
     // Create Ycbcr conversion
@@ -10023,30 +10019,28 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
-    VkSamplerYcbcrConversion conversions[2];
-    vk::CreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
+    vk_testing::SamplerYcbcrConversion conversions[2];
+    conversions[0].init(*m_device, ycbcr_create_info, false);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
-    vk::CreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
+    conversions[1].init(*m_device, ycbcr_create_info, false);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
-    ycbcr_info.conversion = conversions[0];
+    ycbcr_info.conversion = conversions[0].handle();
 
     // Create a sampler using conversion
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
     sci.pNext = &ycbcr_info;
     // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
-    VkSampler samplers[2];
-    VkResult err = vk::CreateSampler(m_device->device(), &sci, NULL, &samplers[0]);
-    ASSERT_VK_SUCCESS(err);
-    ycbcr_info.conversion = conversions[1];  // Need two samplers with different conversions
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &samplers[1]);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Sampler samplers[2];
+    samplers[0].init(*m_device, sci);
+    ycbcr_info.conversion = conversions[1].handle();  // Need two samplers with different conversions
+    samplers[1].init(*m_device, sci);
 
-    VkSampler BadSampler;
+    vk_testing::Sampler BadSampler;
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    BadSampler.init(*m_device, sci);
     m_errorMonitor->VerifyFound();
 
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
@@ -10054,14 +10048,14 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     sci.minLod = 0.0;
     sci.maxLod = 0.0;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    BadSampler.init(*m_device, sci);
     m_errorMonitor->VerifyFound();
 
     if (features2.features.samplerAnisotropy == VK_TRUE) {
         sci.unnormalizedCoordinates = VK_FALSE;
         sci.anisotropyEnable = VK_TRUE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-        err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+        BadSampler.init(*m_device, sci);
         m_errorMonitor->VerifyFound();
     }
 
@@ -10069,8 +10063,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     VkImageObj mpimage(m_device);
     mpimage.init(&ci);
 
-    VkImageView view;
-    ycbcr_info.conversion = conversions[0];  // Need two samplers with different conversions
+    ycbcr_info.conversion = conversions[0].handle();  // Need two samplers with different conversions
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
     ivci.image = mpimage.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -10079,12 +10072,14 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
 
+    vk_testing::ImageView view(*m_device, ivci);
+
+    VkSampler vksamplers[2] = {samplers[0].handle(), samplers[1].handle()};
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
-                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, samplers},
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, vksamplers},
                                        });
 
     if (!descriptor_set.set_) {
@@ -10095,8 +10090,8 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     VkDescriptorImageInfo image_infos[2];
     image_infos[0] = {};
     image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_infos[0].imageView = view;
-    image_infos[0].sampler = samplers[0];
+    image_infos[0].imageView = view.handle();
+    image_infos[0].sampler = samplers[0].handle();
     image_infos[1] = image_infos[0];
 
     // Update the descriptor set expecting to get an error
@@ -10123,12 +10118,6 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-02738");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[0], nullptr);
-    vk::DestroySamplerYcbcrConversion(m_device->device(), conversions[1], nullptr);
-    vk::DestroyImageView(m_device->device(), view, NULL);
-    vk::DestroySampler(m_device->device(), samplers[0], nullptr);
-    vk::DestroySampler(m_device->device(), samplers[1], nullptr);
 }
 
 TEST_F(VkLayerTest, DepthStencilImageViewWithColorAspectBitError) {
