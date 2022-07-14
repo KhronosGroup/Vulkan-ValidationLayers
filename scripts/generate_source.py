@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021 The Khronos Group Inc.
-# Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
-# Copyright (c) 2021 Google Inc.
+# Copyright (c) 2021-2022 The Khronos Group Inc.
+# Copyright (c) 2021-2022 Valve Corporation
+# Copyright (c) 2021-2022 LunarG, Inc.
+# Copyright (c) 2021-2022 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ def main(argv):
     gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-grammar', os.path.abspath(os.path.join(args.grammar,  'spirv.core.grammar.json')),
-                   '-warnExtensions', 'VK_KHR_dynamic_rendering',
                    '-quiet',
                    filename] for filename in ["chassis.cpp",
                                               "chassis.h",
