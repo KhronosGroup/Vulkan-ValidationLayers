@@ -1168,10 +1168,12 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
         }
     )glsl";
 
-    std::string cs_image_store = cs_image_base + R"glsl(
-           imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
-        }
-    )glsl";
+    // Broken, fixed by :
+    // https://github.com/KhronosGroup/glslang/issues/2975
+    // std::string cs_image_store = cs_image_base + R"glsl(
+    //        imageAtomicStore(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
+    //     }
+    // )glsl";
 
     std::string cs_image_exchange = cs_image_base + R"glsl(
            imageAtomicExchange(z, ivec2(1, 1), y, gl_ScopeDevice, gl_StorageSemanticsImage, gl_SemanticsRelaxed);
@@ -1196,8 +1198,8 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
     current_shader = cs_image_load.c_str();
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
 
-    current_shader = cs_image_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    // current_shader = cs_image_store.c_str();
+    // CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
 
     current_shader = cs_image_exchange.c_str();
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
