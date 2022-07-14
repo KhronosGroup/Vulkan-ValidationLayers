@@ -12409,16 +12409,16 @@ TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
     TEST_DESCRIPTION("Test allocating large variable descriptor sets");
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&indexing_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (indexing_features.descriptorBindingVariableDescriptorCount == VK_FALSE) {
-        printf("%s descriptorBindingVariableDescriptorCount feature not supported, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "descriptorBindingVariableDescriptorCount feature not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
