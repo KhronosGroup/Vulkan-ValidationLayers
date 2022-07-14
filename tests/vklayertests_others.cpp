@@ -5170,11 +5170,17 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     ahb_desc.stride = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+    pfn_GetAHBProps(dev, ahb, &ahb_props);
+
     VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&ext_buf_info);
-    buffer_create_info.size = 1 << 20;  // 1 MB
+    buffer_create_info.size = ahb_props.allocationSize;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     vk_testing::Buffer buffer(*m_device, buffer_create_info);
@@ -5187,7 +5193,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     import_ahb_Info.buffer = ahb;
 
     VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
-    memory_info.allocationSize = mem_reqs.size + mem_reqs.alignment;  // save room for offset
+    memory_info.allocationSize = ahb_props.allocationSize;  // save room for offset
     bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         AHardwareBuffer_release(ahb);
