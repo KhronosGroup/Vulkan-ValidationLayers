@@ -242,6 +242,7 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    m_errorMonitor->ExpectSuccess();
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -286,6 +287,90 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
     pipe.InitState();
     pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayoutSpec) {
+    TEST_DESCRIPTION(
+        "Same test as ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayout but making sure the path when using spec constants "
+        "works");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    m_errorMonitor->ExpectSuccess();
+
+    // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&explicit_layout_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
+
+    if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
+        printf("%s workgroupMemoryExplicitLayout feature not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+    const uint32_t max_shared_vec4 = max_shared_memory_size / 16;
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        #extension GL_EXT_shared_memory_block : enable
+
+        // will be over the max if the spec constant uses default value
+        layout(constant_id = 0) const uint value = )glsl";
+    csSource << (max_shared_vec4 + 16);
+    csSource << R"glsl(;
+
+        // Both structs by themselves are 16 bytes less than the max
+        shared X {
+            vec4 x1[value];
+            vec4 x2;
+        };
+
+        shared Y {
+            int y1[)glsl";
+    csSource << (max_shared_ints - 4);
+    csSource << R"glsl(];
+            int y2;
+        };
+
+        void main() {
+            x2.x = 0.0f; // prevent dead-code elimination
+            y2 = 0;
+        }
+    )glsl";
+
+    uint32_t data = max_shared_vec4 - 16;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+                                   &specialization_info));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
@@ -554,6 +639,38 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
             new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+}
+
+TEST_F(VkPositiveLayerTest, ComputeSharedMemorySpecConstantOp) {
+    TEST_DESCRIPTION("Validate compute shader shared memory");
+
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    if (max_shared_ints < 16 * 7) {
+        GTEST_SKIP() << "Supported compute shader shared memory size is too small";
+    }
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        layout(constant_id = 0) const uint Condition = 0;
+        layout(constant_id = 1) const uint SharedSize = 16;
+
+        #define enableSharedMemoryOpt (Condition == 1 || Condition == 2 || Condition == 3)
+        shared uint arr[enableSharedMemoryOpt ? SharedSize : 1][enableSharedMemoryOpt ? 7 : 1];
+
+        void main() {}
+    )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
 }
 
 TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
