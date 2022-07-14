@@ -5176,12 +5176,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     buffer_create_info.size = 1 << 20;  // 1 MB
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-    VkBuffer buffer = VK_NULL_HANDLE;
-    vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
+    vk_testing::Buffer buffer(*m_device, buffer_create_info);
 
     // Try to get memory requirements prior to binding memory
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = LvlInitStruct<VkImportAndroidHardwareBufferInfoANDROID>();
     import_ahb_Info.buffer = ahb;
@@ -5191,31 +5190,28 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         AHardwareBuffer_release(ahb);
-        vk::DestroyBuffer(m_device->device(), buffer, nullptr);
         GTEST_SKIP() << "No invalid memory type index could be found";
     }
 
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-    VkResult result = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
-    if ((memory == VK_NULL_HANDLE) || (result != VK_SUCCESS)) {
+    vk_testing::DeviceMemory memory(*m_device, memory_info);
+    if (memory.handle() == VK_NULL_HANDLE) {
+        AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "This test failed to allocate memory for importing";
     }
 
     if (mem_reqs.alignment > 1) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
-        vk::BindBufferMemory(device(), buffer, memory, 1);
+        vk::BindBufferMemory(device(), buffer, memory.handle(), 1);
         m_errorMonitor->VerifyFound();
     }
 
     VkDeviceSize buffer_offset = (mem_reqs.size - 1) & ~(mem_reqs.alignment - 1);
     if (buffer_offset > 0) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-size-01037");
-        vk::BindBufferMemory(device(), buffer, memory, buffer_offset);
+        vk::BindBufferMemory(device(), buffer, memory.handle(), buffer_offset);
         m_errorMonitor->VerifyFound();
     }
 
-    vk::DestroyBuffer(m_device->device(), buffer, nullptr);
-    vk::FreeMemory(m_device->device(), memory, nullptr);
     AHardwareBuffer_release(ahb);
 }
 
