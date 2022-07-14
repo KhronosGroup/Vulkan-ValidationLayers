@@ -1101,23 +1101,36 @@ TEST_F(VkGraphicsLibraryLayerTest, PreRasterWithFS) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
+
+    // Create and add a vertex shader to silence 06896
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+    vs_ci.pCode = vs_spv.data();
+
+    auto vs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    vs_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vs_stage_ci.module = VK_NULL_HANDLE;
+    vs_stage_ci.pName = "main";
+    stages.emplace_back(vs_stage_ci);
+
     const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
     auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
     fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
     fs_ci.pCode = fs_spv.data();
 
-    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
     // The library is not created with fragment shader state, and therefore cannot have a fragment shader
-    stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stage_ci.module = VK_NULL_HANDLE;
-    stage_ci.pName = "main";
+    fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fs_stage_ci.module = VK_NULL_HANDLE;
+    fs_stage_ci.pName = "main";
+    stages.emplace_back(fs_stage_ci);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitPreRasterLibInfo(1, &stage_ci);
+    pipe.InitPreRasterLibInfo(static_cast<uint32_t>(stages.size()), stages.data());
     pipe.InitState();
 
-    // 00727 basically says the same thing as 06894, but in the context of mesh shaders rather than pipeline libraries
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00727");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1143,22 +1156,79 @@ TEST_F(VkGraphicsLibraryLayerTest, FragmentStateWithPreRaster) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fs_stage_ci.module = VK_NULL_HANDLE;
+    fs_stage_ci.pName = "main";
+    stages.emplace_back(fs_stage_ci);
+
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
     auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
 
-    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    auto vs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
     // VK_SHADER_STAGE_VERTEX_BIT is a pre-raster shader stage, but the library will be created with only fragment shader state
-    stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    stage_ci.module = VK_NULL_HANDLE;
-    stage_ci.pName = "main";
+    vs_stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vs_stage_ci.module = VK_NULL_HANDLE;
+    vs_stage_ci.pName = "main";
+    stages.emplace_back(vs_stage_ci);
 
     CreatePipelineHelper pipe(*this);
-    pipe.InitFragmentLibInfo(1, &stage_ci);
+    pipe.InitFragmentLibInfo(static_cast<uint32_t>(stages.size()), stages.data());
     pipe.InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06895");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkGraphicsLibraryLayerTest, MissingShaderStages) {
+    TEST_DESCRIPTION("Create a library with pre-raster state, but no pre-raster shader");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitPreRasterLibInfo(0, nullptr);
+        pipe.InitState();
+
+        // 00727 is effectively unrelated, but gets triggered due to lack of mesh shader extension
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00727");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitFragmentLibInfo(0, nullptr);
+        pipe.InitState();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
 }
