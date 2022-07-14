@@ -10984,50 +10984,36 @@ TEST_F(VkLayerTest, MutableDescriptors) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
-
     mutable_descriptor_type_list.descriptorTypeCount = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-descriptorTypeCount-04597");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
-
     mutable_descriptor_type_list.descriptorTypeCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04598");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04600");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
-
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04601");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
 
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04602");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
-
     descriptor_types[1] = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-pDescriptorTypes-04603");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
 }
 
 TEST_F(VkLayerTest, DescriptorUpdateTemplate) {
