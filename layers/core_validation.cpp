@@ -2313,6 +2313,14 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    if (pipeline->pre_raster_state && !pipeline->fragment_shader_state &&
+        ((pipeline->active_shaders & FragmentShaderState::ValidShaderStages()) != 0)) {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06894",
+                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                         "] does not have fragment shader state, but stages (%s) contains VK_SHADER_STAGE_FRAGMENT_BIT.",
+                         pipe_index, string_VkShaderStageFlags(pipeline->active_shaders).c_str());
+    }
+
     // If a rasterization state is provided...
     const auto raster_state = pipeline->RasterizationState();
     if (raster_state) {
