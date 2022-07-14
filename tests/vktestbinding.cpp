@@ -176,7 +176,8 @@ bool PhysicalDevice::set_memory_type(const uint32_t type_bits, VkMemoryAllocateI
         if ((type_mask & 1) == 1) {
             // Type is available, does it match user properties?
             if ((memory_properties_.memoryTypes[i].propertyFlags & properties) == properties &&
-                (memory_properties_.memoryTypes[i].propertyFlags & forbid) == 0) {
+                (memory_properties_.memoryTypes[i].propertyFlags & forbid) == 0 &&
+                (memory_properties_.memoryHeaps[memory_properties_.memoryTypes[i].heapIndex].size >= info->allocationSize)) {
                 info->memoryTypeIndex = i;
                 return true;
             }
