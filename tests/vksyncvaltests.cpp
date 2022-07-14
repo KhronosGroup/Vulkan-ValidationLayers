@@ -2476,6 +2476,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
+    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     auto cb = m_commandBuffer->handle();
     VkClearColorValue ccv = {};
@@ -2495,7 +2496,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         0,
@@ -2503,16 +2504,25 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         image_input.handle(),
         full_subresource_range,
     };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u, nullptr, 0u, nullptr,
-                           1u, &postClearBarrier);
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr,
+                           0u, nullptr, 1u, &postClearBarrier);
 
     m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
     m_renderPassBeginInfo.renderPass = rp.handle();
     m_renderPassBeginInfo.framebuffer = fb.handle();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ_AFTER_WRITE");
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->VerifyFound();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+
+    // Positive test for ordering rules between load and input attachment usage
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
+    m_commandBuffer->EndRenderPass();
+    m_errorMonitor->VerifyNotFound();
 
     // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
