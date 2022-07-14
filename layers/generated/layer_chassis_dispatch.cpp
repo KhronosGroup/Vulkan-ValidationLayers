@@ -2561,6 +2561,7 @@ VkResult DispatchCreateComputePipelines(
                 if (pCreateInfos[index0].stage.module) {
                     local_pCreateInfos[index0].stage.module = layer_data->Unwrap(pCreateInfos[index0].stage.module);
                 }
+                WrapPnextChainHandles(layer_data, local_pCreateInfos[index0].stage.pNext);
                 if (pCreateInfos[index0].layout) {
                     local_pCreateInfos[index0].layout = layer_data->Unwrap(pCreateInfos[index0].layout);
                 }

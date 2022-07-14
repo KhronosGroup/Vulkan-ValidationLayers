@@ -1981,7 +1981,7 @@ VkResult DispatchGetDeferredOperationResultKHR(
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    WrapPnextChainHandles(layer_data, local_%s%s->pNext);\n' % (indent, prefix, member.name)
+                            pre_code += '%s    WrapPnextChainHandles(layer_data, %spNext);\n' % (indent, new_prefix)
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
@@ -1998,7 +1998,7 @@ VkResult DispatchGetDeferredOperationResultKHR(
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    WrapPnextChainHandles(layer_data, local_%s%s.pNext);\n' % (indent, prefix, member.name)
+                            pre_code += '%s    WrapPnextChainHandles(layer_data, %s%s.pNext);\n' % (indent, prefix, member.name)
         return decls, pre_code, post_code
     #
     # For a particular API, generate the non-dispatchable-object wrapping/unwrapping code

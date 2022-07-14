@@ -7171,6 +7171,57 @@ struct safe_VkPhysicalDeviceASTCDecodeFeaturesEXT {
     VkPhysicalDeviceASTCDecodeFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceASTCDecodeFeaturesEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 pipelineRobustness;
+    safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const VkPhysicalDevicePipelineRobustnessFeaturesEXT* in_struct);
+    safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& operator=(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT();
+    ~safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT();
+    void initialize(const VkPhysicalDevicePipelineRobustnessFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT* copy_src);
+    VkPhysicalDevicePipelineRobustnessFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePipelineRobustnessFeaturesEXT *>(this); }
+    VkPhysicalDevicePipelineRobustnessFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelineRobustnessFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkPipelineRobustnessBufferBehaviorEXT defaultRobustnessStorageBuffers;
+    VkPipelineRobustnessBufferBehaviorEXT defaultRobustnessUniformBuffers;
+    VkPipelineRobustnessBufferBehaviorEXT defaultRobustnessVertexInputs;
+    VkPipelineRobustnessImageBehaviorEXT defaultRobustnessImages;
+    safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const VkPhysicalDevicePipelineRobustnessPropertiesEXT* in_struct);
+    safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& operator=(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT();
+    ~safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT();
+    void initialize(const VkPhysicalDevicePipelineRobustnessPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT* copy_src);
+    VkPhysicalDevicePipelineRobustnessPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePipelineRobustnessPropertiesEXT *>(this); }
+    VkPhysicalDevicePipelineRobustnessPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelineRobustnessPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPipelineRobustnessCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkPipelineRobustnessBufferBehaviorEXT storageBuffers;
+    VkPipelineRobustnessBufferBehaviorEXT uniformBuffers;
+    VkPipelineRobustnessBufferBehaviorEXT vertexInputs;
+    VkPipelineRobustnessImageBehaviorEXT images;
+    safe_VkPipelineRobustnessCreateInfoEXT(const VkPipelineRobustnessCreateInfoEXT* in_struct);
+    safe_VkPipelineRobustnessCreateInfoEXT(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src);
+    safe_VkPipelineRobustnessCreateInfoEXT& operator=(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src);
+    safe_VkPipelineRobustnessCreateInfoEXT();
+    ~safe_VkPipelineRobustnessCreateInfoEXT();
+    void initialize(const VkPipelineRobustnessCreateInfoEXT* in_struct);
+    void initialize(const safe_VkPipelineRobustnessCreateInfoEXT* copy_src);
+    VkPipelineRobustnessCreateInfoEXT *ptr() { return reinterpret_cast<VkPipelineRobustnessCreateInfoEXT *>(this); }
+    VkPipelineRobustnessCreateInfoEXT const *ptr() const { return reinterpret_cast<VkPipelineRobustnessCreateInfoEXT const *>(this); }
+};
+
 struct safe_VkConditionalRenderingBeginInfoEXT {
     VkStructureType sType;
     const void* pNext{};

@@ -34441,6 +34441,210 @@ void safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::initialize(const safe_VkPhysica
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const VkPhysicalDevicePipelineRobustnessFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    pipelineRobustness(in_struct->pipelineRobustness)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT),
+    pNext(nullptr),
+    pipelineRobustness()
+{}
+
+safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineRobustness = copy_src.pipelineRobustness;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::operator=(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineRobustness = copy_src.pipelineRobustness;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::~safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::initialize(const VkPhysicalDevicePipelineRobustnessFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pipelineRobustness = in_struct->pipelineRobustness;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT::initialize(const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    pipelineRobustness = copy_src->pipelineRobustness;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const VkPhysicalDevicePipelineRobustnessPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    defaultRobustnessStorageBuffers(in_struct->defaultRobustnessStorageBuffers),
+    defaultRobustnessUniformBuffers(in_struct->defaultRobustnessUniformBuffers),
+    defaultRobustnessVertexInputs(in_struct->defaultRobustnessVertexInputs),
+    defaultRobustnessImages(in_struct->defaultRobustnessImages)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES_EXT),
+    pNext(nullptr),
+    defaultRobustnessStorageBuffers(),
+    defaultRobustnessUniformBuffers(),
+    defaultRobustnessVertexInputs(),
+    defaultRobustnessImages()
+{}
+
+safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    defaultRobustnessStorageBuffers = copy_src.defaultRobustnessStorageBuffers;
+    defaultRobustnessUniformBuffers = copy_src.defaultRobustnessUniformBuffers;
+    defaultRobustnessVertexInputs = copy_src.defaultRobustnessVertexInputs;
+    defaultRobustnessImages = copy_src.defaultRobustnessImages;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::operator=(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    defaultRobustnessStorageBuffers = copy_src.defaultRobustnessStorageBuffers;
+    defaultRobustnessUniformBuffers = copy_src.defaultRobustnessUniformBuffers;
+    defaultRobustnessVertexInputs = copy_src.defaultRobustnessVertexInputs;
+    defaultRobustnessImages = copy_src.defaultRobustnessImages;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::~safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::initialize(const VkPhysicalDevicePipelineRobustnessPropertiesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    defaultRobustnessStorageBuffers = in_struct->defaultRobustnessStorageBuffers;
+    defaultRobustnessUniformBuffers = in_struct->defaultRobustnessUniformBuffers;
+    defaultRobustnessVertexInputs = in_struct->defaultRobustnessVertexInputs;
+    defaultRobustnessImages = in_struct->defaultRobustnessImages;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT::initialize(const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    defaultRobustnessStorageBuffers = copy_src->defaultRobustnessStorageBuffers;
+    defaultRobustnessUniformBuffers = copy_src->defaultRobustnessUniformBuffers;
+    defaultRobustnessVertexInputs = copy_src->defaultRobustnessVertexInputs;
+    defaultRobustnessImages = copy_src->defaultRobustnessImages;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPipelineRobustnessCreateInfoEXT::safe_VkPipelineRobustnessCreateInfoEXT(const VkPipelineRobustnessCreateInfoEXT* in_struct) :
+    sType(in_struct->sType),
+    storageBuffers(in_struct->storageBuffers),
+    uniformBuffers(in_struct->uniformBuffers),
+    vertexInputs(in_struct->vertexInputs),
+    images(in_struct->images)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPipelineRobustnessCreateInfoEXT::safe_VkPipelineRobustnessCreateInfoEXT() :
+    sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT),
+    pNext(nullptr),
+    storageBuffers(),
+    uniformBuffers(),
+    vertexInputs(),
+    images()
+{}
+
+safe_VkPipelineRobustnessCreateInfoEXT::safe_VkPipelineRobustnessCreateInfoEXT(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src)
+{
+    sType = copy_src.sType;
+    storageBuffers = copy_src.storageBuffers;
+    uniformBuffers = copy_src.uniformBuffers;
+    vertexInputs = copy_src.vertexInputs;
+    images = copy_src.images;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPipelineRobustnessCreateInfoEXT& safe_VkPipelineRobustnessCreateInfoEXT::operator=(const safe_VkPipelineRobustnessCreateInfoEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    storageBuffers = copy_src.storageBuffers;
+    uniformBuffers = copy_src.uniformBuffers;
+    vertexInputs = copy_src.vertexInputs;
+    images = copy_src.images;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPipelineRobustnessCreateInfoEXT::~safe_VkPipelineRobustnessCreateInfoEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPipelineRobustnessCreateInfoEXT::initialize(const VkPipelineRobustnessCreateInfoEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    storageBuffers = in_struct->storageBuffers;
+    uniformBuffers = in_struct->uniformBuffers;
+    vertexInputs = in_struct->vertexInputs;
+    images = in_struct->images;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPipelineRobustnessCreateInfoEXT::initialize(const safe_VkPipelineRobustnessCreateInfoEXT* copy_src)
+{
+    sType = copy_src->sType;
+    storageBuffers = copy_src->storageBuffers;
+    uniformBuffers = copy_src->uniformBuffers;
+    vertexInputs = copy_src->vertexInputs;
+    images = copy_src->images;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT(const VkConditionalRenderingBeginInfoEXT* in_struct) :
     sType(in_struct->sType),
     buffer(in_struct->buffer),
@@ -56381,6 +56585,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceASTCDecodeFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceASTCDecodeFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineRobustnessFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT(reinterpret_cast<const VkPhysicalDevicePipelineRobustnessPropertiesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT:
+            safe_pNext = new safe_VkPipelineRobustnessCreateInfoEXT(reinterpret_cast<const VkPipelineRobustnessCreateInfoEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceConditionalRenderingFeaturesEXT *>(pNext));
             break;
@@ -57651,6 +57864,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceASTCDecodeFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePipelineRobustnessFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePipelineRobustnessPropertiesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT:
+            delete reinterpret_cast<const safe_VkPipelineRobustnessCreateInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT *>(header);
