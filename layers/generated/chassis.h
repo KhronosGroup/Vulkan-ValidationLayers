@@ -2335,6 +2335,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateViSurfaceNN(
 
 
 
+
 VKAPI_ATTR void VKAPI_CALL CmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
     const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin);

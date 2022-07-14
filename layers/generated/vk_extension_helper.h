@@ -446,6 +446,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_pipeline_properties{kNotEnabled};
+    ExtEnabled vk_ext_pipeline_robustness{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
     ExtEnabled vk_ext_primitive_topology_list_restart{kNotEnabled};
     ExtEnabled vk_ext_primitives_generated_query{kNotEnabled};
@@ -679,7 +680,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
-            {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {})},
+            {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_border_color_swizzle, {{
                            {&DeviceExtensions::vk_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME}}})},
             {VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_buffer_device_address, {{
@@ -784,6 +786,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control, {})},
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
             {VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_properties, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_robustness, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})},
             {VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_primitive_topology_list_restart, {})},
@@ -1381,6 +1385,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME,
+    VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
     VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME,
     VK_EXT_PRIMITIVES_GENERATED_QUERY_EXTENSION_NAME,
