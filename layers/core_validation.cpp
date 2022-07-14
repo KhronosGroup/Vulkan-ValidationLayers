@@ -2313,13 +2313,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    // Compute shaders should be specified independent of Gfx shaders
-    if (pipeline->active_shaders & VK_SHADER_STAGE_COMPUTE_BIT) {
-        skip |=
-            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-00728",
-                     "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Do not specify Compute Shader for Gfx Pipeline.", pipe_index);
-    }
-
     // If a rasterization state is provided...
     const auto raster_state = pipeline->RasterizationState();
     if (raster_state) {
