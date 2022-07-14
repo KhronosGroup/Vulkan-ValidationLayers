@@ -6237,38 +6237,36 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         bci.usage = test_case.buffer_usage;
         bci.size = test_case.max_range + test_case.min_align;  // Make buffer bigger than range limit
         bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VkBuffer buffer;
-        VkResult err = vk::CreateBuffer(m_device->device(), &bci, NULL, &buffer);
-        if (VK_SUCCESS != err) {
+        vk_testing::Buffer buffer(*m_device, bci);
+        if (buffer.handle() == VK_NULL_HANDLE) {
             printf("%s Failed to allocate buffer in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
             continue;
         }
 
         // Have to bind memory to buffer before descriptor update
         VkMemoryRequirements mem_reqs;
-        vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
+        vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
         VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
         mem_alloc.allocationSize = mem_reqs.size;
         bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
         if (!pass) {
             printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
-            vk::DestroyBuffer(m_device->device(), buffer, NULL);
+            vk::DestroyBuffer(m_device->device(), buffer.handle(), NULL);
             continue;
         }
 
-        VkDeviceMemory mem;
-        err = vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
-        if (VK_SUCCESS != err) {
+        vk_testing::DeviceMemory mem(*m_device, mem_alloc);
+        if (mem.handle() == VK_NULL_HANDLE) {
             printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
-            vk::DestroyBuffer(m_device->device(), buffer, NULL);
+            vk::DestroyBuffer(m_device->device(), buffer.handle(), NULL);
             continue;
         }
-        err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
+        VkResult err = vk::BindBufferMemory(m_device->device(), buffer.handle(), mem.handle(), 0);
         ASSERT_VK_SUCCESS(err);
 
         VkDescriptorBufferInfo buff_info = {};
-        buff_info.buffer = buffer;
+        buff_info.buffer = buffer.handle();
         VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -6302,10 +6300,6 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_case.max_range_vu);
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
         m_errorMonitor->VerifyFound();
-
-        // Cleanup
-        vk::FreeMemory(m_device->device(), mem, NULL);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
     }
 }
 
