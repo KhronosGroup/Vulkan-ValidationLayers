@@ -68,7 +68,7 @@ class ConfigFile {
 
 static ConfigFile layer_config;
 
-string GetEnvironment(const char *variable) {
+VK_LAYER_EXPORT std::string GetEnvironment(const char *variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     const char *output = getenv(variable);
     return output == NULL ? "" : output;
@@ -108,8 +108,11 @@ string GetEnvironment(const char *variable) {
 
 VK_LAYER_EXPORT const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
 VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option) {
-    layer_config.vk_layer_disables_env_var = GetEnvironment(option);
-    return layer_config.vk_layer_disables_env_var.c_str();
+    // NOTE: new code should use GetEnvironment directly. This is a workaround for the problem
+    // described in https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3048
+    static std::string result;
+    result = GetEnvironment(option);
+    return result.c_str();
 }
 
 VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
