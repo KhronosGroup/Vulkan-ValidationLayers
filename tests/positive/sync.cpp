@@ -30,12 +30,14 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <thread>
 
 #include "cast_utils.h"
 
+static constexpr uint64_t kWaitTimeout{10000000000}; // 10 seconds in ns
 //
 // POSITIVE VALIDATION TESTS
 //
@@ -2071,7 +2073,7 @@ struct FenceSemRaceData {
     VkSemaphore sem{VK_NULL_HANDLE};
     std::atomic<bool> *bailout{nullptr};
     uint64_t wait_value{0};
-    uint64_t timeout{1000000000};
+    uint64_t timeout{kWaitTimeout};
     uint32_t iterations{100000};
 };
 
@@ -2215,3 +2217,226 @@ TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
 
     command_pool.reset();
 }
+
+struct BufferRec {
+    BufferRec(uint64_t value, std::shared_ptr<vk_testing::Buffer> &&buf) : wait_value(value), buffer(std::move(buf)) {}
+
+    uint64_t wait_value{0};
+    std::shared_ptr<vk_testing::Buffer> buffer;
+};
+
+struct SemBufferRaceData {
+    VkDevice device{VK_NULL_HANDLE};
+    VkSemaphore sem{VK_NULL_HANDLE};
+    std::atomic<bool> *bailout{nullptr};
+    uint64_t timeout{kWaitTimeout};
+    uint32_t iterations{10000};
+
+    std::deque<BufferRec> buffer_queue;
+    std::mutex lock;
+    std::condition_variable cv;
+
+    BufferRec Pop() {
+        std::unique_lock<std::mutex> guard(lock);
+        while (buffer_queue.empty()) {
+            cv.wait(guard);
+        }
+        auto result = buffer_queue.front();
+        buffer_queue.pop_front();
+        return result;
+    }
+    void Push(uint64_t value, std::shared_ptr<vk_testing::Buffer> &&buffer) {
+        std::unique_lock<std::mutex> guard(lock);
+        buffer_queue.emplace_back(value, std::move(buffer));
+        cv.notify_all();
+    }
+};
+
+void GetSemFreeBuffer(SemBufferRaceData *data) {
+    auto fpGetSemaphoreCounterValue =
+        reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(vk::GetDeviceProcAddr(data->device, "vkGetSemaphoreCounterValueKHR"));
+
+    while (!*data->bailout) {
+        auto rec = data->Pop();
+        if (rec.wait_value == 0 || !rec.buffer) {
+            break;
+        }
+        uint64_t read_value = 0;
+        do {
+            fpGetSemaphoreCounterValue(data->device, data->sem, &read_value);
+            if (*data->bailout) {
+                return;
+            }
+        } while (read_value != rec.wait_value);
+        rec.buffer.reset();
+    }
+}
+
+TEST_F(VkPositiveLayerTest, GetTimelineSemThreadRace) {
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    }
+
+    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    timeline_ci.initialValue = 0;
+
+    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+    vk_testing::Semaphore sem(*m_device, sem_ci);
+    auto sem_handle = sem.handle();
+
+    uint64_t signal_value = 1;
+    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &sem_handle;
+    submit_info.commandBufferCount = 1;
+
+    std::atomic<bool> bailout{false};
+    SemBufferRaceData data;
+    data.device = m_device->device();
+    data.sem = sem.handle();
+    data.bailout = &bailout;
+
+    m_errorMonitor->SetBailout(&bailout);
+
+    auto fpGetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreCounterValueKHR"));
+
+    std::thread thread(GetSemFreeBuffer, &data);
+    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
+        VkCommandBufferObj cb(m_device, m_commandPool);
+
+        VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        auto buffer = std::make_shared<vk_testing::Buffer>();
+        buffer->init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+
+        cb.begin();
+        cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
+        cb.end();
+        data.Push(signal_value, std::move(buffer));
+
+        submit_info.pCommandBuffers = &cb.handle();
+        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+        uint64_t read_value = 0;
+        do {
+            fpGetSemaphoreCounterValue(data.device, data.sem, &read_value);
+        } while (read_value != signal_value);
+    }
+    data.Push(0, std::shared_ptr<vk_testing::Buffer>());
+    bailout = true;
+    thread.join();
+
+    m_errorMonitor->SetBailout(nullptr);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    data.buffer_queue.clear();
+}
+
+void WaitSemFreeBuffer(SemBufferRaceData *data) {
+    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data->device, "vkWaitSemaphoresKHR"));
+
+    while (!*data->bailout) {
+        auto rec = data->Pop();
+        if (rec.wait_value == 0 || !rec.buffer) {
+            break;
+        }
+
+        auto wait_value = rec.wait_value;
+        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        wait_info.semaphoreCount = 1;
+        wait_info.pSemaphores = &data->sem;
+        wait_info.pValues = &wait_value;
+
+        auto err = fpWaitSemaphores(data->device, &wait_info, data->timeout);
+        ASSERT_VK_SUCCESS(err);
+
+        rec.buffer.reset();
+    }
+}
+
+TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    }
+
+    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+    timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    timeline_ci.initialValue = 0;
+
+    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+    vk_testing::Semaphore sem(*m_device, sem_ci);
+    auto sem_handle = sem.handle();
+
+    uint64_t signal_value = 1234;
+    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+    timeline_info.signalSemaphoreValueCount = 1;
+    timeline_info.pSignalSemaphoreValues = &signal_value;
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &sem_handle;
+    submit_info.commandBufferCount = 1;
+
+    std::atomic<bool> bailout{false};
+    SemBufferRaceData data;
+    data.device = m_device->device();
+    data.sem = sem.handle();
+    data.bailout = &bailout;
+
+    m_errorMonitor->SetBailout(&bailout);
+
+    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data.device, "vkWaitSemaphoresKHR"));
+
+    std::thread thread(WaitSemFreeBuffer, &data);
+    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
+        VkCommandBufferObj cb(m_device, m_commandPool);
+
+        VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        auto buffer = std::make_shared<vk_testing::Buffer>();
+        buffer->init_as_dst(*m_device, (VkDeviceSize)20, reqs);
+
+        cb.begin();
+        cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
+        cb.end();
+        data.Push(signal_value, std::move(buffer));
+
+        submit_info.pCommandBuffers = &cb.handle();
+        auto err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        ASSERT_VK_SUCCESS(err);
+
+        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        wait_info.semaphoreCount = 1;
+        wait_info.pSemaphores = &data.sem;
+        wait_info.pValues = &signal_value;
+        err = fpWaitSemaphores(data.device, &wait_info, data.timeout);
+        ASSERT_VK_SUCCESS(err);
+    }
+    data.Push(0, std::shared_ptr<vk_testing::Buffer>());
+    bailout = true;
+    thread.join();
+
+    m_errorMonitor->SetBailout(nullptr);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    data.buffer_queue.clear();
+}
+

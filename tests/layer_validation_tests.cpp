@@ -675,7 +675,7 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
         return false;
     }
 
-    renderFramework->InitState(nullptr, &features2);
+    renderFramework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     return true;
 }
 
@@ -696,7 +696,7 @@ bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     sync2_features.synchronization2 = VK_TRUE;
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
-    framework->InitState(nullptr, &features2,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    framework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     return true;
 }
 
