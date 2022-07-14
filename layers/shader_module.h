@@ -148,6 +148,7 @@ struct decoration_set {
         nonreadable_bit = 1 << 11,
         per_vertex_bit = 1 << 12,
         passthrough_bit = 1 << 13,
+        aliased_bit = 1 << 14,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 

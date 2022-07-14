@@ -2361,26 +2361,44 @@ bool CoreChecks::ValidateDecorations(const SHADER_MODULE_STATE &module_state) co
     return skip;
 }
 
-bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage) const {
+bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_state, uint32_t total_shared_size) const {
     bool skip = false;
-    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
-        uint32_t total_shared_size = 0;
+
+    // If not found before with spec constants, find here
+    if (total_shared_size == 0) {
+        // when using WorkgroupMemoryExplicitLayoutKHR
+        // either all or none the structs are decorated with Block,
+        // if using block, all must decorated with Aliased.
+        // In this case we want to find the MAX not ADD the block sizes
+        bool find_max_block = false;
+
         for (auto insn : module_state.static_data_.variable_inst) {
-            const uint32_t storage_class = insn.word(3);
-            if (storage_class == spv::StorageClassWorkgroup) {  // StorageClass Workgroup is shared memory
+            // StorageClass Workgroup is shared memory
+            if (insn.word(3) == spv::StorageClassWorkgroup) {
+                if (module_state.get_decorations(insn.word(2)).flags & decoration_set::aliased_bit) {
+                    find_max_block = true;
+                }
+
                 const uint32_t result_type_id = insn.word(1);
                 const auto result_type = module_state.get_def(result_type_id);
                 const auto type = module_state.get_def(result_type.word(3));
-                total_shared_size += module_state.GetTypeBytesSize(type);
+                const uint32_t variable_shared_size = module_state.GetTypeBytesSize(type);
+
+                if (find_max_block) {
+                    total_shared_size = std::max(total_shared_size, variable_shared_size);
+                } else {
+                    total_shared_size += variable_shared_size;
+                }
             }
         }
-        if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
-            skip |= LogError(
-                device, "VUID-RuntimeSpirv-Workgroup-06530",
-                "Shader uses %" PRIu32
-                " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
-                total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
-        }
+    }
+
+    if (total_shared_size > phys_dev_props.limits.maxComputeSharedMemorySize) {
+        skip |=
+            LogError(device, "VUID-RuntimeSpirv-Workgroup-06530",
+                     "Shader uses %" PRIu32
+                     " bytes of shared memory, more than allowed by physicalDeviceLimits::maxComputeSharedMemorySize (%" PRIu32 ")",
+                     total_shared_size, phys_dev_props.limits.maxComputeSharedMemorySize);
     }
     return skip;
 }
@@ -2581,6 +2599,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
+    uint32_t total_shared_size = 0;
 
     // Check the module
     if (!module_state.has_valid_spirv) {
@@ -2712,7 +2731,59 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             // "static use" rules and need to be validated still.
             spirv_inst_iter specialized_it =
                 spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.begin() + 5);  // point to first instruction
-            layer_data::unordered_map<uint32_t, uint32_t> constant_def_value;
+
+            // same as the def_index in SHADER_MODULE_STATE
+            layer_data::unordered_map<uint32_t, uint32_t> def_index;
+            auto get_def = [&def_index, &specialized_spirv](uint32_t id) -> spirv_inst_iter {
+                auto it = def_index.find(id);
+                if (it == def_index.end()) {
+                    return spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.end());
+                }
+                return spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.begin() + it->second);
+            };
+
+            // same as the GetTypeBitsSize in SHADER_MODULE_STATE
+            // allows recursive lambda functions in C++11
+            std::function<uint32_t(const spirv_inst_iter)> get_type_bits_size;
+            get_type_bits_size = [&get_def, &get_type_bits_size](const spirv_inst_iter &iter) -> uint32_t {
+                const uint32_t opcode = iter.opcode();
+                if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
+                    return iter.word(2);
+                } else if (opcode == spv::OpTypeVector) {
+                    const auto component_type = get_def(iter.word(2));
+                    uint32_t scalar_width = get_type_bits_size(component_type);
+                    uint32_t component_count = iter.word(3);
+                    return scalar_width * component_count;
+                } else if (opcode == spv::OpTypeMatrix) {
+                    const auto column_type = get_def(iter.word(2));
+                    uint32_t vector_width = get_type_bits_size(column_type);
+                    uint32_t column_count = iter.word(3);
+                    return vector_width * column_count;
+                } else if (opcode == spv::OpTypeArray) {
+                    const auto element_type = get_def(iter.word(2));
+                    uint32_t element_width = get_type_bits_size(element_type);
+                    const auto length_type = get_def(iter.word(3));
+                    uint32_t length = length_type.word(3);
+                    return element_width * length;
+                } else if (opcode == spv::OpTypeStruct) {
+                    uint32_t total_size = 0;
+                    for (uint32_t i = 2; i < iter.len(); ++i) {
+                        total_size += get_type_bits_size(get_def(iter.word(i)));
+                    }
+                    return total_size;
+                } else if (opcode == spv::OpTypePointer) {
+                    const auto type = get_def(iter.word(3));
+                    return get_type_bits_size(type);
+                } else if (opcode == spv::OpVariable) {
+                    const auto type = get_def(iter.word(1));
+                    return get_type_bits_size(type);
+                }
+                return static_cast<uint32_t>(0);
+            };
+
+            // see ValidateComputeSharedMemory() for details why we might track max block size
+            layer_data::unordered_set<uint32_t> aliased_id;
+            bool find_max_block = false;
 
             uint32_t workgroup_size_id = 0;  // result id can't be zero
             uint32_t local_size_id_x = 0;
@@ -2723,9 +2794,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             while (specialized_it != specialized_spirv.end()) {
                 const uint32_t opcode = specialized_it.opcode();
 
-                // build a quick access look up for constant values
-                if (opcode == spv::OpConstant) {
-                    constant_def_value[specialized_it.word(2)] = specialized_it.word(3);
+                // Every thing with a result will be added
+                const uint32_t result_word = OpcodeResultWord(specialized_it.opcode());
+                if (result_word != 0) {
+                    def_index[specialized_it.word(result_word)] = specialized_it.offset();
                 }
 
                 if (opcode == spv::OpExecutionModeId && specialized_it.word(2) == spv::ExecutionModeLocalSizeId) {
@@ -2734,28 +2806,49 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                     local_size_id_z = specialized_it.word(5);
                 }
 
-                if (opcode == spv::OpDecorate && specialized_it.word(2) == spv::DecorationBuiltIn) {
+                if (opcode == spv::OpDecorate) {
                     // Validate applied WorkgroupSize is still below maxComputeWorkGroupSize limit
-                    if (specialized_it.word(3) == spv::BuiltInWorkgroupSize) {
+                    if (specialized_it.word(2) == spv::DecorationBuiltIn && specialized_it.word(3) == spv::BuiltInWorkgroupSize) {
                         // Will be a OpConstantComposite and always have the OpDecorate section
                         workgroup_size_id = specialized_it.word(1);
+                    }
+                    if (specialized_it.word(2) == spv::DecorationAliased) {
+                        aliased_id.emplace(specialized_it.word(1));
                     }
                 }
 
                 if (opcode == spv::OpConstantComposite && workgroup_size_id == specialized_it.word(2)) {
                     // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32 so this can be assuemd
-                    local_size_x = constant_def_value.find(specialized_it.word(3))->second;
-                    local_size_y = constant_def_value.find(specialized_it.word(4))->second;
-                    local_size_z = constant_def_value.find(specialized_it.word(5))->second;
+                    local_size_x = get_def(specialized_it.word(3)).word(3);
+                    local_size_y = get_def(specialized_it.word(4)).word(3);
+                    local_size_z = get_def(specialized_it.word(5)).word(3);
                 }
+
+                if (opcode == spv::OpVariable && specialized_it.word(3) == spv::StorageClassWorkgroup) {
+                    if (aliased_id.find(specialized_it.word(2)) != aliased_id.end()) {
+                        find_max_block = true;
+                    }
+
+                    const uint32_t result_type_id = specialized_it.word(1);
+                    const auto result_type = get_def(result_type_id);
+                    const auto type = get_def(result_type.word(3));
+                    const uint32_t variable_shared_size = get_type_bits_size(type) / 8;
+
+                    if (find_max_block) {
+                        total_shared_size = std::max(total_shared_size, variable_shared_size);
+                    } else {
+                        total_shared_size += variable_shared_size;
+                    }
+                }
+
                 ++specialized_it;
             }
 
             // if after no WorkgroupSize is found, then can apply any possible LocalSizeId due to precedence order
             if (local_size_x == 0 && local_size_id_x != 0) {
-                local_size_x = constant_def_value.find(local_size_id_x)->second;
-                local_size_y = constant_def_value.find(local_size_id_y)->second;
-                local_size_z = constant_def_value.find(local_size_id_z)->second;
+                local_size_x = get_def(local_size_id_x).word(3);
+                local_size_y = get_def(local_size_id_y).word(3);
+                local_size_z = get_def(local_size_id_z).word(3);
             }
 
             spvDiagnosticDestroy(diag);
@@ -2812,7 +2905,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateExecutionModes(module_state, entrypoint, pStage->stage, pipeline);
     skip |= ValidateSpecializations(pStage);
     skip |= ValidateDecorations(module_state);
-    skip |= ValidateComputeSharedMemory(module_state, pStage->stage);
     skip |= ValidateVariables(module_state);
     const auto *raster_state = pipeline->RasterizationState();
     if (check_point_size && raster_state && !raster_state->rasterizerDiscardEnable) {
@@ -2917,6 +3009,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     }
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
+        skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
     }
 
     return skip;

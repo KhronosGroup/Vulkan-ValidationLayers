@@ -86,6 +86,9 @@ void decoration_set::add(uint32_t decoration, uint32_t value) {
         case spv::DecorationPassthroughNV:
             flags |= passthrough_bit;
             break;
+        case spv::DecorationAliased:
+            flags |= aliased_bit;
+            break;
     }
 }
 
