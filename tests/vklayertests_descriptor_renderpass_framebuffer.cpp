@@ -6332,6 +6332,10 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
                                                {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                            });
 
+        if (descriptor_set.set_ == VK_NULL_HANDLE) {
+            GTEST_SKIP() << "Couldn't create descriptor set";
+        }
+
         // Create an image to be used for invalid updates
         VkImageObj image_obj(m_device);
         VkFormatProperties format_props;
@@ -6414,12 +6418,10 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
             ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
             ycbcr_create_info.forceExplicitReconstruction = false;
 
-            VkSamplerYcbcrConversion conversion = VK_NULL_HANDLE;
-            vkCreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
-            ASSERT_NE(conversion, VK_NULL_HANDLE);
+            vk_testing::SamplerYcbcrConversion conversion(*m_device, ycbcr_create_info, true);
 
             VkSamplerYcbcrConversionInfo ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
-            ycbcr_info.conversion = conversion;
+            ycbcr_info.conversion = conversion.handle();
 
             auto image_view_ci = image_obj.TargetViewCI(mp_format);
             image_view_ci.pNext = &ycbcr_info;
@@ -6435,6 +6437,10 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
                               {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler.handle()},
                           });
 
+            if (descriptor_set.set_ == VK_NULL_HANDLE) {
+                GTEST_SKIP() << "Couldn't create descriptor set";
+            }
+
             // 01564 appears to be impossible to hit due to the following check in descriptor_validation.cpp:
             // if (sampler && !desc->IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) ...
             //   - !desc->IsImmutableSampler() will cause 02738; IOW, multi-plane conversion _requires_ an immutable sampler
@@ -6445,8 +6451,6 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
             descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
             descriptor_set.UpdateDescriptorSets();
             // m_errorMonitor->VerifyFound();
-
-            vkDestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
         }
     }
 }
