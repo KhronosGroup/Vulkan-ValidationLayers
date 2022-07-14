@@ -748,21 +748,6 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
     }
 }
 
-bool VkRenderFramework::IsDriver(VkDriverId driver_id) {
-    if (VkRenderFramework::IgnoreDisableChecks()) {
-        return false;
-    } else {
-        // Assumes api version 1.2+
-        auto driver_properties = LvlInitStruct<VkPhysicalDeviceDriverProperties>();
-        auto physical_device_properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&driver_properties);
-        auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-        assert(vkGetPhysicalDeviceProperties2KHR);
-        vkGetPhysicalDeviceProperties2KHR(gpu_, &physical_device_properties2);
-        return (driver_properties.driverID == driver_id);
-    }
-}
-
 void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,

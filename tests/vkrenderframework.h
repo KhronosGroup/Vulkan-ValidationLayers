@@ -279,7 +279,6 @@ class VkRenderFramework : public VkTestFramework {
     bool InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2KHR &features2);
 
     static bool IgnoreDisableChecks();
-    bool IsDriver(VkDriverId driver_id);
     bool IsPlatform(PlatformType platform);
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
