@@ -939,7 +939,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
 
 }
 static const std::set<std::string> kDeviceWarnExtensionNames {
-    "VK_KHR_dynamic_rendering",
 };
 
 static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device) {
