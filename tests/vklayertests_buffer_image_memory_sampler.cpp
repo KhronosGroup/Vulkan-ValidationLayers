@@ -10088,8 +10088,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
                                        });
 
     if (!descriptor_set.set_) {
-        printf("%s Failed to allocate descriptor set, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to allocate descriptor set, skipping test.";
     }
 
     // Use the same image view twice, using the same sampler, with the *second* mismatched with the *second* immutable sampler
