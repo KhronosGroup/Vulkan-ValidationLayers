@@ -13482,6 +13482,74 @@ TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ComputeSharedMemorySpecConstantDefault) {
+    TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants default");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        layout(constant_id = 0) const uint Condition = 1;
+        layout(constant_id = 1) const uint SharedSize = )glsl";
+    cs_source << (max_shared_ints + 16);
+    cs_source << R"glsl(;
+
+        #define enableSharedMemoryOpt (Condition == 1)
+        shared uint arr[enableSharedMemoryOpt ? SharedSize : 1];
+        void main(){}
+    )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+}
+
+TEST_F(VkLayerTest, ComputeSharedMemorySpecConstantSet) {
+    TEST_DESCRIPTION("Validate shared memory exceed maxComputeSharedMemorySize limit with spec constants set");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    const uint32_t max_shared_ints = max_shared_memory_size / 4;
+
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        layout(constant_id = 0) const uint Condition = 0;
+        layout(constant_id = 1) const uint SharedSize = )glsl";
+    cs_source << (max_shared_ints + 16);
+    cs_source << R"glsl(;
+
+        #define enableSharedMemoryOpt (Condition == 1)
+        shared uint arr[enableSharedMemoryOpt ? SharedSize : 1];
+        void main(){}
+    )glsl";
+
+    uint32_t data = 1;  // set Condition
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
+                                         SPV_SOURCE_GLSL, &specialization_info));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+}
+
 TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
     TEST_DESCRIPTION("Test invalid shader layout in and out with different components.");
 
