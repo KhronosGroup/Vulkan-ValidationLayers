@@ -6237,7 +6237,8 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         bci.usage = test_case.buffer_usage;
         bci.size = test_case.max_range + test_case.min_align;  // Make buffer bigger than range limit
         bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        vk_testing::Buffer buffer(*m_device, bci);
+        vk_testing::Buffer buffer;
+        buffer.init_no_mem(*m_device, bci);
         if (buffer.handle() == VK_NULL_HANDLE) {
             printf("%s Failed to allocate buffer in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
             continue;
@@ -6252,14 +6253,12 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
         if (!pass) {
             printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
-            vk::DestroyBuffer(m_device->device(), buffer.handle(), NULL);
             continue;
         }
 
         vk_testing::DeviceMemory mem(*m_device, mem_alloc);
         if (mem.handle() == VK_NULL_HANDLE) {
             printf("%s Failed to allocate memory in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
-            vk::DestroyBuffer(m_device->device(), buffer.handle(), NULL);
             continue;
         }
         VkResult err = vk::BindBufferMemory(m_device->device(), buffer.handle(), mem.handle(), 0);
