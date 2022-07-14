@@ -10953,8 +10953,7 @@ TEST_F(VkLayerTest, MutableDescriptors) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor_type_features);
     GetPhysicalDeviceFeatures2(features2);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        printf("%s mutableDescriptorType feature is not supported, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "mutableDescriptorType feature is not supported, skipping test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -10984,6 +10983,8 @@ TEST_F(VkLayerTest, MutableDescriptors) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMutableDescriptorTypeListVALVE-descriptorTypeCount-04599");
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
+
+    vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
 
     mutable_descriptor_type_list.descriptorTypeCount = 0;
     dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
