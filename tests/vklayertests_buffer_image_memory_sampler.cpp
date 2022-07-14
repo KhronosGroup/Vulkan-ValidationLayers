@@ -8540,6 +8540,10 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    // This test hits a bug in the driver, CTS was written, but incase using an old driver
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
+    }
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = GetPhysicalDeviceFeatures2(features11);
@@ -8592,7 +8596,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
         VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>(&ycbcr_info);
         ivci.image = image_obj.image();
         ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
+        ivci.format = VK_FORMAT_R8G8_UNORM;  // Compat is VK_FORMAT_R8_UNORM
         ivci.subresourceRange.layerCount = 1;
         ivci.subresourceRange.baseMipLevel = 0;
         ivci.subresourceRange.levelCount = 1;
@@ -8603,6 +8607,10 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
 
         // Correct format succeeds
         ivci.format = VK_FORMAT_R8_UNORM;
+        CreateImageViewTest(*this, &ivci);
+
+        // R8_SNORM is compatible with R8_UNORM
+        ivci.format = VK_FORMAT_R8_SNORM;
         CreateImageViewTest(*this, &ivci);
 
         // Try a multiplane imageview
