@@ -274,6 +274,8 @@ class VkLayerTest : public VkRenderFramework {
         return GetPhysicalDeviceProperties2(props2);
     }
 
+    bool IsDriver(VkDriverId driver_id);
+
   protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
