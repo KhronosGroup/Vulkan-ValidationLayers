@@ -100,30 +100,30 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-01630");
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01632");
-    // vk::BindImageMemory2(m_device->device(), 1, &bind_info);
-    // m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-01630");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01632");
+    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
 
     auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
     bind_swapchain_info.swapchain = VK_NULL_HANDLE;
     bind_swapchain_info.imageIndex = 0;
     bind_info.pNext = &bind_swapchain_info;
 
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
-    // vk::BindImageMemory2(m_device->device(), 1, &bind_info);
-    // m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-RequiredParameter");
+    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
 
     bind_info.memory = mem.handle();
     bind_swapchain_info.swapchain = m_swapchain;
     bind_swapchain_info.imageIndex = std::numeric_limits<uint32_t>::max();
 
-    // if (mem.initialized()) {
-    //     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
-    // }
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644");
-    // vk::BindImageMemory2(m_device->device(), 1, &bind_info);
-    // m_errorMonitor->VerifyFound();
+    if (mem.initialized()) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01631");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644");
+    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+    m_errorMonitor->VerifyFound();
 
     bind_info.memory = VK_NULL_HANDLE;
     bind_swapchain_info.imageIndex = 0;
