@@ -430,6 +430,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                         auto sampler = state_data->GetConstCastShared<SAMPLER_STATE>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
+                            binding->updated[di] = true;
                             binding->descriptors[di].SetSamplerState(std::move(sampler));
                         }
                     }
@@ -445,6 +446,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                         auto sampler = state_data->GetConstCastShared<SAMPLER_STATE>(immut[di]);
                         if (sampler) {
                             some_update_ = true;  // Immutable samplers are updated at creation
+                            binding->updated[di] = true;
                             binding->descriptors[di].SetSamplerState(std::move(sampler));
                         }
                     }
@@ -533,6 +535,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
             break;
         }
         iter->WriteUpdate(this, state_data_, update, i, iter.CurrentBinding().IsBindless());
+        iter.updated(true);
     }
     if (update->descriptorCount) {
         some_update_ = true;
@@ -553,12 +556,13 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
     for (uint32_t i = 0; i < update->descriptorCount; ++i, ++src_iter, ++dst_iter) {
         auto &src = *src_iter;
         auto &dst = *dst_iter;
-        if (src.updated) {
+        if (src_iter.updated()) {
             dst.CopyUpdate(this, state_data_, &src, src_iter.CurrentBinding().IsBindless());
             some_update_ = true;
             change_count_++;
+            dst_iter.updated(true);
         } else {
-            dst.updated = false;
+            dst_iter.updated(false);
         }
         dst.SetDescriptorType(&src);
     }
@@ -747,13 +751,11 @@ void cvdescriptorset::SamplerDescriptor::WriteUpdate(DescriptorSet *set_state, c
         ReplaceStatePtr(set_state, sampler_state_, dev_data->GetConstCastShared<SAMPLER_STATE>(update->pImageInfo[index].sampler),
                         is_bindless);
     }
-    updated = true;
     SetDescriptorType(update->descriptorType, 0);
 }
 
 void cvdescriptorset::SamplerDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                     const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         auto *sampler_src = static_cast<const MutableDescriptor *>(src);
         if (!immutable_) {
@@ -773,7 +775,6 @@ cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const VkDescript
 void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                           const VkWriteDescriptorSet *update, const uint32_t index,
                                                           bool is_bindless) {
-    updated = true;
     const auto &image_info = update->pImageInfo[index];
     if (!immutable_) {
         ReplaceStatePtr(set_state, sampler_state_, dev_data->GetConstCastShared<SAMPLER_STATE>(image_info.sampler), is_bindless);
@@ -786,7 +787,6 @@ void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(DescriptorSet *set_sta
 
 void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                          const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         auto *image_src = static_cast<const MutableDescriptor *>(src);
         if (!immutable_) {
@@ -810,7 +810,6 @@ cvdescriptorset::ImageDescriptor::ImageDescriptor(DescriptorClass class_)
 
 void cvdescriptorset::ImageDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                    const VkWriteDescriptorSet *update, const uint32_t index, bool is_bindless) {
-    updated = true;
     const auto &image_info = update->pImageInfo[index];
     image_layout_ = image_info.imageLayout;
     ReplaceStatePtr(set_state, image_view_state_, dev_data->GetConstCastShared<IMAGE_VIEW_STATE>(image_info.imageView),
@@ -820,7 +819,6 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(DescriptorSet *set_state, con
 
 void cvdescriptorset::ImageDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                   const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         auto *image_src = static_cast<const MutableDescriptor *>(src);
 
@@ -847,7 +845,6 @@ cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
 
 void cvdescriptorset::BufferDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                     const VkWriteDescriptorSet *update, const uint32_t index, bool is_bindless) {
-    updated = true;
     const auto &buffer_info = update->pBufferInfo[index];
     offset_ = buffer_info.offset;
     range_ = buffer_info.range;
@@ -858,7 +855,6 @@ void cvdescriptorset::BufferDescriptor::WriteUpdate(DescriptorSet *set_state, co
 
 void cvdescriptorset::BufferDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                    const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         const auto buff_desc = static_cast<const MutableDescriptor *>(src);
         offset_ = buff_desc->GetOffset();
@@ -876,7 +872,6 @@ cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) :
 
 void cvdescriptorset::TexelDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                    const VkWriteDescriptorSet *update, const uint32_t index, bool is_bindless) {
-    updated = true;
     auto buffer_view = dev_data->GetConstCastShared<BUFFER_VIEW_STATE>(update->pTexelBufferView[index]);
     ReplaceStatePtr(set_state, buffer_view_state_, buffer_view, is_bindless);
     SetDescriptorType(update->descriptorType, buffer_view ? buffer_view->buffer_state->createInfo.size : 0);
@@ -884,7 +879,6 @@ void cvdescriptorset::TexelDescriptor::WriteUpdate(DescriptorSet *set_state, con
 
 void cvdescriptorset::TexelDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                   const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         ReplaceStatePtr(set_state, buffer_view_state_, static_cast<const MutableDescriptor *>(src)->GetSharedBufferViewState(),
                         is_bindless);
@@ -904,7 +898,6 @@ void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet
     const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
     assert(acc_info || acc_info_nv);
     is_khr_ = (acc_info != NULL);
-    updated = true;
     if (is_khr_) {
         acc_ = acc_info->pAccelerationStructures[index];
         ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_), is_bindless);
@@ -917,7 +910,6 @@ void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(DescriptorSet
 
 void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                                   const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == Mutable) {
         auto acc_desc = static_cast<const MutableDescriptor *>(src);
         if (is_khr_) {
@@ -957,7 +949,6 @@ cvdescriptorset::MutableDescriptor::MutableDescriptor(const VkDescriptorType)
 void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                      const VkWriteDescriptorSet *update, const uint32_t index, bool is_bindless) {
     VkDeviceSize buffer_size = 0;
-    updated = true;
     switch (DescriptorTypeToClass(update->descriptorType)) {
         case DescriptorClass::PlainSampler:
             if (!immutable_) {
@@ -1007,7 +998,6 @@ void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet *set_state, c
             const auto *acc_info_nv = LvlFindInChain<VkWriteDescriptorSetAccelerationStructureNV>(update->pNext);
             assert(acc_info || acc_info_nv);
             is_khr_ = (acc_info != NULL);
-            updated = true;
             if (is_khr_) {
                 acc_ = acc_info->pAccelerationStructures[index];
                 ReplaceStatePtr(set_state, acc_state_, dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE_KHR>(acc_),
@@ -1027,7 +1017,6 @@ void cvdescriptorset::MutableDescriptor::WriteUpdate(DescriptorSet *set_state, c
 
 void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data,
                                                     const Descriptor *src, bool is_bindless) {
-    updated = true;
     if (src->descriptor_class == DescriptorClass::PlainSampler) {
         auto *sampler_src = static_cast<const SamplerDescriptor *>(src);
         if (!immutable_) {

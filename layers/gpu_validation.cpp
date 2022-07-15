@@ -1325,35 +1325,70 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue) {
     ProcessAccelerationStructure(queue);
 }
 
-void GpuAssisted::SetDescriptorInitialized(uint32_t *pData, uint32_t index, const cvdescriptorset::Descriptor *descriptor) {
-    if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
-        auto buffer = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor)->GetBuffer();
-        if (buffer == VK_NULL_HANDLE) {
-            pData[index] = UINT_MAX;
-        } else {
-            auto buffer_state = static_cast<const cvdescriptorset::BufferDescriptor *>(descriptor)->GetBufferState();
-            pData[index] = static_cast<uint32_t>(buffer_state->createInfo.size);
+void GpuAssisted::SetBindingState(uint32_t *data, uint32_t index, const cvdescriptorset::DescriptorBinding *binding) {
+    switch (binding->descriptor_class) {
+        case cvdescriptorset::DescriptorClass::GeneralBuffer: {
+            auto buffer_binding = static_cast<const cvdescriptorset::BufferBinding *>(binding);
+            for (uint32_t di = 0; di < buffer_binding->count; di++) {
+                const auto &desc = buffer_binding->descriptors[di];
+                if (!buffer_binding->updated[di]) {
+                    data[index++] = 0;
+                    continue;
+                }
+                auto buffer = desc.GetBuffer();
+                if (buffer == VK_NULL_HANDLE) {
+                    data[index++] = UINT_MAX;
+                } else {
+                    auto buffer_state = desc.GetBufferState();
+                    data[index++] = static_cast<uint32_t>(buffer_state->createInfo.size);
+                }
+            }
+            break;
         }
-    } else if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::TexelBuffer) {
-        auto buffer_view = static_cast<const cvdescriptorset::TexelDescriptor *>(descriptor)->GetBufferView();
-        if (buffer_view == VK_NULL_HANDLE) {
-            pData[index] = UINT_MAX;
-        } else {
-            auto buffer_view_state = static_cast<const cvdescriptorset::TexelDescriptor *>(descriptor)->GetBufferViewState();
-            pData[index] = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
+        case cvdescriptorset::DescriptorClass::TexelBuffer: {
+            auto texel_binding = static_cast<const cvdescriptorset::TexelBinding *>(binding);
+            for (uint32_t di = 0; di < texel_binding->count; di++) {
+                const auto &desc = texel_binding->descriptors[di];
+                if (!texel_binding->updated[di]) {
+                    data[index++] = 0;
+                    continue;
+                }
+                auto buffer_view = desc.GetBufferView();
+                if (buffer_view == VK_NULL_HANDLE) {
+                    data[index++] = UINT_MAX;
+                } else {
+                    auto buffer_view_state = desc.GetBufferViewState();
+                    data[index++] = static_cast<uint32_t>(buffer_view_state->buffer_state->createInfo.size);
+                }
+            }
+            break;
         }
-    } else if (descriptor->GetClass() == cvdescriptorset::DescriptorClass::Mutable) {
-        if (descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
-            descriptor->active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-            const auto size = static_cast<const cvdescriptorset::MutableDescriptor *>(descriptor)->GetBufferSize();
-            pData[index] = static_cast<uint32_t>(size);
-        } else {
-            pData[index] = 1;
+        case cvdescriptorset::DescriptorClass::Mutable: {
+            auto mutable_binding = static_cast<const cvdescriptorset::MutableBinding *>(binding);
+            for (uint32_t di = 0; di < mutable_binding->count; di++) {
+                const auto &desc = mutable_binding->descriptors[di];
+                if (!mutable_binding->updated[di]) {
+                    data[index++] = 0;
+                    continue;
+                }
+                if (desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                    const auto size = desc.GetBufferSize();
+                    data[index++] = static_cast<uint32_t>(size);
+                } else {
+                    data[index++] = 1;
+                }
+            }
+            break;
         }
-    } else {
-        pData[index] = 1;
+        default: {
+            for (uint32_t i = 0; i < binding->count; i++, index++) {
+                data[index] = static_cast<uint32_t>(binding->updated[i]);
+            }
+            break;
+        }
     }
 }
 
@@ -1366,9 +1401,7 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
                 vmaMapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation, reinterpret_cast<void **>(&data));
             if (result == VK_SUCCESS) {
                 for (const auto &update : buffer_info.di_input_mem_block.update_at_submit) {
-                    if (update.second->updated) {
-                        SetDescriptorInitialized(data, update.first, update.second);
-                    }
+                    SetBindingState(data, update.first, update.second);
                 }
                 vmaUnmapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation);
             }
@@ -2041,18 +2074,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                                 continue;
                             }
 
-                            // For each array element in the binding, update the written array with whether it has been written
-                            for (uint32_t i = 0; i < binding->count; i++) {
-                                auto *descriptor = binding->GetDescriptor(i);
-                                if (descriptor->updated) {
-                                    SetDescriptorInitialized(data_ptr, written_index, descriptor);
-                                } else if ((binding->binding_flags & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) != 0) {
-                                    // If it hasn't been written now and it's update after bind, put it in a list to check at
-                                    // QueueSubmit
-                                    di_input_block.update_at_submit[written_index] = descriptor;
-                                }
-                                written_index++;
+                            if ((binding->binding_flags & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) != 0) {
+                                di_input_block.update_at_submit[written_index] = binding.get();
+                            } else {
+                                SetBindingState(data_ptr, written_index, binding.get());
                             }
+                            written_index += binding->count;
                         }
                         auto last = desc->GetLayout()->GetMaxBinding();
                         bindings_to_written += last + 1;
@@ -2092,18 +2119,9 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                                 continue;
                             }
 
-                            // For each array element in the binding, update the written array with whether it has been written
-                            for (uint32_t i = 0; i < binding->count; ++i) {
-                                auto *descriptor = binding->GetDescriptor(i);
-                                if (descriptor->updated) {
-                                    SetDescriptorInitialized(data_ptr, written_index, descriptor);
-                                } else if ((binding->binding_flags & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) != 0) {
-                                    // If it hasn't been written now and it's update after bind, put it in a list to check at
-                                    // QueueSubmit
-                                    di_input_block.update_at_submit[written_index] = descriptor;
-                                }
-                                written_index++;
-                            }
+                            // note that VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT is part of descriptor indexing
+                            SetBindingState(data_ptr, written_index, binding.get());
+                            written_index += binding->count;
                         }
                         auto last = desc->GetLayout()->GetMaxBinding();
                         bindings_to_written += last + 1;

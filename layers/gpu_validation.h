@@ -27,7 +27,7 @@ class GpuAssisted;
 struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
-    layer_data::unordered_map<uint32_t, const cvdescriptorset::Descriptor*> update_at_submit;
+    layer_data::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
 };
 
 struct GpuAssistedPreDrawResources {
@@ -177,7 +177,7 @@ class GpuAssisted : public GpuAssistedBase {
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo &buffer_info,
         uint32_t operation_index, uint32_t* const debug_output_buffer);
 
-    void SetDescriptorInitialized(uint32_t* pData, uint32_t index, const cvdescriptorset::Descriptor* descriptor);
+    void SetBindingState(uint32_t* data, uint32_t index, const cvdescriptorset::DescriptorBinding* binding);
     void UpdateInstrumentationBuffer(gpuav_state::CommandBuffer* cb_node);
     const GpuVuid& GetGpuVuid(CMD_TYPE cmd_type) const;
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) override;

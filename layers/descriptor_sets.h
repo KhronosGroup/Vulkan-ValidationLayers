@@ -330,7 +330,7 @@ class DescriptorSet;
 
 class Descriptor {
   public:
-    Descriptor(DescriptorClass class_) : updated(false), descriptor_class(class_), active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {}
+    Descriptor(DescriptorClass class_) : descriptor_class(class_), active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {}
     virtual ~Descriptor(){};
     virtual void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *,
                              const uint32_t, bool is_bindless) = 0;
@@ -348,7 +348,6 @@ class Descriptor {
     // return true if resources used by this descriptor are destroyed or otherwise missing
     virtual bool Invalid() const { return false; }
 
-    bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
     VkDescriptorType active_descriptor_type;
 };
@@ -377,7 +376,6 @@ class SamplerDescriptor : public Descriptor {
         sampler_state_ = std::move(state);
         // currently this method is only used to initialize immutable samplers during DescriptorSet creation
         immutable_ = true;
-        updated = true;
     }
 
     const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
@@ -452,7 +450,6 @@ class ImageSamplerDescriptor : public ImageDescriptor {
         sampler_state_ = std::move(state);
         // currently this method is only used to initialize immutable samplers during DescriptorSet creation
         immutable_ = true;
-        updated = true;
     }
 
     const SAMPLER_STATE *GetSamplerState() const { return sampler_state_.get(); }
@@ -549,13 +546,9 @@ class InlineUniformDescriptor : public Descriptor {
   public:
     InlineUniformDescriptor(const VkDescriptorType) : Descriptor(InlineUniform) {}
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
-                     bool is_bindless) override {
-        updated = true;
-    }
+                     bool is_bindless) override {}
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
-                    bool is_bindless) override {
-        updated = true;
-    }
+                    bool is_bindless) override {}
 };
 
 class AccelerationStructureDescriptor : public Descriptor {
@@ -711,7 +704,8 @@ class DescriptorBinding {
           stage_flags(create_info.stageFlags),
           binding_flags(binding_flags_),
           count(count_),
-          has_immutable_samplers(create_info.pImmutableSamplers != nullptr) {}
+          has_immutable_samplers(create_info.pImmutableSamplers != nullptr),
+          updated(count_, false) {}
     virtual ~DescriptorBinding() {}
 
     virtual void AddParent(DescriptorSet *ds) = 0;
@@ -743,6 +737,8 @@ class DescriptorBinding {
     const VkDescriptorBindingFlags binding_flags;
     const uint32_t count;
     const bool has_immutable_samplers;
+    //std::vector<bool> updated;
+    small_vector<bool, 1, uint32_t> updated;
 };
 
 template <typename T>
@@ -756,16 +752,18 @@ class DescriptorBindingImpl : public DescriptorBinding {
     Descriptor *GetDescriptor(const uint32_t index) override { return index < count ? &descriptors[index] : nullptr; }
 
     void AddParent(DescriptorSet *ds) override {
-        for (auto &desc : descriptors) {
-            if (desc.updated) {
-                desc.AddParent(ds);
+        auto size = updated.size();
+        for (uint32_t i = 0; i < size; i++) {
+            if (updated[i] != 0) {
+                descriptors[i].AddParent(ds);
             }
         }
     }
     void RemoveParent(DescriptorSet *ds) override {
-        for (auto &desc : descriptors) {
-            if (desc.updated) {
-                desc.RemoveParent(ds);
+        auto size = updated.size();
+        for (uint32_t i = 0; i < size; i++) {
+            if (updated[i] != 0) {
+                descriptors[i].RemoveParent(ds);
             }
         }
     }
@@ -999,6 +997,10 @@ class DescriptorSet : public BASE_NODE {
             return (*iter_)->GetDescriptor(index_);
         }
         Descriptor &operator*() { return *(this->operator->()); }
+
+        bool updated() const { return CurrentBinding().updated[index_] != 0; }
+
+        void updated(bool val) { CurrentBinding().updated[index_] = static_cast<uint32_t>(val); }
 
       private:
         Iter iter_;
