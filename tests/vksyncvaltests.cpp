@@ -4305,6 +4305,7 @@ TEST_F(VkSyncValTest, StageAccessExpansion) {
 }
 
 struct QSTestContext {
+    VkDeviceObj* dev;
     uint32_t q_fam = ~0U;
     VkQueue q0 = VK_NULL_HANDLE;
     VkQueue q1 = VK_NULL_HANDLE;
@@ -4329,7 +4330,7 @@ struct QSTestContext {
 
     VkCommandBufferObj* current_cb = nullptr;
 
-    QSTestContext(VkDeviceObj* device);
+    QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0 = nullptr, VkQueueObj* force_q1 = nullptr);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
     void Begin(VkCommandBufferObj& cb);
@@ -4357,18 +4358,18 @@ struct QSTestContext {
     void TransferBarrier(const VkBufferObj& buffer);
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
 
-    void Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE, VkPipelineStageFlags wait_mask = 0U,
-                VkSemaphore signal = VK_NULL_HANDLE);
+    void Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE);
 
-    void Submit0(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE, VkPipelineStageFlags wait_mask = 0U,
-                 VkSemaphore signal = VK_NULL_HANDLE) {
+    void Submit0(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE) {
         Submit(q0, cb, wait, wait_mask, signal);
     }
     void Submit0Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
     void Submit0Signal(VkCommandBufferObj& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
 
-    void Submit1(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE, VkPipelineStageFlags wait_mask = 0U,
-                 VkSemaphore signal = VK_NULL_HANDLE) {
+    void Submit1(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE) {
         Submit(q1, cb, wait, wait_mask, signal);
     }
     void Submit1Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
@@ -4381,27 +4382,46 @@ struct QSTestContext {
         event.cmd_wait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
                        std::vector<VkImageMemoryBarrier>());
     }
+    void QueueWait(VkQueue q) { vk::QueueWaitIdle(q); }
+    void QueueWait0() { QueueWait(q0); }
+    void QueueWait1() { QueueWait(q1); }
+    void DeviceWait() { vk::DeviceWaitIdle(dev->handle()); }
 };
 
-QSTestContext::QSTestContext(VkDeviceObj* device) {
-    const auto& queues = device->dma_queues();
+QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueObj* force_q1)
+    : dev(device), q0(VK_NULL_HANDLE), q1(VK_NULL_HANDLE) {
+    if (force_q0) {
+        q0 = force_q0->handle();
+        q_fam = force_q0->get_family_index();
+        if (force_q1) {
+            // The object has some assumptions that the queues are from the the same family, so enforce this here
+            if (force_q1->get_family_index() == q_fam) {
+                q1 = force_q1->handle();
+            }
+        } else {
+            q1 = q0;  // Allow the two queues to be the same and valid if forced
+        }
+    } else {
+        const auto& queues = device->dma_queues();
 
-    const uint32_t q_count = static_cast<uint32_t>(queues.size());
-    for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
-        const auto* q0_entry = queues[q0_index];
-        q0 = q0_entry->handle();
-        q_fam = q0_entry->get_family_index();
-        for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
-            const auto* q1_entry = queues[q1_index];
-            if (q_fam == q1_entry->get_family_index()) {
-                q1 = q1_entry->handle();
+        const uint32_t q_count = static_cast<uint32_t>(queues.size());
+        for (uint32_t q0_index = 0; q0_index < q_count; ++q0_index) {
+            const auto* q0_entry = queues[q0_index];
+            q0 = q0_entry->handle();
+            q_fam = q0_entry->get_family_index();
+            for (uint32_t q1_index = (q0_index + 1); q1_index < q_count; ++q1_index) {
+                const auto* q1_entry = queues[q1_index];
+                if (q_fam == q1_entry->get_family_index()) {
+                    q1 = q1_entry->handle();
+                    break;
+                }
+            }
+            if (Valid()) {
                 break;
             }
         }
-        if (Valid()) {
-            break;
-        }
     }
+
     if (!Valid()) return;
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -4428,8 +4448,12 @@ QSTestContext::QSTestContext(VkDeviceObj* device) {
 }
 
 void QSTestContext::Begin(VkCommandBufferObj& cb) {
+    VkCommandBufferBeginInfo info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    info.pInheritanceInfo = nullptr;
+
     cb.reset();
-    cb.begin();
+    cb.begin(&info);
     current_cb = &cb;
 }
 
@@ -4537,66 +4561,53 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
     // TODO (jzulauf)
-    GTEST_SKIP() << "this test is causing a sporadic crash on nvidia 32b release. Skip until further investigation";
+    // GTEST_SKIP() << "this test is causing a sporadic crash on nvidia 32b release. Skip until further investigation";
 
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
-    VkBufferObj buffer_c;
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
-
-    VkBufferCopy region = {0, 0, 256};
-
     m_errorMonitor->ExpectSuccess();
-    VkCommandBufferObj cba(m_device, m_commandPool);
-    VkCommandBufferObj cbb(m_device, m_commandPool);
+    QSTestContext test(m_device, m_device->m_queue_obj);
+    if (!test.Valid()) {
+        GTEST_SKIP() << "Test requires a valid queue object.";
+    }
 
-    cba.begin();
-    const VkCommandBuffer h_cba = cba.handle();
-    vk::CmdCopyBuffer(h_cba, buffer_a.handle(), buffer_b.handle(), 1, &region);
-    cba.end();
+    test.BeginA();
+    test.CopyAToB();
+    test.End();
 
-    const VkCommandBuffer h_cbb = cbb.handle();
-    cbb.begin();
-    vk::CmdCopyBuffer(h_cbb, buffer_c.handle(), buffer_a.handle(), 1, &region);
-    cbb.end();
+    test.BeginB();
+    test.CopyCToA();
+    test.End();
 
     // Submit A
-    auto submit1 = lvl_init_struct<VkSubmitInfo>();
-    submit1.commandBufferCount = 1;
-    submit1.pCommandBuffers = &h_cba;
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.Submit0(test.cba);
     m_errorMonitor->VerifyNotFound();
 
     // Submit B which hazards vs. A
-    submit1.pCommandBuffers = &h_cbb;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.Submit0(test.cbb);
     m_errorMonitor->VerifyFound();
 
     // With the skip settings, the above QueueSubmit's didn't record, so we can treat the previous submit as not
     // having happened. So we'll try again with a device wait idle
     // Submit B again, but after idling, which should remove the hazard
     m_errorMonitor->ExpectSuccess();
-    vk::DeviceWaitIdle(m_device->device());
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.DeviceWait();
+    test.Submit0(test.cbb);
     m_errorMonitor->VerifyNotFound();
 
+    // Submit the same command again for another hazard
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.Submit0(test.cbb);
     m_errorMonitor->VerifyFound();
 
     // With the skip settings, the above QueueSubmit's didn't record, so we can treat the previous submit as not
     // having happened. So we'll try again with a queue wait idle
     // Submit B again, but after idling, which should remove the hazard
     m_errorMonitor->ExpectSuccess();
-    vk::QueueWaitIdle(m_device->m_queue);
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.QueueWait0();
+    test.Submit0(test.cbb);
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -4656,7 +4667,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
     // the second excution scope of the waited signal.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
     test.Submit0Signal(test.cba);
-    test.Submit1Wait(test.cbb, 0U);  // zero the wait mask, s.t. this is an empty wait.
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);  // wait mask is BOTTOM, s.t. this is a wait-for-nothing.
     m_errorMonitor->VerifyFound();
 
     // The since second submit failed, it was skipped. So we can try again, without having to WaitDeviceIdle
@@ -4733,14 +4744,14 @@ TEST_F(VkSyncValTest, SyncQSBufferEvents) {
     test.Submit0Signal(test.cba);
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
     // Need to have a successful signal wait to get the semaphore in a usuable state.
     m_errorMonitor->ExpectSuccess();
     test.BeginC();
     test.End();
-    test.Submit1Wait(test.cbc, VK_PIPELINE_STAGE_2_NONE);
+    test.Submit1Wait(test.cbc, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_device->wait();
 
     // Next ensure that accesses from other queues aren't included in the first scope
@@ -4757,7 +4768,7 @@ TEST_F(VkSyncValTest, SyncQSBufferEvents) {
     test.Submit0Signal(test.cba);
     m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4795,7 +4806,8 @@ TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
 
     test.BeginB();
     image_a.ImageMemoryBarrier(test.current_cb, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_NONE, VK_ACCESS_NONE,
-                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_NONE);
+                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                               VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     test.End();
 
     // We're going to do the copy first, then use the skip on fail, to test three different ways...
@@ -4808,11 +4820,11 @@ TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
 
     // Next synchronously fail -- the pipeline barrier in B shouldn't work on queue 1
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
 
     // Then prove qso works (note that with the failure, the semaphore hasn't been waited, nor the layout changed)
     m_errorMonitor->ExpectSuccess();
-    test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_2_NONE);
+    test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyNotFound();
 }

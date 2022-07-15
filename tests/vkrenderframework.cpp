@@ -1266,7 +1266,8 @@ uint32_t VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags withou
 
 void VkDeviceObj::SetDeviceQueue() {
     ASSERT_NE(true, graphics_queues().empty());
-    m_queue = graphics_queues()[0]->handle();
+    m_queue_obj = graphics_queues()[0];
+    m_queue = m_queue_obj->handle();
 }
 
 VkQueueObj *VkDeviceObj::GetDefaultQueue() {
