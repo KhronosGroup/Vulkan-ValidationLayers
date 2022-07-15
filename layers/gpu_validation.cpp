@@ -1371,14 +1371,16 @@ void GpuAssisted::SetBindingState(uint32_t *data, uint32_t index, const cvdescri
                     data[index++] = 0;
                     continue;
                 }
-                if (desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
-                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
-                    desc.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-                    const auto size = desc.GetBufferSize();
-                    data[index++] = static_cast<uint32_t>(size);
-                } else {
+                switch (desc.ActiveType()) {
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                    data[index++] = static_cast<uint32_t>(desc.GetBufferSize());
+                    break;
+                default:
                     data[index++] = 1;
+                    break;
                 }
             }
             break;

@@ -778,7 +778,7 @@ bool CoreChecks::ValidateDescriptors(const DescriptorContext &context, const Des
                             " is being used in draw but has never been updated via vkUpdateDescriptorSets() or a similar call.",
                             report_data->FormatHandle(set).c_str(), context.caller, binding_info.first, index);
         }
-        skip = ValidateDescriptor(context, binding_info, index, descriptor);
+        skip = ValidateDescriptor(context, binding_info, index, binding.type, descriptor);
     }
     return skip;
 }
@@ -817,7 +817,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const DescriptorContext &conte
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::BufferDescriptor &descriptor) const {
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::BufferDescriptor &descriptor) const {
     // Verify that buffers are valid
     auto buffer = descriptor.GetBuffer();
     auto buffer_node = descriptor.GetBufferState();
@@ -856,7 +856,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::ImageDescriptor &image_descriptor) const {
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::ImageDescriptor &image_descriptor) const {
     std::vector<const SAMPLER_STATE *> sampler_states;
     VkImageView image_view = image_descriptor.GetImageView();
     const IMAGE_VIEW_STATE *image_view_state = image_descriptor.GetImageViewState();
@@ -972,8 +972,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
-        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) &&
-            (image_descriptor.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
+        if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
             !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
             auto set = context.descriptor_set->GetSet();
             LogObjectList objlist(set);
@@ -993,7 +992,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         if (has_format_feature2) {
             const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
 
-            if (image_descriptor.active_descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+            if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
                     !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
                     auto set = context.descriptor_set->GetSet();
@@ -1042,7 +1041,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         // Verify if attachments are used in DescriptorSet
         if (context.attachments && context.attachments->size() > 0 && context.subpasses &&
-            (image_descriptor.active_descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+            (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
             for (uint32_t att_index = 0; att_index < context.attachments->size(); ++att_index) {
                 const auto &view_state = (*context.attachments)[att_index];
                 const SUBPASS_INFO &subpass = (*context.subpasses)[att_index];
@@ -1394,8 +1393,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::ImageSamplerDescriptor &descriptor) const {
-    bool skip = ValidateDescriptor(context, binding_info, index, static_cast<const cvdescriptorset::ImageDescriptor &>(descriptor));
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::ImageSamplerDescriptor &descriptor) const {
+    bool skip = ValidateDescriptor(context, binding_info, index, descriptor_type, static_cast<const cvdescriptorset::ImageDescriptor &>(descriptor));
     if (!skip) {
         skip =
             ValidateSamplerDescriptor(context.caller, context.vuids, context.cb_node, context.descriptor_set, binding_info, index,
@@ -1405,7 +1404,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::TexelDescriptor &texel_descriptor) const {
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::TexelDescriptor &texel_descriptor) const {
     auto buffer_view = texel_descriptor.GetBufferView();
     auto buffer_view_state = texel_descriptor.GetBufferViewState();
     const auto binding = binding_info.first;
@@ -1510,7 +1509,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::AccelerationStructureDescriptor &descriptor) const {
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::AccelerationStructureDescriptor &descriptor) const {
     // Verify that acceleration structures are valid
     const auto binding = binding_info.first;
     if (descriptor.is_khr()) {
@@ -1596,7 +1595,7 @@ bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatc
 }
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
-                                    const cvdescriptorset::SamplerDescriptor &descriptor) const {
+                                    VkDescriptorType descriptor_type, const cvdescriptorset::SamplerDescriptor &descriptor) const {
     return ValidateSamplerDescriptor(context.caller, context.vuids, context.cb_node, context.descriptor_set, binding_info, index,
                                      descriptor.GetSampler(), descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
 }
@@ -1917,13 +1916,13 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
             }
         }
     } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        const auto *descriptor = src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement);
-        if (descriptor->active_descriptor_type != dst_type) {
+        const auto *descriptor = static_cast<const cvdescriptorset::MutableDescriptor*>(src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement));
+        if (descriptor->ActiveType() != dst_type) {
             *error_code = "VUID-VkCopyDescriptorSet-srcSet-04613";
             std::stringstream error_str;
             error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the "
                          "active descriptor type ("
-                      << string_VkDescriptorType(descriptor->active_descriptor_type)
+                      << string_VkDescriptorType(descriptor->ActiveType())
                       << ") does not match the dstBinding descriptor type " << string_VkDescriptorType(dst_type) << ".";
             *error_msg = error_str.str();
             return false;
@@ -1957,10 +1956,10 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
 
     // Update mutable types
     if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        src_type = src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement)->active_descriptor_type;
+        src_type = static_cast<const cvdescriptorset::MutableDescriptor*>(src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement))->ActiveType();
     }
     if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        dst_type = dst_set->GetDescriptorFromBinding(update->dstBinding, update->dstArrayElement)->active_descriptor_type;
+        dst_type = static_cast<const cvdescriptorset::MutableDescriptor*>(dst_set->GetDescriptorFromBinding(update->dstBinding, update->dstArrayElement))->ActiveType();
     }
 
     // Update parameters all look good and descriptor updated so verify update contents

@@ -330,26 +330,20 @@ class DescriptorSet;
 
 class Descriptor {
   public:
-    Descriptor(DescriptorClass class_) : descriptor_class(class_), active_descriptor_type(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {}
-    virtual ~Descriptor(){};
+    Descriptor() {}
+    virtual ~Descriptor() {}
     virtual void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *,
                              const uint32_t, bool is_bindless) = 0;
     virtual void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
                             bool is_bindless) = 0;
-    // Create binding between resources of this descriptor and given cb_node
-    DescriptorClass GetClass() const { return descriptor_class; };
+    virtual DescriptorClass GetClass() const = 0;
     // Special fast-path check for SamplerDescriptors that are immutable
     virtual bool IsImmutableSampler() const { return false; };
     virtual bool AddParent(BASE_NODE *base_node) { return false; }
     virtual void RemoveParent(BASE_NODE *base_node) {}
-    virtual void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) { active_descriptor_type = type; }
-    virtual void SetDescriptorType(const Descriptor *src) { active_descriptor_type = src->active_descriptor_type; }
 
     // return true if resources used by this descriptor are destroyed or otherwise missing
     virtual bool Invalid() const { return false; }
-
-    DescriptorClass descriptor_class;
-    VkDescriptorType active_descriptor_type;
 };
 
 // All Dynamic descriptor types
@@ -364,7 +358,8 @@ inline bool IsBufferDescriptor(VkDescriptorType type) {
 
 class SamplerDescriptor : public Descriptor {
   public:
-    SamplerDescriptor(const VkDescriptorType);
+    SamplerDescriptor() = default;
+    DescriptorClass GetClass() const override { return PlainSampler; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -397,13 +392,14 @@ class SamplerDescriptor : public Descriptor {
     bool Invalid() const override { return !sampler_state_ || sampler_state_->Invalid(); }
 
   private:
-    bool immutable_;
+    bool immutable_{false};
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
 };
 
 class ImageDescriptor : public Descriptor {
   public:
-    ImageDescriptor(const VkDescriptorType);
+    ImageDescriptor() = default;
+    DescriptorClass GetClass() const override { return Image; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -431,14 +427,14 @@ class ImageDescriptor : public Descriptor {
     bool Invalid() const override { return !image_view_state_ || image_view_state_->Invalid(); }
 
   protected:
-    ImageDescriptor(DescriptorClass class_);
     std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
-    VkImageLayout image_layout_;
+    VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
 };
 
 class ImageSamplerDescriptor : public ImageDescriptor {
   public:
-    ImageSamplerDescriptor(const VkDescriptorType);
+    ImageSamplerDescriptor() = default;
+    DescriptorClass GetClass() const override { return ImageSampler; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -474,12 +470,13 @@ class ImageSamplerDescriptor : public ImageDescriptor {
 
   private:
     std::shared_ptr<SAMPLER_STATE> sampler_state_;
-    bool immutable_;
+    bool immutable_{false};
 };
 
 class TexelDescriptor : public Descriptor {
   public:
-    TexelDescriptor(const VkDescriptorType);
+    TexelDescriptor() = default;
+    DescriptorClass GetClass() const override { return TexelBuffer; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -510,7 +507,8 @@ class TexelDescriptor : public Descriptor {
 
 class BufferDescriptor : public Descriptor {
   public:
-    BufferDescriptor(const VkDescriptorType);
+    BufferDescriptor() = default;
+    DescriptorClass GetClass() const override { return GeneralBuffer; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -537,14 +535,15 @@ class BufferDescriptor : public Descriptor {
     bool Invalid() const override { return !buffer_state_ || buffer_state_->Invalid(); }
 
   private:
-    VkDeviceSize offset_;
-    VkDeviceSize range_;
+    VkDeviceSize offset_{0};
+    VkDeviceSize range_{0};
     std::shared_ptr<BUFFER_STATE> buffer_state_;
 };
 
 class InlineUniformDescriptor : public Descriptor {
   public:
-    InlineUniformDescriptor(const VkDescriptorType) : Descriptor(InlineUniform) {}
+    InlineUniformDescriptor() = default;
+    DescriptorClass GetClass() const override { return InlineUniform; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override {}
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
@@ -553,7 +552,8 @@ class InlineUniformDescriptor : public Descriptor {
 
 class AccelerationStructureDescriptor : public Descriptor {
   public:
-    AccelerationStructureDescriptor(const VkDescriptorType);
+    AccelerationStructureDescriptor() = default;
+    DescriptorClass GetClass() const override { return AccelerationStructure; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
@@ -593,27 +593,28 @@ class AccelerationStructureDescriptor : public Descriptor {
     }
 
   private:
-    bool is_khr_;
-    VkAccelerationStructureKHR acc_;
+    bool is_khr_{false};
+    VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
-    VkAccelerationStructureNV acc_nv_;
+    VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
     std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
 class MutableDescriptor : public Descriptor {
   public:
-    MutableDescriptor(const VkDescriptorType);
+    MutableDescriptor();
+    DescriptorClass GetClass() const override { return Mutable; }
     void WriteUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t,
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet *set_state, const ValidationStateTracker *dev_data, const Descriptor *,
                     bool is_bindless) override;
 
-    void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) override {
-        active_descriptor_type = type;
+    void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size) {
+        active_descriptor_type_ = type;
         buffer_size_ = buffer_size;
       }
-      void SetDescriptorType(const Descriptor *src) override {
-          active_descriptor_type = src->active_descriptor_type;
+      void SetDescriptorType(VkDescriptorType src_type, const Descriptor *src) {
+          active_descriptor_type_ = src_type;
           if (src->GetClass() == cvdescriptorset::DescriptorClass::GeneralBuffer) {
               auto buffer = static_cast<const cvdescriptorset::BufferDescriptor *>(src)->GetBuffer();
               if (buffer == VK_NULL_HANDLE) {
@@ -660,27 +661,30 @@ class MutableDescriptor : public Descriptor {
 
       bool Invalid() const override;
 
+      VkDescriptorType ActiveType() const { return active_descriptor_type_; }
+      DescriptorClass ActiveClass() const { return active_descriptor_class_; }
     private:
-      VkDeviceSize buffer_size_;
-      DescriptorClass active_descriptor_class_;
+      VkDeviceSize buffer_size_{0};
+      DescriptorClass active_descriptor_class_{NoDescriptorClass};
+      VkDescriptorType active_descriptor_type_{VK_DESCRIPTOR_TYPE_MUTABLE_VALVE};
 
       // Sampler and ImageSampler Descriptor
-      bool immutable_;
+      bool immutable_{false};
       std::shared_ptr<SAMPLER_STATE> sampler_state_;
       // Image Descriptor
       std::shared_ptr<IMAGE_VIEW_STATE> image_view_state_;
-      VkImageLayout image_layout_;
+      VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
       // Texel Descriptor
       std::shared_ptr<BUFFER_VIEW_STATE> buffer_view_state_;
       // Buffer Descriptor
-      VkDeviceSize offset_;
-      VkDeviceSize range_;
+      VkDeviceSize offset_{0};
+      VkDeviceSize range_{0};
       std::shared_ptr<BUFFER_STATE> buffer_state_;
       // Acceleration Structure Descriptor
-      bool is_khr_;
-      VkAccelerationStructureKHR acc_;
+      bool is_khr_{false};
+      VkAccelerationStructureKHR acc_{VK_NULL_HANDLE};
       std::shared_ptr<ACCELERATION_STRUCTURE_STATE_KHR> acc_state_;
-      VkAccelerationStructureNV acc_nv_;
+      VkAccelerationStructureNV acc_nv_{VK_NULL_HANDLE};
       std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_nv_;
 };
 
@@ -745,7 +749,7 @@ template <typename T>
 class DescriptorBindingImpl : public DescriptorBinding {
   public:
     DescriptorBindingImpl(const VkDescriptorSetLayoutBinding &create_info, uint32_t count_, VkDescriptorBindingFlags binding_flags_)
-        : DescriptorBinding(create_info, count_, binding_flags_), descriptors(count_, T(create_info.descriptorType)) {}
+        : DescriptorBinding(create_info, count_, binding_flags_), descriptors(count_) {}
 
     const Descriptor *GetDescriptor(const uint32_t index) const override { return index < count ? &descriptors[index] : nullptr; }
 
