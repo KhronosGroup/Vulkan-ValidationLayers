@@ -398,6 +398,8 @@ class CoreChecks : public ValidationStateTracker {
                           VkImageLayout new_layout) const;
     bool ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
                                  const char* error_type, const char* function_name) const;
+    bool ValidateMSRTSSAttachmentSampleCount(VkDevice device, const char* function_name, uint32_t attachment_index,
+                                             VkSampleCountFlagBits attachment_bits, VkSampleCountFlagBits msrtss_bit) const;
     bool ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo,
                                   const char* function_name) const;
 
