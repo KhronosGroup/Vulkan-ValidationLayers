@@ -1734,7 +1734,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipe
 }
 
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
-                                              const VkPipelineLibraryCreateInfoKHR *link_info,
+                                              const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
                                               int lib_index, const char *vuid) const {
     bool current_pipeline = lib_index == -1;
@@ -1752,8 +1752,8 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
     if (flags_count >= 1 && flags_count <= 2) {
         // We start iterating at the index after lib_index to avoid duplicating checks, because the caller will iterate the same
         // loop
-        for (int i = lib_index + 1; i < static_cast<int>(link_info->libraryCount); ++i) {
-            const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+        for (int i = lib_index + 1; i < static_cast<int>(link_info.libraryCount); ++i) {
+            const auto lib = Get<PIPELINE_STATE>(link_info.pLibraries[i]);
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
             bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
             if (other_flag) {
@@ -3431,13 +3431,15 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 }
             }
         }
-        if (gpl_info && link_info && pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            skip |= ValidatePipelineLibraryFlags(gpl_info->flags, link_info, rendering_struct, pipe_index, -1,
-                                                 "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+        if (link_info && pipeline->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            if (gpl_info) {
+                skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *link_info, rendering_struct, pipe_index, -1,
+                                                     "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+            }
             for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
-                skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, link_info, lib_rendering_struct, pipe_index, i,
+                skip |= ValidatePipelineLibraryFlags(lib->graphics_lib_type, *link_info, lib_rendering_struct, pipe_index, i,
                                                      "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
             }
         }
