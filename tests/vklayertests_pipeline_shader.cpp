@@ -12456,29 +12456,21 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     TEST_DESCRIPTION("Test VK_EXT_shader_image_atomic_int64.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-
     // Create device without VK_EXT_shader_image_atomic_int64 extension or features enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
     VkPhysicalDeviceFeatures available_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
     if (!available_features.shaderInt64) {
-        printf("%s VkPhysicalDeviceFeatures::shaderInt64 is not supported, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::shaderInt64 is not supported, skipping tests.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required for SPIR-V 1.3, skipping test.\n", kSkipPrefix);
-        return;
-    }
 
     // clang-format off
     std::string cs_image_base = R"glsl(
@@ -12540,8 +12532,8 @@ TEST_F(VkLayerTest, ShaderImageAtomicInt64) {
     if (VK_SUCCESS == current_shader->InitFromGLSLTry()) {
         CreateComputePipelineHelper::OneshotTest(
             *this, set_info, kErrorBit,
-            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-04147",
-                                "VUID-RuntimeSpirv-None-06288"});
+            std::vector<string>{"VUID-VkShaderModuleCreateInfo-pCode-01091", "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                                "VUID-VkShaderModuleCreateInfo-pCode-04147", "VUID-RuntimeSpirv-None-06288"});
     }
 
     current_shader = layer_data::make_unique<VkShaderObj>(this, cs_image_exchange.c_str(), VK_SHADER_STAGE_COMPUTE_BIT,

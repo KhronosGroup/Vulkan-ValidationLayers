@@ -10,7 +10,7 @@
       "name" : "glslang",
       "url" : "https://github.com/KhronosGroup/glslang.git",
       "sub_dir" : "shaderc/third_party/glslang",
-      "commit" : "adbf0d3106b26daa237b10b9bf72b1af7c31092d"
+      "commit" : "7e6b7c26a2a565c677b93f1c1769977cadced306"
     },
     {
       "name" : "Vulkan-Headers",
