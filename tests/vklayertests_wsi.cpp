@@ -130,8 +130,6 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
 
     vk::DestroyImage(m_device->device(), image_from_swapchain, nullptr);
-
-    // image_from_swapchain is controlled by the implementation, so do not destroy it
 }
 
 TEST_F(VkLayerTest, ValidSwapchainImage) {
