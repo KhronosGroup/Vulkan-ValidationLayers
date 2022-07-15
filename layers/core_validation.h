@@ -533,17 +533,17 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDescriptors(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, const T& binding) const;
 
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::BufferDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::BufferDescriptor& descriptor) const;
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::ImageDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::ImageDescriptor& descriptor) const;
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::ImageSamplerDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::ImageSamplerDescriptor& descriptor) const;
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::TexelDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::TexelDescriptor& descriptor) const;
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::AccelerationStructureDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::AccelerationStructureDescriptor& descriptor) const;
     bool ValidateDescriptor(const DescriptorContext& context, const DescriptorBindingInfo& binding_info, uint32_t index,
-                            const cvdescriptorset::SamplerDescriptor& descriptor) const;
+                            VkDescriptorType descriptor_type, const cvdescriptorset::SamplerDescriptor& descriptor) const;
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
