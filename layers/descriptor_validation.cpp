@@ -770,7 +770,7 @@ bool CoreChecks::ValidateDescriptors(const DescriptorContext &context, const Des
     for (uint32_t index = 0; !skip && index < binding.count; index++) {
         const auto &descriptor = binding.descriptors[index];
 
-        if (!descriptor.updated) {
+        if (!binding.updated[index]) {
             auto set = context.descriptor_set->GetSet();
             return LogError(set, context.vuids.descriptor_valid,
                             "Descriptor set %s encountered the following validation error at %s time: Descriptor in binding "
@@ -2701,7 +2701,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
     if (dst_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
         auto dst_iter = dst_set->FindDescriptor(update->dstBinding, update->dstArrayElement);
         for (uint32_t di = 0; di < update->descriptorCount; ++di, ++dst_iter) {
-            if (dst_iter->updated && dst_iter->IsImmutableSampler()) {
+            if (dst_iter.updated() && dst_iter->IsImmutableSampler()) {
                 *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02753";
                 std::stringstream error_str;
                 error_str << "Attempted copy update to an immutable sampler descriptor.";
@@ -2715,7 +2715,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         case DescriptorClass::PlainSampler: {
             auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                if (src_iter->updated) {
+                if (src_iter.updated()) {
                     if (!src_iter->IsImmutableSampler()) {
                         auto update_sampler = static_cast<const SamplerDescriptor &>(*src_iter).GetSampler();
                         if (!ValidateSampler(update_sampler)) {
@@ -2736,7 +2736,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         case DescriptorClass::ImageSampler: {
             auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount; ++di, ++src_iter) {
-                if (!src_iter->updated) continue;
+                if (!src_iter.updated()) continue;
                 auto img_samp_desc = static_cast<const ImageSamplerDescriptor &>(*src_iter);
                 // First validate sampler
                 if (!img_samp_desc.IsImmutableSampler()) {
@@ -2770,7 +2770,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         case DescriptorClass::Image: {
             auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount; ++di, ++src_iter) {
-                if (!src_iter->updated) continue;
+                if (!src_iter.updated()) continue;
                 auto img_desc = static_cast<const ImageDescriptor &>(*src_iter);
                 auto image_view = img_desc.GetImageView();
                 auto image_layout = img_desc.GetImageLayout();
@@ -2788,7 +2788,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         case DescriptorClass::TexelBuffer: {
             auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount; ++di, ++src_iter) {
-                if (!src_iter->updated) continue;
+                if (!src_iter.updated()) continue;
                 auto buffer_view = static_cast<const TexelDescriptor &>(*src_iter).GetBufferView();
                 if (buffer_view) {
                     auto bv_state = device_data->Get<BUFFER_VIEW_STATE>(buffer_view);
@@ -2815,7 +2815,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         case DescriptorClass::GeneralBuffer: {
             auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount; ++di, ++src_iter) {
-                if (!src_iter->updated) continue;
+                if (!src_iter.updated()) continue;
                 auto buffer_state = static_cast<const BufferDescriptor &>(*src_iter).GetBufferState();
                 if (buffer_state) {
                     if (!ValidateBufferUsage(report_data, buffer_state, src_type, error_code, error_msg)) {
