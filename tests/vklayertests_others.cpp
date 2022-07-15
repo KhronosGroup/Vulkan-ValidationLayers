@@ -5170,11 +5170,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
     ahb_desc.stride = 1;
     AHardwareBuffer_allocate(&ahb_desc, &ahb);
 
-    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_fmt_props);
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
     PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
-        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(dev, "vkGetAndroidHardwareBufferPropertiesANDROID");
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-    pfn_GetAHBProps(dev, ahb, &ahb_props);
+    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
 
     VkExternalMemoryBufferCreateInfo ext_buf_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
     ext_buf_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
