@@ -44,6 +44,7 @@
 #include "sync_utils.h"
 #include "sync_vuid_maps.h"
 
+using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
 using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
 
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
@@ -593,7 +594,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             LayoutUseCheckAndMessage layout_check(check_layout, test_aspect);
 
             skip |= subresource_map->AnyInRange(
-                normalized_range, [this, &layout_check, i](const VkImageSubresource &subres, const LayoutEntry &state) {
+                normalized_range, [this, &layout_check, i](const LayoutRange &range, const LayoutEntry &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
                         subres_skip = LogError(device, kVUID_Core_DrawState_InvalidRenderpass,
@@ -899,11 +900,12 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
                 auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
                 normalized_isr.aspectMask = test_aspect;
                 skip |= read_subresource_map->AnyInRange(
-                    normalized_isr, [this, cb_state, &layout_check, &loc, &img_barrier](const VkImageSubresource &subres,
-                                                                                        const LayoutEntry &state) {
+                    normalized_isr, [this, read_subresource_map, cb_state, &layout_check, &loc, &img_barrier](
+                                        const LayoutRange &range, const LayoutEntry &state) {
                         bool subres_skip = false;
                         if (!layout_check.Check(state)) {
                             const auto &vuid = GetImageBarrierVUID(loc, ImageError::kConflictingLayout);
+                            auto subres = read_subresource_map->Decode(range.begin);
                             subres_skip = LogError(
                                 cb_state->commandBuffer(), vuid,
                                 "%s %s cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
@@ -1400,11 +1402,12 @@ bool CoreChecks::VerifyImageLayoutRange(const CMD_BUFFER_STATE &cb_node, const I
 
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
     skip |= subresource_map->AnyInRange(
-        range_factory(*subresource_map), [this, &cb_node, &image_state, &layout_check, layout_mismatch_msg_code, caller, error](
-                                             const VkImageSubresource &subres, const LayoutEntry &state) {
+        range_factory(*subresource_map), [this, subresource_map, &cb_node, &image_state, &layout_check, layout_mismatch_msg_code,
+                                          caller, error](const LayoutRange &range, const LayoutEntry &state) {
             bool subres_skip = false;
             if (!layout_check.Check(state)) {
                 *error = true;
+                auto subres = subresource_map->Decode(range.begin);
                 subres_skip |= LogError(cb_node.commandBuffer(), layout_mismatch_msg_code,
                                         "%s: Cannot use %s (layer=%u mip=%u) with specific layout %s that doesn't match the "
                                         "%s layout %s.",
@@ -2193,7 +2196,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
         skip |= subresource_map->AnyInRange(
-            normalized_isr, [this, cb_node, &layout_check, func_name](const VkImageSubresource &subres, const LayoutEntry &state) {
+            normalized_isr, [this, cb_node, &layout_check, func_name](const LayoutRange &range, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
                     const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00004";
