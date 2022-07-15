@@ -77,6 +77,7 @@ class VkDeviceObj : public vk_testing::Device {
     VkPhysicalDeviceProperties props;
     std::vector<VkQueueFamilyProperties> queue_props;
 
+    VkQueueObj *m_queue_obj = nullptr;
     VkQueue m_queue;
 };
 
