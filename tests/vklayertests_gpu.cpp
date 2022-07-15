@@ -41,7 +41,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     bool descriptor_indexing = InitGpuAssistedFramework(true);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     if (IsPlatform(kGalaxyS10)) {
         printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
@@ -57,15 +61,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
-    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto maintenance4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
+    maintenance4_features.maintenance4 = true;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&maintenance4_features);
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
-        PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-            (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-        ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
-        features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&indexing_features);
-        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+        maintenance4_features.pNext = &indexing_features;
+        vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
 
         if (!indexing_features.runtimeDescriptorArray || !indexing_features.descriptorBindingSampledImageUpdateAfterBind ||
             !indexing_features.descriptorBindingPartiallyBound || !indexing_features.descriptorBindingVariableDescriptorCount ||
