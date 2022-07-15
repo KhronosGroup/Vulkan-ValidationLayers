@@ -730,19 +730,16 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 1 of 2");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
-               VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    m_device_extension_names.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
-        printf("%s Device does not support multiViewport, test skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Device does not support multiViewport, test skipped.";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -759,7 +756,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
@@ -771,20 +768,17 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 2 of 2");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Need to use SPV_EXT_shader_viewport_index_layer
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
-               VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    m_device_extension_names.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // These tests require that the device support multiViewport
     if (!m_device->phy().features().multiViewport) {
-        printf("%s Device does not support multiViewport, test skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Device does not support multiViewport, test skipped.";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -801,7 +795,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
-    pipe.shader_stages_ = {vs.GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
@@ -2134,25 +2128,16 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (!mesh_shader_features.meshShader || !mesh_shader_features.taskShader) {
         GTEST_SKIP() << "Test requires (unsupported) meshShader and taskShader features, skipping test.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     VkPhysicalDeviceVulkan11Properties vulkan11_props = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
-    auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&vulkan11_props);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(vulkan11_props);
 
     if ((vulkan11_props.subgroupSupportedStages & VK_SHADER_STAGE_TASK_BIT_NV) == 0) {
         GTEST_SKIP() << "%s VkPhysicalDeviceVulkan11Properties::subgroupSupportedStages does not include "
@@ -2219,7 +2204,7 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     VkShaderObj ms(this, meshShaderText, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_2);
 
     const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo()};
+        helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, "", true);
 }

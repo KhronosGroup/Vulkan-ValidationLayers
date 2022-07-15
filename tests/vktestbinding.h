@@ -344,6 +344,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
 class Semaphore : public internal::NonDispHandle<VkSemaphore> {
   public:
     Semaphore() = default;
+    Semaphore(const Device &dev) { init(dev, LvlInitStruct<VkSemaphoreCreateInfo>()); }
     Semaphore(const Device &dev, const VkSemaphoreCreateInfo &info) { init(dev, info); }
     ~Semaphore() NOEXCEPT;
 
@@ -356,6 +357,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
     Event() = default;
+    Event(const Device &dev) { init(dev, LvlInitStruct<VkEventCreateInfo>()); }
     Event(const Device &dev, const VkEventCreateInfo &info) { init(dev, info); }
     ~Event() NOEXCEPT;
 

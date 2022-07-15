@@ -2992,8 +2992,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto library_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multiview_features);
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&library_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
@@ -3004,7 +3003,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3039,6 +3038,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryViewMask) {
     pipe.InitInfo();
     pipe.gp_ci_.pNext = &library_create_info;
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.shader_stages_ = {pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
@@ -3105,8 +3105,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto library_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multiview_features);
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>(&library_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
@@ -3117,7 +3116,7 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
         GTEST_SKIP() << "Test requires (unsupported) multiview";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &dynamic_rendering_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3126,53 +3125,49 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibrariesViewMask) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    auto graphics_library_create_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
-    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&graphics_library_create_info);
-
     VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
     auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     color_blend_state_create_info.attachmentCount = 1;
     color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
 
-    m_errorMonitor->ExpectSuccess();
     CreatePipelineHelper lib1(*this);
     lib1.cb_ci_ = color_blend_state_create_info;
-    lib1.InitInfo();
-    lib1.gp_ci_.pNext = &library_create_info;
+    lib1.InitFragmentOutputLibInfo(&pipeline_rendering_info);
     lib1.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib1.InitState();
     lib1.CreateGraphicsPipeline();
 
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
     pipeline_rendering_info.viewMask = 0x1;
 
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fs_stage_ci.module = VK_NULL_HANDLE;
+    fs_stage_ci.pName = "main";
+
     CreatePipelineHelper lib2(*this);
     lib2.cb_ci_ = color_blend_state_create_info;
-    lib2.InitInfo();
-    lib2.gp_ci_.pNext = &library_create_info;
+    lib2.InitFragmentLibInfo(1, &fs_stage_ci, &pipeline_rendering_info);
     lib2.gp_ci_.renderPass = VK_NULL_HANDLE;
     lib2.ds_ci_ = ds_ci;
     lib2.InitState();
     lib2.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 
-    graphics_library_create_info.flags =
-        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT | VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    pipeline_rendering_info.viewMask = 0;
+    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
     library_create_info.libraryCount = 2;
     VkPipeline libraries[2] = {lib1.pipeline_, lib2.pipeline_};
     library_create_info.pLibraries = libraries;
-    pipeline_rendering_info.viewMask = 0;
 
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.gp_ci_.pNext = &library_create_info;
-    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
-    pipe.InitState();
+    auto pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&library_create_info);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pLibraries-06627");
-    pipe.CreateGraphicsPipeline();
+    vk_testing::Pipeline pipe(*m_device, pipe_ci);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3211,31 +3206,33 @@ TEST_F(VkLayerTest, InvalidDynamicRenderingLibraryRenderPass) {
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_format;
 
-    auto graphics_library_create_info = LvlInitStruct<VkGraphicsPipelineLibraryCreateInfoEXT>(&pipeline_rendering_info);
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
-    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&graphics_library_create_info);
-
     VkPipelineColorBlendAttachmentState color_blend_attachment_state = {};
     auto color_blend_state_create_info = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     color_blend_state_create_info.attachmentCount = 1;
     color_blend_state_create_info.pAttachments = &color_blend_attachment_state;
 
-    m_errorMonitor->ExpectSuccess();
     CreatePipelineHelper lib(*this);
     lib.cb_ci_ = color_blend_state_create_info;
-    lib.InitInfo();
-    lib.gp_ci_.pNext = &library_create_info;
+    lib.InitFragmentOutputLibInfo(&pipeline_rendering_info);
     lib.InitState();
     lib.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 
-    graphics_library_create_info.flags = VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
+    auto library_create_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>(&pipeline_rendering_info);
     library_create_info.libraryCount = 1;
     library_create_info.pLibraries = &lib.pipeline_;
 
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto fs_stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    fs_stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fs_stage_ci.module = VK_NULL_HANDLE;
+    fs_stage_ci.pName = "main";
+
     CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.gp_ci_.pNext = &library_create_info;
+    pipe.InitFragmentLibInfo(1, &fs_stage_ci, &library_create_info);
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.InitState();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderpass-06625");
