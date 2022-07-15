@@ -196,6 +196,20 @@ static bool SparseMetaDataRequired(const IMAGE_STATE::SparseReqs &sparse_reqs) {
     }
     return result;
 }
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTypeFlagBitsEXT object_type_required) {
+    bool retval = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == object_type_required) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkFormatFeatureFlags2KHR ff)
@@ -218,6 +232,10 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       sparse_metadata_required(SparseMetaDataRequired(sparse_requirements)),
       get_sparse_reqs_called(false),
       sparse_metadata_bound(false),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
+      metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
+#endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device) {}  // TODO REMOVE WHEN encoder can be const
@@ -243,6 +261,10 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
       sparse_metadata_required(false),
       get_sparse_reqs_called(false),
       sparse_metadata_bound(false),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
+      metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
+#endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
       store_device_as_workaround(dev_data->device) {  // TODO REMOVE WHEN encoder can be const

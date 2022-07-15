@@ -42,16 +42,37 @@ class RENDER_PASS_STATE;
 class CoreChecks;
 class ValidationStateTracker;
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+static bool GetMetalExport(const VkEventCreateInfo *info) {
+    bool retval = false;
+    auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+    while (export_metal_object_info) {
+        if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
+            retval = true;
+            break;
+        }
+        export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+    }
+    return retval;
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 class EVENT_STATE : public BASE_NODE {
   public:
     int write_in_use;
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_event_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
     VkPipelineStageFlags2KHR stageMask = VkPipelineStageFlags2KHR(0);
     VkEventCreateFlags flags;
+
+    EVENT_STATE(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
+        : BASE_NODE(event_, kVulkanObjectTypeEvent), 
+        write_in_use(0),
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    bool metal_event_export = false;
-#endif // VK_USE_PLATFORM_METAL_EXT
-    EVENT_STATE(VkEvent event_, VkEventCreateFlags flags_)
-        : BASE_NODE(event_, kVulkanObjectTypeEvent), write_in_use(0), flags(flags_) {}
+        metal_event_export(GetMetalExport(pCreateInfo)),
+#endif  // VK_USE_PLATFORM_METAL_EXT
+        flags(pCreateInfo->flags) {}
 
     VkEvent event() const { return handle_.Cast<VkEvent>(); }
 };

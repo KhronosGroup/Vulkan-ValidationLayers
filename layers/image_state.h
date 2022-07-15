@@ -120,8 +120,8 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;          // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_bound;           // Track if sparse metadata aspect is bound to this image
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    bool metal_image_export = false;
-    bool metal_io_surface_export = false;
+    const bool metal_image_export;
+    const bool metal_io_surface_export;
 #endif // VK_USE_PLATFORM_METAL
 
     const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder

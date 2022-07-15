@@ -126,8 +126,26 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         bool CanBeWaited() const {  return op_type == kSignal || op_type == kBinaryAcquire; }
     };
 
-    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info)
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    static bool GetMetalExport(const VkSemaphoreCreateInfo *info) {
+        bool retval = false;
+        auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(info->pNext);
+        while (export_metal_object_info) {
+            if (export_metal_object_info->exportObjectType == VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT) {
+                retval = true;
+                break;
+            }
+            export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(export_metal_object_info->pNext);
+        }
+        return retval;
+    }
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info, const VkSemaphoreCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+          metal_semaphore_export(GetMetalExport(pCreateInfo)),
+#endif  // VK_USE_PLATFORM_METAL_EXT
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           completed_{kNone, nullptr, 0, type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1) {}
@@ -173,11 +191,10 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
-
-    const VkSemaphoreType type;
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    bool metal_semaphore_export = false;
-#endif // VK_USE_PLATFORM_METAL_EXT
+    const bool metal_semaphore_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+    const VkSemaphoreType type;
 
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
