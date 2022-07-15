@@ -113,8 +113,9 @@ class ImageSubresourceLayoutMap {
             }
         };
     };
-    using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
+    using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
+    using RangeType = LayoutMap::key_type;
 
     bool SetSubresourceRangeLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout);
@@ -145,26 +146,23 @@ class ImageSubresourceLayoutMap {
     }
 
     bool AnyInRange(const VkImageSubresourceRange& normalized_range,
-            std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+                    std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         return AnyInRange(RangeGen(normalized_range), std::move(func));
     }
 
-    bool AnyInRange(const RangeGenerator& gen,
-                    std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+    bool AnyInRange(const RangeGenerator& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         return AnyInRange(RangeGenerator(gen), std::move(func));
     }
 
-    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const VkImageSubresource& subres, const LayoutEntry& state)> &&func) const {
+    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
         for (; gen->non_empty(); ++gen) {
             for (auto pos = layouts_.lower_bound(*gen); (pos != layouts_.end()) && (gen->intersects(pos->first)); ++pos) {
-                auto subres = encoder_.Decode(pos->first.begin);
-                if (func(subres, pos->second)) {
+                if (func(pos->first, pos->second)) {
                     return true;
                 }
             }
         }
         return false;
-
     }
 
   protected:
