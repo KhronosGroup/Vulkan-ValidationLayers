@@ -8659,6 +8659,14 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, stencil_view_state, msrtss_samples, "Stencil",
                                                                  func_name);
         }
+        if (msrtss_info) {
+            if (msrtss_info->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError(commandBuffer, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878",
+                                 "%s(): A VkMultisampledRenderToSingleSampledInfoEXT struct is in the pNext chain of "
+                                 "VkRenderingInfo with a rasterizationSamples value of VK_SAMPLE_COUNT_1_BIT which is not allowed",
+                                 func_name);
+            }
+        }
     }
     return skip;
 }
@@ -13687,6 +13695,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                 pCreateInfo->pAttachments[subpass.pColorAttachments[last_sample_count_attachment].attachment]
                                     .samples;
                             if (current_sample_count != last_sample_count) {
+                                // Also VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06869
                                 vuid = use_rp2 ? "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872"
                                                : "VUID-VkSubpassDescription-pColorAttachments-06868";
                                 skip |= LogError(
@@ -13812,6 +13821,17 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                          function_name, error_type.c_str(), color_desc.format, resolve_desc.format);
                     }
                 }
+            }
+        }
+
+        if (use_rp2 && enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled &&
+            ms_render_to_single_sample) {
+            if (ms_render_to_single_sample->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError(
+                    device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-rasterizationSamples-06878",
+                    "%s(): A VkMultisampledRenderToSingleSampledInfoEXT struct is in the pNext chain of  VkSubpassDescription2 "
+                    "with a rasterizationSamples value of VK_SAMPLE_COUNT_1_BIT which is not allowed",
+                    function_name);
             }
         }
     }
