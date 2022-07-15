@@ -6064,8 +6064,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     m_commandBuffer->end();
 
     if (!tf_properties.maxTransformFeedbackBufferDataStride) {
-        printf("%s , maxTransformFeedbackBufferDataStride is zero, skipping subtests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxTransformFeedbackBufferDataStride is zero, skipping subtests";
     }
 
     std::vector<const char *> device_extension_names;
@@ -6075,24 +6074,31 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     VkCommandBufferObj commandBuffer(&test_device, &commandPool);
     VkBufferObj counter_buffer2;
     counter_buffer2.init(test_device, buffer_create_info);
+
     VkPipelineLayoutObj pipelineLayout(&test_device);
-    VkRenderPass renderpass;
+
     VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
     VkSubpassDescription subpass = {};
     rp_info.pSubpasses = &subpass;
     rp_info.subpassCount = 1;
-    vk::CreateRenderPass(test_device.handle(), &rp_info, nullptr, &renderpass);
+    vk_testing::RenderPass renderpass(test_device, rp_info);
+    ASSERT_TRUE(renderpass.handle());
+
     VkPipelineObj pipeline(&test_device);
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
     vs.InitFromGLSLTry(false, &test_device);
+    fs.InitFromGLSLTry(false, &test_device);
     pipeline.AddShader(&vs);
-    pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass);
-    m_renderPassBeginInfo.renderPass = renderpass;
-    VkFramebuffer fb;
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass, 0, nullptr, 256, 256, 1};
-    vk::CreateFramebuffer(test_device.handle(), &fbci, nullptr, &fb);
-    m_renderPassBeginInfo.framebuffer = fb;
-    m_renderPassBeginInfo.renderPass = renderpass;
+    pipeline.AddShader(&fs);
+    pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass.handle());
+    m_renderPassBeginInfo.renderPass = renderpass.handle();
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass.handle(), 0, nullptr, 256, 256, 1};
+    vk_testing::Framebuffer fb(test_device, fbci);
+    ASSERT_TRUE(fb.initialized());
+    m_renderPassBeginInfo.framebuffer = fb.handle();
+    m_renderPassBeginInfo.renderPass = renderpass.handle();
     commandBuffer.begin();
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     vk::CmdSetViewport(commandBuffer.handle(), 0, 1, &viewport);
@@ -6106,8 +6112,6 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287");
     fpvkCmdDrawIndirectByteCountEXT(commandBuffer.handle(), 1, 0, counter_buffer2.handle(), 0, 0, 1);
     m_errorMonitor->VerifyFound();
-    vk::DestroyRenderPass(test_device.handle(), renderpass, nullptr);
-    vk::DestroyFramebuffer(test_device.handle(), fb, nullptr);
 }
 
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
@@ -6604,9 +6608,11 @@ TEST_F(VkLayerTest, MeshShaderNV) {
                                           vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02095"}));
 
         // vertex or mesh must be present
+        // 02096 overlaps with 06896
         const auto break_vp2 = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {fs.GetStageCreateInfo()}; };
         CreatePipelineHelper::OneshotTest(*this, break_vp2, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096"}));
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-stage-02096",
+                                                               "VUID-VkGraphicsPipelineCreateInfo-pStages-06896"}));
 
         // vertexinput and inputassembly must be valid when vertex stage is present
         const auto break_vp3 = [&](CreatePipelineHelper &helper) {
@@ -6649,26 +6655,21 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(mesh_shader_features);
     if (mesh_shader_features.meshShader != VK_TRUE) {
-        printf("%s Mesh shader feature not supported\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Mesh shader feature not supported";
     }
 
     mesh_shader_features.meshShader = VK_FALSE;
     mesh_shader_features.taskShader = VK_FALSE;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkEvent event;
-    VkEventCreateInfo event_create_info = LvlInitStruct<VkEventCreateInfo>();
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+    vk_testing::Event event_obj(*m_device);
+    const auto event = event_obj.handle();
+    ASSERT_TRUE(event_obj.initialized());
 
     m_commandBuffer->begin();
 
@@ -6714,9 +6715,9 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
 
     m_commandBuffer->end();
 
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    VkSemaphore semaphore;
-    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+    vk_testing::Semaphore semaphore_obj(*m_device);
+    const auto semaphore = semaphore_obj.handle();
+    ASSERT_TRUE(semaphore_obj.initialized());
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -6778,17 +6779,15 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
 
     VkShaderObj task_shader(this, task_src, VK_SHADER_STAGE_TASK_BIT_NV);
     VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_NV);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // mesh and task shaders not supported
     const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo()};
+        helper.shader_stages_ = {task_shader.GetStageCreateInfo(), mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
                                       vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02091",
                                                            "VUID-VkPipelineShaderStageCreateInfo-stage-02092"}));
-
-    vk::DestroyEvent(m_device->device(), event, nullptr);
-    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
 
 TEST_F(VkLayerTest, ViewportWScalingNV) {

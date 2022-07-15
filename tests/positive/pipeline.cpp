@@ -852,6 +852,8 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         sizeof(void *) == 8 ? reinterpret_cast<void *>(fake_address_64) : reinterpret_cast<void *>(fake_address_32);
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo stages[2] = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
 
     const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -887,7 +889,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         1.0f   // lineWidth
     };
 
-    VkPipelineLayout pipeline_layout;
+    vk_testing::PipelineLayout pipeline_layout;
     {
         VkPipelineLayoutCreateInfo pipeline_layout_create_info{
             VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -899,24 +901,21 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             nullptr  // push constants
         };
 
-        VkResult err = vk::CreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
-        ASSERT_VK_SUCCESS(err);
+        pipeline_layout.init(*m_device, pipeline_layout_create_info, {});
     }
 
     // try disabled rasterizer and no tessellation
     {
-        m_errorMonitor->ExpectSuccess();
-
         VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
             pipeline_rasterization_state_create_info_template;
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
-            1,        // stageCount
-            &vs.GetStageCreateInfo(),
+            nullptr,                              // pNext
+            0,                                    // flags
+            static_cast<uint32_t>(size(stages)),  // stageCount
+            stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
             reinterpret_cast<const VkPipelineTessellationStateCreateInfo *>(hopefully_undereferencable_pointer),
@@ -926,21 +925,16 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
-            pipeline_layout,
+            pipeline_layout.handle(),
             m_renderPass,
             0,  // subpass
             VK_NULL_HANDLE,
             0};
 
-        VkPipeline pipeline;
-        vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
-        m_errorMonitor->VerifyNotFound();
+        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
 
-        m_errorMonitor->ExpectSuccess();
         m_commandBuffer->begin();
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        m_errorMonitor->VerifyNotFound();
-        vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
     }
 
     const VkPipelineMultisampleStateCreateInfo pipeline_multisample_state_create_info{
@@ -957,8 +951,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
 
     // try enabled rasterizer but no subpass attachments
     {
-        m_errorMonitor->ExpectSuccess();
-
         VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
             pipeline_rasterization_state_create_info_template;
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
@@ -975,7 +967,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             1,
             &scissor};
 
-        VkRenderPass render_pass;
+        vk_testing::RenderPass render_pass;
         {
             VkSubpassDescription subpass_desc = {};
 
@@ -991,16 +983,15 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
                 nullptr  // subpass dependencies
             };
 
-            VkResult err = vk::CreateRenderPass(m_device->handle(), &render_pass_create_info, nullptr, &render_pass);
-            ASSERT_VK_SUCCESS(err);
+            render_pass.init(*m_device, render_pass_create_info);
         }
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
             VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            nullptr,  // pNext
-            0,        // flags
-            1,        // stageCount
-            &vs.GetStageCreateInfo(),
+            nullptr,                              // pNext
+            0,                                    // flags
+            static_cast<uint32_t>(size(stages)),  // stageCount
+            stages,
             &pipeline_vertex_input_state_create_info,
             &pipeline_input_assembly_state_create_info,
             nullptr,
@@ -1010,25 +1001,17 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
-            pipeline_layout,
-            render_pass,
+            pipeline_layout.handle(),
+            render_pass.handle(),
             0,  // subpass
             VK_NULL_HANDLE,
             0};
 
-        VkPipeline pipeline;
-        vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
-
-        m_errorMonitor->VerifyNotFound();
-
-        vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
-        vk::DestroyRenderPass(m_device->handle(), render_pass, nullptr);
+        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
 
     // try dynamic viewport and scissor
     {
-        m_errorMonitor->ExpectSuccess();
-
         VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
             pipeline_rasterization_state_create_info_template;
         pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
@@ -1069,10 +1052,10 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             2, dynamic_states};
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-                                                                   nullptr,  // pNext
-                                                                   0,        // flags
-                                                                   1,        // stageCount
-                                                                   &vs.GetStageCreateInfo(),
+                                                                   nullptr,                              // pNext
+                                                                   0,                                    // flags
+                                                                   static_cast<uint32_t>(size(stages)),  // stageCount
+                                                                   stages,
                                                                    &pipeline_vertex_input_state_create_info,
                                                                    &pipeline_input_assembly_state_create_info,
                                                                    nullptr,
@@ -1082,21 +1065,14 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
                                                                    &pipeline_depth_stencil_state_create_info,
                                                                    &pipeline_color_blend_state_create_info,
                                                                    &pipeline_dynamic_state_create_info,  // dynamic states
-                                                                   pipeline_layout,
+                                                                   pipeline_layout.handle(),
                                                                    m_renderPass,
                                                                    0,  // subpass
                                                                    VK_NULL_HANDLE,
                                                                    0};
 
-        VkPipeline pipeline;
-        vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
-
-        m_errorMonitor->VerifyNotFound();
-
-        vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+        vk_testing::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
     }
-
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
