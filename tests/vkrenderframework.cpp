@@ -457,6 +457,7 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 
 inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
     auto disable = GetEnvironment("VK_LAYER_TESTS_DISABLE_CORE_VALIDATION");
+    std::transform(disable.begin(), disable.end(), disable.begin(), ::tolower);
     if (disable == "false" || disable == "0" || disable == "FALSE") {       // default is to change nothing, unless flag is correctly specified
         features.disabledValidationFeatureCount = 0;  // remove all disables to get all validation messages
     }
