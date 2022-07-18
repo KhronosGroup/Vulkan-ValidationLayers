@@ -5168,7 +5168,7 @@ TEST_F(VkLayerTest, CreatePipelineDuplicateStage) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), helper.vs_->GetStageCreateInfo(),
                                  helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00726");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-06897");
 }
 
 TEST_F(VkLayerTest, CreatePipelineMissingEntrypoint) {
