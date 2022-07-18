@@ -18,6 +18,7 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 #include "best_practices_error_enums.h"
+#include "core_validation_error_enums.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     // Enable all vendor-specific checks
@@ -159,7 +160,8 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
     queue_info.pNext = NULL;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
-    queue_info.pQueuePriorities = nullptr;
+    float qp = 1;
+    queue_info.pQueuePriorities = &qp;
     dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dev_info.pNext = nullptr;
     dev_info.queueCreateInfoCount = 1;
@@ -193,7 +195,8 @@ TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     queue_info.pNext = NULL;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
-    queue_info.pQueuePriorities = nullptr;
+    float qp = 1;
+    queue_info.pQueuePriorities = &qp;
     dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dev_info.pNext = nullptr;
     dev_info.queueCreateInfoCount = 1;
@@ -576,11 +579,18 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     attachment.samples = VK_SAMPLE_COUNT_4_BIT;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription sd{};
 
     VkRenderPassCreateInfo rp_info{};
     rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &sd;
 
     VkRenderPass rp;
     vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
@@ -613,11 +623,18 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription sd{};
 
     VkRenderPassCreateInfo rp_info{};
     rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     rp_info.attachmentCount = 1;
     rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &sd;
 
     VkRenderPass rp = VK_NULL_HANDLE;
     vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
@@ -679,6 +696,9 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
+    // This test does not need for the shader to consume the vertex input
+    m_errorMonitor->SetAllowedFailureMsg(kVUID_Core_Shader_OutputNotConsumed);
+
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -690,12 +710,16 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     bindings[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     attributes[0].binding = 0;
+    attributes[0].location = 0;
+    attributes[0].format = VK_FORMAT_R32_SFLOAT;
 
     bindings[1].binding = 1;
     bindings[1].stride = 8;
     bindings[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     attributes[1].binding = 1;
+    attributes[1].location = 1;
+    attributes[1].format = VK_FORMAT_R32_SFLOAT;
 
     VkPipelineVertexInputStateCreateInfo vi_state_ci{};
     vi_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
