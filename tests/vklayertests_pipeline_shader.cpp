@@ -10113,23 +10113,20 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
     VkResult err = rt_pipe.CreateKHRRayTracingPipeline();
     ASSERT_VK_SUCCESS(err);
 
-    VkBuffer buffer;
     VkBufferCreateInfo buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 4096;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Buffer buffer(*m_device, buf_info, vk_testing::no_mem);
 
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
 
     VkMemoryAllocateInfo alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = 4096;
-    VkDeviceMemory mem;
-    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
-    vk::BindBufferMemory(device(), buffer, mem, 0);
+    vk_testing::DeviceMemory mem(*m_device, alloc_info);
+    vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
+
     PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
         (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vk::GetInstanceProcAddr(
             instance(), "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
