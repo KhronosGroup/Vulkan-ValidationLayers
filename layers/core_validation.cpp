@@ -2114,13 +2114,13 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
             if (msrtss_info->rasterizationSamples != pipeline->MultisampleState()->rasterizationSamples) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854",
-                                 "vkCreateGraphicsPipelines(): VkMultisampledRenderToSingleSampledInfoEXT in the pNext chain of "
-                                 "pipelines[%" PRIu32 "] subpass index %" PRIu32
-                                 "'s VkSubpassDescription2 has a rasterizationSamples of (%" PRIu32
-                                 ") which is not equal to  pMultisampleState.rasterizationSamples which is (%" PRIu32 ").",
-                                 pipe_index, subpass, msrtss_info->rasterizationSamples,
-                                 pipeline->MultisampleState()->rasterizationSamples);
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06854",
+                    "vkCreateGraphicsPipelines(): A VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain of "
+                    "pipelines[%" PRIu32 "], subpass index %" PRIu32
+                    "'s VkSubpassDescription2 has a rasterizationSamples of (%" PRIu32
+                    ") which is not equal to  pMultisampleState.rasterizationSamples which is (%" PRIu32 ").",
+                    pipe_index, subpass, msrtss_info->rasterizationSamples, pipeline->MultisampleState()->rasterizationSamples);
             }
         }
     }
@@ -8641,22 +8641,21 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     if (IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
         const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(pRenderingInfo->pNext);
-        const auto msrtss_samples = (msrtss_info) ? msrtss_info->rasterizationSamples : VK_SAMPLE_COUNT_1_BIT;
         for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
             if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
                 const auto image_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pColorAttachments[j].imageView);
-                skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, image_view_state, msrtss_samples, "Color",
+                skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, image_view_state, msrtss_info, "color",
                                                                      func_name);
             }
         }
         if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
             const auto depth_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pDepthAttachment->imageView);
             skip |=
-                ValidateMultisampledRenderToSingleSampleView(commandBuffer, depth_view_state, msrtss_samples, "Depth", func_name);
+                ValidateMultisampledRenderToSingleSampleView(commandBuffer, depth_view_state, msrtss_info, "depth", func_name);
         }
         if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
             const auto stencil_view_state = Get<IMAGE_VIEW_STATE>(pRenderingInfo->pStencilAttachment->imageView);
-            skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, stencil_view_state, msrtss_samples, "Stencil",
+            skip |= ValidateMultisampledRenderToSingleSampleView(commandBuffer, stencil_view_state, msrtss_info, "stencil",
                                                                  func_name);
         }
         if (msrtss_info) {
@@ -8673,15 +8672,29 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
                                                               const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view_state,
-                                                              VkSampleCountFlagBits expected_samples, const char *attachment_type,
+                                                              const VkMultisampledRenderToSingleSampledInfoEXT *msrtss_info,
+                                                              const char *attachment_type,
                                                               const char *func_name) const {
     bool skip = false;
     const auto image_view = image_view_state->Handle();
-    if (image_view_state->samples != expected_samples) {
-        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06858",
-                         "%s(): VkMultisampledRenderToSingleSampledInfoEXT::rasterizationSamples is %s, but %s attachment's imageView (%s) was created with %s",
-                         func_name, string_VkSampleCountFlagBits(expected_samples), attachment_type,
+    if (msrtss_info) {
+        if ((image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) &&
+            (image_view_state->samples != msrtss_info->rasterizationSamples)) {
+            skip |=
+                LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06858",
+                         "%s(): A VkMultisampledRenderToSingleSampledInfoEXT struct is in the pNext chain of VkRenderingInfo with "
+                         "rasterizationSamples set to %s, but %s attachment's "
+                         "imageView (%s) was created with %s, which is not VK_SAMPLE_COUNT_1_BIT",
+                         func_name, string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), attachment_type,
                          report_data->FormatHandle(image_view).c_str(), string_VkSampleCountFlagBits(image_view_state->samples));
+        }
+    } else if (image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06858",
+                         "%s(): There is no VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain, so "
+                         "VK_SAMPLE_COUNT_1_BIT is required, but %s attachment's "
+                         "imageView (%s) was created with %s",
+                         func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
+                         string_VkSampleCountFlagBits(image_view_state->samples));
     }
     IMAGE_STATE *image_state = image_view_state->image_state.get();
     if ((image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) &&
@@ -8692,6 +8705,39 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                          "pImageCreateInfo.flags when the image used to create the imageView (%s) was created",
                          func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
                          report_data->FormatHandle(image_state->image()).c_str());
+    }
+    VkImageFormatProperties image_properties = {};
+    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
+        physical_device, image_view_state->create_info.format, image_state->createInfo.imageType,
+        image_state->createInfo.tiling, image_state->createInfo.usage, image_state->createInfo.flags,
+        &image_properties);
+    if (image_properties_result != VK_SUCCESS) {
+        if (LogError(device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880",
+                     "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
+                     "when called for %s validation with following params: "
+                     "format: %s, imageType: %s, "
+                     "tiling: %s, usage: %s, "
+                     "flags: %s.",
+                     func_name, string_VkFormat(image_view_state->create_info.format),
+                     string_VkImageType(image_state->createInfo.imageType), string_VkImageTiling(image_state->createInfo.tiling),
+                     string_VkImageUsageFlags(image_state->createInfo.usage).c_str(),
+                     string_VkImageCreateFlags(image_state->createInfo.flags).c_str())) {
+            return true;
+        }
+    } else if (msrtss_info && !(image_properties.sampleCounts & msrtss_info->rasterizationSamples)) {
+        skip |= LogError(
+            device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880",
+            "%s(): %s attachment %s was created with format %s from image %s, and rasterizationSamples "
+            "specified in VkMultisampledRenderToSingleSampledInfoEXT is %s, but format %s does not support sample "
+            "count %s from an image with imageType: %s, "
+            "tiling: %s, usage: %s, "
+            "flags: %s.",
+            func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
+            string_VkFormat(image_view_state->create_info.format), report_data->FormatHandle(image_state->Handle()).c_str(),
+            string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), string_VkFormat(image_view_state->create_info.format),
+            string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), string_VkImageType(image_state->createInfo.imageType),
+            string_VkImageTiling(image_state->createInfo.tiling), string_VkImageUsageFlags(image_state->createInfo.usage).c_str(),
+            string_VkImageCreateFlags(image_state->createInfo.flags).c_str());
     }
     return skip;
 }

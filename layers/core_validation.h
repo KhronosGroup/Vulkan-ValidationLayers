@@ -442,9 +442,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateIndirectCountCmd(const BUFFER_STATE& count_buffer_state, VkDeviceSize count_buffer_offset,
                                   CMD_TYPE cmd_type) const;
     bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
-                                                      const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view_state,
-                                                      VkSampleCountFlagBits expected_samples, const char* attachment_type,
-                                                      const char* func_name) const; 
+                                                      const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view_state,
+                                                      const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info,
+                                                      const char* attachment_type, const char* func_name) const;
 
     template <typename T1>
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char* VUID) const;
