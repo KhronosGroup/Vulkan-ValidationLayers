@@ -2721,6 +2721,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                                  string_VkShaderStageFlagBits(stage_state.stage_flag));
             }
 
+            SHADER_MODULE_STATE spec_mod(specialized_spirv);
+
             // The new optimized SPIR-V will NOT match the SHADER_MODULE_STATE object parsing, so all additional logical will need
             // to be done without any helper functions. This an issue due to each pipeline being able to reuse the same shader
             // module but with different spec constant values.
@@ -2729,57 +2731,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not
             // guaranteed to run things such as dead-code elimination. The following checks are things that don't follow under
             // "static use" rules and need to be validated still.
-            spirv_inst_iter specialized_it =
-                spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.begin() + 5);  // point to first instruction
-
-            // same as the def_index in SHADER_MODULE_STATE
-            layer_data::unordered_map<uint32_t, uint32_t> def_index;
-            auto get_def = [&def_index, &specialized_spirv](uint32_t id) -> spirv_inst_iter {
-                auto it = def_index.find(id);
-                if (it == def_index.end()) {
-                    return spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.end());
-                }
-                return spirv_inst_iter(specialized_spirv.begin(), specialized_spirv.begin() + it->second);
-            };
-
-            // same as the GetTypeBitsSize in SHADER_MODULE_STATE
-            // allows recursive lambda functions in C++11
-            std::function<uint32_t(const spirv_inst_iter)> get_type_bits_size;
-            get_type_bits_size = [&get_def, &get_type_bits_size](const spirv_inst_iter &iter) -> uint32_t {
-                const uint32_t opcode = iter.opcode();
-                if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
-                    return iter.word(2);
-                } else if (opcode == spv::OpTypeVector) {
-                    const auto component_type = get_def(iter.word(2));
-                    uint32_t scalar_width = get_type_bits_size(component_type);
-                    uint32_t component_count = iter.word(3);
-                    return scalar_width * component_count;
-                } else if (opcode == spv::OpTypeMatrix) {
-                    const auto column_type = get_def(iter.word(2));
-                    uint32_t vector_width = get_type_bits_size(column_type);
-                    uint32_t column_count = iter.word(3);
-                    return vector_width * column_count;
-                } else if (opcode == spv::OpTypeArray) {
-                    const auto element_type = get_def(iter.word(2));
-                    uint32_t element_width = get_type_bits_size(element_type);
-                    const auto length_type = get_def(iter.word(3));
-                    uint32_t length = length_type.word(3);
-                    return element_width * length;
-                } else if (opcode == spv::OpTypeStruct) {
-                    uint32_t total_size = 0;
-                    for (uint32_t i = 2; i < iter.len(); ++i) {
-                        total_size += get_type_bits_size(get_def(iter.word(i)));
-                    }
-                    return total_size;
-                } else if (opcode == spv::OpTypePointer) {
-                    const auto type = get_def(iter.word(3));
-                    return get_type_bits_size(type);
-                } else if (opcode == spv::OpVariable) {
-                    const auto type = get_def(iter.word(1));
-                    return get_type_bits_size(type);
-                }
-                return static_cast<uint32_t>(0);
-            };
+            auto specialized_it = spec_mod.begin();
 
             // see ValidateComputeSharedMemory() for details why we might track max block size
             layer_data::unordered_set<uint32_t> aliased_id;
@@ -2791,14 +2743,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             uint32_t local_size_id_z = 0;
 
             // make single interation through new shader
-            while (specialized_it != specialized_spirv.end()) {
+            while (specialized_it != spec_mod.end()) {
                 const uint32_t opcode = specialized_it.opcode();
-
-                // Every thing with a result will be added
-                const uint32_t result_word = OpcodeResultWord(specialized_it.opcode());
-                if (result_word != 0) {
-                    def_index[specialized_it.word(result_word)] = specialized_it.offset();
-                }
 
                 if (opcode == spv::OpExecutionModeId && specialized_it.word(2) == spv::ExecutionModeLocalSizeId) {
                     local_size_id_x = specialized_it.word(3);
@@ -2819,9 +2765,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
                 if (opcode == spv::OpConstantComposite && workgroup_size_id == specialized_it.word(2)) {
                     // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32 so this can be assuemd
-                    local_size_x = get_def(specialized_it.word(3)).word(3);
-                    local_size_y = get_def(specialized_it.word(4)).word(3);
-                    local_size_z = get_def(specialized_it.word(5)).word(3);
+                    local_size_x = spec_mod.get_def(specialized_it.word(3)).word(3);
+                    local_size_y = spec_mod.get_def(specialized_it.word(4)).word(3);
+                    local_size_z = spec_mod.get_def(specialized_it.word(5)).word(3);
                 }
 
                 if (opcode == spv::OpVariable && specialized_it.word(3) == spv::StorageClassWorkgroup) {
@@ -2830,9 +2776,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                     }
 
                     const uint32_t result_type_id = specialized_it.word(1);
-                    const auto result_type = get_def(result_type_id);
-                    const auto type = get_def(result_type.word(3));
-                    const uint32_t variable_shared_size = get_type_bits_size(type) / 8;
+                    const auto result_type = spec_mod.get_def(result_type_id);
+                    const auto type = spec_mod.get_def(result_type.word(3));
+                    const uint32_t variable_shared_size = spec_mod.GetTypeBitsSize(type) / 8;
 
                     if (find_max_block) {
                         total_shared_size = std::max(total_shared_size, variable_shared_size);
@@ -2846,9 +2792,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
             // if after no WorkgroupSize is found, then can apply any possible LocalSizeId due to precedence order
             if (local_size_x == 0 && local_size_id_x != 0) {
-                local_size_x = get_def(local_size_id_x).word(3);
-                local_size_y = get_def(local_size_id_y).word(3);
-                local_size_z = get_def(local_size_id_z).word(3);
+                local_size_x = spec_mod.get_def(local_size_id_x).word(3);
+                local_size_y = spec_mod.get_def(local_size_id_y).word(3);
+                local_size_z = spec_mod.get_def(local_size_id_z).word(3);
             }
 
             spvDiagnosticDestroy(diag);

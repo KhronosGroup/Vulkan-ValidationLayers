@@ -298,7 +298,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    m_errorMonitor->ExpectSuccess();
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -309,13 +308,11 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     }
 
     auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&explicit_layout_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(explicit_layout_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
 
     if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
-        printf("%s workgroupMemoryExplicitLayout feature not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
     }
 
     const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
@@ -370,7 +367,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
                                    &specialization_info));
     pipe.InitState();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
