@@ -101,15 +101,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
     if (!IgnoreMessage(errorString)) {
         for (auto desired_msg_it = desired_message_strings_.begin(); desired_msg_it != desired_message_strings_.end();
              ++desired_msg_it) {
-            if ((*desired_msg_it).length() == 0) {
-                // An empty desired_msg string "" indicates a positive test - not expecting an error.
-                // Return true to avoid calling layers/driver with this error.
-                // And don't erase the "" string, so it remains if another error is found.
-                result = VK_TRUE;
-                found_expected = true;
-                message_found_ = true;
-                failure_message_strings_.insert(errorString);
-            } else if (errorString.find(*desired_msg_it) != string::npos) {
+            if (errorString.find(*desired_msg_it) != string::npos) {
                 found_expected = true;
                 failure_message_strings_.insert(errorString);
                 message_found_ = true;
@@ -132,6 +124,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
         }
 
         if (!found_expected) {
+            result = VK_TRUE;
             printf("Unexpected: %s\n", msgString);
             other_messages_.push_back(errorString);
         }
@@ -171,7 +164,7 @@ void ErrorMonitor::DumpFailureMsgs() const {
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
     // Match ANY message matching specified type
     auto guard = Lock();
-    desired_message_strings_.insert("");
+    desired_message_strings_.clear();
     message_flags_ = message_flag_mask;
 }
 
