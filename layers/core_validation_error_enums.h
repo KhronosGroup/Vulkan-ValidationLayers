@@ -73,6 +73,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidExtents = "UNASSI
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImage = "UNASSIGNED-CoreValidation-DrawState-InvalidImage";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageAspect = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout";
+static const char DECORATE_UNUSED *kVUID_Core_DrawState_UnoptimalImageLayout = "UNASSIGNED-CoreValidation-DrawState-UnoptimalImageLayout";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidLayout";
 // static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidPipeline = "UNASSIGNED-CoreValidation-DrawState-InvalidPipeline";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidPipelineCreateState = "UNASSIGNED-CoreValidation-DrawState-InvalidPipelineCreateState";

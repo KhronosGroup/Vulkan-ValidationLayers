@@ -1437,7 +1437,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_node, const IMAGE_
         if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
             if (image_state.createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
                 // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
-                skip |= LogPerformanceWarning(cb_node.commandBuffer(), kVUID_Core_DrawState_InvalidImageLayout,
+                skip |= LogPerformanceWarning(cb_node.commandBuffer(), kVUID_Core_DrawState_UnoptimalImageLayout,
                                               "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
                                               report_data->FormatHandle(image_state.Handle()).c_str(),
                                               string_VkImageLayout(optimal_layout));
