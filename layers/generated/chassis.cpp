@@ -268,15 +268,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    uint32_t api_version;
-    if (specified_version < VK_API_VERSION_1_1)
-        api_version = VK_API_VERSION_1_0;
-    else if (specified_version < VK_API_VERSION_1_2)
-        api_version = VK_API_VERSION_1_1;
-    else if (specified_version < VK_API_VERSION_1_3)
-        api_version = VK_API_VERSION_1_2;
-    else
-        api_version = VK_API_VERSION_1_3;
+    uint32_t api_version = VK_MAKE_API_VERSION(0, VK_API_VERSION_MAJOR(specified_version), VK_API_VERSION_MINOR(specified_version), 0);
+
     auto report_data = new debug_report_data{};
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
