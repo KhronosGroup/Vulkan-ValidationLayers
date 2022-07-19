@@ -12485,6 +12485,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 // Validate image usage
                 uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
                 for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+                    const auto *ms_rendered_to_single_sampled =
+                        LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(rpci->pSubpasses[i].pNext);
                     skip |= MatchUsage(rpci->pSubpasses[i].colorAttachmentCount, rpci->pSubpasses[i].pColorAttachments, pCreateInfo,
                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03201");
                     skip |=
@@ -12509,6 +12511,19 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                                            "VUID-VkFramebufferCreateInfo-flags-04549");
+                    }
+
+                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(rpci->pSubpasses[i].inputAttachmentCount,
+                                                                               rpci->pSubpasses[i].pInputAttachments, pCreateInfo,
+                                                                               rpci, i);
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(rpci->pSubpasses[i].colorAttachmentCount,
+                                                                               rpci->pSubpasses[i].pColorAttachments, pCreateInfo,
+                                                                               rpci, i);
+                        if (rpci->pSubpasses[i].pDepthStencilAttachment) {
+                            skip |= MsRenderedToSingleSampledValidateFBAttachments(1, rpci->pSubpasses[i].pDepthStencilAttachment,
+                                                                                   pCreateInfo, rpci, i);
+                        }
                     }
                 }
 
@@ -12615,6 +12630,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 // Verify correct attachment usage flags
                 for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
                     const VkSubpassDescription2 &subpass_description = rpci->pSubpasses[subpass];
+                    const auto *ms_rendered_to_single_sampled =
+                        LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_description.pNext);
                     // Verify input attachments:
                     skip |= MatchUsage(subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, pCreateInfo,
                                        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
@@ -12644,6 +12661,18 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment,
                                                pCreateInfo, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                                                "VUID-VkFramebufferCreateInfo-flags-04548");
+                        }
+                    }
+                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(subpass_description.inputAttachmentCount,
+                                                                               subpass_description.pInputAttachments, pCreateInfo,
+                                                                               rpci, subpass);
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(subpass_description.colorAttachmentCount,
+                                                                               subpass_description.pColorAttachments, pCreateInfo,
+                                                                               rpci, subpass);
+                        if (subpass_description.pDepthStencilAttachment) {
+                            skip |= MsRenderedToSingleSampledValidateFBAttachments(1, subpass_description.pDepthStencilAttachment,
+                                                                                   pCreateInfo, rpci, subpass);
                         }
                     }
                 }
@@ -12692,6 +12721,38 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
         skip |= LogError(device, "VUID-VkFramebufferCreateInfo-layers-00889",
                          "vkCreateFramebuffer(): Requested VkFramebufferCreateInfo layers must be greater than zero.");
     }
+    return skip;
+}
+
+bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2 *attachments,
+                                                                 const VkFramebufferCreateInfo *fbci,
+                                                                 const VkRenderPassCreateInfo2 *rpci, uint32_t subpass) const {
+    bool skip = false;
+
+    for (uint32_t attach = 0; attach < count; attach++) {
+        if (attachments[attach].attachment != VK_ATTACHMENT_UNUSED) {
+            if (attachments[attach].attachment < fbci->attachmentCount) {
+                const auto renderpass_samples = rpci->pAttachments[attachments[attach].attachment].samples;
+                if (renderpass_samples == VK_SAMPLE_COUNT_1_BIT) {
+                    const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
+                    auto view_state = Get<IMAGE_VIEW_STATE>(*image_view);
+                    auto image_state = view_state->image_state;
+                    if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
+                        skip |= LogError(device, "VUID-VkFramebufferCreateInfo-samples-06881",
+                                         "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
+                                         " enables "
+                                         "multisampled-render-to-single-sampled and attachment %" PRIu32
+                                         ", is specified from with "
+                                         "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) was created without "
+                                         "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT in its createInfo.flags.",
+                                         subpass, attachments[attach].attachment,
+                                         report_data->FormatHandle(image_state->Handle()).c_str());
+                    }
+                }
+            }
+        }
+    }
+
     return skip;
 }
 
