@@ -238,12 +238,12 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     DispatchGetPhysicalDeviceProperties(physicalDevice, &physical_device_properties);
     auto device_api_version = physical_device_properties.apiVersion;
 
-    // check api versions and warn if instance api Version is higher than version on device.
+    // Check api versions and log an info message when instance api Version is higher than version on device.
     if (api_version > device_api_version) {
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
+        skip |= LogInfo(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
                            "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
                            inst_api_name.c_str(), dev_api_name.c_str());
     }
