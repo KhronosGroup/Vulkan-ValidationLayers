@@ -2030,6 +2030,22 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
     }
 
+    if ((pCreateInfo->flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) != 0) {
+        if (!(enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled)) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882",
+                "vkCreateImage(): pCreateInfo.flags contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT "
+                "but the multisampledRenderToSingleSampled feature is not enabled");
+        }
+        if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-flags-06883",
+                "vkCreateImage(): pCreateInfo.flags contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT "
+                "but samples (%s) is not equal to VK_SAMPLE_COUNT_1_BIT",
+                string_VkSampleCountFlagBits(pCreateInfo->samples));
+        }
+    }
+
     skip |= ValidateImageFormatFeatures(pCreateInfo);
 
     // Check compatibility with VK_KHR_portability_subset
