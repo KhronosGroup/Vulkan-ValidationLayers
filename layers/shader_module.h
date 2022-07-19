@@ -275,7 +275,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     SHADER_MODULE_STATE(const uint32_t *code, std::size_t count, spv_target_env env = SPV_ENV_VULKAN_1_0)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
-          words(code, code + (count / sizeof(uint32_t))) {
+          words(code, code + (count / sizeof(uint32_t))),
+          static_data_(*this) {
         PreprocessShaderBinary(env);
     }
 
