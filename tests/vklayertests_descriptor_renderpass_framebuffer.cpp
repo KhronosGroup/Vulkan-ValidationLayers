@@ -30,6 +30,7 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
+#include "core_validation_error_enums.h"
 
 TEST_F(VkLayerTest, ValidationArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
@@ -12823,9 +12824,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferWith3DImage) {
 }
 
 TEST_F(VkLayerTest, InitialLayoutMatchesCurrentLayout) {
-    TEST_DESCRIPTION("Begin Renderpass with initialLayout different to current layout");
-
-    m_errorMonitor->ExpectSuccess();
+    TEST_DESCRIPTION("Begin Renderpass with initialLayout different to current layout, catch VUID 00900");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
@@ -12842,8 +12841,8 @@ TEST_F(VkLayerTest, InitialLayoutMatchesCurrentLayout) {
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
     rp_ci.subpassCount = 1;
@@ -12895,5 +12894,15 @@ TEST_F(VkLayerTest, InitialLayoutMatchesCurrentLayout) {
     m_commandBuffer->BeginRenderPass(render_pass_bi);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
+
+    VkSubmitInfo si = LvlInitStruct<VkSubmitInfo>();
+    si.commandBufferCount = 1;
+    si.pCommandBuffers = &m_commandBuffer->handle();
+
+    // Actually VUID 00900
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kVUID_Core_DrawState_InvalidImageLayout);
+    vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
 }
