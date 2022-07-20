@@ -173,17 +173,6 @@ class small_vector {
         DebugUpdateWorkingStore();
     }
 
-    small_vector(size_type size, const value_type& value = value_type()) : size_(0), capacity_(N) {
-        reserve(size);
-        auto dest = GetWorkingStore();
-        for (size_type i = 0; i < size; i++) {
-            new (dest) value_type(value);
-            ++dest;
-        }
-        size_ = size;
-    }
-
-
     ~small_vector() { clear(); }
 
     bool operator==(const small_vector &rhs) const {

@@ -741,8 +741,7 @@ class DescriptorBinding {
     const VkDescriptorBindingFlags binding_flags;
     const uint32_t count;
     const bool has_immutable_samplers;
-    //std::vector<bool> updated;
-    small_vector<bool, 1, uint32_t> updated;
+    std::vector<bool> updated;
 };
 
 template <typename T>
@@ -771,7 +770,7 @@ class DescriptorBindingImpl : public DescriptorBinding {
             }
         }
     }
-    small_vector<T, 1, uint32_t> descriptors;
+    std::vector<T> descriptors;
 };
 
 using SamplerBinding = DescriptorBindingImpl<SamplerDescriptor>;
