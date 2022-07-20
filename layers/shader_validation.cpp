@@ -2721,12 +2721,11 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                                  string_VkShaderStageFlagBits(stage_state.stage_flag));
             }
 
+            // The new optimized SPIR-V will NOT match the original SHADER_MODULE_STATE object parsing, so a new SHADER_MODULE_STATE
+            // object is needed. This an issue due to each pipeline being able to reuse the same shader module but with different
+            // spec constant values.
             SHADER_MODULE_STATE spec_mod(specialized_spirv);
 
-            // The new optimized SPIR-V will NOT match the SHADER_MODULE_STATE object parsing, so all additional logical will need
-            // to be done without any helper functions. This an issue due to each pipeline being able to reuse the same shader
-            // module but with different spec constant values.
-            //
             // According to https://github.com/KhronosGroup/Vulkan-Docs/issues/1671 anything labeled as "static use" (such as if an
             // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not
             // guaranteed to run things such as dead-code elimination. The following checks are things that don't follow under
