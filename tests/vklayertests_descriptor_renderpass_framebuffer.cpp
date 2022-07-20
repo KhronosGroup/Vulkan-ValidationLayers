@@ -9432,6 +9432,10 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferDimensions) {
         GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::attachmentFragmentShadingRate not supported.";
     }
 
+    if (fsr_properties.layeredShadingRateAttachments != VK_TRUE) {
+        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRatePropertiesKHR::layeredShadingRateAttachments not supported.";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkAttachmentReference2 attach = LvlInitStruct<VkAttachmentReference2>();
@@ -9496,7 +9500,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateFramebufferDimensions) {
     fb.init(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 
-    if (fsr_properties.layeredShadingRateAttachments == VK_TRUE && multiview_features.multiview) {
+    if (multiview_features.multiview) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-flags-04538");
         fb.init(*m_device, fb_info);
         m_errorMonitor->VerifyFound();
