@@ -409,7 +409,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
     // Foreach binding, create default descriptors of given type
     auto binding_count = layout_->GetBindingCount();
     bindings_.reserve(binding_count);
-    bindings_store_.reserve(binding_count);
+    bindings_store_.resize(binding_count);
     auto free_binding = bindings_store_.data();
     for (uint32_t i = 0; i < binding_count; ++i) {
         auto create_info = layout_->GetDescriptorSetLayoutBindingPtrFromIndex(i);
