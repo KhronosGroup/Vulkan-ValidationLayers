@@ -9753,11 +9753,6 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                                                              "VUID-vkBuildAccelerationStructuresKHR-pInfos-03722");
         }
         if (pInfos[i].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-            if (src_as_state) {
-                skip |=
-                    ValidateHostVisibleMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkBuildAccelerationStructuresKHR",
-                                                             "VUID-vkBuildAccelerationStructuresKHR-pInfos-03723");
-            }
             if (src_as_state == nullptr || !src_as_state->built ||
                 !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                 skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03667",
@@ -9766,24 +9761,31 @@ bool CoreChecks::PreCallValidateBuildAccelerationStructuresKHR(
                                  "been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set in "
                                  "VkAccelerationStructureBuildGeometryInfoKHR::flags.");
             }
-            if (pInfos[i].geometryCount != src_as_state->build_info_khr.geometryCount) {
-                skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03758",
-                                 "vkBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
-                                 "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                 " its geometryCount member must have the same value which was specified when "
-                                 "srcAccelerationStructure was last built.");
-            }
-            if (pInfos[i].flags != src_as_state->build_info_khr.flags) {
-                skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03759",
+            if (src_as_state) {
+                skip |=
+                    ValidateHostVisibleMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkBuildAccelerationStructuresKHR",
+                                                             "VUID-vkBuildAccelerationStructuresKHR-pInfos-03723");
+                if (pInfos[i].geometryCount != src_as_state->build_info_khr.geometryCount) {
+                    skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03758",
+                                     "vkBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
+                                     "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
+                                     " its geometryCount member must have the same value which was specified when "
+                                     "srcAccelerationStructure was last built.");
+                }
+                if (pInfos[i].flags != src_as_state->build_info_khr.flags) {
+                    skip |=
+                        LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03759",
                                  "vkBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
                                  " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its flags member must have the same value which"
                                  " was specified when srcAccelerationStructure was last built.");
-            }
-            if (pInfos[i].type != src_as_state->build_info_khr.type) {
-                skip |= LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03760",
+                }
+                if (pInfos[i].type != src_as_state->build_info_khr.type) {
+                    skip |=
+                        LogError(device, "VUID-vkBuildAccelerationStructuresKHR-pInfos-03760",
                                  "vkBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
                                  " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its type member must have the same value which"
                                  " was specified when srcAccelerationStructure was last built.");
+                }
             }
         }
         if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
