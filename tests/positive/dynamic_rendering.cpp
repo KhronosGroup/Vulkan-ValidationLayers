@@ -39,8 +39,6 @@
 TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     TEST_DESCRIPTION("Draw with Dynamic Rendering.");
 
-    m_errorMonitor->ExpectSuccess();
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -95,9 +93,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     create_info.pNext = &pipeline_rendering_info;
 
     pipe.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info);
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->ExpectSuccess();
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};
 
@@ -117,8 +113,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
@@ -137,8 +131,6 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -188,8 +180,6 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
@@ -225,8 +215,6 @@ TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
         reinterpret_cast<PFN_vkCmdEndRendering>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndRendering"));
     assert(vkCmdEndRendering != nullptr);
 
-    m_errorMonitor->ExpectSuccess();
-
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.layerCount = 1;
 
@@ -245,8 +233,6 @@ TEST_F(VkPositiveLayerTest, TestBeginQueryInDynamicRendering) {
     vkCmdEndRendering(m_commandBuffer->handle());
 
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
@@ -265,8 +251,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -315,15 +299,11 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingPipeWithDiscard) {
 
     const VkRenderPass render_pass = VK_NULL_HANDLE;
     pipe.CreateVKPipeline(pl.handle(), render_pass, &create_info);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 
 TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
     TEST_DESCRIPTION("Use stencil attachment with integer format and depth stencil resolve extension");
-
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -388,14 +368,10 @@ TEST_F(VkPositiveLayerTest, UseStencilAttachmentWithIntegerFormatAndDepthStencil
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
     TEST_DESCRIPTION("Test creating an image with subsampled bit.");
-
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -460,13 +436,10 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingFragmentDensityMapSubsampledBit) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     TEST_DESCRIPTION("Resume and suspend at vkCmdBeginRendering time");
-
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -571,8 +544,6 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     submit.commandBufferCount = static_cast<uint32_t>(cbs.size());
     submit.pCommandBuffers = cbs.data();
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
-
-    m_errorMonitor->VerifyNotFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
 }

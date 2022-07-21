@@ -204,7 +204,6 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
 
 TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
-    m_errorMonitor->ExpectSuccess();
 
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
     if (version < VK_API_VERSION_1_2) {
@@ -271,7 +270,6 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     pipe.AddShader(&tc);
     pipe.AddShader(&fs);
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
-    m_errorMonitor->VerifyNotFound();
 
     create_info.pColorBlendState = &color_blend_state_create_info;
     create_info.pNext = &pipeline_rendering_info;
@@ -2489,8 +2487,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoDepthFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     std::vector<VkFormat> depth_formats;
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
     for (uint32_t i = 0; i < size(ds_formats); ++i) {
@@ -2548,8 +2544,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoDepthFormat) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    m_errorMonitor->VerifyNotFound();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06197");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
     m_errorMonitor->VerifyFound();
@@ -2581,8 +2575,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachments) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -2624,8 +2616,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachments) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    m_errorMonitor->VerifyNotFound();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06196");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
     m_errorMonitor->VerifyFound();
@@ -2657,8 +2647,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachmentCoun
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
@@ -2700,8 +2688,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoColorAttachmentCoun
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    m_errorMonitor->VerifyNotFound();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06195");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
     m_errorMonitor->VerifyFound();
@@ -2733,8 +2719,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoStencilFormat) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     std::vector<VkFormat> stencil_formats;
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
@@ -2792,8 +2776,6 @@ TEST_F(VkLayerTest, BindPipelineWithIncompatibleRenderingInfoStencilFormat) {
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipeline-06194");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
@@ -5128,8 +5110,6 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstance) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    m_errorMonitor->ExpectSuccess();
-
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
@@ -5170,8 +5150,6 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstance) {
     submit_info.pCommandBuffers = command_buffers;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pCommandBuffers-06014");
 
@@ -5236,8 +5214,6 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
         reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
     ASSERT_TRUE(vkQueueSubmit2KHR != nullptr);
 
-    m_errorMonitor->ExpectSuccess();
-
     VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj cmd_buffer1(m_device, &command_pool);
     VkCommandBufferObj cmd_buffer2(m_device, &command_pool);
@@ -5284,8 +5260,6 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
     submit_info.pCommandBufferInfos = command_buffer_submit_info;
     vkQueueSubmit2KHR(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo2KHR-commandBuffer-06010");
 

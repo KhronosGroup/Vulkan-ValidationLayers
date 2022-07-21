@@ -51,7 +51,6 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    m_errorMonitor->ExpectSuccess();
     auto fpGetPhysicalDeviceToolPropertiesEXT =
         (PFN_vkGetPhysicalDeviceToolPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceToolPropertiesEXT");
 
@@ -82,6 +81,4 @@ TEST_F(VkPositiveLayerTest, ToolingExtension) {
     if (!found_validation_layer) {
         m_errorMonitor->SetError("Expected layer tooling data but received none");
     }
-
-    m_errorMonitor->VerifyNotFound();
 }

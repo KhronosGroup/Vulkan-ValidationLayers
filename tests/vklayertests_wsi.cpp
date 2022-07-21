@@ -280,7 +280,6 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    m_errorMonitor->ExpectSuccess();
     VkImageObj src_Image(m_device);
     src_Image.init(&image_create_info);
 
@@ -333,7 +332,6 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -699,7 +697,6 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    m_errorMonitor->ExpectSuccess();
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
         return;
@@ -723,7 +720,6 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
             break;
         }
     }
-    m_errorMonitor->VerifyNotFound();
 
     if (!found) {
         printf("%s All queues support surface present, skipping test\n", kSkipPrefix);
@@ -931,9 +927,7 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
         swapchain_create_info.imageColorSpace = valid_surface_format.colorSpace;
     }
 
-    m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
@@ -985,9 +979,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
 
     // Sanity check
     swapchain_create_info.minImageCount = m_surface_capabilities.minImageCount;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
@@ -1084,9 +1076,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
 
     // Sanity check
     swapchain_create_info.minImageCount = 1;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {

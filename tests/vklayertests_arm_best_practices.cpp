@@ -299,7 +299,6 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
 
     // the previous allocate and free should not cause any warning
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
 
     // allocate the previously freed descriptor set
     alloc_info = {};
@@ -321,7 +320,6 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, ds);
 
     // this should create no validation warnings
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
@@ -392,38 +390,33 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
 
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
         m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
-        m_errorMonitor->VerifyNotFound();
 
         // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
         ibo.memory().map();
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        if (expect_error) {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        }
         m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
         if (expect_error) {
             m_errorMonitor->VerifyFound();
         } else {
-            m_errorMonitor->VerifyNotFound();
         }
         ibo.memory().unmap();
 
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        if (expect_error) {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        }
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pr_pipe.pipeline_);
         m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
-        m_errorMonitor->VerifyNotFound();
 
         ibo.memory().map();
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                             "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
         m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
         if (expect_error) {
             m_errorMonitor->VerifyFound();
-        } else {
-            m_errorMonitor->VerifyNotFound();
         }
         ibo.memory().unmap();
-
-        m_errorMonitor->Reset();
     };
 
     // our non-sparse indices should not trigger a warning for either pipeline in this case
@@ -483,7 +476,6 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     VkConstantBufferObj worst_ibo(m_device, worst_indices.size() * sizeof(uint16_t), worst_indices.data(),
                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     m_commandBuffer->BindIndexBuffer(&worst_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->VerifyNotFound();
 
     // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
     worst_ibo.memory().map();
@@ -497,11 +489,9 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(uint16_t), best_indices.data(),
                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     m_commandBuffer->BindIndexBuffer(&best_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
-    m_errorMonitor->VerifyNotFound();
 
     best_ibo.memory().map();
     m_commandBuffer->DrawIndexed(best_indices.size(), 0, 0, 0, 0);
-    m_errorMonitor->VerifyNotFound();
     best_ibo.memory().unmap();
 }
 
@@ -566,7 +556,6 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
     ASSERT_VK_SUCCESS(err)
 }
 
@@ -594,7 +583,6 @@ TEST_F(VkArmBestPracticesLayerTest, PipelineDepthBiasZeroTest) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero");
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
@@ -727,8 +715,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     m_commandBuffer->EndRenderPass();
 
-    m_errorMonitor->VerifyNotFound();
-
     // record a command buffer which records a significant number of depth pre-passes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -791,16 +777,10 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest
     };
 
     // these two pipelines should not cause any warning
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
     makePipelineWithShader(pipe, compute_4_1_1.GetStageCreateInfo());
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
     makePipelineWithShader(pipe, compute_16_8_1.GetStageCreateInfo());
-    m_errorMonitor->VerifyNotFound();
 
     // this pipeline should cause a warning due to bad work group alignment
 
@@ -851,16 +831,10 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     };
 
     // these two pipelines should not cause any warning
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
     make_pipeline_with_shader(pipe, compute_4_1_1.GetStageCreateInfo());
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-work-group-size");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-thread-group-alignment");
     make_pipeline_with_shader(pipe, compute_4_1_3.GetStageCreateInfo());
-    m_errorMonitor->VerifyNotFound();
 
     // this pipeline should cause a warning due to the total workgroup count
 
@@ -924,21 +898,21 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
 
     auto* this_ptr = this;  // Required for older compilers with c++20 compatibility
     auto test_spatial_locality = [=](CreateComputePipelineHelper& pipe, const VkPipelineShaderStageCreateInfo& stage,
-                                     bool positive_test, const std::vector<std::string>& allowed = {}) {
-        this_ptr->m_errorMonitor->SetDesiredFailureMsg(
-            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-            "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality");
+                                     bool positive_test) {
+        if (!positive_test) {
+            this_ptr->m_errorMonitor->SetDesiredFailureMsg(
+                VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                "UNASSIGNED-BestPractices-vkCreateComputePipelines-compute-spatial-locality");
+        }
         make_pipeline_with_shader(pipe, stage);
-        if (positive_test) {
+        if (!positive_test) {
             this_ptr->m_errorMonitor->VerifyFound();
-        } else {
-            this_ptr->m_errorMonitor->VerifyNotFound();
         }
     };
 
-    test_spatial_locality(pipe, compute_sampler_2d_8_8_1.GetStageCreateInfo(), false);
-    test_spatial_locality(pipe, compute_sampler_1d_64_1_1.GetStageCreateInfo(), false);
-    test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), true);
+    test_spatial_locality(pipe, compute_sampler_2d_8_8_1.GetStageCreateInfo(), true);
+    test_spatial_locality(pipe, compute_sampler_1d_64_1_1.GetStageCreateInfo(), true);
+    test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), false);
 }
 
 TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
@@ -1347,8 +1321,6 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
@@ -1528,7 +1500,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_all.pipeline_);
         m_commandBuffer->Draw(1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
-        m_errorMonitor->VerifyNotFound();
     }
 
     // Only color is redundant.

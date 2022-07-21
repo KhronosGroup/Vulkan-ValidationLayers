@@ -125,7 +125,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     m_errorMonitor->VerifyFound();
 
     // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT);
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-khronos-Validation-debug-build-warning-message");
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-khronos-Validation-fine-grained-locking-warning-message");
     VkApplicationInfo new_info{};
@@ -137,7 +136,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     ici.pApplicationInfo = &new_info;
     vk::CreateInstance(&ici, nullptr, &dummy);
     vk::DestroyInstance(dummy, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
@@ -283,7 +281,6 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     {
         // Small clears which don't cover the render area should not trigger the warning.
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect_small);
-        m_errorMonitor->VerifyNotFound();
         // Call for full-sized FB Color attachment prior to issuing a Draw
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
         // This test may also trigger other warnings
@@ -306,7 +303,6 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     {
         // Small clears which don't cover the render area should not trigger the warning.
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_small_clear.handle());
-        m_errorMonitor->VerifyNotFound();
         // Call for full-sized FB Color attachment prior to issuing a Draw
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
         // This test may also trigger other warnings
@@ -391,8 +387,6 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
     vk::DestroyBufferView(m_device->device(), VK_NULL_HANDLE, NULL);
     vk::DestroyCommandPool(m_device->device(), VK_NULL_HANDLE, NULL);
@@ -467,8 +461,6 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
@@ -828,7 +820,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_writes.pipeline_);
         m_commandBuffer->Draw(1, 0, 0, 0);
         vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
-        m_errorMonitor->VerifyNotFound();
     }
     m_commandBuffer->EndRenderPass();
 
@@ -886,7 +877,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     {
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_draw_write.handle());
         vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_clear.handle());
-        m_errorMonitor->VerifyNotFound();
     }
     m_commandBuffer->EndRenderPass();
 }
@@ -954,7 +944,6 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
     swapchain_create_info.minImageCount = 3;
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
     ASSERT_VK_SUCCESS(err)
 }
 
@@ -1028,9 +1017,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-    m_errorMonitor->ExpectSuccess(kWarningBit);
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
@@ -1044,8 +1031,6 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     const vk_testing::PhysicalDevice phys_device_obj(gpu_);
 
     std::vector<VkQueueFamilyProperties> queue_family_props;
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Ensure we can find a graphics queue family.
     uint32_t queue_count = 0;
@@ -1090,7 +1075,6 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     m_errorMonitor->VerifyFound();
 
     // Now get information correctly
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     vk_testing::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties());
     // Only request creation with queuefamilies that have at least one queue
     std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
@@ -1100,7 +1084,6 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
             create_queue_infos.push_back(qci[j]);
         }
     }
-    m_errorMonitor->VerifyNotFound();
 
     VkPhysicalDeviceFeatures all_features;
     VkDeviceCreateInfo device_ci = {};
@@ -1251,8 +1234,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
-
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -1261,8 +1242,6 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
@@ -1294,7 +1273,6 @@ TEST_F(VkBestPracticesLayerTest, ImageExtendedUsageWithoutMutableFormat) {
 #if GTEST_IS_THREADSAFE
 TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     TEST_DESCRIPTION("Two threads updating the same UAB descriptor set, expected not to generate a threading error");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
@@ -1364,8 +1342,6 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     thread.join();
 
     m_errorMonitor->SetBailout(NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 #endif  // GTEST_IS_THREADSAFE
 
@@ -1465,9 +1441,7 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT);
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
@@ -1490,10 +1464,8 @@ TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
     vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->ExpectSuccess(kWarningBit);
     signal_submit_info.signalSemaphoreCount = 1;
     vk::QueueSubmit(m_device->m_queue, 1, &signal_submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
 
     VkSubmitInfo wait_submit_info = LvlInitStruct<VkSubmitInfo>();
     wait_submit_info.waitSemaphoreCount = 0;
@@ -1562,7 +1534,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Setup necessary objects correctly
-    m_errorMonitor->ExpectSuccess();
 
     // Bigger size to avoid small allocation best practices warning
     const unsigned int w = 1920;
@@ -1637,7 +1608,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     begin_info.framebuffer = fb.handle();
 
     // Setup finished
-    m_errorMonitor->VerifyNotFound();
 
     // TEST :
 
@@ -1760,7 +1730,6 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Setup necessary objects correctly
-    m_errorMonitor->ExpectSuccess();
 
     const unsigned int w = 100;
     const unsigned int h = 100;
@@ -1862,7 +1831,6 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     // Setup finished
-    m_errorMonitor->VerifyNotFound();
 
     // TEST :
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad);

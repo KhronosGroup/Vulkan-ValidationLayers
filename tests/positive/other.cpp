@@ -52,7 +52,6 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, pool_flags, &features));
 
-    m_errorMonitor->ExpectSuccess();
     // Specify 0 for a reserved VkFlags parameter. Normally this is expected to trigger an stateless validation error, but this
     // validation was disabled via the features extension, so no errors should be forthcoming.
     VkEvent event_handle = VK_NULL_HANDLE;
@@ -60,7 +59,6 @@ TEST_F(VkPositiveLayerTest, StatelessValidationDisable) {
     event_info.flags = 1;
     vk::CreateEvent(device(), &event_info, NULL, &event_handle);
     vk::DestroyEvent(device(), event_handle, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test. No failures are expected.
@@ -68,8 +66,6 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     VkResult err;
 
     TEST_DESCRIPTION("Call all applicable destroy and free routines with NULL handles, expecting no validation errors");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     vk::DestroyBuffer(m_device->device(), VK_NULL_HANDLE, NULL);
@@ -141,8 +137,6 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
     vk::DestroyDescriptorPool(m_device->device(), ds_pool, NULL);
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
@@ -157,16 +151,12 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
-
     VkCommandBufferObj cmd_buf(m_device, m_commandPool);
     cmd_buf.begin();
     // Set Negative height, should give error if Maintenance 1 is not enabled
     VkViewport viewport = {0, 0, 16, -16, 0, 1};
     vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
     cmd_buf.end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ValidStructPNext) {
@@ -181,8 +171,6 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = LvlInitStruct<VkDedicatedAllocationBufferCreateInfoNV>();
     dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
@@ -221,8 +209,6 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
 
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
     vk::FreeMemory(m_device->device(), buffer_memory, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
@@ -241,7 +227,6 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
 
     // Use the VK_GOOGLE_surfaceless_query extension to query the available formats and
     // colorspaces by using a VK_NULL_HANDLE for the VkSurfaceKHR handle.
-    m_errorMonitor->ExpectSuccess();
     uint32_t count;
     vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
     std::vector<VkSurfaceFormatKHR> surface_formats(count);
@@ -250,7 +235,6 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, nullptr);
     std::vector<VkPresentModeKHR> present_modes(count);
     vk::GetPhysicalDeviceSurfacePresentModesKHR(gpu(), VK_NULL_HANDLE, &count, present_modes.data());
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
@@ -269,7 +253,6 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     VkResult err;
-    m_errorMonitor->ExpectSuccess();
 
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
@@ -330,16 +313,12 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     }
 
     vk::DestroyDevice(device, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
-    m_errorMonitor->ExpectSuccess();
     app_info_.apiVersion = 0U;
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
@@ -379,7 +358,6 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), 0, m_surface, &supported);
 
@@ -391,7 +369,6 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
 
 TEST_F(VkPositiveLayerTest, ModifyPnext) {
     TEST_DESCRIPTION("Make sure invalid values in pNext structures are ignored at query time");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -421,7 +398,6 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
     auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&shading);
 
     vk::GetPhysicalDeviceProperties2(gpu(), &props);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
@@ -453,8 +429,6 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
 
     auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
 
-    m_errorMonitor->ExpectSuccess();
-
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
@@ -462,8 +436,6 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
@@ -481,10 +453,8 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
     device_ci.queueCreateInfoCount = 1;
     device_ci.pQueueCreateInfos = &queue_ci;
 
-    m_errorMonitor->ExpectSuccess();
     VkDevice test_device;
     vk::CreateDevice(gpu(), &device_ci, nullptr, &test_device);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyDevice(test_device, nullptr);
 }
@@ -503,12 +473,10 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
     auto fpDestroySurface = (PFN_vkCreateValidationCacheEXT)vk::GetDeviceProcAddr(m_device->device(), "vkDestroySurfaceKHR");
     if (fpDestroySurface) {
         m_errorMonitor->SetError("Null was expected!");
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
@@ -520,7 +488,6 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
     auto vkTrimCommandPool = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPool");
     auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPoolKHR");
     if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
@@ -544,7 +511,6 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
 
     vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device, "vkTrimCommandPoolKHR");
     if (nullptr == vkTrimCommandPoolKHR) m_errorMonitor->SetError("Unexpected null pointer");
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyDevice(device, nullptr);
 }
 #endif
@@ -571,7 +537,6 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
     VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     features12.bufferDeviceAddress = true;
     features2.pNext = &features12;
@@ -604,13 +569,11 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
         (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddress");
     ASSERT_TRUE(vkGetBufferDeviceAddress != nullptr);
     vkGetBufferDeviceAddress(m_device->device(), &bda_info);
-    m_errorMonitor->VerifyNotFound();
 
     // Also verify that we don't get the KHR extension address without enabling the KHR extension
     auto vkGetBufferDeviceAddressKHR =
         (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
     if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
 }
@@ -680,10 +643,8 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
         }
     };
 
-    Monitor().ExpectSuccess();
     std::array<thread, 3> threads = {thread(testing_thread1), thread(testing_thread2), thread(testing_thread3)};
     for (auto &t : threads) t.join();
-    Monitor().VerifyNotFound();
 
     vk::QueueWaitIdle(queue_h);
 }
@@ -703,8 +664,6 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore acquire_semaphore;
@@ -764,7 +723,6 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     vk::QueuePresentKHR(m_device->m_queue, &present);
 
     vk::QueueWaitIdle(m_device->m_queue);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroySemaphore(device(), submit_semaphore, nullptr);
     vk::DestroySemaphore(device(), acquire_semaphore, nullptr);
@@ -805,8 +763,6 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    m_errorMonitor->ExpectSuccess();
-
     auto vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
         vk::GetInstanceProcAddr(instance(), "vkGetAccelerationStructureBuildSizesKHR"));
     assert(vkGetAccelerationStructureBuildSizesKHR != nullptr);
@@ -816,10 +772,7 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
     uint32_t max_primitives_count;
     auto build_sizes_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
     vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_OR_DEVICE_KHR, &build_info,
-                                            &max_primitives_count,
-                                            &build_sizes_info);
-
-    m_errorMonitor->VerifyNotFound();
+                                            &max_primitives_count, &build_sizes_info);
 }
 
 TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
@@ -838,8 +791,6 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFenceObj fence;
     fence.init(*m_device, VkFenceObj::create_info());
@@ -893,5 +844,4 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
     vk::QueuePresentKHR(m_device->m_queue, &present);
 
     vk::QueueWaitIdle(m_device->m_queue);
-    m_errorMonitor->VerifyNotFound();
 }

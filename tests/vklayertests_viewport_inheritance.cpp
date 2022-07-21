@@ -420,7 +420,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
         printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
@@ -441,7 +440,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     vk::CmdExecuteCommands(primary_cmd, 1, &subpass_cmd);
     vk::CmdEndRenderPass(primary_cmd);
     vk::EndCommandBuffer(primary_cmd);
-    m_errorMonitor->VerifyNotFound();
 
     // Viewport with incorrect depth range.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
@@ -481,9 +479,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 0, nullptr);
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 1, test_data.kViewportDepthOnlyArray);
         }
         test_data.BindGraphicsPipeline(subpass_cmd, true, 1);
@@ -499,7 +495,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Secondary that binds a static viewport/scissor pipeline.
@@ -515,9 +510,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
         std::array<VkCommandBuffer, 2> secondaries = {should_fail ? static_state_cmd : subpass_cmd,
                                                       should_fail ? subpass_cmd : static_state_cmd};
@@ -531,7 +524,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Check that the validation layers don't count the primary
@@ -541,9 +533,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
 
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
@@ -556,7 +546,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Check that the validation layers DON'T report mismatched viewport depth when the secondary command buffer does not actually
@@ -568,9 +557,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
 
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
@@ -582,14 +569,11 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Check that the validation layers are not okay with binding static viewport/scissor pipelines when inheritance enabled, or
     // setting viewport/scissor explicitly, but are okay if inheritance is not enabled (no regression).
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
-        if (!should_fail) m_errorMonitor->ExpectSuccess();
-
         if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-commandBuffer-04808");
         test_data.BeginSubpassCommandBuffer(no_draw_cmd, should_fail, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(no_draw_cmd, false, 1);
@@ -604,7 +588,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         if (should_fail) m_errorMonitor->VerifyFound();
 
         vk::EndCommandBuffer(no_draw_cmd);
-        if (!should_fail) m_errorMonitor->VerifyNotFound();
     }
 
     // Check for at least 1 viewport depth given when enabling inheritance.
@@ -612,9 +595,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04784");
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
         VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor = {
             VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV, nullptr, should_fail ? VK_TRUE : VK_FALSE,
@@ -625,7 +606,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         (void)cmd;
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Check for VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT
@@ -652,9 +632,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
             vk::CmdExecuteCommands(primary_cmd, 1, &set_viewport_cmd);
             VkCommandBuffer secondaries[2] = {set_scissor_cmd, subpass_cmd};
             vk::CmdExecuteCommands(primary_cmd, 2, secondaries);
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
             VkCommandBuffer secondaries[3] = {set_viewport_cmd, set_scissor_cmd, subpass_cmd};
             vk::CmdExecuteCommands(primary_cmd, 3, secondaries);
         }
@@ -662,7 +640,6 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 }
 
@@ -688,9 +665,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMissingFeature) {
     }
     VkCommandPool pool = m_commandPool->handle();
 
-    m_errorMonitor->ExpectSuccess();
     test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04782");
     test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportArray);
@@ -739,8 +714,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     // Test drawing with pipeline that uses more viewports than have been inherited.
     for (int i = 0; i < 4; ++i) {
         auto should_fail = i & 1;
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-        else m_errorMonitor->ExpectSuccess();
+        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");  // viewport
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, should_fail ? 1 : 2, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(draw_cmd, true, 2); // Uses 2 viewports
@@ -761,7 +735,6 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Test providing needed viewports in secondary command buffer, and trashing it by binding static state pipeline in another
@@ -798,9 +771,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport 1
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor 1
             }
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, 2, test_data.kViewportDepthOnlyArray);
@@ -844,7 +815,6 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Test mismatched depth count detection, but allow it if the mismatched viewport is not actually used.
@@ -855,9 +825,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         auto should_fail = i & 1;
         if (should_fail) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport 1
-        }
-        else {
-            m_errorMonitor->ExpectSuccess();
+        } else {
         }
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, 2, test_data.kViewportDepthOnlyArray);
@@ -880,7 +848,6 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 
     // Test dynamic viewport count failing due to either exceeding the viewport inheritance limit, or inheriting a viewport with
@@ -891,7 +858,6 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         auto inherited_incorrect_depth = i & 4;
 
         if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
-        else m_errorMonitor->ExpectSuccess();
 
         VkViewport viewports[3];
         viewports[0] = test_data.kViewportArray[0];
@@ -942,7 +908,6 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         vk::EndCommandBuffer(primary_cmd);
 
         if (should_fail) m_errorMonitor->VerifyFound();
-        else m_errorMonitor->VerifyNotFound();
     }
 }
 

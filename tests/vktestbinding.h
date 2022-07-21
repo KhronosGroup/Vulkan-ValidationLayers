@@ -497,6 +497,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
 class BufferView : public internal::NonDispHandle<VkBufferView> {
   public:
+    BufferView() = default;
+    BufferView(const Device &dev, const VkBufferViewCreateInfo &info) { init(dev, info); }
     ~BufferView() NOEXCEPT;
 
     // vkCreateBufferView()

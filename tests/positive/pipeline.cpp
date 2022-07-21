@@ -82,9 +82,7 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
     pipe.vp_state_ci_.viewportCount = 0;
     pipe.vp_state_ci_.scissorCount = 0;
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
@@ -96,8 +94,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
         printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj tcs(this, bindStateTscShaderText, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -115,12 +111,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineComplexTypes) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
     TEST_DESCRIPTION("Test that pipeline validation accepts matrices passed as vertex attributes");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -157,12 +151,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribMatrixType) {
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
     /* expect success */
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -197,8 +188,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribArrayType) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
@@ -206,7 +195,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
         "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
         "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
         "location outputs");
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -299,13 +287,9 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
     pipe.AddVertexInputAttribs(input_attribs, 3);
     pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderpass);
     vk::DestroyRenderPass(m_device->device(), renderpass, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineSimplePositive) {
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -313,15 +297,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSimplePositive) {
     pipe.InitInfo();
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     TEST_DESCRIPTION(
-        "Test that pipeline validation accepts the relaxed type matching rules set out in VK_KHR_maintenance4 (default in Vulkan 1.3) device extension:"
+        "Test that pipeline validation accepts the relaxed type matching rules set out in VK_KHR_maintenance4 (default in Vulkan "
+        "1.3) device extension:"
         "fundamental type must match, and producer side must have at least as many components");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -370,13 +352,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
     TEST_DESCRIPTION("Test that pipeline validation accepts per-vertex variables passed between the TCS and TES stages");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -423,14 +402,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineTessPerVertex) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a user-defined interface block passed into the geometry shader. This is interesting "
         "because the 'extra' array level is not present on the member type, but on the block instance.");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -470,14 +447,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineGeometryInputBlockPositive) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
-    m_errorMonitor->ExpectSuccess();
 
     if (!EnableDeviceProfileLayer()) {
         printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
@@ -538,12 +513,10 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
     TEST_DESCRIPTION("Positive test for a correctly matched input attachment");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -595,8 +568,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineInputAttachmentPositive) {
     // should be OK. would go wrong here if it's going to...
     pipe.CreateVKPipeline(pl.handle(), rp);
 
-    m_errorMonitor->VerifyNotFound();
-
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
@@ -605,7 +576,6 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive
         "Test that pipeline validation accepts a compute pipeline which declares a descriptor-backed resource which is not "
         "provided, but the shader does not statically use it. This is interesting because it requires compute pipelines to have a "
         "proper descriptor use walk, which they didn't for some time.");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -623,13 +593,10 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineMissingDescriptorUnusedPositive
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     pipe.CreateComputePipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineFragmentShadingRate) {
     TEST_DESCRIPTION("Verify that pipeline validation accepts a compute pipeline with fragment shading rate extension enabled");
-    m_errorMonitor->ExpectSuccess();
 
     // Enable KHR_fragment_shading_rate and all of its required extensions
     bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -676,14 +643,11 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineFragmentShadingRate) {
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     pipe.CreateComputePipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsSampler) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming only the sampler portion of a combined image + sampler");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -709,16 +673,12 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsS
     memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsImage) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming only the image portion of a combined image + sampler");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -744,17 +704,13 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsI
     memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsBoth) {
     TEST_DESCRIPTION(
         "Test that pipeline validation accepts a shader consuming both the sampler and the image of a combined image+sampler but "
         "via separate variables");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -779,10 +735,7 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineCombinedImageSamplerConsumedAsB
     memcpy(pipe.dsl_bindings_.data(), bindings.data(), bindings.size() * sizeof(VkDescriptorSetLayoutBinding));
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
@@ -816,7 +769,6 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
     fs.InitFromGLSLTry(false, &test_device);
 
     // Set polygonMode=FILL. No error is expected
-    m_errorMonitor->ExpectSuccess();
     {
         VkPipelineObj pipe(&test_device);
         pipe.AddShader(&vs);
@@ -827,7 +779,6 @@ TEST_F(VkPositiveLayerTest, PSOPolygonModeValid) {
         pipe.SetRasterization(&rs_ci);
         pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
@@ -1097,9 +1048,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineWithCoreChecksDisabled) {
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
@@ -1137,9 +1086,7 @@ TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
     pipe.gp_ci_.pInputAssemblyState = &iasci;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
@@ -1203,8 +1150,6 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     // Verify that the usage of gl_ViewportMask[] in the allowed vertex processing
     // stages does not cause any errors.
     for (auto stage : vertex_stages) {
-        m_errorMonitor->ExpectSuccess();
-
         VkPipelineInputAssemblyStateCreateInfo iaci = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
         iaci.topology = (stage != TestStage::VERTEX) ? VK_PRIMITIVE_TOPOLOGY_PATCH_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
@@ -1287,7 +1232,6 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
         }
 
         pipe.CreateVKPipeline(pl.handle(), renderPass());
-        m_errorMonitor->VerifyNotFound();
     }
 }
 
@@ -1306,7 +1250,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotConsumedButAlphaToCov
         helper.pipe_ms_state_ci_ = ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
@@ -1349,7 +1293,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.gp_ci_.renderPass = render_pass;
     };
-    CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit | kWarningBit, "", true);
+    CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit | kWarningBit);
 
     vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
 }
@@ -1363,13 +1307,11 @@ TEST_F(VkPositiveLayerTest, CreateSurface) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
         return;
     }
     DestroySwapchain();  // cleans up both surface and swapchain, if they were created
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
@@ -1416,8 +1358,6 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
             outColor = fragColor;
         }
     )glsl";
-
-    m_errorMonitor->ExpectSuccess();
 
     const VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_8_BIT;
 
@@ -1472,8 +1412,6 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
     pipe.CreateVKPipeline(pl.handle(), rp);
 
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
@@ -1589,9 +1527,7 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_errorMonitor->VerifyNotFound();
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -1618,9 +1554,7 @@ TEST_F(VkPositiveLayerTest, NotPointSizeGeometryShaderSuccess) {
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.InitState();
 
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
@@ -1771,8 +1705,6 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
         }
     )glsl";
 
-    m_errorMonitor->ExpectSuccess();
-
     const VkPipelineLayoutObj pl(m_device);
 
     VkPipelineObj pipe(m_device);
@@ -1790,14 +1722,11 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
     // Create pipeline and make sure that the usage of NV_geometry_shader_passthrough
     // in the fragment shader does not cause any errors.
     pipe.CreateVKPipeline(pl.handle(), renderPass());
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     TEST_DESCRIPTION("Create renderpass and CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT");
 
-    m_errorMonitor->ExpectSuccess();
     if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1852,9 +1781,7 @@ TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, subpasses, 1, &dependency};
     VkRenderPass rp;
 
-    m_errorMonitor->ExpectSuccess();
     vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    m_errorMonitor->VerifyNotFound();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -1892,10 +1819,8 @@ TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     imb.subresourceRange.baseArrayLayer = 0;
     imb.subresourceRange.layerCount = 1;
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
                            VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, 0, 0, nullptr, 0, nullptr, 1, &imb);
-    m_errorMonitor->VerifyNotFound();
 
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
@@ -1905,8 +1830,6 @@ TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
 
 TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
     TEST_DESCRIPTION("Test overlapping push-constant ranges.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1944,14 +1867,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
     pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
     TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2042,7 +1961,7 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     // Fragment entry point first
@@ -2055,16 +1974,12 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointPushConstantVertNormalFrag) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
     TEST_DESCRIPTION("Test push-constant only being used by single entrypoint.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2155,7 +2070,7 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     // Fragment entry point first
@@ -2168,10 +2083,8 @@ TEST_F(VkPositiveLayerTest, MultipleEntryPointNormalVertPushConstantFrag) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.pipeline_layout_ci_ = pipeline_layout_info;
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PushConstantsCompatibilityGraphicsOnly) {
@@ -2180,7 +2093,6 @@ TEST_F(VkPositiveLayerTest, PushConstantsCompatibilityGraphicsOnly) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     char const *const vsSource = R"glsl(
         #version 450
@@ -2315,8 +2227,6 @@ TEST_F(VkPositiveLayerTest, PushConstantsCompatibilityGraphicsOnly) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PushConstantsStaticallyUnused) {
@@ -2325,7 +2235,6 @@ TEST_F(VkPositiveLayerTest, PushConstantsStaticallyUnused) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     // Create set of Pipeline Layouts that cover variations of ranges
     VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
@@ -2386,14 +2295,10 @@ TEST_F(VkPositiveLayerTest, PushConstantsStaticallyUnused) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
     TEST_DESCRIPTION("Test int8 specialization.");
-
-    m_errorMonitor->ExpectSuccess();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2468,14 +2373,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
     pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt16) {
     TEST_DESCRIPTION("Test int16 specialization.");
-
-    m_errorMonitor->ExpectSuccess();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2543,14 +2444,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt16) {
     pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt32) {
     TEST_DESCRIPTION("Test int32 specialization.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2597,14 +2494,10 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt32) {
     pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
     TEST_DESCRIPTION("Test int64 specialization.");
-
-    m_errorMonitor->ExpectSuccess();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2672,8 +2565,6 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
     pipe.InitState();
 
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
@@ -2683,7 +2574,6 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
     AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME << " not supported";
@@ -2697,8 +2587,6 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
         return;
     }
 
-    m_errorMonitor->VerifyNotFound();
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkFormat ds_format = VK_FORMAT_D24_UNORM_S8_UINT;
@@ -2861,7 +2749,6 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyRenderPass(device(), render_pass_separate, nullptr);
     vk::DestroyRenderPass(device(), render_pass_combined, nullptr);
@@ -2959,9 +2846,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
     rpbi.renderArea = {{0, 0}, {1, 1}};
     cmdbuff.BeginRenderPass(rpbi);
 
-    Monitor().ExpectSuccess();
     vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
-    Monitor().VerifyNotFound();
 
     // teardown
     vk::DestroyImageView(device(), image_view, nullptr);
@@ -2985,7 +2870,6 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
         return;
     }
     InitSwapchainInfo();
-    m_errorMonitor->ExpectSuccess();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
@@ -3050,14 +2934,11 @@ TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReference
         vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
         m_surface = VK_NULL_HANDLE;
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ProtectedAndUnprotectedQueue) {
     TEST_DESCRIPTION("Test creating 2 queues, 1 protected, and getting both with vkGetDeviceQueue2");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
-    m_errorMonitor->ExpectSuccess();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3160,13 +3041,10 @@ TEST_F(VkPositiveLayerTest, ProtectedAndUnprotectedQueue) {
     vkGetDeviceQueue2(test_device, &queue_info_2, &test_queue_unprotected);
 
     vk::DestroyDevice(test_device, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
     TEST_DESCRIPTION("Test VK_KHR_float_controls");
-    m_errorMonitor->ExpectSuccess();
 
     // Need 1.1 to get SPIR-V 1.3 since OpExecutionModeId was added in SPIR-V 1.2
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -3241,7 +3119,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
             helper.cs_.reset(
                 new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (denorm_preserve) {
@@ -3259,7 +3137,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
             helper.cs_.reset(
                 new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (denorm_flush_to_zero) {
@@ -3277,7 +3155,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
             helper.cs_.reset(
                 new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (rounding_mode_rte) {
@@ -3295,7 +3173,7 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
             helper.cs_.reset(
                 new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (rounding_mode_rtz) {
@@ -3313,15 +3191,12 @@ TEST_F(VkPositiveLayerTest, ShaderFloatControl) {
             helper.cs_.reset(
                 new VkShaderObj(this, spv_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM));
         };
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Storage8and16bit) {
     TEST_DESCRIPTION("Test VK_KHR_8bit_storage and VK_KHR_16bit_storage");
-    m_errorMonitor->ExpectSuccess();
 
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3384,7 +3259,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_8_bit_features.uniformAndStorageBuffer8BitAccess == VK_TRUE) {
@@ -3404,7 +3279,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_8_bit_features.storagePushConstant8 == VK_TRUE) {
@@ -3427,7 +3302,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
@@ -3450,7 +3325,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
@@ -3470,7 +3345,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
@@ -3493,7 +3368,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
@@ -3525,7 +3400,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
@@ -3548,7 +3423,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.uniformAndStorageBuffer16BitAccess == VK_TRUE) {
@@ -3568,7 +3443,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.storagePushConstant16 == VK_TRUE) {
@@ -3591,7 +3466,7 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (storage_16_bit_features.storageInputOutput16 == VK_TRUE) {
@@ -3623,10 +3498,9 @@ TEST_F(VkPositiveLayerTest, Storage8and16bit) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ReadShaderClock) {
@@ -3690,14 +3564,14 @@ TEST_F(VkPositiveLayerTest, ReadShaderClock) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs_device.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (shader_clock_features.shaderSubgroupClock == VK_TRUE) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs_subgroup.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -3778,10 +3652,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
 
     // Should be able to bind memory with no error
     VkDeviceMemory memory;
-    m_errorMonitor->ExpectSuccess();
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
     vk::BindBufferMemory(m_device->device(), buffer, memory, 0);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
@@ -3876,10 +3748,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
     }
 
     VkDeviceMemory memory;
-    m_errorMonitor->ExpectSuccess();
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
     vk::BindImageMemory(m_device->device(), dsImage, memory, 0);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyImage(m_device->device(), dsImage, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
@@ -3925,7 +3795,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     VkBuffer buffer = VK_NULL_HANDLE;
     vk::CreateBuffer(m_device->device(), &buffer_create_info, nullptr, &buffer);
 
-    m_errorMonitor->ExpectSuccess();
     // Try to get memory requirements prior to binding memory
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
@@ -3955,8 +3824,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferBindBufferMemory) {
     vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
     vk::BindBufferMemory(m_device->device(), buffer, memory, mem_reqs.alignment);
 
-    m_errorMonitor->VerifyNotFound();
-
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
@@ -3977,8 +3844,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
     PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID =
         (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
     ASSERT_TRUE(vkGetMemoryAndroidHardwareBufferANDROID != nullptr);
-
-    m_errorMonitor->ExpectSuccess();
 
     // Create VkBuffer to be exported to an AHB
     VkBuffer buffer = VK_NULL_HANDLE;
@@ -4017,8 +3882,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportBuffer) {
     get_ahb_info.memory = memory;
     vkGetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
 
-    m_errorMonitor->VerifyNotFound();
-
     // App in charge of releasing after exporting
     AHardwareBuffer_release(ahb);
     vk::FreeMemory(device(), memory, NULL);
@@ -4041,8 +3904,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     PFN_vkGetMemoryAndroidHardwareBufferANDROID vkGetMemoryAndroidHardwareBufferANDROID =
         (PFN_vkGetMemoryAndroidHardwareBufferANDROID)vk::GetDeviceProcAddr(device(), "vkGetMemoryAndroidHardwareBufferANDROID");
     ASSERT_TRUE(vkGetMemoryAndroidHardwareBufferANDROID != nullptr);
-
-    m_errorMonitor->ExpectSuccess();
 
     // Create VkImage to be exported to an AHB
     VkExternalMemoryImageCreateInfo ext_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
@@ -4094,8 +3955,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExportImage) {
     VkMemoryGetAndroidHardwareBufferInfoANDROID get_ahb_info = LvlInitStruct<VkMemoryGetAndroidHardwareBufferInfoANDROID>();
     get_ahb_info.memory = memory;
     vkGetMemoryAndroidHardwareBufferANDROID(device(), &get_ahb_info, &ahb);
-
-    m_errorMonitor->VerifyNotFound();
 
     // App in charge of releasing after exporting
     AHardwareBuffer_release(ahb);
@@ -4210,10 +4069,8 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalImage) {
     }
 
     VkDeviceMemory memory;
-    m_errorMonitor->ExpectSuccess();
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
     vk::BindImageMemory(m_device->device(), image, memory, 0);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyImage(m_device->device(), image, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
@@ -4240,8 +4097,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
         (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
                                                                                "vkGetAndroidHardwareBufferPropertiesANDROID");
     ASSERT_TRUE(pfn_GetAHBProps != nullptr);
-
-    m_errorMonitor->ExpectSuccess();
 
     // Simulate camera usage of AHB
     AHardwareBuffer *ahb;
@@ -4330,7 +4185,6 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
     VkDeviceMemory memory;
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
     vk::BindImageMemory(m_device->device(), image, memory, 0);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyImage(m_device->device(), image, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
@@ -4410,8 +4264,6 @@ void main() {
     )glsl";
     const VkShaderObj fs(this, fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    m_errorMonitor->ExpectSuccess();
-
     std::array<VkPushConstantRange, 2> push_ranges;
     push_ranges[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_ranges[0].size = sizeof(uint64_t);
@@ -4429,9 +4281,7 @@ void main() {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, OpCopyObjectSampler) {
@@ -4495,9 +4345,7 @@ void main() {
     };
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, InitSwapchain) {
@@ -4513,11 +4361,9 @@ TEST_F(VkPositiveLayerTest, InitSwapchain) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
     if (InitSwapchain()) {
         DestroySwapchain();
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
@@ -4566,7 +4412,6 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
     std::vector<vk_testing::Image> images(m_surface_capabilities.minImageCount);
 
     int i = 0;
-    m_errorMonitor->ExpectSuccess();
     for (auto &image : images) {
         image.init_no_mem(*m_device, image_create_info);
         auto bind_swapchain_info = LvlInitStruct<VkBindImageMemorySwapchainInfoKHR>();
@@ -4580,7 +4425,6 @@ TEST_F(VkPositiveLayerTest, DestroySwapchainWithBoundImages) {
 
         vkBindImageMemory2KHR(m_device->device(), 1, &bind_info);
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
@@ -4595,7 +4439,6 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     return;
 #endif
 
-    m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddSurfaceExtension();
@@ -4748,8 +4591,6 @@ TEST_F(VkPositiveLayerTest, ProtectedSwapchainImageColorAttachment) {
     vk::CmdDraw(protectedCommandBuffer.handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(protectedCommandBuffer.handle());
     protectedCommandBuffer.end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
@@ -4836,10 +4677,8 @@ TEST_F(VkPositiveLayerTest, ImageDrmFormatModifier) {
         ci.pNext = &mod_list;
 
         VkImage image;
-        m_errorMonitor->ExpectSuccess();
         VkResult err = vk::CreateImage(device(), &ci, nullptr, &image);
         ASSERT_VK_SUCCESS(err);
-        m_errorMonitor->VerifyNotFound();
 
         // bind memory
         VkPhysicalDeviceMemoryProperties phys_mem_props;
@@ -4901,9 +4740,7 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     auto dbgUtils1 = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>(&dbgUtils0);
     ici.pNext = &dbgUtils1;
 
-    m_errorMonitor->ExpectSuccess();
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance));
-    m_errorMonitor->VerifyNotFound();
 
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance, nullptr));
 }
@@ -4982,9 +4819,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
 
     helper.InitState();
 
-    m_errorMonitor->ExpectSuccess();
     helper.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
@@ -4998,8 +4833,6 @@ TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 2, 5, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image.InitNoLayout(image_ci);
     ASSERT_TRUE(image.initialized());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkImageSubresourceLayers src_layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkImageSubresourceLayers dst_layer{VK_IMAGE_ASPECT_COLOR_BIT, 1, 3, 1};
@@ -5068,7 +4901,6 @@ TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
 
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
@@ -5167,7 +4999,6 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
             auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
 
             cmd_buf.begin();
-            m_errorMonitor->ExpectSuccess();
             image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
             image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
             image_barrier.image = image->handle();
@@ -5189,19 +5020,15 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
             image_barrier.newLayout = descriptor_layout;
             cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
                                     nullptr, 1, &image_barrier);
-            m_errorMonitor->VerifyNotFound();
 
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
                 cmd_buf.end();
-                m_errorMonitor->ExpectSuccess();
                 vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
                 vk::QueueWaitIdle(m_device->m_queue);
-                m_errorMonitor->VerifyNotFound();
                 cmd_buf.begin();
             }
 
-            m_errorMonitor->ExpectSuccess();
             cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
             vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
@@ -5213,13 +5040,10 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
 
             cmd_buf.EndRenderPass();
             cmd_buf.end();
-            m_errorMonitor->VerifyNotFound();
 
             // Submit cmd buffer
-            m_errorMonitor->ExpectSuccess();
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             vk::QueueWaitIdle(m_device->m_queue);
-            m_errorMonitor->VerifyNotFound();
         }
     };
     do_test(&image, &view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -5258,7 +5082,6 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
 
 TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     TEST_DESCRIPTION("Verify renderpass layout transitions for a 2d ImageView created from a 3d Image.");
-    m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
@@ -5451,7 +5274,6 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
                 cmd_buf.begin();
             }
 
-            m_errorMonitor->ExpectSuccess();
             m_renderPassBeginInfo.renderPass = rp;
             m_renderPassBeginInfo.framebuffer = fb;
             m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
@@ -5476,7 +5298,6 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     };
     do_test(&image_3d, &view_2d, &other_image, &other_view, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, RenderPassInputResolve) {
@@ -5583,15 +5404,15 @@ TEST_F(VkPositiveLayerTest, SpecializationUnused) {
         helper.cs_.reset(
             new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM, &specialization_info));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
     // Even if the ID is never seen in VkSpecializationMapEntry the OpSpecConstant will use the default and still is valid
     specialization_info.mapEntryCount = 1;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 
     // try another random unused value other than zero
     entries[0].constantID = 100;
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
@@ -5603,7 +5424,6 @@ TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    m_errorMonitor->ExpectSuccess();
 
     uint32_t transfer = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
     if (transfer == UINT32_MAX) {
@@ -5622,7 +5442,6 @@ TEST_F(VkPositiveLayerTest, FillBufferCmdPoolTransferQueue) {
     cb.begin();
     cb.FillBuffer(buffer.handle(), 0, 12, 0x11111111);
     cb.end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
@@ -5715,14 +5534,14 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
     };
 
     current_shader = cs_storage_buffer.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     current_shader = cs_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     if (atomic_int64_features.shaderSharedInt64Atomics == VK_TRUE) {
         current_shader = cs_workgroup.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -5737,8 +5556,6 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
         printf("%s Device does not support tessellation shaders; skipped.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     char const *tcsSource = R"glsl(
         #version 450
@@ -5807,7 +5624,6 @@ TEST_F(VkPositiveLayerTest, TopologyAtRasterizer) {
     vk::CmdDraw(m_commandBuffer->handle(), 4, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
@@ -5848,9 +5664,7 @@ TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
     pipe.dyn_state_ci_ = dyn_state_ci;
     pipe.InitState();
     pipe.gp_ci_.pVertexInputState = nullptr;
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
@@ -5907,7 +5721,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
@@ -5915,7 +5728,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
@@ -5973,7 +5785,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     attribute.format = VK_FORMAT_R32_SFLOAT;
     attribute.offset = 0;
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vkCmdSetVertexInputEXT(m_commandBuffer->handle(), 1, &binding, 1, &attribute);
@@ -5981,7 +5792,6 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXTStride) {
     vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
@@ -6045,7 +5855,6 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
                 }
             )glsl";
 
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -6054,7 +5863,6 @@ TEST_F(VkPositiveLayerTest, TestPervertexNVShaderAttributes) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
@@ -6063,8 +5871,6 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
         vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
@@ -6173,7 +5979,6 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
     VkResult err =
         vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
-    m_errorMonitor->VerifyNotFound();
     ASSERT_VK_SUCCESS(err);
     ASSERT_NE(pipeline, VK_NULL_HANDLE);
 
@@ -6183,8 +5988,6 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
 TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
     TEST_DESCRIPTION("Check different line topologies within the same topology class");
-
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -6250,7 +6053,6 @@ TEST_F(VkPositiveLayerTest, LineTopologyClasses) {
     cb.EndRenderPass();
 
     cb.end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
@@ -6295,8 +6097,6 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     fmt_props_3.optimalTilingFeatures |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
     fmt_props_3.optimalTilingFeatures |= VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fpvkSetPhysicalDeviceFormatProperties2EXT(gpu(), image_view_format, fmt_props);
-
-    m_errorMonitor->ExpectSuccess();
 
     // Make sure compute pipeline has a compute shader stage set
     const char *csSource = R"(
@@ -6408,7 +6208,6 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
                               1, &ds.set_, 0, nullptr);
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
@@ -6422,8 +6221,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -6488,7 +6285,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
     render_pass.init(*m_device, render_pass_ci);
 
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
@@ -6502,8 +6298,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
@@ -6562,12 +6356,10 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
     pipe.InitGraphicsPipelineCreateInfo(&create_info);
     // if there isn't a VkPipelineRenderingCreateInfoKHR, the driver is supposed to use safe default values
     pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAccessFlags) {
     TEST_DESCRIPTION("Test for a creating a pipeline with VK_ARM_rasterization_order_attachment_access enabled");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME);
@@ -6589,8 +6381,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_errorMonitor->VerifyNotFound();
 
     auto ds_ci = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     VkPipelineColorBlendAttachmentState cb_as = {};
@@ -6659,7 +6449,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
         vk_testing::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
-        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit);
     }
 
     // Depth attachment
@@ -6670,7 +6460,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
         vk_testing::RenderPass render_pass;
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
-        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit);
     }
 
     // Stencil attachment
@@ -6682,17 +6472,14 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineRasterizationOrderAttachmentAc
         create_render_pass(VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM, render_pass);
         render_pass_handle = render_pass.handle();
 
-        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_flgas_pipeline_createinfo, kErrorBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
     TEST_DESCRIPTION(
         "Create a pipeline with rasterization disabled, containing a valid pColorBlendState and color attachments, but a fragment "
         "shader that does not have any outputs");
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -6709,8 +6496,6 @@ TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
@@ -6718,8 +6503,6 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     const char vsSource[] = R"glsl(#version 450
 
@@ -6824,8 +6607,6 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch2) {
@@ -6833,8 +6614,6 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch2) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     const char vsSource[] = R"glsl(#version 450
         layout(location = 0) out vec2 v1;
@@ -6864,8 +6643,6 @@ TEST_F(VkPositiveLayerTest, TestShaderInputOutputMatch2) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
@@ -6888,8 +6665,6 @@ TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    m_errorMonitor->ExpectSuccess();
 
     char const *fsSource = R"glsl(
         #version 450
@@ -6928,7 +6703,6 @@ TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
@@ -6959,8 +6733,6 @@ TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_errorMonitor->ExpectSuccess();
 
     char const *fsSource = R"glsl(
         #version 450
@@ -7011,8 +6783,6 @@ TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
@@ -7050,8 +6820,6 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     auto vkQueueSubmit2KHR =
         reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
     assert(vkQueueSubmit2KHR != nullptr);
-
-    m_errorMonitor->ExpectSuccess();
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -7155,8 +6923,6 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     vk::FreeMemory(device(), memory1, nullptr);
     vk::FreeMemory(device(), memory2, nullptr);
     vk::FreeMemory(device(), memory3, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
@@ -7194,8 +6960,6 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
     auto vkQueueSubmit2KHR =
         reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
     assert(vkQueueSubmit2KHR != nullptr);
-
-    m_errorMonitor->ExpectSuccess();
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -7292,13 +7056,10 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
 
     vk::FreeMemory(device(), memory1, nullptr);
     vk::FreeMemory(device(), memory3, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     TEST_DESCRIPTION("Create a graphics pipeline with no color attachments, but use dynamic color write enable.");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -7386,6 +7147,4 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }

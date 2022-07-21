@@ -734,8 +734,7 @@ void VkRenderFramework::ShutdownFramework() {
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
 
-    debug_reporter_.error_monitor_.VerifyNotFound();
-    debug_reporter_.error_monitor_.Reset();
+    debug_reporter_.error_monitor_.Finish();
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
