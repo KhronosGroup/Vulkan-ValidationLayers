@@ -41,11 +41,9 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
     return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
 }
 
-ErrorMonitor::ErrorMonitor(Behavior behavior) : behavior_(behavior) {
+ErrorMonitor::ErrorMonitor() {
     MonitorReset();
-    if (behavior_ == Behavior::DefaultSuccess) {
-        ExpectSuccess(kErrorBit);
-    }
+    ExpectSuccess(kErrorBit);
 }
 
 ErrorMonitor::~ErrorMonitor() NOEXCEPT {}
@@ -201,9 +199,7 @@ void ErrorMonitor::VerifyFound() {
         MonitorReset();
     }
 
-    if (behavior_ == Behavior::DefaultSuccess) {
-        ExpectSuccess();
-    }
+    ExpectSuccess();
 }
 
 void ErrorMonitor::VerifyNotFound() {

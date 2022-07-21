@@ -94,13 +94,7 @@ class VkDeviceObj : public vk_testing::Device {
 // failure was encountered.
 class ErrorMonitor {
   public:
-    enum Behavior {
-        DefaultSuccess = 0,
-        DefaultIgnore,
-    };
-
-    ErrorMonitor(Behavior = Behavior::DefaultSuccess);
-
+    ErrorMonitor();
     ~ErrorMonitor() NOEXCEPT;
 
     // Set monitor to pristine state
@@ -146,7 +140,7 @@ class ErrorMonitor {
         return (desired_message_strings_.size() == 1) &&
                (desired_message_strings_.count("") == 1 && ignore_message_strings_.size() == 0);
     }
-    bool NeedCheckSuccess() const { return (behavior_ == Behavior::DefaultSuccess) && ExpectingSuccess(); }
+    bool NeedCheckSuccess() const { return ExpectingSuccess(); }
     void VerifyNotFound();
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
@@ -167,7 +161,6 @@ class ErrorMonitor {
     mutable std::mutex mutex_;
     bool *bailout_;
     bool message_found_;
-    Behavior behavior_;
 };
 
 struct DebugReporter {
