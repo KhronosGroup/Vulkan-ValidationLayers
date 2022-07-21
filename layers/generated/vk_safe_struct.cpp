@@ -53643,6 +53643,216 @@ void safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT::initializ
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM(const VkImageViewSampleWeightCreateInfoQCOM* in_struct) :
+    sType(in_struct->sType),
+    filterCenter(in_struct->filterCenter),
+    filterSize(in_struct->filterSize),
+    numPhases(in_struct->numPhases)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM() :
+    sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM),
+    pNext(nullptr),
+    filterCenter(),
+    filterSize(),
+    numPhases()
+{}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::safe_VkImageViewSampleWeightCreateInfoQCOM(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    filterCenter = copy_src.filterCenter;
+    filterSize = copy_src.filterSize;
+    numPhases = copy_src.numPhases;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM& safe_VkImageViewSampleWeightCreateInfoQCOM::operator=(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    filterCenter = copy_src.filterCenter;
+    filterSize = copy_src.filterSize;
+    numPhases = copy_src.numPhases;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewSampleWeightCreateInfoQCOM::~safe_VkImageViewSampleWeightCreateInfoQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewSampleWeightCreateInfoQCOM::initialize(const VkImageViewSampleWeightCreateInfoQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    filterCenter = in_struct->filterCenter;
+    filterSize = in_struct->filterSize;
+    numPhases = in_struct->numPhases;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewSampleWeightCreateInfoQCOM::initialize(const safe_VkImageViewSampleWeightCreateInfoQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    filterCenter = copy_src->filterCenter;
+    filterSize = copy_src->filterSize;
+    numPhases = copy_src->numPhases;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    textureSampleWeighted(in_struct->textureSampleWeighted),
+    textureBoxFilter(in_struct->textureBoxFilter),
+    textureBlockMatch(in_struct->textureBlockMatch)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM),
+    pNext(nullptr),
+    textureSampleWeighted(),
+    textureBoxFilter(),
+    textureBlockMatch()
+{}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    textureSampleWeighted = copy_src.textureSampleWeighted;
+    textureBoxFilter = copy_src.textureBoxFilter;
+    textureBlockMatch = copy_src.textureBlockMatch;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::operator=(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    textureSampleWeighted = copy_src.textureSampleWeighted;
+    textureBoxFilter = copy_src.textureBoxFilter;
+    textureBlockMatch = copy_src.textureBlockMatch;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::~safe_VkPhysicalDeviceImageProcessingFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::initialize(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    textureSampleWeighted = in_struct->textureSampleWeighted;
+    textureBoxFilter = in_struct->textureBoxFilter;
+    textureBlockMatch = in_struct->textureBlockMatch;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingFeaturesQCOM::initialize(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    textureSampleWeighted = copy_src->textureSampleWeighted;
+    textureBoxFilter = copy_src->textureBoxFilter;
+    textureBlockMatch = copy_src->textureBlockMatch;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    maxWeightFilterPhases(in_struct->maxWeightFilterPhases),
+    maxWeightFilterDimension(in_struct->maxWeightFilterDimension),
+    maxBlockMatchRegion(in_struct->maxBlockMatchRegion),
+    maxBoxFilterBlockSize(in_struct->maxBoxFilterBlockSize)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM),
+    pNext(nullptr),
+    maxWeightFilterPhases(),
+    maxWeightFilterDimension(),
+    maxBlockMatchRegion(),
+    maxBoxFilterBlockSize()
+{}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    maxWeightFilterPhases = copy_src.maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src.maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src.maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src.maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::operator=(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxWeightFilterPhases = copy_src.maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src.maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src.maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src.maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::~safe_VkPhysicalDeviceImageProcessingPropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::initialize(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxWeightFilterPhases = in_struct->maxWeightFilterPhases;
+    maxWeightFilterDimension = in_struct->maxWeightFilterDimension;
+    maxBlockMatchRegion = in_struct->maxBlockMatchRegion;
+    maxBoxFilterBlockSize = in_struct->maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceImageProcessingPropertiesQCOM::initialize(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    maxWeightFilterPhases = copy_src->maxWeightFilterPhases;
+    maxWeightFilterDimension = copy_src->maxWeightFilterDimension;
+    maxBlockMatchRegion = copy_src->maxBlockMatchRegion;
+    maxBoxFilterBlockSize = copy_src->maxBoxFilterBlockSize;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT::safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT(const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     subpassMergeFeedback(in_struct->subpassMergeFeedback)
@@ -54187,6 +54397,130 @@ void safe_VkShaderModuleIdentifierEXT::initialize(const safe_VkShaderModuleIdent
     for (uint32_t i = 0; i < VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT; ++i) {
         identifier[i] = copy_src->identifier[i];
     }
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    tileProperties(in_struct->tileProperties)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM),
+    pNext(nullptr),
+    tileProperties()
+{}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    tileProperties = copy_src.tileProperties;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::operator=(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    tileProperties = copy_src.tileProperties;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::~safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::initialize(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    tileProperties = in_struct->tileProperties;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::initialize(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    tileProperties = copy_src->tileProperties;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM(const VkTilePropertiesQCOM* in_struct) :
+    sType(in_struct->sType),
+    tileSize(in_struct->tileSize),
+    apronSize(in_struct->apronSize),
+    origin(in_struct->origin)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM() :
+    sType(VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM),
+    pNext(nullptr),
+    tileSize(),
+    apronSize(),
+    origin()
+{}
+
+safe_VkTilePropertiesQCOM::safe_VkTilePropertiesQCOM(const safe_VkTilePropertiesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    tileSize = copy_src.tileSize;
+    apronSize = copy_src.apronSize;
+    origin = copy_src.origin;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkTilePropertiesQCOM& safe_VkTilePropertiesQCOM::operator=(const safe_VkTilePropertiesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    tileSize = copy_src.tileSize;
+    apronSize = copy_src.apronSize;
+    origin = copy_src.origin;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkTilePropertiesQCOM::~safe_VkTilePropertiesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkTilePropertiesQCOM::initialize(const VkTilePropertiesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    tileSize = in_struct->tileSize;
+    apronSize = in_struct->apronSize;
+    origin = in_struct->origin;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkTilePropertiesQCOM::initialize(const safe_VkTilePropertiesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    tileSize = copy_src->tileSize;
+    apronSize = copy_src->apronSize;
+    origin = copy_src->origin;
+    pNext = SafePnextCopy(copy_src->pNext);
 }
 
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
@@ -57229,6 +57563,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM:
+            safe_pNext = new safe_VkImageViewSampleWeightCreateInfoQCOM(reinterpret_cast<const VkImageViewSampleWeightCreateInfoQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceImageProcessingFeaturesQCOM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(reinterpret_cast<const VkPhysicalDeviceImageProcessingPropertiesQCOM *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT *>(pNext));
             break;
@@ -57249,6 +57592,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT:
             safe_pNext = new safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT(reinterpret_cast<const VkPipelineShaderStageModuleIdentifierCreateInfoEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
@@ -58509,6 +58855,15 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_COMPRESSION_CONTROL_SWAPCHAIN_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM:
+            delete reinterpret_cast<const safe_VkImageViewSampleWeightCreateInfoQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT *>(header);
             break;
@@ -58529,6 +58884,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

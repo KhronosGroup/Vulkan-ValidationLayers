@@ -1265,6 +1265,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetShaderModuleCreateInfoIdentifierEXT,
     InterceptIdPreCallRecordGetShaderModuleCreateInfoIdentifierEXT,
     InterceptIdPostCallRecordGetShaderModuleCreateInfoIdentifierEXT,
+    InterceptIdPreCallValidateGetFramebufferTilePropertiesQCOM,
+    InterceptIdPreCallRecordGetFramebufferTilePropertiesQCOM,
+    InterceptIdPostCallRecordGetFramebufferTilePropertiesQCOM,
+    InterceptIdPreCallValidateGetDynamicRenderingTilePropertiesQCOM,
+    InterceptIdPreCallRecordGetDynamicRenderingTilePropertiesQCOM,
+    InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM,
     InterceptIdPreCallValidateCreateAccelerationStructureKHR,
     InterceptIdPreCallRecordCreateAccelerationStructureKHR,
     InterceptIdPostCallRecordCreateAccelerationStructureKHR,
@@ -2747,6 +2753,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderModuleCreateInfoIdentifierEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderModuleCreateInfoIdentifierEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderModuleCreateInfoIdentifierEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetFramebufferTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetFramebufferTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetFramebufferTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetDynamicRenderingTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetDynamicRenderingTilePropertiesQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetDynamicRenderingTilePropertiesQCOM);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

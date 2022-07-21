@@ -8944,6 +8944,40 @@ void ThreadSafety::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(
     FinishReadObjectParentInstance(device, "vkGetShaderModuleCreateInfoIdentifierEXT");
 }
 
+void ThreadSafety::PreCallRecordGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties) {
+    StartReadObjectParentInstance(device, "vkGetFramebufferTilePropertiesQCOM");
+    StartReadObject(framebuffer, "vkGetFramebufferTilePropertiesQCOM");
+}
+
+void ThreadSafety::PostCallRecordGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetFramebufferTilePropertiesQCOM");
+    FinishReadObject(framebuffer, "vkGetFramebufferTilePropertiesQCOM");
+}
+
+void ThreadSafety::PreCallRecordGetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties) {
+    StartReadObjectParentInstance(device, "vkGetDynamicRenderingTilePropertiesQCOM");
+}
+
+void ThreadSafety::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetDynamicRenderingTilePropertiesQCOM");
+}
+
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
