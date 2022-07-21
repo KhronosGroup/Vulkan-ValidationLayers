@@ -5990,29 +5990,22 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
         "2. range value of 0\n"
         "3. range value greater than buffer (size - offset)");
 
-    // GPDDP2 needed for push descriptors support below
-    bool gpdp2_support = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
-    if (gpdp2_support) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     const bool update_template_support =
-        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) &&
-        !IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY);
-    if (update_template_support) {
-        m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-    } else {
+        IsExtensionsEnabled(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) && !IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY);
+    if (!update_template_support) {
         printf("%s Descriptor Update Template Extensions not supported, template cases skipped.\n", kSkipPrefix);
     }
 
     // Note: Includes workaround for some implementations which incorrectly return 0 maxPushDescriptors
-    bool push_descriptor_support = gpdp2_support &&
-                                   DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) &&
+    bool push_descriptor_support = IsExtensionsEnabled(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) &&
                                    (GetPushDescriptorProperties(instance(), gpu()).maxPushDescriptors > 0);
-    if (push_descriptor_support) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
+    if (!push_descriptor_support) {
         printf("%s Push Descriptor Extension not supported, push descriptor cases skipped.\n", kSkipPrefix);
     }
 
