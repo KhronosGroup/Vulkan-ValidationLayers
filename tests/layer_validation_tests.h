@@ -544,8 +544,7 @@ struct CreatePipelineHelper {
     // info_override can be any callable that takes a CreatePipelineHeper &
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors,
-                            bool positive_test = false) {
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors) {
         CreatePipelineHelper helper(test);
         helper.InitInfo();
         info_override(helper);
@@ -554,17 +553,19 @@ struct CreatePipelineHelper {
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
 
-        if (positive_test || (errors.size() == 0)) {
-            test.Monitor().VerifyNotFound();
-        } else {
+        if (!errors.empty()) {
             test.Monitor().VerifyFound();
         }
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error,
-                            bool positive_test = false) {
-        OneshotTest(test, info_override, flags, std::vector<Error>(1, error), positive_test);
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error) {
+        OneshotTest(test, info_override, flags, std::vector<Error>(1, error));
+    }
+
+    template <typename Test, typename OverrideFunc>
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
+        OneshotTest(test, info_override, flags, std::vector<std::string>{});
     }
 };
 
@@ -617,17 +618,19 @@ struct CreateComputePipelineHelper {
         for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateComputePipeline();
 
-        if (positive_test) {
-            test.Monitor().VerifyNotFound();
-        } else {
+        if (!errors.empty()) {
             test.Monitor().VerifyFound();
         }
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error,
-                            bool positive_test = false) {
-        OneshotTest(test, info_override, flags, std::vector<Error>(1, error), positive_test);
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error) {
+        OneshotTest(test, info_override, flags, std::vector<Error>(1, error));
+    }
+
+    template <typename Test, typename OverrideFunc>
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
+        OneshotTest(test, info_override, flags, std::vector<std::string>{});
     }
 };
 

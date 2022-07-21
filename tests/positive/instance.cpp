@@ -78,13 +78,11 @@ TEST_F(VkPositiveLayerTest, NullFunctionPointer) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess();
     auto fpGetBufferMemoryRequirements =
         (PFN_vkGetBufferMemoryRequirements2)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferMemoryRequirements2");
     if (fpGetBufferMemoryRequirements) {
         m_errorMonitor->SetError("Null was expected!");
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ValidationInstanceExtensions) {

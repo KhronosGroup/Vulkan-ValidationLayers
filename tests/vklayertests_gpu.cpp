@@ -670,13 +670,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         *data = test.index;
         offset_buffer.memory().unmap();
         if (test.positive) {
-            m_errorMonitor->ExpectSuccess();
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
         }
         m_commandBuffer->QueueCommandBuffer();
         if (test.positive) {
-            m_errorMonitor->VerifyNotFound();
         } else {
             m_errorMonitor->VerifyFound();
         }
@@ -1092,7 +1090,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     m_errorMonitor->VerifyFound();
 
     // Positive test - stay inside buffer
-    m_errorMonitor->ExpectSuccess();
     data = (VkDeviceAddress *)buffer0.memory().map();
     data[0] = pBuffer;
     data[1] = 4;
@@ -1101,7 +1098,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     ASSERT_VK_SUCCESS(err);
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
 
     if (mesh_shader_supported) {
         const unsigned push_constant_range_count = 1;
@@ -1248,7 +1244,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHan
     instance_buffer.memory().unmap();
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkBufferObj top_level_as_scratch;
     top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
@@ -1315,7 +1310,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
     };
 
     VkAccelerationStructureObj bot_level_as_never_built(*m_device, bot_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkGeometryInstanceNV instance = {
         {
@@ -1343,7 +1337,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
     instance_buffer.memory().unmap();
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkBufferObj top_level_as_scratch;
     top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
@@ -1412,7 +1405,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
     uint64_t destroyed_bot_level_as_handle = 0;
     {
         VkAccelerationStructureObj destroyed_bot_level_as(*m_device, bot_level_as_create_info);
-        m_errorMonitor->VerifyNotFound();
 
         destroyed_bot_level_as_handle = destroyed_bot_level_as.opaque_handle();
 
@@ -1430,7 +1422,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         submit_info.pCommandBuffers = &command_buffer.handle();
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
-        m_errorMonitor->VerifyNotFound();
 
         // vk::DestroyAccelerationStructureNV called on destroyed_bot_level_as during destruction.
     }
@@ -1461,7 +1452,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
     instance_buffer.memory().unmap();
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkBufferObj top_level_as_scratch;
     top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
@@ -1549,7 +1539,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
     instance_buffer.memory().unmap();
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkBufferObj top_level_as_scratch;
     top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
@@ -2098,7 +2087,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
         "and verify pipeline recovery");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    m_errorMonitor->ExpectSuccess();
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
@@ -2238,7 +2226,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
 
     uint32_t *data = (uint32_t *)buffer0.memory().map();
@@ -2261,7 +2248,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     vk::DestroyInstance(test_inst, NULL);
 
-    m_errorMonitor->ExpectSuccess();
     auto set_count = properties.limits.maxBoundDescriptorSets;
     if (inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks < set_count) {
         printf("Max per stage inline uniform block limit too small - skipping recovery portion of this test\n");
@@ -2289,14 +2275,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     VkPipelineLayout pl_layout;
     pl_create_info.setLayoutCount = set_count;
     pl_create_info.pSetLayouts = layouts;
-    m_errorMonitor->VerifyNotFound();
     // Expect error since GPU-AV cannot add debug descriptor to layout
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GPU-Assisted-Validation");
     vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, NULL, &pl_layout);
     m_errorMonitor->VerifyFound();
 
     // We should still be able to use the layout and create a temporary uninstrumented shader module
-    m_errorMonitor->ExpectSuccess();
     pipeline_info.layout = pl_layout;
     vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
     m_commandBuffer->begin();
@@ -2316,11 +2300,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (*data != test_data) m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
     *data = 0;
     buffer0.memory().unmap();
-    m_errorMonitor->VerifyNotFound();
     delete[] layouts;
 
     // Now make sure we can still use the shader with instrumentation
-    m_errorMonitor->ExpectSuccess();
     VkPipeline c_pipeline2;
     // Use the sane pipeline layout
     pipeline_info.layout = pipeline_layout.handle();
@@ -2338,7 +2320,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
     *data = 0;
     buffer0.memory().unmap();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
@@ -2844,8 +2825,6 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
         reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndexedIndirectCountKHR"));
     ASSERT_TRUE(vkCmdDrawIndexedIndirectCountKHR != nullptr);
 
-    m_errorMonitor->ExpectSuccess();
-
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
@@ -2894,5 +2873,4 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
     m_commandBuffer->end();
 
     vk::DestroySampler(device(), sampler, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }

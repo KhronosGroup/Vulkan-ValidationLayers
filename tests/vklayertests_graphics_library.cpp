@@ -29,7 +29,6 @@ class VkGraphicsLibraryLayerTest : public VkLayerTest {};
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -45,7 +44,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLs) {
     dsl_ci.pBindings = &dsl_binding;
 
     vk_testing::DescriptorSetLayout dsl(*m_device, dsl_ci);
-    m_errorMonitor->VerifyNotFound();
 
     std::vector<const vk_testing::DescriptorSetLayout*> dsls = {&dsl, nullptr};
 
@@ -60,7 +58,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLs) {
 
 TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     TEST_DESCRIPTION("Create a pipeline layout with invalid descriptor set layouts with VK_EXT_grahpics_pipeline_library enabled");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -83,7 +80,6 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
     dsl_ci.pBindings = &dsl_binding;
 
     vk_testing::DescriptorSetLayout dsl(*m_device, dsl_ci);
-    m_errorMonitor->VerifyNotFound();
 
     std::vector<const vk_testing::DescriptorSetLayout *> dsls = {&dsl, nullptr};
 
@@ -98,7 +94,6 @@ TEST_F(VkGraphicsLibraryLayerTest, GPLInvalidDSLs) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
     TEST_DESCRIPTION("Link pre-raster and FS subsets with invalid VkPipelineLayout create flags");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -164,7 +159,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
         frag_shader_lib.gp_ci_.subpass = subpass;
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline());
     }
-    m_errorMonitor->VerifyNotFound();
 
     VkPipeline libraries[2] = {
         pre_raster_lib.pipeline_,
@@ -182,7 +176,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkOnly) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkCreate) {
     TEST_DESCRIPTION("Create pre-raster subset while linking FS subset with invalid VkPipelineLayout create flags");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -246,7 +239,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkCreate) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
-        m_errorMonitor->VerifyNotFound();
         // frag_shader_lib's layout will not be created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, which will trigger
         // the desired error
         frag_shader_lib.gp_ci_.renderPass = render_pass;
@@ -261,7 +253,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidIndependentSetsLinkCreate) {
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSets) {
     TEST_DESCRIPTION(
         "Attempt to bind invalid descriptor sets with and without VK_EXT_graphics_pipeline_library and independent sets");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -280,7 +271,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSets) {
     VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
-    m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
                               static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
@@ -289,7 +279,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSets) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     TEST_DESCRIPTION("Attempt to bind invalid descriptor sets with and with VK_EXT_graphics_pipeline_library");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -315,7 +304,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
     VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds2.layout_});
 
     m_commandBuffer->begin();
-    m_errorMonitor->VerifyNotFound();
 
     // Now bind with a layout that was _not_ created with independent sets, which should trigger 06754
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-graphicsPipelineLibrary-06754");
@@ -326,7 +314,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDescriptorSetsGPL) {
 
 TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
     TEST_DESCRIPTION("Create a library with fragment shader state, but no fragment output state, and invalid DS state");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -371,7 +358,6 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
 
     frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
     frag_shader_lib.InitState();
-    m_errorMonitor->VerifyNotFound();
 
     frag_shader_lib.gp_ci_.renderPass = VK_NULL_HANDLE;
     frag_shader_lib.gp_ci_.pDepthStencilState = nullptr;
@@ -383,8 +369,6 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingDSState) {
 TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
     TEST_DESCRIPTION("Test various VUIDs that were previously implicit, but now explicit due to VK_EXT_graphics_pipeline_library");
 
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -392,7 +376,6 @@ TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
     pipe.InitInfo();
     pipe.InitState();
     pipe.LateBindPipelineInfo();
-    m_errorMonitor->VerifyNotFound();
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-06602");
@@ -417,7 +400,6 @@ TEST_F(VkGraphicsLibraryLayerTest, ImplicitVUIDs) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     TEST_DESCRIPTION("Create invalid graphics pipeline state with VK_EXT_graphics_pipeline_library enabled");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -440,7 +422,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
         pipe.InitInfo();
         pipe.InitState();
         pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
-        m_errorMonitor->VerifyNotFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06608");
@@ -449,7 +430,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     }
 
     {
-        m_errorMonitor->ExpectSuccess();
         // Test creating a pipeline with incomplete state, but feature is not enabled
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
         auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
@@ -464,7 +444,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
         CreatePipelineHelper pipe(*this);
         pipe.InitPreRasterLibInfo(1, &stage_ci);
         pipe.InitState();
-        m_errorMonitor->VerifyNotFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607");
@@ -475,7 +454,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
     TEST_DESCRIPTION("Create graphics pipeline libraries with mismatching link-time optimization flags");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -528,7 +506,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
-        m_errorMonitor->VerifyNotFound();
 
         // Creating with VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT while linking against a library without
         // VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is invalid
@@ -540,11 +517,9 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
     }
 
     {
-        m_errorMonitor->ExpectSuccess();
         CreatePipelineHelper pre_raster_lib(*this);
         pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
         pre_raster_lib.InitState();
-        m_errorMonitor->VerifyNotFound();
 
         // Creating with VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT while linking against a library without
         // VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is invalid
@@ -558,7 +533,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidLinkOptimization) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInCreate) {
     TEST_DESCRIPTION("Link pre-raster state while creating FS state with invalid null DSL + shader stage bindings");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -639,7 +613,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInCreate) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
-        m_errorMonitor->VerifyNotFound();
 
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
@@ -652,7 +625,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInCreate) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInLink) {
     TEST_DESCRIPTION("Link pre-raster state with invalid null DSL + shader stage bindings while creating FS state");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -733,7 +705,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInLink) {
 
         frag_shader_lib.InitFragmentLibInfo(1, &stage_ci, &link_info);
         frag_shader_lib.InitState();
-        m_errorMonitor->VerifyNotFound();
 
         frag_shader_lib.gp_ci_.renderPass = render_pass;
         frag_shader_lib.gp_ci_.subpass = subpass;
@@ -746,7 +717,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsNullInLink) {
 
 TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsLinkOnly) {
     TEST_DESCRIPTION("Link pre-raster and FS subsets with invalid null DSL + shader stage bindings");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -828,7 +798,6 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidDSLShaderBindingsLinkOnly) {
         frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
         ASSERT_VK_SUCCESS(frag_shader_lib.CreateGraphicsPipeline(true, false));
     }
-    m_errorMonitor->VerifyNotFound();
 
     VkPipeline libraries[2] = {
         pre_raster_lib.pipeline_,
@@ -881,7 +850,6 @@ TEST_F(VkGraphicsLibraryLayerTest, CreateGraphicsPipelineWithMissingMultisampleS
 
 TEST_F(VkGraphicsLibraryLayerTest, PreRasterStateNoLayout) {
     TEST_DESCRIPTION("Create a pre-raster graphics library");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -920,7 +888,6 @@ TEST_F(VkGraphicsLibraryLayerTest, PreRasterStateNoLayout) {
     CreatePipelineHelper pipe(*this);
     pipe.InitPreRasterLibInfo(1, &stage_ci);
     pipe.InitState();
-    m_errorMonitor->VerifyNotFound();
 
     pipe.gp_ci_.layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-06642");
@@ -930,7 +897,6 @@ TEST_F(VkGraphicsLibraryLayerTest, PreRasterStateNoLayout) {
 
 TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
     TEST_DESCRIPTION("Link pipelines with DSLs that only differ by immutable samplers");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1071,7 +1037,6 @@ TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->VerifyNotFound();
 
     // Draw with pipeline created with null set
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());

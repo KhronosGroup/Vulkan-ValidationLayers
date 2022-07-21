@@ -45,8 +45,6 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     TEST_DESCRIPTION("Add a pipeline barrier in a secondary command buffer");
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->ExpectSuccess();
-
     // A renderpass with a single subpass that declared a self-dependency
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -133,15 +131,12 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
 
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
     TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -189,13 +184,10 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
@@ -264,7 +256,6 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
     vk::QueueWaitIdle(m_device->m_queue);
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
@@ -309,7 +300,6 @@ TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSec
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CommandPoolDeleteWithReferences) {
@@ -360,7 +350,6 @@ TEST_F(VkPositiveLayerTest, CommandPoolDeleteWithReferences) {
 
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
     TEST_DESCRIPTION("Create a secondary command buffer and record a CmdClearAttachments call into it");
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -396,13 +385,11 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_command_buffer);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
     TEST_DESCRIPTION("Perform an image layout transition in a secondary command buffer followed by a transition in the primary.");
     VkResult err;
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
@@ -476,7 +463,6 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
     submit_info.pCommandBuffers = &primary_command_buffer;
     err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
     err = vk::DeviceWaitIdle(m_device->device());
     ASSERT_VK_SUCCESS(err);
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 1, &secondary_command_buffer);
@@ -485,7 +471,6 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferImageLayoutTransitions) {
 
 TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.1 before drawIndirectCount feature was added");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -538,13 +523,10 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature12) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 using the extension");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -598,13 +580,10 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature12) {
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_draw_indirect_count in 1.2 with feature bit enabled");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -664,13 +643,9 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CommandBufferSimultaneousUseSync) {
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     VkResult err;
 
@@ -711,8 +686,6 @@ TEST_F(VkPositiveLayerTest, CommandBufferSimultaneousUseSync) {
     // longer in flight. delete it.
     vk::DestroySemaphore(m_device->device(), s1, nullptr);
 
-    m_errorMonitor->VerifyNotFound();
-
     // Force device idle and clean up remaining objects
     vk::DeviceWaitIdle(m_device->device());
     vk::DestroySemaphore(m_device->device(), s2, nullptr);
@@ -723,8 +696,6 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     TEST_DESCRIPTION(
         "This test should pass. Create a Framebuffer and command buffer, bind them together, then destroy command pool and "
         "framebuffer and verify there are no errors.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -788,7 +759,6 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDepthOnlyImageView) {
@@ -803,8 +773,6 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
         printf("%s Image format does not support sampling.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkAttachmentDescription attachment = {0,
                                           VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -870,7 +838,6 @@ TEST_F(VkPositiveLayerTest, FramebufferCreateDepthStencilLayoutTransitionForDept
 
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
@@ -896,8 +863,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -948,7 +913,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
     vk::QueueWaitIdle(queue);
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -972,8 +936,6 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
@@ -1036,16 +998,12 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, command_buffer);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DestroyQueryPoolAfterGetQueryPoolResults) {
     TEST_DESCRIPTION("Destroy query pool after GetQueryPoolResults() without VK_QUERY_RESULT_PARTIAL_BIT returns VK_SUCCESS");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
@@ -1091,7 +1049,6 @@ TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    m_errorMonitor->ExpectSuccess();
     for (uint32_t i = 0; i < 2; ++i) {
         VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
         image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
@@ -1180,13 +1137,10 @@ TEST_F(VkPositiveLayerTest, ClearRectWith2DArray) {
 
         m_commandBuffer->reset();
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
     TEST_DESCRIPTION("Test using vkCmdWriteTimestamp2 with NONE and ALL_COMMANDS.");
-
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -1226,15 +1180,11 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
     vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_NONE_KHR, query_pool.handle(), 0);
     vkCmdWriteTimestamp2KHR(m_commandBuffer->handle(), VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR, query_pool.handle(), 1);
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
     TEST_DESCRIPTION("Check secondary command buffers transfer event data when executed by primary ones");
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkCommandBufferObj commandBuffer(m_device, m_commandPool);
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1258,7 +1208,6 @@ TEST_F(VkPositiveLayerTest, EventStageMaskSecondaryCommandBuffer) {
     VkCommandBuffer handles[] = {commandBuffer.handle()};
     submit_info.pCommandBuffers = handles;
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyEvent(m_device->device(), event, nullptr);

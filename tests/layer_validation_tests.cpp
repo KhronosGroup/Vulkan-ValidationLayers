@@ -273,10 +273,8 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
 
-    error_monitor->ExpectSuccess();
     err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
     if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-    error_monitor->VerifyNotFound();
 
     if (rp2_supported) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
@@ -284,10 +282,8 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
-        error_monitor->ExpectSuccess();
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
         if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-        error_monitor->VerifyNotFound();
     }
 }
 
@@ -298,10 +294,8 @@ void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevic
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
         (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
 
-    error_monitor->ExpectSuccess();
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
     if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-    error_monitor->VerifyNotFound();
 }
 
 void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
@@ -355,14 +349,12 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, VkPipelineStageFlags src_stages,
                               VkPipelineStageFlags dst_stages, const VkBufferMemoryBarrier *buf_barrier,
                               const VkImageMemoryBarrier *img_barrier) {
-    monitor->ExpectSuccess();
     cb->begin();
     uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
     uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
     cb->PipelineBarrier(src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier, img_barrier);
     cb->end();
     cb->QueueCommandBuffer();  // Implicitly waits
-    monitor->VerifyNotFound();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
@@ -374,7 +366,6 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
 
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier) {
-    monitor->ExpectSuccess();
     cb->begin();
     auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
@@ -384,7 +375,6 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, con
     cb->PipelineBarrier2KHR(&dep_info);
     cb->end();
     cb->QueueCommandBuffer();  // Implicitly waits
-    monitor->VerifyNotFound();
 }
 
 void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, VkCommandBufferObj *cb_to,
@@ -593,99 +583,55 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
     }
 }
 
-void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, std::string code) {
-    VkResult err;
-    VkSampler sampler = VK_NULL_HANDLE;
-    if (code.length())
+void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, std::string code) {
+    if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
-    else
-        test.Monitor().ExpectSuccess();
+    }
 
-    err = vk::CreateSampler(test.device(), pCreateInfo, NULL, &sampler);
-    if (code.length())
+    vk_testing::Sampler sampler(*test.DeviceObj(), *create_info);
+
+    if (code.length()) {
         test.Monitor().VerifyFound();
-    else
-        test.Monitor().VerifyNotFound();
-
-    if (VK_SUCCESS == err) {
-        vk::DestroySampler(test.device(), sampler, NULL);
     }
 }
 
-void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, std::string code) {
-    VkResult err;
-    VkBuffer buffer = VK_NULL_HANDLE;
-    if (code.length())
-        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
-    else
-        test.Monitor().ExpectSuccess();
-
-    err = vk::CreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
-    if (code.length())
-        test.Monitor().VerifyFound();
-    else
-        test.Monitor().VerifyNotFound();
-
-    if (VK_SUCCESS == err) {
-        vk::DestroyBuffer(test.device(), buffer, NULL);
-    }
-}
-
-void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, std::string code) {
-    VkResult err;
-    VkImage image = VK_NULL_HANDLE;
+void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, std::string code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
-    } else {
-        test.Monitor().ExpectSuccess();
     }
-
-    err = vk::CreateImage(test.device(), pCreateInfo, NULL, &image);
-    if (code.length())
+    vk_testing::Buffer buffer(*test.DeviceObj(), *create_info, vk_testing::no_mem);
+    if (code.length()) {
         test.Monitor().VerifyFound();
-    else
-        test.Monitor().VerifyNotFound();
-
-    if (VK_SUCCESS == err) {
-        vk::DestroyImage(test.device(), image, NULL);
     }
 }
 
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes) {
-    VkResult err;
-    VkBufferView view = VK_NULL_HANDLE;
-    if (codes.size())
-        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredFailureMsg(kErrorBit, s); });
-    else
-        test.Monitor().ExpectSuccess();
-
-    err = vk::CreateBufferView(test.device(), pCreateInfo, NULL, &view);
-    if (codes.size())
-        test.Monitor().VerifyFound();
-    else
-        test.Monitor().VerifyNotFound();
-
-    if (VK_SUCCESS == err) {
-        vk::DestroyBufferView(test.device(), view, NULL);
-    }
-}
-
-void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code) {
-    VkResult err;
-    VkImageView view = VK_NULL_HANDLE;
-    if (code.length())
+void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, std::string code) {
+    if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
-    else
-        test.Monitor().ExpectSuccess();
-
-    err = vk::CreateImageView(test.device(), pCreateInfo, NULL, &view);
-    if (code.length())
+    }
+    vk_testing::Image image(*test.DeviceObj(), *create_info, vk_testing::no_mem);
+    if (code.length()) {
         test.Monitor().VerifyFound();
-    else
-        test.Monitor().VerifyNotFound();
+    }
+}
 
-    if (VK_SUCCESS == err) {
-        vk::DestroyImageView(test.device(), view, NULL);
+void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *create_info, const std::vector<std::string> &codes) {
+    if (codes.size()) {
+        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredFailureMsg(kErrorBit, s); });
+    }
+    vk_testing::BufferView view(*test.DeviceObj(), *create_info);
+    if (codes.size()) {
+        test.Monitor().VerifyFound();
+    }
+}
+
+void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_info, std::string code) {
+    if (code.length()) {
+        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
+    }
+    vk_testing::ImageView view(*test.DeviceObj(), *create_info);
+    if (code.length()) {
+        test.Monitor().VerifyFound();
     }
 }
 
@@ -2781,7 +2727,6 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     submit_info.pCommandBuffers = &ray_tracing_command_buffer.handle();
     vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(ray_tracing_queue);
-    m_errorMonitor->VerifyNotFound();
 
     VkTextureObj texture(m_device, nullptr);
     VkSamplerObj sampler(m_device);

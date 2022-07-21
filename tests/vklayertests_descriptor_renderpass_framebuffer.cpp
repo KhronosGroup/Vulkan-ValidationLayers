@@ -2103,13 +2103,10 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
 
-    m_errorMonitor->ExpectSuccess();
-
     VkRenderPass rp;
     VkResult err;
 
     err = vk::CreateRenderPass(device(), &rpci, NULL, &rp);
-    m_errorMonitor->VerifyNotFound();
     if (err == VK_SUCCESS) vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 
     // Expect an error message for invalid sample counts
@@ -2933,7 +2930,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->ExpectSuccess();
 
     PFN_vkCmdEndRenderPass2KHR vkCmdEndRenderPass2KHR = nullptr;
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR = nullptr;
@@ -3169,7 +3165,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
 
     fbci.renderPass = rp2[1];
     vk_testing::Framebuffer fb2(*m_device, fbci);
-    m_errorMonitor->VerifyNotFound();
 
     // define renderpass begin info
     VkRenderPassBeginInfo rpbi1 = {
@@ -3315,8 +3310,6 @@ TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
     VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
     ASSERT_VK_SUCCESS(err);
 
-    m_errorMonitor->ExpectSuccess();
-
     m_commandBuffer->begin();
     VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = m_framebuffer;
@@ -3329,7 +3322,6 @@ TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyRenderPass-renderPass-00873");
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
@@ -4144,16 +4136,12 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 4;
-    m_errorMonitor->ExpectSuccess();
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyNotFound();
 
     descriptor_write.dstBinding = 4;
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 3;
-    m_errorMonitor->ExpectSuccess();
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyNotFound();
 
     // 3) The second descriptor has a null_ptr pImmutableSamplers and the third descriptor contains an immutable sampler
     descriptor_write.dstBinding = 1;
@@ -5084,7 +5072,6 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
 
             // At draw time the update layout will mis-match the actual layout
             if (positive_test || (test_type == kExternal)) {
-                m_errorMonitor->ExpectSuccess();
             } else {
                 for (const auto &err : internal_errors) {
                     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
@@ -5092,19 +5079,15 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
             }
             cmd_buf.Draw(1, 0, 0, 0);
             if (positive_test || (test_type == kExternal)) {
-                m_errorMonitor->VerifyNotFound();
             } else {
                 m_errorMonitor->VerifyFound();
             }
 
-            m_errorMonitor->ExpectSuccess();
             cmd_buf.EndRenderPass();
             cmd_buf.end();
-            m_errorMonitor->VerifyNotFound();
 
             // Submit cmd buffer
             if (positive_test || (test_type == kInternal)) {
-                m_errorMonitor->ExpectSuccess();
             } else {
                 for (const auto &err : external_errors) {
                     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
@@ -5113,7 +5096,6 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             vk::QueueWaitIdle(m_device->m_queue);
             if (positive_test || (test_type == kInternal)) {
-                m_errorMonitor->VerifyNotFound();
             } else {
                 m_errorMonitor->VerifyFound();
             }
@@ -5499,9 +5481,7 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
 
     // Makes the range the same size of buffer which is valid
     offsets[2] = static_cast<uint32_t>(partial_size);
-    m_errorMonitor->ExpectSuccess();
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
-    m_errorMonitor->VerifyNotFound();
 
     // Now an extra increment larger than buffer
     offsets[2] = static_cast<uint32_t>(partial_size * 2);
@@ -5512,9 +5492,7 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
 
     // Same thing but with [3] to test descriptor arrays
     offsets[3] = static_cast<uint32_t>(partial_size);
-    m_errorMonitor->ExpectSuccess();
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
-    m_errorMonitor->VerifyNotFound();
 
     offsets[3] = static_cast<uint32_t>(partial_size * 2);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
@@ -5524,9 +5502,7 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
 
     // range should be at end of buffer (same size)
     offsets[4] = static_cast<uint32_t>(partial_size);
-    m_errorMonitor->ExpectSuccess();
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
-    m_errorMonitor->VerifyNotFound();
 
     // Now an extra increment larger than buffer
     // tests (offset + range + dynamic_offset)
@@ -5540,7 +5516,6 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
 
 TEST_F(VkLayerTest, DynamicOffsetWithNullBuffer) {
     TEST_DESCRIPTION("Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive, but all have null buffers");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -5573,14 +5548,12 @@ TEST_F(VkLayerTest, DynamicOffsetWithNullBuffer) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descriptor_write.pBufferInfo = buff_info;
 
-    m_errorMonitor->VerifyNotFound();
     // all 3 descriptors produce this error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02998");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->ExpectSuccess();
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -5604,11 +5577,8 @@ TEST_F(VkLayerTest, DynamicOffsetWithNullBuffer) {
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    m_errorMonitor->VerifyNotFound();
 
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
     // The 2 active descriptors produce this error
@@ -6027,7 +5997,9 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool update_template_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    const bool update_template_support =
+        DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) &&
+        !IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY);
     if (update_template_support) {
         m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     } else {
@@ -6947,7 +6919,6 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    m_errorMonitor->ExpectSuccess();
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
@@ -7131,7 +7102,6 @@ TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPassMultiview) {
 
     // Bind rp[1]'s pipeline to command buffer
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_1.handle());
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-renderPass-02684");
     // Render triangle (error on Multiview usage should trigger on draw)
@@ -7315,10 +7285,8 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
     ASSERT_TRUE(good_src.Initialized());
 
     // Put valid data in the good and bad sources, simultaneously doing a positive test on write and copy operations
-    m_errorMonitor->ExpectSuccess();
     write_descriptor.dstSet = good_src.set_;
     vk::UpdateDescriptorSets(m_device->device(), 1, &write_descriptor, 0, NULL);
-    m_errorMonitor->VerifyNotFound();
 
     OneOffDescriptorSet bad_src(m_device, one_uniform_buffer);
     ASSERT_TRUE(bad_src.Initialized());
@@ -7328,7 +7296,6 @@ TEST_F(VkLayerTest, UpdateDestroyDescriptorSetLayout) {
     copy_descriptor.dstSet = bad_src.set_;
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_descriptor);
     bad_src.layout_ = VkDescriptorSetLayoutObj();
-    m_errorMonitor->VerifyNotFound();
 
     // Trigger the three invalid use errors
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, kWriteDestroyedLayout);
@@ -8111,7 +8078,6 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
 
     // Make both bindings valid before binding to the command buffer
     vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, NULL);
-    m_errorMonitor->VerifyNotFound();
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -8130,15 +8096,12 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
         vk::CmdDraw(m_commandBuffer->handle(), 0, 0, 0, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
 
-        m_errorMonitor->VerifyNotFound();
         // Valid to update binding 1 after being bound
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[1], 0, NULL);
-        m_errorMonitor->VerifyNotFound();
 
         if (i == 0) {
             // expect no errors
             m_commandBuffer->end();
-            m_errorMonitor->VerifyNotFound();
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02699");
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
             m_errorMonitor->VerifyFound();
@@ -8147,7 +8110,6 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
             // Invalid to update binding 0 after being bound. But the error is actually
             // generated during vk::EndCommandBuffer
             vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write[0], 0, NULL);
-            m_errorMonitor->VerifyNotFound();
 
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                                  "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDescriptorSet");
@@ -8187,8 +8149,6 @@ TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_errorMonitor->ExpectSuccess();
 
     // not all identical VkDescriptorBindingFlags flags
     VkDescriptorBindingFlags flags[3] = {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0,
@@ -8230,7 +8190,6 @@ TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
     buff_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VkBufferObj buffer;
     buffer.init(*m_device, buff_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     VkDescriptorBufferInfo bufferInfo[3] = {};
     bufferInfo[0].buffer = buffer.handle();
@@ -8559,7 +8518,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     // Create a valid pool
     ds_type_count.descriptorCount = 32;
     err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    m_errorMonitor->VerifyNotFound();
 
     // Create two valid sets with 8 bytes each
     dslb_vec.clear();
@@ -8575,7 +8533,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     ds_layout_ci.pBindings = &dslb_vec[0];
 
     err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
-    m_errorMonitor->VerifyNotFound();
 
     VkDescriptorSet descriptor_sets[2];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout, ds_layout};
@@ -8584,7 +8541,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = set_layouts;
     err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets);
-    m_errorMonitor->VerifyNotFound();
 
     // Test invalid VkWriteDescriptorSet parameters (array element and size must be multiple of 4)
     VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
@@ -8619,7 +8575,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 
     descriptor_write.pNext = &write_inline_uniform;
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-    m_errorMonitor->VerifyNotFound();
 
     // Test invalid VkCopyDescriptorSet parameters (array element and size must be multiple of 4)
     VkCopyDescriptorSet copy_ds_update = LvlInitStruct<VkCopyDescriptorSet>();
@@ -8650,7 +8605,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 
     copy_ds_update.descriptorCount = 4;
     vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyDescriptorPool(m_device->handle(), ds_pool, nullptr);
     vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
@@ -8760,13 +8714,11 @@ TEST_F(VkLayerTest, DescriptorSetLayoutMisc) {
     VkDescriptorSetLayout ds_layout;
 
     // Should succeed with shader stage of 0 or fragment
-    m_errorMonitor->ExpectSuccess();
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
     dsl_binding.stageFlags = 0;
     vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
     vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-01510");
@@ -8836,8 +8788,6 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -8856,8 +8806,6 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
 
-    m_errorMonitor->VerifyNotFound();
-
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorBufferInfo-buffer-02999");
     descriptor_set.WriteDescriptorBufferInfo(1, VK_NULL_HANDLE, 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -8870,7 +8818,6 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     m_errorMonitor->VerifyFound();
 
     // Make sure sampler with NULL image view doesn't cause a crash or errors
-    m_errorMonitor->ExpectSuccess();
     OneOffDescriptorSet sampler_descriptor_set(m_device,
                                                {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -8905,7 +8852,6 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
     vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
@@ -10246,16 +10192,12 @@ TEST_F(VkLayerTest, MutableDescriptorPoolsWithPartialOverlap) {
     m_errorMonitor->VerifyFound();
 
     mdtci.mutableDescriptorTypeListCount = 2;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyDescriptorPool(device(), pool, nullptr);
 
     second_types[0] = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     lists[1].pDescriptorTypes = second_types;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, nullptr, &pool);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyDescriptorPool(device(), pool, nullptr);
 }
@@ -10656,7 +10598,6 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     extEnable.descriptorBindingInlineUniformBlockUpdateAfterBind = VK_FALSE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extEnable));
-    m_errorMonitor->ExpectSuccess();
     VkResult res;
 
     float inline_data[] = {1.f, 2.f};
@@ -10687,7 +10628,6 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
 
         descLayout.init(*m_device, layoutCreate);
 
-        m_errorMonitor->VerifyNotFound();
         ASSERT_TRUE(descLayout.initialized());
     }
 
@@ -10740,9 +10680,7 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     writeDesc.dstSet = descSet.handle();
 
     m_errorMonitor->Reset();
-    m_errorMonitor->ExpectSuccess();
     vk::UpdateDescriptorSets(m_device->device(), 1, &writeDesc, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, AccelerationStructureBindings) {
@@ -10934,9 +10872,7 @@ TEST_F(VkLayerTest, InvalidWriteMutableDescriptorSet) {
     m_errorMonitor->VerifyFound();
 
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    m_errorMonitor->ExpectSuccess();
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, MutableDescriptors) {
@@ -12060,8 +11996,6 @@ TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     const uint32_t width = 32;
     const uint32_t height = 32;
     const VkFormat format = FindSupportedDepthStencilFormat(gpu());
@@ -12206,8 +12140,6 @@ TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, TestColorAttachmentImageViewUsage) {
@@ -12429,7 +12361,6 @@ TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    m_errorMonitor->ExpectSuccess();
     VkDescriptorBindingFlagsEXT flags[2] = {0, VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
     auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     flags_create_info.bindingCount = 2;
@@ -12466,16 +12397,12 @@ TEST_F(VkLayerTest, TestAllocatingVariableDescriptorSets) {
 
     VkDescriptorSet ds;
     vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     TEST_DESCRIPTION("Test using pipeline with incompatible subpass index for current renderpass subpass");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkAttachmentDescription attach_desc = {};
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -12552,8 +12479,6 @@ TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
 
-    m_errorMonitor->VerifyNotFound();
-
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(render_pass_bi);
 
@@ -12562,13 +12487,11 @@ TEST_F(VkLayerTest, TestPipelineSubpassIndex) {
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-subpass-02685");
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.pipeline_);
@@ -12725,8 +12648,6 @@ TEST_F(VkLayerTest, InvalidRenderPassAttachmentUndefinedLayout) {
 TEST_F(VkLayerTest, ImagelessFramebufferWith3DImage) {
     TEST_DESCRIPTION("Create imageless framebuffer with image view from 3D image.");
 
-    m_errorMonitor->ExpectSuccess();
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -12823,5 +12744,4 @@ TEST_F(VkLayerTest, ImagelessFramebufferWith3DImage) {
     m_commandBuffer->BeginRenderPass(render_pass_bi);
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }

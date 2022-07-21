@@ -56,8 +56,6 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
                                                          {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      });
 
-    m_errorMonitor->ExpectSuccess();
-
     const unsigned int copy_size = 2;
     VkCopyDescriptorSet copy_ds_update[copy_size];
     memset(copy_ds_update, 0, sizeof(copy_ds_update));
@@ -70,8 +68,6 @@ TEST_F(VkPositiveLayerTest, CopyNonupdatedDescriptors) {
         copy_ds_update[i].descriptorCount = 1;
     }
     vk::UpdateDescriptorSets(m_device->device(), 0, NULL, copy_size, copy_ds_update);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
@@ -79,8 +75,6 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     VkResult err;
-
-    m_errorMonitor->ExpectSuccess();
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -117,7 +111,6 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     err = vk::FreeDescriptorSets(m_device->device(), ds_pool_one, 1, &descriptorSet);
 
     vk::DestroyDescriptorPool(m_device->device(), ds_pool_one, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test. No failures are expected.
@@ -143,8 +136,6 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 
     // Image Case
     {
-        m_errorMonitor->ExpectSuccess();
-
         VkImageObj image(m_device);
         image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
@@ -175,14 +166,10 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-
-        m_errorMonitor->VerifyNotFound();
     }
 
     // Buffer Case
     {
-        m_errorMonitor->ExpectSuccess();
-
         uint32_t queue_family_index = 0;
         VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
@@ -219,14 +206,10 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         descriptor_write.pTexelBufferView = reinterpret_cast<const VkBufferView *>(invalid_ptr);
 
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
-
-        m_errorMonitor->VerifyNotFound();
     }
 
     // Texel Buffer Case
     {
-        m_errorMonitor->ExpectSuccess();
-
         uint32_t queue_family_index = 0;
         VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
@@ -267,8 +250,6 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 
         vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
-        m_errorMonitor->VerifyNotFound();
-
         vk::DestroyBufferView(m_device->device(), buffer_view, NULL);
     }
 }
@@ -290,13 +271,11 @@ TEST_F(VkPositiveLayerTest, ImmutableSamplerOnlyDescriptor) {
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroySampler(m_device->device(), sampler, NULL);
 
@@ -314,7 +293,6 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
         printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
         return;
     }
-    m_errorMonitor->ExpectSuccess();
 
     // Create layout with two uniform buffer descriptors w/ empty binding between them
     OneOffDescriptorSet ds(m_device, {
@@ -371,7 +349,6 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
 
-    m_errorMonitor->VerifyNotFound();
     // Cleanup
     vk::FreeMemory(m_device->device(), mem, NULL);
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
@@ -395,7 +372,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->ExpectSuccess();
 
     auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
     if (push_descriptor_prop.maxPushDescriptors < 1) {
@@ -452,8 +428,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                               &descriptor_write);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test. No failures are expected.
@@ -483,7 +457,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     // Create descriptor set layout
     VkDescriptorSetLayoutBinding dsl_binding = {};
@@ -543,8 +516,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     // No errors should be generated.
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
-    m_errorMonitor->VerifyNotFound();
-
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -569,7 +540,6 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
@@ -656,7 +626,6 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
@@ -688,7 +657,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
     }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     // Create a descriptor to push
     const uint32_t buffer_data[4] = {4, 5, 6, 7};
@@ -756,8 +724,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     }
 
-    m_errorMonitor->VerifyNotFound();
-
     {
         // Note: the push descriptor set is now set number 3.
         const VkPipelineLayoutObj pipeline_layout(m_device, {&ds_layout, &ds_layout, &ds_layout, &push_ds_layout});
@@ -793,8 +759,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     }
 
-    m_errorMonitor->VerifyNotFound();
-
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
@@ -802,7 +766,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
 TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     // Create a descriptorSet w/ dynamic descriptors where 1 binding is inactive
     // We previously had a bug where dynamic offset of inactive bindings was still being used
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -881,7 +844,6 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
                               &descriptor_set.set_, BINDING_COUNT, dyn_off);
     m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyNotFound();
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -920,7 +882,6 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
     const VkSampler *hopefully_undereferencable_pointer = reinterpret_cast<const VkSampler *>(fake_pointer);
 
     // regular descriptors
-    m_errorMonitor->ExpectSuccess();
     {
         const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
             {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
@@ -940,11 +901,9 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         ASSERT_VK_SUCCESS(err);
         vk::DestroyDescriptorSetLayout(m_device->device(), dsl, nullptr);
     }
-    m_errorMonitor->VerifyNotFound();
 
     if (push_descriptor_found) {
         // push descriptors
-        m_errorMonitor->ExpectSuccess();
         {
             const VkDescriptorSetLayoutBinding non_sampler_bindings[] = {
                 {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
@@ -963,7 +922,6 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
             ASSERT_VK_SUCCESS(err);
             vk::DestroyDescriptorSetLayout(m_device->device(), dsl, nullptr);
         }
-        m_errorMonitor->VerifyNotFound();
     }
 }
 
@@ -1028,12 +986,10 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     descriptor_write.dstSet = descriptor_set.set_;
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
                               &descriptor_write);
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
@@ -1082,8 +1038,6 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1103,7 +1057,6 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     vk::CmdBindVertexBuffers(m_commandBuffer->handle(), 0, 1, &buffer, &offset);
     vkCmdBindVertexBuffers2EXT(m_commandBuffer->handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
@@ -1124,8 +1077,6 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_errorMonitor->ExpectSuccess();
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
@@ -1212,7 +1163,6 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     copy_set.descriptorCount = 1;
 
     vk::UpdateDescriptorSets(m_device->device(), 0, nullptr, 1, &copy_set);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
@@ -1384,8 +1334,6 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
-
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
@@ -1416,7 +1364,6 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
                                      });
     ds.WriteDescriptorImageInfo(0, image_view.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     ds.UpdateDescriptorSets();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
@@ -1443,8 +1390,6 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    m_errorMonitor->ExpectSuccess();
 
     VkImageObj image1(m_device);
     VkImageObj image2(m_device);
@@ -1493,6 +1438,4 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
 
     std::array<std::thread, 2> threads = {std::thread(testing_thread1), std::thread(testing_thread2)};
     for (auto &t : threads) t.join();
-
-    m_errorMonitor->VerifyNotFound();
 }

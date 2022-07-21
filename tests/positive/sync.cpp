@@ -63,7 +63,6 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
     ASSERT_TRUE(vkGetPhysicalDeviceDisplayPropertiesKHR != nullptr);
     ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
 
-    m_errorMonitor->ExpectSuccess();
     uint32_t prop_count = 0;
     vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
@@ -74,7 +73,6 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
         prop_count = 0;
         vkGetDisplayModePropertiesKHR(gpu(), display_props.display, &prop_count, nullptr);
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
@@ -100,7 +98,6 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
     ASSERT_TRUE(vkGetPhysicalDeviceDisplayPlanePropertiesKHR != nullptr);
     ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
 
-    m_errorMonitor->ExpectSuccess();
     uint32_t prop_count = 0;
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &prop_count, nullptr);
     if (prop_count != 0) {
@@ -113,7 +110,6 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayPlaneObjects) {
         prop_count = 0;
         vkGetDisplayModePropertiesKHR(gpu(), display_plane_props.currentDisplay, &prop_count, nullptr);
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersImage) {
@@ -232,7 +228,6 @@ TEST_F(VkPositiveLayerTest, LayoutFromPresentWithoutAccessMemoryRead) {
     // spec, but there is no memory dependency required here, so this should
     // work without warnings.
 
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
@@ -262,14 +257,10 @@ TEST_F(VkPositiveLayerTest, LayoutFromPresentWithoutAccessMemoryRead) {
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
                            &barrier);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
     TEST_DESCRIPTION("Submit multiple command buffers with chained semaphore signals and layout transitions");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkCommandBuffer cmd_bufs[4];
@@ -359,12 +350,10 @@ TEST_F(VkPositiveLayerTest, QueueSubmitSemaphoresAndLayoutTracking) {
 
     vk::DestroySemaphore(m_device->device(), semaphore1, NULL);
     vk::DestroySemaphore(m_device->device(), semaphore2, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test. We used to expect error in this case but spec now allows it
 TEST_F(VkPositiveLayerTest, ResetUnsignaledFence) {
-    m_errorMonitor->ExpectSuccess();
     vk_testing::Fence testFence;
     VkFenceCreateInfo fenceInfo = LvlInitStruct<VkFenceCreateInfo>();
 
@@ -373,13 +362,9 @@ TEST_F(VkPositiveLayerTest, ResetUnsignaledFence) {
     VkFence fences[1] = {testFence.handle()};
     VkResult result = vk::ResetFences(m_device->device(), 1, fences);
     ASSERT_VK_SUCCESS(result);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     VkResult err;
 
@@ -406,8 +391,6 @@ TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
     // Should have both retired!
     vk::DestroyFence(m_device->device(), f1, nullptr);
     vk::DestroyFence(m_device->device(), f2, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -415,7 +398,6 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
     TEST_DESCRIPTION(
         "Two command buffers with two separate fences are each run through a Submit & WaitForFences cycle 3 times. This previously "
         "revealed a bug so running this positive test to prevent a regression.");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkQueue queue = VK_NULL_HANDLE;
@@ -470,7 +452,6 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
             ASSERT_VK_SUCCESS(err);
         }
     }
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyCommandPool(m_device->device(), cmd_pool, NULL);
     for (uint32_t i = 0; i < NUM_OBJECTS; ++i) {
         vk::DestroyFence(m_device->device(), fences[i], nullptr);
@@ -486,8 +467,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkSemaphore semaphore;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
@@ -564,8 +543,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -579,8 +556,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
@@ -662,8 +637,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -677,8 +650,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
@@ -761,8 +732,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
@@ -773,8 +742,6 @@ TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     }
 
     VkResult err;
-
-    m_errorMonitor->ExpectSuccess();
 
     VkQueue q0 = m_device->m_queue;
     VkQueue q1 = nullptr;
@@ -824,8 +791,6 @@ TEST_F(VkPositiveLayerTest, TwoQueuesEnsureCorrectRetirementWithWorkStolen) {
     // Command buffer should have been completed (it was on q0); reset the pool.
     vk::FreeCommandBuffers(m_device->device(), pool, 1, &cb);
 
-    m_errorMonitor->VerifyNotFound();
-
     // Force device completely idle and clean up resources
     vk::DeviceWaitIdle(m_device->device());
     vk::DestroyCommandPool(m_device->device(), pool, nullptr);
@@ -843,8 +808,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
@@ -926,8 +889,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -953,8 +914,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
@@ -1047,8 +1006,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -1056,8 +1013,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, sharing a signal/wait semaphore, the second "
         "having a fence, followed by a WaitForFences call.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFence fence;
@@ -1137,8 +1092,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -1146,8 +1099,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, no fences, followed by a third QueueSubmit "
         "with NO SubmitInfos but with a fence, followed by a WaitForFences call.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFence fence;
@@ -1225,8 +1176,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -1234,8 +1183,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
     TEST_DESCRIPTION(
         "Two command buffers, each in a separate QueueSubmit call on the same queue, the second having a fence, followed by a "
         "WaitForFences call.");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     VkFence fence;
@@ -1310,8 +1257,6 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
@@ -1319,8 +1264,6 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
     TEST_DESCRIPTION(
         "Two command buffers each in a separate SubmitInfo sent in a single QueueSubmit call followed by a WaitForFences call.");
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFence fence;
     VkFenceCreateInfo fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
@@ -1404,13 +1347,9 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
     VkResult err;
 
@@ -1453,8 +1392,6 @@ TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
     for (auto semaphore : semaphores) vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
@@ -1501,7 +1438,6 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
     }
 
     VkResult err;
-    m_errorMonitor->ExpectSuccess();
 
     // Create a semaphore to export payload from
     VkExportSemaphoreCreateInfoKHR esci = {VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO_KHR, nullptr, handle_type};
@@ -1578,8 +1514,6 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
     ASSERT_VK_SUCCESS(err);
     vk::DestroySemaphore(m_device->device(), export_semaphore, nullptr);
     vk::DestroySemaphore(m_device->device(), import_semaphore, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ExternalFence) {
@@ -1624,7 +1558,6 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     }
 
     VkResult err;
-    m_errorMonitor->ExpectSuccess();
 
     // Create a fence to export payload from
     VkFence export_fence;
@@ -1703,8 +1636,6 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
     ASSERT_VK_SUCCESS(err);
     vk::DestroyFence(m_device->device(), export_fence, nullptr);
     vk::DestroyFence(m_device->device(), import_fence, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
@@ -1728,15 +1659,12 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
     thread.join();
 
     m_errorMonitor->SetBailout(NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
     TEST_DESCRIPTION("Wait on a event then set it after the wait has been submitted.");
 
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkEvent event;
@@ -1783,8 +1711,6 @@ TEST_F(VkPositiveLayerTest, WaitEventThenSet) {
     vk::DestroyEvent(m_device->device(), event, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
     vk::DestroyCommandPool(m_device->device(), command_pool, NULL);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
@@ -1818,10 +1744,8 @@ TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
         VkImageMemoryBarrier image_barriers[] = {image.image_memory_barrier(
             0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
 
-        m_errorMonitor->ExpectSuccess();
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 1, image_barriers);
-        m_errorMonitor->VerifyNotFound();
     }
 
     {
@@ -1831,10 +1755,8 @@ TEST_F(VkPositiveLayerTest, DoubleLayoutTransition) {
             image.image_memory_barrier(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_LAYOUT_GENERAL,
                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, image_sub_range)};
 
-        m_errorMonitor->ExpectSuccess();
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                                0, nullptr, 0, nullptr, 2, image_barriers);
-        m_errorMonitor->VerifyNotFound();
     }
 
     m_commandBuffer->end();
@@ -1886,7 +1808,6 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
     auto buffer_a = layer_data::make_unique<VkBufferObj>();
     auto buffer_b = layer_data::make_unique<VkBufferObj>();
     auto buffer_c = layer_data::make_unique<VkBufferObj>();
@@ -1916,7 +1837,6 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
 
     vk_testing::Semaphore semaphore;
     semaphore.init(*m_device, semaphore_create_info);
-    m_errorMonitor->VerifyNotFound();
 
     // timeline values, Begins will be signaled by host, Ends by the queues
     constexpr uint64_t kQ0Begin = 1;
@@ -1943,27 +1863,20 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cb0.handle();
 
-    // NOTE: this test calls VerifyNotFound after every call, because (now fixed) VVL false positives
     // would cause the test to hang at some point, with no output.
-    m_errorMonitor->ExpectSuccess();
     vk::QueueSubmit(q0->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
 
     submit_wait_value = kQ1Begin;
     submit_signal_value = kQ1End;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &cb1.handle();
-    m_errorMonitor->ExpectSuccess();
     vk::QueueSubmit(q1->handle(), 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
 
     // signal semaphore to allow q0 to proceed
     auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
     signal_info.semaphore = semaphore.handle();
     signal_info.value = kQ0Begin;
-    m_errorMonitor->ExpectSuccess();
     fpSignalSemaphore(m_device->device(), &signal_info);
-    m_errorMonitor->VerifyNotFound();
 
     // buffer_a is only used by the q0 commands
     uint64_t wait_info_value = kQ0End;
@@ -1971,27 +1884,20 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
     wait_info.semaphoreCount = 1;
     wait_info.pSemaphores = &semaphore.handle();
     wait_info.pValues = &wait_info_value;
-    m_errorMonitor->ExpectSuccess();
     fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
     buffer_a.reset();
-    m_errorMonitor->VerifyNotFound();
 
     // signal semaphore to 3 to allow q1 to proceed
     signal_info.value = kQ1Begin;
-    m_errorMonitor->ExpectSuccess();
     fpSignalSemaphore(m_device->device(), &signal_info);
-    m_errorMonitor->VerifyNotFound();
 
     // buffer_b is used by both q0 and q1, buffer_c is used by q1
     wait_info_value = kQ1End;
-    m_errorMonitor->ExpectSuccess();
     fpWaitSemaphores(m_device->device(), &wait_info, 1000000000);
     buffer_b.reset();
     buffer_c.reset();
-    m_errorMonitor->VerifyNotFound();
 
     vk::DeviceWaitIdle(m_device->device());
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
@@ -2007,8 +1913,6 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
         printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     VkFenceCreateInfo fence_info = LvlInitStruct<VkFenceCreateInfo>();
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
@@ -2074,8 +1978,6 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 struct FenceSemRaceData {
@@ -2114,7 +2016,6 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
         GTEST_SKIP() << "Timeline semaphore feature not supported.";
     }
 
-    m_errorMonitor->ExpectSuccess();
     auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fence_ci);
     auto fence_handle = fence.handle();
@@ -2149,19 +2050,13 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
     m_errorMonitor->SetBailout(&bailout);
 
     for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
-        m_errorMonitor->ExpectSuccess();
         auto err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence_handle);
-        m_errorMonitor->VerifyNotFound();
         ASSERT_VK_SUCCESS(err);
 
-        m_errorMonitor->ExpectSuccess();
         err = fence.wait(data.timeout);
-        m_errorMonitor->VerifyNotFound();
         ASSERT_VK_SUCCESS(err);
 
-        m_errorMonitor->ExpectSuccess();
         err = vk::ResetFences(m_device->device(), 1, &fence_handle);
-        m_errorMonitor->VerifyNotFound();
         ASSERT_VK_SUCCESS(err);
     }
     m_errorMonitor->SetBailout(nullptr);

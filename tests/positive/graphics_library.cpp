@@ -29,7 +29,6 @@ class VkPositiveGraphicsLibraryLayerTest : public VkLayerTest {};
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
     TEST_DESCRIPTION("Create a vertex input graphics library");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -57,13 +56,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
     pipe.InitVertexInputLibInfo();
     pipe.InitState();
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
     TEST_DESCRIPTION("Create a pre-raster graphics library");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -103,13 +99,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
     pipe.InitPreRasterLibInfo(1, &stage_ci);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary) {
     TEST_DESCRIPTION("Create a fragment shader graphics library");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -148,12 +141,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
     pipe.InitFragmentLibInfo(1, &stage_ci);
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary) {
     TEST_DESCRIPTION("Create a fragment output graphics library");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -182,13 +173,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary
     pipe.InitFragmentOutputLibInfo();
     pipe.InitState();
     ASSERT_VK_SUCCESS(pipe.CreateGraphicsPipeline(true, false));
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
     TEST_DESCRIPTION("Create an executable library by linking one or more graphics libraries");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -286,13 +274,10 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
     auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
     vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     TEST_DESCRIPTION("Make a draw with a pipeline layout derived from null DSLs");
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
 
@@ -449,5 +434,4 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }

@@ -97,9 +97,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     subres.arrayLayer = 0;
     VkSubresourceLayout layout = {};
 
-    m_errorMonitor->ExpectSuccess();
     vk::GetImageSubresourceLayout(device(), image, &subres, &layout);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyImage(device(), image, NULL);
 }
@@ -226,7 +224,6 @@ TEST_F(VkPositiveLayerTest, UncompressedToCompressedImageCopy) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
 
     // Copy from uncompressed to compressed
@@ -250,7 +247,6 @@ TEST_F(VkPositiveLayerTest, UncompressedToCompressedImageCopy) {
     vk::CmdCopyImage(m_commandBuffer->handle(), comp_10x10b_40x40t_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
                      uncomp_10x10t_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
-    m_errorMonitor->VerifyNotFound();
     m_commandBuffer->end();
 }
 
@@ -258,8 +254,6 @@ TEST_F(VkPositiveLayerTest, UncompressedToCompressedImageCopy) {
 TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
     TEST_DESCRIPTION(
         "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -311,13 +305,10 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 
     // VALIDATION FAILURE:
     image.bind_memory(mem, 0);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.1 before samplerMirrorClampToEdge feature was added");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -338,12 +329,10 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature) {
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 using the extension");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -366,12 +355,10 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithoutFeature12) {
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_sampler_mirror_clamp_to_edge in 1.2 with feature bit enabled");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
@@ -400,7 +387,6 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     vk::DestroySampler(m_device->device(), sampler, nullptr);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
@@ -444,7 +430,6 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     ASSERT_VK_SUCCESS(err);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and zero offsets and entire mapped range
-    m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     VkMappedMemoryRange mmr = LvlInitStruct<VkMappedMemoryRange>();
@@ -455,11 +440,9 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     ASSERT_VK_SUCCESS(err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map/Flush/Invalidate using WHOLE_SIZE and an offset and entire mapped range
-    m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 5 * atom_size, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     mmr.memory = mem;
@@ -469,12 +452,10 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     ASSERT_VK_SUCCESS(err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map with offset and size
     // Flush/Invalidate subrange of mapped area with offset and size
-    m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 3 * atom_size, 9 * atom_size, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     mmr.memory = mem;
@@ -484,11 +465,9 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     ASSERT_VK_SUCCESS(err);
     err = vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
     vk::UnmapMemory(m_device->device(), mem);
 
     // Map without offset and flush WHOLE_SIZE with two separate offsets
-    m_errorMonitor->ExpectSuccess();
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
     mmr.memory = mem;
@@ -500,7 +479,6 @@ TEST_F(VkPositiveLayerTest, NonCoherentMemoryMapping) {
     mmr.size = VK_WHOLE_SIZE;
     err = vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyNotFound();
     vk::UnmapMemory(m_device->device(), mem);
 
     vk::FreeMemory(m_device->device(), mem, NULL);
@@ -510,8 +488,6 @@ TEST_F(VkPositiveLayerTest, CreateImageViewFollowsParameterCompatibilityRequirem
     TEST_DESCRIPTION("Verify that creating an ImageView with valid usage does not generate validation errors.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-
-    m_errorMonitor->ExpectSuccess();
 
     VkImageCreateInfo imgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                  nullptr,
@@ -532,7 +508,6 @@ TEST_F(VkPositiveLayerTest, CreateImageViewFollowsParameterCompatibilityRequirem
     image.init(&imgInfo);
     ASSERT_TRUE(image.initialized());
     image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ValidUsage) {
@@ -540,7 +515,6 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->ExpectSuccess();
     // Verify that we can create a view with usage INPUT_ATTACHMENT
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -556,7 +530,6 @@ TEST_F(VkPositiveLayerTest, ValidUsage) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     vk::CreateImageView(m_device->device(), &ivci, NULL, &imageView);
-    m_errorMonitor->VerifyNotFound();
     vk::DestroyImageView(m_device->device(), imageView, NULL);
 }
 
@@ -575,8 +548,6 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
         printf("%s Device does not support sparse bindings.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImage image;
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -649,7 +620,6 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     vk::DestroyImage(m_device->device(), image, NULL);
     vk::FreeMemory(m_device->device(), memory_one, NULL);
     vk::FreeMemory(m_device->device(), memory_two, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 // This is a positive test. No failures are expected.
@@ -667,8 +637,6 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
         printf("%s Device does not support sparseResidencyImage2D.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImage image;
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -759,7 +727,6 @@ TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyImage(m_device->device(), image, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
@@ -776,8 +743,6 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
         printf("%s Device does not support sparse residency for images.\n", kSkipPrefix);
         return;
     }
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a sparse image
     VkImage image;
@@ -843,7 +808,6 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
         bind_info.pImageOpaqueBinds = &opaque_bind_info;
 
         vk::QueueBindSparse(m_device->m_queue, 1, &bind_info, VK_NULL_HANDLE);
-        m_errorMonitor->VerifyNotFound();
 
         // Cleanup
         vk::QueueWaitIdle(m_device->m_queue);
@@ -856,8 +820,6 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
 // This is a positive test.  No errors should be generated.
 TEST_F(VkPositiveLayerTest, BarrierLayoutToImageUsage) {
     TEST_DESCRIPTION("Ensure barriers' new and old VkImageLayout are compatible with their images' VkImageUsageFlags");
-
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -949,7 +911,6 @@ TEST_F(VkPositiveLayerTest, BarrierLayoutToImageUsage) {
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ClearColorImageWithValidRange) {
@@ -971,10 +932,8 @@ TEST_F(VkPositiveLayerTest, ClearColorImageWithValidRange) {
 
     // Try good case
     {
-        m_errorMonitor->ExpectSuccess();
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
-        m_errorMonitor->VerifyNotFound();
     }
 
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -982,10 +941,8 @@ TEST_F(VkPositiveLayerTest, ClearColorImageWithValidRange) {
 
     // Try good case with VK_REMAINING
     {
-        m_errorMonitor->ExpectSuccess();
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
-        m_errorMonitor->VerifyNotFound();
     }
 }
 
@@ -1015,10 +972,8 @@ TEST_F(VkPositiveLayerTest, ClearDepthStencilWithValidRange) {
 
     // Try good case
     {
-        m_errorMonitor->ExpectSuccess();
         VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
-        m_errorMonitor->VerifyNotFound();
     }
 
     image.ImageMemoryBarrier(m_commandBuffer, ds_aspect, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -1026,10 +981,8 @@ TEST_F(VkPositiveLayerTest, ClearDepthStencilWithValidRange) {
 
     // Try good case with VK_REMAINING
     {
-        m_errorMonitor->ExpectSuccess();
         VkImageSubresourceRange range = {ds_aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
-        m_errorMonitor->VerifyNotFound();
     }
 }
 
@@ -1096,8 +1049,6 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize buffer_size = 1024;
@@ -1189,8 +1140,6 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
@@ -1209,8 +1158,6 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a test buffer
     VkBufferObj buffer;
@@ -1274,7 +1221,6 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
     // Submit and verify no validation errors
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, BindMemory2) {
@@ -1293,8 +1239,6 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a test buffer
     VkBufferObj buffer;
@@ -1353,7 +1297,6 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
     // Submit and verify no validation errors
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
@@ -1406,7 +1349,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
     image.init(&ci);
 
     m_commandBuffer->reset();
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -1429,7 +1371,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
@@ -1539,11 +1480,9 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     copyRegion.extent.height = 128;
     copyRegion.extent.depth = 1;
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     m_commandBuffer->CopyImage(image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_commandBuffer->end();
-    m_errorMonitor->VerifyNotFound();
 
     vk::FreeMemory(device(), mem_obj, NULL);
     vk::DestroyImage(device(), image, NULL);
@@ -1609,9 +1548,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         plane_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
         plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
 
-        m_errorMonitor->ExpectSuccess();
         vkBindImageMemory2Function(device(), 3, bind_info);
-        m_errorMonitor->VerifyNotFound();
 
         vk::FreeMemory(device(), p0_mem, NULL);
         vk::FreeMemory(device(), p1_mem, NULL);
@@ -1642,7 +1579,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
                              &copy_region);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer(false);
-    m_errorMonitor->VerifyNotFound();
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
@@ -1684,7 +1620,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
 
-    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1718,7 +1653,6 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyNotFound();
 
     vk::QueueWaitIdle(m_device->m_queue);
     vk::DestroyImageView(m_device->device(), view, NULL);
@@ -1756,10 +1690,8 @@ TEST_F(VkPositiveLayerTest, TestFormatCompatibility) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     image_create_info.flags = 0;
 
-    m_errorMonitor->ExpectSuccess();
     VkImage image;
     vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyImage(m_device->device(), image, nullptr);
 }
@@ -1777,7 +1709,6 @@ TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->ExpectSuccess();
     VkImageCreateInfo image_ci = LvlInitStruct<VkImageCreateInfo>();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -1816,7 +1747,6 @@ TEST_F(VkPositiveLayerTest, TestCreatingFramebufferFrom3DImage) {
     fci.layers = 4;
     VkFramebuffer framebuffer;
     vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
     vk::DestroyImageView(m_device->handle(), view, nullptr);
@@ -1859,9 +1789,7 @@ TEST_F(VkPositiveLayerTest, TestMappingMemoryWithMultiInstanceHeapFlag) {
     vk::AllocateMemory(m_device->device(), &mem_alloc, nullptr, &memory);
 
     uint32_t *pData;
-    m_errorMonitor->ExpectSuccess();
     vk::MapMemory(device(), memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
-    m_errorMonitor->VerifyNotFound();
 
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
@@ -1955,10 +1883,8 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdCopyImage(m_commandBuffer->handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
@@ -2205,7 +2131,6 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
 
 TEST_F(VkPositiveLayerTest, SubresourceLayout) {
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     auto image_ci = vk_testing::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2242,12 +2167,10 @@ TEST_F(VkPositiveLayerTest, SubresourceLayout) {
                            nullptr, 0, nullptr, 1, &barrier);
     m_commandBuffer->end();
     m_commandBuffer->QueueCommandBuffer();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
-    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
     AddSurfaceExtension();
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2428,7 +2351,6 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
     vk::QueuePresentKHR(m_device->m_queue, &present);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
@@ -2437,8 +2359,6 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
 
 TEST_F(VkPositiveLayerTest, ValidExtendedUsageWithDifferentFormatViews) {
     TEST_DESCRIPTION("Create views with different formats of an image with extended usage");
-
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2498,8 +2418,6 @@ TEST_F(VkPositiveLayerTest, ValidExtendedUsageWithDifferentFormatViews) {
     iv_ci.pNext = &ivu_ci;
     vk_testing::ImageView view2(*m_device, iv_ci);
     ASSERT_TRUE(view2.handle() != VK_NULL_HANDLE);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
@@ -2509,7 +2427,6 @@ TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    m_errorMonitor->ExpectSuccess();
     auto image_createinfo = LvlInitStruct<VkImageCreateInfo>();
     image_createinfo.imageType = VK_IMAGE_TYPE_2D;
     image_createinfo.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR;
@@ -2526,7 +2443,6 @@ TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
     image_mem_reqs.planeAspect = VK_IMAGE_ASPECT_NONE;
     auto  mem_reqs_2 = LvlInitStruct<VkMemoryRequirements2>();
     vk::GetDeviceImageMemoryRequirements(device(), &image_mem_reqs, &mem_reqs_2);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
@@ -2556,7 +2472,6 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-    m_errorMonitor->ExpectSuccess();
 
     // Query possible image format with vkGetPhysicalDeviceImageFormatProperties2KHR
     auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
@@ -2607,8 +2522,6 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
 
         vk_testing::Image image(*m_device, image_ci);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
@@ -2619,8 +2532,6 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
     if (!m_device->phy().features().sparseBinding) {
         GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
     }
-
-    m_errorMonitor->ExpectSuccess();
 
     // 2 semaphores needed since we need to bind twice before copying
     auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
@@ -2705,16 +2616,12 @@ TEST_F(VkPositiveLayerTest, CorrectSparseBufferOverlapCopy) {
 
     vk::DestroySemaphore(m_device->handle(), semaphore2, nullptr);
     vk::DestroySemaphore(m_device->handle(), semaphore, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses) {
     TEST_DESCRIPTION(
         "Test no false overlap is reported with multi attachment framebuffer (attachments are slices of a 3D image). Multiple "
         "subpasses that draw to a single slice of a 3D image");
-
-    m_errorMonitor->ExpectSuccess();
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());

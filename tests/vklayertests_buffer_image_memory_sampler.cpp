@@ -655,9 +655,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     vk::MapMemory(m_device->device(), mem, 0, 0, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
-    // m_errorMonitor->ExpectSuccess();
     ASSERT_VK_SUCCESS(vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData));
-    // m_errorMonitor->VerifyNotFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00678");
     vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
@@ -770,9 +768,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         mmr.memory = mem;
         mmr.offset = atom_size;
         mmr.size = VK_WHOLE_SIZE;
-        m_errorMonitor->ExpectSuccess();
         vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
-        m_errorMonitor->VerifyNotFound();
     }
 
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -2483,9 +2479,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[0].pNext = (void *)&plane_memory_info[0];
 
         // Valid case of binding 2 disjoint image and normal image by removing duplicate
-        m_errorMonitor->ExpectSuccess();
         vkBindImageMemory2Function(device(), 5, bind_image_info);
-        m_errorMonitor->VerifyNotFound();
 
         vk::FreeMemory(device(), normal_image_mem, NULL);
         vk::FreeMemory(device(), mp_image_a_mem[0], NULL);
@@ -3142,10 +3136,8 @@ TEST_F(VkLayerTest, BlitImageLayout) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->ExpectSuccess(kPerformanceWarningBit | kErrorBit);
     vk::CmdBlitImage(m_commandBuffer->handle(), img_general.image(), img_general.Layout(), img_general.image(),
                      img_general.Layout(), 1, &blit_region, VK_FILTER_LINEAR);
-    m_errorMonitor->VerifyNotFound();
 
     // Illegal srcImageLayout
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBlitImage-srcImageLayout-00222");
@@ -5666,11 +5658,9 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     VkImageMemoryBarrier img_barriers[2] = {img_barrier, img_barrier};
 
     // Transitions from UNDEFINED  are valid, even if duplicated
-    m_errorMonitor->ExpectSuccess();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2,
                            img_barriers);
-    m_errorMonitor->VerifyNotFound();
 
     // Duplication of layout transitions (not from undefined) are not valid
     img_barriers[0].oldLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -5687,7 +5677,6 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         printf("%s External memory extension not supported, skipping external queue family subcase\n", kSkipPrefix);
     } else {
         // Transitions to and from EXTERNAL within the same command buffer are valid, if pointless.
-        m_errorMonitor->ExpectSuccess();
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         img_barrier.srcQueueFamilyIndex = submit_family;
@@ -5704,7 +5693,6 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         img_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                0, 0, nullptr, 0, nullptr, 1, &img_barrier);
-        m_errorMonitor->VerifyNotFound();
     }
 
     // Exceed the buffer size
@@ -7339,10 +7327,8 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     image_barrier[0].subresourceRange.layerCount = image_create_info.arrayLayers;
     image_barrier[0].subresourceRange.levelCount = image_create_info.mipLevels;
     image_barrier[0].subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_errorMonitor->ExpectSuccess();
     vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            NULL, 0, NULL, 1, image_barrier);
-    m_errorMonitor->VerifyNotFound();
 
     // Now cause error due to bad image layout transition in PipelineBarrier
     image_barrier[0] = LvlInitStruct<VkImageMemoryBarrier>();
@@ -10305,9 +10291,7 @@ TEST_F(VkLayerTest, DedicatedAllocationBinding) {
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    m_errorMonitor->ExpectSuccess();
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 
     // And for images...
     VkImageObj image(m_device);
@@ -10341,9 +10325,7 @@ TEST_F(VkLayerTest, DedicatedAllocationBinding) {
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    m_errorMonitor->ExpectSuccess();
     vk::BindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
@@ -10384,9 +10366,7 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with different but identical image
-    m_errorMonitor->ExpectSuccess();
     vk::BindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 
     VkImageObj smaller_image(m_device);
     image_info = VkImageObj::create_info();
@@ -10396,9 +10376,7 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
     smaller_image.init_no_mem(*m_device, image_info);
 
     // Bind with a smaller image
-    m_errorMonitor->ExpectSuccess();
     vk::BindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 
     VkImageObj larger_image(m_device);
     image_info = VkImageObj::create_info();
@@ -10425,14 +10403,10 @@ TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    m_errorMonitor->ExpectSuccess();
     vk::BindImageMemory(m_device->handle(), image->handle(), dedicated_image_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->ExpectSuccess();
     image.reset();  // destroy the original image
     vk::BindImageMemory(m_device->handle(), post_delete_image.handle(), dedicated_image_memory.handle(), 0);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, CornerSampledImageNV) {
@@ -10771,9 +10745,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
     formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
-    m_errorMonitor->ExpectSuccess();
     vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
-    m_errorMonitor->VerifyNotFound();
 
     // Try to create a Sampler with non-matching filters without feature bit set
     VkSamplerYcbcrConversionInfo sampler_ycbcr_info = LvlInitStruct<VkSamplerYcbcrConversionInfo>();
@@ -10857,14 +10829,12 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     m_errorMonitor->VerifyFound();
 
     // make sure zero and one are allowed for components.a
-    m_errorMonitor->ExpectSuccess();
     sycci.components.a = VK_COMPONENT_SWIZZLE_ONE;
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
     sycci.components.a = VK_COMPONENT_SWIZZLE_ZERO;
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     // test components.r
     sycci.components = identity;
@@ -10891,13 +10861,11 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
     m_errorMonitor->VerifyFound();
 
     // make sure components.r and components.b can be swapped
-    m_errorMonitor->ExpectSuccess();
     sycci.components = identity;
     sycci.components.r = VK_COMPONENT_SWIZZLE_B;
     sycci.components.b = VK_COMPONENT_SWIZZLE_R;
     vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
     vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     // Non RGB Identity model
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_IDENTITY;
@@ -10934,10 +10902,8 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
         sycci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;
         sycci.components = identity;
         sycci.components.g = VK_COMPONENT_SWIZZLE_R;
-        m_errorMonitor->ExpectSuccess();
         vk::CreateSamplerYcbcrConversion(device(), &sycci, NULL, &ycbcr_conv);
         vk::DestroySamplerYcbcrConversion(device(), ycbcr_conv, nullptr);
-        m_errorMonitor->VerifyNotFound();
     }
 
     // Create a valid conversion with guaranteed support
@@ -11026,12 +10992,10 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
     ASSERT_VK_SUCCESS(err);
 
-    m_errorMonitor->ExpectSuccess();
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
@@ -11130,9 +11094,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
         auto fpGetBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddress");
         if (nullptr == fpGetBufferDeviceAddress) {
-            m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferDeviceAddress");
-            m_errorMonitor->VerifyNotFound();
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
             fpGetBufferDeviceAddress(m_device->device(), &info);
@@ -11163,9 +11125,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
         auto fpGetDeviceMemoryOpaqueCaptureAddress =
             (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddress");
         if (nullptr == fpGetDeviceMemoryOpaqueCaptureAddress) {
-            m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetDeviceMemoryOpaqueCaptureAddress");
-            m_errorMonitor->VerifyNotFound();
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
             fpGetDeviceMemoryOpaqueCaptureAddress(m_device->device(), &mem_opaque_addr_info);
@@ -11181,17 +11141,11 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
 
     mem_opaque_addr_info.memory = buffer_mem;
-    m_errorMonitor->ExpectSuccess();
     vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->ExpectSuccess();
     vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
-    m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->ExpectSuccess();
     vkGetBufferDeviceAddressKHR(m_device->device(), &info);
-    m_errorMonitor->VerifyNotFound();
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
@@ -11251,9 +11205,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
         auto fpGetBufferOpaqueCaptureAddress =
             (PFN_vkGetBufferOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddress");
         if (nullptr == fpGetBufferOpaqueCaptureAddress) {
-            m_errorMonitor->ExpectSuccess();
             m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferOpaqueCaptureAddress");
-            m_errorMonitor->VerifyNotFound();
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
             fpGetBufferOpaqueCaptureAddress(m_device->device(), &info);
@@ -12191,9 +12143,7 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     m_errorMonitor->VerifyFound();
 
     custom_color_cinfo.format = VK_FORMAT_R8G8B8A8_UINT;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyNotFound();
 
     VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler};
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0, 1, &dsl_binding};
@@ -12254,9 +12204,7 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = LvlInitStruct<VkSamplerCustomBorderColorCreateInfoEXT>();
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     sampler_info.pNext = &custom_color_cinfo;
-    m_errorMonitor->ExpectSuccess();
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
-    m_errorMonitor->VerifyNotFound();
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -12505,7 +12453,6 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesCombinedSampler) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
     // Verify that it is allowed on this implementation if
@@ -12590,7 +12537,6 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesCombinedSampler) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02703");
@@ -12609,7 +12555,6 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesSeparateSampler) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    m_errorMonitor->ExpectSuccess();
 
     // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
     // Verify that it is allowed on this implementation if
@@ -12708,7 +12653,6 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesSeparateSampler) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02702");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDraw-None-02703");
@@ -13038,19 +12982,15 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     m_errorMonitor->VerifyFound();
 
     // Should work with only first 3 in array
-    m_errorMonitor->ExpectSuccess();
     formatList.viewFormatCount = 3;
     mutableImage.init(&imageInfo);
     ASSERT_TRUE(mutableImage.initialized());
-    m_errorMonitor->VerifyNotFound();
 
     // Make sure no error if 0 format
-    m_errorMonitor->ExpectSuccess();
     formatList.viewFormatCount = 0;
     formatList.pViewFormats = &formats[3];  // non-compatible format
     mutableImageZero.init(&imageInfo);
     ASSERT_TRUE(mutableImageZero.initialized());
-    m_errorMonitor->VerifyNotFound();
     // reset
     formatList.viewFormatCount = 3;
     formatList.pViewFormats = formats;
@@ -13062,11 +13002,9 @@ TEST_F(VkLayerTest, InvalidImageFormatList) {
     m_errorMonitor->VerifyFound();
 
     // Make sure no error if 1 format
-    m_errorMonitor->ExpectSuccess();
     formatList.viewFormatCount = 1;
     normalImage.init(&imageInfo);
     ASSERT_TRUE(normalImage.initialized());
-    m_errorMonitor->VerifyNotFound();
 
     VkImageViewCreateInfo imageViewInfo = LvlInitStruct<VkImageViewCreateInfo>(nullptr);
     imageViewInfo.flags = 0;
@@ -13131,12 +13069,9 @@ TEST_F(VkLayerTest, InvalidImageFormatListSizeCompatible) {
                                    nullptr,
                                    VK_IMAGE_LAYOUT_UNDEFINED};
 
-
     // The first image in the list should be size-compatible (128-bit)
-    m_errorMonitor->ExpectSuccess();
     VkImageObj good_image(m_device);
     good_image.init(&imageInfo);
-    m_errorMonitor->VerifyNotFound();
 
     // The second image in the list should NOT be size-compatible (64-bit)
     formatList.viewFormatCount = 2;
@@ -15363,10 +15298,8 @@ TEST_F(VkLayerTest, TestCopyingInterleavedRegions) {
 
     m_commandBuffer->begin();
 
-    m_errorMonitor->ExpectSuccess();
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer.handle(), 4, copy_infos);
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer.handle(), buffer_shared_memory.handle(), 4, copy_infos);
-    m_errorMonitor->VerifyNotFound();
 
     copy_infos[2].dstOffset = 21;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBuffer-pRegions-00117");
@@ -15436,8 +15369,6 @@ TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess();
-
     VkBufferObj buffer;
     auto buffer_info = VkBufferObj::create_info(4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer.init_no_mem(*m_device, buffer_info);
@@ -15461,8 +15392,6 @@ TEST_F(VkLayerTest, TestBindBufferMemoryDeviceGroup) {
     bind_buffer_info.buffer = buffer.handle();
     bind_buffer_info.memory = buffer_memory;
     bind_buffer_info.memoryOffset = 0;
-
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindBufferMemoryDeviceGroupInfo-deviceIndexCount-01606");
     vk::BindBufferMemory2(device(), 1, &bind_buffer_info);
@@ -15519,8 +15448,6 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    m_errorMonitor->ExpectSuccess();
-
     auto format = FindSupportedDepthStencilFormat(gpu());
     if (!format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
@@ -15529,8 +15456,6 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
 
     VkImageObj color_image(m_device);
     color_image.Init(64, 64, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
-
-    m_errorMonitor->VerifyNotFound();
 
     VkImageViewCreateInfo civ_ci = LvlInitStruct<VkImageViewCreateInfo>();
     civ_ci.image = color_image.handle();
@@ -15593,9 +15518,7 @@ TEST_F(VkLayerTest, VideoBufferUsage) {
 
     video_profiles.profileCount = 2;
 
-    m_errorMonitor->ExpectSuccess();
     vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyNotFound();
 
     vk::DestroyBuffer(device(), buffer, nullptr);
 }
@@ -15699,8 +15622,6 @@ TEST_F(VkLayerTest, TestInvalidSamplerReductionMode) {
 TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
     TEST_DESCRIPTION("Try to bind sparse resident image with invalid VkSparseImageMemoryBind");
 
-    m_errorMonitor->ExpectSuccess();
-
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!m_device->phy().features().sparseBinding || !m_device->phy().features().sparseResidencyImage3D) {
@@ -15754,8 +15675,6 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
 
     uint32_t sparse_index = m_device->QueueFamilyMatching(VK_QUEUE_SPARSE_BINDING_BIT, 0u);
     VkQueue sparse_queue = m_device->graphics_queues()[sparse_index]->handle();
-
-    m_errorMonitor->VerifyNotFound();
 
     // Force offset.x to invalid value
     image_bind.offset.x = granularity.width - 1;
@@ -15824,8 +15743,6 @@ TEST_F(VkLayerTest, InvalidVkSparseImageMemoryBind) {
 TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
     TEST_DESCRIPTION("Try to get image subresource layout for drm image plane 3 when it only has 2");
 
-    m_errorMonitor->ExpectSuccess();
-
     // Try to enable 1.2 since all required extensions were promoted
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
@@ -15884,8 +15801,6 @@ TEST_F(VkLayerTest, GetImageSubresourceLayoutInvalidDrmPlane) {
     if (image.initialized() == false) {
         GTEST_SKIP() << "Failed to create image.";
     }
-
-    m_errorMonitor->VerifyNotFound();
 
     // Try to get layout for plane 3 when we only have 2
     VkImageSubresource subresource{};
@@ -16150,8 +16065,6 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
         GTEST_SKIP() << "Requires unsupported sparseBinding feature.";
     }
 
-    m_errorMonitor->ExpectSuccess();
-
     auto s_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     VkSemaphore semaphore = VK_NULL_HANDLE;
     vk::CreateSemaphore(m_device->handle(), &s_info, nullptr, &semaphore);
@@ -16209,8 +16122,6 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
     m_commandBuffer->end();
 
-    m_errorMonitor->VerifyNotFound();
-
     // Submitting copy command with overlapping device memory regions
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     auto submit_info = LvlInitStruct<VkSubmitInfo>();
@@ -16224,14 +16135,10 @@ TEST_F(VkLayerTest, OverlappingSparseBufferCopy) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->ExpectSuccess();
-
     // Wait for operations to finish before destroying anything
     vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroySemaphore(m_device->handle(), semaphore, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, NonSeamlessCubeMapNotEnabled) {
@@ -16264,7 +16171,6 @@ TEST_F(VkLayerTest, NonSeamlessCubeMapNotEnabled) {
 TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     TEST_DESCRIPTION("Try to change layout of non sparse image with no memory bound.");
 
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
 
     VkImageCreateInfo info = vk_testing::Image::create_info();
@@ -16272,7 +16178,6 @@ TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     VkImageObj image{m_device};
     image.init_no_mem(*m_device, info);
-    m_errorMonitor->VerifyNotFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-image-01932");
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);

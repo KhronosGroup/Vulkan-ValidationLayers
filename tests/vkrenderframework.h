@@ -133,20 +133,21 @@ class ErrorMonitor {
 
     // Helpers
 
+    void VerifyFound();
+    void Finish() {
+        VerifyNotFound();
+        Reset();
+    }
+
+  private:
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
     bool ExpectingSuccess() const {
         return (desired_message_strings_.size() == 1) &&
                (desired_message_strings_.count("") == 1 && ignore_message_strings_.size() == 0);
     }
-    bool NeedCheckSuccess() const {
-        return (behavior_ == Behavior::DefaultSuccess) && ExpectingSuccess();
-    }
-
-    void VerifyFound();
+    bool NeedCheckSuccess() const { return (behavior_ == Behavior::DefaultSuccess) && ExpectingSuccess(); }
     void VerifyNotFound();
-
-  private:
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
     bool IgnoreMessage(std::string const &msg) const;

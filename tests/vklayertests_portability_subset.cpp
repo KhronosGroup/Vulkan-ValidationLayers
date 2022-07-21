@@ -475,13 +475,11 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
     m_errorMonitor->VerifyFound();
 
     // Ensure using without depth-stencil works
-    m_errorMonitor->ExpectSuccess();
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
     // pDepthStencilState should be ignored if rasterization is disabled or if the referenced subpass does not use a depth/stencil
     // attachment
     pipe.gp_ci_.pDepthStencilState = nullptr;
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState) {

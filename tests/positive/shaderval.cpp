@@ -85,9 +85,7 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
                   OpReturn
                   OpFunctionEnd
         )";
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj vs(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
@@ -155,9 +153,7 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr, SPV_ENV_VULKAN_1_0);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
@@ -226,9 +222,7 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
                   OpFunctionEnd
         )";
 
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj vs(this, spv_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayout) {
@@ -242,7 +236,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    m_errorMonitor->ExpectSuccess();
 
     // need at least SPIR-V 1.4 for SPV_KHR_workgroup_memory_explicit_layout
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
@@ -287,7 +280,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
     pipe.InitState();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayoutSpec) {
@@ -373,7 +365,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
     TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess();
 
     const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
     const uint32_t max_shared_ints = max_shared_memory_size / 4;
@@ -392,7 +383,6 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
     pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
@@ -435,7 +425,7 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
         helper.cs_.reset(
             new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeSpecConstantUnder) {
@@ -487,7 +477,7 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeSpecConstantUnder) {
         helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
                                          SPV_SOURCE_ASM, &specialization_info));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
@@ -526,7 +516,7 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeId) {
         helper.cs_.reset(
             new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstant) {
@@ -585,7 +575,7 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizeLocalSizeIdSpecConstant) {
         helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3,
                                          SPV_SOURCE_ASM, &specialization_info));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
@@ -634,13 +624,12 @@ TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSizeId) {
         helper.cs_.reset(
             new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
 }
 
 TEST_F(VkPositiveLayerTest, ComputeSharedMemorySpecConstantOp) {
     TEST_DESCRIPTION("Validate compute shader shared memory");
 
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(Init());
 
     const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
@@ -666,7 +655,7 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemorySpecConstantOp) {
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
         helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
@@ -704,9 +693,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
                    OpFunctionEnd
         )";
 
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
@@ -833,9 +820,7 @@ TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     memcpy(pipe.dsl_bindings_.data(), dslb, dslb_size * sizeof(VkDescriptorSetLayoutBinding));
     pipe.cs_.reset(new VkShaderObj(this, bindStateMinimalShaderText, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
@@ -871,9 +856,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
@@ -910,16 +893,13 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
     pipe.InitInfo();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
     TEST_DESCRIPTION(
         "Test that no error is produced when the fragment shader fails to declare an output, but the corresponding attachment's "
         "write mask is 0.");
-    m_errorMonitor->ExpectSuccess();
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -944,15 +924,12 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotWrittenButMasked) {
     descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
 
     pipe.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PointSizeWriteInFunction) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize in vertex shader function.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
@@ -967,7 +944,6 @@ TEST_F(VkPositiveLayerTest, PointSizeWriteInFunction) {
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
@@ -975,7 +951,6 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, and write in the final geometry stage.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess();
 
     if ((!m_device->phy().features().geometryShader) || (!m_device->phy().features().shaderTessellationAndGeometryPointSize)) {
         printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
@@ -996,14 +971,12 @@ TEST_F(VkPositiveLayerTest, PointSizeGeomShaderSuccess) {
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
     TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST and write PointSize outside of a structure.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
@@ -1086,12 +1059,10 @@ TEST_F(VkPositiveLayerTest, LoosePointSizeWrite) {
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.0 before shaderDrawParameters feature was added");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1119,15 +1090,12 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.1 using the extension");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -1158,15 +1126,12 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithoutFeature11) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
     TEST_DESCRIPTION("Use VK_KHR_shader_draw_parameters in 1.2 with feature bit enabled");
-    m_errorMonitor->ExpectSuccess();
 
     // use 1.2 to get the feature bit in VkPhysicalDeviceVulkan11Features
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1210,10 +1175,8 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
     }
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
@@ -1301,16 +1264,16 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
 
     //  shaderImageInt64Atomics
     current_shader = cs_image_load.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     current_shader = cs_image_store.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     current_shader = cs_image_exchange.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
     current_shader = cs_image_add.c_str();
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
@@ -1498,69 +1461,69 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
 
     if (atomic_float_features.shaderBufferFloat32Atomics == VK_TRUE) {
         current_shader = cs_buffer_float_32_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_buffer_float_32_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_buffer_float_32_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (atomic_float_features.shaderBufferFloat32AtomicAdd == VK_TRUE) {
         current_shader = cs_buffer_float_32_add.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (features2.features.shaderFloat64 == VK_TRUE) {
         if (atomic_float_features.shaderBufferFloat64Atomics == VK_TRUE) {
             current_shader = cs_buffer_float_64_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_64_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_64_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float_features.shaderBufferFloat64AtomicAdd == VK_TRUE) {
             current_shader = cs_buffer_float_64_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
     if (atomic_float_features.shaderSharedFloat32Atomics == VK_TRUE) {
         current_shader = cs_shared_float_32_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_shared_float_32_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_shared_float_32_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (atomic_float_features.shaderSharedFloat32AtomicAdd == VK_TRUE) {
         current_shader = cs_shared_float_32_add.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (features2.features.shaderFloat64 == VK_TRUE) {
         if (atomic_float_features.shaderSharedFloat64Atomics == VK_TRUE) {
             current_shader = cs_shared_float_64_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_64_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_64_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float_features.shaderSharedFloat64AtomicAdd == VK_TRUE) {
             current_shader = cs_shared_float_64_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
@@ -1569,18 +1532,18 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
 
     if (atomic_float_features.shaderImageFloat32Atomics == VK_TRUE) {
         current_shader = cs_image_load.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_image_store.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_image_exchange.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (atomic_float_features.shaderImageFloat32AtomicAdd == VK_TRUE) {
         current_shader = cs_image_add.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -1782,84 +1745,84 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     if (float16int8_features.shaderFloat16 == VK_TRUE && storage_16_bit_features.storageBuffer16BitAccess == VK_TRUE) {
         if (atomic_float2_features.shaderBufferFloat16Atomics == VK_TRUE) {
             current_shader = cs_buffer_float_16_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_16_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_16_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderBufferFloat16AtomicAdd == VK_TRUE) {
             current_shader = cs_buffer_float_16_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderBufferFloat16AtomicMinMax == VK_TRUE) {
             current_shader = cs_buffer_float_16_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_16_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderSharedFloat16Atomics == VK_TRUE) {
             current_shader = cs_shared_float_16_load.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_16_store.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_16_exchange.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderSharedFloat16AtomicAdd == VK_TRUE) {
             current_shader = cs_shared_float_16_add.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderSharedFloat16AtomicMinMax == VK_TRUE) {
             current_shader = cs_shared_float_16_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_16_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
     if (atomic_float2_features.shaderBufferFloat32AtomicMinMax == VK_TRUE) {
         current_shader = cs_buffer_float_32_min.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_buffer_float_32_max.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (atomic_float2_features.shaderSharedFloat32AtomicMinMax == VK_TRUE) {
         current_shader = cs_shared_float_32_min.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_shared_float_32_max.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 
     if (features2.features.shaderFloat64 == VK_TRUE) {
         if (atomic_float2_features.shaderBufferFloat64AtomicMinMax == VK_TRUE) {
             current_shader = cs_buffer_float_64_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_buffer_float_64_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
 
         if (atomic_float2_features.shaderSharedFloat64AtomicMinMax == VK_TRUE) {
             current_shader = cs_shared_float_64_min.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
             current_shader = cs_shared_float_64_max.c_str();
-            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+            CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
         }
     }
 
@@ -1869,10 +1832,10 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     // NOTE: this fails on new mesa drivers with ACO compilers
     if (atomic_float2_features.shaderSharedFloat32AtomicMinMax == VK_TRUE) {
         current_shader = cs_image_32_min.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
         current_shader = cs_image_32_max.c_str();
-        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
+        CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
 }
 
@@ -1952,9 +1915,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
                OpReturn
                OpFunctionEnd
         )";
-    m_errorMonitor->ExpectSuccess();
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
@@ -1984,9 +1945,7 @@ TEST_F(VkPositiveLayerTest, ValidateComputeShaderSharedMemory) {
     pipe.InitInfo();
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
@@ -2094,7 +2053,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputComponents) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
@@ -2168,9 +2127,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
 
     helper.InitState();
 
-    m_errorMonitor->ExpectSuccess();
     helper.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
@@ -2223,7 +2180,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit, "", true);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
@@ -2317,12 +2274,11 @@ TEST_F(VkPositiveLayerTest, TaskAndMeshShader) {
     const auto break_vp = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, "", true);
+    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit);
 }
 
 TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
     TEST_DESCRIPTION("Write built-in PointSize within a struct");
-    m_errorMonitor->ExpectSuccess();
 
     SetTargetApiVersion(VK_API_VERSION_1_1); // At least 1.1 is required for maintenance4
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
@@ -2465,7 +2421,6 @@ TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
     } else {
         printf("%s Error creating shader from assembly\n", kSkipPrefix);
     }
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags10) {
@@ -2539,14 +2494,12 @@ void main() {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags12) {
     TEST_DESCRIPTION("Reproduces issue 3442 where spirv-opt fails to set layout flags options using Vulkan 1.2");
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3442
 
-    m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -2605,7 +2558,6 @@ void main() {
     pipe.InitState();
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
@@ -2759,7 +2711,6 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     pipe.cs_.reset(new VkShaderObj(this, cs_src.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
                                    &specialization_info));
     pipe.InitState();
-    m_errorMonitor->ExpectSuccess();
     pipe.CreateComputePipeline();
 
     // Submit shader to see SSBO output
@@ -2795,7 +2746,6 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     ASSERT_EQ(ssbo_data[3], 0x07060504);
     ASSERT_EQ(ssbo_data[4], 0x04);
     vk::UnmapMemory(m_device->device(), buffer.memory().handle());
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescriptor) {
@@ -2819,8 +2769,6 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    m_errorMonitor->ExpectSuccess();
-
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_MISS_BIT_NV, nullptr},
                                      });
@@ -2838,13 +2786,10 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
     TEST_DESCRIPTION("Create a shader using 1.3 spirv environment");
-    m_errorMonitor->ExpectSuccess();
     SetTargetApiVersion(VK_API_VERSION_1_3);
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -2853,5 +2798,4 @@ TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
     }
 
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
-    m_errorMonitor->VerifyNotFound();
 }
