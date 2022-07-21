@@ -2497,6 +2497,15 @@ void DispatchGetShaderModuleCreateInfoIdentifierEXT(
     VkDevice                                    device,
     const VkShaderModuleCreateInfo*             pCreateInfo,
     VkShaderModuleIdentifierEXT*                pIdentifier);
+VkResult DispatchGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties);
+VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties);
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

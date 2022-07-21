@@ -7389,6 +7389,44 @@ bool ObjectLifetimes::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetFramebufferTilePropertiesQCOM-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(framebuffer, kVulkanObjectTypeFramebuffer, false, "VUID-vkGetFramebufferTilePropertiesQCOM-framebuffer-parameter", "VUID-vkGetFramebufferTilePropertiesQCOM-framebuffer-parent");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDynamicRenderingTilePropertiesQCOM-device-parameter", kVUIDUndefined);
+    if (pRenderingInfo) {
+        if (pRenderingInfo->pColorAttachments) {
+            for (uint32_t index1 = 0; index1 < pRenderingInfo->colorAttachmentCount; ++index1) {
+                skip |= ValidateObject(pRenderingInfo->pColorAttachments[index1].imageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-imageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+                skip |= ValidateObject(pRenderingInfo->pColorAttachments[index1].resolveImageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+            }
+        }
+        if (pRenderingInfo->pDepthAttachment) {
+            skip |= ValidateObject(pRenderingInfo->pDepthAttachment->imageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-imageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+            skip |= ValidateObject(pRenderingInfo->pDepthAttachment->resolveImageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+        }
+        if (pRenderingInfo->pStencilAttachment) {
+            skip |= ValidateObject(pRenderingInfo->pStencilAttachment->imageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-imageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+            skip |= ValidateObject(pRenderingInfo->pStencilAttachment->resolveImageView, kVulkanObjectTypeImageView, true, "VUID-VkRenderingAttachmentInfo-resolveImageView-parameter", "VUID-VkRenderingAttachmentInfo-commonparent");
+        }
+    }
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

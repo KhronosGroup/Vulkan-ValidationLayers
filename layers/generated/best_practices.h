@@ -1814,6 +1814,14 @@ void PostCallRecordCreateScreenSurfaceQNX(
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
 
+void PostCallRecordGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties,
+    VkResult                                    result) override;
+
+
 void PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

@@ -10006,6 +10006,69 @@ void DispatchGetShaderModuleCreateInfoIdentifierEXT(
 
 }
 
+VkResult DispatchGetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+    {
+        framebuffer = layer_data->Unwrap(framebuffer);
+    }
+    VkResult result = layer_data->device_dispatch_table.GetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+
+    return result;
+}
+
+VkResult DispatchGetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+    safe_VkRenderingInfo var_local_pRenderingInfo;
+    safe_VkRenderingInfo *local_pRenderingInfo = NULL;
+    {
+        if (pRenderingInfo) {
+            local_pRenderingInfo = &var_local_pRenderingInfo;
+            local_pRenderingInfo->initialize(pRenderingInfo);
+            if (local_pRenderingInfo->pColorAttachments) {
+                for (uint32_t index1 = 0; index1 < local_pRenderingInfo->colorAttachmentCount; ++index1) {
+                    if (pRenderingInfo->pColorAttachments[index1].imageView) {
+                        local_pRenderingInfo->pColorAttachments[index1].imageView = layer_data->Unwrap(pRenderingInfo->pColorAttachments[index1].imageView);
+                    }
+                    if (pRenderingInfo->pColorAttachments[index1].resolveImageView) {
+                        local_pRenderingInfo->pColorAttachments[index1].resolveImageView = layer_data->Unwrap(pRenderingInfo->pColorAttachments[index1].resolveImageView);
+                    }
+                }
+            }
+            if (local_pRenderingInfo->pDepthAttachment) {
+                if (pRenderingInfo->pDepthAttachment->imageView) {
+                    local_pRenderingInfo->pDepthAttachment->imageView = layer_data->Unwrap(pRenderingInfo->pDepthAttachment->imageView);
+                }
+                if (pRenderingInfo->pDepthAttachment->resolveImageView) {
+                    local_pRenderingInfo->pDepthAttachment->resolveImageView = layer_data->Unwrap(pRenderingInfo->pDepthAttachment->resolveImageView);
+                }
+            }
+            if (local_pRenderingInfo->pStencilAttachment) {
+                if (pRenderingInfo->pStencilAttachment->imageView) {
+                    local_pRenderingInfo->pStencilAttachment->imageView = layer_data->Unwrap(pRenderingInfo->pStencilAttachment->imageView);
+                }
+                if (pRenderingInfo->pStencilAttachment->resolveImageView) {
+                    local_pRenderingInfo->pStencilAttachment->resolveImageView = layer_data->Unwrap(pRenderingInfo->pStencilAttachment->resolveImageView);
+                }
+            }
+            WrapPnextChainHandles(layer_data, local_pRenderingInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetDynamicRenderingTilePropertiesQCOM(device, (const VkRenderingInfo*)local_pRenderingInfo, pProperties);
+
+    return result;
+}
+
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,

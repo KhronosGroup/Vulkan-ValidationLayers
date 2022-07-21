@@ -952,6 +952,10 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetShaderModuleIdentifierEXT GetShaderModuleIdentifierEXT;
     PFN_vkGetShaderModuleCreateInfoIdentifierEXT GetShaderModuleCreateInfoIdentifierEXT;
 
+    // ---- VK_QCOM_tile_properties extension commands
+    PFN_vkGetFramebufferTilePropertiesQCOM GetFramebufferTilePropertiesQCOM;
+    PFN_vkGetDynamicRenderingTilePropertiesQCOM GetDynamicRenderingTilePropertiesQCOM;
+
     // ---- VK_KHR_acceleration_structure extension commands
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
     PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;

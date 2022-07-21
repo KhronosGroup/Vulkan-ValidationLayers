@@ -11704,6 +11704,58 @@ struct safe_VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT {
     VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImageCompressionControlSwapchainFeaturesEXT const *>(this); }
 };
 
+struct safe_VkImageViewSampleWeightCreateInfoQCOM {
+    VkStructureType sType;
+    const void* pNext{};
+    VkOffset2D filterCenter;
+    VkExtent2D filterSize;
+    uint32_t numPhases;
+    safe_VkImageViewSampleWeightCreateInfoQCOM(const VkImageViewSampleWeightCreateInfoQCOM* in_struct);
+    safe_VkImageViewSampleWeightCreateInfoQCOM(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src);
+    safe_VkImageViewSampleWeightCreateInfoQCOM& operator=(const safe_VkImageViewSampleWeightCreateInfoQCOM& copy_src);
+    safe_VkImageViewSampleWeightCreateInfoQCOM();
+    ~safe_VkImageViewSampleWeightCreateInfoQCOM();
+    void initialize(const VkImageViewSampleWeightCreateInfoQCOM* in_struct);
+    void initialize(const safe_VkImageViewSampleWeightCreateInfoQCOM* copy_src);
+    VkImageViewSampleWeightCreateInfoQCOM *ptr() { return reinterpret_cast<VkImageViewSampleWeightCreateInfoQCOM *>(this); }
+    VkImageViewSampleWeightCreateInfoQCOM const *ptr() const { return reinterpret_cast<VkImageViewSampleWeightCreateInfoQCOM const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceImageProcessingFeaturesQCOM {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 textureSampleWeighted;
+    VkBool32 textureBoxFilter;
+    VkBool32 textureBlockMatch;
+    safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct);
+    safe_VkPhysicalDeviceImageProcessingFeaturesQCOM(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& operator=(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceImageProcessingFeaturesQCOM();
+    ~safe_VkPhysicalDeviceImageProcessingFeaturesQCOM();
+    void initialize(const VkPhysicalDeviceImageProcessingFeaturesQCOM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceImageProcessingFeaturesQCOM* copy_src);
+    VkPhysicalDeviceImageProcessingFeaturesQCOM *ptr() { return reinterpret_cast<VkPhysicalDeviceImageProcessingFeaturesQCOM *>(this); }
+    VkPhysicalDeviceImageProcessingFeaturesQCOM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImageProcessingFeaturesQCOM const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceImageProcessingPropertiesQCOM {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t maxWeightFilterPhases;
+    VkExtent2D maxWeightFilterDimension;
+    VkExtent2D maxBlockMatchRegion;
+    VkExtent2D maxBoxFilterBlockSize;
+    safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct);
+    safe_VkPhysicalDeviceImageProcessingPropertiesQCOM(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src);
+    safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& operator=(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM& copy_src);
+    safe_VkPhysicalDeviceImageProcessingPropertiesQCOM();
+    ~safe_VkPhysicalDeviceImageProcessingPropertiesQCOM();
+    void initialize(const VkPhysicalDeviceImageProcessingPropertiesQCOM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceImageProcessingPropertiesQCOM* copy_src);
+    VkPhysicalDeviceImageProcessingPropertiesQCOM *ptr() { return reinterpret_cast<VkPhysicalDeviceImageProcessingPropertiesQCOM *>(this); }
+    VkPhysicalDeviceImageProcessingPropertiesQCOM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImageProcessingPropertiesQCOM const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceSubpassMergeFeedbackFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
@@ -11824,6 +11876,38 @@ struct safe_VkShaderModuleIdentifierEXT {
     void initialize(const safe_VkShaderModuleIdentifierEXT* copy_src);
     VkShaderModuleIdentifierEXT *ptr() { return reinterpret_cast<VkShaderModuleIdentifierEXT *>(this); }
     VkShaderModuleIdentifierEXT const *ptr() const { return reinterpret_cast<VkShaderModuleIdentifierEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 tileProperties;
+    safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct);
+    safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& operator=(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM();
+    ~safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM();
+    void initialize(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM* copy_src);
+    VkPhysicalDeviceTilePropertiesFeaturesQCOM *ptr() { return reinterpret_cast<VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(this); }
+    VkPhysicalDeviceTilePropertiesFeaturesQCOM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceTilePropertiesFeaturesQCOM const *>(this); }
+};
+
+struct safe_VkTilePropertiesQCOM {
+    VkStructureType sType;
+    void* pNext{};
+    VkExtent3D tileSize;
+    VkExtent2D apronSize;
+    VkOffset2D origin;
+    safe_VkTilePropertiesQCOM(const VkTilePropertiesQCOM* in_struct);
+    safe_VkTilePropertiesQCOM(const safe_VkTilePropertiesQCOM& copy_src);
+    safe_VkTilePropertiesQCOM& operator=(const safe_VkTilePropertiesQCOM& copy_src);
+    safe_VkTilePropertiesQCOM();
+    ~safe_VkTilePropertiesQCOM();
+    void initialize(const VkTilePropertiesQCOM* in_struct);
+    void initialize(const safe_VkTilePropertiesQCOM* copy_src);
+    VkTilePropertiesQCOM *ptr() { return reinterpret_cast<VkTilePropertiesQCOM *>(this); }
+    VkTilePropertiesQCOM const *ptr() const { return reinterpret_cast<VkTilePropertiesQCOM const *>(this); }
 };
 
 union safe_VkDeviceOrHostAddressKHR {

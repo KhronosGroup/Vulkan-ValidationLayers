@@ -615,10 +615,12 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_viewport_swizzle{kNotEnabled};
     ExtEnabled vk_nv_win32_keyed_mutex{kNotEnabled};
     ExtEnabled vk_qcom_fragment_density_map_offset{kNotEnabled};
+    ExtEnabled vk_qcom_image_processing{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_shader_resolve{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
     ExtEnabled vk_qcom_rotated_copy_commands{kNotEnabled};
+    ExtEnabled vk_qcom_tile_properties{kNotEnabled};
     ExtEnabled vk_valve_descriptor_set_host_mapping{kNotEnabled};
     ExtEnabled vk_valve_mutable_descriptor_type{kNotEnabled};
 
@@ -1153,6 +1155,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_fragment_density_map_offset, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
+            {VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_image_processing, {{
+                           {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
             {VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})},
             {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
             {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
@@ -1161,6 +1165,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_rotated_copy_commands, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
+            {VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_tile_properties, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_descriptor_set_host_mapping, {})},
             {VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type, {{
                            {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
@@ -1592,10 +1598,12 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME,
 #endif
     VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME,
+    VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
     VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME,
+    VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME,
     VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME,
     VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
 };

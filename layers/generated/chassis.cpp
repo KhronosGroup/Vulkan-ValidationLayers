@@ -12854,6 +12854,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
 
 
 
+
 VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
@@ -12896,6 +12897,54 @@ VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
     }
+}
+
+
+VKAPI_ATTR VkResult VKAPI_CALL GetFramebufferTilePropertiesQCOM(
+    VkDevice                                    device,
+    VkFramebuffer                               framebuffer,
+    uint32_t*                                   pPropertiesCount,
+    VkTilePropertiesQCOM*                       pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetFramebufferTilePropertiesQCOM]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetFramebufferTilePropertiesQCOM]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+    }
+    VkResult result = DispatchGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetFramebufferTilePropertiesQCOM]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
+    VkDevice                                    device,
+    const VkRenderingInfo*                      pRenderingInfo,
+    VkTilePropertiesQCOM*                       pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateGetDynamicRenderingTilePropertiesQCOM]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordGetDynamicRenderingTilePropertiesQCOM]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+    }
+    VkResult result = DispatchGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordGetDynamicRenderingTilePropertiesQCOM]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, result);
+    }
+    return result;
 }
 
 
@@ -14049,6 +14098,8 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkGetDescriptorSetHostMappingVALVE", {kFuncTypeDev, (void*)GetDescriptorSetHostMappingVALVE}},
     {"vkGetShaderModuleIdentifierEXT", {kFuncTypeDev, (void*)GetShaderModuleIdentifierEXT}},
     {"vkGetShaderModuleCreateInfoIdentifierEXT", {kFuncTypeDev, (void*)GetShaderModuleCreateInfoIdentifierEXT}},
+    {"vkGetFramebufferTilePropertiesQCOM", {kFuncTypeDev, (void*)GetFramebufferTilePropertiesQCOM}},
+    {"vkGetDynamicRenderingTilePropertiesQCOM", {kFuncTypeDev, (void*)GetDynamicRenderingTilePropertiesQCOM}},
     {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
     {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
     {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

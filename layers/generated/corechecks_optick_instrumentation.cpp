@@ -8512,6 +8512,38 @@ void CoreChecksOptickInstrumented::PostCallRecordGetShaderModuleCreateInfoIdenti
     CoreChecks::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(device, pCreateInfo, pIdentifier);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetFramebufferTilePropertiesQCOM(VkDevice device, VkFramebuffer framebuffer, uint32_t* pPropertiesCount, VkTilePropertiesQCOM* pProperties, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetFramebufferTilePropertiesQCOM(device, framebuffer, pPropertiesCount, pProperties, result);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo, VkTilePropertiesQCOM* pProperties) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo, VkTilePropertiesQCOM* pProperties) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(VkDevice device, const VkRenderingInfo* pRenderingInfo, VkTilePropertiesQCOM* pProperties, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordGetDynamicRenderingTilePropertiesQCOM(device, pRenderingInfo, pProperties, result);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
