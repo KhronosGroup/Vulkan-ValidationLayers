@@ -905,7 +905,6 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
 cvdescriptorset::MutableDescriptor::MutableDescriptor()
     : Descriptor(),
       buffer_size_(0),
-      active_descriptor_class_(NoDescriptorClass),
       active_descriptor_type_(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE),
       immutable_(false),
       image_layout_(VK_IMAGE_LAYOUT_UNDEFINED),
@@ -1067,6 +1066,7 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, co
             default:
                 break;
         }
+        SetDescriptorType(mutable_src->ActiveType(), mutable_src->GetBufferSize());
     }
 }
 

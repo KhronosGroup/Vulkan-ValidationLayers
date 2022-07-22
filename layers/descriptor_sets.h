@@ -662,10 +662,10 @@ class MutableDescriptor : public Descriptor {
       bool Invalid() const override;
 
       VkDescriptorType ActiveType() const { return active_descriptor_type_; }
-      DescriptorClass ActiveClass() const { return active_descriptor_class_; }
+      DescriptorClass ActiveClass() const { return DescriptorTypeToClass(active_descriptor_type_); }
+
     private:
       VkDeviceSize buffer_size_{0};
-      DescriptorClass active_descriptor_class_{NoDescriptorClass};
       VkDescriptorType active_descriptor_type_{VK_DESCRIPTOR_TYPE_MUTABLE_VALVE};
 
       // Sampler and ImageSampler Descriptor
