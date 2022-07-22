@@ -1916,16 +1916,19 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
             }
         }
     } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        const auto *descriptor = static_cast<const cvdescriptorset::MutableDescriptor*>(src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement));
-        if (descriptor->ActiveType() != dst_type) {
-            *error_code = "VUID-VkCopyDescriptorSet-srcSet-04613";
-            std::stringstream error_str;
-            error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the "
-                         "active descriptor type ("
-                      << string_VkDescriptorType(descriptor->ActiveType())
-                      << ") does not match the dstBinding descriptor type " << string_VkDescriptorType(dst_type) << ".";
-            *error_msg = error_str.str();
-            return false;
+        auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
+        for (uint32_t i = 0; i < update->descriptorCount; i++, ++src_iter) {
+            const auto &mutable_src = static_cast<const cvdescriptorset::MutableDescriptor &>(*src_iter);
+            if (mutable_src.ActiveType() != dst_type) {
+                *error_code = "VUID-VkCopyDescriptorSet-srcSet-04613";
+                std::stringstream error_str;
+                error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the "
+                             "active descriptor type ("
+                          << string_VkDescriptorType(mutable_src.ActiveType()) << ") does not match the dstBinding descriptor type "
+                          << string_VkDescriptorType(dst_type) << ".";
+                *error_msg = error_str.str();
+                return false;
+            }
         }
     }
 
