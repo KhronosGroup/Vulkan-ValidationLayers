@@ -1171,7 +1171,7 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingShaderStages) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported.";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -1187,13 +1187,82 @@ TEST_F(VkGraphicsLibraryLayerTest, MissingShaderStages) {
         m_errorMonitor->VerifyFound();
     }
 
-    {
-        CreatePipelineHelper pipe(*this);
-        pipe.InitFragmentLibInfo(0, nullptr);
-        pipe.InitState();
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+    vs_ci.pCode = vs_spv.data();
 
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+    stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    // While 06896 is a VkGraphicsPipeline*CreateInfo* VUID, it interacts with dynamnic state, so we need to check wait until draw
+    // time to check it
+
+    CreatePipelineHelper vi_pipe(*this);
+    vi_pipe.InitVertexInputLibInfo();
+    vi_pipe.InitState();
+    ASSERT_VK_SUCCESS(vi_pipe.CreateGraphicsPipeline(true, false));
+
+    // Pre-raster lib created with rasterization _enabled_
+    CreatePipelineHelper vs_pipe(*this);
+    vs_pipe.InitPreRasterLibInfo(1, &stage_ci);
+    vs_pipe.InitState();
+    vs_pipe.CreateGraphicsPipeline();
+
+    // FS lib created with no fragment shader
+    CreatePipelineHelper fs_pipe(*this);
+    fs_pipe.InitFragmentLibInfo(0, nullptr);
+    fs_pipe.InitState();
+    fs_pipe.CreateGraphicsPipeline();
+
+    CreatePipelineHelper fo_pipe(*this);
+    fo_pipe.InitFragmentOutputLibInfo();
+    fo_pipe.gp_ci_.renderPass = fs_pipe.gp_ci_.renderPass;
+    fo_pipe.gp_ci_.subpass = fs_pipe.gp_ci_.subpass;
+    ASSERT_VK_SUCCESS(fo_pipe.CreateGraphicsPipeline());
+
+    {
+        VkPipeline libraries[4] = {vi_pipe.pipeline_, fs_pipe.pipeline_, vs_pipe.pipeline_, fo_pipe.pipeline_};
+
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size(libraries);
+        link_info.pLibraries = libraries;
+
+        auto pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        vk_testing::Pipeline pipe(*m_device, pipe_ci);
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896");
-        pipe.CreateGraphicsPipeline();
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+    }
+
+    {
+        // If rasterization is disabled, a fragment shader is not necessary
+        vs_pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+        vs_pipe.InitState();
+        ASSERT_VK_SUCCESS(vs_pipe.CreateGraphicsPipeline());
+
+        VkPipeline libraries[4] = {vi_pipe.pipeline_, vs_pipe.pipeline_, fs_pipe.pipeline_, fo_pipe.pipeline_};
+
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size(libraries);
+        link_info.pLibraries = libraries;
+
+        auto pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        vk_testing::Pipeline pipe(*m_device, pipe_ci);
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
     }
 }
