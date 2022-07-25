@@ -280,6 +280,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t initial_device_mask;
     VkPrimitiveTopology primitiveTopology;
 
+    bool rasterization_disabled = false;
+
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
     std::shared_ptr<std::vector<SUBPASS_INFO>> active_subpasses;
@@ -514,6 +516,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t GetDynamicDepthResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 1; }
     uint32_t GetDynamicStencilAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 2; }
     uint32_t GetDynamicStencilResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 3; }
+
+    bool RasterizationDisabled() const;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;

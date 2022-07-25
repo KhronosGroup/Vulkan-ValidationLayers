@@ -393,11 +393,8 @@ bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags sta
 
 // Return true if for a given PSO, the given state enum is dynamic, else return false
 bool CoreChecks::IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState state) const {
-    const auto *dynamic_state = pPipeline->DynamicState();
-    if (pPipeline && (pPipeline->GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && dynamic_state) {
-        for (uint32_t i = 0; i < dynamic_state->dynamicStateCount; i++) {
-            if (state == dynamic_state->pDynamicStates[i]) return true;
-        }
+    if (pPipeline) {
+        return pPipeline->IsDynamic(state);
     }
     return false;
 }
@@ -1463,6 +1460,17 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         skip |= ValidateGraphicsPipelineShaderDynamicState(pPipeline, pCB, caller, vuid);
     }
 
+    if (!pCB->RasterizationDisabled()) {
+        // NOTE: we should be able to assume the pipeline has fragment shader state at this point
+        if (pPipeline->fragment_shader_state && ((pPipeline->active_shaders & FragmentShaderState::ValidShaderStages()) == 0)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
+                             "%s(): Currently bound pipeline %s contains fragment shader state, but stages (%s) does not contain a "
+                             "fragment shader.",
+                             caller, report_data->FormatHandle(pPipeline->pipeline()).c_str(),
+                             string_VkShaderStageFlags(pPipeline->active_shaders).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -2336,13 +2344,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
                          "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
                          "] contains pre-raster state, but stages (%s) does not contain any pre-raster shaders.",
-                         pipe_index, string_VkShaderStageFlags(pipeline->active_shaders).c_str());
-    }
-
-    if (pipeline->fragment_shader_state && ((pipeline->active_shaders & FragmentShaderState::ValidShaderStages()) == 0)) {
-        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
-                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                         "] contains fragment shader state, but stages (%s) does not contain a fragment shader.",
                          pipe_index, string_VkShaderStageFlags(pipeline->active_shaders).c_str());
     }
 
