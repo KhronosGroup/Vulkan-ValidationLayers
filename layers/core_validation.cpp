@@ -1547,8 +1547,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         }
         objlist.add(state.pipeline_layout);
         result |= LogError(objlist, vuid.compatible_pipeline,
-                           "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
-                           " with bound descriptor sets, last bound with %s",
+                           "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
+                           ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
                            CommandTypeString(cmd_type), report_data->FormatHandle(pipe->pipeline()).c_str(),
                            pipe_layouts_log.str().c_str(), pipe->max_active_slot,
                            report_data->FormatHandle(state.pipeline_layout).c_str());
