@@ -545,7 +545,11 @@ class Image : public internal::NonDispHandle<VkImage> {
     bool transparent() const;
     bool copyable() const { return (format_features_ & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT); }
 
+    VkImageAspectFlags aspect_mask() const { return aspect_mask(create_info_.format); }
+
+    VkImageSubresourceRange subresource_range() const { return subresource_range(create_info_, aspect_mask()); }
     VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
+
     VkExtent3D extent() const { return create_info_.extent; }
     VkExtent3D extent(uint32_t mip_level) const { return extent(create_info_.extent, mip_level); }
     VkFormat format() const { return create_info_.format; }
@@ -598,6 +602,8 @@ class Image : public internal::NonDispHandle<VkImage> {
                                                      uint32_t base_array_layer, uint32_t num_layers);
     static VkImageSubresourceRange subresource_range(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask);
     static VkImageSubresourceRange subresource_range(const VkImageSubresource &subres);
+
+    static VkImageAspectFlags aspect_mask(VkFormat format);
 
     static VkExtent2D extent(int32_t width, int32_t height);
     static VkExtent2D extent(const VkExtent2D &extent, uint32_t mip_level);

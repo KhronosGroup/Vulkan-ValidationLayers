@@ -29,6 +29,7 @@
 
 #include "test_common.h"
 #include "vk_typemap_helper.h"
+#include "vk_format_utils.h"
 
 namespace {
 
@@ -604,6 +605,20 @@ VkSubresourceLayout Image::subresource_layout(const VkImageSubresourceLayers &su
 bool Image::transparent() const {
     return (create_info_.tiling == VK_IMAGE_TILING_LINEAR && create_info_.samples == VK_SAMPLE_COUNT_1_BIT &&
             !(create_info_.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)));
+}
+
+VkImageAspectFlags Image::aspect_mask(VkFormat format) {
+    VkImageAspectFlags image_aspect;
+    if (FormatIsDepthAndStencil(format)) {
+        image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (FormatIsDepthOnly(format)) {
+        image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
+    } else if (FormatIsStencilOnly(format)) {
+        image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+    } else {  // color
+        image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
+    return image_aspect;
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ImageView, vk::DestroyImageView)
