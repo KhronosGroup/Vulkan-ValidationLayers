@@ -1752,17 +1752,7 @@ void VkImageObj::Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlag
     else
         newLayout = m_descriptorImageInfo.imageLayout;
 
-    VkImageAspectFlags image_aspect = 0;
-    const auto format = create_info.format;
-    if (FormatIsDepthAndStencil(format)) {
-        image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsDepthOnly(format)) {
-        image_aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
-    } else if (FormatIsStencilOnly(format)) {
-        image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
-    } else {  // color
-        image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    }
+    VkImageAspectFlags image_aspect = aspect_mask(create_info.format);
     SetLayout(image_aspect, newLayout);
 }
 
