@@ -3939,6 +3939,11 @@ TEST_F(VkLayerTest, InvalidResolveImageViewSamples) {
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
+    color_attachment.resolveImageView = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06860");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
 }
 
