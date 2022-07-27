@@ -455,6 +455,7 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
     void BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
     void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
     void BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+    void NextSubpass(VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
     void EndRenderPass();
     void BeginRendering(const VkRenderingInfoKHR &renderingInfo);
     void EndRendering();
@@ -607,6 +608,7 @@ class VkImageObj : public vk_testing::Image {
 
     void SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
+    void SetLayout(VkImageLayout image_layout) { SetLayout(aspect_mask(), image_layout); };
 
     VkImageLayout Layout() const { return m_descriptorImageInfo.imageLayout; }
     uint32_t width() const { return extent().width; }

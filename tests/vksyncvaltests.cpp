@@ -2380,7 +2380,8 @@ struct CreateRenderPassHelper {
         }
     };
 
-    VkImageUsageFlags usage_color = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    VkImageUsageFlags usage_color =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkImageUsageFlags usage_input =
         VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2407,8 +2408,7 @@ struct CreateRenderPassHelper {
     std::vector<VkSubpassDescription> subpasses;
     std::vector<SubpassDescriptionStore> subpass_description_store;
     VkRenderPassCreateInfo render_pass_create_info;
-    VkRenderPassCreateInfo render_pass_ci;
-    vk_testing::RenderPass render_pass;
+    std::shared_ptr<vk_testing::RenderPass> render_pass;
     std::shared_ptr<vk_testing::Framebuffer> framebuffer;
     VkRenderPassBeginInfo render_pass_begin;
     std::vector<VkClearValue> clear_colors;
@@ -2435,16 +2435,23 @@ struct CreateRenderPassHelper {
         attachments = {view_color, view_input};
     }
 
-    VkAttachmentReference DefaultColorRef() const {
+    static VkAttachmentReference DefaultColorRef() {
         return {
             0u,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         };
     }
 
-    VkAttachmentReference DefaultInputRef() const {
+    static VkAttachmentReference DefaultInputRef() {
         return {
             1u,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        };
+    };
+
+    static VkAttachmentReference UnusedColorAttachmentRef() {
+        return {
+            VK_ATTACHMENT_UNUSED,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         };
     };
@@ -2476,6 +2483,29 @@ struct CreateRenderPassHelper {
         };
     }
 
+    void InitAllAttachmentsToLayoutGeneral() {
+        fb_attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        fb_attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+        color_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+        input_attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        input_attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+        input_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    void SetAttachmentLayout(VkImageObj* image, const VkAttachmentDescription& attach_desc) {
+        if (image && image->initialized() && (attach_desc.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
+            image->SetLayout(attach_desc.initialLayout);
+        }
+    }
+
+    void SetColorLayout() { SetAttachmentLayout(image_color.get(), fb_attach_desc); }
+    void SetInputLayout() { SetAttachmentLayout(image_input.get(), input_attach_desc); }
+
+    void InitAttachmentLayouts() {
+        SetColorLayout();
+        SetInputLayout();
+    }
+
     void InitAttachmentArrays() {
         // Add attachments
         if (attachment_descs.empty()) {
@@ -2489,10 +2519,17 @@ struct CreateRenderPassHelper {
         }
     }
 
+    void AddSubpassDescription(const std::vector<VkAttachmentReference>& input, const std::vector<VkAttachmentReference> color) {
+        subpass_description_store.emplace_back(input, color);
+    }
+
+    // Capture the current input and color attachements, which can then be modified
+    void AddSubpassDescription() { subpass_description_store.emplace_back(input_attachments, color_attachments); }
+
     // This is the default for a single subpass renderpass, don't call if you want to change that
     void InitSubpassDescription() {
         if (subpass_description_store.empty()) {
-            subpass_description_store.emplace_back(input_attachments, color_attachments);
+            AddSubpassDescription();
         }
     }
 
@@ -2522,7 +2559,8 @@ struct CreateRenderPassHelper {
         InitSubpassDescription();
         InitSubpasses();
         InitRenderPassInfo();
-        render_pass.init(*dev, render_pass_create_info);
+        render_pass = std::make_shared<vk_testing::RenderPass>();
+        render_pass->init(*dev, render_pass_create_info);
     }
 
     void InitFramebuffer() {
@@ -2530,7 +2568,7 @@ struct CreateRenderPassHelper {
         VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                         0,
                                         0u,
-                                        render_pass.handle(),
+                                        render_pass->handle(),
                                         static_cast<uint32_t>(attachments.size()),
                                         attachments.data(),
                                         width,
@@ -2546,7 +2584,7 @@ struct CreateRenderPassHelper {
     void InitBeginInfo() {
         render_pass_begin = lvl_init_struct<VkRenderPassBeginInfo>();
         render_pass_begin.renderArea = {{0, 0}, {width, height}};
-        render_pass_begin.renderPass = render_pass.handle();
+        render_pass_begin.renderPass = render_pass->handle();
         render_pass_begin.framebuffer = framebuffer->handle();
 
         // Simplistic ensure enough clear colors, if not provided
@@ -2558,6 +2596,15 @@ struct CreateRenderPassHelper {
         }
         render_pass_begin.clearValueCount = static_cast<uint32_t>(clear_colors.size());
         render_pass_begin.pClearValues = clear_colors.data();
+    }
+
+    void InitPipelineHelper(CreatePipelineHelper& g_pipe) {
+        g_pipe.InitInfo();
+        g_pipe.ResetShaderInfo(bindStateVertShaderText, bindStateFragSubpassLoadInputText);
+        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+        g_pipe.gp_ci_.renderPass = render_pass->handle();
+        g_pipe.InitState();
+        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
     }
 
     void Init() {
@@ -2608,12 +2655,10 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
         GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
-    // ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.Init();
     const VkImage image_input_handle = rp_helper.image_input->handle();
-    const VkRenderPass rp = rp_helper.render_pass.handle();
+    const VkRenderPass rp = rp_helper.render_pass->handle();
 
     SyncTestPipeline st_pipe(*this, rp);
     st_pipe.InitState();
@@ -2714,12 +2759,7 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     VkImageCopy full_region{mip_0_layer_0, image_zero, mip_0_layer_0, image_zero, image_size};
 
     rp_helper_positive.InitState();
-    rp_helper_positive.fb_attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rp_helper_positive.fb_attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rp_helper_positive.color_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
-    rp_helper_positive.input_attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rp_helper_positive.input_attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rp_helper_positive.input_ref.layout = VK_IMAGE_LAYOUT_GENERAL;
+    rp_helper_positive.InitAllAttachmentsToLayoutGeneral();
 
     // Copy the comon state to the other renderpass helper
     CreateRenderPassHelper rp_helper_negative(m_device);
@@ -2766,14 +2806,9 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
 
 
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.InitInfo();
-    g_pipe.ResetShaderInfo(bindStateVertShaderText, bindStateFragSubpassLoadInputText);
-    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-    g_pipe.gp_ci_.renderPass = rp_helper_positive.render_pass.handle();
-    g_pipe.InitState();
-    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+    rp_helper_positive.InitPipelineHelper(g_pipe);
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper_positive.view_input, sampler.handle(),
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper_positive.view_input, VK_NULL_HANDLE,
                                                      VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -4872,4 +4907,75 @@ TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
     m_errorMonitor->ExpectSuccess();
     test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkSyncValTest, SyncQSRenderPass) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    CreateRenderPassHelper rp_helper(m_device);
+    rp_helper.InitAllAttachmentsToLayoutGeneral();
+
+    rp_helper.InitState();
+    rp_helper.InitAttachmentLayouts();  // Quiet any CoreChecks ImageLayout complaints
+    m_device->wait();                   // and quiesce the system
+
+    // The  dependency protects the input attachment but not the color attachment
+    rp_helper.subpass_dep.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                     VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, 0U});
+
+    rp_helper.InitRenderPass();
+    rp_helper.InitFramebuffer();
+    rp_helper.InitBeginInfo();
+
+    VkCommandBufferObj cb0(m_device, m_commandPool);
+    VkCommandBufferObj cb1(m_device, m_commandPool);
+
+    auto do_begin_rp = [&rp_helper](VkCommandBufferObj& cb_obj) { cb_obj.BeginRenderPass(rp_helper.render_pass_begin); };
+
+    auto do_clear = [&rp_helper](VkCommandBufferObj& cb_obj) {
+        VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_input->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
+                               &full_subresource_range);
+        vk::CmdClearColorImage(cb_obj.handle(), rp_helper.image_color->handle(), VK_IMAGE_LAYOUT_GENERAL, &rp_helper.ccv, 1,
+                               &full_subresource_range);
+    };
+
+    // Single renderpass barrier  (sanity check)
+    cb0.begin();
+    do_clear(cb0);
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    do_begin_rp(cb0);
+    m_errorMonitor->VerifyFound();
+    // No "end render pass" as the begin fails
+
+    m_errorMonitor->ExpectSuccess();
+    cb0.end();
+    cb0.reset();
+
+    // Inter CB detection (dual cb), load is safe, clear errors at submit time
+    cb0.begin();
+    do_clear(cb0);
+    cb0.end();
+
+    cb1.begin();
+    do_begin_rp(cb1);
+    cb1.EndRenderPass();
+    cb1.end();
+
+    auto submit2 = lvl_init_struct<VkSubmitInfo>();
+    VkCommandBuffer two_cbs[2] = {cb0.handle(), cb1.handle()};
+    submit2.commandBufferCount = 2;
+    submit2.pCommandBuffers = two_cbs;
+    m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
 }
