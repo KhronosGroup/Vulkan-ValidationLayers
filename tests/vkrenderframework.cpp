@@ -2487,6 +2487,8 @@ void VkCommandBufferObj::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSu
     vk::CmdBeginRenderPass(handle(), &info, contents);
 }
 
+void VkCommandBufferObj::NextSubpass(VkSubpassContents contents) { vk::CmdNextSubpass(handle(), contents); }
+
 void VkCommandBufferObj::EndRenderPass() { vk::CmdEndRenderPass(handle()); }
 
 void VkCommandBufferObj::BeginRendering(const VkRenderingInfoKHR &renderingInfo) {
