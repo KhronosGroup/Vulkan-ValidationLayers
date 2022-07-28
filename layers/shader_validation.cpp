@@ -2970,95 +2970,106 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
         producer.CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput, producer_stage->arrayed_output);
     auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput, consumer_stage->arrayed_input);
 
-    auto a_it = outputs.begin();
-    auto b_it = inputs.begin();
+    auto output_it = outputs.begin();
+    auto input_it = inputs.begin();
 
-    uint32_t a_component = 0;
-    uint32_t b_component = 0;
+    uint32_t output_component = 0;
+    uint32_t input_component = 0;
 
     // Maps sorted by key (location); walk them together to find mismatches
-    while ((outputs.size() > 0 && a_it != outputs.end()) || (inputs.size() && b_it != inputs.end())) {
-        bool a_at_end = outputs.size() == 0 || a_it == outputs.end();
-        bool b_at_end = inputs.size() == 0 || b_it == inputs.end();
-        auto a_first = a_at_end ? std::make_pair(0u, 0u) : a_it->first;
-        auto b_first = b_at_end ? std::make_pair(0u, 0u) : b_it->first;
+    while ((outputs.size() > 0 && output_it != outputs.end()) || (inputs.size() && input_it != inputs.end())) {
+        bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
+        bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
+        auto output_first = output_at_end ? std::make_pair(0u, 0u) : output_it->first;
+        auto input_first = input_at_end ? std::make_pair(0u, 0u) : input_it->first;
 
-        a_first.second += a_component;
-        b_first.second += b_component;
+        output_first.second += output_component;
+        input_first.second += input_component;
 
-        const auto a_length = a_at_end ? 0 : producer.GetNumComponentsInBaseType(producer.get_def(a_it->second.type_id));
-        const auto b_length = b_at_end ? 0 : consumer.GetNumComponentsInBaseType(consumer.get_def(b_it->second.type_id));
-        assert(a_at_end || a_component < a_length);
-        assert(b_at_end || b_component < b_length);
+        const auto output_length =
+            output_at_end ? 0 : producer.GetNumComponentsInBaseType(producer.get_def(output_it->second.type_id));
+        const auto input_length =
+            input_at_end ? 0 : consumer.GetNumComponentsInBaseType(consumer.get_def(input_it->second.type_id));
+        assert(output_at_end || output_component < output_length);
+        assert(input_at_end || input_component < input_length);
 
-        if (b_at_end || ((!a_at_end) && (a_first < b_first))) {
+        if (input_at_end || ((!output_at_end) && (output_first < input_first))) {
             if (!enabled_features.core13.maintenance4) {
-                skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed,
-                                 "%s writes to output location %" PRIu32 ".%" PRIu32 " which is not consumed by %s." \
-                                 "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors.",
-                                 producer_stage->name, a_first.first, a_first.second, consumer_stage->name);
+                const std::string msg = std::string{producer_stage->name} + " writes to output location " +
+                                        std::to_string(output_first.first) + "." + std::to_string(output_first.second) +
+                                        " which is not consumed by " + consumer_stage->name +
+                                        "."
+                                        "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between "
+                                        "input and output vectors.";
+                if (input_at_end) {
+                    // It is not an error if a stage does not consume all outputs from the previous stage
+                    skip |=
+                        LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
+                } else {
+                    skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
+                }
             }
-            if ((b_first.first > a_first.first) || b_at_end || (a_component + 1 == a_length)) {
-                a_it++;
-                a_component = 0;
+            if ((input_first.first > output_first.first) || input_at_end || (output_component + 1 == output_length)) {
+                output_it++;
+                output_component = 0;
             } else {
-                a_component++;
+                output_component++;
             }
-        } else if (a_at_end || a_first > b_first) {
+        } else if (output_at_end || output_first > input_first) {
             skip |= LogError(consumer.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                              "%s consumes input location %" PRIu32 ".%" PRIu32 " which is not written by %s", consumer_stage->name,
-                             b_first.first, b_first.second, producer_stage->name);
-            if ((a_first.first > b_first.first) || a_at_end || (b_component + 1 == b_length)) {
-                b_it++;
-                b_component = 0;
+                             input_first.first, input_first.second, producer_stage->name);
+            if ((output_first.first > input_first.first) || output_at_end || (input_component + 1 == input_length)) {
+                input_it++;
+                input_component = 0;
             } else {
-                b_component++;
+                input_component++;
             }
         } else {
             // subtleties of arrayed interfaces:
             // - if is_patch, then the member is not arrayed, even though the interface may be.
             // - if is_block_member, then the extra array level of an arrayed interface is not
             //   expressed in the member type -- it's expressed in the block type.
-            if (!TypesMatch(producer, consumer, a_it->second.type_id, b_it->second.type_id)) {
+            if (!TypesMatch(producer, consumer, output_it->second.type_id, input_it->second.type_id)) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Type mismatch on location %" PRIu32 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'",
-                                 a_first.first, a_first.second, producer_stage->name, consumer_stage->name,
-                                 producer.DescribeType(a_it->second.type_id).c_str(),
-                                 consumer.DescribeType(b_it->second.type_id).c_str());
-                a_it++;
-                b_it++;
+                                 output_first.first, output_first.second, producer_stage->name, consumer_stage->name,
+                                 producer.DescribeType(output_it->second.type_id).c_str(),
+                                 consumer.DescribeType(input_it->second.type_id).c_str());
+                output_it++;
+                input_it++;
                 continue;
             }
-            if (a_it->second.is_patch != b_it->second.is_patch) {
+            if (output_it->second.is_patch != input_it->second.is_patch) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Decoration mismatch on location %" PRIu32 ".%" PRIu32
                                  ": is per-%s in %s stage but per-%s in %s stage",
-                                 a_first.first, a_first.second, a_it->second.is_patch ? "patch" : "vertex", producer_stage->name,
-                                 b_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
+                                 output_first.first, output_first.second, output_it->second.is_patch ? "patch" : "vertex",
+                                 producer_stage->name, input_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
             }
-            uint32_t a_remaining = a_length - a_component;
-            uint32_t b_remaining = b_length - b_component;
-            if (a_remaining == b_remaining) {  // Sizes match so we can advance both a_it and b_it
-                a_it++;
-                b_it++;
-                a_component = 0;
-                b_component = 0;
-            } else if (a_remaining > b_remaining) {  // a has more components remaining
-                a_component += b_remaining;
-                b_component = 0;
-                b_it++;
-            } else if (b_remaining > a_remaining) {  // b has more components remaining
-                b_component += a_remaining;
-                a_component = 0;
-                a_it++;
+            uint32_t output_remaining = output_length - output_component;
+            uint32_t input_remaining = input_length - input_component;
+            if (output_remaining == input_remaining) {  // Sizes match so we can advance both output_it and input_it
+                output_it++;
+                input_it++;
+                output_component = 0;
+                input_component = 0;
+            } else if (output_remaining > input_remaining) {  // a has more components remaining
+                output_component += input_remaining;
+                input_component = 0;
+                input_it++;
+            } else if (input_remaining > output_remaining) {  // b has more components remaining
+                input_component += output_remaining;
+                output_component = 0;
+                output_it++;
             }
-            if (a_component == 4) {
-                a_component = 0;
-                a_it++;
+            if (output_component == 4) {
+                output_component = 0;
+                output_it++;
             }
-            if (b_component == 4) {
-                b_component = 0;
-                b_it++;
+            if (input_component == 4) {
+                input_component = 0;
+                input_it++;
             }
         }
     }

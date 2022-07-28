@@ -4354,7 +4354,7 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "not consumed by fragment shader");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "not consumed by fragment shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
@@ -4956,10 +4956,9 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-        std::vector<std::string>{
-            "vertex shader writes to output location 1.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between input and output vectors.",
-            "fragment shader consumes input location 0.0 which is not written by vertex shader"});
+    CreatePipelineHelper::OneshotTest(
+        *this, set_info, kErrorBit,
+        std::vector<std::string>{"fragment shader consumes input location 0.0 which is not written by vertex shader"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
@@ -13513,7 +13512,7 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         char const *fsSource = R"glsl(
                 #version 450
 
-                layout(location = 0, component = 0) in vec3 rgb;
+                layout(location = 0) in vec3 rgb;
 
                 layout (location = 0) out vec4 color;
 
@@ -13526,15 +13525,14 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
-                                          "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
     }
 
     {
         char const *vsSource = R"glsl(
                 #version 450
 
-                layout(location = 0, component = 0) out vec3 v;
+                layout(location = 0) out vec3 v;
 
                 void main() {
                 }
@@ -13558,8 +13556,67 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
-                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+    }
+
+    {
+        char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0) out vec3 v;
+
+                void main() {
+                    v = vec3(1.0);
+                }
+            )glsl";
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+        char const *fsSource = R"glsl(
+                #version 450
+
+                layout(location = 0) in vec4 v;
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = v;
+                }
+            )glsl";
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-InputNotProduced");
+    }
+
+    {
+        char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0) out vec3 v;
+
+                void main() {
+                    v = vec3(1.0);
+                }
+            )glsl";
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+        char const *fsSource = R"glsl(
+                #version 450
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = vec4(1.0);
+                }
+            )glsl";
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "", true);
     }
 }
 
