@@ -1460,17 +1460,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         skip |= ValidateGraphicsPipelineShaderDynamicState(pPipeline, pCB, caller, vuid);
     }
 
-    if (!pCB->RasterizationDisabled()) {
-        // NOTE: we should be able to assume the pipeline has fragment shader state at this point
-        if (pPipeline->fragment_shader_state && ((pPipeline->active_shaders & FragmentShaderState::ValidShaderStages()) == 0)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
-                             "%s(): Currently bound pipeline %s contains fragment shader state, but stages (%s) does not contain a "
-                             "fragment shader.",
-                             caller, report_data->FormatHandle(pPipeline->pipeline()).c_str(),
-                             string_VkShaderStageFlags(pPipeline->active_shaders).c_str());
-        }
-    }
-
     return skip;
 }
 
