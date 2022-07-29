@@ -407,8 +407,11 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
       variable_count_(variable_count),
       change_count_(0) {
     // Foreach binding, create default descriptors of given type
-    bindings_.reserve(layout_->GetBindingCount());
-    for (uint32_t i = 0; i < layout_->GetBindingCount(); ++i) {
+    auto binding_count = layout_->GetBindingCount();
+    bindings_.reserve(binding_count);
+    bindings_store_.resize(binding_count);
+    auto free_binding = bindings_store_.data();
+    for (uint32_t i = 0; i < binding_count; ++i) {
         auto create_info = layout_->GetDescriptorSetLayoutBindingPtrFromIndex(i);
         assert(create_info);
         uint32_t descriptor_count = create_info->descriptorCount;
@@ -420,7 +423,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
         auto descriptor_class = DescriptorTypeToClass(type);
         switch (descriptor_class) {
             case PlainSampler: {
-                auto binding = layer_data::make_unique<SamplerBinding>(*create_info, descriptor_count, flags);
+                auto binding = MakeBinding<SamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
@@ -436,7 +439,7 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 break;
             }
             case ImageSampler: {
-                auto binding = layer_data::make_unique<ImageSamplerBinding>(*create_info, descriptor_count, flags);
+                auto binding = MakeBinding<ImageSamplerBinding>(free_binding++, *create_info, descriptor_count, flags);
                 auto immut = layout_->GetImmutableSamplerPtrFromIndex(i);
                 if (immut) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
@@ -453,15 +456,15 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
             }
             // ImageDescriptors
             case Image: {
-                bindings_.push_back(layer_data::make_unique<ImageBinding>(*create_info, descriptor_count, flags));
+                bindings_.push_back(MakeBinding<ImageBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             case TexelBuffer: {
-                bindings_.push_back(layer_data::make_unique<TexelBinding>(*create_info, descriptor_count, flags));
+                bindings_.push_back(MakeBinding<TexelBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             case GeneralBuffer: {
-                auto binding = layer_data::make_unique<BufferBinding>(*create_info, descriptor_count, flags);
+                auto binding = MakeBinding<BufferBinding>(free_binding++, *create_info, descriptor_count, flags);
                 if (IsDynamicDescriptor(type)) {
                     for (uint32_t di = 0; di < descriptor_count; ++di) {
                         dynamic_offset_idx_to_descriptor_list_.push_back({i, di});
@@ -471,15 +474,16 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIP
                 break;
             }
             case InlineUniform: {
-                bindings_.push_back(layer_data::make_unique<InlineUniformBinding>(*create_info, descriptor_count, flags));
+                bindings_.push_back(MakeBinding<InlineUniformBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             case AccelerationStructure: {
-                bindings_.push_back(layer_data::make_unique<AccelerationStructureBinding>(*create_info, descriptor_count, flags));
+                bindings_.push_back(
+                    MakeBinding<AccelerationStructureBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             case Mutable: {
-                bindings_.push_back(layer_data::make_unique<MutableBinding>(*create_info, descriptor_count, flags));
+                bindings_.push_back(MakeBinding<MutableBinding>(free_binding++, *create_info, descriptor_count, flags));
                 break;
             }
             default:
