@@ -968,7 +968,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     for (uint32_t i = 0; i < createInfoCount; i++) {
         const auto& create_info = pCreateInfos[i];
 
-        if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
+        if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && create_info.pVertexInputState) {
             const auto& vertex_input = *create_info.pVertexInputState;
             uint32_t count = 0;
             for (uint32_t j = 0; j < vertex_input.vertexBindingDescriptionCount; j++) {
