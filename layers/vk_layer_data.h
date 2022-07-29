@@ -173,6 +173,17 @@ class small_vector {
         DebugUpdateWorkingStore();
     }
 
+    small_vector(size_type size, const value_type& value = value_type()) : size_(0), capacity_(N) {
+        reserve(size);
+        auto dest = GetWorkingStore();
+        for (size_type i = 0; i < size; i++) {
+            new (dest) value_type(value);
+            ++dest;
+        }
+        size_ = size;
+    }
+
+
     ~small_vector() { clear(); }
 
     bool operator==(const small_vector &rhs) const {
@@ -311,10 +322,9 @@ class small_vector {
         if (new_cap > capacity_) {
             assert(capacity_ >= kSmallCapacity);
             auto new_store = std::unique_ptr<BackingStore[]>(new BackingStore[new_cap]);
-            auto new_values = reinterpret_cast<pointer>(new_store.get());
             auto working_store = GetWorkingStore();
             for (size_type i = 0; i < size_; i++) {
-                new (new_values + i) value_type(std::move(working_store[i]));
+                new (new_store[i].data) value_type(std::move(working_store[i]));
                 working_store[i].~value_type();
             }
             large_store_ = std::move(new_store);
@@ -344,11 +354,11 @@ class small_vector {
   protected:
     inline const_pointer GetWorkingStore() const {
         const BackingStore *store = large_store_ ? large_store_.get() : small_store_;
-        return reinterpret_cast<const_pointer>(store);
+        return &store->object;
     }
     inline pointer GetWorkingStore() {
         BackingStore *store = large_store_ ? large_store_.get() : small_store_;
-        return reinterpret_cast<pointer>(store);
+        return &store->object;
     }
 
     void ClearAndReset() {
@@ -358,8 +368,12 @@ class small_vector {
         DebugUpdateWorkingStore();
     }
 
-    struct alignas(alignof(value_type)) BackingStore {
+    union BackingStore {
+        BackingStore() {}
+        ~BackingStore() {}
+
         uint8_t data[sizeof(value_type)];
+        value_type object;
     };
     size_type size_;
     size_type capacity_;
