@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
+ * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -718,23 +718,23 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
         case VK_SHADER_STAGE_COMPUTE_BIT:
             return EShLangCompute;
 
-        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-            return EShLangRayGenNV;
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+            return EShLangRayGen;
 
-        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-            return EShLangAnyHitNV;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+            return EShLangAnyHit;
 
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-            return EShLangClosestHitNV;
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+            return EShLangClosestHit;
 
-        case VK_SHADER_STAGE_MISS_BIT_NV:
-            return EShLangMissNV;
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+            return EShLangMiss;
 
-        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-            return EShLangIntersectNV;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+            return EShLangIntersect;
 
-        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-            return EShLangCallableNV;
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+            return EShLangCallable;
 
         case VK_SHADER_STAGE_TASK_BIT_NV:
             return EShLangTaskNV;

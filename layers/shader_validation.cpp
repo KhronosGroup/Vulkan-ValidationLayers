@@ -1046,12 +1046,12 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             }
             break;
 
-        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-        case VK_SHADER_STAGE_MISS_BIT_NV:
-        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+        case VK_SHADER_STAGE_MISS_BIT_KHR:
+        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
         case VK_SHADER_STAGE_TASK_BIT_NV:
         case VK_SHADER_STAGE_MESH_BIT_NV:
             break;
@@ -3381,13 +3381,13 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
             group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
-            if (!GroupHasValidIndex(*pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
+            if (!GroupHasValidIndex(*pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418",
                                  ": pGroups[%d]", group_index);
             }
-            if (!GroupHasValidIndex(*pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
+            if (!GroupHasValidIndex(*pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417",
