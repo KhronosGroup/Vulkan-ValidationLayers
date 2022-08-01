@@ -3521,6 +3521,7 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
     const auto *required_subgroup_size_features =
         LvlFindInChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>(stage_state.create_info->pNext);
     if (required_subgroup_size_features) {
+        const uint32_t requiredSubgroupSize = required_subgroup_size_features->requiredSubgroupSize;
         skip |= RequireFeature(enabled_features.core13.subgroupSizeControl, "subgroupSizeControl",
                                "VUID-VkPipelineShaderStageCreateInfo-pNext-02755");
         if ((phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages & stage_state.stage_flag) == 0) {
@@ -3530,25 +3531,45 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
                 string_VkShaderStageFlagBits(stage_state.stage_flag),
                 string_VkShaderStageFlags(phys_dev_ext_props.subgroup_size_control_props.requiredSubgroupSizeStages).c_str());
         }
-        if ((invocations > required_subgroup_size_features->requiredSubgroupSize *
-                               phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups)) {
+        if ((invocations > requiredSubgroupSize * phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups)) {
             skip |=
                 LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-pNext-02756",
                          "Local workgroup size (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                          ") is greater than VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::requiredSubgroupSize (%" PRIu32
                          ") * maxComputeWorkgroupSubgroups (%" PRIu32 ").",
-                         local_size_x, local_size_y, local_size_z, required_subgroup_size_features->requiredSubgroupSize,
+                         local_size_x, local_size_y, local_size_z, requiredSubgroupSize,
                          phys_dev_ext_props.subgroup_size_control_props.maxComputeWorkgroupSubgroups);
         }
         if ((stage_state.create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT) > 0) {
-            if (SafeModulo(local_size_x, required_subgroup_size_features->requiredSubgroupSize) != 0) {
+            if (SafeModulo(local_size_x, requiredSubgroupSize) != 0) {
                 skip |= LogError(
                     module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-pNext-02757",
                     "Local workgroup size x (%" PRIu32
                     ") is not a multiple of VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT::requiredSubgroupSize (%" PRIu32
                     ").",
-                    local_size_x, required_subgroup_size_features->requiredSubgroupSize);
+                    local_size_x, requiredSubgroupSize);
             }
+        }
+        if (!IsPowerOfTwo(requiredSubgroupSize)) {
+            skip |= LogError(module_state.vk_shader_module(),
+                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760",
+                             "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
+                             ") is not a power of 2.",
+                             requiredSubgroupSize);
+        }
+        if (requiredSubgroupSize < phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize) {
+            skip |= LogError(module_state.vk_shader_module(),
+                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761",
+                             "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
+                             ") is less than minSubgroupSize (%" PRIu32 ").",
+                             requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize);
+        }
+        if (requiredSubgroupSize > phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) {
+            skip |= LogError(module_state.vk_shader_module(),
+                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762",
+                             "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
+                             ") is greater than maxSubgroupSize (%" PRIu32 ").",
+                             requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
         }
     }
     if ((stage_state.create_info->flags & subgroup_flags) == subgroup_flags) {
