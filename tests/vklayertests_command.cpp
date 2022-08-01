@@ -5898,7 +5898,16 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.multiDrawIndirect == VK_FALSE) {
+        GTEST_SKIP() << "multiDrawIndirect not supported";
+    }
+
+    VkPhysicalDeviceFeatures requiredFeatures{};
+    requiredFeatures.multiDrawIndirect = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&requiredFeatures));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     CreatePipelineHelper pipe(*this);
