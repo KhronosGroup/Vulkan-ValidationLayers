@@ -352,17 +352,17 @@ class ResourceAccessState : public SyncStageAccess {
     struct QueueTagPredicate {
         QueueId queue;
         ResourceUsageTag tag;
-        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag) const;
     };
 
     struct QueuePredicate {
         QueueId queue;
         QueuePredicate(QueueId queue_) : queue(queue_) {}
-        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag) const;
     };
     struct TagPredicate {
         ResourceUsageTag tag;
-        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag);
+        bool operator()(QueueId usage_queue, ResourceUsageTag usage_tag) const;
     };
 
     template <typename Pred>
@@ -515,6 +515,20 @@ using ResourceAccessRangeMap = sparse_container::range_map<ResourceAddress, Reso
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 using ResourceAccessRangeIndex = typename ResourceAccessRange::index_type;
 using ResourceRangeMergeIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
+
+struct FenceSyncState {
+    std::shared_ptr<const FENCE_STATE> fence;
+    ResourceUsageTag tag;
+    QueueId queue_id;
+    FenceSyncState();
+    FenceSyncState(const FenceSyncState &other) = default;
+    FenceSyncState(FenceSyncState &&other) = default;
+    FenceSyncState &operator=(const FenceSyncState &other) = default;
+    FenceSyncState &operator=(FenceSyncState &&other) = default;
+
+    FenceSyncState(const std::shared_ptr<const FENCE_STATE> &fence_, ResourceUsageTag tag_, QueueId queue_id_)
+        : fence(fence_), tag(tag_), queue_id(queue_id_) {}
+};
 
 class AttachmentViewGen {
   public:
@@ -960,6 +974,8 @@ class AccessContext {
     void SetStartTag(ResourceUsageTag tag) { start_tag_ = tag; }
     template <typename Action>
     void ForAll(Action &&action);
+    template <typename Predicate>
+    void EraseIf(Predicate &&pred);
 
     // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
     void AddAsyncContext(const AccessContext *context);
@@ -1415,18 +1431,6 @@ class QueueBatchContext : public CommandExecutionContext {
             : index(index_), cb(std::move(cb_)) {}
     };
 
-    // For Wait operations we have to
-    struct QueueWormBase {
-        std::vector<AccessContext::AddressRange> erase_list;
-        bool erase_all = true;
-    };
-
-    struct QueueWaitWorm : QueueWormBase {
-        ResourceAccessState::QueuePredicate predicate;
-        QueueWaitWorm(QueueId queue_, ResourceUsageTag tag_ = ResourceUsageRecord::kMaxIndex);
-        void operator()(AccessAddressType address_type, ResourceAccessRangeMap::value_type &access);
-    };
-
     using CommandBuffers = std::vector<CmdBufferEntry>;
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
@@ -1552,6 +1556,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using QueueSyncStatesMap = layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
     SignaledSemaphores signaled_semaphores_;
+
+    using SignaledFences = layer_data::unordered_map<VkFence, FenceSyncState>;
+    using SignaledFence = SignaledFences::value_type;
+    SignaledFences waitable_fences_;
+
+    void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
+
+    void UpdateFenceWaitInfo(VkFence fence, QueueId queue_id, ResourceUsageTag tag);
+    void WaitForFence(VkFence fence);
 
     const QueueSyncState *GetQueueSyncState(VkQueue queue) const;
     QueueSyncState *GetQueueSyncState(VkQueue queue);
@@ -1942,4 +1955,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                         VkFence fence) const override;
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                        VkResult result) override;
+    void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) override;
+    void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
+                                     uint64_t timeout, VkResult result) override;
 };

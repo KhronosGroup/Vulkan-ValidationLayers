@@ -860,6 +860,15 @@ void AccessContext::ForAll(Action &&action) {
     }
 }
 
+template <typename Predicate>
+void AccessContext::EraseIf(Predicate &&pred) {
+    for (const auto address_type : kAddressTypes) {
+        auto &accesses = GetAccessStateMap(address_type);
+        // Note: Don't forward, we don't want r-values moved, since we're going to make multiple calls.
+        layer_data::EraseIf(accesses, pred);
+    }
+}
+
 // A recursive range walker for hazard detection, first for the current context and the (DetectHazardRecur) to walk
 // the DAG of the contexts (for example subpasses)
 template <typename Detector>
@@ -3521,13 +3530,13 @@ void ResourceAccessState::ApplySemaphore(const SemaphoreScope &signal, const Sem
     write_dependency_chain = read_execution_barriers;
 }
 
-bool ResourceAccessState::QueueTagPredicate::operator()(QueueId usage_queue, ResourceUsageTag usage_tag) {
-    return (queue == usage_queue) && (tag <= usage_tag);
+bool ResourceAccessState::QueueTagPredicate::operator()(QueueId usage_queue, ResourceUsageTag usage_tag) const {
+    return (usage_queue == queue) && (usage_tag <= tag);
 }
 
-bool ResourceAccessState::QueuePredicate::operator()(QueueId usage_queue, ResourceUsageTag) { return queue == usage_queue; }
+bool ResourceAccessState::QueuePredicate::operator()(QueueId usage_queue, ResourceUsageTag) const { return queue == usage_queue; }
 
-bool ResourceAccessState::TagPredicate::operator()(QueueId, ResourceUsageTag usage_tag) { return tag <= usage_tag; }
+bool ResourceAccessState::TagPredicate::operator()(QueueId, ResourceUsageTag usage_tag) const { return tag <= usage_tag; }
 
 // Return if the resulting state is "empty"
 template <typename Pred>
@@ -3775,6 +3784,36 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
     reserve.begin = tag_limit_.fetch_add(tag_count);
     reserve.end = reserve.begin + tag_count;
     return reserve;
+}
+
+void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
+    // We need to go through every queue batch context and clear all accesses this wait synchronizes
+    // As usual -- two groups, the "last batch" and the signaled semaphores
+    // NOTE: Since ApplyTaggedWait crawls through every usage in every ResourceAccessState in the AccessContext of *every*
+    // QueueBatchContext, track which we've done to avoid duplicate traversals
+    QueueBatchContext::BatchSet queue_batch_contexts = GetQueueBatchSnapshot();
+    for (auto &batch : queue_batch_contexts) {
+        batch->ApplyTaggedWait(queue_id, tag);
+    }
+}
+
+void SyncValidator::UpdateFenceWaitInfo(VkFence fence, QueueId queue_id, ResourceUsageTag tag) {
+    if (fence != VK_NULL_HANDLE) {
+        // Overwrite the current fence wait information
+        // NOTE: Not doing fence usage validation here, leaving that in CoreChecks intentionally
+        auto fence_state = Get<FENCE_STATE>(fence);
+        waitable_fences_[fence] = {fence_state, tag, queue_id};
+    }
+}
+
+void SyncValidator::WaitForFence(VkFence fence) {
+    auto fence_it = waitable_fences_.find(fence);
+    if (fence_it != waitable_fences_.end()) {
+        // The fence may no longer be waitable for several valid reasons.
+        FenceSyncState &wait_for = fence_it->second;
+        ApplyTaggedWait(wait_for.queue_id, wait_for.tag);
+        waitable_fences_.erase(fence_it);
+    }
 }
 
 const QueueSyncState *SyncValidator::GetQueueSyncState(VkQueue queue) const {
@@ -7161,17 +7200,10 @@ void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) 
     const auto queue_state = GetQueueSyncStateShared(queue);
     if (!queue_state) return;  // Invalid queue
     QueueId waited_queue = queue_state->GetQueueId();
+    ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
 
-    // We need to go through every queue batch context and clear all accesses this wait synchronizes
-    // As usual -- two groups, the "last batch" and the signaled semaphores
-    // NOTE: Since ApplyTaggedWait crawls through every usage in every ResourceAccessState in the AccessContext of *every*
-    // QueueBatchContext, track which we've done to avoid duplicate traversals
-    QueueBatchContext::BatchSet queue_batch_contexts = GetQueueBatchSnapshot();
-    for (auto &batch : queue_batch_contexts) {
-        batch->ApplyTaggedWait(waited_queue, ResourceUsageRecord::kMaxIndex);
-    }
-
-    // TODO: Fences affected by Wait
+    // Eliminate waitable fences from the current queue.
+    layer_data::EraseIf(waitable_fences_, [waited_queue](const SignaledFence &sf) { return sf.second.queue_id == waited_queue; });
 }
 
 void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
@@ -7182,7 +7214,8 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult resul
         batch->ApplyDeviceWait();
     }
 
-    // TODO: Update Fences affected by Wait
+    // As we we've waited for everything on device, any waits are mooted.
+    waitable_fences_.clear();
 }
 
 struct QueueSubmitCmdState {
@@ -7308,8 +7341,8 @@ void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
     // Update the global access log from the one built during validation
     global_access_log_.MergeMove(std::move(cmd_state->logger));
 
-
-    // WIP: record information about fences
+    ResourceUsageRange fence_tag_range = ReserveGlobalTagRange(1U);
+    UpdateFenceWaitInfo(fence, queue_state->GetQueueId(), fence_tag_range.begin);
 }
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -7329,6 +7362,27 @@ void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submit
     if (!enabled[sync_validation_queue_submit]) return;
 
     // WIP: Add Submit2 support
+}
+
+void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
+    StateTracker::PostCallRecordGetFenceStatus(device, fence, result);
+    if (!enabled[sync_validation_queue_submit]) return;
+    if (result == VK_SUCCESS) {
+        // fence is signalled, mark it as waited for
+        WaitForFence(fence);
+    }
+}
+
+void SyncValidator::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
+                                                uint64_t timeout, VkResult result) {
+    StateTracker::PostCallRecordWaitForFences(device, fenceCount, pFences, waitAll, timeout, result);
+    if (!enabled[sync_validation_queue_submit]) return;
+    if ((result == VK_SUCCESS) && ((VK_TRUE == waitAll) || (1 == fenceCount))) {
+        // We can only know the pFences have signal if we waited for all of them, or there was only one of them
+        for (uint32_t i = 0; i < fenceCount; i++) {
+            WaitForFence(pFences[i]);
+        }
+    }
 }
 
 AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffset3D &offset, const VkExtent3D &extent)
@@ -7455,16 +7509,11 @@ void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext &recor
 VulkanTypedHandle QueueBatchContext::Handle() const { return queue_state_->Handle(); }
 
 void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
-    QueueWaitWorm wait_worm(queue_id);
-    access_context_.ForAll(wait_worm);
-    if (wait_worm.erase_all) {
-        access_context_.Reset();
-    } else {
-        // TODO: Profiling will tell us if we need a more efficient clean up.
-        for (const auto &address : wait_worm.erase_list) {
-            access_context_.DeleteAccess(address);
-        }
-    }
+    ResourceAccessState::QueueTagPredicate predicate{queue_id, tag};
+    access_context_.EraseIf([&predicate](ResourceAccessRangeMap::value_type &access) {
+        // Apply..Wait returns true if the waited access is empty...
+        return access.second.ApplyQueueTagWait(predicate);
+    });
 
     if (queue_id == GetQueueId()) {
         events_context_.ApplyTaggedWait(GetQueueFlags(), tag);
@@ -7690,17 +7739,6 @@ void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
     access_context_.SetStartTag(bias);
 }
 
-QueueBatchContext::QueueWaitWorm::QueueWaitWorm(QueueId queue, ResourceUsageTag tag) : predicate(queue) {}
-
-void QueueBatchContext::QueueWaitWorm::operator()(AccessAddressType address_type, ResourceAccessRangeMap::value_type &access) {
-    bool erased = access.second.ApplyQueueTagWait(predicate);
-    if (erased) {
-        erase_list.emplace_back(address_type, access.first);
-    } else {
-        erase_all = false;
-    }
-}
-
 AccessLogger::BatchLog *AccessLogger::AddBatch(const QueueSyncState *queue_state, uint64_t submit_id, uint32_t batch_id,
                                                const ResourceUsageRange &range) {
     const auto inserted = access_log_map_.insert(std::make_pair(range, BatchLog(BatchRecord(queue_state, submit_id, batch_id))));
@@ -7782,3 +7820,5 @@ SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> 
     assert(batch);
     assert(sem_state);
 }
+
+FenceSyncState::FenceSyncState() : fence(), tag(kInvalidTag), queue_id(QueueSyncState::kQueueIdInvalid) {}
