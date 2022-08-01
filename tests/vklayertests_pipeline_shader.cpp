@@ -12100,6 +12100,51 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
         cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
         m_errorMonitor->VerifyFound();
     }
+
+    // if on a device with the min and max the same, there is no way to isolate this VUID
+    // Intel integrated GPU normally have a min of 8 and max of 32
+    if (subgroup_properties.minSubgroupSize >= 8 && subgroup_properties.minSubgroupSize < 16 &&
+        subgroup_properties.maxSubgroupSize >= 16) {
+        subgroup_size_control.requiredSubgroupSize = 10;  // non-power of 2
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+        cs_pipeline.cp_ci_.stage.flags = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (subgroup_properties.minSubgroupSize > 1) {
+        subgroup_size_control.requiredSubgroupSize = 1;  // below min
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+        cs_pipeline.cp_ci_.stage.flags = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        subgroup_size_control.requiredSubgroupSize = subgroup_properties.maxSubgroupSize * 2;  // above max
+        CreateComputePipelineHelper cs_pipeline(*this);
+        cs_pipeline.InitInfo();
+        cs_pipeline.InitState();
+        cs_pipeline.LateBindPipelineInfo();
+        cs_pipeline.cp_ci_.stage.pNext = &subgroup_size_control;
+        cs_pipeline.cp_ci_.stage.flags = 0;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762");
+        cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {

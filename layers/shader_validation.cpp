@@ -3552,21 +3552,21 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
         }
         if (!IsPowerOfTwo(requiredSubgroupSize)) {
             skip |= LogError(module_state.vk_shader_module(),
-                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760",
+                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02760",
                              "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
                              ") is not a power of 2.",
                              requiredSubgroupSize);
         }
         if (requiredSubgroupSize < phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize) {
             skip |= LogError(module_state.vk_shader_module(),
-                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761",
+                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02761",
                              "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
                              ") is less than minSubgroupSize (%" PRIu32 ").",
                              requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.minSubgroupSize);
         }
         if (requiredSubgroupSize > phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize) {
             skip |= LogError(module_state.vk_shader_module(),
-                             " VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762",
+                             "VUID-VkPipelineShaderStageRequiredSubgroupSizeCreateInfo-requiredSubgroupSize-02762",
                              "VkPhysicalDeviceSubgroupSizeControlPropertiesEXT::requiredSubgroupSizeStages (%" PRIu32
                              ") is greater than maxSubgroupSize (%" PRIu32 ").",
                              requiredSubgroupSize, phys_dev_ext_props.subgroup_size_control_props.maxSubgroupSize);
