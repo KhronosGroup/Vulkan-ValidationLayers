@@ -14910,6 +14910,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountAMD(
     if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndirectCountAMD", VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndirectCountAMD", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndirectCountAMD", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
@@ -14925,6 +14926,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountAMD(
     if (!IsExtEnabled(device_extensions.vk_amd_draw_indirect_count)) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountAMD", VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountAMD", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountAMD", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 

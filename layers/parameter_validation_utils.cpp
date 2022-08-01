@@ -4832,14 +4832,18 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer 
 
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError(device, "VUID-vkCmdDrawIndirect-drawCount-02718",
-                         "CmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
+                         "vkCmdDrawIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
                          drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
         skip |=
             LogError(commandBuffer, "VUID-vkCmdDrawIndirect-drawCount-02719",
-                     "CmdDrawIndirect(): drawCount (%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
+                     "vkCmdDrawIndirect(): drawCount (%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
                      drawCount, device_limits.maxDrawIndirectCount);
+    }
+    if (offset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-offset-02710",
+                         "vkCmdDrawIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
@@ -4849,33 +4853,37 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
                                                                        uint32_t stride) const {
     bool skip = false;
     if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
-        skip |=
-            LogError(device, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718",
-                     "CmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
-                     drawCount);
+        skip |= LogError(
+            device, "VUID-vkCmdDrawIndexedIndirect-drawCount-02718",
+            "vkCmdDrawIndexedIndirect(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
+            drawCount);
     }
     if (drawCount > device_limits.maxDrawIndirectCount) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-drawCount-02719",
-                         "CmdDrawIndexedIndirect(): drawCount (%" PRIu32
+                         "vkCmdDrawIndexedIndirect(): drawCount (%" PRIu32
                          ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
                          drawCount, device_limits.maxDrawIndirectCount);
+    }
+    if (offset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-offset-02710",
+                         "vkCmdDrawIndexedIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
 
 bool StatelessValidation::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                       VkDeviceSize countBufferOffset, bool khr) const {
+                                                       VkDeviceSize countBufferOffset, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const char *api_name = khr ? "vkCmdDrawIndirectCountKHR()" : "vkCmdDrawIndirectCount()";
     if (offset & 3) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-offset-02710",
-                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", api_name, offset);
+                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         CommandTypeString(cmd_type), offset);
     }
 
     if (countBufferOffset & 3) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
-                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", api_name,
-                         countBufferOffset);
+                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         CommandTypeString(cmd_type), countBufferOffset);
     }
     return skip;
 }
@@ -4884,29 +4892,36 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCount(VkCommandBu
                                                                      VkDeviceSize offset, VkBuffer countBuffer,
                                                                      VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                      uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, false);
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNT);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                        VkDeviceSize offset, VkBuffer countBuffer,
+                                                                        VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                        uint32_t stride) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNTAMD);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                         VkDeviceSize offset, VkBuffer countBuffer,
                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                         uint32_t stride) const {
-    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, true);
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDIRECTCOUNTKHR);
 }
 
 bool StatelessValidation::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
-                                                              VkDeviceSize countBufferOffset, bool khr) const {
+                                                              VkDeviceSize countBufferOffset, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const char *api_name = khr ? "vkCmdDrawIndexedIndirectCountKHR()" : "vkCmdDrawIndexedIndirectCount()";
     if (offset & 3) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
-                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", api_name, offset);
+                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         CommandTypeString(cmd_type), offset);
     }
 
     if (countBufferOffset & 3) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
-                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", api_name,
-                         countBufferOffset);
+                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.",
+                         CommandTypeString(cmd_type), countBufferOffset);
     }
     return skip;
 }
@@ -4915,14 +4930,21 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCount(VkCo
                                                                             VkDeviceSize offset, VkBuffer countBuffer,
                                                                             VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                             uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, false);
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNT);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountAMD(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                               VkDeviceSize offset, VkBuffer countBuffer,
+                                                                               VkDeviceSize countBufferOffset,
+                                                                               uint32_t maxDrawCount, uint32_t stride) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNTAMD);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                                VkDeviceSize offset, VkBuffer countBuffer,
                                                                                VkDeviceSize countBufferOffset,
                                                                                uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, true);
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, CMD_DRAWINDEXEDINDIRECTCOUNTKHR);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
@@ -5520,9 +5542,9 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchIndirect(VkCommandBuf
                                                                     VkDeviceSize offset) const {
     bool skip = false;
 
-    if ((offset % 4) != 0) {
+    if (offset & 3) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDispatchIndirect-offset-02710",
-                         "vkCmdDispatchIndirect(): offset (%" PRIu64 ") must be a multiple of 4.", offset);
+                         "vkCmdDispatchIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
 }
@@ -5736,13 +5758,12 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
                                                                            VkDeviceSize offset, uint32_t drawCount,
                                                                            uint32_t stride) const {
     bool skip = false;
-    static const int condition_multiples = 0b0011;
-    if (offset & condition_multiples) {
+    if (offset & 3) {
         skip |= LogError(
             commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710",
             "vkCmdDrawMeshTasksIndirectNV() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
-    if (drawCount > 1 && ((stride & condition_multiples) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
+    if (drawCount > 1 && ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV))) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
                          "vkCmdDrawMeshTasksIndirectNV() parameter, uint32_t stride (0x%" PRIxLEAST32
                          "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
