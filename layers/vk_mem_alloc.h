@@ -20,6 +20,18 @@
 // THE SOFTWARE.
 //
 
+//
+// Source: https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+// THIS FILE HAS BEEN CHANGED FROM THE ORIGINAL VERSION
+//
+// Change Log:
+//    3/27/19 - Make changes to suppress warnings from GCC
+//    6/05/19 - Make changes to suppress warnings from clang 3.8.0
+//    6/05/19 - Make changes to suppress more warnings from GCC
+//   11/18/20 - Make changes to suppress warnings from clang
+// 
+//
+
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
 #define AMD_VULKAN_MEMORY_ALLOCATOR_H
 
@@ -2578,6 +2590,25 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeStatsString(
     #include <bit> // For std::popcount
 #endif
 
+#if defined(__GNUC__)
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#endif
+#if GCC_VERSION >= 80000
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+#if defined(ANDROID)
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+#endif
+#endif
+
+
 /*******************************************************************************
 CONFIGURATION SECTION
 
@@ -2616,7 +2647,7 @@ VmaAllocatorCreateInfo::pVulkanFunctions. Other members can be null.
         #define VMA_USE_STL_SHARED_MUTEX 1
     // Visual studio defines __cplusplus properly only when passed additional parameter: /Zc:__cplusplus
     // Otherwise it is always 199711L, despite shared_mutex works since Visual Studio 2015 Update 2.
-    #elif defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && __cplusplus == 199711L && _MSVC_LANG >= 201703L
+    #elif defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && __cplusplus == 199711L && _MSVC_LANG >= 201703L && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
         #define VMA_USE_STL_SHARED_MUTEX 1
     #else
         #define VMA_USE_STL_SHARED_MUTEX 0
@@ -2670,6 +2701,14 @@ static void* vma_aligned_alloc(size_t alignment, size_t size)
     return memalign(alignment, size);
 }
 #elif defined(__APPLE__) || defined(__ANDROID__) || (defined(__linux__) && defined(__GLIBCXX__) && !defined(_GLIBCXX_HAVE_ALIGNED_ALLOC))
+#define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#elif defined(__GNU_LIBRARY__)
+#  if !defined(__GLIBC_PREREQ) || !__GLIBC_PREREQ(2, 16)
+// aligned_alloc() is defined in glibc only for version >= 2.16
+      #define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#  endif
+#endif
+#ifdef ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
 #include <cstdlib>
 
 #if defined(__APPLE__)
@@ -2841,7 +2880,7 @@ static void vma_aligned_free(void* VMA_NULLABLE ptr)
 
 // Read-write mutex, where "read" is shared access, "write" is exclusive access.
 #ifndef VMA_RW_MUTEX
-    #if VMA_USE_STL_SHARED_MUTEX
+    #if defined(VMA_USE_STL_SHARED_MUTEX) && VMA_USE_STL_SHARED_MUTEX
         // Use std::shared_mutex from C++17.
         #include <shared_mutex>
         class VmaRWMutex
@@ -3011,7 +3050,6 @@ tools like RenderDOc.
 END OF CONFIGURATION
 */
 #endif // _VMA_CONFIGURATION
-
 
 static const uint8_t VMA_ALLOCATION_FILL_PATTERN_CREATED = 0xDC;
 static const uint8_t VMA_ALLOCATION_FILL_PATTERN_DESTROYED = 0xEF;
@@ -6423,7 +6461,7 @@ void VmaBlockMetadata::PrintDetailedMap_Begin(class VmaJsonWriter& json,
     json.WriteNumber(GetSize());
 
     json.WriteString("UnusedBytes");
-    json.WriteSize(unusedBytes);
+    json.WriteSize((size_t)unusedBytes);
 
     json.WriteString("Allocations");
     json.WriteSize(allocationCount);
@@ -13369,10 +13407,10 @@ bool VmaDefragmentationContext_T::IncrementCounters(VkDeviceSize bytes)
 {
     m_PassStats.bytesMoved += bytes;
     // Early return when max found
-    if (++m_PassStats.allocationsMoved >= m_MaxPassAllocations || m_PassStats.bytesMoved >= m_MaxPassBytes)
+    if ((++m_PassStats.allocationsMoved >= m_MaxPassAllocations) || (m_PassStats.bytesMoved >= m_MaxPassBytes))
     {
-        VMA_ASSERT(m_PassStats.allocationsMoved == m_MaxPassAllocations ||
-            m_PassStats.bytesMoved == m_MaxPassBytes && "Exceeded maximal pass threshold!");
+        VMA_ASSERT(((m_PassStats.allocationsMoved == m_MaxPassAllocations) ||
+            (m_PassStats.bytesMoved == m_MaxPassBytes)) && "Exceeded maximal pass threshold!");
         return true;
     }
     return false;
@@ -17526,6 +17564,12 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeVirtualBlockStatsString(VmaVirtualBlock V
 }
 #endif // VMA_STATS_STRING_ENABLED
 #endif // _VMA_PUBLIC_INTERFACE
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#endif
 #endif // VMA_IMPLEMENTATION
 
 /**
