@@ -4474,6 +4474,8 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
     vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    m_device->wait();
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
@@ -4520,6 +4522,8 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
     // Submit B again, but after idling, which should remove the hazard
     test.QueueWait0();
     test.Submit0(test.cbb);
+
+    m_device->wait();
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
@@ -4591,6 +4595,8 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
     //  ... and again on the same queue
     test.Submit0Signal(test.cba);
     test.Submit0Wait(test.cbc, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    m_device->wait();
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferEvents) {
@@ -4668,6 +4674,8 @@ TEST_F(VkSyncValTest, SyncQSBufferEvents) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
     test.Submit1Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     m_errorMonitor->VerifyFound();
+
+    m_device->wait();
 }
 
 TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
@@ -4723,6 +4731,8 @@ TEST_F(VkSyncValTest, SyncQSOBarrierHazard) {
 
     // Then prove qso works (note that with the failure, the semaphore hasn't been waited, nor the layout changed)
     test.Submit0Wait(test.cbb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+
+    m_device->wait();
 }
 
 TEST_F(VkSyncValTest, SyncQSRenderPass) {
