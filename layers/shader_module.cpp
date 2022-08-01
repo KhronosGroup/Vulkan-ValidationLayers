@@ -134,18 +134,18 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
             return VK_SHADER_STAGE_FRAGMENT_BIT;
         case spv::ExecutionModelGLCompute:
             return VK_SHADER_STAGE_COMPUTE_BIT;
-        case spv::ExecutionModelRayGenerationNV:
-            return VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        case spv::ExecutionModelAnyHitNV:
-            return VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-        case spv::ExecutionModelClosestHitNV:
-            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        case spv::ExecutionModelMissNV:
-            return VK_SHADER_STAGE_MISS_BIT_NV;
-        case spv::ExecutionModelIntersectionNV:
-            return VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        case spv::ExecutionModelCallableNV:
-            return VK_SHADER_STAGE_CALLABLE_BIT_NV;
+        case spv::ExecutionModelRayGenerationKHR:
+            return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        case spv::ExecutionModelAnyHitKHR:
+            return VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
+        case spv::ExecutionModelClosestHitKHR:
+            return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+        case spv::ExecutionModelMissKHR:
+            return VK_SHADER_STAGE_MISS_BIT_KHR;
+        case spv::ExecutionModelIntersectionKHR:
+            return VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+        case spv::ExecutionModelCallableKHR:
+            return VK_SHADER_STAGE_CALLABLE_BIT_KHR;
         case spv::ExecutionModelTaskNV:
             return VK_SHADER_STAGE_TASK_BIT_NV;
         case spv::ExecutionModelMeshNV:

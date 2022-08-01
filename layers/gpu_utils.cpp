@@ -752,7 +752,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                                                      const VkPipelineBindPoint bind_point) {
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
-        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         return;
     }
 
@@ -807,7 +807,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       const VkPipelineBindPoint bind_point, const SafeCreateInfo &modified_create_infos) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
-        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+        bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         return;
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
@@ -941,7 +941,7 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
             strm << "Draw ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
             strm << "Compute ";
-        } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+        } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             strm << "Ray Trace ";
         } else {
             assert(false);

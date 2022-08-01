@@ -347,7 +347,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     static const std::map<VkPipelineBindPoint, std::string> bindpoint_errors = {
         std::make_pair(VK_PIPELINE_BIND_POINT_GRAPHICS, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361"),
         std::make_pair(VK_PIPELINE_BIND_POINT_COMPUTE, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361"),
-        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361")};
+        std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-00361")};
     skip |= ValidatePipelineBindPoint(cb_state.get(), pipelineBindPoint, "vkCmdBindPipeline()", bindpoint_errors);
 
     return skip;
