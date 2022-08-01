@@ -273,7 +273,7 @@ void CMD_BUFFER_STATE::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
 void CMD_BUFFER_STATE::Reset() {
-    ResetUse();
+    assert(!InUse());
     // Reset CB state (note that createInfo is not cleared)
     memset(&beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
     memset(&inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
