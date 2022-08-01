@@ -986,5 +986,22 @@ bool Contains(const Container &container, const Key &key) {
     return container.find(key) != container.cend();
 }
 
+// EraseIf is not implemented as std::erase(std::remove_if(...), ...) for two reasons:
+//   1) Robin Hood containers don't support two-argument erase functions
+//   2) STL remove_if requires the predicate to be const w.r.t the value-type, and std::erase_if doesn't AFAICT
+template <typename Container, typename Predicate>
+typename Container::size_type EraseIf(Container &c, Predicate &&p) {
+    const auto before_size = c.size();
+    auto pos = c.begin();
+    while (pos != c.end()) {
+        if (p(*pos)) {
+            pos = c.erase(pos);
+        } else {
+            ++pos;
+        }
+    }
+    return before_size - c.size();
+}
+
 }  // namespace layer_data
 #endif  // LAYER_DATA_H

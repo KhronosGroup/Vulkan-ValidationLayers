@@ -184,6 +184,7 @@ class range_map {
     using value_type = typename ImplMap::value_type;
     using key_type = typename ImplMap::key_type;
     using index_type = typename key_type::index_type;
+    using size_type = typename ImplMap::size_type;
 
   protected:
     template <typename ThisType>
@@ -662,7 +663,7 @@ class range_map {
     }
 
     bool empty() const { return impl_map_.empty(); }
-    size_t size() const { return impl_map_.size(); }
+    size_type size() const { return impl_map_.size(); }
 
     // For configuration/debug use // Use with caution...
     ImplMap &get_implementation_map() { return impl_map_; }
