@@ -381,12 +381,12 @@ VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fen
     const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
-    submit_info.commandBufferCount = (uint32_t)cmd_handles.size();
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
+    submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
     submit_info.pCommandBuffers = cmd_handles.data();
     submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
+    submit_info.pSignalSemaphores = nullptr;
 
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
     if (expect_success) EXPECT(result == VK_SUCCESS);
@@ -400,6 +400,34 @@ VkResult Queue::submit(const CommandBuffer &cmd, const Fence &fence, bool expect
 VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
     Fence fence;
     return submit(cmd, fence);
+}
+
+VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
+    std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
+    for (size_t i = 0; i < cmds.size(); i++) {
+        VkCommandBufferSubmitInfo cmd_submit_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+        cmd_submit_info.deviceMask = 0;
+        cmd_submit_info.commandBuffer = cmds[i]->handle();
+        cmd_submit_infos.push_back(cmd_submit_info);
+    }
+
+    VkSubmitInfo2 submit_info = LvlInitStruct<VkSubmitInfo2>();
+    submit_info.flags = 0;
+    submit_info.waitSemaphoreInfoCount = 0;
+    submit_info.pWaitSemaphoreInfos = nullptr;
+    submit_info.signalSemaphoreInfoCount = 0;
+    submit_info.pSignalSemaphoreInfos = nullptr;
+    submit_info.commandBufferInfoCount = static_cast<uint32_t>(cmd_submit_infos.size());
+    submit_info.pCommandBufferInfos = cmd_submit_infos.data();
+
+    // requires synchronization2 to be enabled
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit_info, fence.handle());
+    if (expect_success) EXPECT(result == VK_SUCCESS);
+    return result;
+}
+
+VkResult Queue::submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success) {
+    return submit2(std::vector<const CommandBuffer *>(1, &cmd), fence, expect_success);
 }
 
 VkResult Queue::wait() {

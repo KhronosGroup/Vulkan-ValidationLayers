@@ -291,6 +291,9 @@ class Queue : public internal::Handle<VkQueue> {
     VkResult submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
     VkResult submit(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
     VkResult submit(const CommandBuffer &cmd, bool expect_success = true);
+    // vkQueueSubmit2()
+    VkResult submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success = true);
+    VkResult submit2(const CommandBuffer &cmd, const Fence &fence, bool expect_success = true);
 
     // vkQueueWaitIdle()
     VkResult wait();

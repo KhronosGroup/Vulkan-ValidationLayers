@@ -489,7 +489,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 #ifdef VK_USE_PLATFORM_METAL_EXT
     instance_extensions_.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
-    
+
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
 
@@ -2519,21 +2519,25 @@ void VkCommandBufferObj::Draw(uint32_t vertexCount, uint32_t instanceCount, uint
     vk::CmdDraw(handle(), vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void VkCommandBufferObj::QueueCommandBuffer(bool checkSuccess) {
-    VkFenceObj nullFence;
-    QueueCommandBuffer(nullFence, checkSuccess);
+void VkCommandBufferObj::QueueCommandBuffer(bool check_success) {
+    VkFenceObj null_fence;
+    QueueCommandBuffer(null_fence, check_success);
 }
 
-void VkCommandBufferObj::QueueCommandBuffer(const VkFenceObj &fence, bool checkSuccess) {
+void VkCommandBufferObj::QueueCommandBuffer(const VkFenceObj &fence, bool check_success, bool submit_2) {
     VkResult err = VK_SUCCESS;
 
-    err = m_queue->submit(*this, fence, checkSuccess);
-    if (checkSuccess) {
+    if (submit_2) {
+        err = m_queue->submit2(*this, fence, check_success);
+    } else {
+        err = m_queue->submit(*this, fence, check_success);
+    }
+    if (check_success) {
         ASSERT_VK_SUCCESS(err);
     }
 
     err = m_queue->wait();
-    if (checkSuccess) {
+    if (check_success) {
         ASSERT_VK_SUCCESS(err);
     }
 
@@ -2541,7 +2545,6 @@ void VkCommandBufferObj::QueueCommandBuffer(const VkFenceObj &fence, bool checkS
     // Wait for work to finish before cleaning up.
     vk::DeviceWaitIdle(m_device->device());
 }
-
 void VkCommandBufferObj::BindDescriptorSet(VkDescriptorSetObj &descriptorSet) {
     VkDescriptorSet set_obj = descriptorSet.GetDescriptorSetHandle();
 

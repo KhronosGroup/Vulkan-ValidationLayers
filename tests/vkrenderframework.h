@@ -457,8 +457,8 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
     void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
     void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                      uint32_t firstInstance);
-    void QueueCommandBuffer(bool checkSuccess = true);
-    void QueueCommandBuffer(const VkFenceObj &fence, bool checkSuccess = true);
+    void QueueCommandBuffer(bool check_success = true);
+    void QueueCommandBuffer(const VkFenceObj &fence, bool check_success = true, bool submit_2 = false);
     void SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports);
     void SetStencilReference(VkStencilFaceFlags faceMask, uint32_t reference);
     void UpdateBuffer(VkBuffer buffer, VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData);
