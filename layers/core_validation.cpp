@@ -791,7 +791,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const char *caller = CommandTypeString(cmd_type);
     const auto pipeline_flags = pPipeline->GetPipelineCreateFlags();
 
-    if (pCB->activeRenderPass && pCB->activeRenderPass->use_dynamic_rendering) {
+    if (pCB->activeRenderPass && pCB->activeRenderPass->UsesDynamicRendering()) {
         const auto &rp_state = pPipeline->RenderPassState();
         if (rp_state) {
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
@@ -1245,7 +1245,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     if (!raster_state || (raster_state->rasterizerDiscardEnable == VK_FALSE)) {
         VkSampleCountFlagBits pso_num_samples = GetNumSamples(pPipeline);
         if (pCB->activeRenderPass) {
-            if (pCB->activeRenderPass->use_dynamic_rendering || pCB->activeRenderPass->use_dynamic_rendering_inherited) {
+            if (pCB->activeRenderPass->UsesDynamicRendering()) {
                 // TODO: Mirror the below VUs but using dynamic rendering
                 const auto dynamic_rendering_info = pCB->activeRenderPass->dynamic_rendering_begin_rendering_info;
             } else {
@@ -1301,7 +1301,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
     // Verify that PSO creation renderPass is compatible with active renderPass
-    if (pCB->activeRenderPass && !pCB->activeRenderPass->use_dynamic_rendering) {
+    if (pCB->activeRenderPass && !pCB->activeRenderPass->UsesDynamicRendering()) {
         const auto &rp_state = pPipeline->RenderPassState();
         // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
         if (pCB->activeRenderPass->renderPass() != rp_state->renderPass()) {
@@ -1443,10 +1443,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
     if (pPipeline->fragment_output_state->dual_source_blending  &&
         pCB->activeRenderPass) {
-        uint32_t count = pCB->activeRenderPass->use_dynamic_rendering
+        uint32_t count = pCB->activeRenderPass->UsesDynamicRendering()
                              ? pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
-                             : pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass]
-                .colorAttachmentCount;
+                             : pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].colorAttachmentCount;
         if (count > phys_dev_props.limits.maxFragmentDualSrcAttachments) {
             skip |=
                 LogError(pPipeline->pipeline(), "VUID-RuntimeSpirv-Fragment-06427",
@@ -1691,14 +1690,14 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE *pPipe
         const auto subpass = pPipeline->Subpass();
         const auto *subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
 
-        uint32_t numberColorAttachments = (rp_state->use_dynamic_rendering)
+        uint32_t numberColorAttachments = rp_state->UsesDynamicRendering()
                                               ? rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount
                                               : subpass_desc->colorAttachmentCount;
 
         for (uint32_t i = 0; i < pPipeline->Attachments().size() && i < numberColorAttachments; ++i) {
             VkFormatFeatureFlags2KHR format_features;
 
-            if (rp_state->use_dynamic_rendering) {
+            if (rp_state->UsesDynamicRendering()) {
                 if (color_blend_state->attachmentCount != numberColorAttachments) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055",
                                      "Pipeline %s: VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
@@ -1900,7 +1899,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     }
 
     const auto subpass = pipeline->Subpass();
-    if (rp_state && !rp_state->use_dynamic_rendering) {
+    if (rp_state && !rp_state->UsesDynamicRendering()) {
         // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
         // produces nonsense errors that confuse users. Other layers should already
         // emit errors for renderpass being invalid.
@@ -8775,8 +8774,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer
     bool skip = false;
 
     if (cb_state->activeRenderPass) {
-        if ((cb_state->activeRenderPass->use_dynamic_rendering == false) &&
-            (cb_state->activeRenderPass->use_dynamic_rendering_inherited == false)) {
+        if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
             skip |= LogError(
                 commandBuffer, "VUID-vkCmdEndRendering-None-06161",
                 "Calling vkCmdEndRenderingKHR() in a render pass instance that was not begun with vkCmdBeginRenderingKHR().");
@@ -8795,7 +8793,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) c
     bool skip = false;
 
     if (cb_state->activeRenderPass) {
-        if (cb_state->activeRenderPass->use_dynamic_rendering == false) {
+        if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
             skip |= LogError(
                 commandBuffer, "VUID-vkCmdEndRendering-None-06161",
                 "Calling vkCmdEndRendering() in a render pass instance that was not begun with vkCmdBeginRendering().");
@@ -9246,7 +9244,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-None-02323", "vkCmdBindPipeline(): transform feedback is active.");
         }
         if ((cb_state->commands_since_begin_rendering > 0) && cb_state->activeRenderPass &&
-            cb_state->activeRenderPass->use_dynamic_rendering && cb_state->hasDrawCmd) {
+            cb_state->activeRenderPass->UsesDynamicRendering() && cb_state->hasDrawCmd) {
             const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
             const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
             const auto *last_rendering_struct =
@@ -10551,7 +10549,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
                                                     const VkDependencyInfoKHR *dep_info) const {
     bool skip = false;
     const auto &rp_state = cb_state->activeRenderPass;
-    if (rp_state->use_dynamic_rendering || rp_state->use_dynamic_rendering_inherited) {
+    if (rp_state->UsesDynamicRendering()) {
         return skip;
     }
     RenderPassDepState state(this, outer_loc.StringFunc().c_str(), "VUID-vkCmdPipelineBarrier2-pDependencies-02285",
@@ -10921,7 +10919,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
     skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
     skip |= ValidateCmd(cb_state.get(), CMD_PIPELINEBARRIER);
-    if (cb_state->activeRenderPass && !cb_state->activeRenderPass->use_dynamic_rendering) {
+    if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering()) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, dependencyFlags,
                                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
                                                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -10933,7 +10931,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
     }
-    if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering) {
+    if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
         skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier-None-06191",
                          "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
     }
@@ -10966,7 +10964,7 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
     }
-    if (cb_state->activeRenderPass && cb_state->activeRenderPass->use_dynamic_rendering) {
+    if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
         skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-None-06191",
                          "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
     }
@@ -11177,7 +11175,7 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
 
     if (cb_state->activeRenderPass) {
         const auto *render_pass_info = cb_state->activeRenderPass->createInfo.ptr();
-        if (!cb_state->activeRenderPass->use_dynamic_rendering && !cb_state->activeRenderPass->use_dynamic_rendering_inherited) {
+        if (!cb_state->activeRenderPass->UsesDynamicRendering()) {
             const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state->activeSubpass];
             if (subpass_desc) {
                 constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
@@ -14755,12 +14753,12 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
     RENDER_PASS_STATE *rp_state = cb_state->activeRenderPass.get();
     if (rp_state) {
         const VkRenderPassCreateInfo2 *rpci = rp_state->createInfo.ptr();
-        if ((cb_state->activeSubpass != rp_state->createInfo.subpassCount - 1) && !rp_state->use_dynamic_rendering) {
+        if (!rp_state->UsesDynamicRendering() && (cb_state->activeSubpass != rp_state->createInfo.subpassCount - 1)) {
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-03103" : "VUID-vkCmdEndRenderPass-None-00910";
             skip |= LogError(commandBuffer, vuid, "%s: Called before reaching final subpass.", function_name);
         }
 
-        if (rp_state->use_dynamic_rendering) {
+        if (rp_state->UsesDynamicRendering()) {
             vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-06171" : "VUID-vkCmdEndRenderPass-None-06170";
             skip |= LogError(commandBuffer, vuid, "%s: Called when the render pass instance was begun with %s().", function_name,
                              cb_state->begin_rendering_func_name.c_str());
@@ -15323,7 +15321,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     }
 
     if (cb_state->activeRenderPass) {
-        if ((cb_state->activeRenderPass->use_dynamic_rendering == false) &&
+        if (!cb_state->activeRenderPass->UsesDynamicRendering() &&
             (cb_state->activeSubpassContents != VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-contents-06018",
                              "vkCmdExecuteCommands(): contents must be set to VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS "
@@ -15331,7 +15329,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                              "vkCmdBeginRenderPass().");
         }
 
-        if ((cb_state->activeRenderPass->use_dynamic_rendering == true) &&
+        if (cb_state->activeRenderPass->UsesDynamicRendering() &&
             !(cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
               VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdExecuteCommands-flags-06024",
@@ -15378,7 +15376,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
                                      "the vkBeginCommandBuffer() was called.",
                                      report_data->FormatHandle(pCommandBuffers[i]).c_str());
-                } else if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == false) &&
+                } else if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering() &&
                            (sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     // Make sure render pass is compatible with parent command buffer pass if has continue
                     if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
@@ -15417,7 +15415,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     }
                 }
 
-                if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == false) &&
+                if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering() &&
                     (cb_state->activeSubpass != sub_cb_state->beginInfo.pInheritanceInfo->subpass)) {
                     LogObjectList objlist(pCommandBuffers[i]);
                     objlist.add(cb_state->activeRenderPass->renderPass());
@@ -15429,7 +15427,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      report_data->FormatHandle(pCommandBuffers[i]).c_str(),
                                      report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
                                      sub_cb_state->beginInfo.pInheritanceInfo->subpass, cb_state->activeSubpass);
-                } else if (cb_state->activeRenderPass && (cb_state->activeRenderPass->use_dynamic_rendering == true)) {
+                } else if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
                     if (sub_cb_state->beginInfo.pInheritanceInfo->renderPass != VK_NULL_HANDLE) {
                         LogObjectList objlist(pCommandBuffers[i]);
                         objlist.add(cb_state->activeRenderPass->renderPass());
