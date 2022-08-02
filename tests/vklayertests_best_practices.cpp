@@ -983,15 +983,6 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
         return;
     }
 
-    // GetPhysicalDeviceSurfaceCapabilitiesKHR() not called before trying to create a swapchain
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved");
-
-    // GetPhysicalDeviceSurfaceFormatsKHR() not called before trying to create a swapchain
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved");
-
-    // GetPhysicalDeviceSurfacePresentModesKHR() not called before trying to create a swapchain
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved");
-
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     m_surface_composite_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
 #else
@@ -1015,13 +1006,6 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    // Set unexpected error because warning is thrown any time the present mode is not VK_PRESENT_MODE_FIFO_KHR
-    m_errorMonitor->SetUnexpectedError("UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
-
-    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    ASSERT_TRUE(err == VK_ERROR_VALIDATION_FAILED_EXT);
-    m_errorMonitor->VerifyFound();
-
     // Test for successful swapchain creation when GetPhysicalDeviceSurfaceCapabilitiesKHR() and
     // GetPhysicalDeviceSurfaceFormatsKHR() are queried as expected and GetPhysicalDeviceSurfacePresentModesKHR() is not called but
     // the present mode is VK_PRESENT_MODE_FIFO_KHR
@@ -1037,6 +1021,17 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
+
+    // GetPhysicalDeviceSurfacePresentModesKHR() not called before trying to create a swapchain
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved");
+
+    // Set unexpected error because warning is thrown any time the present mode is not VK_PRESENT_MODE_FIFO_KHR
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
+
+    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    // ASSERT_TRUE(err == VK_ERROR_VALIDATION_FAILED_EXT);
+    m_errorMonitor->VerifyFound();
+
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
     err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
