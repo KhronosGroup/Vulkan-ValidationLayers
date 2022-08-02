@@ -174,11 +174,6 @@ TEST_F(VkLayerTest, PipelineWrongBindPointRayTracing) {
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
-    }
-
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.InitState();
@@ -2333,9 +2328,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
 TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage texel buffer without an image format");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2350,8 +2344,7 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        printf("%s Failed to device profile layer.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -3937,7 +3930,9 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
 
-    EnableDeviceProfileLayer();
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -4651,20 +4646,16 @@ TEST_F(VkLayerTest, InvalidPushConstantRange) {
 TEST_F(VkLayerTest, InvalidCmdPushConstantRange) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange values in vkCmdPushConstants.");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-
-    // Load required functions
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Failed to device profile layer.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     // Set limit to be same max as the shader usages
@@ -5470,18 +5461,15 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
 TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Failed to device profile layer.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     VkPhysicalDeviceProperties props;
@@ -5556,18 +5544,15 @@ TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
 TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Failed to device profile layer.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     VkPhysicalDeviceProperties props;
@@ -9912,21 +9897,15 @@ TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
 TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
-
-    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
-        return;
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     // Spec requires a minimum of 128 so know this is setting it lower than that
@@ -10159,21 +10138,15 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
 TEST_F(VkLayerTest, LimitsMaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
-
-    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
-        return;
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     // Set limit to match with hardcoded values in shaders
@@ -10619,9 +10592,8 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
     VkResult err;
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Couldn't enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -10630,11 +10602,8 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-
-    // Load required functions
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        printf("%s Required extensions are not present.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     const VkFormat sampled_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -16734,9 +16703,8 @@ TEST_F(VkLayerTest, MissingSubgroupSizeControlFeature) {
 TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -16749,14 +16717,10 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
-
-    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
-        return;
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();

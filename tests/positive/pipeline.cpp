@@ -454,9 +454,8 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -6045,9 +6044,8 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     const VkFormat image_format = VK_FORMAT_B8G8R8A8_SRGB;
     const VkFormat image_view_format = VK_FORMAT_R32_SFLOAT;
 
-    if (!EnableDeviceProfileLayer()) {
-        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
-        return;
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
@@ -6061,8 +6059,7 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        printf("%s Failed to device profile layer.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Failed to load device profile layer.";
     }
 
     auto fmt_props_3 = LvlInitStruct<VkFormatProperties3>();

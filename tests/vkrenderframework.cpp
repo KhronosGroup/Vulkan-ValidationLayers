@@ -360,17 +360,17 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
 }
 
 // Enable device profile as last layer on stack overriding devsim if there, or return if not available
-bool VkRenderFramework::EnableDeviceProfileLayer() {
-    if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-        if (VkTestFramework::m_devsim_layer) {
+bool VkRenderFramework::OverrideDevsimForDeviceProfileLayer() {
+    if (VkTestFramework::m_devsim_layer) {
+        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
             assert(0 == strncmp(instance_layers_.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
             instance_layers_.back() = "VK_LAYER_LUNARG_device_profile_api";
         } else {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+            printf(
+                "             Did not find VK_LAYER_LUNARG_device_profile_api layer; make sure VK_LAYER_PATH is set correctly to "
+                "where the validation layers are built, the device profile layer should be in the same directory.\n");
+            return false;
         }
-    } else {
-        printf("             Did not find VK_LAYER_LUNARG_device_profile_api layer; skipped.\n");
-        return false;
     }
     return true;
 }
@@ -489,7 +489,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 #ifdef VK_USE_PLATFORM_METAL_EXT
     instance_extensions_.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
-    
+
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
 

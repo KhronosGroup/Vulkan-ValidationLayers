@@ -234,18 +234,22 @@ There are times a test writer will want to test a case where an implementation r
 ### Device Profile Format Feature
 Here is an example of how To enable it to allow overriding format features (limits are the same idea, just different function names):
 ```cpp
-if (!EnableDeviceProfileLayer()) {
-    GTEST_SKIP() << "Failed to enable device profile layer.";
+// Will replace VK_LAYER_LUNARG_device_simulation with VK_LAYER_LUNARG_device_profile_api
+//
+// This can be skipped if test doesn't allow for devsim (ex. GPU Validation tests)
+//
+// Needs to be done BEFORE creating an VkInstance (because they are instance level layers)
+if (!OverrideDevsimForDeviceProfileLayer()) {
+    GTEST_SKIP() << "Failed to override devsim for device profile layer.";
 }
 
 ASSERT_NO_FATAL_FAILURE(Init());
 
+// Load required functions
 PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
 PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
-
-// Load required functions
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-    GTEST_SKIP() << "Failed to device profile layer.";
+    GTEST_SKIP() << "Failed to load device profile layer.";
 }
 ```
 
@@ -262,7 +266,7 @@ If you are in need of `VkFormatProperties3` the following is an example how to u
 PFN_vkSetPhysicalDeviceFormatProperties2EXT fpvkSetPhysicalDeviceFormatProperties2EXT = nullptr;
 PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT fpvkGetOriginalPhysicalDeviceFormatProperties2EXT = nullptr;
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatProperties2EXT, fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-    GTEST_SKIP() << "Failed to device profile layer.";
+    GTEST_SKIP() << "Failed to load device profile layer.";
 }
 
 auto fmt_props_3 = LvlInitStruct<VkFormatProperties3>();
@@ -287,12 +291,11 @@ When using the device profile layer for limits, the test maybe need to call `vkS
 ```cpp
 ASSERT_NO_FATAL_FAILURE(InitFramework());
 
+// Load required functions
 PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
 PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
-
-// Load required functions
 if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-    GTEST_SKIP() << "Failed to device profile layer.";
+    GTEST_SKIP() << "Failed to load device profile layer.";
 }
 
 VkPhysicalDeviceProperties props;

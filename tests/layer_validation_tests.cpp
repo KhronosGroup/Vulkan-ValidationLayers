@@ -970,6 +970,8 @@ VkLayerTest::VkLayerTest() {
 
     instance_layers_.push_back(kValidationLayerName);
 
+    // Devsim and device profile layer can't be on at the same time as they both override the vkGetPhysicalDevice* calls. Always try
+    // to set device profile unless running with devsim explicitly set
     if (VkTestFramework::m_devsim_layer) {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
             instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
@@ -986,8 +988,7 @@ VkLayerTest::VkLayerTest() {
         instance_layers_.push_back(kSynchronization2LayerName);
     }
 
-    app_info_.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info_.pNext = NULL;
+    app_info_ = LvlInitStruct<VkApplicationInfo>();
     app_info_.pApplicationName = "layer_tests";
     app_info_.applicationVersion = 1;
     app_info_.pEngineName = "unittest";
@@ -1106,11 +1107,14 @@ bool VkLayerTest::LoadDeviceProfileLayer(
         instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
-        return 0;
+        printf(
+            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n",
+            kSkipPrefix);
+        return false;
     }
 
-    return 1;
+    return true;
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(
@@ -1124,7 +1128,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
             instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
 
     if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        printf(
+            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n",
+            kSkipPrefix);
         return false;
     }
 
@@ -1140,7 +1147,29 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
         (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
-        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        printf(
+            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n",
+            kSkipPrefix);
+        return false;
+    }
+
+    return true;
+}
+
+bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpvkSetPhysicalDeviceFeaturesEXT,
+                                         PFN_vkGetOriginalPhysicalDeviceFeaturesEXT &fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
+    // Load required functions
+    fpvkSetPhysicalDeviceFeaturesEXT =
+        (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vSetPhysicalDeviceFeaturesEXT");
+    fpvkGetOriginalPhysicalDeviceFeaturesEXT =
+        (PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT");
+
+    if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
+        printf(
+            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n",
+            kSkipPrefix);
         return false;
     }
 
