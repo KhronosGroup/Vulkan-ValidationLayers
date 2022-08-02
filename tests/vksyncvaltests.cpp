@@ -4250,6 +4250,7 @@ struct QSTestContext {
     VkCommandBufferObj* current_cb = nullptr;
 
     QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0 = nullptr, VkQueueObj* force_q1 = nullptr);
+    VkCommandBuffer InitFromPool(VkCommandBufferObj& cb_obj);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
     void Begin(VkCommandBufferObj& cb);
@@ -4278,18 +4279,21 @@ struct QSTestContext {
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
 
     void Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE);
+                VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+                VkFence fence = VK_NULL_HANDLE);
 
     void Submit0(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE) {
-        Submit(q0, cb, wait, wait_mask, signal);
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+                 VkFence fence = VK_NULL_HANDLE) {
+        Submit(q0, cb, wait, wait_mask, signal, fence);
     }
     void Submit0Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
     void Submit0Signal(VkCommandBufferObj& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
 
     void Submit1(VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
-                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE) {
-        Submit(q1, cb, wait, wait_mask, signal);
+                 VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
+                 VkFence fence = VK_NULL_HANDLE) {
+        Submit(q1, cb, wait, wait_mask, signal, fence);
     }
     void Submit1Wait(VkCommandBufferObj& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
     void Submit1Signal(VkCommandBufferObj& cb, VkPipelineStageFlags signal_mask) {
@@ -4351,19 +4355,21 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
     region = {0, 0, 256};
 
     pool.Init(device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    cba.Init(device, &pool);
-    cbb.Init(device, &pool);
-    cbc.Init(device, &pool);
 
-    h_cba = cba.handle();
-    h_cbb = cbb.handle();
-    h_cbc = cbc.handle();
+    h_cba = InitFromPool(cba);
+    h_cbb = InitFromPool(cbb);
+    h_cbc = InitFromPool(cbc);
 
     auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
     semaphore.init(*device, semaphore_ci);
 
     VkEventCreateInfo eci = LvlInitStruct<VkEventCreateInfo>();
     event.init(*device, eci);
+}
+
+VkCommandBuffer QSTestContext::InitFromPool(VkCommandBufferObj& cb_obj) {
+    cb_obj.Init(dev, &pool);
+    return cb_obj.handle();
 }
 
 void QSTestContext::Begin(VkCommandBufferObj& cb) {
@@ -4398,8 +4404,8 @@ void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier)
 
 void QSTestContext::TransferBarrier(const VkBufferObj& buffer) { TransferBarrier(InitBufferBarrier(buffer)); }
 
-void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask,
-                           VkSemaphore signal) {
+void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
+                           VkFence fence) {
     auto submit1 = lvl_init_struct<VkSubmitInfo>();
     submit1.commandBufferCount = 1;
     VkCommandBuffer h_cb = cb.handle();
@@ -4413,7 +4419,7 @@ void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, 
         submit1.signalSemaphoreCount = 1;
         submit1.pSignalSemaphores = &signal;
     }
-    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+    vk::QueueSubmit(q, 1, &submit1, fence);
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
@@ -4524,6 +4530,66 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
     test.Submit0(test.cbb);
 
     m_device->wait();
+}
+
+TEST_F(VkSyncValTest, SyncQSBufferCopyVsFence) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    QSTestContext test(m_device, m_device->m_queue_obj);
+    if (!test.Valid()) {
+        GTEST_SKIP() << "Test requires a valid queue object.";
+    }
+
+    vk_testing::Fence fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    VkFence fence_handle = fence.handle();
+    VkResult wait_result;
+    VkCommandBufferObj cbd;
+    test.InitFromPool(cbd);
+
+    // Set up four CB with copy commands
+    // We'll wait for the first, but not the second
+    test.BeginA();
+    test.CopyAToB();
+    test.End();
+
+    test.BeginB();
+    test.CopyAToC();
+    test.End();
+
+    test.BeginC();
+    test.CopyAToB();
+    test.End();
+
+    // This is the one that should error
+    test.Begin(cbd);
+    test.CopyAToC();
+    test.End();
+
+    // Two copies *better* finish in a second...
+    const uint64_t kFourSeconds = 1U << 30;
+    // Copy A to B
+    test.Submit0(test.cba, VK_NULL_HANDLE, 0U, VK_NULL_HANDLE, fence_handle);
+    // Copy A to C
+    test.Submit0(test.cbb);
+    // Wait for A to B
+    wait_result = fence.wait(kFourSeconds);
+
+    if (wait_result != VK_SUCCESS) {
+        ADD_FAILURE() << "Fence wait failed. Aborting test.";
+        m_device->wait();
+    }
+
+    // A and B should be good to go...
+    test.Submit0(test.cbc);
+
+    // But C shouldn't
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    test.Submit0(cbd);
+    m_errorMonitor->VerifyFound();
+
+    test.DeviceWait();
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
