@@ -16,6 +16,7 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
+#include "best_practices_error_enums.h"
 
 const char *kEnableArmValidation = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM";
 
@@ -93,8 +94,6 @@ TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
                                          "UNASSIGNED-BestPractices-vkCreateSampler-border-clamp-color");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSampler-unnormalized-coordinates");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy");
 
     VkSamplerCreateInfo sampler_info{};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -103,10 +102,10 @@ TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     sampler_info.minLod = 0.0f;
-    sampler_info.maxLod = 4.0f;
+    sampler_info.maxLod = 0.0f;
     sampler_info.mipLodBias = 1.0f;
     sampler_info.unnormalizedCoordinates = VK_TRUE;
-    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.anisotropyEnable = VK_FALSE;
     sampler_info.maxAnisotropy = 4.0f;
 
     VkSampler sampler = VK_NULL_HANDLE;
@@ -133,6 +132,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference color_ref{};
     color_ref.attachment = 0;
@@ -213,6 +213,11 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_ci.size = sizeof(uint32_t) * 3;
+    buffer_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBufferObj indexBuffer(*m_device, buffer_ci);
+
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     pipe_ms_state_ci.pNext = NULL;
@@ -230,6 +235,8 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), indexBuffer.handle(), 0, VK_INDEX_TYPE_UINT32);
 
     for (int i = 0; i < 10; i++) {
         m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
@@ -250,7 +257,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    ds_type_count.descriptorCount = 3;
+    ds_type_count.descriptorCount = 6;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -260,9 +267,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    VkDescriptorPool ds_pool;
-    VkResult err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding ds_binding = {};
     ds_binding.binding = 0;
@@ -274,11 +279,9 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     ds_layout_info.bindingCount = 1;
     ds_layout_info.pBindings = &ds_binding;
 
-    VkDescriptorSetLayout ds_layout;
-    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_info, nullptr, &ds_layout);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
 
-    auto ds_layouts = std::vector<VkDescriptorSetLayout>(ds_pool_ci.maxSets, ds_layout);
+    auto ds_layouts = std::vector<VkDescriptorSetLayout>(ds_pool_ci.maxSets, ds_layout.handle());
 
     std::vector<VkDescriptorSet> descriptor_sets = {};
     descriptor_sets.resize(ds_layouts.size());
@@ -286,16 +289,16 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     // allocate N/2 descriptor sets
     VkDescriptorSetAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.descriptorSetCount = descriptor_sets.size() / 2;
     alloc_info.pSetLayouts = ds_layouts.data();
 
-    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets.data());
+    VkResult err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets.data());
     ASSERT_VK_SUCCESS(err);
 
     // free one descriptor set
     VkDescriptorSet* ds = descriptor_sets.data();
-    err = vk::FreeDescriptorSets(m_device->device(), ds_pool, 1, ds);
+    err = vk::FreeDescriptorSets(m_device->device(), ds_pool.handle(), 1, ds);
 
     // the previous allocate and free should not cause any warning
     ASSERT_VK_SUCCESS(err);
@@ -303,7 +306,7 @@ TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
     // allocate the previously freed descriptor set
     alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.descriptorSetCount = 1;
     alloc_info.pSetLayouts = ds_layouts.data();
 
@@ -384,7 +387,7 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
         pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
         pr_pipe.CreateGraphicsPipeline();
 
-        m_commandBuffer->reset();
+        vk::ResetCommandPool(m_device->device(), m_commandPool->handle(), 0);
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
@@ -417,6 +420,11 @@ TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
             m_errorMonitor->VerifyFound();
         }
         ibo.memory().unmap();
+
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        m_errorMonitor->Reset();
     };
 
     // our non-sparse indices should not trigger a warning for either pipeline in this case
@@ -596,7 +604,8 @@ TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
     queue_info.pNext = nullptr;
     queue_info.queueFamilyIndex = 0;
     queue_info.queueCount = 1;
-    queue_info.pQueuePriorities = nullptr;
+    float qp = 1.f;
+    queue_info.pQueuePriorities = &qp;
     VkDeviceCreateInfo dev_info = {};
     dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dev_info.pNext = nullptr;
@@ -636,21 +645,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
 
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     InitRenderTarget(m_depthStencil->BindInfo());
-
-    VkAttachmentDescription attachment{};
-    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkRenderPassCreateInfo rp_info{};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    rp_info.attachmentCount = 1;
-    rp_info.pAttachments = &attachment;
-    rp_info.pNext = nullptr;
-
-    VkRenderPass rp = VK_NULL_HANDLE;
-    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
 
     // set up pipelines
 
@@ -718,8 +712,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     // record a command buffer which records a significant number of depth pre-passes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, kVUID_BestPractices_EndRenderPass_DepthPrePassUsage);
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
@@ -731,8 +724,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     m_commandBuffer->EndRenderPass();
 
     m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadAlignmentTest) {
@@ -921,8 +912,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     InitBestPracticesFramework(kEnableArmValidation);
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-RenderPass-redundant-store");
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, kVUID_BestPractices_RenderPass_RedundantStore);
+    m_errorMonitor->SetAllowedFailureMsg(kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile);
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
@@ -947,6 +938,12 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
         std::unique_ptr<VkShaderObj>(new VkShaderObj(this, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT));
     graphics_pipeline.InitInfo();
     graphics_pipeline.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkDynamicState ds = VK_DYNAMIC_STATE_VIEWPORT;
+    graphics_pipeline.dyn_state_ci_ = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    graphics_pipeline.dyn_state_ci_.dynamicStateCount = 1;
+    graphics_pipeline.dyn_state_ci_.pDynamicStates = &ds;
+
     graphics_pipeline.InitState();
 
     graphics_pipeline.gp_ci_.renderPass = renderpasses[1];
@@ -965,6 +962,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     render_pass_begin_info.pClearValues = clear_values;
 
     const auto execute_work = [&](const std::function<void(VkCommandBufferObj & command_buffer)>& work) {
+        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
         m_commandBuffer->begin();
 
         work(*m_commandBuffer);
@@ -1013,6 +1011,13 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     execute_work(start_and_end_renderpass);
 
     m_errorMonitor->VerifyFound();
+
+    for (auto rp : renderpasses) {
+        vk::DestroyRenderPass(device(), rp, nullptr);
+    }
+    for (auto fb : framebuffers) {
+        vk::DestroyFramebuffer(device(), fb, nullptr);
+    }
 }
 
 TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
@@ -1031,6 +1036,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
+    images[0]->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
@@ -1094,6 +1100,13 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
+
+    for (auto rp : renderpasses) {
+        vk::DestroyRenderPass(device(), rp, nullptr);
+    }
+    for (auto fb : framebuffers) {
+        vk::DestroyFramebuffer(device(), fb, nullptr);
+    }
 }
 
 TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
@@ -1109,13 +1122,34 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
-    std::vector<std::unique_ptr<VkImageObj>> images;
-    std::vector<VkRenderPass> renderpasses;
-    std::vector<VkFramebuffer> framebuffers;
+    // Create renderpass
+    VkAttachmentDescription attachment = {};
+    attachment.format = FMT;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
-    renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_reference;
+
+    VkRenderPassCreateInfo rpinf = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpinf.attachmentCount = 1;
+    rpinf.pAttachments = &attachment;
+    rpinf.subpassCount = 1;
+    rpinf.pSubpasses = &subpass;
+
+    vk_testing::RenderPass rp(*m_device, rpinf);
+
+    std::unique_ptr<VkImageObj> image = CreateImage(FMT, WIDTH, HEIGHT);
+    image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    VkFramebuffer fb = CreateFramebuffer(WIDTH, HEIGHT, image->targetView(FMT), rp.handle());
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1129,7 +1163,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
     graphics_pipeline.InitState();
 
-    graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
+    graphics_pipeline.gp_ci_.renderPass = rp.handle();
     graphics_pipeline.gp_ci_.flags = 0;
 
     graphics_pipeline.CreateGraphicsPipeline();
@@ -1139,8 +1173,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
 
     VkRenderPassBeginInfo render_pass_begin_info = {};
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = renderpasses[0];
-    render_pass_begin_info.framebuffer = framebuffers[0];
+    render_pass_begin_info.renderPass = rp.handle();
+    render_pass_begin_info.framebuffer = fb;
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
 
@@ -1151,7 +1185,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     subresource_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource_range.layerCount = VK_REMAINING_ARRAY_LAYERS;
     subresource_range.levelCount = VK_REMAINING_MIP_LEVELS;
-    m_commandBuffer->ClearColorImage(images[0]->image(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
+    m_commandBuffer->ClearColorImage(image->handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color_value, 1, &subresource_range);
 
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
 
@@ -1177,6 +1211,8 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     vk::QueueWaitIdle(m_device->m_queue);
 
     m_errorMonitor->VerifyFound();
+
+    vk::DestroyFramebuffer(device(), fb, nullptr);
 }
 
 TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
@@ -1191,15 +1227,43 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
+    // Create renderpass
+    VkAttachmentDescription attachment = {};
+    attachment.format = FMT;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference attachment_reference = {};
+    attachment_reference.attachment = 0;
+    attachment_reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachment_reference;
+
+    VkRenderPassCreateInfo rpinf = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpinf.attachmentCount = 1;
+    rpinf.pAttachments = &attachment;
+    rpinf.subpassCount = 1;
+    rpinf.pSubpasses = &subpass;
+
+    vk_testing::RenderPass rp(*m_device, rpinf);
+
     std::vector<std::unique_ptr<VkImageObj>> images;
-    std::vector<VkRenderPass> renderpasses;
     std::vector<VkFramebuffer> framebuffers;
 
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
     images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
-    renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
-    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[0]));
+
+    for (auto& image : images) {
+        image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    }
+
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), rp.handle()));
+    framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), rp.handle()));
 
     CreatePipelineHelper graphics_pipeline(*this);
 
@@ -1220,7 +1284,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     graphics_pipeline.cb_attachments_[0].colorWriteMask = 0xf;
     graphics_pipeline.InitState();
 
-    graphics_pipeline.gp_ci_.renderPass = renderpasses[0];
+    graphics_pipeline.gp_ci_.renderPass = rp.handle();
     graphics_pipeline.gp_ci_.flags = 0;
 
     graphics_pipeline.CreateGraphicsPipeline();
@@ -1231,16 +1295,15 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     pool_sizes[1].descriptorCount = 4;
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 
-    VkDescriptorPool pool;
     VkDescriptorPoolCreateInfo descriptor_pool_create_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     descriptor_pool_create_info.maxSets = 1;
     descriptor_pool_create_info.poolSizeCount = 2;
     descriptor_pool_create_info.pPoolSizes = pool_sizes;
-    vk::CreateDescriptorPool(m_device->handle(), &descriptor_pool_create_info, nullptr, &pool);
+    vk_testing::DescriptorPool pool(*m_device, descriptor_pool_create_info);
 
     VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
     VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-    descriptor_set_allocate_info.descriptorPool = pool;
+    descriptor_set_allocate_info.descriptorPool = pool.handle();
     descriptor_set_allocate_info.descriptorSetCount = 1;
     descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
     vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
@@ -1264,7 +1327,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
 
     VkRenderPassBeginInfo render_pass_begin_info = {};
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = renderpasses[0];
+    render_pass_begin_info.renderPass = rp.handle();
     render_pass_begin_info.framebuffer = framebuffers[0];
     render_pass_begin_info.clearValueCount = 3;
     render_pass_begin_info.pClearValues = clear_values;
@@ -1321,6 +1384,10 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     submit.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
+
+    for (auto fb : framebuffers) {
+        vk::DestroyFramebuffer(device(), fb, nullptr);
+    }
 }
 
 TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
@@ -1371,16 +1438,31 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
                      images[1]->image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                      1, &blit_region, VK_FILTER_LINEAR);
 
-    VkImageMemoryBarrier pre_render_pass_barrier{
-        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr,
-        VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-        images[0]->image(), { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+    VkImageMemoryBarrier pre_render_pass_barriers[2] = {
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         nullptr,
+         VK_ACCESS_TRANSFER_READ_BIT,
+         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         VK_QUEUE_FAMILY_IGNORED,
+         VK_QUEUE_FAMILY_IGNORED,
+         images[0]->image(),
+         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
+        {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+         nullptr,
+         VK_ACCESS_TRANSFER_WRITE_BIT,
+         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         VK_QUEUE_FAMILY_IGNORED,
+         VK_QUEUE_FAMILY_IGNORED,
+         images[1]->image(),
+         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}},
     };
 
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                     0, 0, nullptr, 0, nullptr, 1, &pre_render_pass_barrier);
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr,
+                                     0, nullptr, 2, pre_render_pass_barriers);
 
     // A renderpass with two subpasses, both writing the same attachment.
     VkAttachmentDescription attach[] = {
@@ -1397,25 +1479,15 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
         0, nullptr,
     };
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::RenderPass rp(*m_device, rpci);
 
     auto imageView = images[1]->targetView(FMT);
-    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, WIDTH, HEIGHT, 1};
-    VkFramebuffer fb;
-    err = vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
-    ASSERT_VK_SUCCESS(err);
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, WIDTH, HEIGHT, 1};
+    vk_testing::Framebuffer fb(*m_device, fbci);
 
     VkRenderPassBeginInfo rpbi = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        nullptr,
-        rp,
-        fb,
-        {{0, 0}, {WIDTH, HEIGHT}},
-        0,
-        nullptr
-    };
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp.handle(), fb.handle(), {{0, 0}, {WIDTH, HEIGHT}}, 0, nullptr};
 
     // subtest 1: bind in the wrong subpass
     m_commandBuffer->BeginRenderPass(rpbi);
@@ -1447,8 +1519,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         ASSERT_TRUE((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
     }
 
-    auto ds = CreateImage(ds_format, 64, 64,
-                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    auto ds = CreateImage(ds_format, (uint32_t)m_width, (uint32_t)m_height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     m_clear_via_load_op = true;
     m_depth_stencil_fmt = ds_format;
@@ -1513,6 +1584,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         m_commandBuffer->Draw(1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
     }
 
     // Only depth is redundant.
@@ -1526,6 +1598,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         m_commandBuffer->Draw(1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
     }
 
     // Only stencil is redundant.
@@ -1548,6 +1621,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantAttachment) {
         m_commandBuffer->Draw(1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_errorMonitor->VerifyFound();
+        m_commandBuffer->EndRenderPass();
     }
 
     m_commandBuffer->end();
