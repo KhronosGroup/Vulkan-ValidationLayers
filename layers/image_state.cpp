@@ -89,7 +89,8 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image
 }
 
 static bool IsDepthSliced(const VkImageCreateInfo &image_create_info, const VkImageViewCreateInfo &create_info) {
-    return ((image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) &&
+    auto kDepthSlicedFlags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    return ((image_create_info.flags & kDepthSlicedFlags) != 0) &&
            (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 }
 
