@@ -282,7 +282,7 @@ class VkRenderFramework : public VkTestFramework {
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 
-    bool EnableDeviceProfileLayer();
+    bool OverrideDevsimForDeviceProfileLayer();
     bool InstanceExtensionEnabled(const char *name);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
