@@ -337,7 +337,7 @@ class VkRenderFramework : public VkTestFramework {
     VkDeviceObj *m_device;
     VkCommandPoolObj *m_commandPool;
     VkCommandBufferObj *m_commandBuffer;
-    VkRenderPass m_renderPass;
+    VkRenderPass m_renderPass = VK_NULL_HANDLE;
     VkRenderPassCreateInfo m_renderPass_info = {};
     std::vector<VkAttachmentDescription> m_renderPass_attachments;
     std::vector<VkSubpassDescription> m_renderPass_subpasses;
