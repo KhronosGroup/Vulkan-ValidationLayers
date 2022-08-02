@@ -264,7 +264,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     std::map<uint32_t, Attachment> location_map;
 
     const auto &rp_state = pipeline->RenderPassState();
-    if (rp_state && !rp_state->use_dynamic_rendering) {
+    if (rp_state && !rp_state->UsesDynamicRendering()) {
         const auto rpci = rp_state->createInfo.ptr();
         const auto subpass = rpci->pSubpasses[subpass_index];
         for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
@@ -1154,7 +1154,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, co
 
     const auto &rp_state = pipeline->RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
-        if (rp_state->use_dynamic_rendering) {
+        if (rp_state->UsesDynamicRendering()) {
             total_resources += rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
         } else {
             // "For the fragment shader stage the framebuffer color attachments also count against this limit"
@@ -2930,7 +2930,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(accessible_ids);
 
         const auto &rp_state = pipeline->RenderPassState();
-        if (rp_state && !rp_state->use_dynamic_rendering) {
+        if (rp_state && !rp_state->UsesDynamicRendering()) {
             auto rpci = rp_state->createInfo.ptr();
             auto subpass = pipeline->Subpass();
             for (auto use : input_attachment_uses) {
@@ -3179,7 +3179,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 
     if (fragment_stage && fragment_stage->module_state->has_valid_spirv) {
         const auto &rp_state = pipeline->RenderPassState();
-        if (rp_state && rp_state->use_dynamic_rendering) {
+        if (rp_state && rp_state->UsesDynamicRendering()) {
             skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state.get(),
                                                                        fragment_stage->entrypoint, pipeline);
         } else {

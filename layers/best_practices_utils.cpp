@@ -1035,7 +1035,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 static std::vector<bp_state::AttachmentInfo> GetAttachmentAccess(const safe_VkGraphicsPipelineCreateInfo& create_info,
                                                                  std::shared_ptr<const RENDER_PASS_STATE>& rp) {
     std::vector<bp_state::AttachmentInfo> result;
-    if (!rp || rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
+    if (!rp || rp->UsesDynamicRendering()) {
         return result;
     }
 
@@ -2484,7 +2484,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     // If we have a rect which covers the entire frame buffer, we have a LOAD_OP_CLEAR-like command.
     bool full_clear = ClearAttachmentsIsFullClear(*cmd_state, rectCount, pRects);
 
-    if (!rp_state->use_dynamic_rendering && !rp_state->use_dynamic_rendering_inherited) {
+    if (!rp_state->UsesDynamicRendering()) {
         auto& subpass = rp_state->createInfo.pSubpasses[cmd_state->activeSubpass];
         for (uint32_t i = 0; i < attachmentCount; i++) {
             auto& attachment = pClearAttachments[i];
