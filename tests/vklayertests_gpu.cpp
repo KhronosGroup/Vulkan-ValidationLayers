@@ -1698,7 +1698,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
     InitGpuAssistedFramework(false);
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
@@ -1804,6 +1804,94 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
         m_errorMonitor->VerifyFound();
     }
+}
+
+TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
+    TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit using vkQueueSubmit2");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    InitGpuAssistedFramework(false);
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
+    }
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxDrawIndirectCount = 1;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    auto features_13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
+    auto features_12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>(&features_13);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features_12);
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features_12.drawIndirectCount || !features_13.synchronization2) {
+        GTEST_SKIP() << "drawIndirectCount and synchronization2 both not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 2 * sizeof(VkDrawIndexedIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBufferObj draw_buffer;
+    draw_buffer.init(*m_device, buffer_create_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDrawIndexedIndirectCommand *draw_ptr = static_cast<VkDrawIndexedIndirectCommand *>(draw_buffer.memory().map());
+    memset(draw_ptr, 0, 2 * sizeof(VkDrawIndexedIndirectCommand));
+    draw_buffer.memory().unmap();
+
+    VkBufferCreateInfo count_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    count_buffer_create_info.size = sizeof(uint32_t);
+    count_buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkBufferObj count_buffer;
+    count_buffer.init(*m_device, count_buffer_create_info,
+                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.memory().map());
+    *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
+    count_buffer.memory().unmap();
+
+    VkBufferObj index_buffer;
+    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    vk_testing::PipelineLayout pipeline_layout(*m_device, pipelineLayoutCreateInfo);
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass()));
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02717");
+    vk::CmdDrawIndexedIndirectCount(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 2,
+                                    sizeof(VkDrawIndexedIndirectCommand));
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+    VkFenceObj null_fence;
+    // use vkQueueSumit2
+    m_commandBuffer->QueueCommandBuffer(null_fence, true, true);
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
