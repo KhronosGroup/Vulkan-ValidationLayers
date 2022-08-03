@@ -1,6 +1,6 @@
-// Copyright (c) 2021 The Khronos Group Inc.
-// Copyright (c) 2021 Valve Corporation
-// Copyright (c) 2021 LunarG, Inc.
+// Copyright (c) 2021-2022 The Khronos Group Inc.
+// Copyright (c) 2021-2022 Valve Corporation
+// Copyright (c) 2021-2022 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 //
 // * Author: Tony Barbour <tony@lunarg.com>
 //
+// Values used in the pre draw validation shader and then mapped and checked in gpu_validation
 
 #ifndef GPU_PRE_DRAW_CONSTANTS
 #define GPU_PRE_DRAW_CONSTANTS
 
+// values match those found in SPIRV-Tools instrument.hpp file
 #define _kInstErrorPreDrawValidate 8
 #define _kInstValidationOutError 7
+// debug buffer is memset to 0 so need to start at index 1
 #define pre_draw_count_exceeds_bufsize_error 1
 #define pre_draw_count_exceeds_limit_error 2
 #define pre_draw_first_instance_error 3
