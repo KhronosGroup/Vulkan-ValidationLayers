@@ -151,15 +151,6 @@ class GpuAssisted : public GpuAssistedBase {
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                          VkResult result) override;
-    bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                      VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                      uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const override;
-    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                          const VkDependencyInfoKHR* pDependencyInfos) const override;
-    bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                       const VkDependencyInfo* pDependencyInfos) const override;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, void* cb_state_data) override;
     void CreateAccelerationStructureBuildValidationState();

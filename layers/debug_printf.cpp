@@ -22,7 +22,6 @@
 #include "spirv-tools/instrument.hpp"
 #include <iostream>
 #include "layer_chassis_dispatch.h"
-#include "sync_utils.h"
 #include "cmd_buffer_state.h"
 
 static const VkShaderStageFlags kShaderStageAllRayTracing =
@@ -82,58 +81,6 @@ void DebugPrintf::DestroyBuffer(DPFBufferInfo &buffer_info) {
     if (buffer_info.desc_set != VK_NULL_HANDLE) {
         desc_set_manager->PutBackDescriptorSet(buffer_info.desc_pool, buffer_info.desc_set);
     }
-}
-
-// Just gives a warning about a possible deadlock.
-bool DebugPrintf::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                               VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                               uint32_t bufferMemoryBarrierCount,
-                                               const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                               const VkImageMemoryBarrier *pImageMemoryBarriers) const {
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "Debug Printf waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    return false;
-}
-
-bool DebugPrintf::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                   const VkDependencyInfoKHR *pDependencyInfos) const {
-    VkPipelineStageFlags2KHR src_stage_mask = 0;
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
-    }
-
-    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents2KHR recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "Debug Printf waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    return false;
-}
-
-bool DebugPrintf::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                   const VkDependencyInfo *pDependencyInfos) const {
-    VkPipelineStageFlags2 src_stage_mask = 0;
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
-    }
-
-    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents2 recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "Debug Printf waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    return false;
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
@@ -484,10 +431,13 @@ void debug_printf_state::CommandBuffer::Process(VkQueue queue) {
             uint32_t operation_index = 0;
             if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 operation_index = draw_index;
+                draw_index++;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 operation_index = compute_index;
+                compute_index++;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
                 operation_index = ray_trace_index;
+                ray_trace_index++;
             } else {
                 assert(false);
             }
@@ -496,16 +446,6 @@ void debug_printf_state::CommandBuffer::Process(VkQueue queue) {
             if (result == VK_SUCCESS) {
                 device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)data);
                 vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
-            }
-
-            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                draw_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                compute_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-                ray_trace_index++;
-            } else {
-                assert(false);
             }
         }
     }

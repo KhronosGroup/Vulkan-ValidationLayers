@@ -26,7 +26,6 @@
 #include "layer_chassis_dispatch.h"
 #include "gpu_vuids.h"
 #include "gpu_pre_draw_constants.h"
-#include "sync_utils.h"
 #include "buffer_state.h"
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
@@ -959,63 +958,6 @@ void GpuAssisted::DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationB
     }
 }
 
-// Just gives a warning about a possible deadlock.
-bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                               VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                               uint32_t bufferMemoryBarrierCount,
-                                               const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                               const VkImageMemoryBarrier *pImageMemoryBarriers) const {
-    if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU-Assisted validation waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    ValidationStateTracker::PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask,
-                                                         memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
-                                                         pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    return false;
-}
-
-bool GpuAssisted::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                   const VkDependencyInfoKHR *pDependencyInfos) const {
-    VkPipelineStageFlags2KHR src_stage_mask = 0;
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
-    }
-
-    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents2KHR recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU-Assisted validation waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    return false;
-}
-
-bool GpuAssisted::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                const VkDependencyInfo *pDependencyInfos) const {
-    VkPipelineStageFlags2 src_stage_mask = 0;
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
-    }
-
-    if (src_stage_mask & VK_PIPELINE_STAGE_HOST_BIT) {
-        ReportSetupProblem(commandBuffer,
-                           "CmdWaitEvents2 recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "GPU-Assisted validation waits on queue completion. "
-                           "This wait could block the host's signaling of this event, resulting in deadlock.");
-    }
-    ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
-    return false;
-}
-
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                             VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
@@ -1297,10 +1239,13 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue) {
             uint32_t operation_index = 0;
             if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
                 operation_index = draw_index;
+                draw_index++;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
                 operation_index = compute_index;
+                compute_index++;
             } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
                 operation_index = ray_trace_index;
+                ray_trace_index++;
             } else {
                 assert(false);
             }
@@ -1309,16 +1254,6 @@ void gpuav_state::CommandBuffer::Process(VkQueue queue) {
             if (result == VK_SUCCESS) {
                 device_state->AnalyzeAndGenerateMessages(commandBuffer(), queue, buffer_info, operation_index, (uint32_t *)data);
                 vmaUnmapMemory(device_state->vmaAllocator, buffer_info.output_mem_block.allocation);
-            }
-
-            if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                draw_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                compute_index++;
-            } else if (buffer_info.pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
-                ray_trace_index++;
-            } else {
-                assert(false);
             }
         }
     }

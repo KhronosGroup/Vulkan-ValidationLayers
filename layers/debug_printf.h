@@ -84,16 +84,6 @@ class DebugPrintf : public GpuAssistedBase {
     }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
-    bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                      VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                      uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                      uint32_t imageMemoryBarrierCount,
-                                      const VkImageMemoryBarrier* pImageMemoryBarriers) const override;
-    bool PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                          const VkDependencyInfoKHR* pDependencyInfos) const override;
-    bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                       const VkDependencyInfo* pDependencyInfos) const override;
     bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<uint32_t>& new_pgm, uint32_t* unique_shader_id);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,

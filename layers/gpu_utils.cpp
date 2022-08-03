@@ -19,6 +19,7 @@
 
 #include "gpu_utils.h"
 #include "descriptor_sets.h"
+#include "sync_utils.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -519,6 +520,58 @@ void GpuAssistedBase::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitC
     RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
 }
 
+// Just gives a warning about a possible deadlock.
+bool GpuAssistedBase::ValidateCmdWaitEvents(VkCommandBuffer command_buffer, VkPipelineStageFlags2 src_stage_mask,
+                                            CMD_TYPE cmd_type) const {
+    if (src_stage_mask & VK_PIPELINE_STAGE_2_HOST_BIT) {
+        std::ostringstream error_msg;
+        error_msg << CommandTypeString(cmd_type)
+                  << ": recorded with VK_PIPELINE_STAGE_HOST_BIT set. GPU-Assisted validation waits on queue completion. This wait "
+                     "could block the host's signaling of this event, resulting in deadlock.";
+        ReportSetupProblem(command_buffer, error_msg.str().c_str());
+    }
+    return false;
+}
+
+bool GpuAssistedBase::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                   VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+                                                   uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                   uint32_t bufferMemoryBarrierCount,
+                                                   const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                   uint32_t imageMemoryBarrierCount,
+                                                   const VkImageMemoryBarrier *pImageMemoryBarriers) const {
+    ValidationStateTracker::PreCallValidateCmdWaitEvents(commandBuffer, eventCount, pEvents, srcStageMask, dstStageMask,
+                                                         memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
+                                                         pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+    return ValidateCmdWaitEvents(commandBuffer, static_cast<VkPipelineStageFlags2>(srcStageMask), CMD_WAITEVENTS);
+}
+
+bool GpuAssistedBase::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                       const VkDependencyInfoKHR *pDependencyInfos) const {
+    VkPipelineStageFlags2 src_stage_mask = 0;
+
+    for (uint32_t i = 0; i < eventCount; i++) {
+        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
+        src_stage_mask |= stage_masks.src;
+    }
+
+    ValidationStateTracker::PreCallValidateCmdWaitEvents2KHR(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2KHR);
+}
+
+bool GpuAssistedBase::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                    const VkDependencyInfo *pDependencyInfos) const {
+    VkPipelineStageFlags2 src_stage_mask = 0;
+
+    for (uint32_t i = 0; i < eventCount; i++) {
+        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
+        src_stage_mask |= stage_masks.src;
+    }
+
+    ValidationStateTracker::PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos);
+    return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, CMD_WAITEVENTS2);
+}
+
 void GpuAssistedBase::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                         void *cpl_state_data) {
@@ -940,7 +993,7 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
         if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
             strm << "Draw ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            strm << "Compute ";
+            strm << "Compute Dispatch ";
         } else if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
             strm << "Ray Trace ";
         } else {
