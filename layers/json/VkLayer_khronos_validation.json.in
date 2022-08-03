@@ -411,6 +411,12 @@
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
+                            "key": "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
+                            "label": "QueueSubmit Synchronization Validation",
+                            "description": "Enable synchronization validation between submitted command buffers when Synchronization Validation is enabled.",
+                            "status": "ALPHA"
+                        },
+                        {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
                             "label": "Debug Printf",
                             "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
@@ -595,6 +601,7 @@
                             "description": "Adds check for spec-conforming but non-ideal code on AMD GPUs.",
                             "platforms": [ "WINDOWS", "LINUX", "MACOS"]
                         }
+
                     ],
                     "default": []
                 },
