@@ -2998,16 +2998,11 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                 const std::string msg = std::string{producer_stage->name} + " writes to output location " +
                                         std::to_string(output_first.first) + "." + std::to_string(output_first.second) +
                                         " which is not consumed by " + consumer_stage->name +
-                                        "."
+                                        ". "
                                         "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between "
                                         "input and output vectors.";
-                if (input_at_end) {
-                    // It is not an error if a stage does not consume all outputs from the previous stage
-                    skip |=
-                        LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
-                } else {
-                    skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
-                }
+                // It is not an error if a stage does not consume all outputs from the previous stage
+                skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
             }
             if ((input_first.first > output_first.first) || input_at_end || (output_component + 1 == output_length)) {
                 output_it++;

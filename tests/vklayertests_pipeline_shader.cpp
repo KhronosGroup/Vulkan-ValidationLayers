@@ -4966,12 +4966,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<std::string>{
-            "location 0.1 which is not written by vertex shader",
-            "vertex shader writes to output location 0.0 which is not consumed by fragment shader.Enable VK_KHR_maintenance4 "
-            "device extension to allow relaxed interface matching between input and output vectors."});
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      std::vector<std::string>{"location 0.1 which is not written by vertex shader"});
 }
 
 TEST_F(VkLayerTest, CreatePipelineAttribNotConsumed) {
@@ -13543,7 +13539,8 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
+                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
     }
 
     {
@@ -13596,6 +13593,42 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
 
                 void main() {
                     color = vec4(1.0);
+                }
+            )glsl";
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+    }
+
+    {
+        char const *vsSource = R"glsl(
+                #version 450
+
+                layout(location = 0) out vec3 v1;
+                layout(location = 1) out vec3 v2;
+                layout(location = 2) out vec3 v3;
+
+                void main() {
+                    v1 = vec3(1.0);
+                    v2 = vec3(2.0);
+                    v3 = vec3(3.0);
+                }
+            )glsl";
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+        char const *fsSource = R"glsl(
+                #version 450
+
+                layout (location = 0) in vec3 v1;
+                layout (location = 2) in vec3 v3;
+
+                layout (location = 0) out vec4 color;
+
+                void main() {
+                    color = vec4(v1 * v3, 1.0);
                 }
             )glsl";
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
