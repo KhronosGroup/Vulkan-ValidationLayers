@@ -44,5 +44,13 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
+      - name: Cache dependent components
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-windows
+        with:
+          path: external
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}
