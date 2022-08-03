@@ -2403,6 +2403,83 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
     return skip;
 }
 
+bool CoreChecks::ValidateShaderModuleId(const SHADER_MODULE_STATE &module_state, const PipelineStageState &stage_state,
+                                        const safe_VkPipelineShaderStageCreateInfo *pStage, const VkPipelineCreateFlags flags) const {
+    bool skip = false;
+    const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(pStage->pNext);
+    const auto module_create_info = LvlFindInChain<VkShaderModuleCreateInfo>(pStage->pNext);
+    if (module_identifier && (module_identifier->identifierSize > 0)) {
+        if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
+            skip |= LogError(
+                device, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850",
+                "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                "struct in the pNext chain but the shaderModuleIdentifier feature is not enabled",
+                report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                string_VkShaderStageFlagBits(stage_state.stage_flag));
+        }
+        if (!(flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
+            skip |= LogError(
+                device, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851",
+                "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                "struct in the pNext chain whose identifierSize is > 0 (%" PRIu32
+                "), but the "
+                "VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT bit is not set in the pipeline create flags",
+                report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                string_VkShaderStageFlagBits(stage_state.stage_flag), module_identifier->identifierSize);
+        }
+        if (module_identifier->identifierSize > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT) {
+            skip |= LogError(
+                device, "VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-identifierSize-06852",
+                "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                "struct in the pNext chain whose identifierSize (%" PRIu32
+                ") is > VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT (%" PRIu32 ")",
+                report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                string_VkShaderStageFlagBits(stage_state.stage_flag), module_identifier->identifierSize,
+                VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT);
+        }
+    }
+    if (module_identifier && module_create_info) {
+        skip |= LogError(
+            device, "VUID-VkPipelineShaderStageCreateInfo-stage-06844",
+            "%s module (stage %s) VkPipelineShaderStageCreateInfo has both a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+            "struct and a VkShaderModuleCreateInfo struct in the pNext chain",
+            report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+            string_VkShaderStageFlagBits(stage_state.stage_flag));
+    }
+    if (enabled_features.graphics_pipeline_library_features.graphicsPipelineLibrary) {
+        if (!module_identifier && pStage->module == VK_NULL_HANDLE && !module_create_info) {
+            skip |= LogError(
+                device, "VUID-VkPipelineShaderStageCreateInfo-stage-06845",
+                "%s module (stage %s) VkPipelineShaderStageCreateInfo has no VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                "struct and no VkShaderModuleCreateInfo struct in the pNext chain, and module is not a valid VkShaderModule",
+                report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                string_VkShaderStageFlagBits(stage_state.stage_flag));
+        }
+    } else {
+        if (!module_identifier && pStage->module == VK_NULL_HANDLE) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_khr_pipeline_library)
+                                   ? "VUID-VkPipelineShaderStageCreateInfo-stage-06846"
+                                   : "VUID-VkPipelineShaderStageCreateInfo-stage-06847";
+            skip |= LogError(
+                device, vuid,
+                "%s module (stage %s) VkPipelineShaderStageCreateInfo has no VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+                "struct in the pNext chain, the graphicsPipelineLibrary feature is not enabled, and module is not a valid "
+                "VkShaderModule",
+                report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                string_VkShaderStageFlagBits(stage_state.stage_flag));
+        }
+    }
+    if (module_identifier && pStage->module != VK_NULL_HANDLE) {
+        skip |= LogError(
+            device, "VUID-VkPipelineShaderStageCreateInfo-stage-06848",
+            "%s module (stage %s) VkPipelineShaderStageCreateInfo has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
+            "struct in the pNext chain, and module is not VK_NULL_HANDLE",
+            report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+            string_VkShaderStageFlagBits(stage_state.stage_flag));
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) const {
     bool skip = false;
 
@@ -2595,7 +2672,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     const auto &entrypoint = stage_state.entrypoint;
 
-    // TODO: @Tony-LunarG - Most of the shader_module_identifier validation goes here
+    skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline->GetPipelineCreateFlags());
+
     if (module_state.vk_shader_module() == VK_NULL_HANDLE) return skip;  // No real shader for further validation
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
@@ -2709,6 +2787,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
 
         // Apply the specialization-constant values and revalidate the shader module is valid.
+        const char *pSpecializationInfo_vuid = IsExtEnabled(device_extensions.vk_ext_shader_module_identifier)
+                               ? "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849"
+                               : "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719";
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
             optimizer.Run(module_state.words.data(), module_state.words.size(), &specialized_spirv, options, false);
@@ -2718,7 +2799,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             spv_diagnostic diag = nullptr;
             auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
             if (spv_valid != SPV_SUCCESS) {
-                skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719",
+                skip |= LogError(device, pSpecializationInfo_vuid,
                                  "After specialization was applied, %s does not contain valid spirv for stage %s.",
                                  report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                                  string_VkShaderStageFlagBits(stage_state.stage_flag));
@@ -2803,7 +2884,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             spvContextDestroy(ctx);
         } else {
             // Should never get here, but better then asserting
-            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719",
+            skip |= LogError(device, pSpecializationInfo_vuid,
                              "%s module (stage %s) attempted to apply specialization constants with spirv-opt but failed.",
                              report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                              string_VkShaderStageFlagBits(stage_state.stage_flag));
@@ -3460,6 +3541,27 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         spvContextDestroy(ctx);
     }
 
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
+                                                             VkShaderModuleIdentifierEXT *pIdentifier) const {
+    bool skip = false;
+    if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
+        skip |= LogError(device, "VUID-vkGetShaderModuleIdentifierEXT-shaderModuleIdentifier-06884",
+                         "vkGetShaderModuleIdentifierEXT() was called when the shaderModuleIdentifier feature was not enabled");
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
+                                                                       VkShaderModuleIdentifierEXT *pIdentifier) const {
+    bool skip = false;
+    if (!(enabled_features.shader_module_identifier_features.shaderModuleIdentifier)) {
+        skip |= LogError(
+            device, "VUID-vkGetShaderModuleCreateInfoIdentifierEXT-shaderModuleIdentifier-06885",
+            "vkGetShaderModuleCreateInfoIdentifierEXT() was called when the shaderModuleIdentifier feature was not enabled");
+    }
     return skip;
 }
 

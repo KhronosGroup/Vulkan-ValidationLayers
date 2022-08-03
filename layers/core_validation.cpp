@@ -3391,6 +3391,17 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                          "library included in VkPipelineLibraryCreateInfoKHR.",
                                          pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
                     }
+                    if ((lib->uses_shader_module_id) &&
+                        !(pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
+                        LogObjectList objs(device);
+                        skip |= LogError(objs, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] does not have the VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT set, but "
+                                         "the %s "
+                                         "library included in VkPipelineLibraryCreateInfoKHR was created with a shader stage with "
+                                         "VkPipelineShaderStageModuleIdentifierCreateInfoEXT and identifierSize not equal to 0",
+                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                    }
                 }
             }
         }

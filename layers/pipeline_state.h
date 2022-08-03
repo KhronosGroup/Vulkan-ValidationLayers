@@ -201,6 +201,7 @@ class PIPELINE_STATE : public BASE_NODE {
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
+    const bool uses_shader_module_id;
 
     // Executable or legacy pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,

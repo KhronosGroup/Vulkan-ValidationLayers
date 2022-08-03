@@ -1232,6 +1232,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (multisampled_render_to_single_sampled_features) {
             enabled_features.multisampled_render_to_single_sampled_features = *multisampled_render_to_single_sampled_features;
         }
+
+        const auto shader_module_identifier_features =
+            LvlFindInChain<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(pCreateInfo->pNext);
+        if (shader_module_identifier_features) {
+            enabled_features.shader_module_identifier_features = *shader_module_identifier_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

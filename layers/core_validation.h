@@ -598,6 +598,10 @@ class CoreChecks : public ValidationStateTracker {
     bool GroupHasValidIndex(const PIPELINE_STATE& pipeline, uint32_t group, uint32_t stage) const;
     bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, const safe_VkRayTracingPipelineCreateInfoCommon& create_info,
                                     VkPipelineCreateFlags flags, bool isKHR) const;
+    bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
+                                                     VkShaderModuleIdentifierEXT* pIdentifier) const override;
+    bool PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
+                                                               VkShaderModuleIdentifierEXT* pIdentifier) const override;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
     bool ValidatePipelineShaderStage(const PIPELINE_STATE* pipeline, const PipelineStageState& stage_state,
@@ -650,6 +654,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDecorations(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateVariables(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateTransformFeedback(const SHADER_MODULE_STATE& module_state) const;
+    bool ValidateShaderModuleId(const SHADER_MODULE_STATE& module_state, const PipelineStageState& stage_state,
+                                const safe_VkPipelineShaderStageCreateInfo* pStage, const VkPipelineCreateFlags flags) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, spirv_inst_iter& insn) const;
 
     template <typename RegionType>
