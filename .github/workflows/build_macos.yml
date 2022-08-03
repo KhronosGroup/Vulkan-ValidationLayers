@@ -33,6 +33,14 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
+      - name: Cache dependent components
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-macos
+        with:
+          path: external
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
         run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON
       - name: Build Vulkan-ValidationLayers
