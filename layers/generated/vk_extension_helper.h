@@ -394,6 +394,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_rasterization_order_attachment_access{kNotEnabled};
     ExtEnabled vk_ext_4444_formats{kNotEnabled};
     ExtEnabled vk_ext_astc_decode_mode{kNotEnabled};
+    ExtEnabled vk_ext_attachment_feedback_loop_layout{kNotEnabled};
     ExtEnabled vk_ext_blend_operation_advanced{kNotEnabled};
     ExtEnabled vk_ext_border_color_swizzle{kNotEnabled};
     ExtEnabled vk_ext_buffer_device_address{kNotEnabled};
@@ -621,6 +622,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
     ExtEnabled vk_qcom_rotated_copy_commands{kNotEnabled};
     ExtEnabled vk_qcom_tile_properties{kNotEnabled};
+    ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
     ExtEnabled vk_valve_descriptor_set_host_mapping{kNotEnabled};
     ExtEnabled vk_valve_mutable_descriptor_type{kNotEnabled};
 
@@ -681,6 +683,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_4444_FORMATS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_4444_formats, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_attachment_feedback_loop_layout, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_blend_operation_advanced, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
@@ -1167,6 +1171,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_copy_commands2, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME}}})},
             {VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_tile_properties, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_SEC_AMIGO_PROFILING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_sec_amigo_profiling, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_descriptor_set_host_mapping, {})},
             {VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_valve_mutable_descriptor_type, {{
                            {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
@@ -1335,6 +1341,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME,
     VK_EXT_4444_FORMATS_EXTENSION_NAME,
     VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME,
+    VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME,
     VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME,
     VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME,
     VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
@@ -1604,6 +1611,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
     VK_QCOM_ROTATED_COPY_COMMANDS_EXTENSION_NAME,
     VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME,
+    VK_SEC_AMIGO_PROFILING_EXTENSION_NAME,
     VK_VALVE_DESCRIPTOR_SET_HOST_MAPPING_EXTENSION_NAME,
     VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
 };

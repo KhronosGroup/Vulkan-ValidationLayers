@@ -11219,9 +11219,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
 
     // Enable KHR multiplane req'd extensions
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    const bool ycbcr_array_extension = IsExtensionsEnabled(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
@@ -11265,17 +11263,6 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
 
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_create_info, &img_limits));
-
-    // invalid arrayLayers
-    if (img_limits.maxArrayLayers == 1) {
-        printf("%s Multiplane image maxArrayLayers is already 1.  Skipping test.\n", kSkipPrefix);
-    } else {
-        image_create_info.arrayLayers = img_limits.maxArrayLayers;
-        const char *error_vuid =
-            (ycbcr_array_extension) ? "VUID-VkImageCreateInfo-format-06414" : "VUID-VkImageCreateInfo-format-06413";
-        CreateImageTest(*this, &image_create_info, error_vuid);
-        image_create_info = reset_create_info;
-    }
 
     // invalid mipLevels
     if (img_limits.maxMipLevels == 1) {
