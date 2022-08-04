@@ -31,12 +31,13 @@ struct GpuAssistedDeviceMemoryBlock {
 };
 
 struct GpuAssistedPreDrawResources {
-    VkDescriptorPool desc_pool;
-    VkDescriptorSet desc_set;
-    VkBuffer buffer;
-    VkDeviceSize offset;
-    uint32_t stride;
-    VkDeviceSize buf_size;
+    VkDescriptorPool desc_pool = VK_NULL_HANDLE;
+    VkDescriptorSet desc_set = VK_NULL_HANDLE;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize offset = 0;
+    uint32_t stride = 0;
+    VkDeviceSize buf_size = 0;
+    static const uint32_t push_constant_words = 4;
 };
 
 struct GpuAssistedBufferInfo {
@@ -81,8 +82,8 @@ struct GpuAssistedAccelerationStructureBuildValidationBufferInfo {
 
     // The storage buffer used by the validating compute shader whichcontains info about
     // the valid handles and which is written to communicate found invalid handles.
-    VkBuffer validation_buffer = VK_NULL_HANDLE;
-    VmaAllocation validation_buffer_allocation = VK_NULL_HANDLE;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation buffer_allocation = VK_NULL_HANDLE;
 };
 
 struct GpuAssistedAccelerationStructureBuildValidationState {
@@ -99,16 +100,18 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
 
 struct GpuAssistedPreDrawValidationState {
     bool globals_created = false;
-    VkShaderModule validation_shader_module = VK_NULL_HANDLE;
-    VkDescriptorSetLayout validation_ds_layout = VK_NULL_HANDLE;
-    VkPipelineLayout validation_pipeline_layout = VK_NULL_HANDLE;
+    VkShaderModule shader_module = VK_NULL_HANDLE;
+    VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     vl_concurrent_unordered_map <VkRenderPass, VkPipeline> renderpass_to_pipeline;
+
+    void Destroy(VkDevice device);
 };
 
 struct GpuAssistedCmdDrawIndirectState {
     VkBuffer buffer;
     VkDeviceSize offset;
-    uint32_t drawCount;
+    uint32_t draw_count;
     uint32_t stride;
     VkBuffer count_buffer;
     VkDeviceSize count_buffer_offset;
@@ -255,9 +258,11 @@ class GpuAssisted : public GpuAssistedBase {
                                                const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable,
                                                const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable,
                                                VkDeviceAddress indirectDeviceAddress) override;
-    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd, const GpuAssistedCmdDrawIndirectState *cdic_state = nullptr);
+    void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd,
+                                     const GpuAssistedCmdDrawIndirectState* cdi_state = nullptr);
     void AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block, GpuAssistedPreDrawResources& resources,
-                                            const LAST_BOUND_STATE& state, VkPipeline *pPipeline, const GpuAssistedCmdDrawIndirectState *cdic_state);
+                                            const LAST_BOUND_STATE& state, VkPipeline* pPipeline,
+                                            const GpuAssistedCmdDrawIndirectState* cdi_state);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties) override;
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
