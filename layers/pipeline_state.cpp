@@ -545,17 +545,16 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
                    VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR)));
 }
 
-void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(CMD_BUFFER_STATE *cb_state,
-                                                       std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds) {
+void LAST_BOUND_STATE::UnbindAndResetPushDescriptorSet(std::shared_ptr<cvdescriptorset::DescriptorSet> &&ds) {
     if (push_descriptor_set) {
         for (auto &ps : per_set) {
             if (ps.bound_descriptor_set == push_descriptor_set) {
-                cb_state->RemoveChild(ps.bound_descriptor_set);
+                cb_state.RemoveChild(ps.bound_descriptor_set);
                 ps.bound_descriptor_set.reset();
             }
         }
     }
-    cb_state->AddChild(ds);
+    cb_state.AddChild(ds);
     push_descriptor_set = std::move(ds);
 }
 
@@ -563,6 +562,7 @@ void LAST_BOUND_STATE::Reset() {
     pipeline_state = nullptr;
     pipeline_layout = VK_NULL_HANDLE;
     if (push_descriptor_set) {
+        cb_state.RemoveChild(push_descriptor_set);
         push_descriptor_set->Destroy();
     }
     push_descriptor_set.reset();
