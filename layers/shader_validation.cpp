@@ -2595,6 +2595,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     const auto &entrypoint = stage_state.entrypoint;
 
+    // TODO: @Tony-LunarG - Most of the shader_module_identifier validation goes here
+    if (module_state.vk_shader_module() == VK_NULL_HANDLE) return skip;  // No real shader for further validation
+
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;
