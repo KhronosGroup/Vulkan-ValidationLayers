@@ -6427,18 +6427,6 @@ void CoreChecks::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, cons
                         pCopyBufferInfos->pRegions, CMD_COPYBUFFER2);
 }
 
-bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
-    bool skip = false;
-    auto buffer_state = Get<BUFFER_STATE>(buffer);
-    if (buffer_state) {
-        if (buffer_state->InUse()) {
-            skip |= LogError(buffer, "VUID-vkDestroyBuffer-buffer-00922", "Cannot free %s that is in use by a command buffer.",
-                             report_data->FormatHandle(buffer).c_str());
-        }
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
                                                  const VkAllocationCallbacks *pAllocator) const {
     auto image_view_state = Get<IMAGE_VIEW_STATE>(imageView);
@@ -6451,7 +6439,13 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
 }
 
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) const {
-    return ValidateIdleBuffer(buffer);
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+
+    bool skip = false;
+    if (buffer_state) {
+        skip |= ValidateObjectNotInUse(buffer_state.get(), "vkDestroyBuffer", "VUID-vkDestroyBuffer-buffer-00922");
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
