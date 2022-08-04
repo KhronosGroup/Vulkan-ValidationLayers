@@ -153,7 +153,7 @@ void ErrorMonitor::SetError(const char *const errorString) {
     failure_message_strings_.insert(errorString);
 }
 
-void ErrorMonitor::SetBailout(bool *bailout) {
+void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
     auto guard = Lock();
     bailout_ = bailout;
 }

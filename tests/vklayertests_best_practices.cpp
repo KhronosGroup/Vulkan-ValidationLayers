@@ -1322,7 +1322,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
     data.buffer = buffer.handle();
-    bool bailout = false;
+    std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
