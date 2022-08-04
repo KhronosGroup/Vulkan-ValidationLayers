@@ -42,8 +42,8 @@
 #endif
 
 // Implementation for Descriptor Set Manager class
-UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet)
-    : device(device), numBindingsInSet(numBindingsInSet) {}
+UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set)
+    : device(device), num_bindings_in_set(num_bindings_in_set) {}
 
 UtilDescriptorSetManager::~UtilDescriptorSetManager() {
     for (auto &pool : desc_pool_map_) {
@@ -90,7 +90,7 @@ VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescripto
         }
         const VkDescriptorPoolSize size_counts = {
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            pool_count * numBindingsInSet,
+            pool_count * num_bindings_in_set,
         };
         auto desc_pool_info = LvlInitStruct<VkDescriptorPoolCreateInfo>();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;

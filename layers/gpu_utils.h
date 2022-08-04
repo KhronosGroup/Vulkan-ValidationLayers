@@ -26,9 +26,13 @@
 
 class GpuAssistedBase;
 
+static const VkShaderStageFlags kShaderStageAllRayTracing =
+    VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CALLABLE_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+    VK_SHADER_STAGE_INTERSECTION_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+
 class UtilDescriptorSetManager {
   public:
-    UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
+    UtilDescriptorSetManager(VkDevice device, uint32_t num_bindings_in_set);
     ~UtilDescriptorSetManager();
 
     VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
@@ -45,7 +49,7 @@ class UtilDescriptorSetManager {
         uint32_t used;
     };
     VkDevice device;
-    uint32_t numBindingsInSet;
+    uint32_t num_bindings_in_set;
     layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
     mutable std::mutex lock_;
 };
