@@ -662,7 +662,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,
                                                           const IMAGE_STATE* dst_img, const RegionType* region, const uint32_t i,
                                                           const char* function, CMD_TYPE cmd_type) const;
-    bool ValidateIdleBuffer(VkBuffer buffer) const;
     template <typename T1>
     bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const T1 object,
                             const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
