@@ -123,7 +123,7 @@ class ErrorMonitor {
     VkBool32 CheckForDesiredMsg(const char *const msgString);
     VkDebugReportFlagsEXT GetMessageFlags();
     void SetError(const char *const errorString);
-    void SetBailout(bool *bailout);
+    void SetBailout(std::atomic<bool> *bailout);
 
     // Helpers
 
@@ -159,7 +159,7 @@ class ErrorMonitor {
     std::vector<std::string> allowed_message_strings_;
     std::vector<std::string> other_messages_;
     mutable std::mutex mutex_;
-    bool *bailout_;
+    std::atomic<bool> *bailout_;
     bool message_found_;
 };
 

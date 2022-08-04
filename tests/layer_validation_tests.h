@@ -850,7 +850,7 @@ struct ThreadTestData {
     VkDescriptorSet descriptorSet;
     VkBuffer buffer;
     uint32_t binding;
-    bool *bailout;
+    std::atomic<bool> *bailout;
 };
 
 void AddToCommandBuffer(ThreadTestData *);

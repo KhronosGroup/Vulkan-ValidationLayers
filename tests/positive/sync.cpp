@@ -1646,7 +1646,7 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
 
     ThreadTestData data;
     data.device = m_device->device();
-    bool bailout = false;
+    std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
@@ -1981,12 +1981,12 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
 }
 
 struct FenceSemRaceData {
-    VkDevice device;
-    VkSemaphore sem;
-    bool *bailout;
-    uint64_t wait_value;
-    uint64_t timeout;
-    uint32_t iterations;
+    VkDevice device{VK_NULL_HANDLE};
+    VkSemaphore sem{VK_NULL_HANDLE};
+    std::atomic<bool> *bailout{nullptr};
+    uint64_t wait_value{0};
+    uint64_t timeout{1000000000};
+    uint32_t iterations{100000};
 };
 
 void WaitTimelineSem(FenceSemRaceData *data) {
@@ -2037,13 +2037,11 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &sem_handle;
 
-    bool bailout = false;
-    struct FenceSemRaceData data;
+    std::atomic<bool> bailout{false};
+    FenceSemRaceData data;
     data.device = m_device->device();
     data.sem = sem.handle();
     data.wait_value = signal_value;
-    data.iterations = 100000;
-    data.timeout = 1000000000;
     data.bailout = &bailout;
     std::thread thread(WaitTimelineSem, &data);
 

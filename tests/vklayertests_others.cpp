@@ -3505,7 +3505,7 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     ThreadTestData data;
     data.commandBuffer = commandBuffer.handle();
     data.event = event;
-    bool bailout = false;
+    std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
@@ -3560,7 +3560,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
     data.buffer = buffer.handle();
-    bool bailout = false;
+    std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
@@ -3635,7 +3635,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
     data.buffer = buffer.handle();
-    bool bailout = false;
+    std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
 
