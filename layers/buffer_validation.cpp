@@ -1929,16 +1929,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
     // Tests for "Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
     if (FormatRequiresYcbcrConversionExplicitly(pCreateInfo->format)) {
-        if (!enabled_features.ycbcr_image_array_features.ycbcrImageArrays && pCreateInfo->arrayLayers != 1) {
-            const char *error_vuid = IsExtEnabled(device_extensions.vk_ext_ycbcr_image_arrays)
-                                         ? "VUID-VkImageCreateInfo-format-06414"
-                                         : "VUID-VkImageCreateInfo-format-06413";
-            skip |= LogError(device, error_vuid,
-                             "vkCreateImage(): arrayLayers = %d, but when the ycbcrImagesArrays feature is not enabled and using a "
-                             "YCbCr Conversion format, arrayLayers must be 1",
-                             pCreateInfo->arrayLayers);
-        }
-
         if (pCreateInfo->mipLevels != 1) {
             skip |= LogError(device, "VUID-VkImageCreateInfo-format-06410",
                              "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format, mipLevels must be 1",

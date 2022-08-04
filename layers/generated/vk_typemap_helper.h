@@ -5487,6 +5487,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_PROPERTIES_EX
     typedef VkImageCompressionPropertiesEXT Type;
 };
 
+// Map type VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT> {
+    typedef VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT Type;
+};
+
 // Map type VkPhysicalDevice4444FormatsFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDevice4444FormatsFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT;
@@ -6185,6 +6194,24 @@ template <> struct LvlTypeMap<VkTilePropertiesQCOM> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_TILE_PROPERTIES_QCOM> {
     typedef VkTilePropertiesQCOM Type;
+};
+
+// Map type VkPhysicalDeviceAmigoProfilingFeaturesSEC to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC
+template <> struct LvlTypeMap<VkPhysicalDeviceAmigoProfilingFeaturesSEC> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_AMIGO_PROFILING_FEATURES_SEC> {
+    typedef VkPhysicalDeviceAmigoProfilingFeaturesSEC Type;
+};
+
+// Map type VkAmigoProfilingSubmitInfoSEC to id VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC
+template <> struct LvlTypeMap<VkAmigoProfilingSubmitInfoSEC> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC> {
+    typedef VkAmigoProfilingSubmitInfoSEC Type;
 };
 
 // Map type VkAccelerationStructureGeometryTrianglesDataKHR to id VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR
