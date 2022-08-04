@@ -451,7 +451,10 @@ void CMD_BUFFER_STATE::Destroy() {
 
     // Remove the cb debug labels
     EraseCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
-    Reset();
+    {
+        auto guard = WriteLock();
+        Reset();
+    }
     BASE_NODE::Destroy();
 }
 
