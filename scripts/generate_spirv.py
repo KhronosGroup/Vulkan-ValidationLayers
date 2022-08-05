@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2016-2021 Valve Corporation
-# Copyright (c) 2016-2021 LunarG, Inc.
-# Copyright (c) 2016-2021 Google Inc.
+# Copyright (c) 2016-2022 Valve Corporation
+# Copyright (c) 2016-2022 LunarG, Inc.
+# Copyright (c) 2016-2022 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Compile GLSL to SPIR-V.
-
-Depends on glslangValidator
-"""
+#
+# Author: Tony Barbour <tony@lunarg.com>
+# Author: Spencer Fricke <spencerfricke@gmail.com>
+#
+# Compile GLSL to SPIR-V. Depends on glslangValidator
 
 import os
 import sys
@@ -28,21 +28,11 @@ import struct
 import re
 import argparse
 
+import common_codegen
+
 SPIRV_MAGIC = 0x07230203
 COLUMNS = 4
 INDENT = 4
-
-parser = argparse.ArgumentParser(description='Generate spirv code for this repository')
-parser.add_argument('--outfilename', action='store', help='Output Filename')
-parser.add_argument('infilename', action='store', type=str, help='Input Filename')
-parser.add_argument('glslangvalidator', action='store', help='glslangvalidator')
-args_in = parser.parse_args()
-
-if not os.path.isfile(args_in.infilename):
-    sys.exit("Cannot find infilename " + args_in.infilename)
-
-if not os.path.isfile(args_in.glslangvalidator):
-    sys.exit("Cannot find glslangvalidator " + args_in.glslangvalidator)
 
 def identifierize(s):
     # translate invalid chars
@@ -50,10 +40,12 @@ def identifierize(s):
     # translate leading digits
     return re.sub("^[^a-zA-Z_]+", "_", s)
 
-def compile(filename, tmpfile):
+def compile(filename, glslang_validator):
+    tmpfile = os.path.basename(filename) + '.tmp'
+
     # invoke glslangValidator
     try:
-        args = [args_in.glslangvalidator, "-V", "-H", "-o", tmpfile, filename]
+        args = [glslang_validator, "-V", "-H", "-o", tmpfile, filename]
         output = subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
         raise(e.output)
@@ -71,43 +63,51 @@ def compile(filename, tmpfile):
 
         assert(words[0] == SPIRV_MAGIC)
 
-
     # remove temp file
     os.remove(tmpfile)
 
-    return (words, output.rstrip())
+    # The disassembled SPIR-V first line has file path to the shader
+    # Because this might be absolute on the system, remove it
+    return (words, output.rstrip()[output.index('\n') + 1:])
 
-base = os.path.basename(args_in.infilename)
-words, comments = compile(args_in.infilename, base + ".tmp")
+def write(words, disassembled, filename):
+    name = identifierize(os.path.basename(filename))
 
-literals = []
-for i in range(0, len(words), COLUMNS):
-    columns = ["0x%08x" % word for word in words[i:(i + COLUMNS)]]
-    literals.append(" " * INDENT + ", ".join(columns) + ",")
+    literals = []
+    for i in range(0, len(words), COLUMNS):
+        columns = ["0x%08x" % word for word in words[i:(i + COLUMNS)]]
+        literals.append(" " * INDENT + ", ".join(columns) + ",")
 
-header = """#include <stdint.h>
+    header = """#include <stdint.h>
 #pragma once
 
-// This file is ***GENERATED***.  Do Not Edit.
-/* Copyright (c) 2021 The Khronos Group Inc.
- * Copyright (c) 2021 Valve Corporation
- * Copyright (c) 2021 LunarG, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Author: Tony Barbour <tony@lunarg.com>
- */
+// *** THIS FILE IS GENERATED - DO NOT EDIT ***
+// See generate_spirv.py for modifications
 
+/***************************************************************************
+*
+* Copyright (c) 2021-2022 The Khronos Group Inc.
+* Copyright (c) 2021-2022 Valve Corporation
+* Copyright (c) 2021-2022 LunarG, Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+* Author: Tony Barbour <tony@lunarg.com>
+* Author: Spencer Fricke <spencerfricke@gmail.com>
+*
+****************************************************************************/
+
+// disassembled SPIR-V
 #if 0
 %s
 #endif
@@ -115,10 +115,41 @@ header = """#include <stdint.h>
 static const uint32_t %s[%d] = {
 %s
 };
-""" % (comments, identifierize(base), len(words), "\n".join(literals))
+""" % (disassembled, name, len(words), "\n".join(literals))
 
-if args_in.outfilename:
-    with open(args_in.outfilename, "w") as f:
+    out_file = os.path.join(common_codegen.repo_relative('layers/generated'), name + '.h')
+    with open(out_file, "w") as f:
         print(header, end="", file=f)
-else:
-        print(header, end="")
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpu_shaders/README.md for more deatils')
+    parser.add_argument('--shader', action='store', type=str, help='Input Filename')
+    parser.add_argument('--glslang', action='store', type=str, help='Path to glslangvalidator to use')
+    args = parser.parse_args()
+
+    generate_shaders = []
+    if args.shader:
+        if not os.path.isfile(args.shader):
+            sys.exit("Cannot find infilename " + args.shader)
+        generate_shaders.append(args.shader)
+    else:
+        # Get all shaders in gpu_shaders folder
+        shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
+        gpu_shaders = common_codegen.repo_relative('layers/gpu_shaders')
+        for filename in os.listdir(gpu_shaders):
+            if (filename.split(".")[-1] in shader_type):
+                generate_shaders.append(os.path.join(gpu_shaders, filename))
+
+    # default glslangValidator path
+    glslang_validator =  common_codegen.repo_relative('external/glslang/build/install/bin/glslangValidator')
+    if args.glslang:
+        glslang_validator = args.glslang
+    if not os.path.isfile(glslang_validator):
+        sys.exit("Cannot find glslangValidator " + glslang_validator)
+
+    for shader in generate_shaders:
+        words, disassembled = compile(shader, glslang_validator)
+        write(words, disassembled, shader)
+
+if __name__ == '__main__':
+  main()

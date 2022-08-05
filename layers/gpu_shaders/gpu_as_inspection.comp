@@ -1,0 +1,54 @@
+// This is the GLSL source for the compute shader that is used during ray tracing acceleration structure
+// building validation which inspects instance buffers for top level acceleration structure builds and
+// reports and replaces invalid bottom level acceleration structure handles with good bottom level
+// acceleration structure handle so that applications can continue without undefined behavior long enough
+// to report errors.
+//
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "gpu_shaders_constants.h"
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+struct VkGeometryInstanceNV {
+    uint unused[14];
+    uint handle_bits_0;
+    uint handle_bits_1;
+};
+
+layout(set=0, binding=0, std430) buffer InstanceBuffer {
+    VkGeometryInstanceNV instances[];
+};
+
+layout(set=0, binding=1, std430) buffer ValidationBuffer {
+    uint instances_to_validate;
+    uint replacement_handle_bits_0;
+    uint replacement_handle_bits_1;
+    uint invalid_handle_found;
+    uint invalid_handle_bits_0;
+    uint invalid_handle_bits_1;
+    uint valid_handles_count;
+    uint valid_handles[];
+};
+
+void main() {
+    for (uint instance_index = 0; instance_index < instances_to_validate; instance_index++) {
+        uint instance_handle_bits_0 = instances[instance_index].handle_bits_0;
+        uint instance_handle_bits_1 = instances[instance_index].handle_bits_1;
+        bool valid = false;
+        for (uint valid_handle_index = 0; valid_handle_index < valid_handles_count; valid_handle_index++) {
+            if (instance_handle_bits_0 == valid_handles[2*valid_handle_index+0] &&
+                instance_handle_bits_1 == valid_handles[2*valid_handle_index+1]) {
+                valid = true;
+                break;
+            }
+        }
+        if (!valid) {
+            invalid_handle_found += 1;
+            invalid_handle_bits_0 = instance_handle_bits_0;
+            invalid_handle_bits_1 = instance_handle_bits_1;
+            instances[instance_index].handle_bits_0 = replacement_handle_bits_0;
+            instances[instance_index].handle_bits_1 = replacement_handle_bits_1;
+        }
+    }
+}

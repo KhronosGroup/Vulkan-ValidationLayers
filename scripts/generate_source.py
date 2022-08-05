@@ -30,8 +30,7 @@ import difflib
 import common_codegen
 
 # files to exclude from --verify check
-verify_exclude = ['.clang-format',
-                  'gpu_pre_draw_shader.h'] # Requires glslangvalidator, so updated manually when needed
+verify_exclude = ['.clang-format']
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
@@ -119,7 +118,11 @@ def main(argv):
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
             temp_filename = os.path.join(temp_dir, filename)
             repo_filename = os.path.join(repo_dir, filename)
-            if filename not in repo_files:
+            if filename.startswith('gpu_'):
+                # The shaders requires glslangvalidator,
+                # so updated manually with generate_spirv when needed
+                continue
+            elif filename not in repo_files:
                 print('ERROR: Missing repo file', filename)
                 files_match = False
             elif filename not in temp_files:

@@ -16,10 +16,10 @@
 //
 // * Author: Tony Barbour <tony@lunarg.com>
 //
-// Values used in the pre draw validation shader and then mapped and checked in gpu_validation
+// Values used between the GLSL shaders and the GPU-AV logic
 
-#ifndef GPU_PRE_DRAW_CONSTANTS
-#define GPU_PRE_DRAW_CONSTANTS
+#ifndef GPU_SHADER_CONSTANTS
+#define GPU_SHADER_CONSTANTS
 
 // values match those found in SPIRV-Tools instrument.hpp file.
 #define _kInstErrorMax 7
@@ -33,4 +33,5 @@
 #define pre_draw_count_exceeds_bufsize_error 1
 #define pre_draw_count_exceeds_limit_error 2
 #define pre_draw_first_instance_error 3
+
 #endif
