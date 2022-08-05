@@ -312,6 +312,24 @@ bool RENDER_PASS_STATE::UsesDepthStencilAttachment(uint32_t subpass_num) const {
     return result;
 }
 
+uint32_t RENDER_PASS_STATE::GetDynamicRenderingColorAttachmentCount() const {
+    if (use_dynamic_rendering_inherited) {
+        return inheritance_rendering_info.colorAttachmentCount;
+    } else if (use_dynamic_rendering) {
+        return dynamic_rendering_begin_rendering_info.colorAttachmentCount;
+    }
+    return 0;
+}
+
+uint32_t RENDER_PASS_STATE::GetDynamicRenderingViewMask() const {
+    if (use_dynamic_rendering_inherited) {
+        return inheritance_rendering_info.viewMask;
+    } else if (use_dynamic_rendering) {
+        return dynamic_rendering_begin_rendering_info.viewMask;
+    }
+    return 0;
+}
+
 RENDER_PASS_STATE::RENDER_PASS_STATE(VkRenderingInfo const *pRenderingInfo)
     : BASE_NODE(static_cast<VkRenderPass>(VK_NULL_HANDLE), kVulkanObjectTypeRenderPass),
       use_dynamic_rendering(true),

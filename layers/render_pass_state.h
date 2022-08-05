@@ -124,6 +124,8 @@ class RENDER_PASS_STATE : public BASE_NODE {
     bool UsesDepthStencilAttachment(uint32_t subpass) const;
     // prefer this to checking the individual flags unless you REALLY need to check one or the other
     bool UsesDynamicRendering() const { return use_dynamic_rendering || use_dynamic_rendering_inherited; }
+    uint32_t GetDynamicRenderingColorAttachmentCount() const;
+    uint32_t GetDynamicRenderingViewMask() const;
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {

@@ -794,6 +794,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     if (pCB->activeRenderPass && pCB->activeRenderPass->UsesDynamicRendering()) {
         const auto &rp_state = pPipeline->RenderPassState();
         if (rp_state) {
+            const auto rendering_view_mask = pCB->activeRenderPass->GetDynamicRenderingViewMask();
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06198,
                                  "%s: Currently bound pipeline %s must have been created with a "
@@ -801,25 +802,23 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
             }
 
-            if (rp_state->dynamic_rendering_pipeline_create_info.viewMask !=
-                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask) {
+            if (rp_state->dynamic_rendering_pipeline_create_info.viewMask != rendering_view_mask) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
                                  "%s: Currently bound pipeline %s viewMask ([%" PRIu32
                                  ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 rp_state->dynamic_rendering_pipeline_create_info.viewMask,
-                                 pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
+                                 rp_state->dynamic_rendering_pipeline_create_info.viewMask, rendering_view_mask);
             }
 
             const auto color_attachment_count = rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
-            if (color_attachment_count &&
-                (color_attachment_count != pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount)) {
+            const auto rendering_color_attachment_count = pCB->activeRenderPass->GetDynamicRenderingColorAttachmentCount();
+            if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
                                  "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
                                  ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
-                                 pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+                                 rendering_color_attachment_count);
             }
 
             if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
