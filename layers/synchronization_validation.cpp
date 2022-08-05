@@ -2332,8 +2332,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd_
     // Create an access context the current renderpass.
     const auto barrier_tag = NextCommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
     const auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
-    render_pass_contexts_.emplace_back(rp_state, render_area, GetQueueFlags(), attachment_views, &cb_access_context_);
-    current_renderpass_context_ = &render_pass_contexts_.back();
+    render_pass_contexts_.emplace_back(layer_data::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(),
+                                                                                        attachment_views, &cb_access_context_));
+    current_renderpass_context_ = render_pass_contexts_.back().get();
     current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
     return barrier_tag;
