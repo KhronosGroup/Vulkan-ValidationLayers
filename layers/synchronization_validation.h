@@ -1331,7 +1331,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     SyncEventsContext events_context_;
 
     // Don't need the following for an active proxy cb context
-    std::vector<RenderPassAccessContext> render_pass_contexts_;
+    std::vector<std::unique_ptr<RenderPassAccessContext>> render_pass_contexts_;
     RenderPassAccessContext *current_renderpass_context_;
     std::vector<SyncOpEntry> sync_ops_;
 };
