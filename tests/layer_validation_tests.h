@@ -33,7 +33,7 @@
 #include <vulkan/vulkan.h>
 #endif
 
-#include "layers/vk_device_profile_api_layer.h"
+#include "layers/vk_lunarg_device_profile_api_layer.h"
 #include "vk_layer_settings_ext.h"
 
 #if defined(ANDROID)
