@@ -94,20 +94,20 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
                                          "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
     // create a depth attachment image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-               VK_IMAGE_TYPE_1D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-               VK_SHARING_MODE_EXCLUSIVE,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
+                nullptr,
+                VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                VK_IMAGE_TYPE_1D,
+                VK_FORMAT_D32_SFLOAT,
+                {1, 1, 1},
+                1,
+                1,
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_SHARING_MODE_EXCLUSIVE,
+                0,
+                nullptr,
+                VK_IMAGE_LAYOUT_UNDEFINED};
     test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
@@ -144,6 +144,8 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00942");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00941");
 
     // create a render target image with mutable bit set
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -167,22 +169,24 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00942");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00941");
     // create a render target image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-               nullptr,
-               0,
-               VK_IMAGE_TYPE_1D,
-               VK_FORMAT_R8G8B8A8_UNORM,
-               {1, 1, 1},
-               1,
-               1,
-               VK_SAMPLE_COUNT_1_BIT,
-               VK_IMAGE_TILING_OPTIMAL,
-               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-               VK_SHARING_MODE_CONCURRENT,
-               0,
-               nullptr,
-               VK_IMAGE_LAYOUT_UNDEFINED};
+                nullptr,
+                0,
+                VK_IMAGE_TYPE_1D,
+                VK_FORMAT_D32_SFLOAT,
+                {1, 1, 1},
+                1,
+                1,
+                VK_SAMPLE_COUNT_1_BIT,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_SHARING_MODE_CONCURRENT,
+                0,
+                nullptr,
+                VK_IMAGE_LAYOUT_UNDEFINED};
     test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
@@ -295,19 +299,17 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayout DS_layout;
-
     VkDescriptorSetLayoutCreateInfo DS_layout_info = {};
     DS_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     DS_layout_info.bindingCount = 1;
     DS_layout_info.pBindings = &binding;
 
-    vk::CreateDescriptorSetLayout(m_device->device(), &DS_layout_info, nullptr, &DS_layout);
+    vk_testing::DescriptorSetLayout DS_layout(*m_device, DS_layout_info);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 1;
-    pipeline_layout_info.pSetLayouts = &DS_layout;
+    pipeline_layout_info.pSetLayouts = &DS_layout.handle();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_range;
 
@@ -330,18 +332,17 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    ds_type_count.descriptorCount = 1;
+    ds_type_count.descriptorCount = 2;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = {};
     ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     ds_pool_ci.pNext = NULL;
-    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
-    VkDescriptorPool ds_pool;
-    vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    vk_testing::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
     VkDescriptorSetLayoutBinding dsl_binding = {};
     dsl_binding.binding = 2;
@@ -352,11 +353,11 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
 
     const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
-    VkDescriptorSet descriptor_sets[3] = {};
+    VkDescriptorSet descriptor_sets[2] = {};
     VkDescriptorSetAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = &ds_layout.handle();
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[0]);
     vk::AllocateDescriptorSets(m_device->device(), &alloc_info, &descriptor_sets[1]);
@@ -575,21 +576,22 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+    VkImageCreateInfo img_info = {
+        VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        nullptr,
+        VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+        VK_IMAGE_TYPE_1D,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        {1, 1, 1},
+        1,
+        1,
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        VK_SHARING_MODE_EXCLUSIVE,
+        0,
+        nullptr,
+        VK_IMAGE_LAYOUT_UNDEFINED};
     VkImageObj image_1D(m_device);
     image_1D.init(&img_info);
     ASSERT_TRUE(image_1D.initialized());
@@ -604,6 +606,8 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
 
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryBarrier-oldLayout-01197");
+
     // check total number of barriers warning
     uint32_t warn_Limit = 250;
     for (uint32_t i = 0; i < warn_Limit; i++) {
@@ -616,6 +620,8 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-CmdBuffer-backToBackBarrier");  // we already test for this above
     image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
