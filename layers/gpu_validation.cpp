@@ -1060,15 +1060,18 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
     ValidationStateTracker::PreCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, csm_state_data);
 }
 
-static const int kInstErrorPreDrawValidate = spvtools::kInstErrorMax + 1;
-static const int kPreDrawValidateSubError = spvtools::kInstValidationOutError + 1;
 // Generate the part of the message describing the violation.
 bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info, GpuAssisted *gpu_assisted) {
     using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
-    assert(kInstErrorPreDrawValidate == _kInstErrorPreDrawValidate);
-    assert(kInstValidationOutError == _kInstValidationOutError);
+    static_assert(
+        spvtools::kInstErrorMax == _kInstErrorMax,
+        "If this asserts then SPIRV-Tools was updated with a new instrument.hpp and kInstErrorMax was updated. This needs to be "
+        "changed in GPU-AV so that the GLSL gpu_shaders can read the constants.");
+    static_assert(spvtools::kInstValidationOutError == _kInstValidationOutError,
+                  "If this asserts then SPIRV-Tools was updated with a new instrument.hpp and kInstValidationOutError was updated. "
+                  "This needs to be changed in GPU-AV so that the GLSL gpu_shaders can read the constants.");
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
             strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
@@ -1118,10 +1121,10 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                     vuid_msg = vuid.storage_access_oob;
             }
         } break;
-        case kInstErrorPreDrawValidate: {
+        case _kInstErrorPreDrawValidate: {
             // Buffer size must be >= (stride * (drawCount - 1) + offset + sizeof(VkDrawIndexedIndirectCommand))
-            if (debug_record[kPreDrawValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
-                uint32_t count = debug_record[kPreDrawValidateSubError + 1];
+            if (debug_record[_kPreDrawValidateSubError] == pre_draw_count_exceeds_bufsize_error) {
+                uint32_t count = debug_record[_kPreDrawValidateSubError + 1];
                 uint32_t stride = buf_info.pre_draw_resources.stride;
                 uint32_t offset = static_cast<uint32_t>(buf_info.pre_draw_resources.offset);
                 uint32_t draw_size = (stride * (count - 1) + offset + sizeof(VkDrawIndexedIndirectCommand));
@@ -1134,14 +1137,14 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                 } else {
                     vuid_msg = vuid.count_exceeds_bufsize;
                 }
-            } else if (debug_record[kPreDrawValidateSubError] == pre_draw_count_exceeds_limit_error) {
-                uint32_t count = debug_record[kPreDrawValidateSubError + 1];
+            } else if (debug_record[_kPreDrawValidateSubError] == pre_draw_count_exceeds_limit_error) {
+                uint32_t count = debug_record[_kPreDrawValidateSubError + 1];
                 const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
                 strm << "Indirect draw count of " << count << " would exceed maxDrawIndirectCount limit of "
                      << gpu_assisted->phys_dev_props.limits.maxDrawIndirectCount;
                 vuid_msg = vuid.count_exceeds_device_limit;
-            } else if (debug_record[kPreDrawValidateSubError] == pre_draw_first_instance_error) {
-                uint32_t index = debug_record[kPreDrawValidateSubError + 1];
+            } else if (debug_record[_kPreDrawValidateSubError] == pre_draw_first_instance_error) {
+                uint32_t index = debug_record[_kPreDrawValidateSubError + 1];
                 const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
                 strm << "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the "
                         "VkDrawIndirectCommand structure at index "
