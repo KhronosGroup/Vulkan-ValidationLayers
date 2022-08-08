@@ -2028,7 +2028,8 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
                                              const VkRenderPassBeginInfo* pRenderPassBegin) {
     // Reset the renderpass state
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    cb->hasDrawCmd = false;
+    // TODO - move this logic to the Render Pass state as cb->has_draw_cmd should stay true for lifetime of command buffer
+    cb->has_draw_cmd = false;
     assert(cb);
     auto& render_pass_state = cb->render_pass_state;
     render_pass_state.touchesAttachments.clear();
@@ -2411,10 +2412,6 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 
         primary->render_pass_state.numDrawCallsDepthEqualCompare += secondary->render_pass_state.numDrawCallsDepthEqualCompare;
         primary->render_pass_state.numDrawCallsDepthOnly += secondary->render_pass_state.numDrawCallsDepthOnly;
-
-        if (secondary->hasDrawCmd) {
-            primary->hasDrawCmd = true;
-        }
     }
 
 }
@@ -3116,7 +3113,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
     }
 
     // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
-    if (!cmd.hasDrawCmd) {
+    if (!cmd.has_draw_cmd) {
         skip |= LogPerformanceWarning(
             cmd.Handle(), kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
             "vkCmdClearAttachments() issued on %s prior to any Draw Cmds in current render pass. It is recommended you "

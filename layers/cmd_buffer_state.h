@@ -67,12 +67,13 @@ class EVENT_STATE : public BASE_NODE {
     VkEventCreateFlags flags;
 
     EVENT_STATE(VkEvent event_, const VkEventCreateInfo *pCreateInfo)
-        : BASE_NODE(event_, kVulkanObjectTypeEvent), 
-        write_in_use(0),
+        : BASE_NODE(event_, kVulkanObjectTypeEvent),
+          write_in_use(0),
 #ifdef VK_USE_PLATFORM_METAL_EXT
-        metal_event_export(GetMetalExport(pCreateInfo)),
+          metal_event_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-        flags(pCreateInfo->flags) {}
+          flags(pCreateInfo->flags) {
+    }
 
     VkEvent event() const { return handle_.Cast<VkEvent>(); }
 };
@@ -204,14 +205,17 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const COMMAND_POOL_STATE *command_pool;
     ValidationStateTracker *dev_data;
-    bool hasDrawCmd;
-    bool hasTraceRaysCmd;
-    bool hasBuildAccelerationStructureCmd;
-    bool hasDispatchCmd;
     bool unprotected;  // can't be used for protected memory
     bool hasRenderPassInstance;
     bool suspendsRenderPassInstance;
     bool resumesRenderPassInstance;
+
+    // Track if certain commands have been called at least once in lifetime of the command buffer
+    // primary command buffers values are set true if a secondary command buffer has a command
+    bool has_draw_cmd;
+    bool has_dispatch_cmd;
+    bool has_trace_rays_cmd;
+    bool has_build_as_cmd;
 
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
@@ -468,9 +472,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t set,
                                 uint32_t descriptorWriteCount, const VkWriteDescriptorSet *pDescriptorWrites);
 
-    void UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point);
-    void UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point);
-    void UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
+    void UpdateDrawCmd(CMD_TYPE cmd_type);
+    void UpdateDispatchCmd(CMD_TYPE cmd_type);
+    void UpdateTraceRayCmd(CMD_TYPE cmd_type);
+    void UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
     void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);

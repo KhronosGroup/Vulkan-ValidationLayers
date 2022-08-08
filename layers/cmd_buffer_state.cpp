@@ -277,10 +277,10 @@ void CMD_BUFFER_STATE::Reset() {
     // Reset CB state (note that createInfo is not cleared)
     memset(&beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
     memset(&inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
-    hasDrawCmd = false;
-    hasTraceRaysCmd = false;
-    hasBuildAccelerationStructureCmd = false;
-    hasDispatchCmd = false;
+    has_draw_cmd = false;
+    has_dispatch_cmd = false;
+    has_trace_rays_cmd = false;
+    has_build_as_cmd = false;
     hasRenderPassInstance = false;
     suspendsRenderPassInstance = false;
     resumesRenderPassInstance = false;
@@ -786,7 +786,7 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
             depthResolveAttachment = res.first->get();
         }
-    } 
+    }
 
     if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
         auto& stencilAttachment = attachments[GetDynamicStencilAttachmentImageIndex()];
@@ -929,6 +929,20 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
         trashedScissorMask = ~uint32_t(0);
         trashedViewportCount = true;
         trashedScissorCount = true;
+
+        // Pass along if any commands are used in the secondary command buffer
+        if (sub_cb_state->has_draw_cmd) {
+            has_draw_cmd = true;
+        }
+        if (sub_cb_state->has_dispatch_cmd) {
+            has_dispatch_cmd = true;
+        }
+        if (sub_cb_state->has_trace_rays_cmd) {
+            has_trace_rays_cmd = true;
+        }
+        if (sub_cb_state->has_build_as_cmd) {
+            has_build_as_cmd = true;
+        }
     }
 }
 
@@ -959,16 +973,10 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
     push_descriptor_set->PerformPushDescriptorsUpdate(dev_data, descriptorWriteCount, pDescriptorWrites);
 }
 
-// Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
-void CMD_BUFFER_STATE::UpdateStateCmdDrawDispatchType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
-    UpdateDrawState(cmd_type, bind_point);
-    hasDispatchCmd = true;
-}
-
 // Generic function to handle state update for all CmdDraw* type functions
-void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindPoint bind_point) {
-    UpdateStateCmdDrawDispatchType(cmd_type, bind_point);
-    hasDrawCmd = true;
+void CMD_BUFFER_STATE::UpdateDrawCmd(CMD_TYPE cmd_type) {
+    has_draw_cmd = true;
+    UpdatePipelineState(cmd_type, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // Update the consumed viewport/scissor count.
     uint32_t &used = usedViewportScissorCount;
@@ -978,7 +986,20 @@ void CMD_BUFFER_STATE::UpdateStateCmdDrawType(CMD_TYPE cmd_type, VkPipelineBindP
     usedDynamicScissorCount |= !!(dynamic_status & CBSTATUS_SCISSOR_WITH_COUNT_SET);
 }
 
-void CMD_BUFFER_STATE::UpdateDrawState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) {
+// Generic function to handle state update for all CmdDispatch* type functions
+void CMD_BUFFER_STATE::UpdateDispatchCmd(CMD_TYPE cmd_type) {
+    has_dispatch_cmd = true;
+    UpdatePipelineState(cmd_type, VK_PIPELINE_BIND_POINT_COMPUTE);
+}
+
+// Generic function to handle state update for all CmdTraceRay* type functions
+void CMD_BUFFER_STATE::UpdateTraceRayCmd(CMD_TYPE cmd_type) {
+    has_trace_rays_cmd = true;
+    UpdatePipelineState(cmd_type, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+}
+
+// Generic function to handle state update for all Provoking functions calls (draw/dispatch/traceray/etc)
+void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) {
     RecordCmd(cmd_type);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
