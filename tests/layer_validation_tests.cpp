@@ -3670,6 +3670,8 @@ class LogcatPrinter : public ::testing::EmptyTestEventListener {
         std::string result;
         if (info.result()->Passed()) {
             result.append("[       OK ]");
+        } else if (info.result()->Skipped()) {
+            result.append("[  SKIPPED ]");
         } else {
             result.append("[  FAILED  ]");
         }
