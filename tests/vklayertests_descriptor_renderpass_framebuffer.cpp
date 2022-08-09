@@ -6206,7 +6206,9 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
         vk_testing::Buffer buffer;
         buffer.init_no_mem(*m_device, bci);
         if (buffer.handle() == VK_NULL_HANDLE) {
-            printf("%s Failed to allocate buffer in DSBufferLimitErrors; skipped.\n", kSkipPrefix);
+            std::string msg = std::string{kSkipPrefix} + " Failed to allocate buffer of size " + std::to_string(bci.size) +
+                              " in DSBufferLimitErrors; skipped";
+            printf("%s\n", msg.c_str());
             continue;
         }
 
