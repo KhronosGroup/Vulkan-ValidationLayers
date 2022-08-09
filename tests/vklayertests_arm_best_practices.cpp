@@ -910,6 +910,11 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     TEST_DESCRIPTION("Test for appropriate warnings to be thrown when a redundant store is used.");
 
     InitBestPracticesFramework(kEnableArmValidation);
+
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "Test temporarily disabled on S10 device";
+    }
+
     InitState();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, kVUID_BestPractices_RenderPass_RedundantStore);
