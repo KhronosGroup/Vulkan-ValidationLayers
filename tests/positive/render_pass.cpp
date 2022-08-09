@@ -982,14 +982,10 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
 
     vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     if (vulkan_11_features.multiview == VK_FALSE) {
-        printf("%s multiview feature not supported, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "multiview feature not supported, skipping test.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    auto vkCreateRenderPass2KHR =
-        reinterpret_cast<PFN_vkCreateRenderPass2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR"));
 
     auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1006,8 +1002,133 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     render_pass_ci.attachmentCount = 1;
     render_pass_ci.pAttachments = &attach_desc;
 
-    VkRenderPass render_pass;
-    vkCreateRenderPass2KHR(device(), &render_pass_ci, nullptr, &render_pass);
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+}
 
-    vk::DestroyRenderPass(device(), render_pass, nullptr);
+TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
+    TEST_DESCRIPTION("Begin render pass with view mask and a push descriptor.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    if (vulkan_11_features.multiview == VK_FALSE) {
+        GTEST_SKIP() << "multiview feature not supported, skipping test.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    if (push_descriptor_prop.maxPushDescriptors < 1) {
+        // Some implementations report an invalid maxPushDescriptors of 0
+        GTEST_SKIP() << "maxPushDescriptors is zero, skipping tests";
+    }
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    std::array<VkSubpassDescription2, 2> subpasses = {LvlInitStruct<VkSubpassDescription2>(),
+                                                      LvlInitStruct<VkSubpassDescription2>()};
+    subpasses[0].viewMask = 0x1;
+    subpasses[1].viewMask = 0x1;
+
+    auto render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    render_pass_ci.subpassCount = subpasses.size();
+    render_pass_ci.pSubpasses = subpasses.data();
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass(*m_device, render_pass_ci);
+
+    // A compatible framebuffer.
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    auto ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                       VK_COMPONENT_SWIZZLE_IDENTITY};
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vk_testing::ImageView view(*m_device, ivci);
+
+    auto fci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fci.renderPass = render_pass.handle();
+    fci.attachmentCount = 1;
+    fci.pAttachments = &view.handle();
+    fci.width = 32;
+    fci.height = 32;
+    fci.layers = 1;
+    vk_testing::Framebuffer fb(*m_device, fci);
+
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    rpbi.renderPass = render_pass.handle();
+    rpbi.framebuffer = fb.handle();
+    rpbi.renderArea = {{0, 0}, {32, 32}};
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 2;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    dsl_binding.pImmutableSamplers = NULL;
+
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
+    // Create push descriptor set layout
+    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+
+    // Use helper to create graphics pipeline
+    CreatePipelineHelper helper(*this);
+    helper.InitInfo();
+    helper.InitState();
+    helper.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&push_ds_layout, &ds_layout});
+    helper.gp_ci_.renderPass = render_pass.handle();
+    helper.CreateGraphicsPipeline();
+
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), &vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buff_info;
+    buff_info.buffer = vbo.handle();
+    buff_info.offset = 0;
+    buff_info.range = sizeof(vbo_data);
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pTexelBufferView = nullptr;
+    descriptor_write.pBufferInfo = &buff_info;
+    descriptor_write.pImageInfo = nullptr;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.dstSet = 0;  // Should not cause a validation error
+
+    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
+        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    assert(vkCmdPushDescriptorSetKHR != nullptr);
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_);
+    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+                              &descriptor_write);
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
 }
