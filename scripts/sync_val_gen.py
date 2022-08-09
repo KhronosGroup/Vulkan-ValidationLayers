@@ -77,8 +77,10 @@ def ParseAccessMasks(valid_usage_path, all_stages):
     expand_access_bits = {
         'VK_ACCESS_2_SHADING_RATE_IMAGE_READ_BIT_NV': ['VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR'],
         'VK_ACCESS_2_SHADER_WRITE_BIT': ['VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT'],
-        'VK_ACCESS_2_SHADER_READ_BIT': ['VK_ACCESS_2_UNIFORM_READ_BIT', 'VK_ACCESS_2_SHADER_SAMPLED_READ_BIT',
-                                            'VK_ACCESS_2_SHADER_STORAGE_READ_BIT'],
+        'VK_ACCESS_2_SHADER_READ_BIT': ['VK_ACCESS_2_UNIFORM_READ_BIT',
+                                        'VK_ACCESS_2_SHADER_SAMPLED_READ_BIT',
+                                        'VK_ACCESS_2_SHADER_STORAGE_READ_BIT',
+                                        'VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR'],
     }
     for extension_combo, vuid_list in vuid_dict['validation']['VkMemoryBarrier2'].items():
         for vuid in vuid_list:
@@ -172,7 +174,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.185
+# Snipped from chapters/synchronization.txt -- tag v1.3.224
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - sync2-ify stage names
@@ -488,7 +490,7 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# Snipped from chapters/synchronization.txt -- tag v1.2.185
+# Snipped from chapters/synchronization.txt -- tag v1.3.224
 # manual fixups:
 # - sync2-ify stage names
 # - remove ifdefs
