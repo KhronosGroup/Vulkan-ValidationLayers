@@ -1025,13 +1025,13 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     // Set unexpected error because warning is thrown any time the present mode is not VK_PRESENT_MODE_FIFO_KHR
     m_errorMonitor->SetUnexpectedError("UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
 
-    VkResult err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
     // ASSERT_TRUE(err == VK_ERROR_VALIDATION_FAILED_EXT);
     m_errorMonitor->VerifyFound();
 
     swapchain_create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-    err = vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
 }
 
 TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
