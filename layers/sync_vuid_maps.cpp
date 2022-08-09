@@ -364,6 +364,15 @@ static const std::map<VkAccessFlags2KHR, std::array<Entry, 6>> kAccessMask2Commo
          {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-03906"},
          {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-03906"},
      }}},
+    {VK_ACCESS_2_SHADER_BINDING_TABLE_READ_BIT_KHR,
+     {{
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "UNASSIGNED-VkMemoryBarrier2-srcAccessMask-SHADER_BINDING_TABLE_READ"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "UNASSIGNED-VkMemoryBarrier2-dstAccessMask-SHADER_BINDING_TABLE_READ"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "UNASSIGNED-VkBufferMemoryBarrier2-srcAccessMask-SHADER_BINDING_TABLE_READ"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "UNASSIGNED-VkBufferMemoryBarrier2-dstAccessMask-SHADER_BINDING_TABLE_READ"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "UNASSIGNED-VkImageMemoryBarrier2-srcAccessMask-SHADER_BINDING_TABLE_READ"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "UNASSIGNED-VkImageMemoryBarrier2-dstAccessMask-SHADER_BINDING_TABLE_READ"},
+     }}},
     {VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT_KHR,
      {{
          {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-03907"},
