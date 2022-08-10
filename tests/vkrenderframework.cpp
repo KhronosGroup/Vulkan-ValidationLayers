@@ -444,12 +444,58 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 #endif
 }
 
-inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
+inline void CheckDisableCoreValidation(VkValidationFeaturesEXT *features) {
     auto disable = GetEnvironment("VK_LAYER_TESTS_DISABLE_CORE_VALIDATION");
     std::transform(disable.begin(), disable.end(), disable.begin(), ::tolower);
     if (disable == "false" || disable == "0" || disable == "FALSE") {       // default is to change nothing, unless flag is correctly specified
-        features.disabledValidationFeatureCount = 0;  // remove all disables to get all validation messages
+        features->disabledValidationFeatureCount = 0;                       // remove all disables to get all validation messages
     }
+}
+
+inline void *SetupValidationSettings(void *pnext) {
+    auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
+    std::transform(validation.begin(), validation.end(), validation.begin(), ::tolower);
+    VkValidationFeaturesEXT *features = nullptr;
+    if (validation == "all" || validation == "core" || validation == "none") {
+        while (pnext) {
+            if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
+                features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
+                CheckDisableCoreValidation(features);
+                break;
+            }
+            pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
+        }
+
+        if (!features) {
+            features = new VkValidationFeaturesEXT{};
+            features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+            features->pNext = pnext;
+        }
+    }
+    if (validation == "all") {
+        auto enables = new VkValidationFeatureEnableEXT[5]{
+            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT, VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+            VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
+        features->enabledValidationFeatureCount = 3;
+        features->pEnabledValidationFeatures = enables;
+        features->disabledValidationFeatureCount = 0;
+
+        return features;
+    } else if (validation == "core") {
+        features->disabledValidationFeatureCount = 0;
+
+        return features;
+    } else if (validation == "none") {
+        auto disables = new VkValidationFeatureDisableEXT[1]{VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
+        features->disabledValidationFeatureCount = 1;
+        features->pDisabledValidationFeatures = disables;
+        features->enabledValidationFeatureCount = 0;
+
+        return features;
+    }
+
+    return pnext;
 }
 
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
@@ -490,11 +536,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
     // If is validation features then check for disabled validation
 
-    auto bos = reinterpret_cast<VkBaseOutStructure *>(instance_pnext);
-    if (instance_pnext && bos->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
-        auto features = reinterpret_cast<VkValidationFeaturesEXT *>(instance_pnext);
-        CheckDisableCoreValidation(*features);
-    }
+    instance_pnext = SetupValidationSettings(instance_pnext);
 
     // concatenate pNexts
     void *last_pnext = nullptr;
