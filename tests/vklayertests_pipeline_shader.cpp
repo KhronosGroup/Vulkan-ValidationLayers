@@ -12296,6 +12296,7 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     VkPipelineColorBlendAttachmentState attachment_state = {};
     attachment_state.blendEnable = VK_TRUE;
     attachment_state.colorBlendOp = VK_BLEND_OP_XOR_EXT;
+    attachment_state.alphaBlendOp = VK_BLEND_OP_XOR_EXT;
 
     VkPipelineColorBlendStateCreateInfo color_blend_state = LvlInitStruct<VkPipelineColorBlendStateCreateInfo>();
     color_blend_state.attachmentCount = 1;
@@ -12303,6 +12304,8 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     pipe.gp_ci_.pColorBlendState = &color_blend_state;
 
     pipe.InitState();
+    // When using devsim, advancedBlendMaxColorAttachments will be zero
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

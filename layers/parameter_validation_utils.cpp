@@ -1868,11 +1868,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            // Values needed from either dynamic rendering or the subpass description
+            uint32_t color_attachment_count = 0;
+
             if (!create_info.renderPass) {
                 if (create_info.pColorBlendState && create_info.pMultisampleState) {
                     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
                     // Pipeline has fragment output state
                     if (rendering_struct) {
+                        color_attachment_count = rendering_struct->colorAttachmentCount;
+
                         if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
                             skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
                                                          AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
@@ -1900,15 +1905,15 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             }
                         }
 
-                        if (rendering_struct->colorAttachmentCount != 0) {
+                        if (color_attachment_count != 0) {
                             skip |= validate_ranged_enum_array(
                                 "VkPipelineRenderingCreateInfo", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
                                 "colorAttachmentCount", "pColorAttachmentFormats", "VkFormat", AllVkFormatEnums,
-                                rendering_struct->colorAttachmentCount, rendering_struct->pColorAttachmentFormats, true, true);
+                                color_attachment_count, rendering_struct->pColorAttachmentFormats, true, true);
                         }
 
                         if (rendering_struct->pColorAttachmentFormats) {
-                            for (uint32_t j = 0; j < rendering_struct->colorAttachmentCount; ++j) {
+                            for (uint32_t j = 0; j < color_attachment_count; ++j) {
                                 skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "pColorAttachmentFormats", "VkFormat",
                                                              AllVkFormatEnums, rendering_struct->pColorAttachmentFormats[j],
                                                              "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
@@ -1919,7 +1924,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
                     auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(create_info.pNext);
                     if (attachment_sample_count_info && attachment_sample_count_info->pColorAttachmentSamples) {
-                        for (uint32_t j = 0; j < attachment_sample_count_info->colorAttachmentCount; ++j) {
+                        color_attachment_count = attachment_sample_count_info->colorAttachmentCount;
+
+                        for (uint32_t j = 0; j < color_attachment_count; ++j) {
                             skip |= validate_flags("vkCreateGraphicsPipelines",
                                                    ParameterName("VkAttachmentSampleCountInfoAMD->pColorAttachmentSamples"),
                                                    "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
@@ -1942,14 +1949,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 skip |= validate_struct_type_array(
                     "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].stageCount", ParameterName::IndexVector{i}),
                     ParameterName("pCreateInfos[%i].pStages", ParameterName::IndexVector{i}),
-                    "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", pCreateInfos[i].stageCount, pCreateInfos[i].pStages,
+                    "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", create_info.stageCount, create_info.pStages,
                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true,
                     "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
                     "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
                 skip |= validate_struct_type("vkCreateGraphicsPipelines",
                                              ParameterName("pCreateInfos[%i].pRasterizationState", ParameterName::IndexVector{i}),
                                              "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
-                                             pCreateInfos[i].pRasterizationState,
+                                             create_info.pRasterizationState,
                                              VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, true,
                                              "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
                                              "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
@@ -3214,6 +3221,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             uses_depthstencil_attachment = true;
                         }
                         subpass_flags = subpasses_uses.subpasses_flags[create_info.subpass];
+
+                        color_attachment_count = subpasses_uses.color_attachment_count;
                     }
                     lock.unlock();
                 }
@@ -3434,120 +3443,176 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         create_info.pColorBlendState->attachmentCount, &create_info.pColorBlendState->pAttachments, false, true,
                         kVUIDUndefined, kVUIDUndefined);
 
-                    if (create_info.pColorBlendState->pAttachments != NULL) {
+                    if (create_info.pColorBlendState->pAttachments != nullptr) {
+                        const VkBlendOp first_color_blend_op = create_info.pColorBlendState->pAttachments[0].colorBlendOp;
+                        const VkBlendOp first_alpha_blend_op = create_info.pColorBlendState->pAttachments[0].alphaBlendOp;
                         for (uint32_t attachment_index = 0; attachment_index < create_info.pColorBlendState->attachmentCount;
                              ++attachment_index) {
+                            const VkPipelineColorBlendAttachmentState attachment_state =
+                                create_info.pColorBlendState->pAttachments[attachment_index];
+
                             skip |= validate_bool32("vkCreateGraphicsPipelines",
                                                     ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].blendEnable",
                                                                   ParameterName::IndexVector{i, attachment_index}),
-                                                    create_info.pColorBlendState->pAttachments[attachment_index].blendEnable);
+                                                    attachment_state.blendEnable);
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcColorBlendFactor",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendFactor", AllVkBlendFactorEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].srcColorBlendFactor,
+                                "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcColorBlendFactor,
                                 "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-parameter");
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstColorBlendFactor",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendFactor", AllVkBlendFactorEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].dstColorBlendFactor,
+                                "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstColorBlendFactor,
                                 "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-parameter");
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorBlendOp",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendOp", AllVkBlendOpEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].colorBlendOp,
+                                "VkBlendOp", AllVkBlendOpEnums, attachment_state.colorBlendOp,
                                 "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-parameter");
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcAlphaBlendFactor",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendFactor", AllVkBlendFactorEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].srcAlphaBlendFactor,
+                                "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcAlphaBlendFactor,
                                 "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-parameter");
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstAlphaBlendFactor",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendFactor", AllVkBlendFactorEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].dstAlphaBlendFactor,
+                                "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstAlphaBlendFactor,
                                 "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-parameter");
 
                             skip |= validate_ranged_enum(
                                 "vkCreateGraphicsPipelines",
                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].alphaBlendOp",
                                               ParameterName::IndexVector{i, attachment_index}),
-                                "VkBlendOp", AllVkBlendOpEnums,
-                                create_info.pColorBlendState->pAttachments[attachment_index].alphaBlendOp,
+                                "VkBlendOp", AllVkBlendOpEnums, attachment_state.alphaBlendOp,
                                 "VUID-VkPipelineColorBlendAttachmentState-alphaBlendOp-parameter");
 
-                            skip |=
-                                validate_flags("vkCreateGraphicsPipelines",
-                                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorWriteMask",
-                                                             ParameterName::IndexVector{i, attachment_index}),
-                                               "VkColorComponentFlagBits", AllVkColorComponentFlagBits,
-                                               create_info.pColorBlendState->pAttachments[attachment_index].colorWriteMask,
-                                               kOptionalFlags, "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
+                            skip |= validate_flags(
+                                "vkCreateGraphicsPipelines",
+                                ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorWriteMask",
+                                              ParameterName::IndexVector{i, attachment_index}),
+                                "VkColorComponentFlagBits", AllVkColorComponentFlagBits, attachment_state.colorWriteMask,
+                                kOptionalFlags, "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
 
-                            if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendAllOperations == VK_FALSE) {
-                                bool invalid = false;
-                                switch (create_info.pColorBlendState->pAttachments[attachment_index].colorBlendOp) {
-                                    case VK_BLEND_OP_ZERO_EXT:
-                                    case VK_BLEND_OP_SRC_EXT:
-                                    case VK_BLEND_OP_DST_EXT:
-                                    case VK_BLEND_OP_SRC_OVER_EXT:
-                                    case VK_BLEND_OP_DST_OVER_EXT:
-                                    case VK_BLEND_OP_SRC_IN_EXT:
-                                    case VK_BLEND_OP_DST_IN_EXT:
-                                    case VK_BLEND_OP_SRC_OUT_EXT:
-                                    case VK_BLEND_OP_DST_OUT_EXT:
-                                    case VK_BLEND_OP_SRC_ATOP_EXT:
-                                    case VK_BLEND_OP_DST_ATOP_EXT:
-                                    case VK_BLEND_OP_XOR_EXT:
-                                    case VK_BLEND_OP_INVERT_EXT:
-                                    case VK_BLEND_OP_INVERT_RGB_EXT:
-                                    case VK_BLEND_OP_LINEARDODGE_EXT:
-                                    case VK_BLEND_OP_LINEARBURN_EXT:
-                                    case VK_BLEND_OP_VIVIDLIGHT_EXT:
-                                    case VK_BLEND_OP_LINEARLIGHT_EXT:
-                                    case VK_BLEND_OP_PINLIGHT_EXT:
-                                    case VK_BLEND_OP_HARDMIX_EXT:
-                                    case VK_BLEND_OP_PLUS_EXT:
-                                    case VK_BLEND_OP_PLUS_CLAMPED_EXT:
-                                    case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
-                                    case VK_BLEND_OP_PLUS_DARKER_EXT:
-                                    case VK_BLEND_OP_MINUS_EXT:
-                                    case VK_BLEND_OP_MINUS_CLAMPED_EXT:
-                                    case VK_BLEND_OP_CONTRAST_EXT:
-                                    case VK_BLEND_OP_INVERT_OVG_EXT:
-                                    case VK_BLEND_OP_RED_EXT:
-                                    case VK_BLEND_OP_GREEN_EXT:
-                                    case VK_BLEND_OP_BLUE_EXT:
-                                        invalid = true;
-                                        break;
-                                    default:
-                                        break;
+                            // if blendEnabled is false, these values are ignored
+                            if (attachment_state.blendEnable) {
+                                bool advance_blend = false;
+                                if (IsAdvanceBlendOperation(attachment_state.colorBlendOp)) {
+                                    advance_blend = true;
+                                    if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendAllOperations == VK_FALSE) {
+                                        // This VUID checks if a subset of advance blend ops are allowed
+                                        switch (attachment_state.colorBlendOp) {
+                                            case VK_BLEND_OP_ZERO_EXT:
+                                            case VK_BLEND_OP_SRC_EXT:
+                                            case VK_BLEND_OP_DST_EXT:
+                                            case VK_BLEND_OP_SRC_OVER_EXT:
+                                            case VK_BLEND_OP_DST_OVER_EXT:
+                                            case VK_BLEND_OP_SRC_IN_EXT:
+                                            case VK_BLEND_OP_DST_IN_EXT:
+                                            case VK_BLEND_OP_SRC_OUT_EXT:
+                                            case VK_BLEND_OP_DST_OUT_EXT:
+                                            case VK_BLEND_OP_SRC_ATOP_EXT:
+                                            case VK_BLEND_OP_DST_ATOP_EXT:
+                                            case VK_BLEND_OP_XOR_EXT:
+                                            case VK_BLEND_OP_INVERT_EXT:
+                                            case VK_BLEND_OP_INVERT_RGB_EXT:
+                                            case VK_BLEND_OP_LINEARDODGE_EXT:
+                                            case VK_BLEND_OP_LINEARBURN_EXT:
+                                            case VK_BLEND_OP_VIVIDLIGHT_EXT:
+                                            case VK_BLEND_OP_LINEARLIGHT_EXT:
+                                            case VK_BLEND_OP_PINLIGHT_EXT:
+                                            case VK_BLEND_OP_HARDMIX_EXT:
+                                            case VK_BLEND_OP_PLUS_EXT:
+                                            case VK_BLEND_OP_PLUS_CLAMPED_EXT:
+                                            case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
+                                            case VK_BLEND_OP_PLUS_DARKER_EXT:
+                                            case VK_BLEND_OP_MINUS_EXT:
+                                            case VK_BLEND_OP_MINUS_CLAMPED_EXT:
+                                            case VK_BLEND_OP_CONTRAST_EXT:
+                                            case VK_BLEND_OP_INVERT_OVG_EXT:
+                                            case VK_BLEND_OP_RED_EXT:
+                                            case VK_BLEND_OP_GREEN_EXT:
+                                            case VK_BLEND_OP_BLUE_EXT: {
+                                                skip |= LogError(
+                                                    device,
+                                                    "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409",
+                                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                                    "].pColorBlendState->pAttachments[%" PRIu32
+                                                    "].colorBlendOp (%s) is not valid when "
+                                                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::"
+                                                    "advancedBlendAllOperations is "
+                                                    "VK_FALSE",
+                                                    i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp));
+                                                break;
+                                            }
+                                            default:
+                                                break;
+                                        }
+                                    }
+
+                                    if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend ==
+                                            VK_FALSE &&
+                                        attachment_state.colorBlendOp != first_color_blend_op) {
+                                        skip |= LogError(
+                                            device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
+                                            "vkCreateGraphicsPipelines: advancedBlendIndependentBlend is set to VK_FALSE, but "
+                                            "pCreateInfos[%" PRIu32 "].pColorBlendState->pAttachments[%" PRIu32
+                                            "].colorBlendOp (%s) is not same the other attachments (%s).",
+                                            i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp),
+                                            string_VkBlendOp(first_color_blend_op));
+                                    }
                                 }
-                                if (invalid) {
-                                    skip |= LogError(
-                                        device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409",
-                                        "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
-                                        "].pColorBlendState->pAttachments[%" PRIu32
-                                        "].colorBlendOp (%s) is not valid when "
-                                        "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendAllOperations is "
-                                        "VK_FALSE",
-                                        i, attachment_index,
-                                        string_VkBlendOp(
-                                            create_info.pColorBlendState->pAttachments[attachment_index].colorBlendOp));
+
+                                if (IsAdvanceBlendOperation(attachment_state.alphaBlendOp)) {
+                                    advance_blend = true;
+                                    if (phys_dev_ext_props.blend_operation_advanced_props.advancedBlendIndependentBlend ==
+                                            VK_FALSE &&
+                                        attachment_state.alphaBlendOp != first_alpha_blend_op) {
+                                        skip |= LogError(
+                                            device, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408",
+                                            "vkCreateGraphicsPipelines: advancedBlendIndependentBlend is set to VK_FALSE, but "
+                                            "pCreateInfos[%" PRIu32 "].pColorBlendState->pAttachments[%" PRIu32
+                                            "].alphaBlendOp (%s) is not same the other attachments (%s).",
+                                            i, attachment_index, string_VkBlendOp(attachment_state.alphaBlendOp),
+                                            string_VkBlendOp(first_alpha_blend_op));
+                                    }
+                                }
+
+                                if (advance_blend) {
+                                    if (attachment_state.colorBlendOp != attachment_state.alphaBlendOp) {
+                                        skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01406",
+                                                         "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                                         "].pColorBlendState->pAttachments[%" PRIu32
+                                                         "] has different colorBlendOp (%s) and alphaBlendOp (%s) but one of "
+                                                         "them is an advance blend operation.",
+                                                         i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp),
+                                                         string_VkBlendOp(attachment_state.alphaBlendOp));
+                                    } else if (color_attachment_count >=
+                                               phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
+                                        // color_attachment_count is found one of multiple spots above
+                                        //
+                                        // error can guarantee it is the same VkBlendOp
+                                        skip |= LogError(
+                                            device, "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410",
+                                            "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                            "].pColorBlendState->pAttachments[%" PRIu32
+                                            "] has an advance blend operation (%s) but the colorAttachmentCount (%" PRIu32
+                                            ") for the subpass is greater than advancedBlendMaxColorAttachments (%" PRIu32 ").",
+                                            i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp),
+                                            color_attachment_count,
+                                            phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments);
+                                    }
                                 }
                             }
                         }
