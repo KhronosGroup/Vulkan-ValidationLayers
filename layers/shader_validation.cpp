@@ -736,7 +736,7 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
         const uint32_t scope_id = insn.word(entry);
         const auto &scope_def = module_state.GetConstantDef(scope_id);
         if (scope_def != module_state.end()) {
-            const auto scope_type = GetConstantValue(scope_def);
+            const auto scope_type = module_state.GetConstantValue(scope_def);
             if (enabled_features.core12.vulkanMemoryModel && !enabled_features.core12.vulkanMemoryModelDeviceScope &&
                 scope_type == spv::Scope::ScopeDevice) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-vulkanMemoryModel-06265",
