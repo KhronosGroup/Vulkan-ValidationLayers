@@ -1774,6 +1774,15 @@ void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, V
     }
 }
 
+void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
+                                                              VkResult result) {
+    auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
+    if (semaphore_state) {
+        semaphore_state->RetireTimeline(pSignalInfo->value);
+    }
+}
+
+
 void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
