@@ -764,6 +764,143 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
                                             &max_primitives_count, &build_sizes_info);
 }
 
+TEST_F(VkPositiveLayerTest, AccelerationStructureReference) {
+    TEST_DESCRIPTION("Test host side accelerationStructureReference");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
+    auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
+    acc_structure_features.pNext = &ray_query_features;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (acc_structure_features.accelerationStructureHostCommands == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructureHostCommands feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR =
+        (PFN_vkGetAccelerationStructureBuildSizesKHR)vk::GetInstanceProcAddr(instance(), "vkGetAccelerationStructureBuildSizesKHR");
+    assert(vkGetAccelerationStructureBuildSizesKHR);
+
+    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
+        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
+    assert(vkBuildAccelerationStructuresKHR);
+
+    // Build Bottom Level Acceleration Structure
+    const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
+    const std::vector<uint32_t> indices = {0, 1, 2};
+    VkAccelerationStructureGeometryKHR blas_geometry = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
+    blas_geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    blas_geometry.flags = 0;
+    blas_geometry.geometry.triangles = LvlInitStruct<VkAccelerationStructureGeometryTrianglesDataKHR>();
+    blas_geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    blas_geometry.geometry.triangles.vertexData.hostAddress = vertices.data();
+    blas_geometry.geometry.triangles.maxVertex = vertices.size() - 1;
+    blas_geometry.geometry.triangles.vertexStride = 12;
+    blas_geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    blas_geometry.geometry.triangles.indexData.hostAddress = indices.data();
+    blas_geometry.geometry.triangles.transformData.hostAddress = nullptr;
+
+    VkAccelerationStructureBuildGeometryInfoKHR blas_build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    blas_build_info_khr.flags = 0;
+    blas_build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    blas_build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    blas_build_info_khr.srcAccelerationStructure = VK_NULL_HANDLE;
+    blas_build_info_khr.dstAccelerationStructure = VK_NULL_HANDLE;
+    blas_build_info_khr.geometryCount = 1;
+    blas_build_info_khr.pGeometries = &blas_geometry;
+    blas_build_info_khr.ppGeometries = nullptr;
+
+    VkAccelerationStructureBuildSizesInfoKHR blas_build_sizes = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    uint32_t max_primitive_count = 1;
+    vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR, &blas_build_info_khr,
+                                            &max_primitive_count, &blas_build_sizes);
+
+    VkBufferObj blas_buffer;
+    blas_buffer.init(*m_device, blas_build_sizes.accelerationStructureSize, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    VkAccelerationStructureCreateInfoKHR blas_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    blas_create_info.buffer = blas_buffer.handle();
+    blas_create_info.createFlags = 0;
+    blas_create_info.offset = 0;
+    blas_create_info.size = blas_build_sizes.accelerationStructureSize;
+    blas_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    blas_create_info.deviceAddress = 0;
+    VkAccelerationStructurekhrObj blas(*m_device, blas_create_info, false);
+    blas_build_info_khr.dstAccelerationStructure = blas.handle();
+
+    std::vector<uint8_t> blas_scratch(static_cast<size_t>(blas_build_sizes.buildScratchSize));
+    blas_build_info_khr.scratchData.hostAddress = blas_scratch.data();
+
+    VkAccelerationStructureBuildRangeInfoKHR blas_build_range_info;
+    blas_build_range_info.firstVertex = 0;
+    blas_build_range_info.primitiveCount = 1;
+    blas_build_range_info.primitiveOffset = 0;
+    blas_build_range_info.transformOffset = 0;
+    VkAccelerationStructureBuildRangeInfoKHR *pBuildRangeInfos = &blas_build_range_info;
+
+    vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &blas_build_info_khr, &pBuildRangeInfos);
+
+    // Build Top Level Acceleration Structure
+    VkAccelerationStructureInstanceKHR tlas_instance = {};
+    tlas_instance.accelerationStructureReference = (uint64_t)blas_build_info_khr.dstAccelerationStructure;
+
+    VkAccelerationStructureGeometryKHR tlas_geometry = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
+    tlas_geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    tlas_geometry.flags = 0;
+    tlas_geometry.geometry.instances = LvlInitStruct<VkAccelerationStructureGeometryInstancesDataKHR>();
+    tlas_geometry.geometry.instances.arrayOfPointers = VK_FALSE;
+    tlas_geometry.geometry.instances.data.hostAddress = &tlas_instance;
+
+    VkAccelerationStructureBuildGeometryInfoKHR tlas_build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    tlas_build_info_khr.flags = 0;
+    tlas_build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    tlas_build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    tlas_build_info_khr.srcAccelerationStructure = VK_NULL_HANDLE;
+    tlas_build_info_khr.dstAccelerationStructure = VK_NULL_HANDLE;
+    tlas_build_info_khr.geometryCount = 1;
+    tlas_build_info_khr.pGeometries = &tlas_geometry;
+    tlas_build_info_khr.ppGeometries = nullptr;
+
+    VkAccelerationStructureBuildSizesInfoKHR tlas_build_sizes = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+    vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_HOST_KHR, &tlas_build_info_khr,
+                                            &max_primitive_count, &tlas_build_sizes);
+
+    VkBufferObj tlas_buffer;
+    tlas_buffer.init(*m_device, tlas_build_sizes.accelerationStructureSize, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+    VkAccelerationStructureCreateInfoKHR tlas_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    tlas_create_info.buffer = tlas_buffer.handle();
+    tlas_create_info.createFlags = 0;
+    tlas_create_info.offset = 0;
+    tlas_create_info.size = tlas_build_sizes.accelerationStructureSize;
+    tlas_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    tlas_create_info.deviceAddress = 0;
+    VkAccelerationStructurekhrObj tlas(*m_device, tlas_create_info, false);
+    tlas_build_info_khr.dstAccelerationStructure = tlas.handle();
+
+    std::vector<uint8_t> tlas_scratch(static_cast<size_t>(tlas_build_sizes.buildScratchSize));
+    tlas_build_info_khr.scratchData.hostAddress = tlas_scratch.data();
+
+    VkAccelerationStructureBuildRangeInfoKHR tlas_build_range_info;
+    tlas_build_range_info.primitiveCount = 1;
+    tlas_build_range_info.primitiveOffset = 0;
+    pBuildRangeInfos = &tlas_build_range_info;
+
+    vkBuildAccelerationStructuresKHR(device(), VK_NULL_HANDLE, 1, &tlas_build_info_khr, &pBuildRangeInfos);
+}
+
 TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
     TEST_DESCRIPTION("Test waiting on swapchain image with a fence.");
 
