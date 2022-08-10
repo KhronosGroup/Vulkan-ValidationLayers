@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2016-2020 Valve Corporation
- * Copyright (c) 2016-2020 LunarG, Inc.
- * Copyright (c) 2016-2020 The Khronos Group Inc.
+ * Copyright (c) 2016-2022 Valve Corporation
+ * Copyright (c) 2016-2022 LunarG, Inc.
+ * Copyright (c) 2016-2022 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,8 @@ typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)(VkPhysicalDe
                                                                     const VkPhysicalDeviceFeatures *features);
 typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFeaturesEXT)(VkPhysicalDevice physicalDevice,
                                                             const VkPhysicalDeviceFeatures newFeatures);
+typedef void(VKAPI_PTR *PFN_VkSetPhysicalDeviceProperties2EXT)(VkPhysicalDevice physicalDevice,
+                                                               const VkPhysicalDeviceProperties2 newProperties);
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus

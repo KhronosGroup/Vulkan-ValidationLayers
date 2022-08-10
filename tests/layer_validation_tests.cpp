@@ -1176,6 +1176,22 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
     return true;
 }
 
+bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT) {
+    // Load required functions
+    fpvkSetPhysicalDeviceProperties2EXT =
+        (PFN_VkSetPhysicalDeviceProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceProperties2EXT");
+
+    if (!fpvkSetPhysicalDeviceProperties2EXT) {
+        printf(
+            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n",
+            kSkipPrefix);
+        return false;
+    }
+
+    return true;
+}
+
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
         return true;
