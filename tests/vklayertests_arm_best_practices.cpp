@@ -712,7 +712,8 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     // record a command buffer which records a significant number of depth pre-passes
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, kVUID_BestPractices_EndRenderPass_DepthPrePassUsage);
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                         "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
@@ -917,8 +918,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, kVUID_BestPractices_RenderPass_RedundantStore);
-    m_errorMonitor->SetAllowedFailureMsg(kVUID_BestPractices_EndRenderPass_RedundantAttachmentOnTile);
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-RenderPass-redundant-store");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdEndRenderPass-redundant-attachment-on-tile");
 
     const VkFormat FMT = VK_FORMAT_R8G8B8A8_UNORM;
     const uint32_t WIDTH = 512, HEIGHT = 512;
