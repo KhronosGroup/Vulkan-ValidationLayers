@@ -121,7 +121,6 @@ struct interface_var {
 };
 
 // Utils taking a spirv_inst_iter
-uint32_t GetConstantValue(const spirv_inst_iter &itr);
 std::vector<uint32_t> FindEntrypointInterfaces(const spirv_inst_iter &entrypoint);
 
 enum FORMAT_TYPE {
@@ -365,6 +364,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                        uint32_t &local_size_z) const;
 
     spirv_inst_iter GetConstantDef(uint32_t id) const;
+    uint32_t GetConstantValue(const spirv_inst_iter &itr) const;
     uint32_t GetConstantValueById(uint32_t id) const;
     int32_t GetShaderResourceDimensionality(const interface_var &resource) const;
     uint32_t GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const;

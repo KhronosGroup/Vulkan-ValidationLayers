@@ -664,9 +664,9 @@ bool SHADER_MODULE_STATE::FindLocalSize(const spirv_inst_iter &entrypoint, uint3
             auto composite_def = get_def(workgroup_size_id);
             if (composite_def.opcode() == spv::OpConstantComposite) {
                 // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
-                local_size_x = GetConstantValue(get_def(composite_def.word(3)));
-                local_size_y = GetConstantValue(get_def(composite_def.word(4)));
-                local_size_z = GetConstantValue(get_def(composite_def.word(5)));
+                local_size_x = GetConstantValueById(composite_def.word(3));
+                local_size_y = GetConstantValueById(composite_def.word(4));
+                local_size_z = GetConstantValueById(composite_def.word(5));
                 return true;
             }
         }
@@ -709,6 +709,12 @@ spirv_inst_iter SHADER_MODULE_STATE::GetConstantDef(uint32_t id) const {
     return end();
 }
 
+// While simple, function name provides a more human readable description why word(3) is used
+uint32_t SHADER_MODULE_STATE::GetConstantValue(const spirv_inst_iter &itr) const {
+    assert(itr.opcode() == spv::OpConstant);
+    return itr.word(3);
+}
+
 // Either returns the constant value described by the instruction at id, or 1
 uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     auto value = GetConstantDef(id);
@@ -718,6 +724,7 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
         //       considering here, OR -- specialize on the fly now.
         return 1;
     }
+
     return GetConstantValue(value);
 }
 
@@ -1902,9 +1909,6 @@ uint32_t SHADER_MODULE_STATE::GetTypeId(uint32_t id) const {
     const auto type = get_def(id);
     return OpcodeHasType(type.opcode()) ? type.word(1) : 0;
 }
-
-// Assumes itr points to an OpConstant instruction
-uint32_t GetConstantValue(const spirv_inst_iter &itr) { return itr.word(3); }
 
 std::vector<uint32_t> FindEntrypointInterfaces(const spirv_inst_iter &entrypoint) {
     assert(entrypoint.opcode() == spv::OpEntryPoint);
