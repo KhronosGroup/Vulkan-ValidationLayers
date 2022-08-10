@@ -122,6 +122,7 @@ class StatelessValidation : public ValidationObject {
         layer_data::unordered_set<uint32_t> subpasses_using_color_attachment;
         layer_data::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
         std::vector<VkSubpassDescriptionFlags> subpasses_flags;
+        uint32_t color_attachment_count;
     };
 
     // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
@@ -1399,6 +1400,8 @@ class StatelessValidation : public ValidationObject {
         renderpass_state.subpasses_flags.resize(pCreateInfo->subpassCount);
         for (uint32_t subpass = 0; subpass < pCreateInfo->subpassCount; ++subpass) {
             bool uses_color = false;
+            renderpass_state.color_attachment_count = pCreateInfo->pSubpasses[subpass].colorAttachmentCount;
+
             for (uint32_t i = 0; i < pCreateInfo->pSubpasses[subpass].colorAttachmentCount && !uses_color; ++i)
                 if (pCreateInfo->pSubpasses[subpass].pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) uses_color = true;
 
