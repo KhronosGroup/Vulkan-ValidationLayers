@@ -76,6 +76,10 @@ struct GpuVuidsCmdDispatchIndirect : GpuVuid {
     GpuVuidsCmdDispatchIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDispatchIndirect-None-02705";
         storage_access_oob = "VUID-vkCmdDispatchIndirect-None-02706";
+        group_exceeds_device_limit_x = "VUID-VkDispatchIndirectCommand-x-00417";
+        group_exceeds_device_limit_y = "VUID-VkDispatchIndirectCommand-y-00418";
+        group_exceeds_device_limit_z = "VUID-VkDispatchIndirectCommand-z-00419";
+
     }
 };
 
