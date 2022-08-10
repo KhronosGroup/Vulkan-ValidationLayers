@@ -42,7 +42,7 @@ khronos_validation.duplicate_message_limit = 10
 # <LayerIdentifier>.message_id_filter
 # List of VUIDs and VUID identifers which are to be IGNORED by the validation
 # layer
-khronos_validation.message_id_filter = 
+khronos_validation.message_id_filter =
 
 # Disables
 # =====================
@@ -54,7 +54,7 @@ khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT
 # =====================
 # <LayerIdentifier>.enables
 # Setting an option here will enable specialized areas of validation
-khronos_validation.enables = 
+khronos_validation.enables =
 
 # Redirect Printf messages to stdout
 # =====================
@@ -80,7 +80,7 @@ khronos_validation.enables =
 # Enable descriptor indexing access checking
 #khronos_validation.gpuav_descriptor_indexing = true
 
-# Check Out of Bounds 
+# Check Out of Bounds
 # =====================
 # <LayerIdentifier>.gpuav_buffer_oob
 # Enable buffer out of bounds checking
@@ -91,6 +91,12 @@ khronos_validation.enables =
 # <LayerIdentifier>.validate_draw_indirect
 # Enable draw indirect checking
 #khronos_validation.validate_draw_indirect = true
+
+# Check Dispatch Indirect group count values
+# =====================
+# <LayerIdentifier>.validate_dispatch_indirect
+# Enable dispatch indirect checking
+#khronos_validation.validate_dispatch_indirect = true
 
 # Use linear vma allocator for GPU-AV output buffers
 # =====================
