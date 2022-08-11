@@ -286,6 +286,16 @@ static inline uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
     }
 }
 
+// return true if VK_PIPELINE_STAGE_*_SHADER_BIT
+// TODO - generate all VK_PIPELINE_STAGE_*_SHADER_BIT from the XML, should be new stages too often though
+static inline bool IsPipelineShaderStageBit(VkPipelineStageFlags2 stage) {
+    return stage & (VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                    VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV |
+                    VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV);
+}
+
 // Perform a zero-tolerant modulo operation
 static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
     VkDeviceSize result = 0;

@@ -1030,4 +1030,58 @@ const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     return result;
 }
 
+static const std::map<AccelerationStructureError, std::vector<Entry>> kAccelerationStructureErrors{
+    {AccelerationStructureError::kWithRayTracingPipelineWithRayQuery,
+     {
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06256"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06256"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06256"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-06256"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-06256"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-06256"},
+     }},
+    {AccelerationStructureError::kWithRayTracingPipelineWithoutRayQuery,
+     {
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06254"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06254"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06254"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-06254"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-06254"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-06254"},
+     }},
+    {AccelerationStructureError::kWithoutRayTracingPipelineWithRayQuery,
+     {
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06257"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06257"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06257"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-06257"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-06257"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-06257"},
+     }},
+    {AccelerationStructureError::kWithoutRayTracingPipelineWithoutRayQuery,
+     {
+         {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask), "VUID-VkMemoryBarrier2-srcAccessMask-06255"},
+         {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask), "VUID-VkMemoryBarrier2-dstAccessMask-06255"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask), "VUID-VkBufferMemoryBarrier2-srcAccessMask-06255"},
+         {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask), "VUID-VkBufferMemoryBarrier2-dstAccessMask-06255"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask), "VUID-VkImageMemoryBarrier2-srcAccessMask-06255"},
+         {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask), "VUID-VkImageMemoryBarrier2-dstAccessMask-06255"},
+     }},
+};
+
+const std::string &GetAccelerationStructureVUID(const Location &loc, bool rayTracingPipeline, bool rayQuery) {
+    AccelerationStructureError error =
+        (rayTracingPipeline && rayQuery)    ? AccelerationStructureError::kWithRayTracingPipelineWithRayQuery
+        : (rayTracingPipeline && !rayQuery) ? AccelerationStructureError::kWithRayTracingPipelineWithoutRayQuery
+        : (!rayTracingPipeline && rayQuery) ? AccelerationStructureError::kWithoutRayTracingPipelineWithRayQuery
+                                            : AccelerationStructureError::kWithoutRayTracingPipelineWithoutRayQuery;
+    const auto &result = FindVUID(error, loc, kAccelerationStructureErrors);
+    assert(!result.empty());
+    if (result.empty()) {
+         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-AccelerationStructure-error");
+         return unhandled;
+    }
+    return result;
+}
+
 };  // namespace sync_vuid_maps

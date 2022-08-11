@@ -10910,6 +10910,25 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const Location
     auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_stages);
     auto bad_accesses = (access_mask & ~valid_accesses);
     if (bad_accesses == 0) {
+        // special exception for the ray tracing extensions depending on what is enabled
+        if ((access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR) && (IsPipelineShaderStageBit(stage_mask))) {
+            // Can be ray tracing shader if extension is enabled
+            if (!(stage_mask & VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR) ||
+                !IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline)) {
+                // Last exception is if the rayQuery feature is enabled
+                if (!enabled_features.ray_query_features.rayQuery) {
+                    const auto &vuid = sync_vuid_maps::GetAccelerationStructureVUID(
+                        loc, IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline),
+                        IsExtEnabled(device_extensions.vk_khr_ray_query));
+                    std::stringstream msg;
+                    msg << loc.Message() << " bit VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR is not supported by stage mask ("
+                        << sync_utils::StringPipelineStageFlags(stage_mask)
+                        << ") (look into enabling the VK_KHR_ray_tracing_pipeline extension or rayQuery feature).";
+                    skip |= LogError(objects, vuid, "%s", msg.str().c_str());
+                }
+            }
+        }
+
         return skip;
     }
     for (size_t i = 0; i < sizeof(bad_accesses) * 8; i++) {

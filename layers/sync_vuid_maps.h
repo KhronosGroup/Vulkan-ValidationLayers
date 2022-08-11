@@ -108,4 +108,13 @@ enum class SubmitError {
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
+enum class AccelerationStructureError {
+    kWithRayTracingPipelineWithRayQuery,
+    kWithRayTracingPipelineWithoutRayQuery,
+    kWithoutRayTracingPipelineWithRayQuery,
+    kWithoutRayTracingPipelineWithoutRayQuery
+};
+
+const std::string &GetAccelerationStructureVUID(const Location &loc, bool rayTracingPipeline, bool rayQuery);
+
 };  // namespace sync_vuid_maps
