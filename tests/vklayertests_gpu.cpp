@@ -2957,3 +2957,105 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
 
     vk::DestroySampler(device(), sampler, nullptr);
 }
+
+TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
+    TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
+    InitGpuAssistedFramework(false);
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
+    }
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxComputeWorkGroupCount[0] = 2;
+    props.limits.maxComputeWorkGroupCount[1] = 2;
+    props.limits.maxComputeWorkGroupCount[2] = 2;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 5 * sizeof(VkDispatchIndirectCommand);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+
+    VkBufferObj indirect_buffer;
+    indirect_buffer.init(*m_device, buffer_create_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.memory().map());
+    // VkDispatchIndirectCommand[0]
+    ptr->x = 4;  // over
+    ptr->y = 2;
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[1]
+    ptr++;
+    ptr->x = 2;
+    ptr->y = 3;  // over
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[2] - valid inbetween
+    ptr++;
+    ptr->x = 1;
+    ptr->y = 1;
+    ptr->z = 1;
+    // VkDispatchIndirectCommand[3]
+    ptr++;
+    ptr->x = 0;  // allowed
+    ptr->y = 2;
+    ptr->z = 3;  // over
+    // VkDispatchIndirectCommand[4]
+    ptr++;
+    ptr->x = 3;  // over
+    ptr->y = 2;
+    ptr->z = 3;  // over
+    indirect_buffer.memory().unmap();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-y-00418");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), sizeof(VkDispatchIndirectCommand));
+
+    // valid
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 2 * sizeof(VkDispatchIndirectCommand));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-z-00419");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 3 * sizeof(VkDispatchIndirectCommand));
+
+    // Only expect to have the first error return
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+
+    // Check again in a 2nd submitted command buffer
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 2 * sizeof(VkDispatchIndirectCommand));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDispatchIndirectCommand-x-00417");
+    vk::CmdDispatchIndirect(m_commandBuffer->handle(), indirect_buffer.handle(), 0);
+
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+    m_errorMonitor->VerifyFound();
+}
