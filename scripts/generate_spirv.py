@@ -48,7 +48,7 @@ def compile(filename, glslang_validator):
         args = [glslang_validator, "-V", "-H", "-o", tmpfile, filename]
         output = subprocess.check_output(args, universal_newlines=True)
     except subprocess.CalledProcessError as e:
-        raise(e.output)
+        raise Exception(e.output)
 
     # read the temp file into a list of SPIR-V words
     words = []
@@ -70,7 +70,7 @@ def compile(filename, glslang_validator):
     # Because this might be absolute on the system, remove it
     return (words, output.rstrip()[output.index('\n') + 1:])
 
-def write(words, disassembled, filename):
+def write(words, disassembled, filename, outfilename = None):
     name = identifierize(os.path.basename(filename))
 
     literals = []
@@ -117,7 +117,11 @@ static const uint32_t %s[%d] = {
 };
 """ % (disassembled, name, len(words), "\n".join(literals))
 
-    out_file = os.path.join(common_codegen.repo_relative('layers/generated'), name + '.h')
+    if outfilename:
+      out_file = outfilename
+    else:
+      out_file = os.path.join(common_codegen.repo_relative('layers/generated'), name + '.h')
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         print(header, end="", file=f)
 
@@ -125,6 +129,7 @@ def main():
     parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpu_shaders/README.md for more deatils')
     parser.add_argument('--shader', action='store', type=str, help='Input Filename')
     parser.add_argument('--glslang', action='store', type=str, help='Path to glslangvalidator to use')
+    parser.add_argument('--outfilename', action='store', type=str, help='Optional path to output file')
     args = parser.parse_args()
 
     generate_shaders = []
@@ -149,7 +154,7 @@ def main():
 
     for shader in generate_shaders:
         words, disassembled = compile(shader, glslang_validator)
-        write(words, disassembled, shader)
+        write(words, disassembled, shader, args.outfilename)
 
 if __name__ == '__main__':
   main()
