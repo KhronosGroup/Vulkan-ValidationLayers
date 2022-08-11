@@ -4126,8 +4126,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     VkBuffer buffer;
@@ -4198,8 +4197,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     VkImage image;
@@ -6061,8 +6059,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -7081,8 +7078,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     PFN_vkCmdCopyImage2KHR vkCmdCopyImage2Function = nullptr;
@@ -15509,8 +15505,7 @@ TEST_F(VkLayerTest, TestBarrierAccessSync2) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -15702,8 +15697,7 @@ TEST_F(VkLayerTest, TestBarrierAccessAccelerationStructure) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
@@ -15755,8 +15749,7 @@ TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
