@@ -24,6 +24,12 @@ Synchronization Validation settings are managed by configuring the Validation La
 
 Synchronization Validation settings can also be enabled and configured using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
 
+The alpha release of QueueSubmit time validation can be enabled using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html), or by adding:
+
+`VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT`
+
+to the "Enables" as documented in [VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details). ***NOTE*:** changes to configuration of this feature between alpha, and full release should be expected.
+
 
 ## Synchronization Validation Functionality
 
@@ -89,15 +95,23 @@ The pipelined and multi-threaded nature of Vulkan makes it particularly importan
   - vkCmdSetEvent2KHR/vkCmdWaitEvents2KHR/vkCmdResetEvent2KHR.
 - Image layout transition hazard and access tracking.
 - Load/Store/Resolve operations within Subpasses.
+- ExecuteCommands detection of hazard from or with secondary command buffers
+
+### Alpha Functionality
+
+- QueueSubmit (excluding QueueSubmit2, for alpha release) hazard detection
+- Semaphore (binary only) and Fence synchronization operations/effects
+- Device and Queue WaitIdle support
 
 ### Known Limitations
 
 - Does not include implementation of multi-view renderpass support.
 - Host set event not supported.
-- ExecuteCommands and QueueSubmit hazards from are not tracked or reported.
-- Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
+-  Memory access checks not suppressed for VK_CULL_MODE_FRONT_AND_BACK.
 - Does not include component granularity access tracking.
-- Host synchronization not supported.
+- Host synchronization not supported, except Fences (above).
+- Timeline Semaphore not supported
+- Swapchain memory/operations not tracked
 
 ## Typical Synchronization Validation Usage
 
