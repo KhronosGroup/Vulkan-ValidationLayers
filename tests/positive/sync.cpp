@@ -119,13 +119,11 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersImage) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
@@ -174,13 +172,11 @@ TEST_F(VkPositiveLayerTest, Sync2OwnershipTranfersBuffer) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     uint32_t no_gfx = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);

@@ -229,13 +229,11 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
     auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
 
@@ -513,13 +511,11 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
     auto fpCmdPipelineBarrier2KHR = (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
 

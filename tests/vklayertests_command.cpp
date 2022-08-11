@@ -375,13 +375,11 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
     auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferSubmitInfo-commandBuffer-03890");
@@ -445,13 +443,11 @@ TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     } else {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
-        printf("%s Synchronization2 not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Synchronization2 not supported";
     }
     auto fpQueueSubmit2KHR = (PFN_vkQueueSubmit2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR");
 
