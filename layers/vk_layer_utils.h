@@ -287,7 +287,7 @@ static inline uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
 }
 
 // return true if VK_PIPELINE_STAGE_*_SHADER_BIT
-// TODO - generate all VK_PIPELINE_STAGE_*_SHADER_BIT from the XML, should be new stages too often though
+// TODO - generate all VK_PIPELINE_STAGE_*_SHADER_BIT from the XML, should not be new stages too often though
 static inline bool IsPipelineShaderStageBit(VkPipelineStageFlags2 stage) {
     return stage & (VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
                     VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT |
