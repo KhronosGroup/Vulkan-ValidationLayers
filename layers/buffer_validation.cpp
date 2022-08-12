@@ -452,6 +452,43 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
                          report_data->FormatHandle(image_view).c_str());
     }
 
+    if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+        if (((image_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0) ||
+            ((image_usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0)) {
+            vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07002" : "VUID-vkCmdBeginRenderPass-initialLayout-07000";
+            LogObjectList objlist(image);
+            objlist.add(renderpass);
+            objlist.add(framebuffer);
+            objlist.add(image_view);
+            skip |=
+                LogError(objlist, vuid,
+                         "%s: Layout/usage mismatch for attachment %" PRIu32
+                         " in %s"
+                         " - the %s is %s but the image attached to %s via %s"
+                         " was not created with either the VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT or "
+                         "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT usage bits, and the VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or "
+                         "VK_IMAGE_USAGE_SAMPLED_BIT usage bits",
+                         function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                         string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                         report_data->FormatHandle(image_view).c_str());
+        }
+        if (!(image_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT)) {
+            vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07003" : "VUID-vkCmdBeginRenderPass-initialLayout-07001";
+            LogObjectList objlist(image);
+            objlist.add(renderpass);
+            objlist.add(framebuffer);
+            objlist.add(image_view);
+            skip |= LogError(objlist, vuid,
+                             "%s: Layout/usage mismatch for attachment %" PRIu32
+                             " in %s"
+                             " - the %s is %s but the image attached to %s via %s"
+                             " was not created with the VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT usage bit",
+                             function_name, attachment_index, report_data->FormatHandle(renderpass).c_str(), variable_name,
+                             string_VkImageLayout(layout), report_data->FormatHandle(framebuffer).c_str(),
+                             report_data->FormatHandle(image_view).c_str());
+        }
+    }
+
     if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
@@ -791,6 +828,10 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage 
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
             is_error = ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0);
             break;
+        case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
+            is_error = ((usage_flags & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0);
+            is_error |= ((usage_flags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0);
+            is_error |= ((usage_flags & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0);
         default:
             // Other VkImageLayout values do not have VUs defined in this context.
             break;
@@ -827,9 +868,15 @@ bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_B
         if (!image_state) {
             continue;
         }
-        VkImageUsageFlags usage_flags = image_state->createInfo.usage;
-        skip |= ValidateBarrierLayoutToImageUsage(loc.dot(Field::oldLayout), img_barrier.image, img_barrier.oldLayout, usage_flags);
-        skip |= ValidateBarrierLayoutToImageUsage(loc.dot(Field::newLayout), img_barrier.image, img_barrier.newLayout, usage_flags);
+
+        if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
+            (img_barrier.oldLayout != img_barrier.newLayout)) {
+            VkImageUsageFlags usage_flags = image_state->createInfo.usage;
+            skip |=
+                ValidateBarrierLayoutToImageUsage(loc.dot(Field::oldLayout), img_barrier.image, img_barrier.oldLayout, usage_flags);
+            skip |=
+                ValidateBarrierLayoutToImageUsage(loc.dot(Field::newLayout), img_barrier.image, img_barrier.newLayout, usage_flags);
+        }
 
         // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
         if (image_state->layout_locked) {
