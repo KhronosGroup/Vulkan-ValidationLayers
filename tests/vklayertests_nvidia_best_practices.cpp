@@ -245,6 +245,9 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     InitBestPracticesFramework(kEnableNVIDIAValidation);
 
+    if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
+        GTEST_SKIP() << "Test is crashing on AMD hardware for unknown reasons.";
+    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "Vulkan >= 1.1 required";
     }
