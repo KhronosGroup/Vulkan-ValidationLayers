@@ -2111,7 +2111,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     err = pipe.CreateVKPipeline(pipeline_layout, renderPass());
     ASSERT_VK_SUCCESS(err);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirect-firstInstance-00478");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawIndirectCommand-firstInstance-00501");
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -2129,7 +2129,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     m_errorMonitor->VerifyFound();
 
     // Now with an offset and indexed draw
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-firstInstance-00530");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554");
     VkBufferObj indexed_draw_buffer;
     buffer_create_info.size = 4 * sizeof(VkDrawIndexedIndirectCommand);
     indexed_draw_buffer.init(*m_device, buffer_create_info,

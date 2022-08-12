@@ -53,7 +53,7 @@ struct GpuVuidsCmdDrawIndirect : GpuVuid {
     GpuVuidsCmdDrawIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndirect-None-02705";
         storage_access_oob = "VUID-vkCmdDrawIndirect-None-02706";
-        first_instance_not_zero = "VUID-vkCmdDrawIndirect-firstInstance-00478";
+        first_instance_not_zero = "VUID-VkDrawIndirectCommand-firstInstance-00501";
     }
 };
 
@@ -61,7 +61,7 @@ struct GpuVuidsCmdDrawIndexedIndirect : GpuVuid {
     GpuVuidsCmdDrawIndexedIndirect() : GpuVuid() {
         uniform_access_oob = "VUID-vkCmdDrawIndexedIndirect-None-02705";
         storage_access_oob = "VUID-vkCmdDrawIndexedIndirect-None-02706";
-        first_instance_not_zero = "VUID-vkCmdDrawIndexedIndirect-firstInstance-00530";
+        first_instance_not_zero = "VUID-VkDrawIndexedIndirectCommand-firstInstance-00554";
     }
 };
 

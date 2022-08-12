@@ -1050,8 +1050,8 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
             } else if (debug_record[_kPreValidateSubError] == pre_draw_first_instance_error) {
                 uint32_t index = debug_record[_kPreValidateSubError + 1];
                 strm << "The drawIndirectFirstInstance feature is not enabled, but the firstInstance member of the "
-                        "VkDrawIndirectCommand structure at index "
-                     << index << " is not zero";
+                     << ((buf_info.cmd_type == CMD_DRAWINDIRECT) ? "VkDrawIndirectCommand" : "VkDrawIndexedIndirectCommand")
+                     << " structure at index " << index << " is not zero";
                 vuid_msg = vuid.first_instance_not_zero;
             }
             return_code = false;
