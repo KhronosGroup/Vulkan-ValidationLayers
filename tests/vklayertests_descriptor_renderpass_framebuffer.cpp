@@ -2249,9 +2249,11 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
+    AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     bool maintenance2Supported = rp2Supported;
+    const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
     // Check for VK_KHR_maintenance2
     if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
@@ -2259,7 +2261,11 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         maintenance2Supported = true;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    auto attachment_feedback_loop_layout_features =
+        LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&attachment_feedback_loop_layout_features);
+    GetPhysicalDeviceFeatures2(features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
@@ -2390,6 +2396,38 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         descriptions[0].initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
         test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-01758", "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
+    }
+
+    if (feedback_loop_layout) {
+        VkImageObj no_fb_loop_attachment(m_device);
+        // No VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT
+        no_fb_loop_attachment.InitNoLayout(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_TILING_OPTIMAL);
+        vk_testing::ImageView image_view_no_fb_loop;
+        auto image_view_ci = no_fb_loop_attachment.TargetViewCI(VK_FORMAT_R8G8B8A8_UNORM);
+        image_view_ci.image = no_fb_loop_attachment.handle();
+        image_view_no_fb_loop.init(*m_device, image_view_ci);
+        views[0] = image_view_no_fb_loop.handle();
+        descriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+        descriptions[0].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+        test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-07001", "VUID-vkCmdBeginRenderPass2-initialLayout-07003");
+
+        descriptions[0].initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        descriptions[0].format = dformat;;
+        views[0] = iadv;
+        VkImageObj no_usage_sampled_attachment(m_device);
+        // No VK_IMAGE_USAGE_SAMPLED_BIT_EXT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+        no_usage_sampled_attachment.InitNoLayout(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                                     VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT,
+                                                 VK_IMAGE_TILING_OPTIMAL);
+        image_view_ci.image = no_usage_sampled_attachment.handle();
+        vk_testing::ImageView image_view_no_usage_sampled;
+        image_view_no_usage_sampled.init(*m_device, image_view_ci);
+        descriptions[1].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+        views[1] = image_view_no_usage_sampled.handle();
+        test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-07000", "VUID-vkCmdBeginRenderPass2-initialLayout-07002");
     }
 
     vk::DestroyImageView(m_device->device(), iav, nullptr);

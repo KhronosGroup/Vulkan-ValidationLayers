@@ -5550,6 +5550,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     AddOptionalExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (IsPlatform(kNexusPlayer)) {
@@ -5563,6 +5564,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const bool external_memory = IsExtensionsEnabled(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     const bool separate_ds_layouts = IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
     // Set separate depth stencil feature bit
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -5981,6 +5983,14 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             conc_test(bad_buffer_layouts[i].msg_code);
         }
 
+        if (feedback_loop_layout) {
+            conc_test.image_barrier_.image = img_color.handle();
+            conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+            conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            conc_test("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07006");
+        }
+
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         conc_test.image_barrier_.image = image.handle();
@@ -6050,9 +6060,12 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     const bool separate_ds_layouts = IsExtensionsEnabled(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -6373,6 +6386,14 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
             conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
             conc_test.image_barrier_.newLayout = bad_layout;
             conc_test(bad_buffer_layouts[i].msg_code);
+        }
+
+        if (feedback_loop_layout) {
+            conc_test.image_barrier_.image = img_color.handle();
+            conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+            conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            conc_test("VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07006");
         }
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
