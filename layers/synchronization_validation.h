@@ -974,6 +974,8 @@ class AccessContext {
     void SetStartTag(ResourceUsageTag tag) { start_tag_ = tag; }
     template <typename Action>
     void ForAll(Action &&action);
+    template <typename Action>
+    void ConstForAll(Action &&action) const;
     template <typename Predicate>
     void EraseIf(Predicate &&pred);
 
