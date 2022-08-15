@@ -758,30 +758,27 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
 
-        # The names here need to match the define, not the string name
-        # due to differences like PROPERTIES_2_EXTENSION_NAME vs
-        # PROPERTIES2_EXTENSION_NAME
         V_1_0_instance_extensions_promoted_to_V_1_1_core = [
             'VK_KHR_device_group_creation',
             'VK_KHR_external_fence_capabilities',
             'VK_KHR_external_memory_capabilities',
             'VK_KHR_external_semaphore_capabilities',
-            'VK_KHR_get_physical_device_properties_2',
+            'VK_KHR_get_physical_device_properties2',
             ]
 
         V_1_0_device_extensions_promoted_to_V_1_1_core = [
             'VK_KHR_16bit_storage',
-            'VK_KHR_bind_memory_2',
+            'VK_KHR_bind_memory2',
             'VK_KHR_dedicated_allocation',
             'VK_KHR_descriptor_update_template',
             'VK_KHR_device_group',
             'VK_KHR_external_fence',
             'VK_KHR_external_memory',
             'VK_KHR_external_semaphore',
-            'VK_KHR_get_memory_requirements_2',
-            'VK_KHR_maintenance_1',
-            'VK_KHR_maintenance_2',
-            'VK_KHR_maintenance_3',
+            'VK_KHR_get_memory_requirements2',
+            'VK_KHR_maintenance1',
+            'VK_KHR_maintenance2',
+            'VK_KHR_maintenance3',
             'VK_KHR_multiview',
             'VK_KHR_relaxed_block_layout',
             'VK_KHR_sampler_ycbcr_conversion',
@@ -796,7 +793,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         V_1_1_device_extensions_promoted_to_V_1_2_core = [
             'VK_KHR_8bit_storage',
             'VK_KHR_buffer_device_address',
-            'VK_KHR_create_renderpass_2',
+            'VK_KHR_create_renderpass2',
             'VK_KHR_depth_stencil_resolve',
             'VK_KHR_draw_indirect_count',
             'VK_KHR_driver_properties',
@@ -888,10 +885,10 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     if len(list(extension)) == 0:
                         continue
                     for promoted_ext in temp_ext_list_1_1:
-                        if self.genOpts.apiname not in extension.get('supported') and extension[0][1].get('name') == promoted_ext.upper()+'_EXTENSION_NAME':
+                        if self.genOpts.apiname not in extension.get('supported') and extension.get('name') == promoted_ext:
                             promoted_1_1_ext_list.remove(promoted_ext)
                     for promoted_ext in temp_ext_list_1_2:
-                        if self.genOpts.apiname not in extension.get('supported') and extension[0][1].get('name') == promoted_ext.upper()+'_EXTENSION_NAME':
+                        if self.genOpts.apiname not in extension.get('supported') and extension.get('name') == promoted_ext:
                             promoted_1_2_ext_list.remove(promoted_ext)
 
             field_name = { ext_name: re.sub('_extension_name', '', ext_name.lower()) for ext_name, info in extension_items }
@@ -974,12 +971,16 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             if type == 'Instance':
                 struct.extend([
                     '    uint32_t NormalizeApiVersion(uint32_t specified_version) {',
+                    '#if !defined(VULKANSC)',
                     '        if (specified_version < VK_API_VERSION_1_1)',
                     '            return VK_API_VERSION_1_0;',
                     '        else if (specified_version < VK_API_VERSION_1_2)',
                     '            return VK_API_VERSION_1_1;',
                     '        else',
                     '            return VK_API_VERSION_1_2;',
+                    '#else',
+                    '        return VKSC_API_VERSION_1_0;',
+                    '#endif',
                     '    }',
                     '',
                     '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {'])
@@ -1002,40 +1003,74 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 '        };',
                 '        static const std::vector<const char *> V_1_2_promoted_%s_apis = {' % type.lower() ])
             struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_2_ext_list])
-            struct.extend([
-                '        };',
-                '',
-                '        // Initialize struct data, robust to invalid pCreateInfo',
-                '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
-                '        if (api_version >= VK_API_VERSION_1_1) {',
-                '            auto info = get_info("VK_VERSION_1_1");',
-                '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
-                '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
-                '                info = get_info(promoted_ext);',
-                '                assert(info.state);',
-                '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
-                '            }',
-                '        }',
-                '        if (api_version >= VK_API_VERSION_1_2) {',
-                '            auto info = get_info("VK_VERSION_1_2");',
-                '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
-                '            for (auto promoted_ext : V_1_2_promoted_%s_apis) {' % type.lower(),
-                '                info = get_info(promoted_ext);',
-                '                assert(info.state);',
-                '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
-                '            }',
-                '        }',
-                '        // CreateInfo takes precedence over promoted',
-                '        if (pCreateInfo->ppEnabledExtensionNames) {',
-                '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
-                '                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;',
-                '                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);',
-                '                if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
-                '            }',
-                '        }',
-                '        return api_version;',
-                '    }',
-                '};'])
+            if self.genOpts.apiname == 'vulkansc':
+                struct.extend([
+                    '        };',
+                    '',
+                    '        // Initialize struct data, robust to invalid pCreateInfo',
+                    '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
+                    '        if (api_version >= VKSC_API_VERSION_1_0) {',
+                    '            auto info_1_1 = get_info("VK_VERSION_1_1");',
+                    '            if (info_1_1.state) this->*(info_1_1.state) = kEnabledByCreateinfo;',
+                    '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
+                    '                info_1_1 = get_info(promoted_ext);',
+                    '                assert(info_1_1.state);',
+                    '                if (info_1_1.state) this->*(info_1_1.state) = kEnabledByApiLevel;',
+                    '            }',
+                    '            auto info_1_2 = get_info("VK_VERSION_1_2");',
+                    '            if (info_1_2.state) this->*(info_1_2.state) = kEnabledByCreateinfo;',
+                    '            for (auto promoted_ext : V_1_2_promoted_%s_apis) {' % type.lower(),
+                    '                info_1_2 = get_info(promoted_ext);',
+                    '                assert(info_1_2.state);',
+                    '                if (info_1_2.state) this->*(info_1_2.state) = kEnabledByApiLevel;',
+                    '            }',
+                    '        }',
+                    '        // CreateInfo takes precedence over promoted',
+                    '        if (pCreateInfo->ppEnabledExtensionNames) {',
+                    '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
+                    '                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;',
+                    '                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);',
+                    '                if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                    '            }',
+                    '        }',
+                    '        return api_version;',
+                    '    }',
+                    '};'])
+            else:
+                struct.extend([
+                    '        };',
+                    '',
+                    '        // Initialize struct data, robust to invalid pCreateInfo',
+                    '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
+                    '        if (api_version >= VK_API_VERSION_1_1) {',
+                    '            auto info = get_info("VK_VERSION_1_1");',
+                    '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                    '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
+                    '                info = get_info(promoted_ext);',
+                    '                assert(info.state);',
+                    '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
+                    '            }',
+                    '        }',
+                    '        if (api_version >= VK_API_VERSION_1_2) {',
+                    '            auto info = get_info("VK_VERSION_1_2");',
+                    '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                    '            for (auto promoted_ext : V_1_2_promoted_%s_apis) {' % type.lower(),
+                    '                info = get_info(promoted_ext);',
+                    '                assert(info.state);',
+                    '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
+                    '            }',
+                    '        }',
+                    '        // CreateInfo takes precedence over promoted',
+                    '        if (pCreateInfo->ppEnabledExtensionNames) {',
+                    '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
+                    '                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;',
+                    '                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);',
+                    '                if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                    '            }',
+                    '        }',
+                    '        return api_version;',
+                    '    }',
+                    '};'])
 
             # Output reference lists of instance/device extension names
             struct.extend(['', 'static const std::set<std::string> k%sExtensionNames = {' % type])

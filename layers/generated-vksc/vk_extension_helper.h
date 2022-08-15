@@ -129,12 +129,16 @@ struct InstanceExtensions {
     }
 
     uint32_t NormalizeApiVersion(uint32_t specified_version) {
+#if !defined(VULKANSC)
         if (specified_version < VK_API_VERSION_1_1)
             return VK_API_VERSION_1_0;
         else if (specified_version < VK_API_VERSION_1_2)
             return VK_API_VERSION_1_1;
         else
             return VK_API_VERSION_1_2;
+#else
+        return VKSC_API_VERSION_1_0;
+#endif
     }
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
@@ -146,22 +150,20 @@ struct InstanceExtensions {
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+        if (api_version >= VKSC_API_VERSION_1_0) {
+            auto info_1_1 = get_info("VK_VERSION_1_1");
+            if (info_1_1.state) this->*(info_1_1.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_1_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                info_1_1 = get_info(promoted_ext);
+                assert(info_1_1.state);
+                if (info_1_1.state) this->*(info_1_1.state) = kEnabledByApiLevel;
             }
-        }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            auto info_1_2 = get_info("VK_VERSION_1_2");
+            if (info_1_2.state) this->*(info_1_2.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_2_promoted_instance_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                info_1_2 = get_info(promoted_ext);
+                assert(info_1_2.state);
+                if (info_1_2.state) this->*(info_1_2.state) = kEnabledByApiLevel;
             }
         }
         // CreateInfo takes precedence over promoted
@@ -375,22 +377,20 @@ struct DeviceExtensions : public InstanceExtensions {
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
-        if (api_version >= VK_API_VERSION_1_1) {
-            auto info = get_info("VK_VERSION_1_1");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+        if (api_version >= VKSC_API_VERSION_1_0) {
+            auto info_1_1 = get_info("VK_VERSION_1_1");
+            if (info_1_1.state) this->*(info_1_1.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_1_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                info_1_1 = get_info(promoted_ext);
+                assert(info_1_1.state);
+                if (info_1_1.state) this->*(info_1_1.state) = kEnabledByApiLevel;
             }
-        }
-        if (api_version >= VK_API_VERSION_1_2) {
-            auto info = get_info("VK_VERSION_1_2");
-            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            auto info_1_2 = get_info("VK_VERSION_1_2");
+            if (info_1_2.state) this->*(info_1_2.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_2_promoted_device_apis) {
-                info = get_info(promoted_ext);
-                assert(info.state);
-                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+                info_1_2 = get_info(promoted_ext);
+                assert(info_1_2.state);
+                if (info_1_2.state) this->*(info_1_2.state) = kEnabledByApiLevel;
             }
         }
         // CreateInfo takes precedence over promoted

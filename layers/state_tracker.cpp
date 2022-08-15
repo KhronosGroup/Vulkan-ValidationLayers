@@ -1671,11 +1671,12 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
     image_state->get_sparse_reqs_called = true;
 }
 
+#if !defined(VULKANSC)
 void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                               const VkAllocationCallbacks *pAllocator) {
     Destroy<SHADER_MODULE_STATE>(shaderModule);
 }
-#endif // !defined(VULKANSC)
+#endif
 
 void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                                           const VkAllocationCallbacks *pAllocator) {

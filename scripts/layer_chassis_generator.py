@@ -913,6 +913,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     PFN_vkCreateInstance fpCreateInstance = (PFN_vkCreateInstance)fpGetInstanceProcAddr(NULL, "vkCreateInstance");
     if (fpCreateInstance == NULL) return VK_ERROR_INITIALIZATION_FAILED;
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
+#if !defined(VULKANSC)
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     uint32_t api_version;
     if (specified_version < VK_API_VERSION_1_1)
@@ -921,6 +922,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         api_version = VK_API_VERSION_1_1;
     else
         api_version = VK_API_VERSION_1_2;
+#else // !defined(VULKANSC)
+    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VKSC_API_VERSION_1_0);
+    uint32_t api_version = specified_version;
+#endif
     auto report_data = new debug_report_data{};
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
@@ -979,7 +984,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : local_object_dispatch) {
@@ -1114,7 +1119,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : instance_interceptor->object_dispatch) {
@@ -1257,7 +1262,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1298,7 +1303,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1340,7 +1345,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1383,7 +1388,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1422,7 +1427,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1457,7 +1462,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1492,7 +1497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
 #endif
@@ -1533,7 +1538,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -1584,7 +1589,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
 
@@ -2192,9 +2197,10 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 'uint32_t': 'return 0;',
                 'uint64_t': 'return 0;'
                 }
-            # vksc doesn't support VK_ERROR_VALIDATION_FAILED_EXT, update return_map
+            # vksc promoted VK_ERROR_VALIDATION_FAILED_EXT to VK_ERROR_VALIDATION_FAILED,
+            # update return_map to use VK_ERROR_VALIDATION_FAILED for vksc.
             if self.genOpts.apiname == 'vulkansc':
-                return_map['VkResult'] = 'return VK_ERROR_INITIALIZATION_FAILED;'
+                return_map['VkResult'] = 'return VK_ERROR_VALIDATION_FAILED;'
             resulttype = cmdinfo.elem.find('proto/type')
             assignresult = ''
             if (resulttype.text != 'void'):
