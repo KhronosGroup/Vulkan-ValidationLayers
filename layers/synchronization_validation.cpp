@@ -860,6 +860,16 @@ void AccessContext::ForAll(Action &&action) {
     }
 }
 
+template <typename Action>
+void AccessContext::ConstForAll(Action &&action) const {
+    for (const auto address_type : kAddressTypes) {
+        auto &accesses = GetAccessStateMap(address_type);
+        for (auto &access : accesses) {
+            action(address_type, access);
+        }
+    }
+}
+
 template <typename Predicate>
 void AccessContext::EraseIf(Predicate &&pred) {
     for (const auto address_type : kAddressTypes) {
@@ -1009,7 +1019,6 @@ static SyncBarrier MergeBarriers(const std::vector<SyncBarrier> &barriers) {
     }
     return merged;
 }
-
 template <typename BarrierAction>
 void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAccessRange &range, BarrierAction &barrier_action,
                                        ResourceAccessRangeMap *resolve_map, const ResourceAccessState *infill_state,
@@ -1023,7 +1032,6 @@ void AccessContext::ResolveAccessRange(AccessAddressType type, const ResourceAcc
             const auto &src_pos = current->pos_B->lower_bound;
             auto access = src_pos->second;  // intentional copy
             barrier_action(&access);
-
             if (current->pos_A->valid) {
                 const auto trimmed = sparse_container::split(current->pos_A->lower_bound, *resolve_map, current_range);
                 trimmed->second.Resolve(access);
@@ -1733,7 +1741,12 @@ struct PipelineBarrierOp {
     bool layout_transition;
     ResourceAccessState::QueueScopeOps scope;
     PipelineBarrierOp(QueueId queue_id, const SyncBarrier &barrier_, bool layout_transition_)
-        : barrier(barrier_), layout_transition(layout_transition_), scope(queue_id) {}
+        : barrier(barrier_), layout_transition(layout_transition_), scope(queue_id) {
+        if (queue_id != QueueSyncState::kQueueIdInvalid) {
+            // This is a submit time application... supress layout transitions to not taint the QueueBatchContext write state
+            layout_transition = false;
+        }
+    }
     PipelineBarrierOp(const PipelineBarrierOp &) = default;
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope, barrier, layout_transition); }
 };
@@ -1755,7 +1768,12 @@ struct WaitEventBarrierOp {
 
     WaitEventBarrierOp(const QueueId scope_queue_, const ResourceUsageTag scope_tag_, const SyncBarrier &barrier_,
                        bool layout_transition_)
-        : scope_ops(scope_queue_, scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {}
+        : scope_ops(scope_queue_, scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {
+        if (scope_queue_ != QueueSyncState::kQueueIdInvalid) {
+            // This is a submit time application... supress layout transitions to not taint the QueueBatchContext write state
+            layout_transition = false;
+        }
+    }
     void operator()(ResourceAccessState *access_state) const { access_state->ApplyBarrier(scope_ops, barrier, layout_transition); }
 };
 
