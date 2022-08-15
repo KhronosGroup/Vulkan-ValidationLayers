@@ -2800,7 +2800,7 @@ TEST_F(VkPositiveLayerTest, Spirv16Vulkan13) {
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
 }
 
-TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) { 
+TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) {
     TEST_DESCRIPTION("Create a pipeline using a shader module identifier");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
@@ -2840,4 +2840,82 @@ TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) {
     pipe.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
     pipe.InitState();
     pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
+    TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // layout (constant_id = 0) const uint sc = 10;
+    // layout(set = 0, binding = 0) buffer storageBuffer { int x; };
+    // void main() {
+    //     int myArray[sc];
+    //     x = myArray[3];
+    // }
+    std::stringstream spv_source;
+    spv_source << R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpMemberDecorate %storageBuffer 0 Offset 0
+               OpDecorate %storageBuffer BufferBlock
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+               OpDecorate %sc SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+%storageBuffer = OpTypeStruct %int
+%_ptr_Uniform_storageBuffer = OpTypePointer Uniform %storageBuffer
+          %var = OpVariable %_ptr_Uniform_storageBuffer Uniform
+      %int_0 = OpConstant %int 0
+       %uint = OpTypeInt 32 0
+         %sc = OpSpecConstant %uint 10
+%_arr_int_sc = OpTypeArray %int %sc
+%_ptr_Function__arr_int_sc = OpTypePointer Function %_arr_int_sc
+      %int_3 = OpConstant %int 3
+%_ptr_Function_int = OpTypePointer Function %int
+%_ptr_Uniform_int = OpTypePointer Uniform %int
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+    %myArray = OpVariable %_ptr_Function__arr_int_sc Function
+         %18 = OpAccessChain %_ptr_Function_int %myArray %int_3
+         %19 = OpLoad %int %18
+         %21 = OpAccessChain %_ptr_Uniform_int %var %int_0
+               OpStore %21 %19
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    uint32_t data = 5;
+
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    // Use default value for spec constant
+    const auto set_info_nospec = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                         SPV_SOURCE_ASM, nullptr));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_nospec, kErrorBit | kWarningBit);
+
+    // Use spec constant to update value
+    const auto set_info_spec = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+                                         SPV_SOURCE_ASM, &specialization_info));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit | kWarningBit);
 }
