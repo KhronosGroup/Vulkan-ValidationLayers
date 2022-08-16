@@ -2844,15 +2844,12 @@ TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) {
 
 TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
     TEST_DESCRIPTION("Make sure spec constants for a OpTypeArray doesn't assert");
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
 
-    // layout (constant_id = 0) const uint sc = 10;
-    // layout(set = 0, binding = 0) buffer storageBuffer { int x; };
-    // void main() {
-    //     int myArray[sc];
-    //     x = myArray[3];
-    // }
     std::stringstream spv_source;
     spv_source << R"(
                OpCapability Shader
@@ -2862,30 +2859,60 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
                OpExecutionMode %main LocalSize 1 1 1
                OpMemberDecorate %storageBuffer 0 Offset 0
                OpDecorate %storageBuffer BufferBlock
-               OpDecorate %var DescriptorSet 0
-               OpDecorate %var Binding 0
+               OpDecorate %_ DescriptorSet 0
+               OpDecorate %_ Binding 0
                OpDecorate %sc SpecId 0
        %void = OpTypeVoid
           %3 = OpTypeFunction %void
         %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
 %storageBuffer = OpTypeStruct %int
 %_ptr_Uniform_storageBuffer = OpTypePointer Uniform %storageBuffer
-          %var = OpVariable %_ptr_Uniform_storageBuffer Uniform
+          %_ = OpVariable %_ptr_Uniform_storageBuffer Uniform
       %int_0 = OpConstant %int 0
-       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+     %v3uint = OpTypeVector %uint 3
          %sc = OpSpecConstant %uint 10
 %_arr_int_sc = OpTypeArray %int %sc
-%_ptr_Function__arr_int_sc = OpTypePointer Function %_arr_int_sc
+%_ptr_Workgroup__arr_int_sc = OpTypePointer Workgroup %_arr_int_sc
+  %wg_normal = OpVariable %_ptr_Workgroup__arr_int_sc Workgroup
       %int_3 = OpConstant %int 3
+%_ptr_Workgroup_int = OpTypePointer Workgroup %int
+         %xx = OpSpecConstant %uint 1
+         %yy = OpSpecConstant %uint 1
+         %zz = OpSpecConstant %uint 1
+%gl_WorkGroupSize = OpSpecConstantComposite %v3uint %xx %yy %zz
+         %57 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 2
+         %58 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 1
+         %59 = OpSpecConstantOp %uint IMul %57 %58
+         %60 = OpSpecConstantOp %uint CompositeExtract %gl_WorkGroupSize 0
+         %61 = OpSpecConstantOp %uint IMul %59 %60
+%_arr_int_21 = OpTypeArray %int %61
+%_ptr_Workgroup__arr_int_21 = OpTypePointer Workgroup %_arr_int_21
+      %wg_op = OpVariable %_ptr_Workgroup__arr_int_21 Workgroup
+%_ptr_Function__arr_int_sc = OpTypePointer Function %_arr_int_sc
 %_ptr_Function_int = OpTypePointer Function %int
+         %34 = OpSpecConstantOp %uint IAdd %sc %uint_1
+%_arr_int_34 = OpTypeArray %int %34
+%_ptr_Function__arr_int_34 = OpTypePointer Function %_arr_int_34
 %_ptr_Uniform_int = OpTypePointer Uniform %int
        %main = OpFunction %void None %3
           %5 = OpLabel
-    %myArray = OpVariable %_ptr_Function__arr_int_sc Function
-         %18 = OpAccessChain %_ptr_Function_int %myArray %int_3
+%func_normal = OpVariable %_ptr_Function__arr_int_sc Function
+    %func_op = OpVariable %_ptr_Function__arr_int_34 Function
+         %18 = OpAccessChain %_ptr_Workgroup_int %wg_normal %int_3
          %19 = OpLoad %int %18
-         %21 = OpAccessChain %_ptr_Uniform_int %var %int_0
-               OpStore %21 %19
+         %25 = OpAccessChain %_ptr_Workgroup_int %wg_op %int_3
+         %26 = OpLoad %int %25
+         %27 = OpIAdd %int %19 %26
+         %31 = OpAccessChain %_ptr_Function_int %func_normal %int_3
+         %32 = OpLoad %int %31
+         %33 = OpIAdd %int %27 %32
+         %38 = OpAccessChain %_ptr_Function_int %func_op %int_3
+         %39 = OpLoad %int %38
+         %40 = OpIAdd %int %33 %39
+         %42 = OpAccessChain %_ptr_Uniform_int %_ %int_0
+               OpStore %42 %40
                OpReturn
                OpFunctionEnd
     )";
@@ -2905,7 +2932,7 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
 
     // Use default value for spec constant
     const auto set_info_nospec = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                          SPV_SOURCE_ASM, nullptr));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };
@@ -2913,7 +2940,7 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
 
     // Use spec constant to update value
     const auto set_info_spec = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
+        helper.cs_.reset(new VkShaderObj(this, spv_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1,
                                          SPV_SOURCE_ASM, &specialization_info));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
     };

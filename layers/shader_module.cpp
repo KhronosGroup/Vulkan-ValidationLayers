@@ -711,6 +711,9 @@ spirv_inst_iter SHADER_MODULE_STATE::GetConstantDef(uint32_t id) const {
 
 // While simple, function name provides a more human readable description why word(3) is used
 uint32_t SHADER_MODULE_STATE::GetConstantValue(const spirv_inst_iter &itr) const {
+    // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
+    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
+    // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
     assert(itr.opcode() == spv::OpConstant);
     return itr.word(3);
 }
