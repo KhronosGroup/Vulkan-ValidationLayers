@@ -11031,7 +11031,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                gl_Position = vec4(float(a) * 0.0);
             }
         )glsl";
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
         m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
@@ -11245,7 +11245,7 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                gl_Position = vec4(float(a) * 0.0);
             }
         )glsl";
-        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL_TRY);
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_GLSL_TRY);
 
         m_errorMonitor->SetUnexpectedError(kVUID_Core_Shader_InconsistentSpirv);
         if (VK_SUCCESS == vs.InitFromGLSLTry()) {
@@ -11360,6 +11360,510 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                                "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
                                "VUID-VkShaderModuleCreateInfo-pCode-01091"});   // StorageInputOutput16 frag
         }
+    }
+}
+
+TEST_F(VkLayerTest, Storage8and16bitFeatures) {
+    TEST_DESCRIPTION(
+        "Test VK_KHR_8bit_storage and VK_KHR_16bit_storage where the Int8/Int16 capability are only used and since they are "
+        "superset of a capabilty");
+
+    // the following [OpCapability UniformAndStorageBuffer8BitAccess] requires the uniformAndStorageBuffer8BitAccess feature bit or
+    // the generated capability checking code will catch it
+    //
+    // But having just [OpCapability Int8] is still a legal SPIR-V shader because the Int8 capabilty allows all storage classes in
+    // the SPIR-V spec... but the shaderInt8 feature bit in Vulkan spec explains how you still need the
+    // uniformAndStorageBuffer8BitAccess feature bit for Uniform storage class from Vulkan's perspective
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    // Prevent extra errors for not having the support for the SPV extensions
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto float16Int8 = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&float16Int8);
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (float16Int8.shaderInt8 == VK_TRUE) {
+        // storageBuffer8BitAccess
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int8
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %int8 = OpTypeInt 8 0
+       %Data = OpTypeStruct %int8
+        %ptr = OpTypePointer StorageBuffer %Data
+        %var = OpVariable %ptr StorageBuffer
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storageBuffer8BitAccess-06328");
+        }
+
+        // uniformAndStorageBuffer8BitAccess
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int8
+               OpExtension "SPV_KHR_8bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %int8 = OpTypeInt 8 0
+       %Data = OpTypeStruct %int8
+        %ptr = OpTypePointer Uniform %Data
+        %var = OpVariable %ptr Uniform
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              "VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329");
+        }
+
+        // storagePushConstant8
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int8
+               OpExtension "SPV_KHR_8bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %int8 = OpTypeInt 8 0
+       %Data = OpTypeStruct %int8
+        %ptr = OpTypePointer PushConstant %Data
+        %var = OpVariable %ptr PushConstant
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storagePushConstant8-06330");
+        }
+    }
+
+    if (float16Int8.shaderFloat16 == VK_TRUE) {
+        // storageBuffer16BitAccess - float
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+    %float16 = OpTypeFloat 16
+       %Data = OpTypeStruct %float16
+        %ptr = OpTypePointer StorageBuffer %Data
+        %var = OpVariable %ptr StorageBuffer
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storageBuffer16BitAccess-06331");
+        }
+
+        // uniformAndStorageBuffer16BitAccess - float
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+    %float16 = OpTypeFloat 16
+       %Data = OpTypeStruct %float16
+        %ptr = OpTypePointer Uniform %Data
+        %var = OpVariable %ptr Uniform
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332");
+        }
+
+        // storagePushConstant16 - float
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+    %float16 = OpTypeFloat 16
+       %Data = OpTypeStruct %float16
+        %ptr = OpTypePointer PushConstant %Data
+        %var = OpVariable %ptr PushConstant
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storagePushConstant16-06333");
+        }
+
+        // storageInputOutput16 - float
+        {
+            const std::string vs_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %var
+               OpDecorate %var Location 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+    %float16 = OpTypeFloat 16
+        %ptr = OpTypePointer Output %float16
+        %var = OpVariable %ptr Output
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_source, "main", nullptr);
+
+            const std::string fs_source = R"(
+               OpCapability Shader
+               OpCapability Float16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %in %out
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %in Location 0
+               OpDecorate %out Location 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+    %float16 = OpTypeFloat 16
+      %inPtr = OpTypePointer Input %float16
+         %in = OpVariable %inPtr Input
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %outPtr = OpTypePointer Output %v4float
+        %out = OpVariable %outPtr Output
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, "main", nullptr);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",    // StorageInputOutput16 vert
+                               "VUID-RuntimeSpirv-storageInputOutput16-06334"});  // StorageInputOutput16 frag
+        }
+    }
+
+    if (features2.features.shaderInt16 == VK_TRUE) {
+        // storageBuffer16BitAccess - int
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int16
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %int16 = OpTypeInt 16 0
+       %Data = OpTypeStruct %int16
+        %ptr = OpTypePointer StorageBuffer %Data
+        %var = OpVariable %ptr StorageBuffer
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storageBuffer16BitAccess-06331");
+        }
+
+        // uniformAndStorageBuffer16BitAccess - int
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %int16 = OpTypeInt 16 0
+       %Data = OpTypeStruct %int16
+        %ptr = OpTypePointer Uniform %Data
+        %var = OpVariable %ptr Uniform
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332");
+        }
+
+        // storagePushConstant16 - int
+        {
+            const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %Data 0 Offset 0
+               OpDecorate %Data Block
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %int16 = OpTypeInt 16 0
+       %Data = OpTypeStruct %int16
+        %ptr = OpTypePointer PushConstant %Data
+        %var = OpVariable %ptr PushConstant
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+            VkPushConstantRange push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+            VkPipelineLayoutCreateInfo pipeline_layout_info{
+                VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 1, &push_constant_range};
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+                helper.pipeline_layout_ci_ = pipeline_layout_info;
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-storagePushConstant16-06333");
+        }
+
+        // storageInputOutput16 - int
+        {
+            const std::string vs_source = R"(
+               OpCapability Shader
+               OpCapability Int16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %var
+               OpDecorate %var Location 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %int16 = OpTypeInt 16 0
+        %ptr = OpTypePointer Output %int16
+        %var = OpVariable %ptr Output
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, vs_source, "main", nullptr);
+
+            const std::string fs_source = R"(
+               OpCapability Shader
+               OpCapability Int16
+               OpExtension "SPV_KHR_16bit_storage"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %in %out
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %in Location 0
+               OpDecorate %in Flat
+               OpDecorate %out Location 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %int16 = OpTypeInt 16 0
+      %inPtr = OpTypePointer Input %int16
+         %in = OpVariable %inPtr Input
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+     %outPtr = OpTypePointer Output %v4float
+        %out = OpVariable %outPtr Output
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+            auto fs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_FRAGMENT_BIT, fs_source, "main", nullptr);
+
+            const auto set_info = [&](CreatePipelineHelper &helper) {
+                helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            };
+            CreatePipelineHelper::OneshotTest(
+                *this, set_info, kErrorBit,
+                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",    // StorageInputOutput16 vert
+                               "VUID-RuntimeSpirv-storageInputOutput16-06334"});  // StorageInputOutput16 frag
+        }
+    }
+
+    // tests struct with multiple types
+    if (float16Int8.shaderInt8 == VK_TRUE && features2.features.shaderInt16 == VK_TRUE) {
+        // struct X {
+        //   u16vec2 a;
+        // };
+        // struct {
+        //   uint a;
+        //   X b;
+        //   uint8_t c;
+        // } Data;
+        const std::string spv_source = R"(
+               OpCapability Shader
+               OpCapability Int8
+               OpCapability Int16
+               OpExtension "SPV_KHR_8bit_storage"
+               OpExtension "SPV_KHR_16bit_storage"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main"
+               OpMemberDecorate %X 0 Offset 0
+               OpMemberDecorate %Data 0 Offset 0
+               OpMemberDecorate %Data 1 Offset 4
+               OpMemberDecorate %Data 2 Offset 8
+               OpDecorate %Data Block
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+       %int8 = OpTypeInt 8 0
+      %int16 = OpTypeInt 16 0
+    %v2int16 = OpTypeVector %int16 2
+      %int32 = OpTypeInt 32 0
+          %X = OpTypeStruct %v2int16
+       %Data = OpTypeStruct %int32 %X %int8
+        %ptr = OpTypePointer StorageBuffer %Data
+        %var = OpVariable %ptr StorageBuffer
+       %main = OpFunction %void None %func
+      %label = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+        auto vs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_VERTEX_BIT, spv_source, "main", nullptr);
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs->GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+            helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          vector<string>{"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",    // 16 bit var
+                                                         "VUID-RuntimeSpirv-storageBuffer8BitAccess-06328 "});  // 8 bit var
     }
 }
 
@@ -17100,14 +17604,14 @@ TEST_F(VkLayerTest, ShaderModuleIdentifier) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
- 
+
     auto sm_id_create_info = LvlInitStruct<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>();
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
     auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>(&sm_id_create_info);
     vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
     vs_ci.pCode = vs_spv.data();
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
-    
+
     auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
     stage_ci.module = VK_NULL_HANDLE;
