@@ -2863,6 +2863,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         //
         // this will generate branch/switch statements that we want to leverage spirv-opt to apply to make parsing easier
         optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
+        // Currently need to re-run the pass as spirv-opt has a bug and not folding everything sometimes
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4399#issuecomment-1216203563
+        optimizer.RegisterPass(spvtools::CreateFoldSpecConstantOpAndCompositePass());
 
         // Apply the specialization-constant values and revalidate the shader module is valid.
         const char *pSpecializationInfo_vuid = IsExtEnabled(device_extensions.vk_ext_shader_module_identifier)
