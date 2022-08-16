@@ -2919,3 +2919,28 @@ TEST_F(VkPositiveLayerTest, OpTypeArraySpecConstant) {
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info_spec, kErrorBit | kWarningBit);
 }
+
+TEST_F(VkPositiveLayerTest, OpTypeStructRuntimeArray) {
+    TEST_DESCRIPTION("Make sure variables with a OpTypeStruct can handle a runtime array inside");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // %float = OpTypeFloat 32
+    // %ra = OpTypeRuntimeArray %float
+    // %struct = OpTypeStruct %ra
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) buffer sb {
+            float values[];
+        };
+        void main(){
+            values[gl_LocalInvocationIndex] = gl_LocalInvocationIndex;
+        }
+    )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
