@@ -1813,9 +1813,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     } else {
         auto modifier_list = LvlFindInChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
         auto explicit_modifier = LvlFindInChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+        /* format list must be passed to avoid failing driver checks for mutability */
+        auto format_list_info = LvlFindInChain<VkImageFormatListCreateInfo>(pCreateInfo->pNext);
         if (modifier_list) {
             for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
-                auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
+                auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>(&format_list_info);
                 drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
                 auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&drm_format_modifier);
                 image_format_info.type = pCreateInfo->imageType;
