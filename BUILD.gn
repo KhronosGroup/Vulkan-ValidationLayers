@@ -256,6 +256,14 @@ if (!is_android) {
   }
 }
 
+config("vulkan_memory_allocator_config") {
+  if (is_clang) {
+    cflags_cc = [
+      "-Wno-nullability-completeness",
+    ]
+  }
+}
+
 source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
@@ -291,7 +299,7 @@ source_set("vulkan_layer_utils") {
     "layers/xxhash.c",
     "layers/xxhash.h",
   ]
-  public_configs = [ ":vulkan_internal_config" ]
+  public_configs = [ ":vulkan_internal_config", ":vulkan_memory_allocator_config" ]
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
   public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
