@@ -602,8 +602,7 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     features12.drawIndirectCount = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (features12.drawIndirectCount != VK_TRUE) {
         printf("drawIndirectCount not supported, skipping test\n");

@@ -3499,7 +3499,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     synchronization2.synchronization2 = VK_FALSE;  // Invalid
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     auto vkCmdPipelineBarrier2KHR =
         (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");

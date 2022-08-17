@@ -81,7 +81,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     portability_feature.events = VK_FALSE;  // Make sure events are disabled
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -107,7 +107,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImage) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.imageView2DOn3DImage = VK_FALSE;
     portability_feature.multisampleArrayImage = VK_FALSE;
@@ -158,7 +158,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.imageViewFormatSwizzle = VK_FALSE;
     portability_feature.imageViewFormatReinterpretation = VK_FALSE;
@@ -235,7 +235,7 @@ TEST_F(VkPortabilitySubsetTest, CreateSampler) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.samplerMipLodBias = VK_FALSE;
 
@@ -260,7 +260,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.triangleFans = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -296,7 +296,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
@@ -348,7 +348,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.vertexAttributeAccessBeyondStride = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -396,7 +396,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure point polygons are disabled
     portability_feature.pointPolygons = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -449,7 +449,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     portability_feature.separateStencilMaskRef = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -496,7 +496,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     portability_feature.constantAlphaColorBlendFactors = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -550,7 +550,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     // Make sure image features are disabled via portability extension
     portability_feature.mutableComparisonSamplers = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -607,7 +607,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     auto portability_feature = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_feature);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     portability_feature.tessellationIsolines = VK_FALSE;                    // Make sure IsoLines are disabled
     portability_feature.tessellationPointMode = VK_FALSE;                   // Make sure PointMode is disabled
     portability_feature.shaderSampleRateInterpolationFunctions = VK_FALSE;  // Make sure interpolation functions are disabled

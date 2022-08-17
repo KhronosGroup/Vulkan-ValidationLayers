@@ -133,35 +133,6 @@ bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkF
     return (features == (phy_features & features));
 }
 
-VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
-    // Find address of extension call and make the call -- assumes needed extensions are enabled.
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
-    // Get the push descriptor limits
-    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&push_descriptor_prop);
-    vkGetPhysicalDeviceProperties2KHR(gpu, &prop2);
-    return push_descriptor_prop;
-}
-
-VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu) {
-    auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
-
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_prop);
-    vk::GetPhysicalDeviceProperties2(gpu, &prop2);
-    return subgroup_prop;
-}
-
-VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu) {
-    auto descriptor_indexing_prop = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingProperties>();
-
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&descriptor_indexing_prop);
-    vk::GetPhysicalDeviceProperties2(gpu, &prop2);
-    return descriptor_indexing_prop;
-}
-
 bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {
     bool is_equal = (rhs.color[0] == lhs.color[0]) && (rhs.color[1] == lhs.color[1]) && (rhs.color[2] == lhs.color[2]) &&
                     (rhs.color[3] == lhs.color[3]);

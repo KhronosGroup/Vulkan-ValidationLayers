@@ -752,7 +752,7 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
     auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(&ray_query_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&ray_tracing_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
         printf("%s rayTracingPipeline feature not supported, skipping tests\n", kSkipPrefix);

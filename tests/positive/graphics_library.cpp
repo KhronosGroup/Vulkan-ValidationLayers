@@ -43,7 +43,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputGraphicsPipelineLibrary) {
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&gpl_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
         printf("%s VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported", kSkipPrefix);
@@ -74,7 +74,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, PreRasterGraphicsPipelineLibrary) {
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&gpl_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
         printf("%s VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported", kSkipPrefix);
@@ -117,7 +117,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentShaderGraphicsPipelineLibrary
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&gpl_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
         GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
@@ -159,7 +159,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, FragmentOutputGraphicsPipelineLibrary
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&gpl_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
         printf("%s VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported", kSkipPrefix);
@@ -191,7 +191,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, ExeLibrary) {
 
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&gpl_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!gpl_features.graphicsPipelineLibrary) {
         printf("%s VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported", kSkipPrefix);
