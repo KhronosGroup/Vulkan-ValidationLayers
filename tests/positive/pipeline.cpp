@@ -4185,20 +4185,17 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
 TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
 
-    app_info_.apiVersion = VK_API_VERSION_1_2;
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    std::vector<const char *> exts = {
-        "VK_KHR_shader_non_semantic_info",
-        "VK_EXT_scalar_block_layout",
-    };
-    for (const auto *ext : exts) {
-        if (DeviceExtensionSupported(gpu(), nullptr, ext)) {
-            m_device_extension_names.push_back(ext);
-        } else {
-            printf("%s %s extension not supported. Skipping.\n", kSkipPrefix, ext);
-            return;
-        }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
