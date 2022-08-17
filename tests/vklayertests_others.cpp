@@ -4738,7 +4738,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-02964");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-01874");
     vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
     m_errorMonitor->VerifyFound();
@@ -5100,7 +5099,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     vk::DestroyBuffer(dev, buf, NULL);
 }
 
-TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
+TEST_F(VkLayerTest, AndroidHardwareBufferExportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer export memory as AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -5149,7 +5148,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     mai.pNext = &emai;
 
     // Create an image, do not bind memory
-    VkImage img = VK_NULL_HANDLE;
     VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>();
     ici.imageType = VK_IMAGE_TYPE_2D;
     ici.arrayLayers = 1;
@@ -5160,12 +5158,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    vk::CreateImage(dev, &ici, NULL, &img);
-    ASSERT_TRUE(VK_NULL_HANDLE != img);
+    vk_testing::Image img(*m_device, ici);
+    ASSERT_TRUE(img.initialized());
 
     // Add image to allocation chain as dedicated info, re-allocate
     VkMemoryDedicatedAllocateInfo mdai = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
-    mdai.image = img;
+    mdai.image = img.handle();
     emai.pNext = &mdai;
     mai.allocationSize = 0;
     vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
@@ -5177,7 +5175,6 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
 
     if (ahb) AHardwareBuffer_release(ahb);
     if (VK_NULL_HANDLE != mem_handle) vk::FreeMemory(dev, mem_handle, NULL);
-    vk::DestroyImage(dev, img, NULL);
 }
 
 TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
@@ -5234,7 +5231,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferInvalidBindBufferMemory) {
 
     VkMemoryAllocateInfo memory_info = LvlInitStruct<VkMemoryAllocateInfo>(&import_ahb_Info);
     memory_info.allocationSize = ahb_props.allocationSize;
-    bool has_memtype = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    bool has_memtype = m_device->phy().set_memory_type(ahb_props.memoryTypeBits, &memory_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     if (!has_memtype) {
         AHardwareBuffer_release(ahb);
         GTEST_SKIP() << "No invalid memory type index could be found";
