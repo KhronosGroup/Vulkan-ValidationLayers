@@ -371,8 +371,7 @@ TEST_F(VkPositiveLayerTest, SamplerMirrorClampToEdgeWithFeature) {
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     features12.samplerMirrorClampToEdge = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (features12.samplerMirrorClampToEdge != VK_TRUE) {
         printf("samplerMirrorClampToEdge not supported, skipping test\n");

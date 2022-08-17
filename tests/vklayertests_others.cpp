@@ -2695,7 +2695,8 @@ TEST_F(VkLayerTest, PushDescriptorUniformDestroySignaled) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         GTEST_SKIP() << "maxPushDescriptors is zero, skipping tests";
@@ -4805,15 +4806,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-
-    if ((DeviceValidationVersion() < VK_API_VERSION_1_1) &&
-        !InstanceExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s %s extension not supported, skipping test\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
 
     VkImageFormatProperties2 ifp = LvlInitStruct<VkImageFormatProperties2>();
     VkPhysicalDeviceImageFormatInfo2 pdifi = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
@@ -7204,7 +7201,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     auto vk12_features = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&vk12_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!sync2_features.synchronization2) {
         GTEST_SKIP() << "VkPhysicalDeviceSynchronization2FeaturesKHR::synchronization2 required";
     }
@@ -7217,7 +7214,7 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
 
     auto timelineproperties = LvlInitStruct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
-    vk::GetPhysicalDeviceProperties2(gpu(), &prop2);
+    GetPhysicalDeviceProperties2(prop2);
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
     semaphore_type_create_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
@@ -7339,14 +7336,15 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
 
 TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     TEST_DESCRIPTION("General testing of VK_EXT_image_drm_format_modifier");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1";
+    }
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
@@ -8207,7 +8205,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
- 
+
     if (ray_tracing_features.rayTracingPipelineTraceRaysIndirect == VK_FALSE) {
         printf("%s rayTracingIndirectTraceRays not supported, skipping tests\n", kSkipPrefix);
         return;
@@ -9015,7 +9013,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
         return;
@@ -9133,7 +9131,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
         return;
@@ -9490,7 +9488,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
         return;
@@ -10079,7 +10077,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
         printf("%s Test requires (unsupported) extendedDynamicState2, skipping\n", kSkipPrefix);
         return;
@@ -10151,7 +10149,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
         printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
         return;
@@ -10210,7 +10208,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
         printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
         return;
@@ -10268,7 +10266,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Enabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
         printf("%s Test requires (unsupported) extendedDynamicState2, skipping\n", kSkipPrefix);
         return;
@@ -10349,7 +10347,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
         printf("%s Test requires (unsupported) extendedDynamicState2PatchControlPoints, skipping\n", kSkipPrefix);
         return;
@@ -10430,7 +10428,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpEnabled) {
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state2_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
         printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
         return;
@@ -10553,7 +10551,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
 
     auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vertex_input_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
         printf("%s Test requires (unsupported) vertexInputDynamicState, skipping\n", kSkipPrefix);
         return;
@@ -10777,7 +10775,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
     auto vertex_input_dynamic_state_features =
         LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(&vertex_attribute_divisor_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vertex_input_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!vertex_attribute_divisor_features.vertexAttributeInstanceRateDivisor) {
         printf("%s Test requires (unsupported) vertexAttributeInstanceRateDivisor, skipping\n", kSkipPrefix);
         return;
@@ -10789,7 +10787,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
 
     auto vertex_attribute_divisor_properties = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&vertex_attribute_divisor_properties);
-    vk::GetPhysicalDeviceProperties2(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(properties2);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -11390,7 +11388,7 @@ TEST_F(VkLayerTest, InvalidCmdSetDiscardRectangleEXTRectangleCount) {
 
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
     phys_dev_props_2.pNext = &discard_rectangle_properties;
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
 
     auto fpCmdSetDiscardRectangleEXT =
         (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
@@ -11479,7 +11477,7 @@ TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTPrimitiveGenerated) {
 
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&primitives_generated_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
         printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
@@ -11491,7 +11489,7 @@ TEST_F(VkLayerTest, InvalidCmdEndQueryIndexedEXTPrimitiveGenerated) {
     auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
 
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
 
     auto fpCmdBeginQueryIndexedEXT =
         reinterpret_cast<PFN_vkCmdBeginQueryIndexedEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT"));
@@ -11856,7 +11854,7 @@ TEST_F(VkLayerTest, CopyUnboundAccelerationStructure) {
 
     auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&as_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (as_features.accelerationStructure == VK_FALSE) {
         printf("%s accelerationStructure feature is not supported.\n", kSkipPrefix);
@@ -12081,7 +12079,7 @@ TEST_F(VkLayerTest, CmdCopyUnboundAccelerationStructure) {
     }
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&accel_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         printf("%s accelerationStructureHostCommands feature is not supported.\n", kSkipPrefix);
@@ -12298,7 +12296,7 @@ TEST_F(VkLayerTest, BeginQueryWithMultiview) {
 
     auto features_1_1 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features_1_1);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!features_1_1.multiview) {
         GTEST_SKIP() << "Test requires VkPhysicalDeviceVulkan11Features::multiview feature.";
     }
@@ -12414,7 +12412,7 @@ TEST_F(VkLayerTest, BuildAccelerationStructureKHR) {
 
     auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (acc_structure_features.accelerationStructureHostCommands == VK_FALSE) {
         printf("%s accelerationStructureHostCommands feature not supported, skipping test.\n", kSkipPrefix);
@@ -12544,7 +12542,7 @@ TEST_F(VkLayerTest, TestWriteAccelerationStructureMemory) {
 
     auto as_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&as_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (as_features.accelerationStructure == VK_FALSE) {
         printf("%s accelerationStructure feature is not supported.\n", kSkipPrefix);
@@ -12845,7 +12843,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
 
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&primitives_generated_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
         printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
@@ -12857,7 +12855,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQuery) {
     auto transform_feedback_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
 
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_properties);
-    vk::GetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);
+    GetPhysicalDeviceProperties2(phys_dev_props_2);
 
     uint32_t compute_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
     if (compute_queue_family_index == std::numeric_limits<uint32_t>::max()) {
@@ -12924,7 +12922,7 @@ TEST_F(VkLayerTest, TestCopyMemoryToAsBuffer) {
     }
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&accel_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (accel_features.accelerationStructureHostCommands == VK_FALSE) {
         printf("%s accelerationStructureHostCommands feature is not supported.\n", kSkipPrefix);
@@ -12972,7 +12970,7 @@ TEST_F(VkLayerTest, PrimitivesGeneratedQueryFeature) {
     }
     auto primitives_generated_features = LvlInitStruct<VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&primitives_generated_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (primitives_generated_features.primitivesGeneratedQuery == VK_FALSE) {
         printf("%s primitivesGeneratedQuery feature is not supported.\n", kSkipPrefix);
         return;
@@ -13278,7 +13276,7 @@ TEST_F(VkLayerTest, IncompatibleRenderPass2) {
 
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&multiview_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (multiview_features.multiview == VK_FALSE) {
         printf("%s multiview feature not supported, skipping test.\n", kSkipPrefix);
         return;
@@ -13396,7 +13394,7 @@ TEST_F(VkLayerTest, ExportMetalObjects) {
     const bool ycbcr_conversion_extension = IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&portability_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (ycbcr_conversion_extension) {
         auto ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();

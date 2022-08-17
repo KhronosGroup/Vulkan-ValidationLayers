@@ -59,7 +59,7 @@ TEST_F(VkPositiveLayerTest, ViewportWithCountNoMultiViewport) {
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&extended_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!extended_dynamic_state_features.extendedDynamicState) {
         printf("%s Test requires (unsupported) extendedDynamicState, skipping\n", kSkipPrefix);
         return;
@@ -316,7 +316,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineRelaxedTypeMatch) {
     }
     auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&maint4features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!maint4features.maintenance4) {
         GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
     }
@@ -2580,7 +2580,7 @@ TEST_F(VkPositiveLayerTest, SeparateDepthStencilSubresourceLayout) {
 
     auto separate_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&separate_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!separate_features.separateDepthStencilLayouts) {
         printf("separateDepthStencilLayouts feature not supported, skipping tests\n");
         return;
@@ -4185,25 +4185,22 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferExternalCameraFormat) {
 TEST_F(VkPositiveLayerTest, PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Reproduces Github issue #2467 and effectively #2465 as well.");
 
-    app_info_.apiVersion = VK_API_VERSION_1_2;
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    std::vector<const char *> exts = {
-        "VK_KHR_shader_non_semantic_info",
-        "VK_EXT_scalar_block_layout",
-    };
-    for (const auto *ext : exts) {
-        if (DeviceExtensionSupported(gpu(), nullptr, ext)) {
-            m_device_extension_names.push_back(ext);
-        } else {
-            printf("%s %s extension not supported. Skipping.\n", kSkipPrefix, ext);
-            return;
-        }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (VK_TRUE != features12.bufferDeviceAddress) {
         printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.\n", kSkipPrefix);
@@ -4284,7 +4281,7 @@ TEST_F(VkPositiveLayerTest, OpCopyObjectSampler) {
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (VK_TRUE != features12.shaderStorageTexelBufferArrayNonUniformIndexing) {
         printf(
@@ -5618,7 +5615,7 @@ TEST_F(VkPositiveLayerTest, TestDynamicVertexInput) {
 
     auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vertex_input_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
         printf("%s Feature vertexInputDynamicState is not supported.\n", kSkipPrefix);
@@ -5659,7 +5656,7 @@ TEST_F(VkPositiveLayerTest, TestCmdSetVertexInputEXT) {
 
     auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vertex_input_dynamic_state_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
         printf("%s Feature vertexInputDynamicState is not supported.\n", kSkipPrefix);
@@ -6195,7 +6192,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRendering) {
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!dynamic_rendering_features.dynamicRendering) {
         printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
         return;
@@ -6272,7 +6269,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineDynamicRenderingNoInfo) {
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!dynamic_rendering_features.dynamicRendering) {
         printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
         return;
@@ -6627,7 +6624,7 @@ TEST_F(VkPositiveLayerTest, TestDualBlendShader) {
     }
 
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (features2.features.dualSrcBlend == VK_FALSE) {
         printf("%s dualSrcBlend feature is not available, skipping test.\n", kSkipPrefix);
@@ -6692,7 +6689,7 @@ TEST_F(VkPositiveLayerTest, TestDynamicRenderingWithDualSourceBlending) {
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (features2.features.dualSrcBlend == VK_FALSE) {
         printf("%s dualSrcBlend feature is not available, skipping test.\n", kSkipPrefix);
@@ -6774,7 +6771,7 @@ TEST_F(VkPositiveLayerTest, TestUpdateAfterBind) {
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
     auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&descriptor_indexing);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (descriptor_indexing.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         printf("%s descriptorBindingStorageBufferUpdateAfterBind feature is not supported.\n", kSkipPrefix);
@@ -6914,7 +6911,7 @@ TEST_F(VkPositiveLayerTest, TestPartiallyBoundDescriptors) {
     auto descriptor_indexing = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
     auto synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>(&descriptor_indexing);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (descriptor_indexing.descriptorBindingStorageBufferUpdateAfterBind == VK_FALSE) {
         printf("%s descriptorBindingStorageBufferUpdateAfterBind feature is not supported.\n", kSkipPrefix);

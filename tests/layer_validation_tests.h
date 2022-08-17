@@ -749,15 +749,6 @@ class ExtensionChain {
 };
 }  // namespace chain_util
 
-// PushDescriptorProperties helper
-VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu);
-
-// Subgroup properties helper
-VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu);
-
-// Descriptor Indexing properties helper
-VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu);
-
 class BarrierQueueFamilyBase {
   public:
     struct QueueFamilyObjs {

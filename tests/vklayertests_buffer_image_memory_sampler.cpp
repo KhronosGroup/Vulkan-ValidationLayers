@@ -4940,7 +4940,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
     VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT align_props =
         LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&align_props);
-    vk::GetPhysicalDeviceProperties2(gpu(), &pd_props2);
+    GetPhysicalDeviceProperties2(pd_props2);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -8548,7 +8548,7 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
@@ -10744,7 +10744,7 @@ TEST_F(VkLayerTest, InvalidSwizzleYCbCr) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
@@ -12869,7 +12869,7 @@ TEST_F(VkLayerTest, CreateImageViewMissingYcbcrConversion) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
@@ -12953,8 +12953,7 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties =
         LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     VkPhysicalDeviceProperties2 properties = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsrProperties);
-
-    vk::GetPhysicalDeviceProperties2(gpu(), &properties);
+    GetPhysicalDeviceProperties2(properties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
         if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -13886,7 +13885,7 @@ TEST_F(VkLayerTest, InvalidImageSubresourceRangeAspectMask) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (features11.samplerYcbcrConversion != VK_TRUE) {
         printf("samplerYcbcrConversion not supported, skipping test\n");
         return;
@@ -14968,7 +14967,7 @@ TEST_F(VkLayerTest, Image2DViewOf3D) {
 
     auto image_2D_view_of_3D_features = LvlInitStruct<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_2D_view_of_3D_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (!image_2D_view_of_3D_features.image2DViewOf3D){
         printf("%s image2DViewOf3D is not supported, skipping test.\n", kSkipPrefix);
         return;
@@ -15055,7 +15054,7 @@ TEST_F(VkLayerTest, Image2DViewOf3DFeature) {
 
     auto image_2D_view_of_3D_features = LvlInitStruct<VkPhysicalDeviceImage2DViewOf3DFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_2D_view_of_3D_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     image_2D_view_of_3D_features.image2DViewOf3D = VK_FALSE;
     image_2D_view_of_3D_features.sampler2DViewOf3D = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -16438,7 +16437,7 @@ TEST_F(VkLayerTest, NonSeamlessCubeMapNotEnabled) {
     }
     auto non_seamless_cube_map_features = LvlInitStruct<VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&non_seamless_cube_map_features);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     non_seamless_cube_map_features.nonSeamlessCubeMap = false;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 

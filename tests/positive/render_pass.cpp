@@ -980,7 +980,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
 
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (vulkan_11_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported, skipping test.";
     }
@@ -1023,14 +1023,15 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
 
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
     if (vulkan_11_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported, skipping test.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         GTEST_SKIP() << "maxPushDescriptors is zero, skipping tests";

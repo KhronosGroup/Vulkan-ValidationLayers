@@ -373,7 +373,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
@@ -448,7 +449,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
@@ -649,7 +651,8 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
@@ -868,7 +871,10 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
 
         // In addition to the extension being supported we need to have at least one available
         // Some implementations report an invalid maxPushDescriptors of 0
-        push_descriptor_found = GetPushDescriptorProperties(instance(), gpu()).maxPushDescriptors > 0;
+        VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop =
+            LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+        GetPhysicalDeviceProperties2(push_descriptor_prop);
+        push_descriptor_found = push_descriptor_prop.maxPushDescriptors > 0;
     } else {
         printf("%s %s Extension not supported, skipping push descriptor sub-tests\n", kSkipPrefix,
                VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -943,7 +949,8 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
         return;
     }
 
-    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
         printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
@@ -1382,7 +1389,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
 
     auto mutable_descriptor = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mutable_descriptor);
-    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    GetPhysicalDeviceFeatures2(features2);
 
     if (mutable_descriptor.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported, skipping test.\n", kSkipPrefix);
