@@ -139,6 +139,12 @@ void UtilDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, 
 }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
+    return DispatchGetInstanceProcAddr(inst, name);
+}
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetDeviceProcAddr(VkDevice dev, const char *name) {
+    return DispatchGetDeviceProcAddr(dev, name);
+}
 static VKAPI_ATTR void VKAPI_CALL gpuVkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                                    VkPhysicalDeviceProperties *pProperties) {
     DispatchGetPhysicalDeviceProperties(physicalDevice, pProperties);
@@ -209,6 +215,8 @@ VkResult UtilInitializeVma(VkInstance instance, VkPhysicalDevice physical_device
     allocator_info.device = device;
     allocator_info.physicalDevice = physical_device;
 
+    functions.vkGetInstanceProcAddr = static_cast<PFN_vkGetInstanceProcAddr>(gpuVkGetInstanceProcAddr);
+    functions.vkGetDeviceProcAddr = static_cast<PFN_vkGetDeviceProcAddr>(gpuVkGetDeviceProcAddr);
     functions.vkGetPhysicalDeviceProperties = static_cast<PFN_vkGetPhysicalDeviceProperties>(gpuVkGetPhysicalDeviceProperties);
     functions.vkGetPhysicalDeviceMemoryProperties =
         static_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(gpuVkGetPhysicalDeviceMemoryProperties);
