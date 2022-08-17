@@ -81,7 +81,7 @@ These commands will run vkcube, enabling the api_dump and validation layers that
 For macOS, if Vulkan SDK 1.2.198.0 was locally installed in `/sdk` and `VULKAN_SDK=/sdk/1.2.198/macOS`:
 
 ```
-$ export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layers.d
+$ export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layers.d
 $ export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib
 $ export VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_api_dump:VK_LAYER_KHRONOS_validation
 $ cd $VULKAN_SDK/../Applications/
