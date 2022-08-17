@@ -271,7 +271,7 @@ class GpuAssisted : public GpuAssistedBase {
     void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd,
                                      const GpuAssistedCmdIndirectState* indirect_state = nullptr);
     void AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block, GpuAssistedPreDrawResources& resources,
-                                            const LAST_BOUND_STATE& state, VkPipeline* pPipeline,
+                                            const VkRenderPass render_pass, VkPipeline* pPipeline,
                                             const GpuAssistedCmdIndirectState* indirect_state);
     void AllocatePreDispatchValidationResources(GpuAssistedDeviceMemoryBlock output_block,
                                                 GpuAssistedPreDispatchResources& resources,

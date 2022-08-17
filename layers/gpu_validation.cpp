@@ -1541,7 +1541,7 @@ VkPipeline GpuAssisted::GetValidationPipeline(VkRenderPass render_pass) {
 }
 
 void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block,
-                                                     GpuAssistedPreDrawResources &resources, const LAST_BOUND_STATE &state,
+                                                     GpuAssistedPreDrawResources &resources, const VkRenderPass render_pass,
                                                      VkPipeline *pPipeline, const GpuAssistedCmdIndirectState *indirect_state) {
     VkResult result;
     if (!pre_draw_validation_state.initialized) {
@@ -1589,7 +1589,6 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
         pre_draw_validation_state.initialized = true;
     }
 
-    VkRenderPass render_pass = state.pipeline_state->RenderPassState()->renderPass();
     *pPipeline = GetValidationPipeline(render_pass);
     if (*pPipeline == VK_NULL_HANDLE) {
         ReportSetupProblem(device, "Could not find or create a pipeline.  Aborting GPU-AV");
@@ -1809,7 +1808,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS);
         assert(indirect_state != NULL);
         VkPipeline validation_pipeline;
-        AllocatePreDrawValidationResources(output_block, pre_draw_resources, state, &validation_pipeline, indirect_state);
+        AllocatePreDrawValidationResources(output_block, pre_draw_resources, cb_node->activeRenderPass.get()->renderPass(),
+                                           &validation_pipeline, indirect_state);
         if (aborted) return;
 
         // Save current graphics pipeline state
