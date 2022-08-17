@@ -5652,6 +5652,16 @@ bool CoreChecks::IsZeroAllocationSizeAllowed(const VkMemoryAllocateInfo *pAlloca
     if (import_memory_host_pointer && (import_memory_host_pointer->handleType & ignored_allocation) != 0) {
         return true;
     }
+
+    // Handles 01874 cases
+    const auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);
+    if (export_info && (export_info->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
+        const auto dedicated_info = LvlFindInChain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+        if (dedicated_info && dedicated_info->image) {
+            return true;
+        }
+    }
+
 #ifdef VK_USE_PLATFORM_FUCHSIA
     const auto import_memory_zircon = LvlFindInChain<VkImportMemoryZirconHandleInfoFUCHSIA>(pAllocateInfo->pNext);
     if (import_memory_zircon && (import_memory_zircon->handleType & ignored_allocation) != 0) {
