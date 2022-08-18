@@ -4414,68 +4414,50 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    VkBufferObj buffer_a;
-    VkBufferObj buffer_b;
-    VkBufferObj buffer_c;
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+    QSTestContext test(m_device, m_device->m_queue_obj);
+    if (!test.Valid()) {
+        GTEST_SKIP() << "Test requires a valid queue object.";
+    }
 
-    VkBufferCopy region = {0, 0, 256};
+    test.BeginA();
+    test.CopyAToB();
+    test.End();
 
-    VkCommandBufferObj cba(m_device, m_commandPool);
-    VkCommandBufferObj cbb(m_device, m_commandPool);
-
-    cba.begin();
-    const VkCommandBuffer h_cba = cba.handle();
-    vk::CmdCopyBuffer(h_cba, buffer_a.handle(), buffer_b.handle(), 1, &region);
-    cba.end();
-
-    const VkCommandBuffer h_cbb = cbb.handle();
-    cbb.begin();
-    vk::CmdCopyBuffer(h_cbb, buffer_c.handle(), buffer_a.handle(), 1, &region);
-    cbb.end();
+    test.BeginB();
+    test.CopyCToA();
+    test.End();
 
     auto submit1 = lvl_init_struct<VkSubmitInfo>();
     submit1.commandBufferCount = 2;
-    VkCommandBuffer two_cbs[2] = {h_cba, h_cbb};
+    VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
     submit1.pCommandBuffers = two_cbs;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    vk::QueueSubmit(test.q0, 1, &submit1, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    vk::DeviceWaitIdle(m_device->device());
+    test.DeviceWait();
 
     VkSubmitInfo submit2[2] = {lvl_init_struct<VkSubmitInfo>(), lvl_init_struct<VkSubmitInfo>()};
     submit2[0].commandBufferCount = 1;
-    submit2[0].pCommandBuffers = &h_cba;
+    submit2[0].pCommandBuffers = &test.h_cba;
     submit2[1].commandBufferCount = 1;
-    submit2[1].pCommandBuffers = &h_cbb;
+    submit2[1].pCommandBuffers = &test.h_cbb;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    vk::QueueSubmit(m_device->m_queue, 2, submit2, VK_NULL_HANDLE);
+    vk::QueueSubmit(test.q0, 2, submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     // With the skip settings, the above QueueSubmit's didn't record, so we can treat the global queue contexts as empty
-    submit1.commandBufferCount = 1;
-    submit1.pCommandBuffers = &h_cba;
-    // Submit A
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.Submit0(test.cba);
 
-    submit1.pCommandBuffers = &h_cbb;
-    // Submit B -- which should conflict via the queue's "last batch"
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
-    vk::QueueSubmit(m_device->m_queue, 1, &submit1, VK_NULL_HANDLE);
+    test.Submit0(test.cbb);
     m_errorMonitor->VerifyFound();
 
-    m_device->wait();
+    test.DeviceWait();
 }
 
 TEST_F(VkSyncValTest, SyncQSBufferCopyVsIdle) {
-    // TODO (jzulauf)
-    // GTEST_SKIP() << "this test is causing a sporadic crash on nvidia 32b release. Skip until further investigation";
-
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
