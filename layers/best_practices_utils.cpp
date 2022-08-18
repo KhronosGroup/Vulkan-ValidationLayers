@@ -4577,8 +4577,10 @@ void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer comma
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, "vkCmdClearDepthStencilImage()", dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
-    for (uint32_t i = 0; i < rangeCount; i++) {
-        RecordResetZcullDirection(*cb, image, pRanges[i]);
+    if (VendorCheckEnabled(kBPVendorNVIDIA)) {
+        for (uint32_t i = 0; i < rangeCount; i++) {
+            RecordResetZcullDirection(*cb, image, pRanges[i]);
+        }
     }
 }
 
