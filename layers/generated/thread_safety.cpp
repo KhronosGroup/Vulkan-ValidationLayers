@@ -4670,8 +4670,8 @@ void ThreadSafety::PostCallRecordDestroyVideoSessionKHR(
 void ThreadSafety::PreCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t*                                   pVideoSessionMemoryRequirementsCount,
-    VkVideoGetMemoryPropertiesKHR*              pVideoSessionMemoryRequirements) {
+    uint32_t*                                   pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR*        pMemoryRequirements) {
     StartReadObjectParentInstance(device, "vkGetVideoSessionMemoryRequirementsKHR");
     StartReadObject(videoSession, "vkGetVideoSessionMemoryRequirementsKHR");
 }
@@ -4679,8 +4679,8 @@ void ThreadSafety::PreCallRecordGetVideoSessionMemoryRequirementsKHR(
 void ThreadSafety::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t*                                   pVideoSessionMemoryRequirementsCount,
-    VkVideoGetMemoryPropertiesKHR*              pVideoSessionMemoryRequirements,
+    uint32_t*                                   pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR*        pMemoryRequirements,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetVideoSessionMemoryRequirementsKHR");
     FinishReadObject(videoSession, "vkGetVideoSessionMemoryRequirementsKHR");
@@ -4689,8 +4689,8 @@ void ThreadSafety::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
 void ThreadSafety::PreCallRecordBindVideoSessionMemoryKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t                                    videoSessionBindMemoryCount,
-    const VkVideoBindMemoryKHR*                 pVideoSessionBindMemories) {
+    uint32_t                                    bindSessionMemoryInfoCount,
+    const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos) {
     StartReadObjectParentInstance(device, "vkBindVideoSessionMemoryKHR");
     StartReadObject(videoSession, "vkBindVideoSessionMemoryKHR");
 }
@@ -4698,8 +4698,8 @@ void ThreadSafety::PreCallRecordBindVideoSessionMemoryKHR(
 void ThreadSafety::PostCallRecordBindVideoSessionMemoryKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t                                    videoSessionBindMemoryCount,
-    const VkVideoBindMemoryKHR*                 pVideoSessionBindMemories,
+    uint32_t                                    bindSessionMemoryInfoCount,
+    const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkBindVideoSessionMemoryKHR");
     FinishReadObject(videoSession, "vkBindVideoSessionMemoryKHR");

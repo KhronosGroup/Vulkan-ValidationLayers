@@ -454,6 +454,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_private_data{kNotEnabled};
     ExtEnabled vk_ext_provoking_vertex{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
+    ExtEnabled vk_ext_rasterization_order_attachment_access{kNotEnabled};
     ExtEnabled vk_ext_rgba10x6_formats{kNotEnabled};
     ExtEnabled vk_ext_robustness2{kNotEnabled};
     ExtEnabled vk_ext_sample_locations{kNotEnabled};
@@ -804,6 +805,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_queue_family_foreign, {{
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})},
+            {VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_rasterization_order_attachment_access, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_RGBA10X6_FORMATS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_rgba10x6_formats, {{
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})},
             {VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_robustness2, {})},
@@ -1405,6 +1408,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
     VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
+    VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME,
     VK_EXT_RGBA10X6_FORMATS_EXTENSION_NAME,
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
     VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,

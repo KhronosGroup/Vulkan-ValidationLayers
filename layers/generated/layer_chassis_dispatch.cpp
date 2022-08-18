@@ -5357,7 +5357,7 @@ VkBool32 DispatchGetPhysicalDeviceWin32PresentationSupportKHR(
 
 VkResult DispatchGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
-    const VkVideoProfileKHR*                    pVideoProfile,
+    const VkVideoProfileInfoKHR*                pVideoProfile,
     VkVideoCapabilitiesKHR*                     pCapabilities)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
@@ -5426,15 +5426,15 @@ void DispatchDestroyVideoSessionKHR(
 VkResult DispatchGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t*                                   pVideoSessionMemoryRequirementsCount,
-    VkVideoGetMemoryPropertiesKHR*              pVideoSessionMemoryRequirements)
+    uint32_t*                                   pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR*        pMemoryRequirements)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.GetVideoSessionMemoryRequirementsKHR(device, videoSession, pVideoSessionMemoryRequirementsCount, pVideoSessionMemoryRequirements);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements);
     {
         videoSession = layer_data->Unwrap(videoSession);
     }
-    VkResult result = layer_data->device_dispatch_table.GetVideoSessionMemoryRequirementsKHR(device, videoSession, pVideoSessionMemoryRequirementsCount, pVideoSessionMemoryRequirements);
+    VkResult result = layer_data->device_dispatch_table.GetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements);
 
     return result;
 }
@@ -5445,27 +5445,27 @@ VkResult DispatchGetVideoSessionMemoryRequirementsKHR(
 VkResult DispatchBindVideoSessionMemoryKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
-    uint32_t                                    videoSessionBindMemoryCount,
-    const VkVideoBindMemoryKHR*                 pVideoSessionBindMemories)
+    uint32_t                                    bindSessionMemoryInfoCount,
+    const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.BindVideoSessionMemoryKHR(device, videoSession, videoSessionBindMemoryCount, pVideoSessionBindMemories);
-    safe_VkVideoBindMemoryKHR *local_pVideoSessionBindMemories = NULL;
+    if (!wrap_handles) return layer_data->device_dispatch_table.BindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos);
+    safe_VkBindVideoSessionMemoryInfoKHR *local_pBindSessionMemoryInfos = NULL;
     {
         videoSession = layer_data->Unwrap(videoSession);
-        if (pVideoSessionBindMemories) {
-            local_pVideoSessionBindMemories = new safe_VkVideoBindMemoryKHR[videoSessionBindMemoryCount];
-            for (uint32_t index0 = 0; index0 < videoSessionBindMemoryCount; ++index0) {
-                local_pVideoSessionBindMemories[index0].initialize(&pVideoSessionBindMemories[index0]);
-                if (pVideoSessionBindMemories[index0].memory) {
-                    local_pVideoSessionBindMemories[index0].memory = layer_data->Unwrap(pVideoSessionBindMemories[index0].memory);
+        if (pBindSessionMemoryInfos) {
+            local_pBindSessionMemoryInfos = new safe_VkBindVideoSessionMemoryInfoKHR[bindSessionMemoryInfoCount];
+            for (uint32_t index0 = 0; index0 < bindSessionMemoryInfoCount; ++index0) {
+                local_pBindSessionMemoryInfos[index0].initialize(&pBindSessionMemoryInfos[index0]);
+                if (pBindSessionMemoryInfos[index0].memory) {
+                    local_pBindSessionMemoryInfos[index0].memory = layer_data->Unwrap(pBindSessionMemoryInfos[index0].memory);
                 }
             }
         }
     }
-    VkResult result = layer_data->device_dispatch_table.BindVideoSessionMemoryKHR(device, videoSession, videoSessionBindMemoryCount, (const VkVideoBindMemoryKHR*)local_pVideoSessionBindMemories);
-    if (local_pVideoSessionBindMemories) {
-        delete[] local_pVideoSessionBindMemories;
+    VkResult result = layer_data->device_dispatch_table.BindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, (const VkBindVideoSessionMemoryInfoKHR*)local_pBindSessionMemoryInfos);
+    if (local_pBindSessionMemoryInfos) {
+        delete[] local_pBindSessionMemoryInfos;
     }
     return result;
 }
