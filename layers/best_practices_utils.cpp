@@ -1707,9 +1707,12 @@ bool BestPractices::ValidateCmdPipelineBarrierImageBarrier(VkCommandBuffer comma
 
     bool skip = false;
 
+    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
+
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if (barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && barrier.newLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
-            skip |= ValidateZcull(commandBuffer, barrier.image, barrier.subresourceRange);
+            skip |= ValidateZcull(*cmd_state, barrier.image, barrier.subresourceRange);
         }
     }
 
@@ -2128,34 +2131,28 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     }
 }
 
-bool BestPractices::ValidateZcullScope(VkCommandBuffer commandBuffer) const {
+bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     bool skip = false;
 
-    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    assert(cmd_state);
-
-    if (cmd_state->nv.depth_test_enable) {
-        auto& scope = cmd_state->nv.zcull_scope;
-        skip |= ValidateZcull(commandBuffer, scope.image, scope.range);
+    if (cmd_state.nv.depth_test_enable) {
+        auto& scope = cmd_state.nv.zcull_scope;
+        skip |= ValidateZcull(cmd_state, scope.image, scope.range);
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateZcull(VkCommandBuffer commandBuffer, VkImage image,
+bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkImage image,
                                   const VkImageSubresourceRange& subresource_range) const {
     bool skip = false;
 
     const char* good_mode = nullptr;
     const char* bad_mode = nullptr;
 
-    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-    assert(cmd_state);
-
-    const auto image_it = cmd_state->nv.zcull_per_image.find(image);
-    if (image_it == cmd_state->nv.zcull_per_image.end()) {
+    const auto image_it = cmd_state.nv.zcull_per_image.find(image);
+    if (image_it == cmd_state.nv.zcull_per_image.end()) {
         return skip;
     }
     const auto& tree = image_it->second;
@@ -2196,12 +2193,12 @@ bool BestPractices::ValidateZcull(VkCommandBuffer commandBuffer, VkImage image,
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
-            commandBuffer, kVUID_BestPractices_Zcull_LessGreaterRatio,
+            cmd_state.commandBuffer(), kVUID_BestPractices_Zcull_LessGreaterRatio,
             "%s Depth attachment %s is primarily rendered with depth compare op %s, but some draws use %s. "
             "Z-cull is disabled for the least used direction, which harms depth testing performance. "
             "The Z-cull direction can be reset by clearing the depth attachment, transitioning from VK_IMAGE_LAYOUT_UNDEFINED, "
             "using VK_ATTACHMENT_LOAD_OP_DONT_CARE, or using VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-            VendorSpecificTag(kBPVendorNVIDIA), report_data->FormatHandle(cmd_state->nv.zcull_scope.image).c_str(), good_mode,
+            VendorSpecificTag(kBPVendorNVIDIA), report_data->FormatHandle(cmd_state.nv.zcull_scope.image).c_str(), good_mode,
             bad_mode);
     }
 
@@ -3806,7 +3803,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateZcullScope(commandBuffer);
+        const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        assert(cmd_state);
+        skip |= ValidateZcullScope(*cmd_state);
     }
     return skip;
 }
@@ -3816,7 +3815,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
     skip |= StateTracker::PreCallValidateCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateZcullScope(commandBuffer);
+        const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        assert(cmd_state);
+        skip |= ValidateZcullScope(*cmd_state);
     }
     return skip;
 }
@@ -3826,7 +3827,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
     skip |= StateTracker::PreCallValidateCmdEndRenderPass(commandBuffer);
     skip |= ValidateCmdEndRenderPass(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateZcullScope(commandBuffer);
+        const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        assert(cmd_state);
+        skip |= ValidateZcullScope(*cmd_state);
     }
     return skip;
 }
@@ -3835,7 +3838,9 @@ bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRendering(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateZcullScope(commandBuffer);
+        const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        assert(cmd_state);
+        skip |= ValidateZcullScope(*cmd_state);
     }
     return skip;
 }
@@ -3844,7 +3849,9 @@ bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuf
     bool skip = false;
     skip |= StateTracker::PreCallValidateCmdEndRenderingKHR(commandBuffer);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        skip |= ValidateZcullScope(commandBuffer);
+        const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+        assert(cmd_state);
+        skip |= ValidateZcullScope(*cmd_state);
     }
     return skip;
 }
@@ -4319,7 +4326,9 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBuffer& cmd, 
                                   secondary ? "vkCmdExecuteCommands(): " : "", report_data->FormatHandle(cmd.Handle()).c_str());
 
         if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-            skip |= ValidateZcullScope(cmd.commandBuffer());
+            const auto cmd_state = GetRead<bp_state::CommandBuffer>(cmd.commandBuffer());
+            assert(cmd_state);
+            skip |= ValidateZcullScope(*cmd_state);
         }
     }
 
@@ -4362,7 +4371,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                 for (uint32_t i = 0; i < attachmentCount; i++) {
                     const auto& attachment = pAttachments[i];
                     if (attachment.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
-                        skip |= ValidateZcullScope(commandBuffer);
+                        skip |= ValidateZcullScope(*cb_node);
                     }
                     if ((attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && attachment.colorAttachment != VK_ATTACHMENT_UNUSED) {
                         const auto& color_attachment = pColorAttachments[attachment.colorAttachment];
@@ -4772,9 +4781,11 @@ bool BestPractices::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
                     "vkCmdClearAttachments instead",
                     VendorSpecificTag(kBPVendorAMD));
     }
+    const auto cmd_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    assert(cmd_state);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         for (uint32_t i = 0; i < rangeCount; i++) {
-            skip |= ValidateZcull(commandBuffer, image, pRanges[i]);
+            skip |= ValidateZcull(*cmd_state, image, pRanges[i]);
         }
     }
 
