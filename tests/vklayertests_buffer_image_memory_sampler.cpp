@@ -15539,18 +15539,18 @@ TEST_F(VkLayerTest, VideoBufferUsage) {
     vk::CreateBuffer(device(), &buffer_ci, nullptr, &buffer);
     m_errorMonitor->VerifyFound();
 
-    VkVideoProfileKHR video_profile[2];
-    video_profile[0] = LvlInitStruct<VkVideoProfileKHR>();
+    VkVideoProfileInfoKHR video_profile[2];
+    video_profile[0] = LvlInitStruct<VkVideoProfileInfoKHR>();
     video_profile[0].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT;
     video_profile[0].chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
     video_profile[0].chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
     video_profile[0].lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
-    video_profile[1] = LvlInitStruct<VkVideoProfileKHR>();
+    video_profile[1] = LvlInitStruct<VkVideoProfileInfoKHR>();
     video_profile[1].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT;
     video_profile[1].chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
     video_profile[1].chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
     video_profile[1].lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
-    VkVideoProfilesKHR video_profiles = LvlInitStruct<VkVideoProfilesKHR>();
+    VkVideoProfileListInfoKHR video_profiles = LvlInitStruct<VkVideoProfileListInfoKHR>();
     video_profiles.profileCount = 1;
     video_profiles.pProfiles = video_profile;
     buffer_ci.pNext = &video_profiles;

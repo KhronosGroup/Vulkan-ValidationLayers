@@ -1467,7 +1467,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 auto set = context.descriptor_set->GetSet();
                 LogObjectList objlist(set);
                 objlist.add(buffer_view);
-                return LogError(objlist, context.vuids.storage_image_read_without_format,
+                return LogError(objlist, context.vuids.storage_texel_buffer_read_without_format,
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                                 "in binding #%" PRIu32 " index %" PRIu32
                                 ", %s, buffer view format %s feature flags (%s) doesn't "
@@ -1482,7 +1482,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 auto set = context.descriptor_set->GetSet();
                 LogObjectList objlist(set);
                 objlist.add(buffer_view);
-                return LogError(objlist, context.vuids.storage_image_write_without_format,
+                return LogError(objlist, context.vuids.storage_texel_buffer_write_without_format,
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor "
                                 "in binding #%" PRIu32 " index %" PRIu32
                                 ", %s, buffer view format %s feature flags (%s) doesn't "

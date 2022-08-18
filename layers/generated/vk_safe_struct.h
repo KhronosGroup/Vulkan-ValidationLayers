@@ -4437,74 +4437,74 @@ struct safe_VkWin32SurfaceCreateInfoKHR {
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkQueueFamilyQueryResultStatusProperties2KHR {
+struct safe_VkQueueFamilyQueryResultStatusPropertiesKHR {
     VkStructureType sType;
     void* pNext{};
     VkBool32 queryResultStatusSupport;
-    safe_VkQueueFamilyQueryResultStatusProperties2KHR(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct);
-    safe_VkQueueFamilyQueryResultStatusProperties2KHR(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src);
-    safe_VkQueueFamilyQueryResultStatusProperties2KHR& operator=(const safe_VkQueueFamilyQueryResultStatusProperties2KHR& copy_src);
-    safe_VkQueueFamilyQueryResultStatusProperties2KHR();
-    ~safe_VkQueueFamilyQueryResultStatusProperties2KHR();
-    void initialize(const VkQueueFamilyQueryResultStatusProperties2KHR* in_struct);
-    void initialize(const safe_VkQueueFamilyQueryResultStatusProperties2KHR* copy_src);
-    VkQueueFamilyQueryResultStatusProperties2KHR *ptr() { return reinterpret_cast<VkQueueFamilyQueryResultStatusProperties2KHR *>(this); }
-    VkQueueFamilyQueryResultStatusProperties2KHR const *ptr() const { return reinterpret_cast<VkQueueFamilyQueryResultStatusProperties2KHR const *>(this); }
+    safe_VkQueueFamilyQueryResultStatusPropertiesKHR(const VkQueueFamilyQueryResultStatusPropertiesKHR* in_struct);
+    safe_VkQueueFamilyQueryResultStatusPropertiesKHR(const safe_VkQueueFamilyQueryResultStatusPropertiesKHR& copy_src);
+    safe_VkQueueFamilyQueryResultStatusPropertiesKHR& operator=(const safe_VkQueueFamilyQueryResultStatusPropertiesKHR& copy_src);
+    safe_VkQueueFamilyQueryResultStatusPropertiesKHR();
+    ~safe_VkQueueFamilyQueryResultStatusPropertiesKHR();
+    void initialize(const VkQueueFamilyQueryResultStatusPropertiesKHR* in_struct);
+    void initialize(const safe_VkQueueFamilyQueryResultStatusPropertiesKHR* copy_src);
+    VkQueueFamilyQueryResultStatusPropertiesKHR *ptr() { return reinterpret_cast<VkQueueFamilyQueryResultStatusPropertiesKHR *>(this); }
+    VkQueueFamilyQueryResultStatusPropertiesKHR const *ptr() const { return reinterpret_cast<VkQueueFamilyQueryResultStatusPropertiesKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoQueueFamilyProperties2KHR {
+struct safe_VkQueueFamilyVideoPropertiesKHR {
     VkStructureType sType;
     void* pNext{};
     VkVideoCodecOperationFlagsKHR videoCodecOperations;
-    safe_VkVideoQueueFamilyProperties2KHR(const VkVideoQueueFamilyProperties2KHR* in_struct);
-    safe_VkVideoQueueFamilyProperties2KHR(const safe_VkVideoQueueFamilyProperties2KHR& copy_src);
-    safe_VkVideoQueueFamilyProperties2KHR& operator=(const safe_VkVideoQueueFamilyProperties2KHR& copy_src);
-    safe_VkVideoQueueFamilyProperties2KHR();
-    ~safe_VkVideoQueueFamilyProperties2KHR();
-    void initialize(const VkVideoQueueFamilyProperties2KHR* in_struct);
-    void initialize(const safe_VkVideoQueueFamilyProperties2KHR* copy_src);
-    VkVideoQueueFamilyProperties2KHR *ptr() { return reinterpret_cast<VkVideoQueueFamilyProperties2KHR *>(this); }
-    VkVideoQueueFamilyProperties2KHR const *ptr() const { return reinterpret_cast<VkVideoQueueFamilyProperties2KHR const *>(this); }
+    safe_VkQueueFamilyVideoPropertiesKHR(const VkQueueFamilyVideoPropertiesKHR* in_struct);
+    safe_VkQueueFamilyVideoPropertiesKHR(const safe_VkQueueFamilyVideoPropertiesKHR& copy_src);
+    safe_VkQueueFamilyVideoPropertiesKHR& operator=(const safe_VkQueueFamilyVideoPropertiesKHR& copy_src);
+    safe_VkQueueFamilyVideoPropertiesKHR();
+    ~safe_VkQueueFamilyVideoPropertiesKHR();
+    void initialize(const VkQueueFamilyVideoPropertiesKHR* in_struct);
+    void initialize(const safe_VkQueueFamilyVideoPropertiesKHR* copy_src);
+    VkQueueFamilyVideoPropertiesKHR *ptr() { return reinterpret_cast<VkQueueFamilyVideoPropertiesKHR *>(this); }
+    VkQueueFamilyVideoPropertiesKHR const *ptr() const { return reinterpret_cast<VkQueueFamilyVideoPropertiesKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoProfileKHR {
+struct safe_VkVideoProfileInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     VkVideoCodecOperationFlagBitsKHR videoCodecOperation;
     VkVideoChromaSubsamplingFlagsKHR chromaSubsampling;
     VkVideoComponentBitDepthFlagsKHR lumaBitDepth;
     VkVideoComponentBitDepthFlagsKHR chromaBitDepth;
-    safe_VkVideoProfileKHR(const VkVideoProfileKHR* in_struct);
-    safe_VkVideoProfileKHR(const safe_VkVideoProfileKHR& copy_src);
-    safe_VkVideoProfileKHR& operator=(const safe_VkVideoProfileKHR& copy_src);
-    safe_VkVideoProfileKHR();
-    ~safe_VkVideoProfileKHR();
-    void initialize(const VkVideoProfileKHR* in_struct);
-    void initialize(const safe_VkVideoProfileKHR* copy_src);
-    VkVideoProfileKHR *ptr() { return reinterpret_cast<VkVideoProfileKHR *>(this); }
-    VkVideoProfileKHR const *ptr() const { return reinterpret_cast<VkVideoProfileKHR const *>(this); }
+    safe_VkVideoProfileInfoKHR(const VkVideoProfileInfoKHR* in_struct);
+    safe_VkVideoProfileInfoKHR(const safe_VkVideoProfileInfoKHR& copy_src);
+    safe_VkVideoProfileInfoKHR& operator=(const safe_VkVideoProfileInfoKHR& copy_src);
+    safe_VkVideoProfileInfoKHR();
+    ~safe_VkVideoProfileInfoKHR();
+    void initialize(const VkVideoProfileInfoKHR* in_struct);
+    void initialize(const safe_VkVideoProfileInfoKHR* copy_src);
+    VkVideoProfileInfoKHR *ptr() { return reinterpret_cast<VkVideoProfileInfoKHR *>(this); }
+    VkVideoProfileInfoKHR const *ptr() const { return reinterpret_cast<VkVideoProfileInfoKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoProfilesKHR {
+struct safe_VkVideoProfileListInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     uint32_t profileCount;
-    safe_VkVideoProfileKHR* pProfiles{};
-    safe_VkVideoProfilesKHR(const VkVideoProfilesKHR* in_struct);
-    safe_VkVideoProfilesKHR(const safe_VkVideoProfilesKHR& copy_src);
-    safe_VkVideoProfilesKHR& operator=(const safe_VkVideoProfilesKHR& copy_src);
-    safe_VkVideoProfilesKHR();
-    ~safe_VkVideoProfilesKHR();
-    void initialize(const VkVideoProfilesKHR* in_struct);
-    void initialize(const safe_VkVideoProfilesKHR* copy_src);
-    VkVideoProfilesKHR *ptr() { return reinterpret_cast<VkVideoProfilesKHR *>(this); }
-    VkVideoProfilesKHR const *ptr() const { return reinterpret_cast<VkVideoProfilesKHR const *>(this); }
+    safe_VkVideoProfileInfoKHR* pProfiles{};
+    safe_VkVideoProfileListInfoKHR(const VkVideoProfileListInfoKHR* in_struct);
+    safe_VkVideoProfileListInfoKHR(const safe_VkVideoProfileListInfoKHR& copy_src);
+    safe_VkVideoProfileListInfoKHR& operator=(const safe_VkVideoProfileListInfoKHR& copy_src);
+    safe_VkVideoProfileListInfoKHR();
+    ~safe_VkVideoProfileListInfoKHR();
+    void initialize(const VkVideoProfileListInfoKHR* in_struct);
+    void initialize(const safe_VkVideoProfileListInfoKHR* copy_src);
+    VkVideoProfileListInfoKHR *ptr() { return reinterpret_cast<VkVideoProfileListInfoKHR *>(this); }
+    VkVideoProfileListInfoKHR const *ptr() const { return reinterpret_cast<VkVideoProfileListInfoKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -4536,7 +4536,7 @@ struct safe_VkVideoCapabilitiesKHR {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 struct safe_VkPhysicalDeviceVideoFormatInfoKHR {
      VkStructureType sType;
-    void* pNext{};
+    const void* pNext{};
     VkImageUsageFlags imageUsage;
     safe_VkPhysicalDeviceVideoFormatInfoKHR(const VkPhysicalDeviceVideoFormatInfoKHR* in_struct);
     safe_VkPhysicalDeviceVideoFormatInfoKHR(const safe_VkPhysicalDeviceVideoFormatInfoKHR& copy_src);
@@ -4573,78 +4573,78 @@ struct safe_VkVideoFormatPropertiesKHR {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoPictureResourceKHR {
+struct safe_VkVideoPictureResourceInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     VkOffset2D codedOffset;
     VkExtent2D codedExtent;
     uint32_t baseArrayLayer;
     VkImageView imageViewBinding;
-    safe_VkVideoPictureResourceKHR(const VkVideoPictureResourceKHR* in_struct);
-    safe_VkVideoPictureResourceKHR(const safe_VkVideoPictureResourceKHR& copy_src);
-    safe_VkVideoPictureResourceKHR& operator=(const safe_VkVideoPictureResourceKHR& copy_src);
-    safe_VkVideoPictureResourceKHR();
-    ~safe_VkVideoPictureResourceKHR();
-    void initialize(const VkVideoPictureResourceKHR* in_struct);
-    void initialize(const safe_VkVideoPictureResourceKHR* copy_src);
-    VkVideoPictureResourceKHR *ptr() { return reinterpret_cast<VkVideoPictureResourceKHR *>(this); }
-    VkVideoPictureResourceKHR const *ptr() const { return reinterpret_cast<VkVideoPictureResourceKHR const *>(this); }
+    safe_VkVideoPictureResourceInfoKHR(const VkVideoPictureResourceInfoKHR* in_struct);
+    safe_VkVideoPictureResourceInfoKHR(const safe_VkVideoPictureResourceInfoKHR& copy_src);
+    safe_VkVideoPictureResourceInfoKHR& operator=(const safe_VkVideoPictureResourceInfoKHR& copy_src);
+    safe_VkVideoPictureResourceInfoKHR();
+    ~safe_VkVideoPictureResourceInfoKHR();
+    void initialize(const VkVideoPictureResourceInfoKHR* in_struct);
+    void initialize(const safe_VkVideoPictureResourceInfoKHR* copy_src);
+    VkVideoPictureResourceInfoKHR *ptr() { return reinterpret_cast<VkVideoPictureResourceInfoKHR *>(this); }
+    VkVideoPictureResourceInfoKHR const *ptr() const { return reinterpret_cast<VkVideoPictureResourceInfoKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoReferenceSlotKHR {
+struct safe_VkVideoReferenceSlotInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     int8_t slotIndex;
-    safe_VkVideoPictureResourceKHR* pPictureResource{};
-    safe_VkVideoReferenceSlotKHR(const VkVideoReferenceSlotKHR* in_struct);
-    safe_VkVideoReferenceSlotKHR(const safe_VkVideoReferenceSlotKHR& copy_src);
-    safe_VkVideoReferenceSlotKHR& operator=(const safe_VkVideoReferenceSlotKHR& copy_src);
-    safe_VkVideoReferenceSlotKHR();
-    ~safe_VkVideoReferenceSlotKHR();
-    void initialize(const VkVideoReferenceSlotKHR* in_struct);
-    void initialize(const safe_VkVideoReferenceSlotKHR* copy_src);
-    VkVideoReferenceSlotKHR *ptr() { return reinterpret_cast<VkVideoReferenceSlotKHR *>(this); }
-    VkVideoReferenceSlotKHR const *ptr() const { return reinterpret_cast<VkVideoReferenceSlotKHR const *>(this); }
+    safe_VkVideoPictureResourceInfoKHR* pPictureResource{};
+    safe_VkVideoReferenceSlotInfoKHR(const VkVideoReferenceSlotInfoKHR* in_struct);
+    safe_VkVideoReferenceSlotInfoKHR(const safe_VkVideoReferenceSlotInfoKHR& copy_src);
+    safe_VkVideoReferenceSlotInfoKHR& operator=(const safe_VkVideoReferenceSlotInfoKHR& copy_src);
+    safe_VkVideoReferenceSlotInfoKHR();
+    ~safe_VkVideoReferenceSlotInfoKHR();
+    void initialize(const VkVideoReferenceSlotInfoKHR* in_struct);
+    void initialize(const safe_VkVideoReferenceSlotInfoKHR* copy_src);
+    VkVideoReferenceSlotInfoKHR *ptr() { return reinterpret_cast<VkVideoReferenceSlotInfoKHR *>(this); }
+    VkVideoReferenceSlotInfoKHR const *ptr() const { return reinterpret_cast<VkVideoReferenceSlotInfoKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoGetMemoryPropertiesKHR {
+struct safe_VkVideoSessionMemoryRequirementsKHR {
     VkStructureType sType;
-    const void* pNext{};
+    void* pNext{};
     uint32_t memoryBindIndex;
-    safe_VkMemoryRequirements2* pMemoryRequirements{};
-    safe_VkVideoGetMemoryPropertiesKHR(const VkVideoGetMemoryPropertiesKHR* in_struct);
-    safe_VkVideoGetMemoryPropertiesKHR(const safe_VkVideoGetMemoryPropertiesKHR& copy_src);
-    safe_VkVideoGetMemoryPropertiesKHR& operator=(const safe_VkVideoGetMemoryPropertiesKHR& copy_src);
-    safe_VkVideoGetMemoryPropertiesKHR();
-    ~safe_VkVideoGetMemoryPropertiesKHR();
-    void initialize(const VkVideoGetMemoryPropertiesKHR* in_struct);
-    void initialize(const safe_VkVideoGetMemoryPropertiesKHR* copy_src);
-    VkVideoGetMemoryPropertiesKHR *ptr() { return reinterpret_cast<VkVideoGetMemoryPropertiesKHR *>(this); }
-    VkVideoGetMemoryPropertiesKHR const *ptr() const { return reinterpret_cast<VkVideoGetMemoryPropertiesKHR const *>(this); }
+    VkMemoryRequirements memoryRequirements;
+    safe_VkVideoSessionMemoryRequirementsKHR(const VkVideoSessionMemoryRequirementsKHR* in_struct);
+    safe_VkVideoSessionMemoryRequirementsKHR(const safe_VkVideoSessionMemoryRequirementsKHR& copy_src);
+    safe_VkVideoSessionMemoryRequirementsKHR& operator=(const safe_VkVideoSessionMemoryRequirementsKHR& copy_src);
+    safe_VkVideoSessionMemoryRequirementsKHR();
+    ~safe_VkVideoSessionMemoryRequirementsKHR();
+    void initialize(const VkVideoSessionMemoryRequirementsKHR* in_struct);
+    void initialize(const safe_VkVideoSessionMemoryRequirementsKHR* copy_src);
+    VkVideoSessionMemoryRequirementsKHR *ptr() { return reinterpret_cast<VkVideoSessionMemoryRequirementsKHR *>(this); }
+    VkVideoSessionMemoryRequirementsKHR const *ptr() const { return reinterpret_cast<VkVideoSessionMemoryRequirementsKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoBindMemoryKHR {
+struct safe_VkBindVideoSessionMemoryInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     uint32_t memoryBindIndex;
     VkDeviceMemory memory;
     VkDeviceSize memoryOffset;
     VkDeviceSize memorySize;
-    safe_VkVideoBindMemoryKHR(const VkVideoBindMemoryKHR* in_struct);
-    safe_VkVideoBindMemoryKHR(const safe_VkVideoBindMemoryKHR& copy_src);
-    safe_VkVideoBindMemoryKHR& operator=(const safe_VkVideoBindMemoryKHR& copy_src);
-    safe_VkVideoBindMemoryKHR();
-    ~safe_VkVideoBindMemoryKHR();
-    void initialize(const VkVideoBindMemoryKHR* in_struct);
-    void initialize(const safe_VkVideoBindMemoryKHR* copy_src);
-    VkVideoBindMemoryKHR *ptr() { return reinterpret_cast<VkVideoBindMemoryKHR *>(this); }
-    VkVideoBindMemoryKHR const *ptr() const { return reinterpret_cast<VkVideoBindMemoryKHR const *>(this); }
+    safe_VkBindVideoSessionMemoryInfoKHR(const VkBindVideoSessionMemoryInfoKHR* in_struct);
+    safe_VkBindVideoSessionMemoryInfoKHR(const safe_VkBindVideoSessionMemoryInfoKHR& copy_src);
+    safe_VkBindVideoSessionMemoryInfoKHR& operator=(const safe_VkBindVideoSessionMemoryInfoKHR& copy_src);
+    safe_VkBindVideoSessionMemoryInfoKHR();
+    ~safe_VkBindVideoSessionMemoryInfoKHR();
+    void initialize(const VkBindVideoSessionMemoryInfoKHR* in_struct);
+    void initialize(const safe_VkBindVideoSessionMemoryInfoKHR* copy_src);
+    VkBindVideoSessionMemoryInfoKHR *ptr() { return reinterpret_cast<VkBindVideoSessionMemoryInfoKHR *>(this); }
+    VkBindVideoSessionMemoryInfoKHR const *ptr() const { return reinterpret_cast<VkBindVideoSessionMemoryInfoKHR const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -4654,7 +4654,7 @@ struct safe_VkVideoSessionCreateInfoKHR {
     const void* pNext{};
     uint32_t queueFamilyIndex;
     VkVideoSessionCreateFlagsKHR flags;
-    safe_VkVideoProfileKHR* pVideoProfile{};
+    safe_VkVideoProfileInfoKHR* pVideoProfile{};
     VkFormat pictureFormat;
     VkExtent2D maxCodedExtent;
     VkFormat referencePicturesFormat;
@@ -4677,6 +4677,7 @@ struct safe_VkVideoSessionCreateInfoKHR {
 struct safe_VkVideoSessionParametersCreateInfoKHR {
     VkStructureType sType;
     const void* pNext{};
+    VkVideoSessionParametersCreateFlagsKHR flags;
     VkVideoSessionParametersKHR videoSessionParametersTemplate;
     VkVideoSessionKHR videoSession;
     safe_VkVideoSessionParametersCreateInfoKHR(const VkVideoSessionParametersCreateInfoKHR* in_struct);
@@ -4713,11 +4714,10 @@ struct safe_VkVideoBeginCodingInfoKHR {
     VkStructureType sType;
     const void* pNext{};
     VkVideoBeginCodingFlagsKHR flags;
-    VkVideoCodingQualityPresetFlagsKHR codecQualityPreset;
     VkVideoSessionKHR videoSession;
     VkVideoSessionParametersKHR videoSessionParameters;
     uint32_t referenceSlotCount;
-    safe_VkVideoReferenceSlotKHR* pReferenceSlots{};
+    safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
     safe_VkVideoBeginCodingInfoKHR(const VkVideoBeginCodingInfoKHR* in_struct);
     safe_VkVideoBeginCodingInfoKHR(const safe_VkVideoBeginCodingInfoKHR& copy_src);
     safe_VkVideoBeginCodingInfoKHR& operator=(const safe_VkVideoBeginCodingInfoKHR& copy_src);
@@ -4789,10 +4789,10 @@ struct safe_VkVideoDecodeInfoKHR {
     VkBuffer srcBuffer;
     VkDeviceSize srcBufferOffset;
     VkDeviceSize srcBufferRange;
-    safe_VkVideoPictureResourceKHR dstPictureResource;
-    safe_VkVideoReferenceSlotKHR* pSetupReferenceSlot{};
+    safe_VkVideoPictureResourceInfoKHR dstPictureResource;
+    safe_VkVideoReferenceSlotInfoKHR* pSetupReferenceSlot{};
     uint32_t referenceSlotCount;
-    safe_VkVideoReferenceSlotKHR* pReferenceSlots{};
+    safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
     safe_VkVideoDecodeInfoKHR(const VkVideoDecodeInfoKHR* in_struct);
     safe_VkVideoDecodeInfoKHR(const safe_VkVideoDecodeInfoKHR& copy_src);
     safe_VkVideoDecodeInfoKHR& operator=(const safe_VkVideoDecodeInfoKHR& copy_src);
@@ -5907,10 +5907,10 @@ struct safe_VkVideoEncodeInfoKHR {
     VkBuffer dstBitstreamBuffer;
     VkDeviceSize dstBitstreamBufferOffset;
     VkDeviceSize dstBitstreamBufferMaxRange;
-    safe_VkVideoPictureResourceKHR srcPictureResource;
-    safe_VkVideoReferenceSlotKHR* pSetupReferenceSlot{};
+    safe_VkVideoPictureResourceInfoKHR srcPictureResource;
+    safe_VkVideoReferenceSlotInfoKHR* pSetupReferenceSlot{};
     uint32_t referenceSlotCount;
-    safe_VkVideoReferenceSlotKHR* pReferenceSlots{};
+    safe_VkVideoReferenceSlotInfoKHR* pReferenceSlots{};
     uint32_t precedingExternallyEncodedBytes;
     safe_VkVideoEncodeInfoKHR(const VkVideoEncodeInfoKHR* in_struct);
     safe_VkVideoEncodeInfoKHR(const safe_VkVideoEncodeInfoKHR& copy_src);
@@ -6459,7 +6459,7 @@ struct safe_VkVideoEncodeH264DpbSlotInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH264ReferenceListsEXT {
+struct safe_VkVideoEncodeH264ReferenceListsInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint8_t referenceList0EntryCount;
@@ -6467,34 +6467,34 @@ struct safe_VkVideoEncodeH264ReferenceListsEXT {
     uint8_t referenceList1EntryCount;
     safe_VkVideoEncodeH264DpbSlotInfoEXT* pReferenceList1Entries{};
     const StdVideoEncodeH264RefMemMgmtCtrlOperations* pMemMgmtCtrlOperations{};
-    safe_VkVideoEncodeH264ReferenceListsEXT(const VkVideoEncodeH264ReferenceListsEXT* in_struct);
-    safe_VkVideoEncodeH264ReferenceListsEXT(const safe_VkVideoEncodeH264ReferenceListsEXT& copy_src);
-    safe_VkVideoEncodeH264ReferenceListsEXT& operator=(const safe_VkVideoEncodeH264ReferenceListsEXT& copy_src);
-    safe_VkVideoEncodeH264ReferenceListsEXT();
-    ~safe_VkVideoEncodeH264ReferenceListsEXT();
-    void initialize(const VkVideoEncodeH264ReferenceListsEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH264ReferenceListsEXT* copy_src);
-    VkVideoEncodeH264ReferenceListsEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ReferenceListsEXT *>(this); }
-    VkVideoEncodeH264ReferenceListsEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ReferenceListsEXT const *>(this); }
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT(const VkVideoEncodeH264ReferenceListsInfoEXT* in_struct);
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT(const safe_VkVideoEncodeH264ReferenceListsInfoEXT& copy_src);
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT& operator=(const safe_VkVideoEncodeH264ReferenceListsInfoEXT& copy_src);
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT();
+    ~safe_VkVideoEncodeH264ReferenceListsInfoEXT();
+    void initialize(const VkVideoEncodeH264ReferenceListsInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264ReferenceListsInfoEXT* copy_src);
+    VkVideoEncodeH264ReferenceListsInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ReferenceListsInfoEXT *>(this); }
+    VkVideoEncodeH264ReferenceListsInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ReferenceListsInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH264NaluSliceEXT {
+struct safe_VkVideoEncodeH264NaluSliceInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint32_t mbCount;
-    safe_VkVideoEncodeH264ReferenceListsEXT* pReferenceFinalLists{};
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT* pReferenceFinalLists{};
     const StdVideoEncodeH264SliceHeader* pSliceHeaderStd{};
-    safe_VkVideoEncodeH264NaluSliceEXT(const VkVideoEncodeH264NaluSliceEXT* in_struct);
-    safe_VkVideoEncodeH264NaluSliceEXT(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
-    safe_VkVideoEncodeH264NaluSliceEXT& operator=(const safe_VkVideoEncodeH264NaluSliceEXT& copy_src);
-    safe_VkVideoEncodeH264NaluSliceEXT();
-    ~safe_VkVideoEncodeH264NaluSliceEXT();
-    void initialize(const VkVideoEncodeH264NaluSliceEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH264NaluSliceEXT* copy_src);
-    VkVideoEncodeH264NaluSliceEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264NaluSliceEXT *>(this); }
-    VkVideoEncodeH264NaluSliceEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264NaluSliceEXT const *>(this); }
+    safe_VkVideoEncodeH264NaluSliceInfoEXT(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct);
+    safe_VkVideoEncodeH264NaluSliceInfoEXT(const safe_VkVideoEncodeH264NaluSliceInfoEXT& copy_src);
+    safe_VkVideoEncodeH264NaluSliceInfoEXT& operator=(const safe_VkVideoEncodeH264NaluSliceInfoEXT& copy_src);
+    safe_VkVideoEncodeH264NaluSliceInfoEXT();
+    ~safe_VkVideoEncodeH264NaluSliceInfoEXT();
+    void initialize(const VkVideoEncodeH264NaluSliceInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264NaluSliceInfoEXT* copy_src);
+    VkVideoEncodeH264NaluSliceInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264NaluSliceInfoEXT *>(this); }
+    VkVideoEncodeH264NaluSliceInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264NaluSliceInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6502,9 +6502,9 @@ struct safe_VkVideoEncodeH264NaluSliceEXT {
 struct safe_VkVideoEncodeH264VclFrameInfoEXT {
     VkStructureType sType;
     const void* pNext{};
-    safe_VkVideoEncodeH264ReferenceListsEXT* pReferenceFinalLists{};
+    safe_VkVideoEncodeH264ReferenceListsInfoEXT* pReferenceFinalLists{};
     uint32_t naluSliceEntryCount;
-    safe_VkVideoEncodeH264NaluSliceEXT* pNaluSliceEntries{};
+    safe_VkVideoEncodeH264NaluSliceInfoEXT* pNaluSliceEntries{};
     const StdVideoEncodeH264PictureInfo* pCurrentPictureInfo{};
     safe_VkVideoEncodeH264VclFrameInfoEXT(const VkVideoEncodeH264VclFrameInfoEXT* in_struct);
     safe_VkVideoEncodeH264VclFrameInfoEXT(const safe_VkVideoEncodeH264VclFrameInfoEXT& copy_src);
@@ -6519,39 +6519,39 @@ struct safe_VkVideoEncodeH264VclFrameInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH264EmitPictureParametersEXT {
+struct safe_VkVideoEncodeH264EmitPictureParametersInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint8_t spsId;
     VkBool32 emitSpsEnable;
     uint32_t ppsIdEntryCount;
     const uint8_t* ppsIdEntries{};
-    safe_VkVideoEncodeH264EmitPictureParametersEXT(const VkVideoEncodeH264EmitPictureParametersEXT* in_struct);
-    safe_VkVideoEncodeH264EmitPictureParametersEXT(const safe_VkVideoEncodeH264EmitPictureParametersEXT& copy_src);
-    safe_VkVideoEncodeH264EmitPictureParametersEXT& operator=(const safe_VkVideoEncodeH264EmitPictureParametersEXT& copy_src);
-    safe_VkVideoEncodeH264EmitPictureParametersEXT();
-    ~safe_VkVideoEncodeH264EmitPictureParametersEXT();
-    void initialize(const VkVideoEncodeH264EmitPictureParametersEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH264EmitPictureParametersEXT* copy_src);
-    VkVideoEncodeH264EmitPictureParametersEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264EmitPictureParametersEXT *>(this); }
-    VkVideoEncodeH264EmitPictureParametersEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264EmitPictureParametersEXT const *>(this); }
+    safe_VkVideoEncodeH264EmitPictureParametersInfoEXT(const VkVideoEncodeH264EmitPictureParametersInfoEXT* in_struct);
+    safe_VkVideoEncodeH264EmitPictureParametersInfoEXT(const safe_VkVideoEncodeH264EmitPictureParametersInfoEXT& copy_src);
+    safe_VkVideoEncodeH264EmitPictureParametersInfoEXT& operator=(const safe_VkVideoEncodeH264EmitPictureParametersInfoEXT& copy_src);
+    safe_VkVideoEncodeH264EmitPictureParametersInfoEXT();
+    ~safe_VkVideoEncodeH264EmitPictureParametersInfoEXT();
+    void initialize(const VkVideoEncodeH264EmitPictureParametersInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264EmitPictureParametersInfoEXT* copy_src);
+    VkVideoEncodeH264EmitPictureParametersInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264EmitPictureParametersInfoEXT *>(this); }
+    VkVideoEncodeH264EmitPictureParametersInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264EmitPictureParametersInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH264ProfileEXT {
+struct safe_VkVideoEncodeH264ProfileInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     StdVideoH264ProfileIdc stdProfileIdc;
-    safe_VkVideoEncodeH264ProfileEXT(const VkVideoEncodeH264ProfileEXT* in_struct);
-    safe_VkVideoEncodeH264ProfileEXT(const safe_VkVideoEncodeH264ProfileEXT& copy_src);
-    safe_VkVideoEncodeH264ProfileEXT& operator=(const safe_VkVideoEncodeH264ProfileEXT& copy_src);
-    safe_VkVideoEncodeH264ProfileEXT();
-    ~safe_VkVideoEncodeH264ProfileEXT();
-    void initialize(const VkVideoEncodeH264ProfileEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH264ProfileEXT* copy_src);
-    VkVideoEncodeH264ProfileEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ProfileEXT *>(this); }
-    VkVideoEncodeH264ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ProfileEXT const *>(this); }
+    safe_VkVideoEncodeH264ProfileInfoEXT(const VkVideoEncodeH264ProfileInfoEXT* in_struct);
+    safe_VkVideoEncodeH264ProfileInfoEXT(const safe_VkVideoEncodeH264ProfileInfoEXT& copy_src);
+    safe_VkVideoEncodeH264ProfileInfoEXT& operator=(const safe_VkVideoEncodeH264ProfileInfoEXT& copy_src);
+    safe_VkVideoEncodeH264ProfileInfoEXT();
+    ~safe_VkVideoEncodeH264ProfileInfoEXT();
+    void initialize(const VkVideoEncodeH264ProfileInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH264ProfileInfoEXT* copy_src);
+    VkVideoEncodeH264ProfileInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH264ProfileInfoEXT *>(this); }
+    VkVideoEncodeH264ProfileInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH264ProfileInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6562,7 +6562,7 @@ struct safe_VkVideoEncodeH264RateControlInfoEXT {
     uint32_t gopFrameCount;
     uint32_t idrPeriod;
     uint32_t consecutiveBFrameCount;
-    VkVideoEncodeH264RateControlStructureFlagBitsEXT rateControlStructure;
+    VkVideoEncodeH264RateControlStructureEXT rateControlStructure;
     uint8_t temporalLayerCount;
     safe_VkVideoEncodeH264RateControlInfoEXT(const VkVideoEncodeH264RateControlInfoEXT* in_struct);
     safe_VkVideoEncodeH264RateControlInfoEXT(const safe_VkVideoEncodeH264RateControlInfoEXT& copy_src);
@@ -6698,7 +6698,7 @@ struct safe_VkVideoEncodeH265DpbSlotInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH265ReferenceListsEXT {
+struct safe_VkVideoEncodeH265ReferenceListsInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint8_t referenceList0EntryCount;
@@ -6706,34 +6706,34 @@ struct safe_VkVideoEncodeH265ReferenceListsEXT {
     uint8_t referenceList1EntryCount;
     safe_VkVideoEncodeH265DpbSlotInfoEXT* pReferenceList1Entries{};
     const StdVideoEncodeH265ReferenceModifications* pReferenceModifications{};
-    safe_VkVideoEncodeH265ReferenceListsEXT(const VkVideoEncodeH265ReferenceListsEXT* in_struct);
-    safe_VkVideoEncodeH265ReferenceListsEXT(const safe_VkVideoEncodeH265ReferenceListsEXT& copy_src);
-    safe_VkVideoEncodeH265ReferenceListsEXT& operator=(const safe_VkVideoEncodeH265ReferenceListsEXT& copy_src);
-    safe_VkVideoEncodeH265ReferenceListsEXT();
-    ~safe_VkVideoEncodeH265ReferenceListsEXT();
-    void initialize(const VkVideoEncodeH265ReferenceListsEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH265ReferenceListsEXT* copy_src);
-    VkVideoEncodeH265ReferenceListsEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265ReferenceListsEXT *>(this); }
-    VkVideoEncodeH265ReferenceListsEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265ReferenceListsEXT const *>(this); }
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT(const VkVideoEncodeH265ReferenceListsInfoEXT* in_struct);
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT(const safe_VkVideoEncodeH265ReferenceListsInfoEXT& copy_src);
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT& operator=(const safe_VkVideoEncodeH265ReferenceListsInfoEXT& copy_src);
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT();
+    ~safe_VkVideoEncodeH265ReferenceListsInfoEXT();
+    void initialize(const VkVideoEncodeH265ReferenceListsInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265ReferenceListsInfoEXT* copy_src);
+    VkVideoEncodeH265ReferenceListsInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265ReferenceListsInfoEXT *>(this); }
+    VkVideoEncodeH265ReferenceListsInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265ReferenceListsInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH265NaluSliceSegmentEXT {
+struct safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint32_t ctbCount;
-    safe_VkVideoEncodeH265ReferenceListsEXT* pReferenceFinalLists{};
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT* pReferenceFinalLists{};
     const StdVideoEncodeH265SliceSegmentHeader* pSliceSegmentHeaderStd{};
-    safe_VkVideoEncodeH265NaluSliceSegmentEXT(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct);
-    safe_VkVideoEncodeH265NaluSliceSegmentEXT(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src);
-    safe_VkVideoEncodeH265NaluSliceSegmentEXT& operator=(const safe_VkVideoEncodeH265NaluSliceSegmentEXT& copy_src);
-    safe_VkVideoEncodeH265NaluSliceSegmentEXT();
-    ~safe_VkVideoEncodeH265NaluSliceSegmentEXT();
-    void initialize(const VkVideoEncodeH265NaluSliceSegmentEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH265NaluSliceSegmentEXT* copy_src);
-    VkVideoEncodeH265NaluSliceSegmentEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentEXT *>(this); }
-    VkVideoEncodeH265NaluSliceSegmentEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentEXT const *>(this); }
+    safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct);
+    safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT(const safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& copy_src);
+    safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& operator=(const safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT& copy_src);
+    safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT();
+    ~safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT();
+    void initialize(const VkVideoEncodeH265NaluSliceSegmentInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT* copy_src);
+    VkVideoEncodeH265NaluSliceSegmentInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentInfoEXT *>(this); }
+    VkVideoEncodeH265NaluSliceSegmentInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265NaluSliceSegmentInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6741,9 +6741,9 @@ struct safe_VkVideoEncodeH265NaluSliceSegmentEXT {
 struct safe_VkVideoEncodeH265VclFrameInfoEXT {
     VkStructureType sType;
     const void* pNext{};
-    safe_VkVideoEncodeH265ReferenceListsEXT* pReferenceFinalLists{};
+    safe_VkVideoEncodeH265ReferenceListsInfoEXT* pReferenceFinalLists{};
     uint32_t naluSliceSegmentEntryCount;
-    safe_VkVideoEncodeH265NaluSliceSegmentEXT* pNaluSliceSegmentEntries{};
+    safe_VkVideoEncodeH265NaluSliceSegmentInfoEXT* pNaluSliceSegmentEntries{};
     const StdVideoEncodeH265PictureInfo* pCurrentPictureInfo{};
     safe_VkVideoEncodeH265VclFrameInfoEXT(const VkVideoEncodeH265VclFrameInfoEXT* in_struct);
     safe_VkVideoEncodeH265VclFrameInfoEXT(const safe_VkVideoEncodeH265VclFrameInfoEXT& copy_src);
@@ -6758,7 +6758,7 @@ struct safe_VkVideoEncodeH265VclFrameInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH265EmitPictureParametersEXT {
+struct safe_VkVideoEncodeH265EmitPictureParametersInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint8_t vpsId;
@@ -6767,32 +6767,32 @@ struct safe_VkVideoEncodeH265EmitPictureParametersEXT {
     VkBool32 emitSpsEnable;
     uint32_t ppsIdEntryCount;
     const uint8_t* ppsIdEntries{};
-    safe_VkVideoEncodeH265EmitPictureParametersEXT(const VkVideoEncodeH265EmitPictureParametersEXT* in_struct);
-    safe_VkVideoEncodeH265EmitPictureParametersEXT(const safe_VkVideoEncodeH265EmitPictureParametersEXT& copy_src);
-    safe_VkVideoEncodeH265EmitPictureParametersEXT& operator=(const safe_VkVideoEncodeH265EmitPictureParametersEXT& copy_src);
-    safe_VkVideoEncodeH265EmitPictureParametersEXT();
-    ~safe_VkVideoEncodeH265EmitPictureParametersEXT();
-    void initialize(const VkVideoEncodeH265EmitPictureParametersEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH265EmitPictureParametersEXT* copy_src);
-    VkVideoEncodeH265EmitPictureParametersEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265EmitPictureParametersEXT *>(this); }
-    VkVideoEncodeH265EmitPictureParametersEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265EmitPictureParametersEXT const *>(this); }
+    safe_VkVideoEncodeH265EmitPictureParametersInfoEXT(const VkVideoEncodeH265EmitPictureParametersInfoEXT* in_struct);
+    safe_VkVideoEncodeH265EmitPictureParametersInfoEXT(const safe_VkVideoEncodeH265EmitPictureParametersInfoEXT& copy_src);
+    safe_VkVideoEncodeH265EmitPictureParametersInfoEXT& operator=(const safe_VkVideoEncodeH265EmitPictureParametersInfoEXT& copy_src);
+    safe_VkVideoEncodeH265EmitPictureParametersInfoEXT();
+    ~safe_VkVideoEncodeH265EmitPictureParametersInfoEXT();
+    void initialize(const VkVideoEncodeH265EmitPictureParametersInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265EmitPictureParametersInfoEXT* copy_src);
+    VkVideoEncodeH265EmitPictureParametersInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265EmitPictureParametersInfoEXT *>(this); }
+    VkVideoEncodeH265EmitPictureParametersInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265EmitPictureParametersInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoEncodeH265ProfileEXT {
+struct safe_VkVideoEncodeH265ProfileInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     StdVideoH265ProfileIdc stdProfileIdc;
-    safe_VkVideoEncodeH265ProfileEXT(const VkVideoEncodeH265ProfileEXT* in_struct);
-    safe_VkVideoEncodeH265ProfileEXT(const safe_VkVideoEncodeH265ProfileEXT& copy_src);
-    safe_VkVideoEncodeH265ProfileEXT& operator=(const safe_VkVideoEncodeH265ProfileEXT& copy_src);
-    safe_VkVideoEncodeH265ProfileEXT();
-    ~safe_VkVideoEncodeH265ProfileEXT();
-    void initialize(const VkVideoEncodeH265ProfileEXT* in_struct);
-    void initialize(const safe_VkVideoEncodeH265ProfileEXT* copy_src);
-    VkVideoEncodeH265ProfileEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265ProfileEXT *>(this); }
-    VkVideoEncodeH265ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265ProfileEXT const *>(this); }
+    safe_VkVideoEncodeH265ProfileInfoEXT(const VkVideoEncodeH265ProfileInfoEXT* in_struct);
+    safe_VkVideoEncodeH265ProfileInfoEXT(const safe_VkVideoEncodeH265ProfileInfoEXT& copy_src);
+    safe_VkVideoEncodeH265ProfileInfoEXT& operator=(const safe_VkVideoEncodeH265ProfileInfoEXT& copy_src);
+    safe_VkVideoEncodeH265ProfileInfoEXT();
+    ~safe_VkVideoEncodeH265ProfileInfoEXT();
+    void initialize(const VkVideoEncodeH265ProfileInfoEXT* in_struct);
+    void initialize(const safe_VkVideoEncodeH265ProfileInfoEXT* copy_src);
+    VkVideoEncodeH265ProfileInfoEXT *ptr() { return reinterpret_cast<VkVideoEncodeH265ProfileInfoEXT *>(this); }
+    VkVideoEncodeH265ProfileInfoEXT const *ptr() const { return reinterpret_cast<VkVideoEncodeH265ProfileInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6803,7 +6803,7 @@ struct safe_VkVideoEncodeH265RateControlInfoEXT {
     uint32_t gopFrameCount;
     uint32_t idrPeriod;
     uint32_t consecutiveBFrameCount;
-    VkVideoEncodeH265RateControlStructureFlagBitsEXT rateControlStructure;
+    VkVideoEncodeH265RateControlStructureEXT rateControlStructure;
     uint8_t subLayerCount;
     safe_VkVideoEncodeH265RateControlInfoEXT(const VkVideoEncodeH265RateControlInfoEXT* in_struct);
     safe_VkVideoEncodeH265RateControlInfoEXT(const safe_VkVideoEncodeH265RateControlInfoEXT& copy_src);
@@ -6843,20 +6843,20 @@ struct safe_VkVideoEncodeH265RateControlLayerInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoDecodeH264ProfileEXT {
+struct safe_VkVideoDecodeH264ProfileInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     StdVideoH264ProfileIdc stdProfileIdc;
     VkVideoDecodeH264PictureLayoutFlagsEXT pictureLayout;
-    safe_VkVideoDecodeH264ProfileEXT(const VkVideoDecodeH264ProfileEXT* in_struct);
-    safe_VkVideoDecodeH264ProfileEXT(const safe_VkVideoDecodeH264ProfileEXT& copy_src);
-    safe_VkVideoDecodeH264ProfileEXT& operator=(const safe_VkVideoDecodeH264ProfileEXT& copy_src);
-    safe_VkVideoDecodeH264ProfileEXT();
-    ~safe_VkVideoDecodeH264ProfileEXT();
-    void initialize(const VkVideoDecodeH264ProfileEXT* in_struct);
-    void initialize(const safe_VkVideoDecodeH264ProfileEXT* copy_src);
-    VkVideoDecodeH264ProfileEXT *ptr() { return reinterpret_cast<VkVideoDecodeH264ProfileEXT *>(this); }
-    VkVideoDecodeH264ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH264ProfileEXT const *>(this); }
+    safe_VkVideoDecodeH264ProfileInfoEXT(const VkVideoDecodeH264ProfileInfoEXT* in_struct);
+    safe_VkVideoDecodeH264ProfileInfoEXT(const safe_VkVideoDecodeH264ProfileInfoEXT& copy_src);
+    safe_VkVideoDecodeH264ProfileInfoEXT& operator=(const safe_VkVideoDecodeH264ProfileInfoEXT& copy_src);
+    safe_VkVideoDecodeH264ProfileInfoEXT();
+    ~safe_VkVideoDecodeH264ProfileInfoEXT();
+    void initialize(const VkVideoDecodeH264ProfileInfoEXT* in_struct);
+    void initialize(const safe_VkVideoDecodeH264ProfileInfoEXT* copy_src);
+    VkVideoDecodeH264ProfileInfoEXT *ptr() { return reinterpret_cast<VkVideoDecodeH264ProfileInfoEXT *>(this); }
+    VkVideoDecodeH264ProfileInfoEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH264ProfileInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -6937,19 +6937,19 @@ struct safe_VkVideoDecodeH264PictureInfoEXT {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoDecodeH264MvcEXT {
+struct safe_VkVideoDecodeH264MvcInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     const StdVideoDecodeH264Mvc* pStdMvc{};
-    safe_VkVideoDecodeH264MvcEXT(const VkVideoDecodeH264MvcEXT* in_struct);
-    safe_VkVideoDecodeH264MvcEXT(const safe_VkVideoDecodeH264MvcEXT& copy_src);
-    safe_VkVideoDecodeH264MvcEXT& operator=(const safe_VkVideoDecodeH264MvcEXT& copy_src);
-    safe_VkVideoDecodeH264MvcEXT();
-    ~safe_VkVideoDecodeH264MvcEXT();
-    void initialize(const VkVideoDecodeH264MvcEXT* in_struct);
-    void initialize(const safe_VkVideoDecodeH264MvcEXT* copy_src);
-    VkVideoDecodeH264MvcEXT *ptr() { return reinterpret_cast<VkVideoDecodeH264MvcEXT *>(this); }
-    VkVideoDecodeH264MvcEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH264MvcEXT const *>(this); }
+    safe_VkVideoDecodeH264MvcInfoEXT(const VkVideoDecodeH264MvcInfoEXT* in_struct);
+    safe_VkVideoDecodeH264MvcInfoEXT(const safe_VkVideoDecodeH264MvcInfoEXT& copy_src);
+    safe_VkVideoDecodeH264MvcInfoEXT& operator=(const safe_VkVideoDecodeH264MvcInfoEXT& copy_src);
+    safe_VkVideoDecodeH264MvcInfoEXT();
+    ~safe_VkVideoDecodeH264MvcInfoEXT();
+    void initialize(const VkVideoDecodeH264MvcInfoEXT* in_struct);
+    void initialize(const safe_VkVideoDecodeH264MvcInfoEXT* copy_src);
+    VkVideoDecodeH264MvcInfoEXT *ptr() { return reinterpret_cast<VkVideoDecodeH264MvcInfoEXT *>(this); }
+    VkVideoDecodeH264MvcInfoEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH264MvcInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8619,19 +8619,19 @@ struct safe_VkPhysicalDeviceShaderCorePropertiesAMD {
 };
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkVideoDecodeH265ProfileEXT {
+struct safe_VkVideoDecodeH265ProfileInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     StdVideoH265ProfileIdc stdProfileIdc;
-    safe_VkVideoDecodeH265ProfileEXT(const VkVideoDecodeH265ProfileEXT* in_struct);
-    safe_VkVideoDecodeH265ProfileEXT(const safe_VkVideoDecodeH265ProfileEXT& copy_src);
-    safe_VkVideoDecodeH265ProfileEXT& operator=(const safe_VkVideoDecodeH265ProfileEXT& copy_src);
-    safe_VkVideoDecodeH265ProfileEXT();
-    ~safe_VkVideoDecodeH265ProfileEXT();
-    void initialize(const VkVideoDecodeH265ProfileEXT* in_struct);
-    void initialize(const safe_VkVideoDecodeH265ProfileEXT* copy_src);
-    VkVideoDecodeH265ProfileEXT *ptr() { return reinterpret_cast<VkVideoDecodeH265ProfileEXT *>(this); }
-    VkVideoDecodeH265ProfileEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH265ProfileEXT const *>(this); }
+    safe_VkVideoDecodeH265ProfileInfoEXT(const VkVideoDecodeH265ProfileInfoEXT* in_struct);
+    safe_VkVideoDecodeH265ProfileInfoEXT(const safe_VkVideoDecodeH265ProfileInfoEXT& copy_src);
+    safe_VkVideoDecodeH265ProfileInfoEXT& operator=(const safe_VkVideoDecodeH265ProfileInfoEXT& copy_src);
+    safe_VkVideoDecodeH265ProfileInfoEXT();
+    ~safe_VkVideoDecodeH265ProfileInfoEXT();
+    void initialize(const VkVideoDecodeH265ProfileInfoEXT* in_struct);
+    void initialize(const safe_VkVideoDecodeH265ProfileInfoEXT* copy_src);
+    VkVideoDecodeH265ProfileInfoEXT *ptr() { return reinterpret_cast<VkVideoDecodeH265ProfileInfoEXT *>(this); }
+    VkVideoDecodeH265ProfileInfoEXT const *ptr() const { return reinterpret_cast<VkVideoDecodeH265ProfileInfoEXT const *>(this); }
 };
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -10705,21 +10705,21 @@ struct safe_VkPhysicalDevice4444FormatsFeaturesEXT {
     VkPhysicalDevice4444FormatsFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevice4444FormatsFeaturesEXT const *>(this); }
 };
 
-struct safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM {
+struct safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
     VkBool32 rasterizationOrderColorAttachmentAccess;
     VkBool32 rasterizationOrderDepthAttachmentAccess;
     VkBool32 rasterizationOrderStencilAttachmentAccess;
-    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct);
-    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src);
-    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& operator=(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM& copy_src);
-    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM();
-    ~safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM();
-    void initialize(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* in_struct);
-    void initialize(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM* copy_src);
-    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM *ptr() { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM *>(this); }
-    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM const *>(this); }
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT& operator=(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT();
+    ~safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT();
+    void initialize(const VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT* copy_src);
+    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *>(this); }
+    VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT {
