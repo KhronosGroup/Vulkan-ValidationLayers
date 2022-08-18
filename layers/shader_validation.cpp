@@ -65,6 +65,8 @@ static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STA
         } else if (a_opcode == spv::OpTypeFloat) {
             // Match width
             return a_base_insn.word(2) == b_base_insn.word(2);
+        } else if (a_opcode == spv::OpTypeBool) {
+            return true;
         } else if (a_opcode == spv::OpTypeStruct) {
             // Match on all element types
             if (a_base_insn.len() != b_base_insn.len()) {
