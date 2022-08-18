@@ -1000,8 +1000,9 @@ class BestPractices : public ValidationStateTracker {
 
     void RecordZcullDraw(bp_state::CommandBuffer& cmd_state);
 
-    bool ValidateZcullScope(VkCommandBuffer commandBuffer) const;
-    bool ValidateZcull(VkCommandBuffer commandBuffer, VkImage image, const VkImageSubresourceRange& subresource_range) const;
+    bool ValidateZcullScope(const bp_state::CommandBuffer& cmd_state) const;
+    bool ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkImage image,
+                       const VkImageSubresourceRange& subresource_range) const;
 
     void RecordClearColor(VkFormat format, const VkClearColorValue& clear_value);
     bool ValidateClearColor(VkCommandBuffer commandBuffer, VkFormat format, const VkClearColorValue& clear_value) const;
