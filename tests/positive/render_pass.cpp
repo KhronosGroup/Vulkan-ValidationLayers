@@ -978,9 +978,7 @@ TEST_F(VkPositiveLayerTest, CreateRenderPassWithViewMask) {
     }
 
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
-
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(vulkan_11_features);
     if (vulkan_11_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported, skipping test.";
     }
@@ -1021,9 +1019,7 @@ TEST_F(VkPositiveLayerTest, BeginRenderPassWithViewMask) {
     }
 
     auto vulkan_11_features = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&vulkan_11_features);
-
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(vulkan_11_features);
     if (vulkan_11_features.multiview == VK_FALSE) {
         GTEST_SKIP() << "multiview feature not supported, skipping test.";
     }
