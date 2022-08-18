@@ -1663,6 +1663,30 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            }\n'
                     '        }\n'
                     '    }\n',
+                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
+                    '    if (usageCountsCount) {\n'
+                    '        if ( in_struct->ppUsageCounts) {\n'
+                    '            ppUsageCounts = new VkMicromapUsageEXT *[usageCountsCount];\n'
+                    '            for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
+                    '                memcpy ((void *)ppUsageCounts[i], (void *)in_struct->ppUsageCounts[i], sizeof(VkMicromapUsageEXT));'
+                    '            }\n'
+                    '        } else {\n'
+                    '            pUsageCounts = new VkMicromapUsageEXT[usageCountsCount];\n'
+                    '            memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*usageCountsCount);'
+                    '        }\n'
+                    '    }\n',
+                'VkMicromapBuildInfoEXT':
+                    '    if (usageCountsCount) {\n'
+                    '        if ( in_struct->ppUsageCounts) {\n'
+                    '            ppUsageCounts = new VkMicromapUsageEXT *[usageCountsCount];\n'
+                    '            for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
+                    '                memcpy ((void *)ppUsageCounts[i], (void *)in_struct->ppUsageCounts[i], sizeof(VkMicromapUsageEXT));'
+                    '            }\n'
+                    '        } else {\n'
+                    '            pUsageCounts = new VkMicromapUsageEXT[usageCountsCount];\n'
+                    '            memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*usageCountsCount);'
+                    '        }\n'
+                    '    }\n',
                 'VkAccelerationStructureGeometryKHR':
                     '    if (is_host && geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {\n'
                     '        if (geometry.instances.arrayOfPointers) {\n'

@@ -82,8 +82,10 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypePerformanceConfigurationINTEL = 42,
     kVulkanObjectTypeIndirectCommandsLayoutNV = 43,
     kVulkanObjectTypeBufferCollectionFUCHSIA = 44,
-    kVulkanObjectTypeAccelerationStructureKHR = 45,
-    kVulkanObjectTypeMax = 46,
+    kVulkanObjectTypeMicromapEXT = 45,
+    kVulkanObjectTypeOpticalFlowSessionNV = 46,
+    kVulkanObjectTypeAccelerationStructureKHR = 47,
+    kVulkanObjectTypeMax = 48,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
@@ -137,6 +139,8 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkPerformanceConfigurationINTEL",
     "VkIndirectCommandsLayoutNV",
     "VkBufferCollectionFUCHSIA",
+    "VkMicromapEXT",
+    "VkOpticalFlowSessionNV",
     "VkAccelerationStructureKHR",
 };
 
@@ -199,6 +203,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
 #else
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
 #endif
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
 };
 
@@ -255,6 +261,8 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
 #ifdef VK_USE_PLATFORM_FUCHSIA
         case kVulkanObjectTypeBufferCollectionFUCHSIA: return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
 #endif
+        case kVulkanObjectTypeMicromapEXT: return VK_OBJECT_TYPE_MICROMAP_EXT;
+        case kVulkanObjectTypeOpticalFlowSessionNV: return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
         case kVulkanObjectTypeAccelerationStructureKHR: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
@@ -313,6 +321,8 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
 #ifdef VK_USE_PLATFORM_FUCHSIA
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA: return kVulkanObjectTypeBufferCollectionFUCHSIA;
 #endif
+        case VK_OBJECT_TYPE_MICROMAP_EXT: return kVulkanObjectTypeMicromapEXT;
+        case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV: return kVulkanObjectTypeOpticalFlowSessionNV;
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: return kVulkanObjectTypeAccelerationStructureKHR;
         default: return kVulkanObjectTypeUnknown;
     }
@@ -752,6 +762,28 @@ template <> struct VkHandleInfo<VkIndirectCommandsLayoutNV> {
 };
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutNV> {
     typedef VkIndirectCommandsLayoutNV Type;
+};
+template <> struct VkHandleInfo<VkMicromapEXT> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeMicromapEXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_MICROMAP_EXT;
+    static const char* Typename() {
+        return "VkMicromapEXT";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeMicromapEXT> {
+    typedef VkMicromapEXT Type;
+};
+template <> struct VkHandleInfo<VkOpticalFlowSessionNV> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeOpticalFlowSessionNV;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
+    static const char* Typename() {
+        return "VkOpticalFlowSessionNV";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeOpticalFlowSessionNV> {
+    typedef VkOpticalFlowSessionNV Type;
 };
 template <> struct VkHandleInfo<VkPerformanceConfigurationINTEL> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypePerformanceConfigurationINTEL;

@@ -8012,6 +8012,9 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[i].pGeometries[j].geometryType,
                     "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
                 if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                    const VkStructureType allowed_structs_vk_acceleration_structure_geometry_triangles_data[] = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT };
+
                     skip |= validate_struct_type(
                         api_name, ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
@@ -8021,7 +8024,9 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     skip |= validate_struct_pnext(
                         api_name,
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{i, j}),
-                        NULL, pInfos[i].pGeometries[j].geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
+                        NULL, pInfos[i].pGeometries[j].geometry.triangles.pNext,
+                        ARRAY_SIZE(allowed_structs_vk_acceleration_structure_geometry_triangles_data),
+                        allowed_structs_vk_acceleration_structure_geometry_triangles_data, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
                     skip |=
                         validate_ranged_enum(api_name,
