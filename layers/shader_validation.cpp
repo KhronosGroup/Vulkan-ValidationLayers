@@ -1327,38 +1327,8 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
     bool seen_coopmat_capability = false;
 
     for (auto insn : module_state) {
-        // Whitelist instructions whose result can be a cooperative matrix type, and
-        // keep track of their types. It would be nice if SPIRV-Headers generated code
-        // to identify which instructions have a result type and result id. Lacking that,
-        // this whitelist is based on the set of instructions that
-        // SPV_NV_cooperative_matrix says can be used with cooperative matrix types.
-        switch (insn.opcode()) {
-            case spv::OpLoad:
-            case spv::OpCooperativeMatrixLoadNV:
-            case spv::OpCooperativeMatrixMulAddNV:
-            case spv::OpSNegate:
-            case spv::OpFNegate:
-            case spv::OpIAdd:
-            case spv::OpFAdd:
-            case spv::OpISub:
-            case spv::OpFSub:
-            case spv::OpFDiv:
-            case spv::OpSDiv:
-            case spv::OpUDiv:
-            case spv::OpMatrixTimesScalar:
-            case spv::OpConstantComposite:
-            case spv::OpCompositeConstruct:
-            case spv::OpConvertFToU:
-            case spv::OpConvertFToS:
-            case spv::OpConvertSToF:
-            case spv::OpConvertUToF:
-            case spv::OpUConvert:
-            case spv::OpSConvert:
-            case spv::OpFConvert:
-                id_to_type_id[insn.word(2)] = insn.word(1);
-                break;
-            default:
-                break;
+        if (OpcodeHasType(insn.opcode()) && OpcodeHasResult(insn.opcode())) {
+            id_to_type_id[insn.word(2)] = insn.word(1);
         }
 
         switch (insn.opcode()) {
