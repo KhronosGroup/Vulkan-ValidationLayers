@@ -1891,7 +1891,8 @@ uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const spirv_inst_iter &iter) cons
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
 uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
     const uint32_t opcode = iter.opcode();
-    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeStruct) {
+    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeBool || opcode == spv::OpTypeStruct) {
+        // point to itself as its the base type (or a struct that needs to be traversed still)
         return iter.word(1);
     } else if (opcode == spv::OpTypeVector) {
         const auto& component_type = get_def(iter.word(2));
@@ -1906,6 +1907,9 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
         const auto& type = get_def(iter.word(3));
         return GetBaseType(type);
     }
+    // If we assert here, we are missing a valid base type that must be handled. Without this assert, a return value of 0 will
+    // produce a hard bug to track
+    assert(false);
     return 0;
 }
 
