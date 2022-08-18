@@ -3498,8 +3498,7 @@ TEST_F(VkLayerTest, Sync2FeatureDisabled) {
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     synchronization2.synchronization2 = VK_FALSE;  // Invalid
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&synchronization2);
-    GetPhysicalDeviceFeatures2(features2);
+    GetPhysicalDeviceFeatures2(synchronization2);
 
     auto vkCmdPipelineBarrier2KHR =
         (PFN_vkCmdPipelineBarrier2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPipelineBarrier2KHR");
@@ -3587,14 +3586,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     }
 
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
-    features2.pNext = &indexing_features;
-
-    auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (!indexing_features.descriptorBindingPartiallyBound) {
         printf("%s Partially bound bindings not supported, skipping test\n", kSkipPrefix);

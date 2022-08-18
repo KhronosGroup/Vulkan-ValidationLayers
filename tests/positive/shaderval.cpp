@@ -246,9 +246,8 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryLimitWorkgroupMemoryExplicitLayou
     }
 
     auto explicit_layout_features = LvlInitStruct<VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&explicit_layout_features);
-    GetPhysicalDeviceFeatures2(features2);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &explicit_layout_features));
+    auto features2 = GetPhysicalDeviceFeatures2(explicit_layout_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     if (!explicit_layout_features.workgroupMemoryExplicitLayout) {
         GTEST_SKIP() << "workgroupMemoryExplicitLayout feature not supported.";
@@ -1150,7 +1149,7 @@ TEST_F(VkPositiveLayerTest, ShaderDrawParametersWithFeature) {
 
     auto features11 = LvlInitStruct<VkPhysicalDeviceVulkan11Features>();
     features11.shaderDrawParameters = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features11);
+    auto features2 = GetPhysicalDeviceFeatures2(features11);
 
     GetPhysicalDeviceFeatures2(features2);
 
@@ -1199,14 +1198,8 @@ TEST_F(VkPositiveLayerTest, ShaderImageAtomicInt64) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
     auto image_atomic_int64_features = lvl_init_struct<VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&image_atomic_int64_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(image_atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         printf("%s shaderInt64 feature not supported, skipping tests\n", kSkipPrefix);
         return;
@@ -1296,14 +1289,8 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
     auto atomic_float_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&atomic_float_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
@@ -1569,9 +1556,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     auto atomic_float2_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT>(&atomic_float_features);
     auto float16int8_features = LvlInitStruct<VkPhysicalDeviceShaderFloat16Int8Features>(&atomic_float2_features);
     auto storage_16_bit_features = LvlInitStruct<VkPhysicalDevice16BitStorageFeatures>(&float16int8_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&storage_16_bit_features);
-    GetPhysicalDeviceFeatures2(features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(storage_16_bit_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     // clang-format off
@@ -1848,8 +1833,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFromPhysicalPointer) {
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (!features12.bufferDeviceAddress) {
         printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.\n", kSkipPrefix);
         return;
@@ -2082,15 +2066,9 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
     // Create a device that enables mesh_shader
     auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&mesh_shader_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(mesh_shader_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (mesh_shader_features.meshShader != VK_TRUE) {
         printf("%s Mesh shader feature not supported\n", kSkipPrefix);
@@ -2290,8 +2268,7 @@ TEST_F(VkPositiveLayerTest, ShaderPointSizeStructMemeberWritten) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
     }
     auto maint4features = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&maint4features);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(maint4features);
     if (!maint4features.maintenance4) {
         GTEST_SKIP() << "VkPhysicalDeviceMaintenance4FeaturesKHR::maintenance4 is required but not enabled.";
     }
@@ -2437,14 +2414,10 @@ TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags10) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-
     auto uniform_buffer_standard_layout_features = LvlInitStruct<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>();
     auto scalar_block_layout_features =
         LvlInitStruct<VkPhysicalDeviceScalarBlockLayoutFeatures>(&uniform_buffer_standard_layout_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&scalar_block_layout_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+    auto features2 = GetPhysicalDeviceFeatures2(scalar_block_layout_features);
 
     if (scalar_block_layout_features.scalarBlockLayout == VK_FALSE ||
         uniform_buffer_standard_layout_features.uniformBufferStandardLayout == VK_FALSE) {
@@ -2508,9 +2481,7 @@ TEST_F(VkPositiveLayerTest, Std430SpirvOptFlags12) {
     }
 
     auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&features12);
-    GetPhysicalDeviceFeatures2(features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
     if (features12.scalarBlockLayout == VK_FALSE || features12.uniformBufferStandardLayout == VK_FALSE) {
         printf("%s scalarBlockLayout and uniformBufferStandardLayout are not supported Skipping.\n", kSkipPrefix);
         return;
@@ -2573,8 +2544,7 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     }
 
     auto float16int8_features = LvlInitStruct<VkPhysicalDeviceFloat16Int8FeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&float16int8_features);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(float16int8_features);
     if (float16int8_features.shaderInt8 == VK_FALSE) {
         printf("%s shaderInt8 feature not supported; skipped.\n", kSkipPrefix);
         return;
@@ -2755,14 +2725,8 @@ TEST_F(VkPositiveLayerTest, WriteDescriptorSetAccelerationStructureNVNullDescrip
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&robustness2_features);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-
+    auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (robustness2_features.nullDescriptor != VK_TRUE) {
         printf("%s nullDescriptor feature not supported, skipping test.\n", kSkipPrefix);
         return;
@@ -2814,8 +2778,7 @@ TEST_F(VkPositiveLayerTest, PositiveShaderModuleIdentifier) {
     auto shader_cache_control_features = LvlInitStruct<VkPhysicalDevicePipelineCreationCacheControlFeatures>();
     auto shader_module_id_features =
         LvlInitStruct<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT>(&shader_cache_control_features);
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&shader_module_id_features);
-    GetPhysicalDeviceFeatures2(features2);
+    auto features2 = GetPhysicalDeviceFeatures2(shader_module_id_features);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
