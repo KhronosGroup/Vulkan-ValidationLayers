@@ -8741,7 +8741,8 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                          func_name, string_VkSampleCountFlagBits(msrtss_info->rasterizationSamples), attachment_type,
                          report_data->FormatHandle(image_view).c_str(), string_VkSampleCountFlagBits(image_view_state->samples));
         }
-    } else if (image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
+    } else if (image_view_state->samples != VK_SAMPLE_COUNT_1_BIT &&
+               enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06858",
                          "%s(): There is no VkMultisampledRenderToSingleSampledInfoEXT struct in the pNext chain, so "
                          "VK_SAMPLE_COUNT_1_BIT is required, but %s attachment's "
@@ -8751,7 +8752,8 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
     }
     IMAGE_STATE *image_state = image_view_state->image_state.get();
     if ((image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) &&
-        !(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)) {
+        !(image_state->createInfo.flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) &&
+        (enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled)) {
         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06859",
                          "%s(): %s attachment %s was created with VK_SAMPLE_COUNT_1_BIT but "
                          "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT was not set in "
