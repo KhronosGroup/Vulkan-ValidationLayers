@@ -8772,7 +8772,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
         (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
 
-    VkMemoryPropertyFlags mem_flags = 0;
+    VkMemoryPropertyFlags mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     const VkDeviceSize buffer_size = 1024;
 
     // Create export and import buffers
