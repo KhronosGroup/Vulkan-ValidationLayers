@@ -4319,7 +4319,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
         mutable_descriptor_type_features && mutable_descriptor_type_features->mutableDescriptorType == VK_TRUE;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-    if ((pCreateInfo != nullptr) && (pCreateInfo->pBindings != nullptr)) {
+    if (pCreateInfo->pBindings != nullptr) {
         for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
             if (pCreateInfo->pBindings[i].descriptorCount != 0) {
                 if (((pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
@@ -4401,28 +4401,46 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                 ValidateMutableDescriptorTypeCreateInfo(*pCreateInfo, *mutable_descriptor_type, "vkDescriptorSetLayoutCreateInfo");
         }
     }
-    if (pCreateInfo) {
-        if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) &&
-            (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
-            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04590",
-                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR and "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
-        }
-        if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
-            (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
-            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04592",
-                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT and "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
-        }
-        if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE &&
-            !mutable_descriptor_type_features_enabled) {
-            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04596",
-                             "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
-                             "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE, but "
-                             "VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType feature is not enabled.");
-        }
+
+    // TODO - Remove these 2 extension checks once the enum-to-extensions logic is generated
+    // mostly likely will fail test trying to hit these
+    if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR &&
+        !IsExtEnabled(device_extensions.vk_khr_push_descriptor)) {
+        skip |= LogError(
+            device, kVUID_Core_DrawState_ExtensionNotEnabled,
+            "vkCreateDescriptorSetLayout(): Attempted to use %s in %s but its required extension %s has not been enabled.\n",
+            "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR", "VkDescriptorSetLayoutCreateInfo::flags",
+            VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    }
+    if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT &&
+        !IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {
+        skip |= LogError(
+            device, kVUID_Core_DrawState_ExtensionNotEnabled,
+            "vkCreateDescriptorSetLayout(): Attemped to use %s in %s but its required extension %s has not been enabled.\n",
+            "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT", "VkDescriptorSetLayoutCreateInfo::flags",
+            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    }
+
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) &&
+        (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04590",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR and "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
+    }
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) &&
+        (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04592",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT and "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
+    }
+    if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE &&
+        !mutable_descriptor_type_features_enabled) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-04596",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE, but "
+                         "VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE::mutableDescriptorType feature is not enabled.");
     }
 
     return skip;
