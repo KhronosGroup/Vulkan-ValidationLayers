@@ -126,6 +126,7 @@ class RENDER_PASS_STATE : public BASE_NODE {
     bool UsesDynamicRendering() const { return use_dynamic_rendering || use_dynamic_rendering_inherited; }
     uint32_t GetDynamicRenderingColorAttachmentCount() const;
     uint32_t GetDynamicRenderingViewMask() const;
+    uint32_t GetViewMaskBits(uint32_t subpass) const;
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {
