@@ -8791,6 +8791,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     // Depending on the underlying device, we may need a specific type of memory for this test to work.  So, select the
     // appropriate memory based on shared import/export memory type properties.
     VkMemoryPropertyFlags common_flags = export_mem_reqs.memoryTypeBits & import_mem_reqs.memoryTypeBits;
+    printf("Memory flags for this device:  0x%08x\n", common_flags);
     if (common_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
         mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     } else if (common_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
