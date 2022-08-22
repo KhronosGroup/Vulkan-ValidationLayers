@@ -17594,14 +17594,31 @@ TEST_F(VkLayerTest, ShaderModuleIdentifier) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    // Now really create a pipeline with a smid
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
+    // Trying to create a pipeline with a shader module identifier at this point can result in a VK_PIPELINE_COMPILE_REQUIRED from
+    // some drivers, and no pipeline creation. Create a pipeline using the module itself presumably getting the driver to compile
+    // the shader so we can create a pipeline using the identifier
+    pipe.gp_ci_.flags = 0;
+    stage_ci.pNext = nullptr;
+    stage_ci.module = vs.handle();
     pipe.CreateGraphicsPipeline();
 
+    // Now really create a pipeline with a smid
+    CreatePipelineHelper pipe2(*this);
+    pipe2.InitInfo();
+    pipe2.gp_ci_.stageCount = 1;
+    pipe2.gp_ci_.pStages = &stage_ci;
+    pipe2.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+    pipe2.InitState();
+    stage_ci.pNext = &sm_id_create_info;
+    stage_ci.module = VK_NULL_HANDLE;
+    VkResult result = pipe2.CreateGraphicsPipeline();
+    if (result != VK_SUCCESS) {
+        printf("Cannot create a pipeline with a shader module identifier, skipping gpl part of the test\n");
+        return;
+    }
     // Now use it in a gpl
-    VkPipeline libraries[1] = {
-        pipe.pipeline_
-    };
+    VkPipeline libraries[1] = {pipe2.pipeline_};
     auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
     link_info.libraryCount = size(libraries);
     link_info.pLibraries = libraries;
