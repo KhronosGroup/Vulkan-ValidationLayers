@@ -456,16 +456,15 @@ inline void *SetupValidationSettings(void *pnext) {
     auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
     std::transform(validation.begin(), validation.end(), validation.begin(), ::tolower);
     VkValidationFeaturesEXT *features = nullptr;
-    if (validation == "all" || validation == "core" || validation == "none") {
-        while (pnext) {
-            if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
-                features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
-                CheckDisableCoreValidation(features);
-                break;
-            }
-            pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
+    while (pnext) {
+        if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
+            features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
+            CheckDisableCoreValidation(features);
+            break;
         }
-
+        pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
+    }
+    if (validation == "all" || validation == "core" || validation == "none") {
         if (!features) {
             features = new VkValidationFeaturesEXT{};
             features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
