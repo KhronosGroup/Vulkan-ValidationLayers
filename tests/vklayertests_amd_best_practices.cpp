@@ -380,32 +380,32 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
 TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
-InitBestPracticesFramework(kEnableAMDValidation);
+    InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     {
         VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                     nullptr,
-                                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                     VK_IMAGE_TYPE_1D,
-                                     VK_FORMAT_R8G8B8A8_UNORM,
-                                     {1, 1, 1},
-                                     1,
-                                     1,
-                                     VK_SAMPLE_COUNT_1_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL,
-                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                     VK_SHARING_MODE_EXCLUSIVE,
-                                     0,
-                                     nullptr,
-                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL};
+                                      nullptr,
+                                      VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                      VK_IMAGE_TYPE_1D,
+                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                      {1, 1, 1},
+                                      1,
+                                      1,
+                                      VK_SAMPLE_COUNT_1_BIT,
+                                      VK_IMAGE_TILING_OPTIMAL,
+                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                      VK_SHARING_MODE_EXCLUSIVE,
+                                      0,
+                                      nullptr,
+                                      VK_IMAGE_LAYOUT_UNDEFINED};
         VkImageObj image_1D(m_device);
         image_1D.init(&img_info);
         ASSERT_TRUE(image_1D.initialized());
 
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
         VkImageSubresourceRange image_range = {};
@@ -420,32 +420,34 @@ InitBestPracticesFramework(kEnableAMDValidation);
                                &image_range);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
     }
 
+    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
+
     {
         VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                     nullptr,
-                                     VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                     VK_IMAGE_TYPE_1D,
-                                     VK_FORMAT_D32_SFLOAT_S8_UINT,
-                                     {1, 1, 1},
-                                     1,
-                                     1,
-                                     VK_SAMPLE_COUNT_1_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL,
-                                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                     VK_SHARING_MODE_EXCLUSIVE,
-                                     0,
-                                     nullptr,
-                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL};
+                                      nullptr,
+                                      VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                      VK_IMAGE_TYPE_1D,
+                                      VK_FORMAT_D32_SFLOAT_S8_UINT,
+                                      {1, 1, 1},
+                                      1,
+                                      1,
+                                      VK_SAMPLE_COUNT_1_BIT,
+                                      VK_IMAGE_TILING_OPTIMAL,
+                                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                      VK_SHARING_MODE_EXCLUSIVE,
+                                      0,
+                                      nullptr,
+                                      VK_IMAGE_LAYOUT_UNDEFINED};
         VkImageObj image_1D(m_device);
         image_1D.init(&img_info);
         ASSERT_TRUE(image_1D.initialized());
 
         m_commandBuffer->begin();
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearDepthStencilValue clear_value = {0.0f, 0};
         VkImageSubresourceRange image_range = {};
@@ -460,7 +462,6 @@ InitBestPracticesFramework(kEnableAMDValidation);
                                       &clear_value, 1, &image_range);
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
     }
 }
@@ -471,20 +472,20 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 0,
-                                 VK_IMAGE_TYPE_2D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_EXCLUSIVE,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+                                  nullptr,
+                                  0,
+                                  VK_IMAGE_TYPE_2D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1, 1, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     VkImageObj image1D_1(m_device);
     image1D_1.init(&img_info);
     ASSERT_TRUE(image1D_1.initialized());
@@ -500,15 +501,20 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     }
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    image1D_1.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image1D_1.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkImage-AvoidImageToImageCopy");
 
+    VkImageCopy copy{};
+    copy.extent = img_info.extent;
+    copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy.dstSubresource.layerCount = 1;
+    copy.srcSubresource = copy.dstSubresource;
     vk::CmdCopyImage(m_commandBuffer->handle(), image1D_1.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_1D_2.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, nullptr);
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, GeneralLayout) {
