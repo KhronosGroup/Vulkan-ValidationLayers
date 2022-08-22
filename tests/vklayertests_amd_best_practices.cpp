@@ -669,17 +669,25 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
         image_1D.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     }
 
+    uint32_t current_buffer;
+    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
+    ASSERT_TRUE(image_acquired.initialized());
+    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired.handle(), VK_NULL_HANDLE,
+                            &current_buffer);
+
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 0;
-    // presentInfo.pWaitSemaphores = &(m_RenderFinishedSemaphores[m_imageIndex]);
+    present_info.pWaitSemaphores = &image_acquired.handle();
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &m_swapchain;
-    present_info.pImageIndices = 0;
+    present_info.pImageIndices = &current_buffer;
     present_info.pResults = NULL;
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPresentInfoKHR-pImageIndices-01296");
 
     vk::QueuePresentKHR(m_device->GetDefaultQueue()->handle(), &present_info);
 
@@ -694,24 +702,32 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfFences");
     uint32_t fence_warn_limit = 5;
+    std::vector<VkFence> testFences(fence_warn_limit);
     for (uint32_t i = 0; i < fence_warn_limit; i++) {
-        VkFence testFence;
         VkFenceCreateInfo fenceInfo = VkFenceObj::create_info();
-        vk::CreateFence(m_device->device(), &fenceInfo, nullptr, &testFence);
+        vk::CreateFence(m_device->device(), &fenceInfo, nullptr, &testFences[i]);
     }
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores");
     uint32_t semaphore_warn_limit = 12;
+    std::vector<VkSemaphore> testSemaphores(semaphore_warn_limit);
     for (uint32_t i = 0; i < semaphore_warn_limit; i++) {
-        VkSemaphore test_semaphore;
         VkSemaphoreCreateInfo semaphore_create_info = {};
         semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &test_semaphore);
+        vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &testSemaphores[i]);
     }
 
     m_errorMonitor->VerifyFound();
+
+    for (auto fence : testFences) {
+        vk::DestroyFence(device(), fence, nullptr);
+    }
+
+    for (auto semaphore : testSemaphores) {
+        vk::DestroySemaphore(device(), semaphore, nullptr);
+    }
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
@@ -744,9 +760,14 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
     VkCommandBufferObj secondary_cmd_buf(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
+    VkCommandBufferInheritanceInfo iinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    iinfo.renderPass = m_renderPassBeginInfo.renderPass;
+
+    VkCommandBufferBeginInfo binfo = LvlInitStruct<VkCommandBufferBeginInfo>();
+    binfo.pInheritanceInfo = &iinfo;
+    binfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     // record a secondary command buffer
-    secondary_cmd_buf.begin();
-    secondary_cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
+    secondary_cmd_buf.begin(&binfo);
 
     vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vertex_buffer.BindVertexBuffers(secondary_cmd_buf.handle());
@@ -766,11 +787,10 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
 
     vk::CmdClearAttachments(secondary_cmd_buf.handle(), 1, &color_attachment, 1, &clear_rect);
 
-    secondary_cmd_buf.EndRenderPass();
     secondary_cmd_buf.end();
 
     m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers");
