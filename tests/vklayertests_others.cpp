@@ -8782,12 +8782,27 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     buffer_info.pNext = &external_buffer_info;
     VkBufferObj buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
+    VkMemoryRequirements export_mem_reqs = buffer_export.memory_requirements();
     external_buffer_info.handleTypes = wrong_handle_type;
     VkBufferObj buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
+    VkMemoryRequirements import_mem_reqs = buffer_import.memory_requirements();
+
+    // Depending on the underlying device, we may need a specific type of memory for this test to work.  So, select the
+    // appropriate memory based on shared import/export memory type properties.
+    VkMemoryPropertyFlags common_flags = export_mem_reqs.memoryTypeBits & import_mem_reqs.memoryTypeBits;
+    if (common_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    } else if (common_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    } else if (common_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else if (common_flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+    }
 
     // Allocation info
-    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, export_mem_reqs, mem_flags);
 
     // Add export allocation info to pNext chain
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
