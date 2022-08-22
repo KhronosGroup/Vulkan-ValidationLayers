@@ -8793,14 +8793,17 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     VkMemoryPropertyFlags common_flags = export_mem_reqs.memoryTypeBits & import_mem_reqs.memoryTypeBits;
     printf("Memory flags for this device:  0x%08x\n", common_flags);
     if (common_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        printf("---DEVICE_LOCAL---\n");
         mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     } else if (common_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        printf("---HOST_VISIBLE---\n");
         mem_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     } else if (common_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        printf("---HOST_COHERENT---\n");
         mem_flags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    } else if (common_flags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT) {
-        mem_flags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
     }
+    fflush(stdout);
+    sleep(1);
 
     // Allocation info
     auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, export_mem_reqs, mem_flags);
