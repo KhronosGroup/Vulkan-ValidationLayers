@@ -126,7 +126,6 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
         if (!found_expected) {
             result = VK_TRUE;
             printf("Unexpected: %s\n", msgString);
-            other_messages_.push_back(errorString);
         }
     }
     return result;
