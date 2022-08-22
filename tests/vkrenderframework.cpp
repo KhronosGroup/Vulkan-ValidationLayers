@@ -452,23 +452,27 @@ inline void CheckDisableCoreValidation(VkValidationFeaturesEXT *features) {
     }
 }
 
-inline void *SetupValidationSettings(void *pnext) {
+inline void *SetupValidationSettings(void *first_pnext) {
     auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
     std::transform(validation.begin(), validation.end(), validation.begin(), ::tolower);
     VkValidationFeaturesEXT *features = nullptr;
-    while (pnext) {
-        if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
-            features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
-            CheckDisableCoreValidation(features);
-            break;
+    {
+        void *pnext = first_pnext;
+        while (pnext) {
+            if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
+                features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
+                CheckDisableCoreValidation(features);
+                break;
+            }
+            pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
         }
-        pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
     }
     if (validation == "all" || validation == "core" || validation == "none") {
         if (!features) {
             features = new VkValidationFeaturesEXT{};
             features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-            features->pNext = pnext;
+            features->pNext = first_pnext;
+            first_pnext = features;
         }
     }
     if (validation == "all") {
@@ -479,22 +483,16 @@ inline void *SetupValidationSettings(void *pnext) {
         features->enabledValidationFeatureCount = 3;
         features->pEnabledValidationFeatures = enables;
         features->disabledValidationFeatureCount = 0;
-
-        return features;
     } else if (validation == "core") {
         features->disabledValidationFeatureCount = 0;
-
-        return features;
     } else if (validation == "none") {
         auto disables = new VkValidationFeatureDisableEXT[1]{VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
         features->disabledValidationFeatureCount = 1;
         features->pDisabledValidationFeatures = disables;
         features->enabledValidationFeatureCount = 0;
-
-        return features;
     }
 
-    return pnext;
+    return first_pnext;
 }
 
 void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
