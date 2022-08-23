@@ -12696,15 +12696,16 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         }
                     }
                     if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
-                        skip |= MsRenderedToSingleSampledValidateFBAttachments(subpass_description.inputAttachmentCount,
-                                                                               subpass_description.pInputAttachments, pCreateInfo,
-                                                                               rpci, subpass);
-                        skip |= MsRenderedToSingleSampledValidateFBAttachments(subpass_description.colorAttachmentCount,
-                                                                               subpass_description.pColorAttachments, pCreateInfo,
-                                                                               rpci, subpass);
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(
+                            subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, pCreateInfo, rpci,
+                            subpass, ms_rendered_to_single_sampled->rasterizationSamples);
+                        skip |= MsRenderedToSingleSampledValidateFBAttachments(
+                            subpass_description.colorAttachmentCount, subpass_description.pColorAttachments, pCreateInfo, rpci,
+                            subpass, ms_rendered_to_single_sampled->rasterizationSamples);
                         if (subpass_description.pDepthStencilAttachment) {
-                            skip |= MsRenderedToSingleSampledValidateFBAttachments(1, subpass_description.pDepthStencilAttachment,
-                                                                                   pCreateInfo, rpci, subpass);
+                            skip |= MsRenderedToSingleSampledValidateFBAttachments(
+                                1, subpass_description.pDepthStencilAttachment, pCreateInfo, rpci, subpass,
+                                ms_rendered_to_single_sampled->rasterizationSamples);
                         }
                     }
                 }
@@ -12757,8 +12758,9 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 }
 
 bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2 *attachments,
-                                                                 const VkFramebufferCreateInfo *fbci,
-                                                                 const VkRenderPassCreateInfo2 *rpci, uint32_t subpass) const {
+                                                                const VkFramebufferCreateInfo *fbci,
+                                                                const VkRenderPassCreateInfo2 *rpci, uint32_t subpass,
+                                                                VkSampleCountFlagBits sample_count) const {
     bool skip = false;
 
     for (uint32_t attach = 0; attach < count; attach++) {
@@ -12779,6 +12781,41 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                          "VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT in its createInfo.flags.",
                                          subpass, attachments[attach].attachment,
                                          report_data->FormatHandle(image_state->Handle()).c_str());
+                    }
+                    const VkImageCreateInfo image_create_info = image_state->createInfo;
+                    VkImageFormatProperties image_properties = {};
+                    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
+                        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+                        image_create_info.usage, image_create_info.flags, &image_properties);
+                    if (image_properties_result != VK_SUCCESS) {
+                        skip |= LogError(device, "VUID-VkFramebufferCreateInfo-samples-07009",
+                                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
+                                         "when called for validation with following params: "
+                                         "format: %s, imageType: %s, "
+                                         "tiling: %s, usage: %s, "
+                                         "flags: %s.",
+                                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                                         string_VkImageTiling(image_create_info.tiling),
+                                         string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                                         string_VkImageCreateFlags(image_create_info.flags).c_str());
+                    } else {
+                        if (!(image_properties.sampleCounts & sample_count)) {
+                            skip |= LogError(
+                                device, "VUID-VkFramebufferCreateInfo-samples-07009",
+                                "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
+                                " enables "
+                                "multisampled-render-to-single-sampled and attachment %" PRIu32
+                                ", is specified from with "
+                                "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
+                                "tiling: %s, usage: %s, "
+                                "flags: %s does not support a rasterizationSamples count of %s",
+                                subpass, attachments[attach].attachment, report_data->FormatHandle(image_state->Handle()).c_str(),
+                                string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                                string_VkImageTiling(image_create_info.tiling),
+                                string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                                string_VkImageCreateFlags(image_create_info.flags).c_str(),
+                                string_VkSampleCountFlagBits(sample_count));
+                        }
                     }
                 }
             }
