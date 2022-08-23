@@ -67,12 +67,24 @@ jobs:
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
                                 libxcb-randr0-dev cmake
       - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
         id: cache-deps
         uses: actions/cache@v3
         env:
           cache-name: cache-linux
         with:
-          path: external
+          path: |
+            external/glslang/build/install
+            external/Vulkan-Headers/build/install
+            external/SPIRV-Headers/build/install
+            external/SPIRV-Tools/build/install
+            external/robin-hood-hashing/build/install
+            external/googletest/build/install
+            external/Vulkan-Headers/registry
+            external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --config ${{ matrix.config }}
@@ -99,12 +111,24 @@ jobs:
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
                                 libxcb-randr0-dev cmake
       - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
         id: cache-deps
         uses: actions/cache@v3
         env:
           cache-name: cache-linux-cpp20
         with:
-          path: external
+          path: |
+            external/glslang/build/install
+            external/Vulkan-Headers/build/install
+            external/SPIRV-Headers/build/install
+            external/SPIRV-Tools/build/install
+            external/robin-hood-hashing/build/install
+            external/googletest/build/install
+            external/Vulkan-Headers/registry
+            external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --config release --cmake='-DVVL_CPP_STANDARD=20'
