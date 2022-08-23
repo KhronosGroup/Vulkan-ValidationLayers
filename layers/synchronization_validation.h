@@ -34,6 +34,7 @@ class AccessContext;
 class CommandBufferAccessContext;
 class CommandExecutionContext;
 class QueueBatchContext;
+struct QueueSubmitCmdState;
 class RenderPassAccessContext;
 class ResourceAccessState;
 struct ResourceFirstAccess;
@@ -1398,7 +1399,6 @@ class AccessLogger {
     AccessLogRangeMap access_log_map_;
 };
 
-// TODO need a map from fence to submbit batch id
 class QueueBatchContext : public CommandExecutionContext {
   public:
     struct RenderPassReplayState {
@@ -1435,6 +1435,9 @@ class QueueBatchContext : public CommandExecutionContext {
 
     using CommandBuffers = std::vector<CmdBufferEntry>;
 
+    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
+    QueueBatchContext() = delete;
+
     std::string FormatUsage(ResourceUsageTag tag) const override;
     AccessContext *GetCurrentAccessContext() override { return current_access_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_access_context_; }
@@ -1456,22 +1459,15 @@ class QueueBatchContext : public CommandExecutionContext {
     void InsertRecordedAccessLogEntries(const CommandBufferAccessContext &cb_context) override;
 
     void SetTagBias(ResourceUsageTag);
-    CommandBuffers::const_iterator begin() const { return command_buffers_.cbegin(); }
-    CommandBuffers::const_iterator end() const { return command_buffers_.cend(); }
+    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
+                            SignaledSemaphores &signaled_semaphores);
+    void SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info);
 
-    QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state);
-    QueueBatchContext() = delete;
-
-    template <typename BatchInfo>
-    void Setup(const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info,
-               SignaledSemaphores &signaled);
+    bool DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state, const VkSubmitInfo2 &submit_info);
 
     void ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
 
     VulkanTypedHandle Handle() const override;
-
-    template <typename BatchInfo, typename Fn>
-    static void ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&func);
 
     void ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag);
     void ApplyDeviceWait();
@@ -1482,15 +1478,6 @@ class QueueBatchContext : public CommandExecutionContext {
     void EndRenderPassReplay() override;
 
   private:
-    // The BatchInfo is either the Submit or Submit2 version with traits allowing generic acces
-    template <typename BatchInfo>
-    class SubmitInfoAccessor {};
-    template <typename BatchInfo>
-    void SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info,
-                            SignaledSemaphores &signaled_semaphores);
-    template <typename BatchInfo>
-    void SetupCommandBufferInfo(const BatchInfo &batch_info);
-
     std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
                                                                SignaledSemaphores &signaled);
 
@@ -1539,6 +1526,33 @@ class QueueSyncState {
     std::shared_ptr<QueueBatchContext> last_batch_;
     const VkQueueFlags queue_flags_;
     QueueId id_;
+};
+
+// The converter needs to be more complex than simply an array of VkSubmitInfo2 structures.
+// In order to convert from Info->Info2, arrays of VkSemaphoreSubmitInfo and VkCommandBufferSubmitInfo
+// structures must be created for the pWaitSemaphoreInfos, pCommandBufferInfos, and pSignalSemaphoreInfos
+// which comprise the converted VkSubmitInfo information. The created VkSubmitInfo2 structure then references the storage
+// of the arrays, which must have a lifespan longer than the conversion, s.t. the ensuing valdation/record operations
+// can reference them.  The resulting VkSubmitInfo2 is then copied into an additional which takes the place of the pSubmits
+// parameter.
+struct SubmitInfoConverter {
+    struct BatchStore {
+        BatchStore(const VkSubmitInfo &info);
+
+        static VkSemaphoreSubmitInfo WaitSemaphore(const VkSubmitInfo &info, uint32_t index);
+        static VkCommandBufferSubmitInfo CommandBuffer(const VkSubmitInfo &info, uint32_t index);
+        static VkSemaphoreSubmitInfo SignalSemaphore(const VkSubmitInfo &info, uint32_t index);
+
+        std::vector<VkSemaphoreSubmitInfo> waits;
+        std::vector<VkCommandBufferSubmitInfo> cbs;
+        std::vector<VkSemaphoreSubmitInfo> signals;
+        VkSubmitInfo2 info2;
+    };
+
+    SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos);
+
+    std::vector<BatchStore> info_store;
+    std::vector<VkSubmitInfo2> info2s;
 };
 
 class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
@@ -1949,14 +1963,21 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                          const VkCommandBuffer *pCommandBuffers) override;
     void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) override;
     void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) override;
+    bool ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                             const char *func_name) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                     VkFence fence) const override;
+    void RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult result);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                    VkResult result) override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                         VkFence fence) const override;
     void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
                                        VkResult result) override;
+    bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                     VkFence fence) const override;
+    void PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                    VkResult result) override;
     void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) override;
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result) override;

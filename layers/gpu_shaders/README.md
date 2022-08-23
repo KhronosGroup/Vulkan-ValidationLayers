@@ -14,3 +14,10 @@ python3 ./scripts/generate_spirv.py --glslang path/to/glslangValidator
 # generate a single shader
 python3 ./scripts/generate_spirv.py --shader layers/gpu_shaders/gpu_pre_draw.vert
 ```
+
+## Adding a new shader
+
+1. Add the GLSL shader to this folder with the appropriate naming (consistent with the other files)
+2. Include the generated header file
+    - example: `#include "gpu_pre_draw_vert.h"` for `gpu_pre_draw.vert`
+3. Add the new header file to `BUILD.gn`

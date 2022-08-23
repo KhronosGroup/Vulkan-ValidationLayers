@@ -3896,6 +3896,32 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
     return snapshot;
 }
 
+struct QueueSubmitCmdState {
+    std::shared_ptr<const QueueSyncState> queue;
+    std::shared_ptr<QueueBatchContext> last_batch;
+    std::string submit_func_name;
+    AccessLogger logger;
+    SignaledSemaphores signaled;
+    QueueSubmitCmdState(const char *func_name, const AccessLogger &parent_log, const SignaledSemaphores &parent_semaphores)
+        : submit_func_name(func_name), logger(&parent_log), signaled(parent_semaphores) {}
+};
+
+bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state,
+                                              const VkSubmitInfo2 &batch_info) {
+    bool skip = false;
+
+    //  For each submit in the batch...
+    for (const auto &cb : command_buffers_) {
+        if (cb.cb->GetTagLimit() == 0) continue;  // Skip empty CB's
+        skip |= cb.cb->ValidateFirstUse(*this, cmd_state.submit_func_name.c_str(), cb.index);
+
+        // The barriers have already been applied in ValidatFirstUse
+        ResourceUsageRange tag_range = ImportRecordedAccessLog(*cb.cb);
+        ResolveSubmittedCommandBuffer(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
+    }
+    return skip;
+}
+
 bool SignaledSemaphores::SignalSemaphore(const std::shared_ptr<const SEMAPHORE_STATE> &sem_state,
                                          const std::shared_ptr<QueueBatchContext> &batch,
                                          const VkSemaphoreSubmitInfo &signal_info) {
@@ -7237,27 +7263,23 @@ void SyncValidator::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult resul
     waitable_fences_.clear();
 }
 
-struct QueueSubmitCmdState {
-    std::shared_ptr<const QueueSyncState> queue;
-    std::shared_ptr<QueueBatchContext> last_batch;
-    AccessLogger logger;
-    SignaledSemaphores signaled;
-    QueueSubmitCmdState(const AccessLogger &parent_log, const SignaledSemaphores &parent_semaphores)
-        : logger(&parent_log), signaled(parent_semaphores) {}
-};
-
 template <>
 thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<QueueSubmitCmdState>::payload_{};
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {
+    SubmitInfoConverter submit_info(submitCount, pSubmits);
+    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, "VkQueueSubmit");
+}
+
+bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
+                                        const char *func_name) const {
     bool skip = false;
 
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!enabled[sync_validation_queue_submit]) return skip;
 
-    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, global_access_log_, signaled_semaphores_);
-    const auto fence_state = Get<FENCE_STATE>(fence);
+    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, global_access_log_, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -7270,32 +7292,24 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     std::shared_ptr<const QueueBatchContext> last_batch = cmd_state->queue->LastBatch();
     std::shared_ptr<QueueBatchContext> batch;
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
-        const VkSubmitInfo &submit = pSubmits[batch_idx];
+        const VkSubmitInfo2 &submit = pSubmits[batch_idx];
         batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
-        batch->Setup(last_batch, submit, cmd_state->signaled);
+        batch->SetupCommandBufferInfo(submit);
+        batch->SetupAccessContext(last_batch, submit, cmd_state->signaled);
 
         // Skip import and validation of empty batches
         if (batch->GetTagRange().size()) {
             batch->SetBatchLog(cmd_state->logger, submit_id, batch_idx);
 
-            //  For each submit in the batch...
-            for (const auto &cb : *batch) {
-                if (cb.cb->GetTagLimit() == 0) continue;  // Skip empty CB's
-                skip |= cb.cb->ValidateFirstUse(*batch.get(), "vkQueueSubmit", cb.index);
-
-                // The barriers have already been applied in ValidatFirstUse
-                ResourceUsageRange tag_range = batch->ImportRecordedAccessLog(*cb.cb);
-                batch->ResolveSubmittedCommandBuffer(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
-            }
+            skip |= batch->DoQueueSubmitValidate(*this, *cmd_state, submit);
         }
 
         // Empty batches could have semaphores, though.
-        for (auto &sem : layer_data::make_span(submit.pSignalSemaphores, submit.signalSemaphoreCount)) {
+        for (uint32_t sem_idx = 0; sem_idx < submit.signalSemaphoreInfoCount; ++sem_idx) {
+            const VkSemaphoreSubmitInfo &semaphore_info = submit.pSignalSemaphoreInfos[sem_idx];
             // Make a copy of the state, signal the copy and pend it...
-            auto sem_state = Get<SEMAPHORE_STATE>(sem);
+            auto sem_state = Get<SEMAPHORE_STATE>(semaphore_info.semaphore);
             if (!sem_state) continue;
-            auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
-            semaphore_info.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
             cmd_state->signaled.SignalSemaphore(sem_state, batch, semaphore_info);
         }
         // Unless the previous batch was referenced by a signal, the QueueBatchContext will self destruct, but as
@@ -7315,6 +7329,10 @@ void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
                                               VkResult result) {
     StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
 
+    RecordQueueSubmit(queue, fence, result);
+}
+
+void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult result) {
     // If this return is above the TlsGuard, then the Validate phase return must also be.
     if (!enabled[sync_validation_queue_submit]) return;  // Queue submit validation must be affirmatively enabled
 
@@ -7366,21 +7384,22 @@ void SyncValidator::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCoun
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                    VkFence fence) const {
-    bool skip = false;
-    if (!enabled[sync_validation_queue_submit]) return skip;
-
-    // WIP: Add Submit2 support
-    return skip;
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "VkQueueSubmit2KHR");
+}
+bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                VkFence fence) const {
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "VkQueueSubmit2");
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                   VkFence fence, VkResult result) {
     StateTracker::PostCallRecordQueueSubmit2KHR(queue, submitCount, pSubmits, fence, result);
-    if (VK_SUCCESS != result) return;  // dispatched QueueSubmit2 failed
-
-    if (!enabled[sync_validation_queue_submit]) return;
-
-    // WIP: Add Submit2 support
+    RecordQueueSubmit(queue, fence, result);
+}
+void SyncValidator::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
+                                               VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+    RecordQueueSubmit(queue, fence, result);
 }
 
 void SyncValidator::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
@@ -7515,12 +7534,6 @@ QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const Queu
       current_access_context_(&access_context_),
       batch_log_(nullptr) {}
 
-template <typename BatchInfo>
-void QueueBatchContext::Setup(const std::shared_ptr<const QueueBatchContext> &prev_batch, const BatchInfo &batch_info,
-                              SignaledSemaphores &signaled) {
-    SetupCommandBufferInfo(batch_info);
-    SetupAccessContext(prev_batch, batch_info, signaled);
-}
 void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
     GetCurrentAccessContext()->ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
 }
@@ -7637,32 +7650,7 @@ std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(Vk
     return signal_state->batch;
 }
 
-// Accessor Traits to allow Submit and Submit2 constructors to call the same utilities
-template <>
-class QueueBatchContext::SubmitInfoAccessor<VkSubmitInfo> {
-  public:
-    SubmitInfoAccessor(const VkSubmitInfo &info) : info_(info) {}
-    inline uint32_t WaitSemaphoreCount() const { return info_.waitSemaphoreCount; }
-    inline VkSemaphore WaitSemaphore(uint32_t index) { return info_.pWaitSemaphores[index]; }
-    inline VkPipelineStageFlags2 WaitDstMask(uint32_t index) { return info_.pWaitDstStageMask[index]; }
-    inline uint32_t CommandBufferCount() const { return info_.commandBufferCount; }
-    inline VkCommandBuffer CommandBuffer(uint32_t index) { return info_.pCommandBuffers[index]; }
-
-  private:
-    const VkSubmitInfo &info_;
-};
-template <typename BatchInfo, typename Fn>
-void QueueBatchContext::ForEachWaitSemaphore(const BatchInfo &batch_info, Fn &&func) {
-    using Accessor = QueueBatchContext::SubmitInfoAccessor<BatchInfo>;
-    Accessor batch(batch_info);
-    const uint32_t wait_count = batch.WaitSemaphoreCount();
-    for (uint32_t i = 0; i < wait_count; ++i) {
-        func(batch.WaitSemaphore(i), batch.WaitDstMask(i));
-    }
-}
-
-template <typename BatchInfo>
-void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const BatchInfo &batch_info,
+void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                                            SignaledSemaphores &signaled) {
     // Copy in the event state from the previous batch (on this queue)
     if (prev) {
@@ -7671,12 +7659,14 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
 
     // Import (resolve) the batches that are waited on, with the semaphore's effective barriers applied
     layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>> batches_resolved;
-    ForEachWaitSemaphore(batch_info, [this, &signaled, &batches_resolved](VkSemaphore sem, VkPipelineStageFlags2 wait_mask) {
-        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(sem, wait_mask, signaled);
+    const uint32_t wait_count = submit_info.waitSemaphoreInfoCount;
+    const VkSemaphoreSubmitInfo *wait_infos = submit_info.pWaitSemaphoreInfos;
+    for (const auto &wait_info : layer_data::make_span(wait_infos, wait_count)) {
+        std::shared_ptr<QueueBatchContext> resolved = ResolveOneWaitSemaphore(wait_info.semaphore, wait_info.stageMask, signaled);
         if (resolved) {
             batches_resolved.emplace(std::move(resolved));
         }
-    });
+    }
 
     // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
     if (prev && !layer_data::Contains(batches_resolved, prev)) {
@@ -7693,19 +7683,17 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
     }
 }
 
-template <typename BatchInfo>
-void QueueBatchContext::SetupCommandBufferInfo(const BatchInfo &batch_info) {
-    using Accessor = QueueBatchContext::SubmitInfoAccessor<BatchInfo>;
-    Accessor batch(batch_info);
-
+void QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info) {
     // Create the list of command buffers to submit
-    const uint32_t cb_count = batch.CommandBufferCount();
+    const uint32_t cb_count = submit_info.commandBufferInfoCount;
+    const VkCommandBufferSubmitInfo *const cb_infos = submit_info.pCommandBufferInfos;
     command_buffers_.reserve(cb_count);
-    for (uint32_t index = 0; index < cb_count; ++index) {
-        auto cb_context = sync_state_->GetAccessContextShared(batch.CommandBuffer(index));
+
+    for (const auto &cb_info : layer_data::make_span(cb_infos, cb_count)) {
+        auto cb_context = sync_state_->GetAccessContextShared(cb_info.commandBuffer);
         if (cb_context) {
             tag_range_.end += cb_context->GetTagLimit();
-            command_buffers_.emplace_back(index, std::move(cb_context));
+            command_buffers_.emplace_back(static_cast<uint32_t>(&cb_info - cb_infos), std::move(cb_context));
         }
     }
 }
@@ -7841,3 +7829,56 @@ SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> 
 }
 
 FenceSyncState::FenceSyncState() : fence(), tag(kInvalidTag), queue_id(QueueSyncState::kQueueIdInvalid) {}
+
+VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo &info, uint32_t index) {
+    auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+    semaphore_info.semaphore = info.pWaitSemaphores[index];
+    semaphore_info.stageMask = info.pWaitDstStageMask[index];
+    return semaphore_info;
+}
+VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const VkSubmitInfo &info, uint32_t index) {
+    auto cb_info = lvl_init_struct<VkCommandBufferSubmitInfo>();
+    cb_info.commandBuffer = info.pCommandBuffers[index];
+    return cb_info;
+}
+
+VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo &info, uint32_t index) {
+    auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+    semaphore_info.semaphore = info.pSignalSemaphores[index];
+    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+    return semaphore_info;
+}
+
+SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info) {
+    info2 = lvl_init_struct<VkSubmitInfo2>();
+
+    info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
+    waits.reserve(info2.waitSemaphoreInfoCount);
+    for (uint32_t i = 0; i < info2.waitSemaphoreInfoCount; ++i) {
+        waits.emplace_back(WaitSemaphore(info, i));
+    }
+    info2.pWaitSemaphoreInfos = waits.data();
+
+    info2.commandBufferInfoCount = info.commandBufferCount;
+    cbs.reserve(info2.commandBufferInfoCount);
+    for (uint32_t i = 0; i < info2.commandBufferInfoCount; ++i) {
+        cbs.emplace_back(CommandBuffer(info, i));
+    }
+    info2.pCommandBufferInfos = cbs.data();
+
+    info2.signalSemaphoreInfoCount = info.signalSemaphoreCount;
+    signals.reserve(info2.signalSemaphoreInfoCount);
+    for (uint32_t i = 0; i < info2.signalSemaphoreInfoCount; ++i) {
+        signals.emplace_back(SignalSemaphore(info, i));
+    }
+    info2.pSignalSemaphoreInfos = signals.data();
+}
+
+SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos) {
+    info_store.reserve(count);
+    info2s.reserve(count);
+    for (uint32_t batch = 0; batch < count; ++batch) {
+        info_store.emplace_back(infos[batch]);
+        info2s.emplace_back(info_store.back().info2);
+    }
+}

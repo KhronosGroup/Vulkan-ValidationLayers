@@ -248,14 +248,10 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
     VkResult err;
 
-    VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
+    GetPhysicalDeviceFeatures2(features2);
 
     // We're not creating a valid m_device, but the phy wrapper is useful
     vk_testing::PhysicalDevice physical_device(gpu());
@@ -523,15 +519,8 @@ TEST_F(VkPositiveLayerTest, Vulkan12Features) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
-    VkPhysicalDeviceFeatures2 features2 = {};
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
-    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2 != nullptr);
-
-    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&bda_features);
-    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
-
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(bda_features);
     if (!bda_features.bufferDeviceAddress) {
         printf("Buffer Device Address feature not supported, skipping test\n");
         return;

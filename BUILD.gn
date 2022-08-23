@@ -127,6 +127,7 @@ core_validation_sources = [
   "layers/generated/spirv_grammar_helper.h",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
+  "layers/generated/gpu_pre_dispatch_comp.h",
   "layers/generated/gpu_pre_draw_vert.h",
   "layers/generated/gpu_as_inspection_comp.h",
   "layers/generated/synchronization_validation_types.cpp",
