@@ -358,6 +358,52 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
     }
     return true;
 }
+bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
+                                                                     VkRenderPass renderpass, uint32_t subpass, VkImage image,
+                                                                     VkImageCreateInfo image_create_info,
+                                                                     VkSampleCountFlagBits msrtss_samples,
+                                                                     uint32_t attachment_index, bool depth) const {
+    bool skip = false;
+    const char *function_name = (rp_version == RENDER_PASS_VERSION_2) ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
+    VkImageFormatProperties image_properties = {};
+    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
+        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
+        image_create_info.flags, &image_properties);
+    if (image_properties_result != VK_SUCCESS) {
+        skip |= LogError(device, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
+                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
+                         "when called for validation with following params: "
+                         "format: %s, imageType: %s, "
+                         "tiling: %s, usage: %s, "
+                         "flags: %s.",
+                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                         string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                         string_VkImageCreateFlags(image_create_info.flags).c_str());
+    } else {
+        if (!(image_properties.sampleCounts & msrtss_samples)) {
+            std::stringstream msg;
+            if (depth) {
+                msg << "depth stencil attachment";
+            } else {
+                msg << "attachment " << attachment_index;
+            }
+            skip |=
+                LogError(device, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
+                         "%s(): Renderpass subpass %" PRIu32
+                         " enables "
+                         "multisampled-render-to-single-sampled and %s"
+                         ", is specified with "
+                         "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
+                         "tiling: %s, usage: %s, "
+                         "flags: %s does not support a rasterizationSamples count of %s",
+                         function_name, subpass, msg.str().c_str(), report_data->FormatHandle(image).c_str(),
+                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                         string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                         string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(msrtss_samples));
+        }
+    }
+    return skip;
+}
 
 bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
                                                                       const IMAGE_VIEW_STATE &image_view_state,
@@ -654,16 +700,26 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 
     for (uint32_t j = 0; j < render_pass_info->subpassCount; ++j) {
         auto &subpass = render_pass_info->pSubpasses[j];
+        const auto *ms_rendered_to_single_sampled =
+            LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(render_pass_info->pSubpasses[j].pNext);
         for (uint32_t k = 0; k < render_pass_info->pSubpasses[j].inputAttachmentCount; ++k) {
             auto &attachment_ref = subpass.pInputAttachments[k];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = attachments[attachment_ref.attachment];
                 auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
-
+                
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
                         rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
                         "input attachment layout");
+                }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        const auto image_create_info = view_state->image_state.get()->createInfo;
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            rp_version, framebuffer, render_pass, k, view_state->create_info.image, image_create_info,
+                            ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment);
+                    }
                 }
             }
         }
@@ -684,6 +740,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                             "resolve attachment layout");
                     }
                 }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        const auto image_create_info = view_state->image_state.get()->createInfo;
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            rp_version, framebuffer, render_pass, k, view_state->create_info.image, image_create_info,
+                            ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment);
+                    }
+                }
             }
         }
 
@@ -697,6 +761,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
                         rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
                         "input attachment layout");
+                }
+                if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
+                    if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
+                        const auto image_create_info = view_state->image_state.get()->createInfo;
+                        skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
+                            rp_version, framebuffer, render_pass, 0, view_state->create_info.image, image_create_info,
+                            ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment, true);
+                    }
                 }
             }
         }

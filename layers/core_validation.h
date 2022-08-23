@@ -672,6 +672,11 @@ class CoreChecks : public ValidationStateTracker {
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        const SubresourceRangeErrorCodes& errorCodes) const;
+    bool ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
+                                                             VkRenderPass renderpass, uint32_t subpass, VkImage image,
+                                                             VkImageCreateInfo image_create_info,
+                                                             VkSampleCountFlagBits msrtss_samples, uint32_t attachment_index,
+                                                             bool depth = false) const;
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
                                                               const IMAGE_VIEW_STATE& image_view_state, VkFramebuffer framebuffer,
                                                               VkRenderPass renderpass, uint32_t attachment_index,
@@ -1437,8 +1442,8 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const override;
     bool PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize* pCommittedMem) const override;
     bool MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, const VkAttachmentReference2* attachments,
-                                                         const VkFramebufferCreateInfo* fbci, const VkRenderPassCreateInfo2* rpci,
-                                                         uint32_t subpass) const;
+                                                        const VkFramebufferCreateInfo* fbci, const VkRenderPassCreateInfo2* rpci,
+                                                        uint32_t subpass, VkSampleCountFlagBits sample_count) const;
     bool ValidateFragmentShadingRateAttachments(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo) const;
     bool ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass,
