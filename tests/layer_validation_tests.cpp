@@ -201,9 +201,13 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
 
-    if (rp1_vuid) {
-        // Some tests mismatch attachment type with layout
-        error_monitor->SetUnexpectedError("VUID-VkSubpassDescription-None-04437");
+    if (nullptr != rp1_vuid) {
+        // If the second VUID is not provided, set it equal to the first VUID.  In this way,
+        // we can check both vkCreateRenderPass and vkCreateRenderPass2 with the same VUID
+        // if rp2_supported is true;
+        if (rp2_supported && nullptr == rp2_vuid) {
+            rp2_vuid = rp1_vuid;
+        }
 
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp1_vuid);
         err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
@@ -211,14 +215,11 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         error_monitor->VerifyFound();
     }
 
-    if (rp2_supported && rp2_vuid) {
+    if (rp2_supported && nullptr == rp2_vuid) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
-
-        // Some tests mismatch attachment type with layout
-        error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
 
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
@@ -228,9 +229,6 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         // For api version >= 1.2, try core entrypoint
         PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
         if (vkCreateRenderPass2) {
-            // Some tests mismatch attachment type with layout
-            error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
-
             error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
             err = vkCreateRenderPass2(device, create_info2.ptr(), nullptr, &render_pass);
             if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
