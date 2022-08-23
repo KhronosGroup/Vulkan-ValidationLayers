@@ -7355,46 +7355,19 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     // Just hacking in specific state to get to the errors we want so don't copy this unless you know what you're doing.
     VkAttachmentReference attach = {};
     VkSubpassDescription subpass = {};
-    subpass.inputAttachmentCount = 1;
-    subpass.pInputAttachments = &attach;
+    subpass.inputAttachmentCount = 0;
+    subpass.colorAttachmentCount = 0;
+    subpass.pDepthStencilAttachment = &attach;
     VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
-    VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
-    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
-    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-    rpci.pAttachments = &attach_desc;
     VkRenderPass rp;
-    // error w/ non-general layout
-    attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
-    m_errorMonitor->VerifyFound();
-
-    subpass.inputAttachmentCount = 0;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &attach;
-    // error w/ non-color opt or GENERAL layout for color attachment
-    attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
-    m_errorMonitor->VerifyFound();
-
-    subpass.colorAttachmentCount = 0;
-    subpass.pDepthStencilAttachment = &attach;
-    attach_desc.format = VK_FORMAT_D16_UNORM;
-    // error w/ non-ds opt or GENERAL layout for color attachment
-    attach.layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-None-04437");
-    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
-    m_errorMonitor->VerifyFound();
 
     // For this error we need a valid renderpass so create default one
     attach.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     attach.attachment = 0;
+    VkAttachmentDescription attach_desc = {};
     attach_desc.format = depth_format;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -7404,6 +7377,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    rpci.pAttachments = &attach_desc;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-format-03283");
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
