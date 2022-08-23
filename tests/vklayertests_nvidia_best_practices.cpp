@@ -1197,6 +1197,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
     allocate_info.commandBufferCount = 1;
     vk_testing::CommandBuffer command_buffer0(*m_device, allocate_info);
     vk_testing::CommandBuffer command_buffer1(*m_device, allocate_info);
+    vk_testing::CommandBuffer command_buffer2(*m_device, allocate_info);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -1245,6 +1246,28 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BeginCommandBuffer_OneTimeSubmit) {
 
         if (err == VK_SUCCESS) {
             command_buffer1.end();
+        }
+    }
+    {
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                             "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit");
+
+        submit_info.pCommandBuffers = &command_buffer2.handle();
+
+        command_buffer2.begin(&begin_info);
+        command_buffer2.end();
+
+        err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+        ASSERT_VK_SUCCESS(err);
+
+        m_device->wait();
+
+        err = vk::BeginCommandBuffer(command_buffer2.handle(), &begin_info);
+        m_errorMonitor->Finish();
+
+        if (err == VK_SUCCESS) {
+            command_buffer2.end();
         }
     }
 }
