@@ -1485,7 +1485,7 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
 
     auto cb = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    if (cb) return;
+    if (!cb) return;
 
     cb->num_submits = 0;
     cb->is_one_time_submit = (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) != 0;
