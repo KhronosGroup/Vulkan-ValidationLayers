@@ -2799,6 +2799,14 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     pipe.AddShader(&ts);
     pipe.AddShader(&ms);
     pipe.AddDefaultColorAttachment();
+    VkViewport viewport{};
+    viewport.width = m_width;
+    viewport.height = m_height;
+    pipe.SetViewport({viewport});
+    VkRect2D rect{};
+    rect.extent.width = (uint32_t)m_width;
+    rect.extent.height = (uint32_t)m_height;
+    pipe.SetScissor({rect});
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
@@ -2807,8 +2815,10 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     ASSERT_TRUE(vkCmdDrawMeshTasksNV != nullptr);
 
     m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
+    m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "hello from task shader");
