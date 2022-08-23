@@ -3279,6 +3279,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         }
 
         if (gpu_assisted) {
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462");
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458");
             // Need these values to pass mapped storage buffer checks
             vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
                              ray_tracing_properties.shaderGroupHandleSize * 0ull, shader_binding_table_buffer.handle(),
