@@ -84,7 +84,8 @@ class DebugPrintf : public GpuAssistedBase {
     }
 
     void CreateDevice(const VkDeviceCreateInfo* pCreateInfo) override;
-    bool InstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<uint32_t>& new_pgm, uint32_t* unique_shader_id);
+    bool InstrumentShader(const layer_data::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
+                          uint32_t* unique_shader_id) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
