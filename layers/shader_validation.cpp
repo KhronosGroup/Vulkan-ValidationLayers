@@ -1068,86 +1068,52 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStorageImageFormats(const SHADER_MODULE_STATE &module_state, const spirv_inst_iter &insn) const {
+bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE &module_state,
+                                                            const spirv_inst_iter &insn) const {
     bool skip = false;
+    // Go through all variables for images and check decorations
+    assert(insn.opcode() == spv::OpVariable);
+    // spirv-val validates this is an OpTypePointer
+    const spirv_inst_iter pointer_def = module_state.get_def(insn.word(1));
+    if (pointer_def.word(2) != spv::StorageClassUniformConstant) {
+        return skip;  // Vulkan Spec says storage image must be UniformConstant
+    }
+    spirv_inst_iter type_def = module_state.get_def(pointer_def.word(3));
 
-    switch (insn.opcode()) {
-        // Go through all ImageRead/Write instructions
-        case spv::OpImageSparseRead:
-        case spv::OpImageRead: {
-            // spirv-val validates this is an OpTypeImage
-            const uint32_t image = module_state.GetTypeId(insn.word(3));
-            const spirv_inst_iter image_def = module_state.get_def(image);
+    // Unpack an optional level of arraying
+    if (type_def.opcode() == spv::OpTypeArray || type_def.opcode() == spv::OpTypeRuntimeArray) {
+        type_def = module_state.get_def(type_def.word(2));
+    }
 
-            const uint32_t dim = image_def.word(3);
-            const uint32_t image_format = image_def.word(8);
-            // If the Image Dim operand is not SubpassData, the Image Format must not be Unknown, unless the
-            // StorageImageReadWithoutFormat Capability was declared.
-            if (dim != spv::DimSubpassData && image_format == spv::ImageFormatUnknown) {
-                skip |= RequireFeature(enabled_features.core.shaderStorageImageReadWithoutFormat,
-                                       "shaderStorageImageReadWithoutFormat", kVUID_Features_shaderStorageImageReadWithoutFormat);
-            }
-            break;
-        }
-        case spv::OpImageWrite: {
-            // spirv-val validates this is an OpTypeImage
-            const uint32_t image = module_state.GetTypeId(insn.word(1));
-            const spirv_inst_iter image_def = module_state.get_def(image);
-
-            const uint32_t image_format = image_def.word(8);
-            if (image_format == spv::ImageFormatUnknown) {
-                skip |= RequireFeature(enabled_features.core.shaderStorageImageWriteWithoutFormat,
-                                       "shaderStorageImageWriteWithoutFormat", kVUID_Features_shaderStorageImageWriteWithoutFormat);
-            }
-            break;
+    if (type_def != module_state.end() && type_def.opcode() == spv::OpTypeImage) {
+        // Only check if the Image Dim operand is not SubpassData
+        const uint32_t dim = type_def.word(3);
+        // Only check storage images
+        const uint32_t sampled = type_def.word(7);
+        const uint32_t image_format = type_def.word(8);
+        if ((dim == spv::DimSubpassData) || (sampled != 2) || (image_format != spv::ImageFormatUnknown)) {
+            return skip;
         }
 
-        // Go through all variables for images and check decorations
-        case spv::OpVariable: {
-            // spirv-val validates this is an OpTypePointer
-            const spirv_inst_iter pointer_def = module_state.get_def(insn.word(1));
-            if (pointer_def.word(2) != spv::StorageClassUniformConstant) {
-                break;  // Vulkan Spec says storage image must be UniformConstant
-            }
-            spirv_inst_iter type_def = module_state.get_def(pointer_def.word(3));
+        const uint32_t var_id = insn.word(2);
+        decoration_set img_decorations = module_state.get_decorations(var_id);
 
-            // Unpack an optional level of arraying
-            if (type_def.opcode() == spv::OpTypeArray || type_def.opcode() == spv::OpTypeRuntimeArray) {
-                type_def = module_state.get_def(type_def.word(2));
-            }
+        if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
+            !(img_decorations.flags & decoration_set::nonreadable_bit)) {
+            skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06270",
+                             "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
+                             "format and is not decorated with NonReadable",
+                             module_state.DescribeInstruction(module_state.get_def(var_id)).c_str(),
+                             module_state.DescribeInstruction(type_def).c_str());
+        }
 
-            if (type_def != module_state.end() && type_def.opcode() == spv::OpTypeImage) {
-                // Only check if the Image Dim operand is not SubpassData
-                const uint32_t dim = type_def.word(3);
-                // Only check storage images
-                const uint32_t sampled = type_def.word(7);
-                const uint32_t image_format = type_def.word(8);
-                if ((dim == spv::DimSubpassData) || (sampled != 2) || (image_format != spv::ImageFormatUnknown)) {
-                    break;
-                }
-
-                const uint32_t var_id = insn.word(2);
-                decoration_set img_decorations = module_state.get_decorations(var_id);
-
-                if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
-                    !(img_decorations.flags & decoration_set::nonreadable_bit)) {
-                    skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06270",
-                                     "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
-                                     "format and is not decorated with NonReadable",
-                                     module_state.DescribeInstruction(module_state.get_def(var_id)).c_str(),
-                                     module_state.DescribeInstruction(type_def).c_str());
-                }
-
-                if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
-                    !(img_decorations.flags & decoration_set::nonwritable_bit)) {
-                    skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06269",
-                                     "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
-                                     "Unknown format and is not decorated with NonWritable",
-                                     module_state.DescribeInstruction(module_state.get_def(var_id)).c_str(),
-                                     module_state.DescribeInstruction(type_def).c_str());
-                }
-            }
-            break;
+        if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
+            !(img_decorations.flags & decoration_set::nonwritable_bit)) {
+            skip |= LogError(device, "VUID-RuntimeSpirv-OpTypeImage-06269",
+                             "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
+                             "Unknown format and is not decorated with NonWritable",
+                             module_state.DescribeInstruction(module_state.get_def(var_id)).c_str(),
+                             module_state.DescribeInstruction(type_def).c_str());
         }
     }
 
@@ -2558,6 +2524,18 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
                                 string_SpvStorageClass(storage_class), module_state.DescribeInstruction(insn).c_str());
            }
         }
+
+        // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
+        // disabled if VK_KHR_format_feature_flags2 is supported.
+        //
+        //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
+        //
+        // The other checks need to take into account the format features and so
+        // we apply that in the descriptor set matching validation code (see
+        // descriptor_sets.cpp).
+        if (!has_format_feature2) {
+            skip |= ValidateShaderStorageImageFormatsVariables(module_state, insn);
+        }
     }
 
     return skip;
@@ -2971,18 +2949,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         skip |= ValidateShaderClock(module_state, insn);
         skip |= ValidateShaderStageGroupNonUniform(module_state, pStage->stage, insn);
         skip |= ValidateMemoryScope(module_state, insn);
-
-        // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
-        // disabled if VK_KHR_format_feature_flags2 is supported.
-        //
-        //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
-        //
-        // The other checks need to take into account the format features and so
-        // we apply that in the descriptor set matching validation code (see
-        // descriptor_sets.cpp).
-        if (!has_format_feature2) {
-            skip |= ValidateShaderStorageImageFormats(module_state, insn);
-        }
     }
 
     skip |= ValidateTransformFeedback(module_state);

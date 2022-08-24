@@ -619,7 +619,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
                                               safe_VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
                                               spirv_inst_iter entrypoint) const;
-    bool ValidateShaderStorageImageFormats(const SHADER_MODULE_STATE& module_state, const spirv_inst_iter& insn) const;
+    bool ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE& module_state, const spirv_inst_iter& insn) const;
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE* pipeline) const;
     bool ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                             spirv_inst_iter& insn) const;
