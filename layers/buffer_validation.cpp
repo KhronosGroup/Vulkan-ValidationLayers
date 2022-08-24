@@ -645,11 +645,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                     return subres_skip;
                 });
         }
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, *view_state, framebuffer,
-                                                             render_pass, i, "initial layout");
+        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, *view_state,
+                                                                     framebuffer, render_pass, i, "initial layout");
 
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, *view_state, framebuffer, render_pass, i,
-                                                             "final layout");
+        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, *view_state, framebuffer,
+                                                                     render_pass, i, "final layout");
     }
 
     for (uint32_t j = 0; j < render_pass_info->subpassCount; ++j) {
@@ -661,9 +661,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
                 if (view_state) {
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "input attachment layout");
+                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                        rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
+                        "input attachment layout");
                 }
             }
         }
@@ -675,13 +675,13 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
                 if (view_state) {
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "color attachment layout");
+                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                        rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
+                        "color attachment layout");
                     if (subpass.pResolveAttachments) {
-                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
-                                                                             framebuffer, render_pass, attachment_ref.attachment,
-                                                                             "resolve attachment layout");
+                        skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                            rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
+                            "resolve attachment layout");
                     }
                 }
             }
@@ -694,9 +694,9 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
                 if (view_state) {
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, *view_state,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "input attachment layout");
+                    skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                        rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
+                        "input attachment layout");
                 }
             }
         }
