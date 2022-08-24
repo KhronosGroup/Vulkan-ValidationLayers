@@ -1846,8 +1846,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
     VkPhysicalDeviceFeatures feat;
     vk::GetPhysicalDeviceFeatures(gpu(), &feat);
     if (feat.shaderStorageImageReadWithoutFormat) {
-        printf("%s format less storage image read supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "shaderStorageImageReadWithoutFormat is supported";
     }
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
@@ -1856,13 +1855,13 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
     //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
     //
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
     }
 
     // Make sure compute pipeline has a compute shader stage set
     const char *csSource = R"(
                OpCapability Shader
+               OpCapability StorageImageReadWithoutFormat
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %4 "main"
@@ -1912,7 +1911,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-shaderStorageImageReadWithoutFormat");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
@@ -1925,8 +1924,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     VkPhysicalDeviceFeatures feat;
     vk::GetPhysicalDeviceFeatures(gpu(), &feat);
     if (feat.shaderStorageImageWriteWithoutFormat) {
-        printf("%s format less storage image write supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is supported";
     }
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
@@ -1935,13 +1933,13 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     //   https://github.com/KhronosGroup/Vulkan-Docs/blob/6177645341afc/appendices/spirvenv.txt#L553
     //
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
-        printf("%s %s supported, skipping.\n", kSkipPrefix, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
     }
 
     // Make sure compute pipeline has a compute shader stage set
     const char *csSource = R"(
                   OpCapability Shader
+                  OpCapability StorageImageReadWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
                   OpMemoryModel Logical GLSL450
                   OpEntryPoint GLCompute %main "main"
@@ -1988,7 +1986,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
@@ -2050,8 +2048,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
     }
 
     if (n_tests == 0) {
-        printf("%s Could not build a test case.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Could not build a test case.";
     }
 
     // Make sure compute pipeline has a compute shader stage set
@@ -2219,8 +2216,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
     }
 
     if (n_tests == 0) {
-        printf("%s Could not build a test case.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Could not build a test case.";
     }
 
     // Make sure compute pipeline has a compute shader stage set
@@ -2502,6 +2498,7 @@ TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
          %21 = OpConstant %19 1
          %22 = OpConstantComposite %20 %21 %21 %21
           %4 = OpFunction %2 None %3
+          %l = OpLabel
           %9 = OpVariable %8 Function
                OpReturn
                OpFunctionEnd
@@ -2574,6 +2571,7 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
         %v3uint = OpTypeVector %uint 3
         %uint_1 = OpConstant %uint 1
           %main = OpFunction %void None %3
+             %l = OpLabel
                   OpReturn
                   OpFunctionEnd
                   )";

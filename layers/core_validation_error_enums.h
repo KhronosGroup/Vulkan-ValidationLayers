@@ -288,8 +288,8 @@ static const char DECORATE_UNUSED *kVUID_Core_CmdDrawMeshTasksIndirectCountNV_Ve
 static const char DECORATE_UNUSED *kVUID_Core_CmdDrawIndirectByteCountEXT_VertexInput = "UNASSIGNED-vkCmdDrawIndirectByteCountEXT-vertexInput-not-specified";
 
 // Format features VUs
-static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
-static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";
+// static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat";
+// static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat";
 // static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageReadWithoutFormat_NonReadable = "UNASSIGNED-features-shaderStorageImageReadWithoutFormat-NonReadable";
 // static const char DECORATE_UNUSED *kVUID_Features_shaderStorageImageWriteWithoutFormat_NonWritable = "UNASSIGNED-features-shaderStorageImageWriteWithoutFormat-NonWritable";
 
