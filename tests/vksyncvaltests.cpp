@@ -447,6 +447,8 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
     image_transition_barrier.image = image_a.handle();
     image_transition_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_transition_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    image_transition_barrier.srcAccessMask = 0;
+    image_transition_barrier.dstAccessMask = 0;
 
     secondary_cb1.reset();
     secondary_cb1.begin();
@@ -1043,7 +1045,7 @@ TEST_F(VkSyncValTest, SyncCopyBufferImageHazards) {
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     buffer_barrier.buffer = buffer_a.handle();
     buffer_barrier.offset = 1024;
-    buffer_barrier.size = 2048;
+    buffer_barrier.size = VK_WHOLE_SIZE;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
                            nullptr);
 
@@ -1090,7 +1092,7 @@ TEST_F(VkSyncValTest, SyncCopyBufferImageHazards) {
     buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     buffer_barrier.buffer = buffer_b.handle();
     buffer_barrier.offset = 1024;
-    buffer_barrier.size = 2048;
+    buffer_barrier.size = VK_WHOLE_SIZE;
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &buffer_barrier, 0,
                            nullptr);
 
@@ -1892,9 +1894,9 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     }
 
     VkDepthStencilObj image_ds(m_device), image_dp(m_device), image_st(m_device);
-    image_ds.Init(m_device, 16, 16, format_ds);
-    image_dp.Init(m_device, 16, 16, format_dp);
-    image_st.Init(m_device, 16, 16, format_st);
+    image_ds.Init(m_device, 16, 16, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    image_dp.Init(m_device, 16, 16, format_dp, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_st.Init(m_device, 16, 16, format_st, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkRenderpassObj rp_ds(m_device, format_ds, true), rp_dp(m_device, format_dp, true), rp_st(m_device, format_st, true);
 
@@ -1972,6 +1974,10 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     m_commandBuffer->reset();
     m_commandBuffer->begin();
 
+    image_ds.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_dp.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_st.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
     VkImageCopy copyRegion;
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copyRegion.srcSubresource.mipLevel = 0;
@@ -1985,13 +1991,14 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {16, 16, 1};
 
-    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, image_dp.handle(),
-                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, &copyRegion);
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImage-srcImage-00135");
+    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dp.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copyRegion);
 
     copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, image_st.handle(),
-                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, &copyRegion);
+    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_st.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copyRegion);
     m_renderPassBeginInfo.renderPass = rp_ds.handle();
     m_renderPassBeginInfo.framebuffer = fb_ds.handle();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
@@ -2603,7 +2610,7 @@ TEST_F(VkSyncValTest, SyncLayoutTransition) {
 
     // There should be no hazard for ILT after ILT
     m_commandBuffer->end();
-    m_commandBuffer->reset();
+    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     m_commandBuffer->begin();
     vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
                            &preClearBarrier);
@@ -2651,16 +2658,16 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
 
     subpass_dep_positive.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_DEPENDENCY_BY_REGION_BIT});
     subpass_dep_positive.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                                    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT});
     subpass_dep_positive.push_back({0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_ACCESS_TRANSFER_READ_BIT, VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_ACCESS_TRANSFER_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT});
     subpass_dep_positive.push_back({0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_ACCESS_TRANSFER_WRITE_BIT, VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_ACCESS_TRANSFER_WRITE_BIT, VK_DEPENDENCY_BY_REGION_BIT});
 
     rp_helper_positive.InitRenderPass();
     rp_helper_positive.InitFramebuffer();
@@ -2669,18 +2676,21 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     auto& subpass_dep_negative = rp_helper_negative.subpass_dep;
     subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                    VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_DEPENDENCY_BY_REGION_BIT});
     // Show that the two barriers do *not* chain by breaking the positive barrier into two bits.
     subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, 0,
-                                    VK_DEPENDENCY_VIEW_LOCAL_BIT});
+                                    VK_DEPENDENCY_BY_REGION_BIT});
     subpass_dep_negative.push_back({VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-                                    VK_DEPENDENCY_VIEW_LOCAL_BIT});
-    rp_helper_negative.InitRenderPass();
+                                    VK_DEPENDENCY_BY_REGION_BIT});
+
+    rp_helper_negative.InitAllAttachmentsToLayoutGeneral();
 
     // Negative and postive RP's are compatible.
-    rp_helper_negative.framebuffer = rp_helper_positive.framebuffer;
+    rp_helper_negative.attachments = rp_helper_positive.attachments;
+    rp_helper_negative.InitRenderPass();
+    rp_helper_negative.InitFramebuffer();
     rp_helper_negative.InitBeginInfo();
 
     vk_testing::Sampler sampler;
@@ -2692,7 +2702,7 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     rp_helper_positive.InitPipelineHelper(g_pipe);
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper_positive.view_input, VK_NULL_HANDLE,
-                                                     VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+                                                     VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -2757,8 +2767,8 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
     m_commandBuffer->EndRenderPass();
 
-    vk::CmdCopyImage(m_commandBuffer->handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, image_input,
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &full_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, image_input, VK_IMAGE_LAYOUT_GENERAL, 1u,
+                     &full_region);
 
     // Postive renderpass multidependency test, will fail IFF the dependencies are acting indepently.
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-READ_AFTER_WRITE");
@@ -2802,7 +2812,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
     src_img_info.extent = {kWidth, kHeight, 1};
     src_img_info.mipLevels = 1;
     src_img_info.arrayLayers = 1;
-    src_img_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    src_img_info.samples = VK_SAMPLE_COUNT_1_BIT;
     src_img_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     src_img_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     src_img_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -2883,7 +2893,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         subpasses[i].inputAttachmentCount = 1;
         subpasses[i].pInputAttachments = &input_ref;
         subpasses[i].colorAttachmentCount = 1;
-        subpasses[i].pColorAttachments = &color_refs[1];
+        subpasses[i].pColorAttachments = &color_refs[i];
         subpasses[i].preserveAttachmentCount = preserve_subpass[i - 1].size();
         subpasses[i].pPreserveAttachments = preserve_subpass[i - 1].data();
     }
@@ -2936,6 +2946,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
+        g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
         ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
 
@@ -2956,6 +2967,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_);
         vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_layout_.handle(), 0,
@@ -2971,17 +2983,17 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
             // we're racing the writes from subpass 0 with our shader reads
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-RACING-WRITE");
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
             m_errorMonitor->VerifyFound();
         }
 
         // we should get an error from async checking in both subpasses 2 & 3
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->end();
+        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     }
 
     // add dependencies from subpass 0 to the others, which are necessary but not sufficient
@@ -3018,6 +3030,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
+        g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
         ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
 
@@ -3050,16 +3063,18 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
         // expect this error because 2 subpasses could try to do the store operation
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
+        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
         // ... and this one because the store could happen during a shader read from another subpass
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_errorMonitor->VerifyFound();
 
-        m_commandBuffer->end();
+        vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
     }
 
     // try again with correct dependencies to make subpass 3 depend on 1 & 2
@@ -3094,6 +3109,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         g_pipe_12.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
         g_pipe_12.gp_ci_.renderPass = rp.handle();
+        g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
         ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
 
@@ -3125,6 +3141,8 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
+
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
 
@@ -3815,7 +3833,7 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
 
     VkAttachmentReference attach_ref1 = {};
     attach_ref1.attachment = 0;
-    attach_ref1.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    attach_ref1.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     VkAttachmentReference attach_ref2 = {};
     attach_ref2.attachment = 0;
     attach_ref2.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -3833,7 +3851,7 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
     attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attachment_description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     auto rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
@@ -3844,6 +3862,8 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
     rp_ci.dependencyCount = 1;
     rp_ci.pDependencies = &subpass_dependency;
 
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubpassDependency-srcStageMask-03937");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubpassDependency-dstStageMask-03937");
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, rp_ci);
 
@@ -3918,7 +3938,6 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
 
     m_errorMonitor->VerifyFound();
 }
@@ -3980,7 +3999,7 @@ TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "SYNC-HAZARD-WRITE_AFTER_WRITE");
-    copy_regions[1].dstOffset = {7, 0, 0};
+    copy_regions[1].dstOffset = {4, 0, 0};
     vk::CmdCopyImage(m_commandBuffer->handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
                      VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
     m_errorMonitor->VerifyFound();
@@ -4501,8 +4520,15 @@ TEST_F(VkSyncValTest, SyncQSSubmit2) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    } else {
+        GTEST_SKIP() << "Synchronization2 not supported";
+    }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        GTEST_SKIP() << "Synchronization2 not supported";
+    }
 
     QSTestContext test(m_device, m_device->m_queue_obj);
     if (!test.Valid()) {

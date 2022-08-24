@@ -1464,6 +1464,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
     attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
     rpci.pAttachments = &attach_desc;
 
@@ -1491,6 +1492,8 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, VkFormat format, bool depthSt
         attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 
         rpci.pAttachments = &attach_desc;
 
