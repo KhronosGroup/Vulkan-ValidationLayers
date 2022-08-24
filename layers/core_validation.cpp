@@ -12532,8 +12532,6 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 // Validate image usage
                 uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
                 for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
-                    const auto *ms_rendered_to_single_sampled =
-                        LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(rpci->pSubpasses[i].pNext);
                     skip |= MatchUsage(rpci->pSubpasses[i].colorAttachmentCount, rpci->pSubpasses[i].pColorAttachments, pCreateInfo,
                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03201");
                     skip |=
@@ -12558,19 +12556,6 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         skip |= MatchUsage(1, fragment_shading_rate_attachment_info->pFragmentShadingRateAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
                                            "VUID-VkFramebufferCreateInfo-flags-04549");
-                    }
-
-                    if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
-                        skip |= MsRenderedToSingleSampledValidateFBAttachments(rpci->pSubpasses[i].inputAttachmentCount,
-                                                                               rpci->pSubpasses[i].pInputAttachments, pCreateInfo,
-                                                                               rpci, i);
-                        skip |= MsRenderedToSingleSampledValidateFBAttachments(rpci->pSubpasses[i].colorAttachmentCount,
-                                                                               rpci->pSubpasses[i].pColorAttachments, pCreateInfo,
-                                                                               rpci, i);
-                        if (rpci->pSubpasses[i].pDepthStencilAttachment) {
-                            skip |= MsRenderedToSingleSampledValidateFBAttachments(1, rpci->pSubpasses[i].pDepthStencilAttachment,
-                                                                                   pCreateInfo, rpci, i);
-                        }
                     }
                 }
 
