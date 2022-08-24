@@ -2053,6 +2053,21 @@ void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_
     RecordResetZcullDirection(cmd_state, scope.image, scope.range);
 }
 
+template <typename Func>
+static void ForEachSubresource(const IMAGE_STATE& image, const VkImageSubresourceRange& range, Func&& func)
+{
+    const uint32_t layerCount = (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? image.full_range.layerCount : range.layerCount;
+    const uint32_t levelCount = (range.levelCount == VK_REMAINING_MIP_LEVELS) ? image.full_range.levelCount : range.levelCount;
+
+    for (uint32_t i = 0; i < layerCount; ++i) {
+        const uint32_t layer = range.baseArrayLayer + i;
+        for (uint32_t j = 0; j < levelCount; ++j) {
+            const uint32_t level = range.baseMipLevel + j;
+            func(layer, level);
+        }
+    }
+}
+
 void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state, VkImage depth_image,
                                               const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
@@ -2065,17 +2080,14 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cmd_state
     }
     auto& tree = image_it->second;
 
-    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
-        const uint32_t layer = subresource_range.baseArrayLayer + i;
+    auto image = Get<IMAGE_STATE>(depth_image);
+    if (!image) return;
 
-        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
-            const uint32_t level = subresource_range.baseMipLevel + j;
-
-            auto& subresource = tree.GetState(layer, level);
-            subresource.num_less_draws = 0;
-            subresource.num_greater_draws = 0;
-        }
-    }
+    ForEachSubresource(*image, subresource_range, [&tree](uint32_t layer, uint32_t level) {
+        auto& subresource = tree.GetState(layer, level);
+        subresource.num_less_draws = 0;
+        subresource.num_greater_draws = 0;
+    });
 }
 
 void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cmd_state, bp_state::CommandBufferStateNV::ZcullDirection mode) {
@@ -2096,14 +2108,12 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cmd_state, 
     }
     auto& tree = image_it->second;
 
-    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
-        const uint32_t layer = subresource_range.baseArrayLayer + i;
+    auto image = Get<IMAGE_STATE>(depth_image);
+    if (!image) return;
 
-        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
-            const uint32_t level = subresource_range.baseMipLevel + j;
-            tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
-        }
-    }
+    ForEachSubresource(*image, subresource_range, [&tree, &cmd_state](uint32_t layer, uint32_t level) {
+        tree.GetState(layer, level).direction = cmd_state.nv.zcull_direction;
+    });
 }
 
 void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
@@ -2112,9 +2122,11 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
     // Add one draw to each subresource depending on the current Z-cull direction
     auto& scope = cmd_state.nv.zcull_scope;
 
-    for (uint32_t i = 0; i < scope.range.layerCount; ++i) {
-        const uint32_t layer = scope.range.baseArrayLayer + i;
-        auto& subresource = scope.tree->GetState(layer, scope.range.baseMipLevel);
+    auto image = Get<IMAGE_STATE>(scope.image);
+    if (!image) return;
+
+    ForEachSubresource(*image, scope.range, [&scope](uint32_t layer, uint32_t level) {
+        auto& subresource = scope.tree->GetState(layer, level);
 
         switch (subresource.direction) {
         case bp_state::CommandBufferStateNV::ZcullDirection::Unknown:
@@ -2128,7 +2140,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cmd_state) {
             ++subresource.num_greater_draws;
             break;
         }
-    }
+    });
 }
 
 bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cmd_state) const {
@@ -2150,6 +2162,7 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
 
     const char* good_mode = nullptr;
     const char* bad_mode = nullptr;
+    bool is_balanced = false;
 
     const auto image_it = cmd_state.nv.zcull_per_image.find(image);
     if (image_it == cmd_state.nv.zcull_per_image.end()) {
@@ -2157,39 +2170,36 @@ bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cmd_state, VkIm
     }
     const auto& tree = image_it->second;
 
-    bool is_balanced = false;
+    auto image_state = Get<IMAGE_STATE>(image);
+    if (!image_state) {
+        return skip;
+    }
 
-    for (uint32_t i = 0; i < subresource_range.layerCount; ++i) {
-        const uint32_t layer = subresource_range.baseArrayLayer + i;
+    ForEachSubresource(*image_state, subresource_range, [&](uint32_t layer, uint32_t level) {
+        if (is_balanced) {
+            return;
+        }
+        const auto& resource = tree.GetState(layer, level);
+        const uint64_t num_draws = resource.num_less_draws + resource.num_greater_draws;
 
-        for (uint32_t j = 0; j < subresource_range.levelCount; ++j) {
-            const uint32_t level = subresource_range.baseMipLevel + j;
+        if (num_draws == 0) {
+            return;
+        }
+        const uint64_t less_ratio = (resource.num_less_draws * 100) / num_draws;
+        const uint64_t greater_ratio = (resource.num_greater_draws * 100) / num_draws;
 
-            const auto& resource = tree.GetState(layer, level);
-            const uint64_t num_draws = resource.num_less_draws + resource.num_greater_draws;
+        if ((less_ratio > kZcullDirectionBalanceRatioNVIDIA) && (greater_ratio > kZcullDirectionBalanceRatioNVIDIA)) {
+            is_balanced = true;
 
-            if (num_draws > 0) {
-                const uint64_t less_ratio = (resource.num_less_draws * 100) / num_draws;
-                const uint64_t greater_ratio = (resource.num_greater_draws * 100) / num_draws;
-
-                if ((less_ratio > kZcullDirectionBalanceRatioNVIDIA) && (greater_ratio > kZcullDirectionBalanceRatioNVIDIA)) {
-                    is_balanced = true;
-
-                    if (greater_ratio > less_ratio) {
-                        good_mode = "GREATER";
-                        bad_mode = "LESS";
-                    } else {
-                        good_mode = "LESS";
-                        bad_mode = "GREATER";
-                    }
-                    break;
-                }
+            if (greater_ratio > less_ratio) {
+                good_mode = "GREATER";
+                bad_mode = "LESS";
+            } else {
+                good_mode = "LESS";
+                bad_mode = "GREATER";
             }
         }
-        if (is_balanced) {
-            break;
-        }
-    }
+    });
 
     if (is_balanced) {
         skip |= LogPerformanceWarning(
