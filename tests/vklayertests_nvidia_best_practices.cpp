@@ -1059,6 +1059,58 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
         m_errorMonitor->VerifyFound();
     }
 
+    discard_barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+    {
+        SCOPED_TRACE("Transfer clear with VK_REMAINING_ARRAY_LAYERS");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        VkClearDepthStencilValue ds_value{};
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1,
+                                      &discard_barrier.subresourceRange);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
+    discard_barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+
+    {
+        SCOPED_TRACE("Transfer clear with VK_REMAINING_MIP_LEVELS");
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_LESS);
+        for (int i = 0; i < 60; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        vk::CmdEndRendering(cmd);
+
+        VkClearDepthStencilValue ds_value{};
+        vk::CmdClearDepthStencilImage(cmd, image.handle(), VK_IMAGE_LAYOUT_GENERAL, &ds_value, 1,
+                                      &discard_barrier.subresourceRange);
+
+        vk::CmdBeginRendering(cmd, &begin_rendering_info);
+
+        vk::CmdSetDepthCompareOp(cmd, VK_COMPARE_OP_GREATER);
+        for (int i = 0; i < 40; ++i) m_commandBuffer->Draw(0, 0, 0, 0);
+
+        set_desired_failure_msg();
+        vk::CmdEndRendering(cmd);
+        m_errorMonitor->Finish();
+    }
+
     m_commandBuffer->end();
 }
 
