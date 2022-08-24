@@ -209,6 +209,9 @@ class GpuAssistedBase : public ValidationStateTracker {
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const VkPipelineBindPoint bind_point, const SafeCreateInfo &modified_create_infos);
 
+    virtual bool InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+                                  uint32_t *unique_shader_id) = 0;
+
   public:
     bool aborted = false;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;

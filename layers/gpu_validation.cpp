@@ -895,10 +895,10 @@ void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass r
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, std::vector<uint32_t> &new_pgm,
+bool GpuAssisted::InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
                                    uint32_t *unique_shader_id) {
     if (aborted) return false;
-    if (pCreateInfo->pCode[0] != spv::MagicNumber) return false;
+    if (input[0] != spv::MagicNumber) return false;
 
     const spvtools::MessageConsumer gpu_console_message_consumer =
         [this](spv_message_level_t level, const char *, const spv_position_t &position, const char *message) -> void {
@@ -915,10 +915,9 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     };
 
     // Load original shader SPIR-V
-    uint32_t num_words = static_cast<uint32_t>(pCreateInfo->codeSize / 4);
     new_pgm.clear();
-    new_pgm.reserve(num_words);
-    new_pgm.insert(new_pgm.end(), &pCreateInfo->pCode[0], &pCreateInfo->pCode[num_words]);
+    new_pgm.reserve(input.size());
+    new_pgm.insert(new_pgm.end(), &input.front(), &input.back() + 1);
 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
@@ -953,7 +952,8 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    bool pass = InstrumentShader(pCreateInfo, csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+    bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
+                                 csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
