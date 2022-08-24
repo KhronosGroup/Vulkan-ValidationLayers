@@ -12971,27 +12971,6 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
 
-    if (imageless_fb_supported) {
-        VkFormat framebufferAttachmentFormats[1] = {VK_FORMAT_B8G8R8A8_UNORM};
-        VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = LvlInitStruct<VkFramebufferAttachmentImageInfoKHR>();
-        framebufferAttachmentImageInfo.flags = 0;
-        framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        framebufferAttachmentImageInfo.width = 64;
-        framebufferAttachmentImageInfo.height = 64;
-        framebufferAttachmentImageInfo.layerCount = 1;
-        framebufferAttachmentImageInfo.viewFormatCount = 1;
-        framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
-        VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo =
-            LvlInitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
-        framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
-        framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
-        fbci.pNext = &framebufferAttachmentsCreateInfo;
-        fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-samples-06881");
-        vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
-        m_errorMonitor->VerifyFound();
-    }
-
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
