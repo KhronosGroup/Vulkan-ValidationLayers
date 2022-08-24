@@ -12953,6 +12953,68 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880");
         m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
+
+        ms_render_to_ss.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+        attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+        subpass.pDepthStencilAttachment = nullptr;
+        rpci.attachmentCount = 1;
+        attach_desc[0].format = unsampleable_format;
+
+        vk_testing::RenderPass unsampleable_rp(*m_device, rpci);
+        VkFramebufferCreateInfo unsampleable_fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                                                     nullptr,
+                                                     0,
+                                                     unsampleable_rp.handle(),
+                                                     1,
+                                                     &unsampleable_image_view.handle(),
+                                                     64,
+                                                     64,
+                                                     1};
+
+        VkFramebuffer unsampleable_fb;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-samples-07009");
+        vk::CreateFramebuffer(m_device->device(), &unsampleable_fbci, nullptr, &unsampleable_fb);
+        m_errorMonitor->VerifyFound();
+        attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+
+        if (imageless_fb_supported) {
+            VkFormat framebufferAttachmentFormats[1] = {unsampleable_format};
+            VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo =
+                LvlInitStruct<VkFramebufferAttachmentImageInfoKHR>();
+            framebufferAttachmentImageInfo.flags = image_create_info.flags;
+            framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            framebufferAttachmentImageInfo.width = 64;
+            framebufferAttachmentImageInfo.height = 64;
+            framebufferAttachmentImageInfo.layerCount = 1;
+            framebufferAttachmentImageInfo.viewFormatCount = 1;
+            framebufferAttachmentImageInfo.pViewFormats = framebufferAttachmentFormats;
+            VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo =
+                LvlInitStruct<VkFramebufferAttachmentsCreateInfoKHR>();
+            framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
+            framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
+            rpci.attachmentCount = 1;
+            attach_desc[0].format = unsampleable_format;
+            attach_desc[0].samples = VK_SAMPLE_COUNT_1_BIT;
+            vk_testing::RenderPass imageless_rp(*m_device, rpci);
+            VkFramebufferCreateInfo imageless_fbci = {
+                VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, imageless_rp.handle(), 1, nullptr, 64, 64, 1};
+            imageless_fbci.pNext = &framebufferAttachmentsCreateInfo;
+            imageless_fbci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+            vk_testing::Framebuffer imageless_fb(*m_device, imageless_fbci);
+
+            VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = LvlInitStruct<VkRenderPassAttachmentBeginInfo>();
+            renderPassAttachmentBeginInfo.attachmentCount = 1;
+            renderPassAttachmentBeginInfo.pAttachments = &unsampleable_image_view.handle();
+            VkRenderPassBeginInfo renderPassBeginInfo = LvlInitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo);
+            renderPassBeginInfo.renderPass = imageless_rp.handle();
+            renderPassBeginInfo.renderArea.extent.width = 64;
+            renderPassBeginInfo.renderArea.extent.height = 64;
+            renderPassBeginInfo.framebuffer = imageless_fb.handle();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
+            m_commandBuffer->BeginRenderPass(renderPassBeginInfo);
+            m_errorMonitor->VerifyFound();
+            attach_desc[0].format = VK_FORMAT_B8G8R8A8_UNORM;
+        }
     }
 
     // Need a renderpass with a COUNT_1 attachment
