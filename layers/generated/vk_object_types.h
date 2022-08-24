@@ -990,5 +990,6 @@ struct VulkanTypedHandle {
     VulkanTypedHandle() :
         handle(CastToUint64(VK_NULL_HANDLE)),
         type(kVulkanObjectTypeUnknown) {}
+    operator bool() const { return handle != 0; }
 };
 

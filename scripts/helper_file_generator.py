@@ -1288,6 +1288,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 VulkanTypedHandle() :
                     handle(CastToUint64(VK_NULL_HANDLE)),
                     type(kVulkanObjectTypeUnknown) {}
+                operator bool() const { return handle != 0; }
             }; ''')  +'\n'
 
         return object_types_header
