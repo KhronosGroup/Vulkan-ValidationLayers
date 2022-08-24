@@ -12889,8 +12889,6 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
 
     color_attachment.imageView = two_count_image_view.handle();
     color_attachment.resolveImageView = VK_NULL_HANDLE;
-    // Image samples can't be COUNT_1 or we get 06861, and has to be COUNT_1, or we get 06858, use COUNT_2 and expect 06858
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06858");
     // If resolveMode is not VK_RESOLVE_MODE_NONE, resolveImageView must not be VK_NULL_HANDLE
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06862");
     m_commandBuffer->BeginRendering(begin_rendering_info);
