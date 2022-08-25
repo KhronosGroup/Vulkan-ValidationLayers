@@ -23,7 +23,7 @@ khronos_validation.log_filename = stdout
 # <LayerIdentifier>.report_flags
 # Comma-delineated list of options specifying the types of messages to be
 # reported
-khronos_validation.report_flags = error,warn,perf
+khronos_validation.report_flags = error
 
 # Limit Duplicated Messages
 # =====================
