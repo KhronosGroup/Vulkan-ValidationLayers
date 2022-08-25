@@ -13391,12 +13391,11 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCountWithDeviceGroup) {
 TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
     TEST_DESCRIPTION("Create descriptor set layout with incompatible bindings.");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
-                                                         m_errorMonitor))) {
-        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
-        return;
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
     if (VK_FALSE == indexing_features.descriptorBindingUniformBufferUpdateAfterBind) {

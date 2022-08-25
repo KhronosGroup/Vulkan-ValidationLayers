@@ -7709,10 +7709,10 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayoutWithoutExtension) {
 TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     TEST_DESCRIPTION("Exercise various create/allocate-time errors related to VK_EXT_descriptor_indexing.");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
-                                                         m_errorMonitor))) {
-        printf("%s Descriptor indexing or one of its dependencies not supported, skipping tests.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     // Create a device that enables all supported indexing features except descriptorBindingUniformBufferUpdateAfterBind
@@ -8040,10 +8040,10 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
 TEST_F(VkLayerTest, DescriptorIndexingSetNonIdenticalWrite) {
     TEST_DESCRIPTION("VkWriteDescriptorSet must have identical VkDescriptorBindingFlagBits");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
-                                                         m_errorMonitor))) {
-        printf("%s Descriptor indexing or one of its dependencies not supported, skipping tests.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeatures>();
@@ -10399,7 +10399,7 @@ TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStru
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false, false)) {
+    if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
