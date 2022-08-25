@@ -4232,6 +4232,55 @@ void main() {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(VkPositiveLayerTest, PhysicalStorageBufferStructRecursion) {
+    TEST_DESCRIPTION("Make sure shader can have a buffer_reference that contains itself.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
+    auto features2 = GetPhysicalDeviceFeatures2(features12);
+    if (VK_TRUE != features12.bufferDeviceAddress) {
+        printf("%s VkPhysicalDeviceVulkan12Features::bufferDeviceAddress not supported and is required. Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char *cs_src = R"glsl(
+#version 450 core
+#extension GL_EXT_buffer_reference : enable
+
+layout(buffer_reference) buffer T1;
+
+layout(set = 0, binding = 0, std140) uniform T2 {
+   layout(offset = 0) T1 a[2];
+};
+
+// This struct calls itself which needs to be properly handled in the shader validation or it will infinite loop
+layout(buffer_reference, std140) buffer T1 {
+   layout(offset = 0) T1 b[2];
+};
+
+void main() {}
+        )glsl";
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, cs_src, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2));
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit);
+}
+
 TEST_F(VkPositiveLayerTest, OpCopyObjectSampler) {
     TEST_DESCRIPTION("Reproduces a use case involving GL_EXT_nonuniform_qualifier and image samplers found in Doom Eternal trace");
 

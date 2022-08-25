@@ -51,11 +51,15 @@ static shader_stage_attributes shader_stage_attribs[] = {
 static const spirv_inst_iter GetBaseTypeIter(const SHADER_MODULE_STATE &module_state, uint32_t type) {
     const auto &insn = module_state.get_def(type);
     const uint32_t base_insn_id = module_state.GetBaseType(insn);
+    // Will return end() if an invalid/unknown base_insn_id is returned
     return module_state.get_def(base_insn_id);
 }
 
 static bool BaseTypesMatch(const SHADER_MODULE_STATE &a, const SHADER_MODULE_STATE &b, const spirv_inst_iter &a_base_insn,
                            const spirv_inst_iter &b_base_insn) {
+    if (a_base_insn == a.end() || b_base_insn == b.end()) {
+        return false;
+    }
     const uint32_t a_opcode = a_base_insn.opcode();
     const uint32_t b_opcode = b_base_insn.opcode();
     if (a_opcode == b_opcode) {
@@ -2461,10 +2465,12 @@ struct VariableInstInfo {
 
 // easier to use recursion to traverse the OpTypeStruct
 static void GetVariableInfo(const SHADER_MODULE_STATE &module_state, const spirv_inst_iter &insn, VariableInstInfo &info) {
-    if (insn.opcode() == spv::OpTypeFloat || insn.opcode() == spv::OpTypeInt) {
-      const uint32_t bit_width = insn.word(2);
-      info.has_8bit |= (bit_width == 8);
-      info.has_16bit |= (bit_width == 16);
+    if (insn == module_state.end()) {
+        return;
+    } else if (insn.opcode() == spv::OpTypeFloat || insn.opcode() == spv::OpTypeInt) {
+        const uint32_t bit_width = insn.word(2);
+        info.has_8bit |= (bit_width == 8);
+        info.has_16bit |= (bit_width == 16);
     } else if (insn.opcode() == spv::OpTypeStruct) {
         for (uint32_t i = 2; i < insn.len(); i++) {
             const auto &base_insn = GetBaseTypeIter(module_state, insn.word(i));

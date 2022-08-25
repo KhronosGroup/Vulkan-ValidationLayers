@@ -1889,6 +1889,7 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const
 uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const spirv_inst_iter &iter) const { return GetTypeBitsSize(iter) / 8; }
 
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
+// Will return 0 if it can not be determined
 uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
     const uint32_t opcode = iter.opcode();
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt || opcode == spv::OpTypeBool || opcode == spv::OpTypeStruct) {
@@ -1904,7 +1905,16 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const spirv_inst_iter &iter) const {
         const auto& element_type = get_def(iter.word(2));
         return GetBaseType(element_type);
     } else if (opcode == spv::OpTypePointer) {
+        const auto &storage_class = iter.word(2);
         const auto& type = get_def(iter.word(3));
+        if (storage_class == spv::StorageClassPhysicalStorageBuffer && type.opcode() == spv::OpTypeStruct) {
+            // A physical storage buffer to a struct has a chance to point to itself and can't resolve a baseType
+            // GLSL example:
+            // layout(buffer_reference) buffer T1 {
+            //     T1 b[2];
+            // };
+            return 0;
+        }
         return GetBaseType(type);
     }
     // If we assert here, we are missing a valid base type that must be handled. Without this assert, a return value of 0 will
