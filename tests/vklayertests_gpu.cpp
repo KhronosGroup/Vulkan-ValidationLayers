@@ -16,24 +16,22 @@
 
 #include "layer_validation_tests.h"
 
-bool VkGpuAssistedLayerTest::InitGpuAssistedFramework(bool request_descriptor_indexing) {
-    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeatureDisableEXT disables[] = {
-        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
-        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+static VkValidationFeatureEnableEXT gpu_av_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+static VkValidationFeatureDisableEXT gpu_av_disables[] = {
+    VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+    VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+
+// All VkGpuAssistedLayerTest should use this for setup as a single access point to more easily toggle which validation features are
+// enabled/disabled
+VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
     VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
     features.enabledValidationFeatureCount = 1;
+    // TODO - Add command line flag or env var or another system for setting this to 'zero' to allow for someone writting a new
+    // GPU-AV test to easily check the test is valid
     features.disabledValidationFeatureCount = 4;
-    features.pEnabledValidationFeatures = enables;
-    features.pDisabledValidationFeatures = disables;
-
-    if (request_descriptor_indexing) {
-        return CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, &features,
-                                                              m_errorMonitor);
-    }
-
-    InitFramework(m_errorMonitor, &features);
-    return false;
+    features.pEnabledValidationFeatures = gpu_av_enables;
+    features.pDisabledValidationFeatures = gpu_av_disables;
+    return features;
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
@@ -42,19 +40,20 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
-    bool descriptor_indexing = InitGpuAssistedFramework(true);
+    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
@@ -73,7 +72,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
             !indexing_features.descriptorBindingPartiallyBound || !indexing_features.descriptorBindingVariableDescriptorCount ||
             !indexing_features.shaderSampledImageArrayNonUniformIndexing ||
             !indexing_features.shaderStorageBufferArrayNonUniformIndexing) {
-            printf("Not all descriptor indexing features supported, skipping descriptor indexing tests\n");
+            GTEST_SKIP() << "Not all descriptor indexing features supported, skipping descriptor indexing tests";
             descriptor_indexing = false;
         }
     }
@@ -527,7 +526,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
 
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
@@ -535,18 +535,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
-
-    if (IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        ;
-        robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>(&multi_draw_features);
-    }
-
+    const bool multi_draw = IsExtensionsEnabled(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>(multi_draw ? &multi_draw_features : nullptr);
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (!robustness2_features.nullDescriptor) {
-        printf("%s nullDescriptor feature not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "nullDescriptor feature not supported";
     }
     features2.features.robustBufferAccess = VK_FALSE;
     robustness2_features.robustBufferAccess2 = VK_FALSE;
@@ -675,7 +669,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
         vk::QueueWaitIdle(m_device->m_queue);
     }
 
-    if (multi_draw_features.multiDraw) {
+    if (multi_draw && multi_draw_features.multiDraw) {
         auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
         auto vkCmdDrawMultiIndexedEXT =
             (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
@@ -735,14 +729,14 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
                                                   const char *expected_error) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     VkPhysicalDeviceFeatures features = {};  // Make sure robust buffer access is not enabled
@@ -907,10 +901,13 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    bool supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
-    InitGpuAssistedFramework(false);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
@@ -918,35 +915,20 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
     if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
-        printf("%s This test should not be run on the RADV driver.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not be run on the RADV driver.";
     }
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        printf("%s This test should not be run on the AMD proprietary driver.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
     }
+    const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
-    supported = supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    VkPhysicalDeviceFeatures2KHR features2 = {};
     auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
-    auto bda_features = DeviceExtensionSupported(gpu(), nullptr, VK_NV_MESH_SHADER_EXTENSION_NAME)
-                            ? LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&mesh_shader_features)
-                            : LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto bda_features =
+        LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(mesh_shader_supported ? &mesh_shader_features : nullptr);
 
-    features2 = GetPhysicalDeviceFeatures2(bda_features);
-    supported = supported && bda_features.bufferDeviceAddress;
-
-    if (!supported) {
-        printf("%s Buffer Device Address feature not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
-    VkBool32 mesh_shader_supported = mesh_shader_features.meshShader;
-    mesh_shader_supported &= DeviceExtensionSupported(gpu(), nullptr, VK_NV_MESH_SHADER_EXTENSION_NAME) ? VK_TRUE : VK_FALSE;
-    if (mesh_shader_supported) {
-        m_device_extension_names.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(bda_features);
+    if (!bda_features.bufferDeviceAddress) {
+        GTEST_SKIP() << "Buffer Device Address feature not supported";
     }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1175,7 +1157,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHan
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1259,7 +1242,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1352,7 +1336,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1466,7 +1451,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresSt
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false, /*need_gpu_validation=*/true)) {
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1688,7 +1674,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit");
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);  // instead of enabling feature
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
@@ -1720,7 +1707,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
     auto vkCmdDrawIndirectCountKHR =
         (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
     if (vkCmdDrawIndirectCountKHR == nullptr) {
-        GTEST_SKIP() << "Did not find vkCmdDrawIndirectCountKHR function pointer;  Skipping.";
+        GTEST_SKIP() << "Did not find vkCmdDrawIndirectCountKHR function pointer.";
     }
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -1798,7 +1785,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     TEST_DESCRIPTION("GPU validation: Validate maxDrawIndirectCount limit using vkQueueSubmit2");
     SetTargetApiVersion(VK_API_VERSION_1_3);
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
@@ -1886,25 +1874,23 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     TEST_DESCRIPTION("GPU validation: Validate Draw*IndirectCount countBuffer contents");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitGpuAssistedFramework(false);
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    } else {
-        printf("%s VK_KHR_draw_indirect_count extension not supported, skipping test\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, NULL, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     auto vkCmdDrawIndirectCountKHR =
         (PFN_vkCmdDrawIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
     if (vkCmdDrawIndirectCountKHR == nullptr) {
-        printf("%s did not find vkCmdDrawIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "did not find vkCmdDrawIndirectCountKHR function pointer";
     }
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -1982,8 +1968,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     auto vkCmdDrawIndexedIndirectCountKHR =
         (PFN_vkCmdDrawIndexedIndirectCountKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
     if (vkCmdDrawIndexedIndirectCountKHR == nullptr) {
-        printf("%s did not find vkCmdDrawIndexedIndirectCountKHR function pointer;  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Did not find vkCmdDrawIndexedIndirectCountKHR function pointer.";
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-03154");
@@ -2049,10 +2034,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     TEST_DESCRIPTION("Validate illegal firstInstance values");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
@@ -2158,33 +2143,29 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
         "and verify pipeline recovery");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
-    VkValidationFeaturesEXT features = LvlInitStruct<VkValidationFeaturesEXT>();
-    features.enabledValidationFeatureCount = 2;
-    features.pEnabledValidationFeatures = enables;
-    bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
-                                                                              m_device_extension_names, &features, m_errorMonitor);
+    validation_features.pEnabledValidationFeatures = enables;
+    validation_features.enabledValidationFeatureCount = 2;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
-    bool inline_uniform_block = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
-    if (!(descriptor_indexing && inline_uniform_block)) {
-        printf("Descriptor indexing and/or inline uniform block not supported Skipping test\n");
-        return;
-    }
-    m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
     if (!indexing_features.descriptorBindingPartiallyBound || !inline_uniform_block_features.inlineUniformBlock) {
-        printf("Not all features supported, skipping test\n");
-        return;
+        GTEST_SKIP() << "Not all features supported";
     }
     auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
-    auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
-    GetPhysicalDeviceProperties2(prop2);
+    GetPhysicalDeviceProperties2(inline_uniform_props);
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
@@ -2193,8 +2174,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     }
     auto c_queue = m_device->GetDefaultComputeQueue();
     if (nullptr == c_queue) {
-        printf("Compute not supported, skipping test\n");
-        return;
+        GTEST_SKIP() << "Compute not supported";
     }
 
     uint32_t qfi = 0;
@@ -2315,9 +2295,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
     auto set_count = properties.limits.maxBoundDescriptorSets;
     if (inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks < set_count) {
-        printf("Max per stage inline uniform block limit too small - skipping recovery portion of this test\n");
-        return;
+        GTEST_SKIP() << "Max per stage inline uniform block limit too small - skipping recovery portion of this test";
     }
+
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
     VkDescriptorSetLayoutBinding dsl_binding[2] = {};
     dsl_binding[0].binding = 0;
@@ -2391,10 +2371,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
@@ -2457,18 +2437,11 @@ void VkDebugPrintfTest::InitDebugPrintfFramework() {
 TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    m_device_extension_names.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     InitDebugPrintfFramework();
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
-               VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-        return;
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
@@ -2479,8 +2452,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
 
     auto features = m_device->phy().features();
     if (!features.vertexPipelineStoresAndAtomics || !features.fragmentStoresAndAtomics) {
-        printf("%s GPU-Assisted printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "GPU-Assisted printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
     }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2853,12 +2825,11 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
         "unbound.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitGpuAssistedFramework(false));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2933,7 +2904,8 @@ TEST_F(VkGpuAssistedLayerTest, DrawingWithUnboundUnusedSet) {
 
 TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
-    InitGpuAssistedFramework(false);
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
     }

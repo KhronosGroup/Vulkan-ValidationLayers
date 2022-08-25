@@ -760,12 +760,11 @@ TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
-    if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
-                                                         m_errorMonitor))) {
-        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
-        return;
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     // Create a device passing in a bad PdevFeatures2 value
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
@@ -5909,7 +5908,7 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&ray_query_features);
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
@@ -6007,7 +6006,7 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHRReplayFeature) {
     auto acc_struct_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&acc_struct_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
@@ -8037,7 +8036,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysKHR) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -8138,7 +8137,7 @@ TEST_F(VkLayerTest, ValidateCmdTraceRaysIndirectKHR) {
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&ray_tracing_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
@@ -8242,7 +8241,7 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionInfoKHR) {
     TEST_DESCRIPTION("Validate VkAccelerationStructureVersionInfoKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+    if (!InitFrameworkForRayTracingTest(this, true)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
@@ -8287,7 +8286,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructuresKHR) {
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
     accel_features.accelerationStructureHostCommands = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -8574,7 +8573,7 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     accel_features.accelerationStructureHostCommands = VK_TRUE;
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -9725,7 +9724,7 @@ TEST_F(VkLayerTest, CmdCopyAccelerationStructureToMemoryKHR) {
     TEST_DESCRIPTION("Validate CmdCopyAccelerationStructureToMemoryKHR.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (!InitFrameworkForRayTracingTest(this, true, false)) {
+    if (!InitFrameworkForRayTracingTest(this, true)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
@@ -12011,7 +12010,7 @@ TEST_F(VkLayerTest, TestCmdCopyMemoryToAccelerationStructureKHR) {
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -12837,7 +12836,7 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
 
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
-    if (!InitFrameworkForRayTracingTest(this, true, false, &features2)) {
+    if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
 
