@@ -2445,11 +2445,7 @@ TEST_F(VkPositiveLayerTest, PlaneAspectNone) {
 TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     TEST_DESCRIPTION("Checks for creating fixed rate compression image.");
 
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (version < VK_API_VERSION_1_2) {
-        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2458,6 +2454,11 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_compression_control);
 
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";

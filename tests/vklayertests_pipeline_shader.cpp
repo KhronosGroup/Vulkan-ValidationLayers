@@ -453,11 +453,8 @@ TEST_F(VkLayerTest, InvalidTopology) {
 
 TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
     TEST_DESCRIPTION("Test VK_EXT_primitive_topology_list_restart");
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
-    }
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
 
     auto ptl_restart_features = LvlInitStruct<VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ptl_restart_features);
@@ -465,6 +462,10 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
     bool retval = InitFrameworkAndRetrieveFeatures(features2);
     if (!retval) {
         printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
         return;
     }
     if (!ptl_restart_features.primitiveTopologyListRestart) {

@@ -1012,16 +1012,11 @@ void VkLayerTest::AddSurfaceExtension() {
     AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 }
 
-uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
+void VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
-    if (target_api_version <= m_instance_api_version) {
-        m_target_api_version = target_api_version;
-        app_info_.apiVersion = m_target_api_version;
-    } else {
-        m_target_api_version = m_instance_api_version;
-        app_info_.apiVersion = m_target_api_version;
-    }
-    return m_target_api_version;
+
+    m_target_api_version = std::min(target_api_version, m_instance_api_version);
+    app_info_.apiVersion = m_target_api_version;
 }
 
 uint32_t VkLayerTest::DeviceValidationVersion() {
