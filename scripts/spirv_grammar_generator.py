@@ -96,6 +96,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.imageGatherOps = []
         self.imageSampleOps = []
         self.imageFetchOps = []
+        self.storageClass = []
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
 
@@ -215,6 +216,12 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                         count = 0  if 'parameters' not in enum else len(enum['parameters'])
                         if enum['value'] not in values:
                             self.imageOperandsParamCount[count].append(enum['enumerant'])
+                            values.append(enum['value'])
+                if operandKind['kind'] == 'StorageClass':
+                    values = [] # prevent alias from being duplicatd
+                    for enum in operandKind['enumerants']:
+                        if enum['value'] not in values:
+                            self.storageClass.append(enum['enumerant'])
                             values.append(enum['value'])
 
             for instruction in instructions:
@@ -454,6 +461,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         output = ''
         if self.headerFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode);\n'
+            output +=  'const char* string_SpvStorageClass(uint32_t storage_class);\n'
         elif self.sourceFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode) {\n'
             output += '    auto format_info = kInstructionTable.find(opcode);\n'
@@ -461,6 +469,15 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '        return format_info->second.name;\n'
             output += '    } else {\n'
             output += '        return \"Unhandled Opcode\";\n'
+            output += '    }\n'
+            output += '};\n'
+            output += '\nconst char* string_SpvStorageClass(uint32_t storage_class) {\n'
+            output += '    switch(storage_class) {\n'
+            for storageClass in self.storageClass:
+                output += '        case spv::StorageClass{}:\n'.format(storageClass)
+                output += '            return \"{}\";\n'.format(storageClass)
+            output += '        default:\n'
+            output += '            return \"unknown\";\n'
             output += '    }\n'
             output += '};'
         return output

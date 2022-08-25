@@ -379,8 +379,7 @@ SHADER_MODULE_STATE::SpirvStaticData::SpirvStaticData(const SHADER_MODULE_STATE 
             case spv::OpExecutionModeId: {
                 execution_mode_inst[insn.word(1)].push_back(insn);
             } break;
-            // Once https://github.com/KhronosGroup/SPIRV-Headers/issues/276 is added this should be derived from SPIR-V grammar
-            // json
+            // Listed from vkspec.html#ray-tracing-repack
             case spv::OpTraceRayKHR:
             case spv::OpTraceRayMotionNV:
             case spv::OpReportIntersectionKHR:
@@ -495,39 +494,6 @@ void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
     }
 }
 
-char const *StorageClassName(uint32_t sc) {
-    switch (sc) {
-        case spv::StorageClassInput:
-            return "input";
-        case spv::StorageClassOutput:
-            return "output";
-        case spv::StorageClassUniformConstant:
-            return "const uniform";
-        case spv::StorageClassUniform:
-            return "uniform";
-        case spv::StorageClassWorkgroup:
-            return "workgroup local";
-        case spv::StorageClassCrossWorkgroup:
-            return "workgroup global";
-        case spv::StorageClassPrivate:
-            return "private global";
-        case spv::StorageClassFunction:
-            return "function";
-        case spv::StorageClassGeneric:
-            return "generic";
-        case spv::StorageClassAtomicCounter:
-            return "atomic counter";
-        case spv::StorageClassImage:
-            return "image";
-        case spv::StorageClassPushConstant:
-            return "push constant";
-        case spv::StorageClassStorageBuffer:
-            return "storage buffer";
-        default:
-            return "unknown";
-    }
-}
-
 void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, uint32_t type) const {
     auto insn = get_def(type);
     assert(insn != end());
@@ -559,7 +525,7 @@ void SHADER_MODULE_STATE::DescribeTypeInner(std::ostringstream &ss, uint32_t typ
             DescribeTypeInner(ss, insn.word(2));
             break;
         case spv::OpTypePointer:
-            ss << "ptr to " << StorageClassName(insn.word(2)) << " ";
+            ss << "ptr to " << string_SpvStorageClass(insn.word(2)) << " ";
             DescribeTypeInner(ss, insn.word(3));
             break;
         case spv::OpTypeStruct: {

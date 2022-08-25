@@ -1582,11 +1582,12 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
             // Validate 64-bit image atomics
             if (((atomic.storage_class == spv::StorageClassStorageBuffer) || (atomic.storage_class == spv::StorageClassUniform)) &&
                 (enabled_features.core12.shaderBufferInt64Atomics == VK_FALSE)) {
-                skip |= LogError(device, "VUID-RuntimeSpirv-None-06278",
-                                 "%s: Can't use 64-bit int atomics operations\n%s\nwith %s storage class without "
-                                 "shaderBufferInt64Atomics enabled.",
-                                 report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
-                                 module_state.DescribeInstruction(atomic_def).c_str(), StorageClassName(atomic.storage_class));
+                skip |=
+                    LogError(device, "VUID-RuntimeSpirv-None-06278",
+                             "%s: Can't use 64-bit int atomics operations\n%s\nwith %s storage class without "
+                             "shaderBufferInt64Atomics enabled.",
+                             report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
+                             module_state.DescribeInstruction(atomic_def).c_str(), string_SpvStorageClass(atomic.storage_class));
             } else if ((atomic.storage_class == spv::StorageClassWorkgroup) &&
                        (enabled_features.core12.shaderSharedInt64Atomics == VK_FALSE)) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-None-06279",
@@ -2507,7 +2508,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
                skip |= LogError(device, "VUID-RuntimeSpirv-storageBuffer8BitAccess-06328",
                                 "vkCreateShaderModule(): storageBuffer8BitAccess is not enabled, but shader contains an 8-bit "
                                 "OpVariable with %s Storage Class.\n%s",
-                                StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+                                string_SpvStorageClass(storage_class), module_state.DescribeInstruction(insn).c_str());
            }
            if (!enabled_features.core12.uniformAndStorageBuffer8BitAccess && storage_class == spv::StorageClassUniform) {
                skip |= LogError(device, "VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329",
@@ -2529,7 +2530,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
               skip |= LogError(device, "VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",
                                "vkCreateShaderModule(): storageBuffer16BitAccess is not enabled, but shader contains an 16-bit "
                                "OpVariable with %s Storage Class.\n%s",
-                               StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+                               string_SpvStorageClass(storage_class), module_state.DescribeInstruction(insn).c_str());
            }
            if (!enabled_features.core11.uniformAndStorageBuffer16BitAccess && storage_class == spv::StorageClassUniform) {
                skip |= LogError(device, "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",
@@ -2548,7 +2549,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
                skip |= LogError(device, "VUID-RuntimeSpirv-storageInputOutput16-06334",
                                 "vkCreateShaderModule(): storageInputOutput16 is not enabled, but shader contains an 16-bit "
                                 "OpVariable with %s Storage Class.\n%s",
-                                StorageClassName(storage_class), module_state.DescribeInstruction(insn).c_str());
+                                string_SpvStorageClass(storage_class), module_state.DescribeInstruction(insn).c_str());
            }
         }
     }

@@ -428,7 +428,4 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     static std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints(const SHADER_MODULE_STATE &module_state);
 };
 
-// String helpers functions to give better error messages
-char const *StorageClassName(uint32_t sc);
-
 #endif  // VULKAN_SHADER_MODULE_H
