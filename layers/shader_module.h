@@ -234,6 +234,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     struct SpirvStaticData {
         SpirvStaticData() = default;
         SpirvStaticData(const SHADER_MODULE_STATE &module_state);
+        SpirvStaticData &operator=(const SpirvStaticData &) = default;
+        SpirvStaticData(SpirvStaticData &&) = default;
 
         // A mapping of <id> to the first word of its def. this is useful because walking type
         // trees, constant expressions, etc requires jumping all over the instruction stream.
@@ -254,7 +256,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::unordered_map<uint32_t, atomic_instruction> atomic_inst;
         std::vector<spv::Capability> capability_list;
 
-        bool has_group_decoration = false;
+        bool has_group_decoration{false};
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};
 
