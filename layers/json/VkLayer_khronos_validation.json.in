@@ -282,9 +282,7 @@
                         }
                     ],
                     "default": [
-                        "error",
-                        "warn",
-                        "perf"
+                        "error"
                     ]
                 },
                 {
