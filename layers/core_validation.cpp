@@ -1950,7 +1950,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
               0) ||
              ((ds_state->flags & VK_PIPELINE_DEPTH_STENCIL_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_ARM) !=
               0)) &&
-            rp_state) {
+            (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06483",
                              "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
                              "].pDepthStencilState[%s] contains "
@@ -1966,7 +1966,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     if (color_blend_state) {
         if (((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) !=
              0) &&
-            rp_state) {
+            (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06482",
                              "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                              "]: created with"
