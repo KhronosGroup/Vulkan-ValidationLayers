@@ -702,3 +702,56 @@ const char* string_SpvOpcode(uint32_t opcode) {
         return "Unhandled Opcode";
     }
 };
+
+const char* string_SpvStorageClass(uint32_t storage_class) {
+    switch(storage_class) {
+        case spv::StorageClassUniformConstant:
+            return "UniformConstant";
+        case spv::StorageClassInput:
+            return "Input";
+        case spv::StorageClassUniform:
+            return "Uniform";
+        case spv::StorageClassOutput:
+            return "Output";
+        case spv::StorageClassWorkgroup:
+            return "Workgroup";
+        case spv::StorageClassCrossWorkgroup:
+            return "CrossWorkgroup";
+        case spv::StorageClassPrivate:
+            return "Private";
+        case spv::StorageClassFunction:
+            return "Function";
+        case spv::StorageClassGeneric:
+            return "Generic";
+        case spv::StorageClassPushConstant:
+            return "PushConstant";
+        case spv::StorageClassAtomicCounter:
+            return "AtomicCounter";
+        case spv::StorageClassImage:
+            return "Image";
+        case spv::StorageClassStorageBuffer:
+            return "StorageBuffer";
+        case spv::StorageClassCallableDataNV:
+            return "CallableDataNV";
+        case spv::StorageClassIncomingCallableDataNV:
+            return "IncomingCallableDataNV";
+        case spv::StorageClassRayPayloadNV:
+            return "RayPayloadNV";
+        case spv::StorageClassHitAttributeNV:
+            return "HitAttributeNV";
+        case spv::StorageClassIncomingRayPayloadNV:
+            return "IncomingRayPayloadNV";
+        case spv::StorageClassShaderRecordBufferNV:
+            return "ShaderRecordBufferNV";
+        case spv::StorageClassPhysicalStorageBuffer:
+            return "PhysicalStorageBuffer";
+        case spv::StorageClassCodeSectionINTEL:
+            return "CodeSectionINTEL";
+        case spv::StorageClassDeviceOnlyINTEL:
+            return "DeviceOnlyINTEL";
+        case spv::StorageClassHostOnlyINTEL:
+            return "HostOnlyINTEL";
+        default:
+            return "unknown";
+    }
+};
