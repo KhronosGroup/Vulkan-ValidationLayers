@@ -1765,11 +1765,7 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
 
 TEST_F(VkLayerTest, PresentIdWait) {
     TEST_DESCRIPTION("Test present wait extension");
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
     auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
     auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);
@@ -1788,6 +1784,11 @@ TEST_F(VkLayerTest, PresentIdWait) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_TRUE(InitSwapchain());
     VkSurfaceKHR surface2;
     VkSwapchainKHR swapchain2;
@@ -1874,11 +1875,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
 
 TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     TEST_DESCRIPTION("Test present wait extension");
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddSurfaceExtension();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
     m_device_extension_names.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
@@ -1891,6 +1888,11 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_TRUE(InitSwapchain());
 
     auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");

@@ -39,11 +39,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_che
 }
 
 TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (version < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
@@ -53,6 +49,10 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
 
     if (!InitSwapchain()) {
         printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
