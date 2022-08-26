@@ -2456,8 +2456,7 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     ASSERT_NO_FATAL_FAILURE(InitFrameworkAndRetrieveFeatures(features2));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required, skipping test.";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -2465,8 +2464,7 @@ TEST_F(VkPositiveLayerTest, ImageCompressionControl) {
     }
 
     if (!image_compression_control.imageCompressionControl) {
-        printf("%s Test requires (unsupported) imageCompressionControl , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) imageCompressionControl, skipping";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
