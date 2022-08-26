@@ -957,7 +957,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         // When KHR_format_feature_flags2 is supported, the read/write without
-        // format support is reported per format rather as a blankey physical
+        // format support is reported per format rather than a single physical
         // device feature.
         if (has_format_feature2) {
             const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
@@ -1431,35 +1431,40 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format));
         }
 
-        if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
-            if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
-                !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
-                auto set = context.descriptor_set->GetSet();
-                LogObjectList objlist(set);
-                objlist.add(buffer_view);
-                return LogError(objlist, context.vuids.storage_texel_buffer_read_without_format,
-                                "Descriptor set %s encountered the following validation error at %s time: Descriptor "
-                                "in binding #%" PRIu32 " index %" PRIu32
-                                ", %s, buffer view format %s feature flags (%s) doesn't "
-                                "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
-                                report_data->FormatHandle(set).c_str(), context.caller, binding, index,
-                                report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
-            }
+        // When KHR_format_feature_flags2 is supported, the read/write without
+        // format support is reported per format rather than a single physical
+        // device feature.
+        if (has_format_feature2) {
+            if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
+                    !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                    auto set = context.descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(buffer_view);
+                    return LogError(objlist, context.vuids.storage_texel_buffer_read_without_format,
+                                    "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                    "in binding #%" PRIu32 " index %" PRIu32
+                                    ", %s, buffer view format %s feature flags (%s) doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
+                                    report_data->FormatHandle(set).c_str(), context.caller, binding, index,
+                                    report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
+                                    string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
+                }
 
-            if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
-                !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
-                auto set = context.descriptor_set->GetSet();
-                LogObjectList objlist(set);
-                objlist.add(buffer_view);
-                return LogError(objlist, context.vuids.storage_texel_buffer_write_without_format,
-                                "Descriptor set %s encountered the following validation error at %s time: Descriptor "
-                                "in binding #%" PRIu32 " index %" PRIu32
-                                ", %s, buffer view format %s feature flags (%s) doesn't "
-                                "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
-                                report_data->FormatHandle(set).c_str(), context.caller, binding, index,
-                                report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
+                if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
+                    !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                    auto set = context.descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(buffer_view);
+                    return LogError(objlist, context.vuids.storage_texel_buffer_write_without_format,
+                                    "Descriptor set %s encountered the following validation error at %s time: Descriptor "
+                                    "in binding #%" PRIu32 " index %" PRIu32
+                                    ", %s, buffer view format %s feature flags (%s) doesn't "
+                                    "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
+                                    report_data->FormatHandle(set).c_str(), context.caller, binding, index,
+                                    report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
+                                    string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
+                }
             }
         }
 
