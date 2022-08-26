@@ -142,35 +142,38 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00942");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00941");
+    if (m_device->queue_props.size() < 2) {
+        GTEST_SKIP() << "Test not supported by a single queue family device";
+    }
+
+    std::vector<uint32_t> queueFamilies(m_device->queue_props.size());
+    for (size_t i = 0; i < m_device->queue_props.size(); i++) {
+        queueFamilies[i] = i;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
 
     // create a render target image with mutable bit set
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                 nullptr,
-                                 0,
-                                 VK_IMAGE_TYPE_1D,
-                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                 {1, 1, 1},
-                                 1,
-                                 1,
-                                 VK_SAMPLE_COUNT_1_BIT,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                 VK_SHARING_MODE_CONCURRENT,
-                                 0,
-                                 nullptr,
-                                 VK_IMAGE_LAYOUT_UNDEFINED};
+                                  nullptr,
+                                  0,
+                                  VK_IMAGE_TYPE_1D,
+                                  VK_FORMAT_R8G8B8A8_UNORM,
+                                  {1, 1, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                  VK_SHARING_MODE_CONCURRENT,
+                                  (uint32_t)queueFamilies.size(),
+                                  queueFamilies.data(),
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
     VkImage test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00942");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-sharingMode-00941");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
     // create a render target image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 nullptr,
@@ -184,8 +187,8 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_SHARING_MODE_CONCURRENT,
-                0,
-                nullptr,
+                (uint32_t)queueFamilies.size(),
+                queueFamilies.data(),
                 VK_IMAGE_LAYOUT_UNDEFINED};
     test_image = VK_NULL_HANDLE;
     vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
