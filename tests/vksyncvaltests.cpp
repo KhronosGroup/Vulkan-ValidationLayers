@@ -1880,18 +1880,14 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    const auto format_ds = FindSupportedDepthStencilFormat(gpu());
+    auto format_ds = FindSupportedDepthStencilFormat(gpu());
     if (!format_ds) {
         GTEST_SKIP() << "No Depth + Stencil format found. Skipped.";
     }
-    const auto format_dp = FindSupportedDepthOnlyFormat(gpu());
-    if (!format_dp) {
-        GTEST_SKIP() << "No only Depth format found. Skipped.";
-    }
-    const auto format_st = FindSupportedStencilOnlyFormat(gpu());
-    if (!format_st) {
-        GTEST_SKIP() << "No only Stencil format found. Skipped.";
-    }
+
+    // Vulkan doesn't support copying between different depth stencil formats, so the formats have to change.
+    auto format_dp = format_ds;
+    auto format_st = format_ds;
 
     VkDepthStencilObj image_ds(m_device), image_dp(m_device), image_st(m_device);
     image_ds.Init(m_device, 16, 16, format_ds, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
@@ -1975,28 +1971,27 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     m_commandBuffer->begin();
 
     image_ds.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_dp.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_st.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_dp.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_st.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     copyRegion.srcSubresource.mipLevel = 0;
     copyRegion.srcSubresource.baseArrayLayer = 0;
     copyRegion.srcSubresource.layerCount = 1;
     copyRegion.srcOffset = {0, 0, 0};
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     copyRegion.dstSubresource.mipLevel = 0;
     copyRegion.dstSubresource.baseArrayLayer = 0;
     copyRegion.dstSubresource.layerCount = 1;
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = {16, 16, 1};
 
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdCopyImage-srcImage-00135");
     m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dp.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copyRegion);
 
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_GENERAL, image_st.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copyRegion);
     m_renderPassBeginInfo.renderPass = rp_ds.handle();
