@@ -1785,8 +1785,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
 
     ASSERT_TRUE(InitSwapchain());
@@ -1889,8 +1888,7 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
 
     ASSERT_TRUE(InitSwapchain());

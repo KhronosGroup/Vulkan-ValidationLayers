@@ -461,16 +461,13 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
     m_device_extension_names.push_back(VK_EXT_PRIMITIVE_TOPOLOGY_LIST_RESTART_EXTENSION_NAME);
     bool retval = InitFrameworkAndRetrieveFeatures(features2);
     if (!retval) {
-        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Error initializing extensions or retrieving features, skipping test";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
     if (!ptl_restart_features.primitiveTopologyListRestart) {
-        printf("%s primitive topology list restart feature is not available, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "primitive topology list restart feature is not available, skipping test";
     }
     ptl_restart_features.primitiveTopologyListRestart = false;
     ptl_restart_features.primitiveTopologyPatchListRestart = false;

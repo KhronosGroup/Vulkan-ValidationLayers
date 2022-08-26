@@ -50,13 +50,11 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
-        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required, skipping test.";
     }
 
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
     }
 
     // Attempt to force an invalid return code for an unsupported format

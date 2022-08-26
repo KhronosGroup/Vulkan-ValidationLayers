@@ -8934,14 +8934,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "%s At least Vulkan version 1.1 is required, skipping test.";
     }
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
@@ -9050,15 +9048,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
     bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
@@ -9407,14 +9403,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
@@ -9989,14 +9983,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Disabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
         return;
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
-        printf("%s Test requires (unsupported) extendedDynamicState2, skipping\n", kSkipPrefix);
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
         return;
     }
 
@@ -10056,15 +10050,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
-        printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2LogicOp, skipping";
     }
 
     // Attempt using VK_EXT_extended_dynamic_state2 without it being enabled.
@@ -10110,15 +10102,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
-        printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2LogicOp, skipping";
     }
 
     // Attempt using VK_EXT_extended_dynamic_state2 without it being enabled.
@@ -10163,15 +10153,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Enabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
-        printf("%s Test requires (unsupported) extendedDynamicState2, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2, skipping";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10239,15 +10227,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2PatchControlPoints) {
-        printf("%s Test requires (unsupported) extendedDynamicState2PatchControlPoints, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2PatchControlPoints, skipping";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10315,15 +10301,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpEnabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2LogicOp) {
-        printf("%s Test requires (unsupported) extendedDynamicState2LogicOp, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) extendedDynamicState2LogicOp, skipping";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10384,8 +10368,7 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -10429,15 +10412,13 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        printf("%s Test requires (unsupported) vertexInputDynamicState, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10640,14 +10621,12 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME " is not supported.";
     }
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
     }
 
     auto vertex_attribute_divisor_features = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
@@ -10655,12 +10634,10 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
         LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>(&vertex_attribute_divisor_features);
     auto features2 = GetPhysicalDeviceFeatures2(vertex_input_dynamic_state_features);
     if (!vertex_attribute_divisor_features.vertexAttributeInstanceRateDivisor) {
-        printf("%s Test requires (unsupported) vertexAttributeInstanceRateDivisor, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) vertexAttributeInstanceRateDivisor, skipping";
     }
     if (!vertex_input_dynamic_state_features.vertexInputDynamicState) {
-        printf("%s Test requires (unsupported) vertexInputDynamicState, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) vertexInputDynamicState, skipping";
     }
 
     auto vertex_attribute_divisor_properties = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT>();
