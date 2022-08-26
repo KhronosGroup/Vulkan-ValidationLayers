@@ -245,7 +245,7 @@ class VkRenderFramework : public VkTestFramework {
     const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
     ErrorMonitor &Monitor();
-    VkPhysicalDeviceProperties physDevProps();
+    const VkPhysicalDeviceProperties &physDevProps();
 
     bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
     bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
