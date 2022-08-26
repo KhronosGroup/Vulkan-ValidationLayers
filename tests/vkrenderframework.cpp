@@ -318,7 +318,7 @@ VkPhysicalDevice VkRenderFramework::gpu() {
     return gpu_;
 }
 
-VkPhysicalDeviceProperties VkRenderFramework::physDevProps() {
+const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() {
     EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
     return physDevProps_;
 }
