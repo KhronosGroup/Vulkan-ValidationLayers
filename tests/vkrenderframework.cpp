@@ -755,7 +755,11 @@ bool VkRenderFramework::IsPlatform(PlatformType platform) {
     if (VkRenderFramework::IgnoreDisableChecks()) {
         return false;
     } else {
-        return (!vk_gpu_table.find(platform)->second.compare(physDevProps().deviceName));
+        const auto search = vk_gpu_table.find(platform);
+        if (search != vk_gpu_table.end()) {
+            return 0 == search->second.compare(physDevProps().deviceName);
+        }
+        return false;
     }
 }
 
