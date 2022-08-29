@@ -629,14 +629,8 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto *pipeline_state = cb_node->lastBound[lv_bind_point].pipeline_state;
-
-    // TODO (ncesario) remove once VK_EXT_graphics_pipeline_library support is added for debug printf
-    if (pipeline_state && pipeline_state->IsGraphicsLibrary()) {
-        ReportSetupProblem(device, "Debug printf does not currently support VK_EXT_graphics_pipeline_library");
-        aborted = true;
-        return;
-    }
+    const auto &last_bound = cb_node->lastBound[lv_bind_point];
+    const auto *pipeline_state = last_bound.pipeline_state;
 
     // Allocate memory for the output block that the gpu will use to return values for printf
     DPFDeviceMemoryBlock output_block = {};
@@ -675,9 +669,11 @@ void DebugPrintf::AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer,
     DispatchUpdateDescriptorSets(device, desc_count, &desc_writes, 0, NULL);
 
     if (pipeline_state) {
+        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. Use the layout that was
+        // last bound.
         const auto &pipeline_layout = pipeline_state->PipelineLayoutState();
         if (pipeline_layout->set_layouts.size() <= desc_set_bind_index) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout->layout(), desc_set_bind_index, 1,
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, last_bound.pipeline_layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
         // Record buffer and memory info in CB state tracking

@@ -634,7 +634,7 @@ void GpuAssistedBase::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPi
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, cgpl_state->pipe_state, &new_pipeline_create_infos,
-                                   VK_PIPELINE_BIND_POINT_GRAPHICS);
+                                   VK_PIPELINE_BIND_POINT_GRAPHICS, *cgpl_state);
     cgpl_state->modified_create_infos = new_pipeline_create_infos;
     cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->modified_create_infos.data());
 }
@@ -647,7 +647,7 @@ void GpuAssistedBase::PreCallRecordCreateComputePipelines(VkDevice device, VkPip
     std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, ccpl_state->pipe_state, &new_pipeline_create_infos,
-                                   VK_PIPELINE_BIND_POINT_COMPUTE);
+                                   VK_PIPELINE_BIND_POINT_COMPUTE, *ccpl_state);
     ccpl_state->modified_create_infos = new_pipeline_create_infos;
     ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->modified_create_infos.data());
 }
@@ -660,7 +660,7 @@ void GpuAssistedBase::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, 
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state, &new_pipeline_create_infos,
-                                   VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+                                   VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, *crtpl_state);
     crtpl_state->modified_create_infos = new_pipeline_create_infos;
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(crtpl_state->modified_create_infos.data());
 }
@@ -674,7 +674,7 @@ void GpuAssistedBase::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device,
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
     PreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state, &new_pipeline_create_infos,
-                                   VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+                                   VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *crtpl_state);
     crtpl_state->modified_create_infos = new_pipeline_create_infos;
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(crtpl_state->modified_create_infos.data());
 }
@@ -804,12 +804,12 @@ safe_VkPipelineShaderStageCreateInfo &GetShaderStageCI(safe_VkComputePipelineCre
 // Examine the pipelines to see if they use the debug descriptor set binding index.
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
 // shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
-template <typename CreateInfo, typename SafeCreateInfo>
+template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>
 void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos,
                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                      std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                                      std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                                     const VkPipelineBindPoint bind_point) {
+                                                     const VkPipelineBindPoint bind_point, GPUAVState &cgpl_state) {
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         return;
@@ -849,6 +849,49 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                     ReportSetupProblem(device,
                                        "Unable to replace instrumented shader with non-instrumented one.  "
                                        "Device could become unstable.");
+                }
+            }
+        } else {
+            // !replace_shaders implies that the instrumented shaders should be used. However, if this is a non-executable pipeline
+            // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
+            if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
+                for (const auto &stage : pipe->stage_state) {
+                    auto module_state = stage.module_state;
+                    if (!module_state->Handle()) {
+                        // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
+                        // case above. Otherwise, it is being defined during CGPL time
+                        if (cgpl_state.shader_states.size() <= pipeline) {
+                            cgpl_state.shader_states.resize(pipeline + 1);
+                        }
+                        auto &csm_state = cgpl_state.shader_states[pipeline][stage.stage_flag];
+                        const auto pass =
+                            InstrumentShader(module_state->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
+                        if (pass) {
+                            const_cast<SHADER_MODULE_STATE *>(module_state.get())->gpu_validation_shader_id =
+                                csm_state.unique_shader_id;
+
+                            // Now we need to find the corresponding VkShaderModuleCreateInfo and update its shader code
+                            auto &stage_ci = GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(
+                                new_pipeline_ci, stage.stage_flag);
+                            // We're modifying the copied, safe create info, which is ok to be non-const
+                            auto sm_ci =
+                                const_cast<VkShaderModuleCreateInfo *>(LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext));
+                            // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
+                            if (sm_ci) {
+                                // "safe" structs manage "raw" pointers, so we need to also manage that here when copying the
+                                // instrumented code
+                                // TODO do we pass safe_* structs down to the driver? If not, it would be nice to have this managed
+                                // within the safe_* struct as something like a std::vector
+                                if (sm_ci->pCode) {
+                                    delete[] sm_ci->pCode;
+                                }
+                                sm_ci->codeSize = static_cast<uint32_t>(csm_state.instrumented_pgm.size() * sizeof(uint32_t));
+                                sm_ci->pCode = new uint32_t[csm_state.instrumented_pgm.size()];
+                                std::copy(&csm_state.instrumented_pgm.front(), &csm_state.instrumented_pgm.back() + 1,
+                                          const_cast<uint32_t *>(sm_ci->pCode));
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -1937,13 +1937,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto const &last_bound = cb_node->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
 
-    // TODO (ncesario) remove once VK_EXT_graphics_pipeline_library support is added for GPU-AV
-    if (pipeline_state->IsGraphicsLibrary()) {
-        ReportSetupProblem(device, "GPU-AV does not currently support VK_EXT_graphics_pipeline_library");
-        aborted = true;
-        return;
-    }
-
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     result = desc_set_manager->GetDescriptorSets(1, &desc_pool, debug_desc_layout, &desc_sets);
@@ -2191,10 +2184,12 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
     if (pipeline_state) {
-        const auto &pipeline_layout = pipeline_state->PipelineLayoutState();
+        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. Use the layout that was
+        // last bound.
+        const auto pipeline_layout = pipeline_state->PipelineLayoutState();
         if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && !pipeline_layout->Destroyed()) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout->layout(), desc_set_bind_index, 1,
-                                          desc_sets.data(), 0, nullptr);
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, state.pipeline_layout, desc_set_bind_index, 1, desc_sets.data(),
+                                          0, nullptr);
         }
         if (pipeline_layout->Destroyed()) {
             ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");

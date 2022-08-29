@@ -199,11 +199,11 @@ class GpuAssistedBase : public ValidationStateTracker {
         return std::static_pointer_cast<QUEUE_STATE>(std::make_shared<gpu_utils_state::Queue>(*this, q, index, flags, queueFamilyProperties));
     }
 
-    template <typename CreateInfo, typename SafeCreateInfo>
+    template <typename CreateInfo, typename SafeCreateInfo, typename GPUAVState>
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                         VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                         std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                        const VkPipelineBindPoint bind_point);
+                                        const VkPipelineBindPoint bind_point, GPUAVState &cgpl_state);
     template <typename CreateInfo, typename SafeCreateInfo>
     void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,

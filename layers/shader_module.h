@@ -289,7 +289,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const StaticData static_data_;
 
     const bool has_valid_spirv{false};
-    const uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
+    uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
     SHADER_MODULE_STATE(const uint32_t *code, std::size_t count, spv_target_env env = SPV_ENV_VULKAN_1_0)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),

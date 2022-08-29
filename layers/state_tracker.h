@@ -87,10 +87,12 @@ struct create_shader_module_api_state {
 };
 
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
+// CreateShaderModuleStates[i] = ith shader state
+using CreateShaderModuleStates = std::array<create_shader_module_api_state, 32>;
 struct create_graphics_pipeline_api_state {
     std::vector<safe_VkGraphicsPipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
-    std::vector<std::vector<create_shader_module_api_state>> shader_states;
+    std::vector<CreateShaderModuleStates> shader_states;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
@@ -98,6 +100,7 @@ struct create_graphics_pipeline_api_state {
 struct create_compute_pipeline_api_state {
     std::vector<safe_VkComputePipelineCreateInfo> modified_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<CreateShaderModuleStates> shader_states;
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
@@ -105,6 +108,7 @@ struct create_compute_pipeline_api_state {
 struct create_ray_tracing_pipeline_api_state {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<CreateShaderModuleStates> shader_states;
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
 
@@ -112,6 +116,7 @@ struct create_ray_tracing_pipeline_api_state {
 struct create_ray_tracing_pipeline_khr_api_state {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<CreateShaderModuleStates> shader_states;
     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };
 
@@ -708,9 +713,10 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                          const VkAllocationCallbacks* pAllocator) override;
 
-    virtual std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(
-        const VkGraphicsPipelineCreateInfo* pCreateInfo, std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
-        std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const;
+    virtual std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
+                                                                        std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
+                                                                        std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
+                                                                        CreateShaderModuleStates* csm_states) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
