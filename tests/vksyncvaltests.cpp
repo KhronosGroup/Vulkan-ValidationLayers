@@ -2968,6 +2968,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         m_renderPassBeginInfo.renderPass = rp.handle();
         m_renderPassBeginInfo.framebuffer = fb.handle();
 
+        // Test is intentionally running without dependencies.
         m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-InvalidRenderpass");
         vk::CmdBeginRenderPass(m_commandBuffer->handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_0.pipeline_);
@@ -3072,9 +3073,7 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
-        // expect this error because 2 subpasses could try to do the store operation
-        // m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-WRITE");
-        // ... and this one because the store could happen during a shader read from another subpass
+        // the store could happen during a shader read from another subpass
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_errorMonitor->VerifyFound();

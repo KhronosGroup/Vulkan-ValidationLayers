@@ -1251,6 +1251,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineWithoutRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    // This test checks that no BP messages are incorrectly triggered, but triggers core errors
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06603");
     m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06574");
 
