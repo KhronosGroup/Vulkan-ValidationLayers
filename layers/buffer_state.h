@@ -77,24 +77,20 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_bufferview_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
-    // Format features that matter when accessing the buffer (OpLoad, OpStore,
-    // OpAtomicLoad, etc...)
+    // Format features that matter when accessing the buffer
+    // both as a buffer (ex OpLoad) or image (ex OpImageWrite)
     const VkFormatFeatureFlags2KHR buf_format_features;
-    // Format features that matter when accessing the buffer as a image
-    // (OpImageRead, OpImageWrite, etc...)
-    const VkFormatFeatureFlags2KHR img_format_features;
 
 
     BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                      VkFormatFeatureFlags2KHR buf_ff, VkFormatFeatureFlags2KHR img_ff)
+                      VkFormatFeatureFlags2KHR buf_ff)
         : BASE_NODE(bv, kVulkanObjectTypeBufferView),
           create_info(*ci),
           buffer_state(bf),
 #ifdef VK_USE_PLATFORM_METAL_EXT
           metal_bufferview_export(GetMetalExport(ci)),
 #endif
-          buf_format_features(buf_ff),
-          img_format_features(img_ff) {}
+          buf_format_features(buf_ff) {}
 
 
     void LinkChildNodes() override {

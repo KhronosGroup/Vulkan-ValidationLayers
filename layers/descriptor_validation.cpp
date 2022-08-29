@@ -1388,7 +1388,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                         report_data->FormatHandle(buffer_view).c_str());
     }
-    if (buffer_view) {
+    if (buffer_view && buffer_view_state) {
         auto buffer = buffer_view_state->create_info.buffer;
         const auto *buffer_state = buffer_view_state->buffer_state.get();
         const VkFormat buffer_view_format = buffer_view_state->create_info.format;
@@ -1400,7 +1400,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                             report_data->FormatHandle(buffer).c_str());
         }
-        auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_format);
+        const auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_format);
 
         if (!(reqs & format_bits)) {
             // bad component type
@@ -1413,7 +1413,6 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;
-        const VkFormatFeatureFlags2KHR img_format_features = buffer_view_state->img_format_features;
         const VkDescriptorType descriptor_type = context.descriptor_set->GetBinding(binding)->type;
 
         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
@@ -1437,7 +1436,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         if (has_format_feature2) {
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
-                    !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
+                    !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
                     auto set = context.descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(buffer_view);
@@ -1448,11 +1447,11 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     "contain VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR",
                                     report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                                     report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                    string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
+                                    string_VkFormatFeatureFlags2KHR(buf_format_features).c_str());
                 }
 
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
-                    !(img_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
+                    !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
                     auto set = context.descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(buffer_view);
@@ -1463,7 +1462,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     "contain VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR",
                                     report_data->FormatHandle(set).c_str(), context.caller, binding, index,
                                     report_data->FormatHandle(buffer_view).c_str(), string_VkFormat(buffer_view_format),
-                                    string_VkFormatFeatureFlags2KHR(img_format_features).c_str());
+                                    string_VkFormatFeatureFlags2KHR(buf_format_features).c_str());
                 }
             }
         }
