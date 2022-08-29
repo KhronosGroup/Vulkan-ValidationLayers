@@ -2943,7 +2943,13 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
+        g_pipe_12.LateBindPipelineInfo();
+
+        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        for (size_t i = 0; i < g_pipes.size(); i++) {
+            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+        }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
@@ -2972,13 +2978,12 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
 
             // we're racing the writes from subpass 0 with our shader reads
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ-RACING-WRITE");
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
             m_errorMonitor->VerifyFound();
         }
@@ -3027,7 +3032,13 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
+        g_pipe_12.LateBindPipelineInfo();
+
+        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        for (size_t i = 0; i < g_pipes.size(); i++) {
+            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+        }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
@@ -3055,11 +3066,10 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
 
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
         // expect this error because 2 subpasses could try to do the store operation
@@ -3106,7 +3116,13 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
         g_pipe_12.gp_ci_.renderPass = rp.handle();
         g_pipe_12.gp_ci_.subpass = 1;
         g_pipe_12.InitState();
-        ASSERT_VK_SUCCESS(g_pipe_12.CreateGraphicsPipeline());
+        g_pipe_12.LateBindPipelineInfo();
+
+        std::vector<vk_testing::Pipeline> g_pipes(kNumImages - 1);
+        for (size_t i = 0; i < g_pipes.size(); i++) {
+            g_pipe_12.gp_ci_.subpass = i + 1;
+            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+        }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler.handle(), VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
         g_pipe_12.descriptor_set_->UpdateDescriptorSets();
@@ -3133,11 +3149,10 @@ TEST_F(VkSyncValTest, RenderPassAsyncHazard) {
 
         for (uint32_t i = 1; i < subpasses.size(); i++) {
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
-            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_12.pipeline_);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipes[i - 1].handle());
             vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                                       g_pipe_12.pipeline_layout_.handle(), 0, 1, &g_pipe_12.descriptor_set_->set_, 0, NULL);
 
-            m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-subpass-02685");
             vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
         }
 
