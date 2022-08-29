@@ -467,19 +467,14 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
         }
     }
     if (validation == "all") {
-        auto enables = new VkValidationFeatureEnableEXT[5]{
-            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-            VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT, VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
-            VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
         features->enabledValidationFeatureCount = 3;
-        features->pEnabledValidationFeatures = enables;
+        features->pEnabledValidationFeatures = validation_enable_all;
         features->disabledValidationFeatureCount = 0;
     } else if (validation == "core") {
         features->disabledValidationFeatureCount = 0;
     } else if (validation == "none") {
-        auto disables = new VkValidationFeatureDisableEXT[1]{VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
         features->disabledValidationFeatureCount = 1;
-        features->pDisabledValidationFeatures = disables;
+        features->pDisabledValidationFeatures = &validation_disable_all;
         features->enabledValidationFeatureCount = 0;
     }
 
