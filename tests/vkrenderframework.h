@@ -399,6 +399,11 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_device_extension_names;
 
     VkValidationFeaturesEXT validation_features;
+    VkValidationFeatureEnableEXT validation_enable_all[5] = {
+        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT, VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT,
+        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
+    VkValidationFeatureDisableEXT validation_disable_all = VK_VALIDATION_FEATURE_DISABLE_ALL_EXT;
 
   private:
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
