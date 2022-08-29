@@ -702,35 +702,27 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    constexpr int fence_warn_limit = 5;
+    const auto fence_ci = vk_testing::Fence::create_info();
+    std::vector<vk_testing::Fence> test_fences(fence_warn_limit);
+    for (int i = 0; i < fence_warn_limit - 1; ++i) {
+        test_fences[i].init(*m_device, fence_ci);
+    }
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfFences");
-    uint32_t fence_warn_limit = 5;
-    std::vector<VkFence> testFences(fence_warn_limit);
-    for (uint32_t i = 0; i < fence_warn_limit; i++) {
-        VkFenceCreateInfo fenceInfo = VkFenceObj::create_info();
-        vk::CreateFence(m_device->device(), &fenceInfo, nullptr, &testFences[i]);
-    }
+    test_fences[fence_warn_limit - 1].init(*m_device, fence_ci);
     m_errorMonitor->VerifyFound();
 
+    constexpr int semaphore_warn_limit = 12;
+    const auto semaphore_ci = LvlInitStruct<VkSemaphoreCreateInfo>();
+    std::vector<vk_testing::Semaphore> test_semaphores(semaphore_warn_limit);
+    for (int i = 0; i < semaphore_warn_limit - 1; ++i) {
+        test_semaphores[i].init(*m_device, semaphore_ci);
+    }
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores");
-    uint32_t semaphore_warn_limit = 12;
-    std::vector<VkSemaphore> testSemaphores(semaphore_warn_limit);
-    for (uint32_t i = 0; i < semaphore_warn_limit; i++) {
-        VkSemaphoreCreateInfo semaphore_create_info = {};
-        semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &testSemaphores[i]);
-    }
-
+    test_semaphores[semaphore_warn_limit - 1].init(*m_device, semaphore_ci);
     m_errorMonitor->VerifyFound();
-
-    for (auto fence : testFences) {
-        vk::DestroyFence(device(), fence, nullptr);
-    }
-
-    for (auto semaphore : testSemaphores) {
-        vk::DestroySemaphore(device(), semaphore, nullptr);
-    }
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
