@@ -1858,3 +1858,36 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
+    TEST_DESCRIPTION("Test for loading a vk1.3 deprecated extension with a 1.3 instance on a 1.2 or less device");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+
+    const char *extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
+
+    VkDeviceQueueCreateInfo qci = LvlInitStruct<VkDeviceQueueCreateInfo>();
+    qci.queueFamilyIndex = 0;
+    float priority = 1;
+    qci.pQueuePriorities = &priority;
+    qci.queueCount = 1;
+
+    VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>();
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &qci;
+    dev_info.enabledExtensionCount = 1;
+    dev_info.ppEnabledExtensionNames = &extension;
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension");
+
+    VkDevice device = VK_NULL_HANDLE;
+    vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
+
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (device) vk::DestroyDevice(device, nullptr);
+}
