@@ -50,6 +50,9 @@ struct hash<VulkanTypedHandle> {
 // returns a shared_ptr version of the current object. It requires the object to
 // be created with std::make_shared<> and it MUST NOT be used from the constructor
 class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
+#ifdef BASE_NODE_DEBUG_NAME
+    std::string debug_name_;
+#endif
   public:
     // Parent nodes are stored as weak_ptrs to avoid cyclic memory dependencies.
     // Because weak_ptrs cannot safely be used as hash keys, the parents are stored
@@ -60,6 +63,9 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
 
     template <typename Handle>
     BASE_NODE(Handle h, VulkanObjectType t) : handle_(h, t), destroyed_(false) {}
+
+    void SetName(debug_report_data *report_data, const char *new_name);
+    void SetName(debug_report_data *report_data, const std::string &new_name) { SetName(report_data, new_name.c_str()); }
 
     // because shared_from_this() does not work from the constructor, this 2nd phase
     // constructor is where a state object should call AddParent() on its child nodes.

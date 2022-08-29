@@ -28,6 +28,17 @@
 #include "base_node.h"
 #include "vk_layer_utils.h"
 
+void BASE_NODE::SetName(debug_report_data* report_data, const char* new_name) {
+    auto name_arg = lvl_init_struct<VkDebugMarkerObjectNameInfoEXT>();
+    name_arg.object = handle_.handle;
+    name_arg.objectType = get_debug_report_enum[handle_.type];
+    name_arg.pObjectName = new_name;
+    report_data->DebugReportSetMarkerObjectName(&name_arg);
+#ifdef BASE_NODE_DEBUG_NAME
+    debug_name_ = std::string(new_name);
+#endif
+}
+
 BASE_NODE::~BASE_NODE() { Destroy(); }
 
 void BASE_NODE::Destroy() {

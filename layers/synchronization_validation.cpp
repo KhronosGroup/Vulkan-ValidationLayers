@@ -4430,6 +4430,9 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     QueueId queue_id = QueueSyncState::kQueueIdBase;
     ForEachShared<QUEUE_STATE>([this, &queue_id](const std::shared_ptr<QUEUE_STATE> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
+        char WIP_number[256];
+        sprintf(WIP_number, "QID: %d", queue_id);
+        queue_state->SetName(report_data, WIP_number);
         std::shared_ptr<QueueSyncState> queue_sync_state = std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id++);
         queue_sync_states_.emplace(std::make_pair(queue_state->Queue(), std::move(queue_sync_state)));
     });

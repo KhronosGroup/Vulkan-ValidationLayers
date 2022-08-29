@@ -263,6 +263,35 @@ enum PushConstantByteState {
     PC_Byte_Not_Updated = 2,
 };
 
+#ifdef DEFAULT_OBJECT_NAMES
+template <typename Category, typename Counter = uint64_t>
+class CategoryCounter {
+  public:
+    Counter Count(const Category& category) {
+        auto& count = counts_[category];
+        return count.fetch_add(1);
+    }
+
+  private:
+    layer_data::unordered_map<Category, std::atomic<Counter>> counts_;
+};
+class DebugNames {
+  public:
+    std::string GetName(const std::string& type_name) {
+        char buff[81];
+        snprintf(buff, 81, "_%" PRIu64, unique_.Count(type_name));
+        return type_name + std::string(buff);
+    }
+    std::string GetName(VulkanObjectType type) {
+        std::string type_name(object_string[type]);
+        return GetName(type_name);
+    }
+
+  private:
+    CategoryCounter<std::string, uint64_t> unique_;
+};
+#endif
+
 struct SHADER_MODULE_STATE;
 
 VALSTATETRACK_STATE_OBJECT(VkQueue, QUEUE_STATE);
@@ -317,11 +346,18 @@ class ValidationStateTracker : public ValidationObject {
         return (MapTraits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
     }
 
+#ifdef DEFAULT_OBJECT_NAMES
+    DebugNames default_names_;
+#endif
+
   public:
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
         auto& map = GetStateMap<State>();
         auto handle = state_object->Handle().template Cast<HandleType>();
+#ifdef DEFAULT_OBJECT_NAMES
+        state_object->SetName(report_data, default_names_.GetName(state_object->Type()));
+#endif
         // Finish setting up the object node tree, which cannot be done from the state object contructors
         // due to use of shared_from_this()
         state_object->LinkChildNodes();
