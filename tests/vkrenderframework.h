@@ -306,6 +306,8 @@ class VkRenderFramework : public VkTestFramework {
     // if requested extensions are not supported, helper function to get string to print out
     std::string RequiredExtensionsNotSupported() const;
 
+    void *SetupValidationSettings(void *first_pnext);
+
     template <typename GLSLContainer>
     std::vector<uint32_t> GLSLToSPV(VkShaderStageFlagBits stage, const GLSLContainer &code, const char *entry_point = "main",
                                     const VkSpecializationInfo *spec_info = nullptr, const spv_target_env env = SPV_ENV_VULKAN_1_0,
@@ -395,6 +397,8 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_optional_extensions;
     // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
+
+    VkValidationFeaturesEXT validation_features;
 
   private:
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the

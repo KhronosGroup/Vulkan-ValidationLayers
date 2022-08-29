@@ -443,32 +443,24 @@ VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 #endif
 }
 
-inline void CheckDisableCoreValidation(VkValidationFeaturesEXT *features) {
+inline void CheckDisableCoreValidation(VkValidationFeaturesEXT &features) {
     auto disable = GetEnvironment("VK_LAYER_TESTS_DISABLE_CORE_VALIDATION");
     std::transform(disable.begin(), disable.end(), disable.begin(), ::tolower);
     if (disable == "false" || disable == "0" || disable == "FALSE") {       // default is to change nothing, unless flag is correctly specified
-        features->disabledValidationFeatureCount = 0;                       // remove all disables to get all validation messages
+        features.disabledValidationFeatureCount = 0;                        // remove all disables to get all validation messages
     }
 }
 
-inline void *SetupValidationSettings(void *first_pnext) {
+void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
     auto validation = GetEnvironment("VK_LAYER_TESTS_VALIDATION_FEATURES");
     std::transform(validation.begin(), validation.end(), validation.begin(), ::tolower);
-    VkValidationFeaturesEXT *features = nullptr;
-    {
-        void *pnext = first_pnext;
-        while (pnext) {
-            if (reinterpret_cast<const VkBaseOutStructure *>(pnext)->sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT) {
-                features = reinterpret_cast<VkValidationFeaturesEXT *>(pnext);
-                CheckDisableCoreValidation(features);
-                break;
-            }
-            pnext = reinterpret_cast<const VkBaseOutStructure *>(pnext)->pNext;
-        }
+    VkValidationFeaturesEXT *features = LvlFindModInChain<VkValidationFeaturesEXT>(first_pnext);
+    if (features) {
+        CheckDisableCoreValidation(*features);
     }
     if (validation == "all" || validation == "core" || validation == "none") {
         if (!features) {
-            features = new VkValidationFeaturesEXT{};
+            features = &validation_features;
             features->sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
             features->pNext = first_pnext;
             first_pnext = features;
