@@ -683,12 +683,19 @@ bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(),
                                                                      "vkGetPhysicalDeviceFeatures2");
-    auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
-    vkGetPhysicalDeviceFeatures2(framework->gpu(), &features2);
-    if (!sync2_features.synchronization2) {
-        return false;
+
+    {
+        auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+        auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
+        vkGetPhysicalDeviceFeatures2(framework->gpu(), &features2);
+        if (!sync2_features.synchronization2) {
+            return false;
+        }
     }
+
+    auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    sync2_features.synchronization2 = VK_TRUE;
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
     framework->InitState(nullptr, &features2,VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     return true;
 }
