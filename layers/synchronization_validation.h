@@ -455,6 +455,11 @@ class ResourceAccessState : public SyncStageAccess {
         if (queue_id == write_queue) {
             return IsWriteBarrierHazard(src_exec_scope, src_access_scope);
         }
+        // Accesses with queue submit or...
+        // If the last access is a layout transition, then exec_scope is all that is needed, otherwise  access scope is needed
+        if (last_write == SYNC_IMAGE_LAYOUT_TRANSITION_BIT) {
+            return !WriteInChain(src_exec_scope);
+        }
         return !WriteInChainedScope(src_exec_scope, src_access_scope);
     }
     bool ReadInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope) const {
