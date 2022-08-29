@@ -204,23 +204,26 @@ class PIPELINE_STATE : public BASE_NODE {
     const VkPrimitiveTopology topology_at_rasterizer;
     const bool uses_shader_module_id;
 
+    CreateShaderModuleStates *csm_states = nullptr;
+
     // Executable or legacy pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout,
+                   CreateShaderModuleStates *csm_states = nullptr);
 
     // Compute pipeline
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoKHR *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo,
-                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout);
+                   std::shared_ptr<const PIPELINE_LAYOUT_STATE> &&layout, CreateShaderModuleStates *csm_states = nullptr);
 
     // Executable pipeline with all state defined within linked pipeline libraries
     PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate = {});
+                   std::shared_ptr<const RENDER_PASS_STATE> &&rpstate = {}, CreateShaderModuleStates *csm_states = nullptr);
 
     VkPipeline pipeline() const { return handle_.Cast<VkPipeline>(); }
 
@@ -431,6 +434,15 @@ class PIPELINE_STATE : public BASE_NODE {
         return {};
     }
 
+    std::shared_ptr<const SHADER_MODULE_STATE> GetShaderModuleState(VkShaderStageFlagBits stage) {
+        for (auto &s : stage_state) {
+            if (s.stage_flag == stage) {
+                return s.module_state;
+            }
+        }
+        return {};
+    }
+
     const safe_VkPipelineDynamicStateCreateInfo *DynamicState() const {
         // TODO Each library can contain its own dynamic state (apparently?). Which one should be returned here? Union?
         return create_info.graphics.pDynamicState;
@@ -474,7 +486,8 @@ class PIPELINE_STATE : public BASE_NODE {
     const void *PNext() const { return create_info.graphics.pNext; }
 
     static ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
-    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state);
+    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state,
+                                        CreateShaderModuleStates *csm_states);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const {

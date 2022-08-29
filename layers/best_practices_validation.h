@@ -359,7 +359,8 @@ class DescriptorPool : public DESCRIPTOR_POOL_STATE {
 class Pipeline : public PIPELINE_STATE {
   public:
     Pipeline(const ValidationStateTracker* state_data, const VkGraphicsPipelineCreateInfo* pCreateInfo,
-             std::shared_ptr<const RENDER_PASS_STATE>&& rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout);
+             std::shared_ptr<const RENDER_PASS_STATE>&& rpstate, std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
+             CreateShaderModuleStates* csm_states);
 
     const std::vector<AttachmentInfo> access_framebuffer_attachments;
 };
@@ -963,7 +964,8 @@ class BestPractices : public ValidationStateTracker {
 
     std::shared_ptr<PIPELINE_STATE> CreateGraphicsPipelineState(const VkGraphicsPipelineCreateInfo* pCreateInfo,
                                                                 std::shared_ptr<const RENDER_PASS_STATE>&& render_pass,
-                                                                std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout) const final;
+                                                                std::shared_ptr<const PIPELINE_LAYOUT_STATE>&& layout,
+                                                                CreateShaderModuleStates* csm_states) const final;
 
   private:
     // CacheEntry and PostTransformLRUCacheModel are used on the stack
