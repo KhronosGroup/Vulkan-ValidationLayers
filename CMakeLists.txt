@@ -181,7 +181,7 @@ endif()
 
 # Platform-specific compiler switches
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
-if(MAKE_C_COMPILER_ID MATCHES "Clang")
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     add_compile_options(-Wconversion
 
                         # TODO These warnings also get turned on with -Wconversion in some versions of clang.
@@ -193,7 +193,7 @@ if(MAKE_C_COMPILER_ID MATCHES "Clang")
                         -Wstring-conversion)
 
 endif()
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
     add_compile_options(-Wall
                         -Wextra
                         -Wno-unused-parameter
@@ -203,18 +203,18 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
                         -fvisibility=hidden)
 
     # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if(BUILD_WERROR)
-        if ((CMAKE_COMPILER_IS_GNUCXX AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.3.0)) OR
-           (("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)))
-            add_compile_options(-Werror)
-        endif()
+    if(BUILD_WERROR OR
+      (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.3.0) OR
+      (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
+        add_compile_options(-Werror)
     endif()
+    
 
     set(CMAKE_C_STANDARD 99)
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard.
-    if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
         add_compile_options(-Wimplicit-fallthrough=0)
     endif()
 elseif(MSVC)
