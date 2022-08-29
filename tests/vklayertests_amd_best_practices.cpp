@@ -302,17 +302,17 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VkDescriptorSetLayoutCreateInfo DS_layout_info = {};
-    DS_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    DS_layout_info.bindingCount = 1;
-    DS_layout_info.pBindings = &binding;
+    VkDescriptorSetLayoutCreateInfo ds_layout_info = {};
+    ds_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    ds_layout_info.bindingCount = 1;
+    ds_layout_info.pBindings = &binding;
 
-    vk_testing::DescriptorSetLayout DS_layout(*m_device, DS_layout_info);
+    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_info);
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 1;
-    pipeline_layout_info.pSetLayouts = &DS_layout.handle();
+    pipeline_layout_info.pSetLayouts = &ds_layout.handle();
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_range;
 
