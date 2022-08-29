@@ -2347,12 +2347,12 @@ TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     auto fmt_props_3 = LvlInitStruct<VkFormatProperties3>();
     auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
-    // set so format can be used as a storage texel buffer, but no WITH_FORMAT support
+    // set so format can be used as a storage texel buffer, but no WITHOUT_FORMAT support
     fpvkGetOriginalPhysicalDeviceFormatProperties2EXT(gpu(), format, &fmt_props);
     fmt_props.formatProperties.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
-    fmt_props.formatProperties.linearTilingFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+    fmt_props.formatProperties.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fmt_props_3.bufferFeatures |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT;
-    fmt_props_3.linearTilingFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
+    fmt_props_3.bufferFeatures &= ~VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
     fpvkSetPhysicalDeviceFormatProperties2EXT(gpu(), format, fmt_props);
 
     const char *csSource = R"(
