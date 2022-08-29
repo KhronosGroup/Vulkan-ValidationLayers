@@ -6276,11 +6276,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  "enabled.  If the minLod feature is not enabled, minLod must be 0.0",
                                  image_view_min_lod->minLod);
             }
-            auto max_level = (pCreateInfo->subresourceRange.baseMipLevel + (pCreateInfo->subresourceRange.levelCount - 1));
+            auto max_level =
+                static_cast<float>(pCreateInfo->subresourceRange.baseMipLevel + (pCreateInfo->subresourceRange.levelCount - 1));
             if (image_view_min_lod->minLod > max_level) {
                 skip |= LogError(device, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456",
                                  "vkCreateImageView(): minLod (%f) must be less or equal to the index of the last mipmap level "
-                                 "accessible to the view (%" PRIu32 ")",
+                                 "accessible to the view (%f)",
                                  image_view_min_lod->minLod, max_level);
             }
         }
