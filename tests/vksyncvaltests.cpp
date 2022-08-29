@@ -1543,8 +1543,8 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
     // DrawIndirect
     VkBufferObj buffer_drawIndirect, buffer_drawIndirect2;
     buffer_usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_drawIndirect.init(*m_device, buffer_drawIndirect.create_info(sizeof(VkDrawIndirectCommand), buffer_usage, nullptr),
-                             mem_prop);
+    buffer_drawIndirect.init(
+        *m_device, buffer_drawIndirect.create_info(sizeof(VkDrawIndexedIndirectCommand), buffer_usage, nullptr), mem_prop);
     buffer_drawIndirect2.init(*m_device, buffer_drawIndirect2.create_info(sizeof(VkDrawIndirectCommand), buffer_usage, nullptr),
                               mem_prop);
 
@@ -3835,8 +3835,8 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
     VkSubpassDependency subpass_dependency = {};
     subpass_dependency.srcSubpass = 0;
     subpass_dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-    subpass_dependency.srcStageMask = 0;
-    subpass_dependency.dstStageMask = 0;
+    subpass_dependency.srcStageMask = VK_SHADER_STAGE_ALL_GRAPHICS;
+    subpass_dependency.dstStageMask = VK_SHADER_STAGE_ALL_GRAPHICS;
     subpass_dependency.srcAccessMask = 0;
     subpass_dependency.dstAccessMask = 0;
     subpass_dependency.dependencyFlags = 0;
@@ -3872,8 +3872,6 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
     rp_ci.dependencyCount = 1;
     rp_ci.pDependencies = &subpass_dependency;
 
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubpassDependency-srcStageMask-03937");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-VkSubpassDependency-dstStageMask-03937");
     vk_testing::RenderPass render_pass;
     render_pass.init(*m_device, rp_ci);
 
@@ -4529,11 +4527,6 @@ TEST_F(VkSyncValTest, SyncQSSubmit2) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Synchronization2 not supported";
     }
 
     if (!CheckSynchronization2SupportAndInitState(this)) {
