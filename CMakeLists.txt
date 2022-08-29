@@ -193,7 +193,7 @@ if(MAKE_C_COMPILER_ID MATCHES "Clang")
                         -Wstring-conversion)
 
 endif()
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+if(CMAKE_GNU_COMPILER_ID OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall
                         -Wextra
                         -Wno-unused-parameter
@@ -214,7 +214,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
     # all compilers until they all accept the C++17 standard.
-    if(CMAKE_COMPILER_IS_GNUCC AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
+    if(CMAKE_GNU_COMPILER_ID AND NOT (CMAKE_CXX_COMPILER_VERSION LESS 7.1))
         add_compile_options(-Wimplicit-fallthrough=0)
     endif()
 elseif(MSVC)
