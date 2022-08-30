@@ -814,6 +814,42 @@ std::string DynamicStateString(CBStatusFlags input_value) {
     return ret;
 }
 
+bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string) const {
+    bool skip = false;
+    const auto image_create_info = image_state.createInfo;
+    VkResult image_properties_result = VK_SUCCESS;
+    if (image_create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
+            physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+            image_create_info.usage, image_create_info.flags, &image_state.image_format_properties);
+    } else {
+        auto image_format_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>();
+        image_format_info.type = image_create_info.imageType;
+        image_format_info.format = image_create_info.format;
+        image_format_info.tiling = image_create_info.tiling;
+        image_format_info.usage = image_create_info.usage;
+        image_format_info.flags = image_create_info.flags;
+        auto image_format_properties = LvlInitStruct<VkImageFormatProperties2>();
+        image_properties_result =
+            DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+        image_state.image_format_properties = image_format_properties.imageFormatProperties;
+    }
+    if (image_properties_result != VK_SUCCESS) {
+        skip |= LogError(device, vuid_string,
+                         "vkGetPhysicalDeviceImageFormatProperties() or vkGetPhysicalDeviceImageFormatProperties2() unexpectedly "
+                         "failed with result = %s, "
+                         "when called for validation with following params: "
+                         "format: %s, imageType: %s, "
+                         "tiling: %s, usage: %s, "
+                         "flags: %s.",
+                         string_VkResult(image_properties_result), string_VkFormat(image_create_info.format),
+                         string_VkImageType(image_create_info.imageType), string_VkImageTiling(image_create_info.tiling),
+                         string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                         string_VkImageCreateFlags(image_create_info.flags).c_str());
+    }
+    return skip;
+}
+
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
                                                const PIPELINE_STATE *pPipeline) const {
@@ -8750,25 +8786,11 @@ bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer co
                              func_name, attachment_type, report_data->FormatHandle(image_view).c_str(),
                              report_data->FormatHandle(image_state->image()).c_str());
         }
-        VkImageFormatProperties image_properties = {};
-        const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-            physical_device, image_view_state->create_info.format, image_state->createInfo.imageType,
-            image_state->createInfo.tiling, image_state->createInfo.usage, image_state->createInfo.flags, &image_properties);
-        if (image_properties_result != VK_SUCCESS) {
-            if (LogError(device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880",
-                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                         "when called for %s validation with following params: "
-                         "format: %s, imageType: %s, "
-                         "tiling: %s, usage: %s, "
-                         "flags: %s.",
-                         func_name, string_VkFormat(image_view_state->create_info.format),
-                         string_VkImageType(image_state->createInfo.imageType),
-                         string_VkImageTiling(image_state->createInfo.tiling),
-                         string_VkImageUsageFlags(image_state->createInfo.usage).c_str(),
-                         string_VkImageCreateFlags(image_state->createInfo.flags).c_str())) {
+        if (!image_state->image_format_properties.sampleCounts) {
+            if (GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880"))
                 return true;
-            }
-        } else if (!(image_properties.sampleCounts & msrtss_info->rasterizationSamples)) {
+        }
+        if (!(image_state->image_format_properties.sampleCounts & msrtss_info->rasterizationSamples)) {
             skip |= LogError(
                 device, "VUID-VkMultisampledRenderToSingleSampledInfoEXT-pNext-06880",
                 "%s(): %s attachment %s was created with format %s from image %s, and rasterizationSamples "
@@ -12783,39 +12805,25 @@ bool CoreChecks::MsRenderedToSingleSampledValidateFBAttachments(uint32_t count, 
                                          report_data->FormatHandle(image_state->Handle()).c_str());
                     }
                     const VkImageCreateInfo image_create_info = image_state->createInfo;
-                    VkImageFormatProperties image_properties = {};
-                    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-                        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling,
-                        image_create_info.usage, image_create_info.flags, &image_properties);
-                    if (image_properties_result != VK_SUCCESS) {
-                        skip |= LogError(device, "VUID-VkFramebufferCreateInfo-samples-07009",
-                                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                                         "when called for validation with following params: "
-                                         "format: %s, imageType: %s, "
-                                         "tiling: %s, usage: %s, "
-                                         "flags: %s.",
-                                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                                         string_VkImageTiling(image_create_info.tiling),
-                                         string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                                         string_VkImageCreateFlags(image_create_info.flags).c_str());
-                    } else {
-                        if (!(image_properties.sampleCounts & sample_count)) {
-                            skip |= LogError(
-                                device, "VUID-VkFramebufferCreateInfo-samples-07009",
-                                "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
-                                " enables "
-                                "multisampled-render-to-single-sampled and attachment %" PRIu32
-                                ", is specified from with "
-                                "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
-                                "tiling: %s, usage: %s, "
-                                "flags: %s does not support a rasterizationSamples count of %s",
-                                subpass, attachments[attach].attachment, report_data->FormatHandle(image_state->Handle()).c_str(),
-                                string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                                string_VkImageTiling(image_create_info.tiling),
-                                string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                                string_VkImageCreateFlags(image_create_info.flags).c_str(),
-                                string_VkSampleCountFlagBits(sample_count));
-                        }
+                    if (!image_state->image_format_properties.sampleCounts) {
+                        skip |=
+                            GetPhysicalDeviceImageFormatProperties(*image_state.get(), "VUID-VkFramebufferCreateInfo-samples-07009");
+                    }
+                    if (!(image_state->image_format_properties.sampleCounts & sample_count)) {
+                        skip |= LogError(
+                            device, "VUID-VkFramebufferCreateInfo-samples-07009",
+                            "vkCreateFramebuffer(): Renderpass subpass %" PRIu32
+                            " enables "
+                            "multisampled-render-to-single-sampled and attachment %" PRIu32
+                            ", is specified from with "
+                            "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
+                            "tiling: %s, usage: %s, "
+                            "flags: %s does not support a rasterizationSamples count of %s",
+                            subpass, attachments[attach].attachment, report_data->FormatHandle(image_state->Handle()).c_str(),
+                            string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
+                            string_VkImageTiling(image_create_info.tiling),
+                            string_VkImageUsageFlags(image_create_info.usage).c_str(),
+                            string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(sample_count));
                     }
                 }
             }
