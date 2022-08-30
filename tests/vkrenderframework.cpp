@@ -31,6 +31,7 @@
 
 #include "vk_format_utils.h"
 #include "vk_extension_helper.h"
+#include "vk_layer_settings_ext.h"
 
 using std::string;
 using std::strncmp;
@@ -465,17 +466,18 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
             features->pNext = first_pnext;
             first_pnext = features;
         }
-    }
-    if (validation == "all") {
-        features->enabledValidationFeatureCount = 3;
-        features->pEnabledValidationFeatures = validation_enable_all;
-        features->disabledValidationFeatureCount = 0;
-    } else if (validation == "core") {
-        features->disabledValidationFeatureCount = 0;
-    } else if (validation == "none") {
-        features->disabledValidationFeatureCount = 1;
-        features->pDisabledValidationFeatures = &validation_disable_all;
-        features->enabledValidationFeatureCount = 0;
+
+        if (validation == "all") {
+            features->enabledValidationFeatureCount = 5;
+            features->pEnabledValidationFeatures = validation_enable_all;
+            features->disabledValidationFeatureCount = 0;
+        } else if (validation == "core") {
+            features->disabledValidationFeatureCount = 0;
+        } else if (validation == "none") {
+            features->disabledValidationFeatureCount = 1;
+            features->pDisabledValidationFeatures = &validation_disable_all;
+            features->enabledValidationFeatureCount = 0;
+        }
     }
 
     return first_pnext;
