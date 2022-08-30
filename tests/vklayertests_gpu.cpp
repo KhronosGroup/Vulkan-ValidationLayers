@@ -3040,3 +3040,182 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+
+    auto validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&robustness2_features);
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!robustness2_features.nullDescriptor) {
+        GTEST_SKIP() << "nullDescriptor feature not supported";
+    }
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    features2.features.robustBufferAccess = VK_FALSE;
+    robustness2_features.robustBufferAccess2 = VK_FALSE;
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj offset_buffer;
+    VkBufferObj write_buffer;
+    VkBufferObj uniform_texel_buffer;
+    VkBufferObj storage_texel_buffer;
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    offset_buffer.init(*m_device, 4, reqs);
+    write_buffer.init_as_storage(*m_device, 16, reqs);
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    uint32_t queue_family_index = 0;
+    buffer_create_info.size = 16;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    uniform_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    storage_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    bvci.buffer = uniform_texel_buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
+    bvci.buffer = storage_texel_buffer.handle();
+    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
+    descriptor_set.WriteDescriptorBufferInfo(1, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(2, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(3, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    descriptor_set.WriteDescriptorBufferView(4, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;  // data[4]
+        layout(set = 0, binding = 2) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
+        layout(set = 0, binding = 3) uniform samplerBuffer u_buffer;              // texel_buffer[4]
+        layout(set = 0, binding = 4, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
+        void main() {
+            vec4 x;
+            if (u_index.index[0] == 8)
+                Data.data[u_index.index[0]] = 0xdeadca71;
+            else if (u_index.index[0] == 0)
+                Data.data[0] = u_index.index[4];
+            else if (u_index.index[0] == 1)
+                Data.data[0] = Null.data[40];  // No error
+            else if (u_index.index[0] == 2)
+                x = texelFetch(u_buffer, 5);
+            else if (u_index.index[0] == 3)
+                x = imageLoad(s_buffer, 5);
+            else if (u_index.index[0] == 4)
+                imageStore(s_buffer, 5, x);
+            else if (u_index.index[0] == 5)  // No Error
+                imageStore(s_buffer, 0, x);
+            else if (u_index.index[0] == 6)  // No Error
+                x = imageLoad(s_buffer, 0);
+        }
+    )glsl";
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+
+    CreatePipelineHelper vi(*this);
+    vi.InitVertexInputLibInfo();
+    vi.InitState();
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+
+    CreatePipelineHelper pre_raster(*this);
+    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitState();
+    pre_raster.gp_ci_.layout = pipeline_layout.handle();
+    pre_raster.CreateGraphicsPipeline(true, false);
+
+    const auto render_pass = pre_raster.gp_ci_.renderPass;
+    const auto subpass = pre_raster.gp_ci_.subpass;
+
+    CreatePipelineHelper fragment(*this);
+    fragment.InitFragmentLibInfo(0, nullptr);
+    fragment.gp_ci_.layout = pipeline_layout.handle();
+    fragment.gp_ci_.renderPass = render_pass;
+    fragment.gp_ci_.subpass = subpass;
+    fragment.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper frag_out(*this);
+    frag_out.InitFragmentOutputLibInfo();
+    frag_out.gp_ci_.renderPass = render_pass;
+    frag_out.gp_ci_.subpass = subpass;
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+
+    std::array<VkPipeline, 4> libraries = {
+        vi.pipeline_,
+        pre_raster.pipeline_,
+        fragment.pipeline_,
+        frag_out.pipeline_,
+    };
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    struct TestCase {
+        bool positive;
+        uint32_t index;
+        char const *expected_error;
+    };
+    std::vector<TestCase> tests;
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
+    // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
+    // so u_index.index[4] accesses bytes 64, 65, 66, and 67
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
+    tests.push_back({true, 1, ""});
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
+
+    for (const auto &test : tests) {
+        uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+        *data = test.index;
+        offset_buffer.memory().unmap();
+        if (test.positive) {
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
+        }
+        m_commandBuffer->QueueCommandBuffer();
+        if (test.positive) {
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+}
