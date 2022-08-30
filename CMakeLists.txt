@@ -181,42 +181,42 @@ endif()
 
 # Platform-specific compiler switches
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     add_compile_options(-Wconversion
-
-                        # TODO These warnings also get turned on with -Wconversion in some versions of clang.
-                        #      Leave off until further investigation.
-                        -Wno-sign-conversion
-                        -Wno-shorten-64-to-32
-                        -Wno-implicit-int-conversion
-                        -Wno-enum-enum-conversion
-                        -Wstring-conversion)
+      # TODO These warnings also get turned on with -Wconversion in some versions of clang.
+      #      Leave off until further investigation.
+      -Wno-sign-conversion
+      -Wno-shorten-64-to-32
+    -Wno-implicit-int-conversion
+    -Wno-enum-enum-conversion
+    -Wstring-conversion)
 
 endif()
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
-    add_compile_options(-Wall
-                        -Wextra
-                        -Wno-unused-parameter
-                        -Wno-missing-field-initializers
-                        -fno-strict-aliasing
-                        -fno-builtin-memcmp
-                        -fvisibility=hidden)
+  add_compile_options(-Wall
+    -Wextra
+    -Wno-unused-parameter
+    -Wno-missing-field-initializers
+    -fno-strict-aliasing
+    -fno-builtin-memcmp
+    -fvisibility=hidden)
 
-    # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if(BUILD_WERROR)
-        if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.3.0) OR
-            (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
-            add_compile_options(-Werror)
-        endif()
+  # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
+  if(BUILD_WERROR)
+    if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.3.0) OR
+    (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
+      add_compile_options(-Werror)
     endif()
+  endif()
 
-    set(CMAKE_C_STANDARD 99)
+  set(CMAKE_C_STANDARD 99)
 
-    # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
-    # all compilers until they all accept the C++17 standard.
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
-        add_compile_options(-Wimplicit-fallthrough=0)
-    endif()
+  # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
+  # all compilers until they all accept the C++17 standard.
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
+    add_compile_options(-Wimplicit-fallthrough=0)
+  endif()
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     if(BUILD_WERROR)
         # Treat warnings as errors
@@ -246,35 +246,35 @@ endif()
 if(BUILD_LAYERS OR BUILD_TESTS)
     find_package(SPIRV-Headers CONFIG QUIET)
     if(SPIRV-Headers_FOUND)
-	# pefer the package if found. Note that if SPIRV_HEADERS_INSTALL_DIR points at an 'installed'
-	# version of SPIRV-Headers, the package will be found.
-	get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
+    # pefer the package if found. Note that if SPIRV_HEADERS_INSTALL_DIR points at an 'installed'
+    # version of SPIRV-Headers, the package will be found.
+    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
     elseif(SPIRV_HEADERS_INCLUDE_DIR)
-	# This is set by SPIRV-Tools (in parent scope!) and also some packages that include VVL with add_subdirectory
-	if (NOT EXISTS "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/spirv.h")
-	    message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INCLUDE_DIR: ${SPIRV_HEADERS_INCLUDE_DIR}")
+    # This is set by SPIRV-Tools (in parent scope!) and also some packages that include VVL with add_subdirectory
+    if (NOT EXISTS "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/spirv.h")
+        message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INCLUDE_DIR: ${SPIRV_HEADERS_INCLUDE_DIR}")
         endif()
     elseif(SPIRV_HEADERS_INSTALL_DIR)
         # This is our official variable for setting SPIRV-Headers location, but pointing at the raw source of SPIRV-Headers
-	if (NOT EXISTS "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/spirv.h")
-	    message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INSTALL_DIR: ${SPIRV_HEADERS_INSTALL_DIR}")
+    if (NOT EXISTS "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/spirv.h")
+        message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INSTALL_DIR: ${SPIRV_HEADERS_INSTALL_DIR}")
         endif()
-	set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include")
+    set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include")
     endif()
     if (NOT TARGET SPIRV-Tools)
         find_package(SPIRV-Tools REQUIRED CONFIG)
-	# See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
-	# The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
-	# Try to handle all possible combinations so that we work with externally built packages.
-	if (TARGET SPIRV-Tools)
-	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
-	elseif(TARGET SPIRV-Tools-static)
-	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
-	elseif(TARGET SPIRV-Tools-shared)
-	    set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
-	else()
-	    message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
-	endif()
+    # See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
+    # The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
+    # Try to handle all possible combinations so that we work with externally built packages.
+    if (TARGET SPIRV-Tools)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
+    elseif(TARGET SPIRV-Tools-static)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
+    elseif(TARGET SPIRV-Tools-shared)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
+    else()
+        message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
+    endif()
     endif()
     # Thankfully SPIRV-Tools-opt has only one target name.
     if (NOT TARGET SPIRV-Tools-opt)
