@@ -673,8 +673,7 @@ class CoreChecks : public ValidationStateTracker {
                                        const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        const SubresourceRangeErrorCodes& errorCodes) const;
     bool ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
-                                                             VkRenderPass renderpass, uint32_t subpass, VkImage image,
-                                                             VkImageCreateInfo image_create_info,
+                                                             VkRenderPass renderpass, uint32_t subpass, IMAGE_STATE* image_state,
                                                              VkSampleCountFlagBits msrtss_samples, uint32_t attachment_index,
                                                              bool depth = false) const;
     bool ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
@@ -1176,6 +1175,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                    VkImageFormatProperties2* pImageFormatProperties) const override;
+    bool GetPhysicalDeviceImageFormatProperties(IMAGE_STATE& image_state, const char* vuid_string) const;
     bool PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline,
                                         const VkAllocationCallbacks* pAllocator) const override;
     bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator) const override;

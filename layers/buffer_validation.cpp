@@ -358,37 +358,25 @@ bool CoreChecks::FindLayouts(const IMAGE_STATE &image_state, std::vector<VkImage
     }
     return true;
 }
+
 bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassCreateVersion rp_version, VkFramebuffer framebuffer,
-                                                                     VkRenderPass renderpass, uint32_t subpass, VkImage image,
-                                                                     VkImageCreateInfo image_create_info,
-                                                                     VkSampleCountFlagBits msrtss_samples,
+                                                                     VkRenderPass renderpass, uint32_t subpass,
+                                                                     IMAGE_STATE *image_state, VkSampleCountFlagBits msrtss_samples,
                                                                      uint32_t attachment_index, bool depth) const {
     bool skip = false;
     const char *function_name = (rp_version == RENDER_PASS_VERSION_2) ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
-    VkImageFormatProperties image_properties = {};
-    const VkResult image_properties_result = DispatchGetPhysicalDeviceImageFormatProperties(
-        physical_device, image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
-        image_create_info.flags, &image_properties);
-    if (image_properties_result != VK_SUCCESS) {
+    const auto image_create_info = image_state->createInfo;
+    if (!image_state->image_format_properties.sampleCounts) {
+        skip |= GetPhysicalDeviceImageFormatProperties(*image_state, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010");
+    }
+    if (!(image_state->image_format_properties.sampleCounts & msrtss_samples)) {
+        std::stringstream msg;
+        if (depth) {
+            msg << "depth stencil attachment";
+        } else {
+            msg << "attachment " << attachment_index;
+        }
         skip |= LogError(device, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
-                         "vkGetPhysicalDeviceImageFormatProperties() unexpectedly failed, "
-                         "when called for validation with following params: "
-                         "format: %s, imageType: %s, "
-                         "tiling: %s, usage: %s, "
-                         "flags: %s.",
-                         string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
-                         string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
-                         string_VkImageCreateFlags(image_create_info.flags).c_str());
-    } else {
-        if (!(image_properties.sampleCounts & msrtss_samples)) {
-            std::stringstream msg;
-            if (depth) {
-                msg << "depth stencil attachment";
-            } else {
-                msg << "attachment " << attachment_index;
-            }
-            skip |=
-                LogError(device, "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-07010",
                          "%s(): Renderpass subpass %" PRIu32
                          " enables "
                          "multisampled-render-to-single-sampled and %s"
@@ -396,11 +384,10 @@ bool CoreChecks::ValidateMultipassRenderedToSingleSampledSampleCount(RenderPassC
                          "VK_SAMPLE_COUNT_1_BIT samples, but image (%s) created with format %s imageType: %s, "
                          "tiling: %s, usage: %s, "
                          "flags: %s does not support a rasterizationSamples count of %s",
-                         function_name, subpass, msg.str().c_str(), report_data->FormatHandle(image).c_str(),
+                         function_name, subpass, msg.str().c_str(), report_data->FormatHandle(image_state->Handle()).c_str(),
                          string_VkFormat(image_create_info.format), string_VkImageType(image_create_info.imageType),
                          string_VkImageTiling(image_create_info.tiling), string_VkImageUsageFlags(image_create_info.usage).c_str(),
                          string_VkImageCreateFlags(image_create_info.flags).c_str(), string_VkSampleCountFlagBits(msrtss_samples));
-        }
     }
     return skip;
 }
@@ -715,9 +702,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 }
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                        const auto image_create_info = view_state->image_state.get()->createInfo;
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            rp_version, framebuffer, render_pass, k, view_state->create_info.image, image_create_info,
+                            rp_version, framebuffer, render_pass, k, view_state->image_state.get(),
                             ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment);
                     }
                 }
@@ -742,9 +728,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 }
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                        const auto image_create_info = view_state->image_state.get()->createInfo;
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            rp_version, framebuffer, render_pass, k, view_state->create_info.image, image_create_info,
+                            rp_version, framebuffer, render_pass, k, view_state->image_state.get(),
                             ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment);
                     }
                 }
@@ -764,9 +749,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                 }
                 if (ms_rendered_to_single_sampled && ms_rendered_to_single_sampled->multisampledRenderToSingleSampledEnable) {
                     if (render_pass_info->pAttachments[attachment_ref.attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
-                        const auto image_create_info = view_state->image_state.get()->createInfo;
                         skip |= ValidateMultipassRenderedToSingleSampledSampleCount(
-                            rp_version, framebuffer, render_pass, 0, view_state->create_info.image, image_create_info,
+                            rp_version, framebuffer, render_pass, 0, view_state->image_state.get(),
                             ms_rendered_to_single_sampled->rasterizationSamples, attachment_ref.attachment, true);
                     }
                 }

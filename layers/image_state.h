@@ -119,6 +119,7 @@ class IMAGE_STATE : public BINDABLE {
     const bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
     bool get_sparse_reqs_called;          // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_bound;           // Track if sparse metadata aspect is bound to this image
+    VkImageFormatProperties image_format_properties = {};
 #ifdef VK_USE_PLATFORM_METAL_EXT
     const bool metal_image_export;
     const bool metal_io_surface_export;
