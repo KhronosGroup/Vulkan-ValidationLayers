@@ -271,7 +271,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                                extension_name);
         }
 
-        skip |= ValidateDeprecatedExtensions("CreateDevice", extension_name, api_version,
+        skip |= ValidateDeprecatedExtensions("CreateDevice", extension_name, device_api_version,
                                              kVUID_BestPractices_CreateDevice_DeprecatedExtension);
         skip |= ValidateSpecialUseExtensions("CreateDevice", extension_name, kSpecialUseDeviceVUIDs);
     }
