@@ -1858,6 +1858,8 @@ TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
     dev_info.ppEnabledExtensionNames = &extension;
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension");
+    // api version != device version
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch");
 
     VkDevice device = VK_NULL_HANDLE;
     vk::CreateDevice(gpu(), &dev_info, nullptr, &device);
