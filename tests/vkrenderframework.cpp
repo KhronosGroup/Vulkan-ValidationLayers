@@ -127,6 +127,7 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
         if (!found_expected) {
             result = VK_TRUE;
             printf("Unexpected: %s\n", msgString);
+            other_messages_.push_back(errorString);
         }
     }
     return result;
@@ -174,7 +175,6 @@ void ErrorMonitor::VerifyFound() {
         auto guard = Lock();
         // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
         if (!AllDesiredMsgsFound()) {
-            DumpFailureMsgs();
             for (const auto &desired_msg : desired_message_strings_) {
                 ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
             }
@@ -199,7 +199,6 @@ void ErrorMonitor::VerifyNotFound() {
     auto guard = Lock();
     // ExpectSuccess() configured us to match anything. Any error is a failure.
     if (AnyDesiredMsgFound()) {
-        DumpFailureMsgs();
         for (const auto &msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
