@@ -393,6 +393,8 @@ class VkBufferTest {
     const VkBuffer &GetBuffer();
     void TestDoubleDestroy();
 
+    const VkDeviceSize size = 32;
+
   protected:
     bool AllocateCurrent;
     bool BoundCurrent;

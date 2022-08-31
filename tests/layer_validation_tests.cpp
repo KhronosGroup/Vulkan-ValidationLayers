@@ -1177,7 +1177,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
       VulkanDevice(aVulkanDevice->device()) {
     if (eBindNullBuffer == aTestFlag || eBindFakeBuffer == aTestFlag) {
         VkMemoryAllocateInfo memory_allocate_info = LvlInitStruct<VkMemoryAllocateInfo>();
-        memory_allocate_info.allocationSize = 1;   // fake size -- shouldn't matter for the test
+        memory_allocate_info.allocationSize = size;  // fake size -- shouldn't matter for the test
         memory_allocate_info.memoryTypeIndex = 0;  // fake type -- shouldn't matter for the test
         vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
 
@@ -1186,7 +1186,7 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
         vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
     } else {
         VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
-        buffer_create_info.size = 32;
+        buffer_create_info.size = size;
         buffer_create_info.usage = aBufferUsage;
 
         vk::CreateBuffer(VulkanDevice, &buffer_create_info, nullptr, &VulkanBuffer);
