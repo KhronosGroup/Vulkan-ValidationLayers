@@ -398,13 +398,6 @@ class VkRenderFramework : public VkTestFramework {
     // Device extensions to enable
     std::vector<const char *> m_device_extension_names;
 
-    VkValidationFeaturesEXT validation_features;
-    const std::array<const VkValidationFeatureEnableEXT, 4> validation_enable_all = {
-        {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-         VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
-         VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT}};
-    VkValidationFeatureDisableEXT validation_disable_all = VK_VALIDATION_FEATURE_DISABLE_ALL_EXT;
-
   private:
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance
