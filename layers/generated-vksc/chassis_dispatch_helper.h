@@ -679,6 +679,7 @@ void ValidationObject::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name) \
     init_object_dispatch_vector(InterceptId ## name, \
                                 typeid(&ValidationObject::name), \
+                                typeid(&ThreadSafety::name), \
                                 typeid(&StatelessValidation::name));
 #endif
 
@@ -732,10 +733,14 @@ void ValidationObject::InitObjectDispatchVectors() {
 #else
     auto init_object_dispatch_vector = [this](InterceptId id,
                                               const std::type_info& vo_typeid,
+                                              const std::type_info& tt_typeid,
                                               const std::type_info& tpv_typeid) {
         for (auto item : this->object_dispatch) {
             auto intercept_vector = &this->intercept_vectors[id];
             switch (item->container_type) {
+            case LayerObjectTypeThreading:
+                if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
             case LayerObjectTypeParameterValidation:
                 if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
                 break;

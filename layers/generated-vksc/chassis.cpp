@@ -296,11 +296,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
 
-#if !defined(VULKANSC)
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
     auto thread_checker_obj = new ThreadSafety(nullptr);
     thread_checker_obj->RegisterValidationObject(!local_disables[thread_safety], api_version, report_data, local_object_dispatch);
-#endif
 
     auto parameter_validation_obj = new StatelessValidation;
     parameter_validation_obj->RegisterValidationObject(!local_disables[stateless_checks], api_version, report_data, local_object_dispatch);
@@ -339,7 +337,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : local_object_dispatch) {
@@ -365,8 +363,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     OutputLayerStatusInfo(framework);
 
-#if !defined(VULKANSC)
     thread_checker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+#if !defined(VULKANSC)
     object_tracker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
 #endif
     parameter_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
@@ -385,8 +383,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject*> local_objs = {
+        thread_checker_obj,
 #if !defined(VULKANSC)
-        thread_checker_obj, object_tracker_obj,
+        object_tracker_obj,
 #endif
         parameter_validation_obj,
 #if !defined(VULKANSC)
@@ -474,7 +473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : instance_interceptor->object_dispatch) {
@@ -507,10 +506,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto disables = instance_interceptor->disabled;
     auto enables = instance_interceptor->enabled;
 
-#if !defined(VULKANSC)
     auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
     thread_safety_obj->InitDeviceValidationObject(!disables[thread_safety], instance_interceptor, device_interceptor);
-#endif
 
     auto stateless_validation_obj = new StatelessValidation;
     stateless_validation_obj->InitDeviceValidationObject(!disables[stateless_checks], instance_interceptor, device_interceptor);
@@ -537,9 +534,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject *> local_objs = {
-#if !defined(VULKANSC)
         thread_safety_obj,
-#endif
         stateless_validation_obj,
 #if !defined(VULKANSC)
         object_tracker_obj,
@@ -617,7 +612,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -658,7 +653,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -700,7 +695,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -743,7 +738,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -782,7 +777,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -817,7 +812,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -852,7 +847,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
 #endif
@@ -893,7 +888,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
     for (auto intercept : layer_data->object_dispatch) {
@@ -944,7 +939,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
 #if defined(VK_EXT_debug_report)
             return VK_ERROR_VALIDATION_FAILED_EXT;
 #else
-            return VK_ERROR_INITIALIZATION_FAILED;
+            return VK_ERROR_VALIDATION_FAILED;
 #endif
     }
 

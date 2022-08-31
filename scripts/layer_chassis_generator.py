@@ -941,11 +941,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
 
-#if !defined(VULKANSC)
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
     auto thread_checker_obj = new ThreadSafety(nullptr);
     thread_checker_obj->RegisterValidationObject(!local_disables[thread_safety], api_version, report_data, local_object_dispatch);
-#endif
 
     auto parameter_validation_obj = new StatelessValidation;
     parameter_validation_obj->RegisterValidationObject(!local_disables[stateless_checks], api_version, report_data, local_object_dispatch);
@@ -1010,8 +1008,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     OutputLayerStatusInfo(framework);
 
-#if !defined(VULKANSC)
     thread_checker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
+#if !defined(VULKANSC)
     object_tracker_obj->FinalizeInstanceValidationObject(framework, *pInstance);
 #endif
     parameter_validation_obj->FinalizeInstanceValidationObject(framework, *pInstance);
@@ -1030,8 +1028,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject*> local_objs = {
+        thread_checker_obj,
 #if !defined(VULKANSC)
-        thread_checker_obj, object_tracker_obj,
+        object_tracker_obj,
 #endif
         parameter_validation_obj,
 #if !defined(VULKANSC)
@@ -1152,10 +1151,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto disables = instance_interceptor->disabled;
     auto enables = instance_interceptor->enabled;
 
-#if !defined(VULKANSC)
     auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
     thread_safety_obj->InitDeviceValidationObject(!disables[thread_safety], instance_interceptor, device_interceptor);
-#endif
 
     auto stateless_validation_obj = new StatelessValidation;
     stateless_validation_obj->InitDeviceValidationObject(!disables[stateless_checks], instance_interceptor, device_interceptor);
@@ -1182,9 +1179,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject *> local_objs = {
-#if !defined(VULKANSC)
         thread_safety_obj,
-#endif
         stateless_validation_obj,
 #if !defined(VULKANSC)
         object_tracker_obj,
@@ -1856,6 +1851,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 #define BUILD_DISPATCH_VECTOR(name) \\
     init_object_dispatch_vector(InterceptId ## name, \\
                                 typeid(&ValidationObject::name), \\
+                                typeid(&ThreadSafety::name), \\
                                 typeid(&StatelessValidation::name));
 #endif
 
@@ -1909,10 +1905,14 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
 #else
     auto init_object_dispatch_vector = [this](InterceptId id,
                                               const std::type_info& vo_typeid,
+                                              const std::type_info& tt_typeid,
                                               const std::type_info& tpv_typeid) {
         for (auto item : this->object_dispatch) {
             auto intercept_vector = &this->intercept_vectors[id];
             switch (item->container_type) {
+            case LayerObjectTypeThreading:
+                if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
             case LayerObjectTypeParameterValidation:
                 if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
                 break;
