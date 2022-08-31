@@ -265,7 +265,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         const char *extension_name = pCreateInfo->ppEnabledExtensionNames[i];
 
-        uint32_t extension_api_version = device_api_version;
+        uint32_t extension_api_version = std::min(api_version, device_api_version);
 
         if (white_list(extension_name, kInstanceExtensionNames)) {
             skip |= LogWarning(instance, kVUID_BestPractices_CreateDevice_ExtensionMismatch,
