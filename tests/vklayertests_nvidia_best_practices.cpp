@@ -471,7 +471,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkDeviceQueueCreateInfo queue_ci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     queue_ci.queueFamilyIndex = 0;
@@ -520,23 +520,24 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
     memory_ai.allocationSize = memory_requirements.size;
     memory_ai.memoryTypeIndex = memory_type_index;
 
-    vk_testing::DeviceMemory memory(test_device, memory_ai);
+    vk_testing::DeviceMemory memory_a(test_device, memory_ai);
+    vk_testing::DeviceMemory memory_b(test_device, memory_ai);
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-BindMemory-NoPriority");
-        vk::BindBufferMemory(test_device.handle(), buffer_a.handle(), memory.handle(), 0);
+        vk::BindBufferMemory(test_device.handle(), buffer_a.handle(), memory_a.handle(), 0);
         m_errorMonitor->VerifyFound();
     }
 
     auto vkSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
         vk::GetDeviceProcAddr(test_device.handle(), "vkSetDeviceMemoryPriorityEXT"));
-    vkSetDeviceMemoryPriorityEXT(test_device.handle(), memory.handle(), 0.5f);
+    vkSetDeviceMemoryPriorityEXT(test_device.handle(), memory_b.handle(), 0.5f);
 
     {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                              "UNASSIGNED-BestPractices-BindMemory-NoPriority");
-        vk::BindBufferMemory(test_device.handle(), buffer_b.handle(), memory.handle(), 0);
+        vk::BindBufferMemory(test_device.handle(), buffer_b.handle(), memory_b.handle(), 0);
         m_errorMonitor->Finish();
     }
 }
