@@ -912,8 +912,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     InitState();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
+
     if (!InitSurface()) {
         printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
         return;
@@ -959,8 +958,14 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
 
-    vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
+
+    // If surface doesn't support 2 images, skip negative test
+    if (m_surface_capabilities.minImageCount <= 2) {
+        vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+        m_errorMonitor->VerifyFound();
+    }
 
     swapchain_create_info.minImageCount = 3;
     vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
