@@ -467,8 +467,8 @@ void *VkRenderFramework::SetupValidationSettings(void *first_pnext) {
         }
 
         if (validation == "all") {
-            features->enabledValidationFeatureCount = 4;
-            features->pEnabledValidationFeatures = validation_enable_all;
+            features->enabledValidationFeatureCount = validation_enable_all.size();
+            features->pEnabledValidationFeatures = validation_enable_all.data();
             features->disabledValidationFeatureCount = 0;
         } else if (validation == "core") {
             features->disabledValidationFeatureCount = 0;

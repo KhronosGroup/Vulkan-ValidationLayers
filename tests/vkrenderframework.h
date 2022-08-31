@@ -399,10 +399,10 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_device_extension_names;
 
     VkValidationFeaturesEXT validation_features;
-    VkValidationFeatureEnableEXT validation_enable_all[4] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
-                                                             VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-                                                             VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
-                                                             VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT};
+    const std::array<const VkValidationFeatureEnableEXT, 4> validation_enable_all = {
+        {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
+         VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+         VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT}};
     VkValidationFeatureDisableEXT validation_disable_all = VK_VALIDATION_FEATURE_DISABLE_ALL_EXT;
 
   private:
