@@ -734,7 +734,7 @@ static const std::map<QueueError, std::vector<Entry>> kBarrierQueueErrors{
 const std::map<QueueError, std::string> kQueueErrorSummary{
     {QueueError::kSrcOrDstMustBeIgnore, "Source or destination queue family must be ignored."},
     {QueueError::kSpecialOrIgnoreOnly, "Source or destination queue family must be special or ignored."},
-    {QueueError::kSrcAndDstValidOrSpecial, "Destination queue family must be valid, ignored, or special."},
+    {QueueError::kSrcAndDstValidOrSpecial, "Source and destination queue family must be valid, ignored, or special."},
     {QueueError::kSrcAndDestMustBeIgnore, "Source and destination queue family must both be ignored."},
     {QueueError::kSrcAndDstBothValid, "Source and destination queue family must both be valid."},
     {QueueError::kSubmitQueueMustMatchSrcOrDst,
