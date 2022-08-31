@@ -1963,7 +1963,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
             skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251",
                              "vkCreateImage(): Format %s is not supported for this combination of parameters and "
-                             "VkGetPhysicalDeviceImageFormatProperties returned back %s.",
+                             "vkGetPhysicalDeviceImageFormatProperties returned back %s.",
                              string_VkFormat(pCreateInfo->format), string_VkResult(result));
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         }

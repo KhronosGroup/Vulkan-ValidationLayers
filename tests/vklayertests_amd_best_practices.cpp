@@ -60,6 +60,16 @@ TEST_F(VkAmdBestPracticesLayerTest, TooManyPipelines) {
 }
 #endif
 
+inline bool CheckFormat(VkPhysicalDevice gpu, VkImageCreateInfo& img_info) {
+    VkImageFormatProperties if_props{};
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties(gpu, img_info.format, img_info.imageType, img_info.tiling,
+                                                                 img_info.usage, img_info.flags, &if_props);
+    if (result != VK_SUCCESS) {
+        return false;
+    }
+    return true;
+}
+
 TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     InitBestPracticesFramework(kEnableAMDValidation);
     InitState();
@@ -67,10 +77,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
-
-    // create a colot attachment image with mutable bit set
+    // create a color attachment image with mutable bit set
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                  nullptr,
                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
@@ -86,12 +93,15 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
                                  0,
                                  nullptr,
                                  VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
+    if (CheckFormat(gpu(), img_info)) {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
+        VkImage test_image = VK_NULL_HANDLE;
+        vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
+
     // create a depth attachment image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 nullptr,
@@ -108,12 +118,15 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
                 0,
                 nullptr,
                 VK_IMAGE_LAYOUT_UNDEFINED};
-    test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
+    if (CheckFormat(gpu(), img_info)) {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
+        VkImage test_image = VK_NULL_HANDLE;
+        vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
+
     // create a storage image with mutable bit set
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                nullptr,
@@ -130,9 +143,14 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
                0,
                nullptr,
                VK_IMAGE_LAYOUT_UNDEFINED};
-    test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
+
+    if (CheckFormat(gpu(), img_info)) {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "UNASSIGNED-BestPractices-vkImage-DontUseMutableRenderTargets");
+        VkImage test_image = VK_NULL_HANDLE;
+        vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
@@ -151,9 +169,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
         queueFamilies[i] = i;
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
-
-    // create a render target image with mutable bit set
+    // create a concurrent color render target image
     VkImageCreateInfo img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                   nullptr,
                                   0,
@@ -169,12 +185,16 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
                                   (uint32_t)queueFamilies.size(),
                                   queueFamilies.data(),
                                   VK_IMAGE_LAYOUT_UNDEFINED};
-    VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
-    // create a render target image with mutable bit set
+    if (CheckFormat(gpu(), img_info)) {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
+        VkImage test_image = VK_NULL_HANDLE;
+        vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // create a concurrent depth render target image
     img_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 nullptr,
                 0,
@@ -190,9 +210,14 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
                 (uint32_t)queueFamilies.size(),
                 queueFamilies.data(),
                 VK_IMAGE_LAYOUT_UNDEFINED};
-    test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
+
+    if (CheckFormat(gpu(), img_info)) {
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "UNASSIGNED-BestPractices-vkImage-AvoidConcurrentRenderTargets");
+        VkImage test_image = VK_NULL_HANDLE;
+        vk::CreateImage(m_device->handle(), &img_info, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
