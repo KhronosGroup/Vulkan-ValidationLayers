@@ -428,27 +428,29 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       0,
                                       nullptr,
                                       VK_IMAGE_LAYOUT_UNDEFINED};
-        VkImageObj image_1D(m_device);
-        image_1D.init(&img_info);
-        ASSERT_TRUE(image_1D.initialized());
 
-        m_commandBuffer->begin();
-        image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        if (CheckFormat(gpu(), img_info)) {
+            VkImageObj image_1D(m_device);
+            image_1D.init(&img_info);
+            ASSERT_TRUE(image_1D.initialized());
 
-        VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
-        VkImageSubresourceRange image_range = {};
-        image_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_range.levelCount = 1;
-        image_range.layerCount = 1;
+            m_commandBuffer->begin();
+            image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                             "UNASSIGNED-BestPractices-ClearAttachment-ClearImage");
+            VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
+            VkImageSubresourceRange image_range = {};
+            image_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_range.levelCount = 1;
+            image_range.layerCount = 1;
 
-        vk::CmdClearColorImage(m_commandBuffer->handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &image_range);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-ClearAttachment-ClearImage");
 
-        m_commandBuffer->end();
+            vk::CmdClearColorImage(m_commandBuffer->handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value,
+                                   1, &image_range);
+            m_errorMonitor->VerifyFound();
+
+            m_commandBuffer->end();
+        }
     }
 
     vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
@@ -469,28 +471,30 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
                                       0,
                                       nullptr,
                                       VK_IMAGE_LAYOUT_UNDEFINED};
-        VkImageObj image_1D(m_device);
-        image_1D.init(&img_info);
-        ASSERT_TRUE(image_1D.initialized());
 
-        m_commandBuffer->begin();
-        image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        if (CheckFormat(gpu(), img_info)) {
+            VkImageObj image_1D(m_device);
+            image_1D.init(&img_info);
+            ASSERT_TRUE(image_1D.initialized());
 
-        VkClearDepthStencilValue clear_value = {0.0f, 0};
-        VkImageSubresourceRange image_range = {};
-        image_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        image_range.levelCount = 1;
-        image_range.layerCount = 1;
+            m_commandBuffer->begin();
+            image_1D.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                             "UNASSIGNED-BestPractices-ClearAttachment-ClearImage");
+            VkClearDepthStencilValue clear_value = {0.0f, 0};
+            VkImageSubresourceRange image_range = {};
+            image_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            image_range.levelCount = 1;
+            image_range.layerCount = 1;
 
-        vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                      &clear_value, 1, &image_range);
-        m_errorMonitor->VerifyFound();
+            m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-ClearAttachment-ClearImage");
 
-        m_commandBuffer->end();
+            vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image_1D.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                          &clear_value, 1, &image_range);
+            m_errorMonitor->VerifyFound();
+
+            m_commandBuffer->end();
+        }
     }
 }
 
