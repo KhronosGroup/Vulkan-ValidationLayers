@@ -86,6 +86,9 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.memoryTypeIndex = 0;
     alloc_info.allocationSize = mem_reqs.size;
+    if (alloc_info.allocationSize == 0) {
+        GTEST_SKIP() << "Driver seems to not be returning an valid allocation size and need to end test";
+    }
 
     vk_testing::DeviceMemory mem;
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);

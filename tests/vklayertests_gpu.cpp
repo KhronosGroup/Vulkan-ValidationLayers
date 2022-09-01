@@ -34,6 +34,23 @@ VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
     return features;
 }
 
+// This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
+bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
+    GetPhysicalDeviceFeatures2(features2);
+    if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
+        printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
+        return false;
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("At least Vulkan version 1.1 is required for GPU-AV\n");
+        return false;
+    } else if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");
+        return false;
+    }
+    return true;
+}
+
 TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
@@ -47,6 +64,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
 
     if (IsPlatform(kGalaxyS10)) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
@@ -54,10 +74,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     if (IsPlatform(kNexusPlayer)) {
         GTEST_SKIP() << "This test should not run on Nexus Player";
-    }
-
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
     auto maintenance4_features = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
@@ -79,9 +95,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -528,11 +541,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
 
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
@@ -731,10 +744,9 @@ void VkGpuAssistedLayerTest::ShaderBufferSizeTest(VkDeviceSize buffer_size, VkDe
 
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
-
     if (IsPlatform(kGalaxyS10)) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
@@ -908,8 +920,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -1157,9 +1169,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHan
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1242,9 +1258,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1336,9 +1356,13 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1450,10 +1474,14 @@ TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationBottomLeve
 TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationRestoresState) {
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     if (!InitFrameworkForRayTracingTest(this, false, nullptr, &validation_features)) {
         GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1680,8 +1708,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
     VkPhysicalDeviceVulkan13Features features13 = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
@@ -1787,12 +1815,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndexedIndirectCountDeviceLimitSubmit2) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
-    }
-
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
     }
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -1877,11 +1904,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCount) {
     AddRequiredExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -2039,13 +2066,12 @@ TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectFirstInstance) {
     if (IsPlatform(kGalaxyS10)) {
         GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
     GetPhysicalDeviceFeatures2(features2);
     features2.features.drawIndirectFirstInstance = VK_FALSE;
@@ -2155,8 +2181,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
     auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
@@ -2169,9 +2195,6 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
     auto c_queue = m_device->GetDefaultComputeQueue();
     if (nullptr == c_queue) {
         GTEST_SKIP() << "Compute not supported";
@@ -2375,6 +2398,9 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
     if (IsPlatform(kNexusPlayer)) {
         GTEST_SKIP() << "This test should not run on Nexus Player";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
 
     PFN_vkSetPhysicalDeviceFeaturesEXT fpvkSetPhysicalDeviceFeaturesEXT = nullptr;
