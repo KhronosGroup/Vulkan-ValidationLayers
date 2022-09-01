@@ -5402,7 +5402,8 @@ class ValidatorState {
     inline bool KhrExternalMem() const { return mem_ext_; }
     inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
     inline bool IsValidOrSpecial(uint32_t queue_family) const {
-        return IsValid(queue_family) || (mem_ext_ && QueueFamilyIsExternal(queue_family));
+        return IsValid(queue_family) || (mem_ext_ && QueueFamilyIsExternal(queue_family)) ||
+               (queue_family == VK_QUEUE_FAMILY_IGNORED);
     }
 
     // Helpers for LogMsg
