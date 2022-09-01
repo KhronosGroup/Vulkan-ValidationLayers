@@ -115,16 +115,18 @@ std::vector<VkLayerProperties> GetGlobalLayers() {
     VkResult err;
     uint32_t layer_count = 32;
     std::vector<VkLayerProperties> layers(layer_count);
-    do {
+    for (;;) {
         err = vk::EnumerateInstanceLayerProperties(&layer_count, layers.data());
-        if (err || 0 == layer_count) return {};
-        if (err == VK_INCOMPLETE) layer_count *= 2; // wasn't enough space, increase it
-        layers.resize(layer_count);
-
-    } while (VK_INCOMPLETE == err);
-
-    assert(!err);
-    return layers;
+        if (err == VK_SUCCESS) {
+            layers.resize(layer_count);
+            return layers;
+        } else if (err == VK_INCOMPLETE) {
+            layer_count *= 2;  // wasn't enough space, increase it
+            layers.resize(layer_count);
+        } else {
+            return {};
+        }
+    }
 }
 
 /*
@@ -141,15 +143,18 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
     VkResult err;
     uint32_t extension_count = 32;
     std::vector<VkExtensionProperties> extensions(extension_count);
-    do {
+    for (;;) {
         err = vk::EnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
-        if (err || 0 == extension_count) return {};
-        if (err == VK_INCOMPLETE) extension_count *= 2; // wasn't enough space, increase it
-        extensions.resize(extension_count);
-    } while (VK_INCOMPLETE == err);
-
-    assert(!err);
-    return extensions;
+        if (err == VK_SUCCESS) {
+            extensions.resize(extension_count);
+            return extensions;
+        } else if (err == VK_INCOMPLETE) {
+            extension_count *= 2;  // wasn't enough space, increase it
+            extensions.resize(extension_count);
+        } else {
+            return {};
+        }
+    }
 }
 
 /*
@@ -160,14 +165,18 @@ std::vector<VkExtensionProperties> PhysicalDevice::extensions(const char *pLayer
     VkResult err;
     uint32_t extension_count = 256;
     std::vector<VkExtensionProperties> extensions(extension_count);
-    do {
+    for (;;) {
         err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extension_count, extensions.data());
-        if (err || 0 == extension_count) return {};
-        if (err == VK_INCOMPLETE) extension_count *= 2; // wasn't enough space, increase it
-        extensions.resize(extension_count);
-    } while (VK_INCOMPLETE == err);
-
-    return extensions;
+        if (err == VK_SUCCESS) {
+            extensions.resize(extension_count);
+            return extensions;
+        } else if (err == VK_INCOMPLETE) {
+            extension_count *= 2;  // wasn't enough space, increase it
+            extensions.resize(extension_count);
+        } else {
+            return {};
+        }
+    }
 }
 
 bool PhysicalDevice::set_memory_type(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
@@ -197,14 +206,18 @@ std::vector<VkLayerProperties> PhysicalDevice::layers() const {
     VkResult err;
     uint32_t layer_count = 32;
     std::vector<VkLayerProperties> layers(layer_count);
-    do {
+    for (;;) {
         err = vk::EnumerateDeviceLayerProperties(handle(), &layer_count, layers.data());
-        if (err || 0 == layer_count) return {};
-        if (err == VK_INCOMPLETE) layer_count *= 2; // wasn't enough space, increase it
-        layers.resize(layer_count);
-    } while (VK_INCOMPLETE == err);
-
-    return layers;
+        if (err == VK_SUCCESS) {
+            layers.resize(layer_count);
+            return layers;
+        } else if (err == VK_INCOMPLETE) {
+            layer_count *= 2;  // wasn't enough space, increase it
+            layers.resize(layer_count);
+        } else {
+            return {};
+        }
+    }
 }
 
 QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props)
