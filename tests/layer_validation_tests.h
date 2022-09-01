@@ -349,6 +349,7 @@ class VkGpuAssistedLayerTest : public VkLayerTest {
                               VkDescriptorType descriptor_type, const char *fragment_shader, const char *expected_error);
 
   protected:
+    bool CanEnableGpuAV();
 };
 
 class VkDebugPrintfTest : public VkLayerTest {
