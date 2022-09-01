@@ -88,13 +88,13 @@ static const char *string_SyncHazardVUID(SyncHazard hazard) {
             return "SYNC-HAZARD-NONE";
             break;
         case SyncHazard::READ_AFTER_WRITE:
-            return "SYNC-HAZARD-READ_AFTER_WRITE";
+            return "SYNC-HAZARD-READ-AFTER-WRITE";
             break;
         case SyncHazard::WRITE_AFTER_READ:
-            return "SYNC-HAZARD-WRITE_AFTER_READ";
+            return "SYNC-HAZARD-WRITE-AFTER-READ";
             break;
         case SyncHazard::WRITE_AFTER_WRITE:
-            return "SYNC-HAZARD-WRITE_AFTER_WRITE";
+            return "SYNC-HAZARD-WRITE-AFTER-WRITE";
             break;
         case SyncHazard::READ_RACING_WRITE:
             return "SYNC-HAZARD-READ-RACING-WRITE";
