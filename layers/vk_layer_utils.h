@@ -517,7 +517,7 @@ class vl_concurrent_unordered_map {
         bool found = itr != maps[h].end();
 
         if (found) {
-            auto ret = std::move(FindResult(true, itr->second));
+            auto ret = FindResult(true, itr->second);
             maps[h].erase(itr);
             return ret;
         } else {

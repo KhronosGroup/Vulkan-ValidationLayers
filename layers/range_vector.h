@@ -285,7 +285,7 @@ class range_map {
             return split_it;  // this is a noop we're keeping the upper half which is the same as split_it;
         }
         // Save the contents of it and erase it
-        auto value = std::move(split_it->second);
+        auto value = split_it->second;
         auto next_it = impl_map_.erase(split_it);  // Keep this, just in case the split point results in an empty "keep" set
 
         if (lower_range.empty() && !SplitOp::keep_upper()) {
