@@ -141,9 +141,9 @@ public:
 
     std::shared_ptr<ObjectUseData> FindObject(T object) {
         assert(object_table.contains(object));
-        auto iter = std::move(object_table.find(object));
+        auto iter = object_table.find(object);
         if (iter != object_table.end()) {
-            return std::move(iter->second);
+            return iter->second;
         } else {
             object_data->LogError(object, kVUID_Threading_Info,
                     "Couldn't find %s Object 0x%" PRIxLEAST64
