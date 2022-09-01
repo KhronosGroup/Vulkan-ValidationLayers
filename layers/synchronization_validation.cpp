@@ -232,12 +232,12 @@ struct SyncNodeFormatter {
 
 std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formater) {
     if (formater.node) {
-        out << ", " << formater.label << ": " << formater.report_data->FormatHandle(formater.node->Handle()).c_str();
+        out << formater.label << ": " << formater.report_data->FormatHandle(formater.node->Handle()).c_str();
         if (formater.node->Destroyed()) {
             out << " (destroyed)";
         }
     } else {
-        out << ", " << formater.label << ": null handle";
+        out << formater.label << ": null handle";
     }
     return out;
 }
@@ -317,7 +317,7 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
     const auto &record = access_log_[tag];
     out << record;
     if (cb_state_.get() != record.cb_state) {
-        out << SyncNodeFormatter(*sync_state_, record.cb_state);
+        out << ", " << SyncNodeFormatter(*sync_state_, record.cb_state);
     }
     out << ", reset_no: " << std::to_string(record.reset_count);
     return out.str();
@@ -7269,7 +7269,7 @@ thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<Queu
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {
     SubmitInfoConverter submit_info(submitCount, pSubmits);
-    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, "VkQueueSubmit");
+    return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, "vkQueueSubmit");
 }
 
 bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
@@ -7384,11 +7384,11 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
 
 bool SyncValidator::PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                    VkFence fence) const {
-    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "VkQueueSubmit2KHR");
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "vkQueueSubmit2KHR");
 }
 bool SyncValidator::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
                                                 VkFence fence) const {
-    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "VkQueueSubmit2");
+    return ValidateQueueSubmit(queue, submitCount, pSubmits, fence, "vkQueueSubmit2");
 }
 
 void SyncValidator::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -7711,8 +7711,8 @@ std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
         out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index;
 
         // Commandbuffer Usages Information
-        out << record;
-        out << SyncNodeFormatter(*sync_state_, record.cb_state);
+        out << ", " << record;
+        out << ", " << SyncNodeFormatter(*sync_state_, record.cb_state);
         out << ", reset_no: " << std::to_string(record.reset_count);
     }
     return out.str();
