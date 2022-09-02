@@ -171,6 +171,7 @@ if(UNIX AND NOT APPLE) # i.e. Linux
 
     if(BUILD_WSI_XCB_SUPPORT)
         find_package(XCB REQUIRED)
+        include_directories(${XCB_INCLUDE_DIR})
     endif()
 
     if(BUILD_WSI_XLIB_SUPPORT)
