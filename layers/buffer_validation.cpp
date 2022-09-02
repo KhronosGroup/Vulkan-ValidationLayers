@@ -2751,11 +2751,18 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE *cb_node, c
     bool skip = false;
     if (base_layer >= img->createInfo.arrayLayers || layer_count > img->createInfo.arrayLayers ||
         (base_layer + layer_count) > img->createInfo.arrayLayers) {
-        skip |= LogError(cb_node->commandBuffer(), vuid,
-                         "In %s, pRegions[%u].%s.baseArrayLayer is %u and .layerCount is "
-                         "%u, but provided %s has %u array layers.",
-                         function, i, member, base_layer, layer_count, report_data->FormatHandle(img->image()).c_str(),
-                         img->createInfo.arrayLayers);
+        if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
+            skip |= LogError(cb_node->commandBuffer(), vuid,
+                             "In %s, pRegions[%u].%s.layerCount is VK_REMAINING_ARRAY_LAYERS, "
+                             "but this special value is not supported here.",
+                             function, i, member);
+        } else {
+            skip |= LogError(cb_node->commandBuffer(), vuid,
+                             "In %s, pRegions[%u].%s.baseArrayLayer is %u and .layerCount is "
+                             "%u, but provided %s has %u array layers.",
+                             function, i, member, base_layer, layer_count, report_data->FormatHandle(img->image()).c_str(),
+                             img->createInfo.arrayLayers);
+        }
     }
     return skip;
 }
