@@ -4362,8 +4362,17 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                 }
 
                 if (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-                    if (!mutable_descriptor_type) {
-                        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04593",
+                    if (mutable_descriptor_type) {
+                        if (i >= mutable_descriptor_type->mutableDescriptorTypeListCount) {
+                            skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07031",
+                                             "vkCreateDescriptorSetLayout(): pCreateInfo->pBindings[%" PRIu32
+                                             "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but "
+                                             "VkMutableDescriptorTypeCreateInfoVALVE::mutableDescriptorTypeListCount is %" PRIu32
+                                             " (not large enough to contain index %" PRIu32 ")",
+                                             i, mutable_descriptor_type->mutableDescriptorTypeListCount, i);
+                        }
+                    } else {
+                        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07031",
                                          "vkCreateDescriptorSetLayout(): pCreateInfo->pBindings[%" PRIu32
                                          "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but "
                                          "VkMutableDescriptorTypeCreateInfoVALVE is not included in the pNext chain.",
