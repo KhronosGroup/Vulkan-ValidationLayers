@@ -1902,6 +1902,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_AMD_gpu_shader_half_float", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
     {"VK_AMD_gpu_shader_int16", {kExtDeprecated, "VK_KHR_shader_float16_int8"}},
     {"VK_AMD_negative_viewport_height", {kExtObsoleted, "VK_KHR_maintenance1"}},
+    {"VK_ARM_rasterization_order_attachment_access", {kExtPromoted, "VK_EXT_rasterization_order_attachment_access"}},
     {"VK_EXT_4444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_buffer_device_address", {kExtDeprecated, "VK_KHR_buffer_device_address"}},
     {"VK_EXT_debug_marker", {kExtPromoted, "VK_EXT_debug_utils"}},

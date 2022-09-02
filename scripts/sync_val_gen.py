@@ -174,7 +174,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.3.224
+# Snipped from chapters/synchronization.txt -- tag v1.3.226
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - sync2-ify stage names
@@ -214,8 +214,8 @@ ordering of the stages matching the order specified here:
 
   * ename:VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT
   * ename:VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT
-  * ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV
-  * ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV
+  * ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT
+  * ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
   * ename:VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
   * ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
@@ -441,8 +441,8 @@ VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT
 VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT
 VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT
 VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT
-VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV
-VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV
+VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT
+VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
 VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
@@ -527,8 +527,8 @@ snippet_pipeline_stages_supported = '''
 |ename:VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT           | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV            | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR            | ename:VK_QUEUE_GRAPHICS_BIT
-|ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
-|ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT                   | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT                   | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
@@ -879,8 +879,8 @@ def ShaderStageAndSyncStageAccessMap(config):
         output.append(ShaderStageToSyncStageAccess('MISS_BIT_KHR', 'RAY_TRACING_SHADER'))
         output.append(ShaderStageToSyncStageAccess('INTERSECTION_BIT_KHR', 'RAY_TRACING_SHADER'))
         output.append(ShaderStageToSyncStageAccess('CALLABLE_BIT_KHR', 'RAY_TRACING_SHADER'))
-        output.append(ShaderStageToSyncStageAccess('TASK_BIT_NV', 'TASK_SHADER_NV'))
-        output.append(ShaderStageToSyncStageAccess('MESH_BIT_NV', 'MESH_SHADER_NV'))
+        output.append(ShaderStageToSyncStageAccess('TASK_BIT_EXT', 'TASK_SHADER_EXT'))
+        output.append(ShaderStageToSyncStageAccess('MESH_BIT_EXT', 'MESH_SHADER_EXT'))
         output.append('};\n')
     return output
 

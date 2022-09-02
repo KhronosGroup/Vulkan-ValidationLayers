@@ -751,6 +751,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT:
@@ -891,8 +893,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT:
@@ -1472,6 +1478,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_VIDEO_DECODE_INFO_KHR";
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR";
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR:
             return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR";
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -1574,6 +1584,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR:
             return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR";
+#endif // VK_ENABLE_BETA_EXTENSIONS
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR";
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR:
@@ -3047,14 +3061,14 @@ static inline const char* string_VkPipelineStageFlagBits(VkPipelineStageFlagBits
             return "VK_PIPELINE_STAGE_HOST_BIT";
         case VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT:
             return "VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT";
-        case VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_NONE:
             return "VK_PIPELINE_STAGE_NONE";
         case VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR:
             return "VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR";
-        case VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT:
             return "VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT";
         case VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -3222,6 +3236,10 @@ static inline const char* string_VkQueryPipelineStatisticFlagBits(VkQueryPipelin
             return "VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_PRIMITIVES_BIT";
         case VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT:
             return "VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT";
+        case VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT:
+            return "VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT";
+        case VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT:
+            return "VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT";
         case VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT:
             return "VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT";
         case VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_EVALUATION_SHADER_INVOCATIONS_BIT:
@@ -3263,6 +3281,8 @@ static inline const char* string_VkQueryType(VkQueryType input_value)
             return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR";
         case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
             return "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR";
+        case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+            return "VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT";
         case VK_QUERY_TYPE_OCCLUSION:
             return "VK_QUERY_TYPE_OCCLUSION";
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
@@ -3894,16 +3914,16 @@ static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits inp
             return "VK_SHADER_STAGE_GEOMETRY_BIT";
         case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
             return "VK_SHADER_STAGE_INTERSECTION_BIT_KHR";
-        case VK_SHADER_STAGE_MESH_BIT_NV:
-            return "VK_SHADER_STAGE_MESH_BIT_NV";
+        case VK_SHADER_STAGE_MESH_BIT_EXT:
+            return "VK_SHADER_STAGE_MESH_BIT_EXT";
         case VK_SHADER_STAGE_MISS_BIT_KHR:
             return "VK_SHADER_STAGE_MISS_BIT_KHR";
         case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
             return "VK_SHADER_STAGE_RAYGEN_BIT_KHR";
         case VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI:
             return "VK_SHADER_STAGE_SUBPASS_SHADING_BIT_HUAWEI";
-        case VK_SHADER_STAGE_TASK_BIT_NV:
-            return "VK_SHADER_STAGE_TASK_BIT_NV";
+        case VK_SHADER_STAGE_TASK_BIT_EXT:
+            return "VK_SHADER_STAGE_TASK_BIT_EXT";
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
             return "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT";
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
@@ -5667,8 +5687,8 @@ static inline const char* string_VkPipelineStageFlagBits2(uint64_t input_value)
             return "VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI";
         case VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT:
             return "VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT";
-        case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_2_NONE:
             return "VK_PIPELINE_STAGE_2_NONE";
         case VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT:
@@ -5679,8 +5699,8 @@ static inline const char* string_VkPipelineStageFlagBits2(uint64_t input_value)
             return "VK_PIPELINE_STAGE_2_RESOLVE_BIT";
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI:
             return "VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI";
-        case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
             return "VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT";
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -6515,6 +6535,43 @@ static inline std::string string_VkVideoDecodeCapabilityFlagsKHR(VkVideoDecodeCa
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+static inline const char* string_VkVideoDecodeUsageFlagBitsKHR(VkVideoDecodeUsageFlagBitsKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_VIDEO_DECODE_USAGE_DEFAULT_KHR:
+            return "VK_VIDEO_DECODE_USAGE_DEFAULT_KHR";
+        case VK_VIDEO_DECODE_USAGE_OFFLINE_BIT_KHR:
+            return "VK_VIDEO_DECODE_USAGE_OFFLINE_BIT_KHR";
+        case VK_VIDEO_DECODE_USAGE_STREAMING_BIT_KHR:
+            return "VK_VIDEO_DECODE_USAGE_STREAMING_BIT_KHR";
+        case VK_VIDEO_DECODE_USAGE_TRANSCODING_BIT_KHR:
+            return "VK_VIDEO_DECODE_USAGE_TRANSCODING_BIT_KHR";
+        default:
+            return "Unhandled VkVideoDecodeUsageFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkVideoDecodeUsageFlagsKHR(VkVideoDecodeUsageFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkVideoDecodeUsageFlagBitsKHR(static_cast<VkVideoDecodeUsageFlagBitsKHR>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkVideoDecodeUsageFlagBitsKHR(static_cast<VkVideoDecodeUsageFlagBitsKHR>(0)));
+    return ret;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 static inline const char* string_VkRenderingFlagBitsKHR(VkRenderingFlagBitsKHR input_value)
 {
     switch (input_value)
@@ -7318,6 +7375,105 @@ static inline std::string string_VkVideoEncodeRateControlModeFlagsKHR(VkVideoEnc
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+static inline const char* string_VkVideoEncodeUsageFlagBitsKHR(VkVideoEncodeUsageFlagBitsKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_VIDEO_ENCODE_USAGE_CONFERENCING_BIT_KHR:
+            return "VK_VIDEO_ENCODE_USAGE_CONFERENCING_BIT_KHR";
+        case VK_VIDEO_ENCODE_USAGE_DEFAULT_KHR:
+            return "VK_VIDEO_ENCODE_USAGE_DEFAULT_KHR";
+        case VK_VIDEO_ENCODE_USAGE_RECORDING_BIT_KHR:
+            return "VK_VIDEO_ENCODE_USAGE_RECORDING_BIT_KHR";
+        case VK_VIDEO_ENCODE_USAGE_STREAMING_BIT_KHR:
+            return "VK_VIDEO_ENCODE_USAGE_STREAMING_BIT_KHR";
+        case VK_VIDEO_ENCODE_USAGE_TRANSCODING_BIT_KHR:
+            return "VK_VIDEO_ENCODE_USAGE_TRANSCODING_BIT_KHR";
+        default:
+            return "Unhandled VkVideoEncodeUsageFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkVideoEncodeUsageFlagsKHR(VkVideoEncodeUsageFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkVideoEncodeUsageFlagBitsKHR(static_cast<VkVideoEncodeUsageFlagBitsKHR>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkVideoEncodeUsageFlagBitsKHR(static_cast<VkVideoEncodeUsageFlagBitsKHR>(0)));
+    return ret;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+static inline const char* string_VkVideoEncodeContentFlagBitsKHR(VkVideoEncodeContentFlagBitsKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_VIDEO_ENCODE_CONTENT_CAMERA_BIT_KHR:
+            return "VK_VIDEO_ENCODE_CONTENT_CAMERA_BIT_KHR";
+        case VK_VIDEO_ENCODE_CONTENT_DEFAULT_KHR:
+            return "VK_VIDEO_ENCODE_CONTENT_DEFAULT_KHR";
+        case VK_VIDEO_ENCODE_CONTENT_DESKTOP_BIT_KHR:
+            return "VK_VIDEO_ENCODE_CONTENT_DESKTOP_BIT_KHR";
+        case VK_VIDEO_ENCODE_CONTENT_RENDERED_BIT_KHR:
+            return "VK_VIDEO_ENCODE_CONTENT_RENDERED_BIT_KHR";
+        default:
+            return "Unhandled VkVideoEncodeContentFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkVideoEncodeContentFlagsKHR(VkVideoEncodeContentFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkVideoEncodeContentFlagBitsKHR(static_cast<VkVideoEncodeContentFlagBitsKHR>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkVideoEncodeContentFlagBitsKHR(static_cast<VkVideoEncodeContentFlagBitsKHR>(0)));
+    return ret;
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+static inline const char* string_VkVideoEncodeTuningModeKHR(VkVideoEncodeTuningModeKHR input_value)
+{
+    switch (input_value)
+    {
+        case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
+            return "VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR";
+        case VK_VIDEO_ENCODE_TUNING_MODE_HIGH_QUALITY_KHR:
+            return "VK_VIDEO_ENCODE_TUNING_MODE_HIGH_QUALITY_KHR";
+        case VK_VIDEO_ENCODE_TUNING_MODE_LOSSLESS_KHR:
+            return "VK_VIDEO_ENCODE_TUNING_MODE_LOSSLESS_KHR";
+        case VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR:
+            return "VK_VIDEO_ENCODE_TUNING_MODE_LOW_LATENCY_KHR";
+        case VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR:
+            return "VK_VIDEO_ENCODE_TUNING_MODE_ULTRA_LOW_LATENCY_KHR";
+        default:
+            return "Unhandled VkVideoEncodeTuningModeKHR";
+    }
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
 static inline const char* string_VkPipelineStageFlagBits2KHR(uint64_t input_value)
 {
     switch (input_value)
@@ -7368,8 +7524,8 @@ static inline const char* string_VkPipelineStageFlagBits2KHR(uint64_t input_valu
             return "VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI";
         case VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT:
             return "VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT";
-        case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_2_NONE:
             return "VK_PIPELINE_STAGE_2_NONE";
         case VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT:
@@ -7380,8 +7536,8 @@ static inline const char* string_VkPipelineStageFlagBits2KHR(uint64_t input_valu
             return "VK_PIPELINE_STAGE_2_RESOLVE_BIT";
         case VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI:
             return "VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI";
-        case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV:
-            return "VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV";
+        case VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT:
+            return "VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT";
         case VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT:
             return "VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT";
         case VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT:
@@ -9439,6 +9595,8 @@ static inline const char* string_VkIndirectCommandsTokenTypeNV(VkIndirectCommand
     {
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV:
             return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV";
+        case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV:
+            return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_MESH_TASKS_NV";
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV:
             return "VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV";
         case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV:

@@ -163,7 +163,7 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
  */
 std::vector<VkExtensionProperties> PhysicalDevice::extensions(const char *pLayerName) const {
     VkResult err;
-    uint32_t extension_count = 256;
+    uint32_t extension_count = 512;
     std::vector<VkExtensionProperties> extensions(extension_count);
     for (;;) {
         err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extension_count, extensions.data());

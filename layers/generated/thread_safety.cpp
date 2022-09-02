@@ -9385,3 +9385,71 @@ void ThreadSafety::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(
     FinishWriteObject(commandBuffer, "vkCmdSetRayTracingPipelineStackSizeKHR");
     // Host access to commandBuffer must be externally synchronized
 }
+
+void ThreadSafety::PreCallRecordCmdDrawMeshTasksEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    StartWriteObject(commandBuffer, "vkCmdDrawMeshTasksEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawMeshTasksEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    FinishWriteObject(commandBuffer, "vkCmdDrawMeshTasksEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDrawMeshTasksIndirectEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    uint32_t                                    drawCount,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer, "vkCmdDrawMeshTasksIndirectEXT");
+    StartReadObject(buffer, "vkCmdDrawMeshTasksIndirectEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawMeshTasksIndirectEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    uint32_t                                    drawCount,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer, "vkCmdDrawMeshTasksIndirectEXT");
+    FinishReadObject(buffer, "vkCmdDrawMeshTasksIndirectEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    StartReadObject(buffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    StartReadObject(countBuffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    FinishReadObject(buffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    FinishReadObject(countBuffer, "vkCmdDrawMeshTasksIndirectCountEXT");
+    // Host access to commandBuffer must be externally synchronized
+}

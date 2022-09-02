@@ -404,6 +404,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_conservative_rasterization{kNotEnabled};
     ExtEnabled vk_ext_custom_border_color{kNotEnabled};
     ExtEnabled vk_ext_debug_marker{kNotEnabled};
+    ExtEnabled vk_ext_depth_clamp_zero_one{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_control{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
@@ -437,6 +438,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_load_store_op_none{kNotEnabled};
     ExtEnabled vk_ext_memory_budget{kNotEnabled};
     ExtEnabled vk_ext_memory_priority{kNotEnabled};
+    ExtEnabled vk_ext_mesh_shader{kNotEnabled};
     ExtEnabled vk_ext_metal_objects{kNotEnabled};
     ExtEnabled vk_ext_multi_draw{kNotEnabled};
     ExtEnabled vk_ext_multisampled_render_to_single_sampled{kNotEnabled};
@@ -703,6 +705,7 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_custom_border_color, {})},
             {VK_EXT_DEBUG_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_debug_marker, {{
                            {&DeviceExtensions::vk_ext_debug_report, VK_EXT_DEBUG_REPORT_EXTENSION_NAME}}})},
+            {VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clamp_zero_one, {})},
             {VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_control, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_enable, {})},
@@ -775,6 +778,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_budget, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_EXT_MESH_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_mesh_shader, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {VK_EXT_METAL_OBJECTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
@@ -1354,6 +1359,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME,
     VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+    VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
@@ -1389,6 +1395,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
     VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
     VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
+    VK_EXT_MESH_SHADER_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_METAL_EXT
     VK_EXT_METAL_OBJECTS_EXTENSION_NAME,
 #endif
