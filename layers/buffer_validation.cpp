@@ -6228,25 +6228,21 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
 
         if (image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
-            if (pCreateInfo->subresourceRange.levelCount != 1) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01584",
+            if (!FormatIsCompressed(view_format)) {
+                if (pCreateInfo->subresourceRange.levelCount != 1) {
+                    skip |=
+                        LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-07072",
                                  "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "but subresourcesRange.levelCount (%" PRIu32 ") is not 1.",
+                                 "and format is not compressed, but subresourcesRange.levelCount (%" PRIu32 ") is not 1.",
                                  pCreateInfo->subresourceRange.levelCount);
-            }
-            if (pCreateInfo->subresourceRange.layerCount != 1) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01584",
+                }
+                if (pCreateInfo->subresourceRange.layerCount != 1) {
+                    skip |=
+                        LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-07072",
                                  "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit, "
-                                 "but subresourcesRange.layerCount (%" PRIu32 ") is not 1.",
+                                 "and format is not compressed, but subresourcesRange.layerCount (%" PRIu32 ") is not 1.",
                                  pCreateInfo->subresourceRange.layerCount);
-            }
-
-            if (!FormatIsCompressed(view_format) && pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_3D) {
-                skip |=
-                    LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04739",
-                             "vkCreateImageView(): Image was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
-                             "non-compressed format (%s), but pCreateInfo->viewType is VK_IMAGE_VIEW_TYPE_3D.",
-                             string_VkFormat(image_format));
+                }
             }
 
             const bool class_compatible = FormatCompatibilityClass(view_format) == FormatCompatibilityClass(image_format);
