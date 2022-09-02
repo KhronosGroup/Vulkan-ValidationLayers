@@ -439,28 +439,26 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsWriteHazard(SyncStageAccessFlags usage) const { return (usage & ~write_barriers).any(); }
     bool IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const;
 
-    // This form is only valid when queue submit order is known...
-    bool IsWriteBarrierHazard(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const {
-        // If the previous write is *not* a layout transition
-        // *AND* is *not* in the 1st access scope
-        // *AND* the current barrier is not in the dependency chain
-        // *AND* the there is no prior memory barrier for the previous write in the dependency chain
-        // then the barrier access is unsafe (R/W after W)
-        return (last_write != SYNC_IMAGE_LAYOUT_TRANSITION_BIT) && !WriteInScope(src_access_scope) &&
-               !WriteInChainedScope(src_exec_scope, src_access_scope);
+    // Apply ordering scope to write hazard detection
+    bool IsOrderedWriteHazard(VkPipelineStageFlags2KHR src_exec_scope, const SyncStageAccessFlags &src_access_scope) const {
+        // Must be neither in the access scope, nor in the chained access scope
+        return !WriteInScope(src_access_scope) && !WriteInChainedScope(src_exec_scope, src_access_scope);
     }
 
     bool IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2KHR src_exec_scope,
                               const SyncStageAccessFlags &src_access_scope) const {
-        if (queue_id == write_queue) {
-            return IsWriteBarrierHazard(src_exec_scope, src_access_scope);
-        }
-        // Accesses with queue submit or...
-        // If the last access is a layout transition, then exec_scope is all that is needed, otherwise  access scope is needed
+        // Special rules for sequential ILT's
         if (last_write == SYNC_IMAGE_LAYOUT_TRANSITION_BIT) {
-            return !WriteInChain(src_exec_scope);
+            if (queue_id == write_queue) {
+                // In queue, they are implicitly ordered
+                return false;
+            } else {
+                // In dep chain means that the ILT is *available*
+                return !WriteInChain(src_exec_scope);
+            }
         }
-        return !WriteInChainedScope(src_exec_scope, src_access_scope);
+        // Otherwise treat as an ordinary write hazard check with ordering rules.
+        return IsOrderedWriteHazard(src_exec_scope, src_access_scope);
     }
     bool ReadInSourceScopeOrChain(VkPipelineStageFlags2KHR src_exec_scope) const {
         return (0 != (src_exec_scope & (last_read_stages | read_execution_barriers)));
