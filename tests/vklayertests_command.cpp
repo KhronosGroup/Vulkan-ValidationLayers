@@ -11572,3 +11572,84 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
     m_commandBuffer->reset();
     secondary.reset();
 }
+
+TEST_F(VkLayerTest, CopyImageRemainingLayers) {
+    TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = image_format;
+    ci.extent = {32, 32, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 8;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    ci.queueFamilyIndexCount = 0;
+    ci.pQueueFamilyIndices = NULL;
+    ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    // 2D images
+    VkImageObj image_a(m_device);
+    VkImageObj image_b(m_device);
+
+    // Copy from a to b
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_a.init(&ci);
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_b.init(&ci);
+
+    ASSERT_TRUE(image_a.initialized());
+    ASSERT_TRUE(image_b.initialized());
+
+    m_commandBuffer->begin();
+
+    image_a.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image_b.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy copy_region{};
+    copy_region.extent = ci.extent;
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy_region.srcSubresource.baseArrayLayer = 7;
+    copy_region.dstSubresource.baseArrayLayer = 7;
+    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayers
+    copy_region.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+    // These vuids will trigger a special message stating that VK_REMAINING_ARRAY_LAYERS is unsupported
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcSubresource-01698");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstSubresource-01699");
+    m_commandBuffer->CopyImage(image_a.image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b.image(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    bci.size = 32 * 32 * 4;
+    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    VkBufferObj buffer(*m_device, bci);
+
+    VkBufferImageCopy buffer_copy{};
+    buffer_copy.bufferImageHeight = ci.extent.height;
+    buffer_copy.bufferRowLength = ci.extent.width;
+    buffer_copy.imageExtent = ci.extent;
+    buffer_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    buffer_copy.imageSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;  // This value is unsupported by VkImageSubresourceLayers
+    buffer_copy.imageSubresource.mipLevel = 0;
+    buffer_copy.imageSubresource.baseArrayLayer = 5;
+
+    // This error will trigger first stating that the copy is too big for the buffer, because of VK_REMAINING_ARRAY_LAYERS
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-00171");
+    // This error will trigger second stating that VK_REMAINING_ARRAY_LAYERS is unsupported here
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
+    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image_b.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                             &buffer_copy);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
