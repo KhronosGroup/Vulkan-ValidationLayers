@@ -1334,6 +1334,15 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetRayTracingPipelineStackSizeKHR,
     InterceptIdPreCallRecordCmdSetRayTracingPipelineStackSizeKHR,
     InterceptIdPostCallRecordCmdSetRayTracingPipelineStackSizeKHR,
+    InterceptIdPreCallValidateCmdDrawMeshTasksEXT,
+    InterceptIdPreCallRecordCmdDrawMeshTasksEXT,
+    InterceptIdPostCallRecordCmdDrawMeshTasksEXT,
+    InterceptIdPreCallValidateCmdDrawMeshTasksIndirectEXT,
+    InterceptIdPreCallRecordCmdDrawMeshTasksIndirectEXT,
+    InterceptIdPostCallRecordCmdDrawMeshTasksIndirectEXT,
+    InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCountEXT,
+    InterceptIdPreCallRecordCmdDrawMeshTasksIndirectCountEXT,
+    InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountEXT,
     InterceptIdCount,
 } InterceptId;
 
@@ -2822,5 +2831,14 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetRayTracingPipelineStackSizeKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetRayTracingPipelineStackSizeKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetRayTracingPipelineStackSizeKHR);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMeshTasksEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMeshTasksIndirectEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawMeshTasksIndirectCountEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawMeshTasksIndirectCountEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawMeshTasksIndirectCountEXT);
 };
 

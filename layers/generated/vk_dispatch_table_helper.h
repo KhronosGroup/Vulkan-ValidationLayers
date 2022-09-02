@@ -566,6 +566,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetRayTracingCaptureReplayShaderGroupH
 static VKAPI_ATTR void VKAPI_CALL StubCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress) {  };
 static VKAPI_ATTR VkDeviceSize VKAPI_CALL StubGetRayTracingShaderGroupStackSizeKHR(VkDevice device, VkPipeline pipeline, uint32_t group, VkShaderGroupShaderKHR groupShader) { return 0; };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRayTracingPipelineStackSizeKHR(VkCommandBuffer commandBuffer, uint32_t pipelineStackSize) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {  };
 
 
 
@@ -629,7 +632,10 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkCmdDrawIndirectCount", "VK_VERSION_1_2"},
     {"vkCmdDrawIndirectCountAMD", "VK_AMD_draw_indirect_count"},
     {"vkCmdDrawIndirectCountKHR", "VK_KHR_draw_indirect_count"},
+    {"vkCmdDrawMeshTasksEXT", "VK_EXT_mesh_shader"},
+    {"vkCmdDrawMeshTasksIndirectCountEXT", "VK_EXT_mesh_shader"},
     {"vkCmdDrawMeshTasksIndirectCountNV", "VK_NV_mesh_shader"},
+    {"vkCmdDrawMeshTasksIndirectEXT", "VK_EXT_mesh_shader"},
     {"vkCmdDrawMeshTasksIndirectNV", "VK_NV_mesh_shader"},
     {"vkCmdDrawMeshTasksNV", "VK_NV_mesh_shader"},
     {"vkCmdDrawMultiEXT", "VK_EXT_multi_draw"},
@@ -1764,6 +1770,12 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetRayTracingShaderGroupStackSizeKHR == nullptr) { table->GetRayTracingShaderGroupStackSizeKHR = (PFN_vkGetRayTracingShaderGroupStackSizeKHR)StubGetRayTracingShaderGroupStackSizeKHR; }
     table->CmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR) gpa(device, "vkCmdSetRayTracingPipelineStackSizeKHR");
     if (table->CmdSetRayTracingPipelineStackSizeKHR == nullptr) { table->CmdSetRayTracingPipelineStackSizeKHR = (PFN_vkCmdSetRayTracingPipelineStackSizeKHR)StubCmdSetRayTracingPipelineStackSizeKHR; }
+    table->CmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT) gpa(device, "vkCmdDrawMeshTasksEXT");
+    if (table->CmdDrawMeshTasksEXT == nullptr) { table->CmdDrawMeshTasksEXT = (PFN_vkCmdDrawMeshTasksEXT)StubCmdDrawMeshTasksEXT; }
+    table->CmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT) gpa(device, "vkCmdDrawMeshTasksIndirectEXT");
+    if (table->CmdDrawMeshTasksIndirectEXT == nullptr) { table->CmdDrawMeshTasksIndirectEXT = (PFN_vkCmdDrawMeshTasksIndirectEXT)StubCmdDrawMeshTasksIndirectEXT; }
+    table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT) gpa(device, "vkCmdDrawMeshTasksIndirectCountEXT");
+    if (table->CmdDrawMeshTasksIndirectCountEXT == nullptr) { table->CmdDrawMeshTasksIndirectCountEXT = (PFN_vkCmdDrawMeshTasksIndirectCountEXT)StubCmdDrawMeshTasksIndirectCountEXT; }
 }
 
 

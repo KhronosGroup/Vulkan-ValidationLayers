@@ -981,6 +981,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdTraceRaysIndirectKHR CmdTraceRaysIndirectKHR;
     PFN_vkGetRayTracingShaderGroupStackSizeKHR GetRayTracingShaderGroupStackSizeKHR;
     PFN_vkCmdSetRayTracingPipelineStackSizeKHR CmdSetRayTracingPipelineStackSizeKHR;
+
+    // ---- VK_EXT_mesh_shader extension commands
+    PFN_vkCmdDrawMeshTasksEXT CmdDrawMeshTasksEXT;
+    PFN_vkCmdDrawMeshTasksIndirectEXT CmdDrawMeshTasksIndirectEXT;
+    PFN_vkCmdDrawMeshTasksIndirectCountEXT CmdDrawMeshTasksIndirectCountEXT;
 } VkLayerDispatchTable;
 
 

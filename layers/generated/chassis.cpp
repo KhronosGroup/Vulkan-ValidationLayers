@@ -12856,6 +12856,7 @@ VKAPI_ATTR void VKAPI_CALL GetDescriptorSetHostMappingVALVE(
 
 
 
+
 VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
@@ -13446,6 +13447,80 @@ VKAPI_ATTR void VKAPI_CALL CmdSetRayTracingPipelineStackSizeKHR(
     }
 }
 
+
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    }
+    DispatchCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    uint32_t                                    drawCount,
+    uint32_t                                    stride) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+    }
+    DispatchCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawMeshTasksIndirectCountEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawMeshTasksIndirectCountEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawMeshTasksIndirectCountEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    }
+    DispatchCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawMeshTasksIndirectCountEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    }
+}
 
 // Map of intercepted ApiName to its associated function data
 #ifdef _MSC_VER
@@ -14125,6 +14200,9 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdTraceRaysIndirectKHR", {kFuncTypeDev, (void*)CmdTraceRaysIndirectKHR}},
     {"vkGetRayTracingShaderGroupStackSizeKHR", {kFuncTypeDev, (void*)GetRayTracingShaderGroupStackSizeKHR}},
     {"vkCmdSetRayTracingPipelineStackSizeKHR", {kFuncTypeDev, (void*)CmdSetRayTracingPipelineStackSizeKHR}},
+    {"vkCmdDrawMeshTasksEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksEXT}},
+    {"vkCmdDrawMeshTasksIndirectEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectEXT}},
+    {"vkCmdDrawMeshTasksIndirectCountEXT", {kFuncTypeDev, (void*)CmdDrawMeshTasksIndirectCountEXT}},
 };
 
 

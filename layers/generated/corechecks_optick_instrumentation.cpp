@@ -8896,4 +8896,52 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetRayTracingPipelineStackSi
     CoreChecks::PostCallRecordCmdSetRayTracingPipelineStackSizeKHR(commandBuffer, pipelineStackSize);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
+}
+
+bool CoreChecksOptickInstrumented::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount, uint32_t stride) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCmdDrawMeshTasksIndirectCountEXT(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+}
+
 #endif // INSTRUMENT_OPTICK

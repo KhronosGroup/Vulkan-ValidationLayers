@@ -23319,6 +23319,66 @@ void safe_VkVideoDecodeCapabilitiesKHR::initialize(const safe_VkVideoDecodeCapab
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
+safe_VkVideoDecodeUsageInfoKHR::safe_VkVideoDecodeUsageInfoKHR(const VkVideoDecodeUsageInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    videoUsageHints(in_struct->videoUsageHints)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkVideoDecodeUsageInfoKHR::safe_VkVideoDecodeUsageInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR),
+    pNext(nullptr),
+    videoUsageHints()
+{}
+
+safe_VkVideoDecodeUsageInfoKHR::safe_VkVideoDecodeUsageInfoKHR(const safe_VkVideoDecodeUsageInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    videoUsageHints = copy_src.videoUsageHints;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoDecodeUsageInfoKHR& safe_VkVideoDecodeUsageInfoKHR::operator=(const safe_VkVideoDecodeUsageInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    videoUsageHints = copy_src.videoUsageHints;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoDecodeUsageInfoKHR::~safe_VkVideoDecodeUsageInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoDecodeUsageInfoKHR::initialize(const VkVideoDecodeUsageInfoKHR* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    videoUsageHints = in_struct->videoUsageHints;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkVideoDecodeUsageInfoKHR::initialize(const safe_VkVideoDecodeUsageInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    videoUsageHints = copy_src->videoUsageHints;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
 safe_VkVideoDecodeInfoKHR::safe_VkVideoDecodeInfoKHR(const VkVideoDecodeInfoKHR* in_struct) :
     sType(in_struct->sType),
     flags(in_struct->flags),
@@ -28542,6 +28602,78 @@ void safe_VkVideoEncodeCapabilitiesKHR::initialize(const safe_VkVideoEncodeCapab
     rateControlLayerCount = copy_src->rateControlLayerCount;
     qualityLevelCount = copy_src->qualityLevelCount;
     inputImageDataFillAlignment = copy_src->inputImageDataFillAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
+
+safe_VkVideoEncodeUsageInfoKHR::safe_VkVideoEncodeUsageInfoKHR(const VkVideoEncodeUsageInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    videoUsageHints(in_struct->videoUsageHints),
+    videoContentHints(in_struct->videoContentHints),
+    tuningMode(in_struct->tuningMode)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkVideoEncodeUsageInfoKHR::safe_VkVideoEncodeUsageInfoKHR() :
+    sType(VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR),
+    pNext(nullptr),
+    videoUsageHints(),
+    videoContentHints(),
+    tuningMode()
+{}
+
+safe_VkVideoEncodeUsageInfoKHR::safe_VkVideoEncodeUsageInfoKHR(const safe_VkVideoEncodeUsageInfoKHR& copy_src)
+{
+    sType = copy_src.sType;
+    videoUsageHints = copy_src.videoUsageHints;
+    videoContentHints = copy_src.videoContentHints;
+    tuningMode = copy_src.tuningMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkVideoEncodeUsageInfoKHR& safe_VkVideoEncodeUsageInfoKHR::operator=(const safe_VkVideoEncodeUsageInfoKHR& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    videoUsageHints = copy_src.videoUsageHints;
+    videoContentHints = copy_src.videoContentHints;
+    tuningMode = copy_src.tuningMode;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkVideoEncodeUsageInfoKHR::~safe_VkVideoEncodeUsageInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkVideoEncodeUsageInfoKHR::initialize(const VkVideoEncodeUsageInfoKHR* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    videoUsageHints = in_struct->videoUsageHints;
+    videoContentHints = in_struct->videoContentHints;
+    tuningMode = in_struct->tuningMode;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkVideoEncodeUsageInfoKHR::initialize(const safe_VkVideoEncodeUsageInfoKHR* copy_src)
+{
+    sType = copy_src->sType;
+    videoUsageHints = copy_src->videoUsageHints;
+    videoContentHints = copy_src->videoContentHints;
+    tuningMode = copy_src->tuningMode;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -53315,6 +53447,62 @@ void safe_VkDescriptorSetLayoutHostMappingInfoVALVE::initialize(const safe_VkDes
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT(const VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    depthClampZeroOne(in_struct->depthClampZeroOne)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT),
+    pNext(nullptr),
+    depthClampZeroOne()
+{}
+
+safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT(const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    depthClampZeroOne = copy_src.depthClampZeroOne;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::operator=(const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    depthClampZeroOne = copy_src.depthClampZeroOne;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::~safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::initialize(const VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    depthClampZeroOne = in_struct->depthClampZeroOne;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT::initialize(const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    depthClampZeroOne = copy_src->depthClampZeroOne;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT::safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT(const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     nonSeamlessCubeMap(in_struct->nonSeamlessCubeMap)
@@ -56715,6 +56903,340 @@ void safe_VkPhysicalDeviceRayQueryFeaturesKHR::initialize(const safe_VkPhysicalD
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceMeshShaderFeaturesEXT::safe_VkPhysicalDeviceMeshShaderFeaturesEXT(const VkPhysicalDeviceMeshShaderFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    taskShader(in_struct->taskShader),
+    meshShader(in_struct->meshShader),
+    multiviewMeshShader(in_struct->multiviewMeshShader),
+    primitiveFragmentShadingRateMeshShader(in_struct->primitiveFragmentShadingRateMeshShader),
+    meshShaderQueries(in_struct->meshShaderQueries)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesEXT::safe_VkPhysicalDeviceMeshShaderFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT),
+    pNext(nullptr),
+    taskShader(),
+    meshShader(),
+    multiviewMeshShader(),
+    primitiveFragmentShadingRateMeshShader(),
+    meshShaderQueries()
+{}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesEXT::safe_VkPhysicalDeviceMeshShaderFeaturesEXT(const safe_VkPhysicalDeviceMeshShaderFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    taskShader = copy_src.taskShader;
+    meshShader = copy_src.meshShader;
+    multiviewMeshShader = copy_src.multiviewMeshShader;
+    primitiveFragmentShadingRateMeshShader = copy_src.primitiveFragmentShadingRateMeshShader;
+    meshShaderQueries = copy_src.meshShaderQueries;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesEXT& safe_VkPhysicalDeviceMeshShaderFeaturesEXT::operator=(const safe_VkPhysicalDeviceMeshShaderFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    taskShader = copy_src.taskShader;
+    meshShader = copy_src.meshShader;
+    multiviewMeshShader = copy_src.multiviewMeshShader;
+    primitiveFragmentShadingRateMeshShader = copy_src.primitiveFragmentShadingRateMeshShader;
+    meshShaderQueries = copy_src.meshShaderQueries;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMeshShaderFeaturesEXT::~safe_VkPhysicalDeviceMeshShaderFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderFeaturesEXT::initialize(const VkPhysicalDeviceMeshShaderFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    taskShader = in_struct->taskShader;
+    meshShader = in_struct->meshShader;
+    multiviewMeshShader = in_struct->multiviewMeshShader;
+    primitiveFragmentShadingRateMeshShader = in_struct->primitiveFragmentShadingRateMeshShader;
+    meshShaderQueries = in_struct->meshShaderQueries;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderFeaturesEXT::initialize(const safe_VkPhysicalDeviceMeshShaderFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    taskShader = copy_src->taskShader;
+    meshShader = copy_src->meshShader;
+    multiviewMeshShader = copy_src->multiviewMeshShader;
+    primitiveFragmentShadingRateMeshShader = copy_src->primitiveFragmentShadingRateMeshShader;
+    meshShaderQueries = copy_src->meshShaderQueries;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesEXT::safe_VkPhysicalDeviceMeshShaderPropertiesEXT(const VkPhysicalDeviceMeshShaderPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    maxTaskWorkGroupTotalCount(in_struct->maxTaskWorkGroupTotalCount),
+    maxTaskWorkGroupInvocations(in_struct->maxTaskWorkGroupInvocations),
+    maxTaskPayloadSize(in_struct->maxTaskPayloadSize),
+    maxTaskSharedMemorySize(in_struct->maxTaskSharedMemorySize),
+    maxTaskPayloadAndSharedMemorySize(in_struct->maxTaskPayloadAndSharedMemorySize),
+    maxMeshWorkGroupTotalCount(in_struct->maxMeshWorkGroupTotalCount),
+    maxMeshWorkGroupInvocations(in_struct->maxMeshWorkGroupInvocations),
+    maxMeshSharedMemorySize(in_struct->maxMeshSharedMemorySize),
+    maxMeshPayloadAndSharedMemorySize(in_struct->maxMeshPayloadAndSharedMemorySize),
+    maxMeshOutputMemorySize(in_struct->maxMeshOutputMemorySize),
+    maxMeshPayloadAndOutputMemorySize(in_struct->maxMeshPayloadAndOutputMemorySize),
+    maxMeshOutputComponents(in_struct->maxMeshOutputComponents),
+    maxMeshOutputVertices(in_struct->maxMeshOutputVertices),
+    maxMeshOutputPrimitives(in_struct->maxMeshOutputPrimitives),
+    maxMeshOutputLayers(in_struct->maxMeshOutputLayers),
+    maxMeshMultiviewViewCount(in_struct->maxMeshMultiviewViewCount),
+    meshOutputPerVertexGranularity(in_struct->meshOutputPerVertexGranularity),
+    meshOutputPerPrimitiveGranularity(in_struct->meshOutputPerPrimitiveGranularity),
+    maxPreferredTaskWorkGroupInvocations(in_struct->maxPreferredTaskWorkGroupInvocations),
+    maxPreferredMeshWorkGroupInvocations(in_struct->maxPreferredMeshWorkGroupInvocations),
+    prefersLocalInvocationVertexOutput(in_struct->prefersLocalInvocationVertexOutput),
+    prefersLocalInvocationPrimitiveOutput(in_struct->prefersLocalInvocationPrimitiveOutput),
+    prefersCompactVertexOutput(in_struct->prefersCompactVertexOutput),
+    prefersCompactPrimitiveOutput(in_struct->prefersCompactPrimitiveOutput)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupCount[i] = in_struct->maxTaskWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupCount[i] = in_struct->maxMeshWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesEXT::safe_VkPhysicalDeviceMeshShaderPropertiesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT),
+    pNext(nullptr),
+    maxTaskWorkGroupTotalCount(),
+    maxTaskWorkGroupInvocations(),
+    maxTaskPayloadSize(),
+    maxTaskSharedMemorySize(),
+    maxTaskPayloadAndSharedMemorySize(),
+    maxMeshWorkGroupTotalCount(),
+    maxMeshWorkGroupInvocations(),
+    maxMeshSharedMemorySize(),
+    maxMeshPayloadAndSharedMemorySize(),
+    maxMeshOutputMemorySize(),
+    maxMeshPayloadAndOutputMemorySize(),
+    maxMeshOutputComponents(),
+    maxMeshOutputVertices(),
+    maxMeshOutputPrimitives(),
+    maxMeshOutputLayers(),
+    maxMeshMultiviewViewCount(),
+    meshOutputPerVertexGranularity(),
+    meshOutputPerPrimitiveGranularity(),
+    maxPreferredTaskWorkGroupInvocations(),
+    maxPreferredMeshWorkGroupInvocations(),
+    prefersLocalInvocationVertexOutput(),
+    prefersLocalInvocationPrimitiveOutput(),
+    prefersCompactVertexOutput(),
+    prefersCompactPrimitiveOutput()
+{}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesEXT::safe_VkPhysicalDeviceMeshShaderPropertiesEXT(const safe_VkPhysicalDeviceMeshShaderPropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    maxTaskWorkGroupTotalCount = copy_src.maxTaskWorkGroupTotalCount;
+    maxTaskWorkGroupInvocations = copy_src.maxTaskWorkGroupInvocations;
+    maxTaskPayloadSize = copy_src.maxTaskPayloadSize;
+    maxTaskSharedMemorySize = copy_src.maxTaskSharedMemorySize;
+    maxTaskPayloadAndSharedMemorySize = copy_src.maxTaskPayloadAndSharedMemorySize;
+    maxMeshWorkGroupTotalCount = copy_src.maxMeshWorkGroupTotalCount;
+    maxMeshWorkGroupInvocations = copy_src.maxMeshWorkGroupInvocations;
+    maxMeshSharedMemorySize = copy_src.maxMeshSharedMemorySize;
+    maxMeshPayloadAndSharedMemorySize = copy_src.maxMeshPayloadAndSharedMemorySize;
+    maxMeshOutputMemorySize = copy_src.maxMeshOutputMemorySize;
+    maxMeshPayloadAndOutputMemorySize = copy_src.maxMeshPayloadAndOutputMemorySize;
+    maxMeshOutputComponents = copy_src.maxMeshOutputComponents;
+    maxMeshOutputVertices = copy_src.maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src.maxMeshOutputPrimitives;
+    maxMeshOutputLayers = copy_src.maxMeshOutputLayers;
+    maxMeshMultiviewViewCount = copy_src.maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
+    maxPreferredTaskWorkGroupInvocations = copy_src.maxPreferredTaskWorkGroupInvocations;
+    maxPreferredMeshWorkGroupInvocations = copy_src.maxPreferredMeshWorkGroupInvocations;
+    prefersLocalInvocationVertexOutput = copy_src.prefersLocalInvocationVertexOutput;
+    prefersLocalInvocationPrimitiveOutput = copy_src.prefersLocalInvocationPrimitiveOutput;
+    prefersCompactVertexOutput = copy_src.prefersCompactVertexOutput;
+    prefersCompactPrimitiveOutput = copy_src.prefersCompactPrimitiveOutput;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupCount[i] = copy_src.maxTaskWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupCount[i] = copy_src.maxMeshWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
+    }
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesEXT& safe_VkPhysicalDeviceMeshShaderPropertiesEXT::operator=(const safe_VkPhysicalDeviceMeshShaderPropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    maxTaskWorkGroupTotalCount = copy_src.maxTaskWorkGroupTotalCount;
+    maxTaskWorkGroupInvocations = copy_src.maxTaskWorkGroupInvocations;
+    maxTaskPayloadSize = copy_src.maxTaskPayloadSize;
+    maxTaskSharedMemorySize = copy_src.maxTaskSharedMemorySize;
+    maxTaskPayloadAndSharedMemorySize = copy_src.maxTaskPayloadAndSharedMemorySize;
+    maxMeshWorkGroupTotalCount = copy_src.maxMeshWorkGroupTotalCount;
+    maxMeshWorkGroupInvocations = copy_src.maxMeshWorkGroupInvocations;
+    maxMeshSharedMemorySize = copy_src.maxMeshSharedMemorySize;
+    maxMeshPayloadAndSharedMemorySize = copy_src.maxMeshPayloadAndSharedMemorySize;
+    maxMeshOutputMemorySize = copy_src.maxMeshOutputMemorySize;
+    maxMeshPayloadAndOutputMemorySize = copy_src.maxMeshPayloadAndOutputMemorySize;
+    maxMeshOutputComponents = copy_src.maxMeshOutputComponents;
+    maxMeshOutputVertices = copy_src.maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src.maxMeshOutputPrimitives;
+    maxMeshOutputLayers = copy_src.maxMeshOutputLayers;
+    maxMeshMultiviewViewCount = copy_src.maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src.meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src.meshOutputPerPrimitiveGranularity;
+    maxPreferredTaskWorkGroupInvocations = copy_src.maxPreferredTaskWorkGroupInvocations;
+    maxPreferredMeshWorkGroupInvocations = copy_src.maxPreferredMeshWorkGroupInvocations;
+    prefersLocalInvocationVertexOutput = copy_src.prefersLocalInvocationVertexOutput;
+    prefersLocalInvocationPrimitiveOutput = copy_src.prefersLocalInvocationPrimitiveOutput;
+    prefersCompactVertexOutput = copy_src.prefersCompactVertexOutput;
+    prefersCompactPrimitiveOutput = copy_src.prefersCompactPrimitiveOutput;
+    pNext = SafePnextCopy(copy_src.pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupCount[i] = copy_src.maxTaskWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src.maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupCount[i] = copy_src.maxMeshWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src.maxMeshWorkGroupSize[i];
+    }
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMeshShaderPropertiesEXT::~safe_VkPhysicalDeviceMeshShaderPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMeshShaderPropertiesEXT::initialize(const VkPhysicalDeviceMeshShaderPropertiesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    maxTaskWorkGroupTotalCount = in_struct->maxTaskWorkGroupTotalCount;
+    maxTaskWorkGroupInvocations = in_struct->maxTaskWorkGroupInvocations;
+    maxTaskPayloadSize = in_struct->maxTaskPayloadSize;
+    maxTaskSharedMemorySize = in_struct->maxTaskSharedMemorySize;
+    maxTaskPayloadAndSharedMemorySize = in_struct->maxTaskPayloadAndSharedMemorySize;
+    maxMeshWorkGroupTotalCount = in_struct->maxMeshWorkGroupTotalCount;
+    maxMeshWorkGroupInvocations = in_struct->maxMeshWorkGroupInvocations;
+    maxMeshSharedMemorySize = in_struct->maxMeshSharedMemorySize;
+    maxMeshPayloadAndSharedMemorySize = in_struct->maxMeshPayloadAndSharedMemorySize;
+    maxMeshOutputMemorySize = in_struct->maxMeshOutputMemorySize;
+    maxMeshPayloadAndOutputMemorySize = in_struct->maxMeshPayloadAndOutputMemorySize;
+    maxMeshOutputComponents = in_struct->maxMeshOutputComponents;
+    maxMeshOutputVertices = in_struct->maxMeshOutputVertices;
+    maxMeshOutputPrimitives = in_struct->maxMeshOutputPrimitives;
+    maxMeshOutputLayers = in_struct->maxMeshOutputLayers;
+    maxMeshMultiviewViewCount = in_struct->maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = in_struct->meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = in_struct->meshOutputPerPrimitiveGranularity;
+    maxPreferredTaskWorkGroupInvocations = in_struct->maxPreferredTaskWorkGroupInvocations;
+    maxPreferredMeshWorkGroupInvocations = in_struct->maxPreferredMeshWorkGroupInvocations;
+    prefersLocalInvocationVertexOutput = in_struct->prefersLocalInvocationVertexOutput;
+    prefersLocalInvocationPrimitiveOutput = in_struct->prefersLocalInvocationPrimitiveOutput;
+    prefersCompactVertexOutput = in_struct->prefersCompactVertexOutput;
+    prefersCompactPrimitiveOutput = in_struct->prefersCompactPrimitiveOutput;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupCount[i] = in_struct->maxTaskWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = in_struct->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupCount[i] = in_struct->maxMeshWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = in_struct->maxMeshWorkGroupSize[i];
+    }
+}
+
+void safe_VkPhysicalDeviceMeshShaderPropertiesEXT::initialize(const safe_VkPhysicalDeviceMeshShaderPropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    maxTaskWorkGroupTotalCount = copy_src->maxTaskWorkGroupTotalCount;
+    maxTaskWorkGroupInvocations = copy_src->maxTaskWorkGroupInvocations;
+    maxTaskPayloadSize = copy_src->maxTaskPayloadSize;
+    maxTaskSharedMemorySize = copy_src->maxTaskSharedMemorySize;
+    maxTaskPayloadAndSharedMemorySize = copy_src->maxTaskPayloadAndSharedMemorySize;
+    maxMeshWorkGroupTotalCount = copy_src->maxMeshWorkGroupTotalCount;
+    maxMeshWorkGroupInvocations = copy_src->maxMeshWorkGroupInvocations;
+    maxMeshSharedMemorySize = copy_src->maxMeshSharedMemorySize;
+    maxMeshPayloadAndSharedMemorySize = copy_src->maxMeshPayloadAndSharedMemorySize;
+    maxMeshOutputMemorySize = copy_src->maxMeshOutputMemorySize;
+    maxMeshPayloadAndOutputMemorySize = copy_src->maxMeshPayloadAndOutputMemorySize;
+    maxMeshOutputComponents = copy_src->maxMeshOutputComponents;
+    maxMeshOutputVertices = copy_src->maxMeshOutputVertices;
+    maxMeshOutputPrimitives = copy_src->maxMeshOutputPrimitives;
+    maxMeshOutputLayers = copy_src->maxMeshOutputLayers;
+    maxMeshMultiviewViewCount = copy_src->maxMeshMultiviewViewCount;
+    meshOutputPerVertexGranularity = copy_src->meshOutputPerVertexGranularity;
+    meshOutputPerPrimitiveGranularity = copy_src->meshOutputPerPrimitiveGranularity;
+    maxPreferredTaskWorkGroupInvocations = copy_src->maxPreferredTaskWorkGroupInvocations;
+    maxPreferredMeshWorkGroupInvocations = copy_src->maxPreferredMeshWorkGroupInvocations;
+    prefersLocalInvocationVertexOutput = copy_src->prefersLocalInvocationVertexOutput;
+    prefersLocalInvocationPrimitiveOutput = copy_src->prefersLocalInvocationPrimitiveOutput;
+    prefersCompactVertexOutput = copy_src->prefersCompactVertexOutput;
+    prefersCompactPrimitiveOutput = copy_src->prefersCompactPrimitiveOutput;
+    pNext = SafePnextCopy(copy_src->pNext);
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupCount[i] = copy_src->maxTaskWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxTaskWorkGroupSize[i] = copy_src->maxTaskWorkGroupSize[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupCount[i] = copy_src->maxMeshWorkGroupCount[i];
+    }
+    for (uint32_t i = 0; i < 3; ++i) {
+        maxMeshWorkGroupSize[i] = copy_src->maxMeshWorkGroupSize[i];
+    }
+}
+
 char *SafeStringCopy(const char *in_string) {
     if (nullptr == in_string) return nullptr;
     char* dest = new char[std::strlen(in_string) + 1];
@@ -57706,6 +58228,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
             safe_pNext = new safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE(reinterpret_cast<const VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceDepthClampZeroOneFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *>(pNext));
             break;
@@ -57781,6 +58306,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceRayQueryFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceRayQueryFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceMeshShaderFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceMeshShaderFeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceMeshShaderPropertiesEXT(reinterpret_cast<const VkPhysicalDeviceMeshShaderPropertiesEXT *>(pNext));
+            break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR:
             safe_pNext = new safe_VkQueueFamilyQueryResultStatusPropertiesKHR(reinterpret_cast<const VkQueueFamilyQueryResultStatusPropertiesKHR *>(pNext));
@@ -57797,6 +58328,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR:
             safe_pNext = new safe_VkVideoDecodeCapabilitiesKHR(reinterpret_cast<const VkVideoDecodeCapabilitiesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR:
+            safe_pNext = new safe_VkVideoDecodeUsageInfoKHR(reinterpret_cast<const VkVideoDecodeUsageInfoKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(pNext));
             break;
@@ -57805,6 +58339,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR:
             safe_pNext = new safe_VkVideoEncodeCapabilitiesKHR(reinterpret_cast<const VkVideoEncodeCapabilitiesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR:
+            safe_pNext = new safe_VkVideoEncodeUsageInfoKHR(reinterpret_cast<const VkVideoEncodeUsageInfoKHR *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR:
             safe_pNext = new safe_VkVideoEncodeRateControlLayerInfoKHR(reinterpret_cast<const VkVideoEncodeRateControlLayerInfoKHR *>(pNext));
@@ -59007,6 +59544,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE:
             delete reinterpret_cast<const safe_VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceDepthClampZeroOneFeaturesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_NON_SEAMLESS_CUBE_MAP_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceNonSeamlessCubeMapFeaturesEXT *>(header);
             break;
@@ -59082,6 +59622,12 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceRayQueryFeaturesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMeshShaderFeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMeshShaderPropertiesEXT *>(header);
+            break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR:
             delete reinterpret_cast<const safe_VkQueueFamilyQueryResultStatusPropertiesKHR *>(header);
@@ -59098,6 +59644,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR:
             delete reinterpret_cast<const safe_VkVideoDecodeCapabilitiesKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoDecodeUsageInfoKHR *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(header);
             break;
@@ -59106,6 +59655,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR:
             delete reinterpret_cast<const safe_VkVideoEncodeCapabilitiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_VIDEO_ENCODE_USAGE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkVideoEncodeUsageInfoKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_VIDEO_ENCODE_RATE_CONTROL_LAYER_INFO_KHR:
             delete reinterpret_cast<const safe_VkVideoEncodeRateControlLayerInfoKHR *>(header);
