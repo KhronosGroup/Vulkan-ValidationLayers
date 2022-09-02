@@ -9392,6 +9392,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         m_errorMonitor->VerifyFound();
     }
 
+    if (vulkan_13) {
+        vkCmdBindVertexBuffers2(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
+    }
+    vkCmdBindVertexBuffers2EXT(commandBuffer.handle(), 0, 0, nullptr, nullptr, nullptr, nullptr);
+
     commandBuffer.end();
 }
 
