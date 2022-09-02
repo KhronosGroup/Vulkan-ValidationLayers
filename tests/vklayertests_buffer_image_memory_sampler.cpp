@@ -13617,12 +13617,12 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidLevelOrLayerCount) {
     // Test for error message
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.levelCount = 4;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
 
     // Test for error message
     ivci.subresourceRange.layerCount = 2;
     ivci.subresourceRange.levelCount = 1;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01584");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
 }
 
 TEST_F(VkLayerTest, FillBufferCmdPoolUnsupported) {
@@ -13800,8 +13800,8 @@ TEST_F(VkLayerTest, BlockTexelViewInvalidType) {
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.levelCount = 1;
 
-    // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-04739");
+    // Test for no error message, as VUID was removed
+    CreateImageViewTest(*this, &ivci);
 }
 
 TEST_F(VkLayerTest, BlockTexelViewInvalidFormat) {
