@@ -10247,10 +10247,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2(
     const VkDeviceSize*                         pSizes,
     const VkDeviceSize*                         pStrides) const {
     bool skip = false;
-    skip |= validate_array("vkCmdBindVertexBuffers2", "bindingCount", "pBuffers", bindingCount, &pBuffers, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pBuffers-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pOffsets-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2", "bindingCount", "pSizes", bindingCount, &pSizes, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pSizes-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2", "bindingCount", "pStrides", bindingCount, &pStrides, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pStrides-parameter");
+    // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
     return skip;
 }
@@ -17306,10 +17303,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers2EXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdBindVertexBuffers2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state)) skip |= OutputExtensionError("vkCmdBindVertexBuffers2EXT", VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pBuffers", bindingCount, &pBuffers, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pBuffers-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pOffsets-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pSizes", bindingCount, &pSizes, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pSizes-parameter");
-    skip |= validate_array("vkCmdBindVertexBuffers2EXT", "bindingCount", "pStrides", bindingCount, &pStrides, true, false, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers2-pStrides-parameter");
+    // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdBindVertexBuffers2EXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides);
     return skip;
 }
