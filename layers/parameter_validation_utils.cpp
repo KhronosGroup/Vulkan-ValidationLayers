@@ -7767,6 +7767,27 @@ bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandB
                                                         bool is_2ext) const {
     bool skip = false;
     const char *api_call = is_2ext ? "vkCmdBindVertexBuffers2EXT()" : "vkCmdBindVertexBuffers2()";
+
+    // Check VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength
+    {
+        const bool vuidCondition = (pSizes != nullptr) || (pStrides != nullptr);
+        const bool vuidExpectation = bindingCount > 0;
+        if (vuidCondition) {
+            if (!vuidExpectation) {
+                const char *not_null_msg = "";
+                if ((pSizes != nullptr) && (pStrides != nullptr))
+                    not_null_msg = "pSizes and pStrides are not NULL";
+                else if (pSizes != nullptr)
+                    not_null_msg = "pSizes is not NULL";
+                else
+                    not_null_msg = "pStrides is not NULL";
+                const char *vuid_breach_msg = "%s: %s, so bindingCount must be greater that 0.";
+                skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength", vuid_breach_msg, api_call,
+                                 not_null_msg);
+            }
+        }
+    }
+
     if (firstBinding >= device_limits.maxVertexInputBindings) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers2-firstBinding-03355",
                          "%s firstBinding (%" PRIu32 ") must be less than maxVertexInputBindings (%" PRIu32 ")", api_call,
