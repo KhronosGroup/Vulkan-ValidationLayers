@@ -1427,6 +1427,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                         if struct_field and struct_field.isoptional:
                                             cvReq = 'false'
                         else:
+                            vuidNameTag = structTypeName if structTypeName is not None else funcName
+                            vuidName = self.GetVuid(vuidNameTag, "%s-arraylength" % (lenParam.name))
+                            arrayVuidExceptions = ["\"VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength\""] # This VUID is considered special, as it is the only one whose names ends in "-arraylength" but has special conditions allowing bindingCount to be 0.
+                            if vuidName in arrayVuidExceptions:
+                                continue
                             if lenParam.isoptional:
                                 cvReq = 'false'
                             elif value.noautovalidity:
