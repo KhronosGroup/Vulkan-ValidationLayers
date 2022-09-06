@@ -202,8 +202,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilityIntegerFunctions2INTEL, {0, &VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::shaderIntegerFunctions2, nullptr, ""}},
     {spv::CapabilityInterpolationFunction, {0, &VkPhysicalDeviceFeatures::sampleRateShading, nullptr, ""}},
     {spv::CapabilityMatrix, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityMeshShadingEXT, {0, nullptr, &DeviceExtensions::vk_ext_mesh_shader, ""}},
+    {spv::CapabilityMeshShadingEXT, {0, nullptr, &DeviceExtensions::vk_ext_mesh_shader, ""}},
     {spv::CapabilityMeshShadingNV, {0, nullptr, &DeviceExtensions::vk_nv_mesh_shader, ""}},
     {spv::CapabilityMinLod, {0, &VkPhysicalDeviceFeatures::shaderResourceMinLod, nullptr, ""}},
     {spv::CapabilityMultiView, {0, &VkPhysicalDeviceVulkan11Features::multiview, nullptr, ""}},
@@ -508,6 +507,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "InterpolationFunction";
          case spv::CapabilityMatrix:
             return "Matrix";
+         case spv::CapabilityMeshShadingEXT:
+            return "MeshShadingEXT";
          case spv::CapabilityMeshShadingNV:
             return "MeshShadingNV";
          case spv::CapabilityMinLod:

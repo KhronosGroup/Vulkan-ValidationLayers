@@ -365,6 +365,8 @@ static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTa
     {spv::OpFragmentFetchAMD, {"OpFragmentFetchAMD", true, true, 0, 0, 0}},
     {spv::OpReadClockKHR, {"OpReadClockKHR", true, true, 0, 3, 0}},
     {spv::OpImageSampleFootprintNV, {"OpImageSampleFootprintNV", true, true, 0, 0, 7}},
+    {spv::OpEmitMeshTasksEXT, {"OpEmitMeshTasksEXT", false, false, 0, 0, 0}},
+    {spv::OpSetMeshOutputsEXT, {"OpSetMeshOutputsEXT", false, false, 0, 0, 0}},
     {spv::OpGroupNonUniformPartitionNV, {"OpGroupNonUniformPartitionNV", true, true, 0, 0, 0}},
     {spv::OpWritePackedPrimitiveIndices4x8NV, {"OpWritePackedPrimitiveIndices4x8NV", false, false, 0, 0, 0}},
     {spv::OpReportIntersectionKHR, {"OpReportIntersectionKHR", true, true, 0, 0, 0}},
@@ -745,6 +747,8 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "ShaderRecordBufferNV";
         case spv::StorageClassPhysicalStorageBuffer:
             return "PhysicalStorageBuffer";
+        case spv::StorageClassTaskPayloadWorkgroupEXT:
+            return "TaskPayloadWorkgroupEXT";
         case spv::StorageClassCodeSectionINTEL:
             return "CodeSectionINTEL";
         case spv::StorageClassDeviceOnlyINTEL:
