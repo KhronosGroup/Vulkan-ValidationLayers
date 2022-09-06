@@ -193,6 +193,316 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
+    TEST_DESCRIPTION("Call CmdClearAttachments with invalid aspect masks.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) " VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME ", skipping\n";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    // Create color image
+    const VkFormat color_format = VK_FORMAT_R32_SFLOAT;
+    VkImageObj color_image(m_device);
+    auto imci = LvlInitStruct<VkImageCreateInfo>();
+    imci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    imci.imageType = VK_IMAGE_TYPE_2D;
+    imci.format = color_format;
+    imci.extent = {32, 32, 1};
+    imci.mipLevels = 1;
+    imci.arrayLayers = 1;
+    imci.samples = VK_SAMPLE_COUNT_1_BIT;
+    imci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    imci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imci.queueFamilyIndexCount = 0;
+    imci.pQueueFamilyIndices = nullptr;
+    imci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_image.Init(imci);
+    ASSERT_TRUE(color_image.initialized());
+
+    // Create correct color image view
+    VkImageViewCreateInfo color_ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                        nullptr,
+                                        0,
+                                        color_image.handle(),
+                                        VK_IMAGE_VIEW_TYPE_2D,
+                                        color_format,
+                                        {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
+    vk_testing::ImageView color_image_view(*m_device, color_ivci);
+
+    // Create depth image
+    const VkFormat depth_format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkImageObj depth_image(m_device);
+    depth_image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_LINEAR);
+    ASSERT_TRUE(depth_image.initialized());
+
+    // Create depth image view
+    VkImageViewCreateInfo depth_stencil_ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                                nullptr,
+                                                0,
+                                                depth_image.handle(),
+                                                VK_IMAGE_VIEW_TYPE_2D,
+                                                depth_format,
+                                                {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                 VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                                {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1}};
+    vk_testing::ImageView depth_image_view(*m_device, depth_stencil_ivci);
+    depth_stencil_ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    vk_testing::ImageView stencil_image_view(*m_device, depth_stencil_ivci);
+    depth_stencil_ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    vk_testing::ImageView depth_stencil_image_view(*m_device, depth_stencil_ivci);
+
+    // Dynamic rendering structs
+    VkRect2D rect{{0, 0}, {32, 32}};
+    auto depth_attachment_info = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
+    depth_attachment_info.imageView = depth_stencil_image_view.handle();
+    auto stencil_attachment_info = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+    stencil_attachment_info.imageView = depth_stencil_image_view.handle();
+    auto color_attachment_info = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+
+    begin_rendering_info.renderArea = rect;
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.pDepthAttachment = &depth_attachment_info;
+    begin_rendering_info.pStencilAttachment = &stencil_attachment_info;
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment_info;
+    begin_rendering_info.viewMask = 0;
+
+    // Render pass structs
+    std::array<VkAttachmentDescription, 2> attachments = {
+        {{0, depth_stencil_ivci.format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
+          VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
+
+         {0, color_ivci.format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
+          VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED,
+          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
+
+    std::array<VkAttachmentReference, 2> attachment_references = {
+        {{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}, {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
+
+    VkSubpassDescription subpass_desc{};
+    subpass_desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_desc.colorAttachmentCount = 1;
+    subpass_desc.pColorAttachments = &attachment_references[1];
+    subpass_desc.pDepthStencilAttachment = &attachment_references[0];
+
+    auto renderpass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    renderpass_ci.attachmentCount = static_cast<uint32_t>(attachments.size());
+    renderpass_ci.pAttachments = attachments.data();
+    renderpass_ci.subpassCount = 1;
+    renderpass_ci.pSubpasses = &subpass_desc;
+
+    VkRenderPass renderpass = VK_NULL_HANDLE;
+    VkResult err = vk::CreateRenderPass(m_device->handle(), &renderpass_ci, nullptr, &renderpass);
+    ASSERT_VK_SUCCESS(err);
+
+    std::array<VkImageView, 2> renderpass_image_views = {depth_stencil_image_view.handle(), color_image_view.handle()};
+
+    auto framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    framebuffer_ci.renderPass = renderpass;
+    framebuffer_ci.attachmentCount = 2;
+    framebuffer_ci.pAttachments = renderpass_image_views.data();
+    framebuffer_ci.width = 32;
+    framebuffer_ci.height = 32;
+    framebuffer_ci.layers = 1;
+
+    auto renderpass_bi = LvlInitStruct<VkRenderPassBeginInfo>();
+    renderpass_bi.renderPass = renderpass;
+    renderpass_bi.renderArea = rect;
+    renderpass_bi.clearValueCount = 2;
+    std::array<VkClearValue, 2> renderpass_clear_values;
+    renderpass_clear_values[0].depthStencil.depth = 1.0f;
+    std::fill(&renderpass_clear_values[0].color.float32[0], &renderpass_clear_values[0].color.float32[0] + 4, 0.0f);
+    renderpass_bi.pClearValues = renderpass_clear_values.data();
+
+    auto clear_cmds_func = [&](const bool use_dynamic_rendering) {
+        std::array<VkFramebuffer, 3> framebuffers = {VK_NULL_HANDLE};
+
+        m_commandBuffer->begin();
+
+        // Try to clear stencil, but image view does not have stencil aspect
+        {
+            // setup incorrect image views and begin rendering
+            if (use_dynamic_rendering) {
+                depth_attachment_info.imageView = depth_image_view.handle();
+                stencil_attachment_info.imageView = depth_image_view.handle();
+
+                m_commandBuffer->BeginRendering(begin_rendering_info);
+            } else {
+                renderpass_image_views[0] = depth_image_view.handle();
+
+                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[0]);
+                ASSERT_VK_SUCCESS(err);
+                renderpass_bi.framebuffer = framebuffers[0];
+                m_commandBuffer->BeginRenderPass(renderpass_bi);
+            }
+
+            // issue clear cmd
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
+            VkClearAttachment clear_stencil_attachment;
+            clear_stencil_attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            clear_stencil_attachment.clearValue.depthStencil.stencil = 0;
+            VkClearRect clear_rect{rect, 0, 1};
+            vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_stencil_attachment, 1, &clear_rect);
+            m_errorMonitor->VerifyFound();
+
+            // end rendering and setup default, correct, image views
+            if (use_dynamic_rendering) {
+                m_commandBuffer->EndRendering();
+
+                depth_attachment_info.imageView = depth_stencil_image_view.handle();
+                stencil_attachment_info.imageView = depth_stencil_image_view.handle();
+            } else {
+                m_commandBuffer->EndRenderPass();
+
+                renderpass_image_views[0] = depth_stencil_image_view.handle();
+            }
+        }
+
+        // Try to clear depth, but image view does not have depth aspect
+        {
+            // setup incorrect image views and begin rendering
+            if (use_dynamic_rendering) {
+                depth_attachment_info.imageView = stencil_image_view.handle();
+                stencil_attachment_info.imageView = stencil_image_view.handle();
+
+                m_commandBuffer->BeginRendering(begin_rendering_info);
+            } else {
+                renderpass_image_views[0] = stencil_image_view.handle();
+
+                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[1]);
+                ASSERT_VK_SUCCESS(err);
+                renderpass_bi.framebuffer = framebuffers[1];
+                m_commandBuffer->BeginRenderPass(renderpass_bi);
+            }
+
+            // issue clear cmd
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
+            VkClearAttachment clear_depth_attachment;
+            clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            clear_depth_attachment.clearValue.depthStencil.depth = 1.0f;
+            VkClearRect clear_rect{rect, 0, 1};
+            vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_depth_attachment, 1, &clear_rect);
+            m_errorMonitor->VerifyFound();
+
+            // end rendering and setup default, correct, image views
+            if (use_dynamic_rendering) {
+                m_commandBuffer->EndRendering();
+
+                depth_attachment_info.imageView = depth_stencil_image_view.handle();
+                stencil_attachment_info.imageView = depth_stencil_image_view.handle();
+            } else {
+                m_commandBuffer->EndRenderPass();
+
+                renderpass_image_views[0] = depth_stencil_image_view.handle();
+            }
+        }
+
+        {
+            if (!use_dynamic_rendering) {
+                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[2]);
+                ASSERT_VK_SUCCESS(err);
+                renderpass_bi.framebuffer = framebuffers[2];
+            }
+
+            // Try to clear color, but aspect also has depth
+            {
+                // begin rendering
+                if (use_dynamic_rendering) {
+                    m_commandBuffer->BeginRendering(begin_rendering_info);
+                } else {
+                    m_commandBuffer->BeginRenderPass(renderpass_bi);
+                }
+
+                // issue clear cmd
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00019");
+                // supplied color attachment index is valid when using a render pass,
+                // so expect 07270 since the corresponding image view is a depth buffer view
+                if (!use_dynamic_rendering)
+                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
+                VkClearAttachment clear_depth_attachment;
+                clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
+                clear_depth_attachment.colorAttachment = 0;
+                VkClearRect clear_rect{rect, 0, 1};
+                vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_depth_attachment, 1, &clear_rect);
+                m_errorMonitor->VerifyFound();
+
+                // end rendering
+                if (use_dynamic_rendering) {
+                    m_commandBuffer->EndRendering();
+                } else {
+                    m_commandBuffer->EndRenderPass();
+                }
+            }
+
+            // Try to clear color, but color attachment is out of range
+            {
+                // begin rendering
+                if (use_dynamic_rendering) {
+                    m_commandBuffer->BeginRendering(begin_rendering_info);
+                } else {
+                    m_commandBuffer->BeginRenderPass(renderpass_bi);
+                }
+
+                // issue clear cmd
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+                VkClearAttachment clear_depth_attachment;
+                clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                clear_depth_attachment.colorAttachment = 2;
+                VkClearRect clear_rect{rect, 0, 1};
+                vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &clear_depth_attachment, 1, &clear_rect);
+                m_errorMonitor->VerifyFound();
+
+                // end rendering
+                if (use_dynamic_rendering) {
+                    m_commandBuffer->EndRendering();
+                } else {
+                    m_commandBuffer->EndRenderPass();
+                }
+            }
+        }
+
+        m_commandBuffer->end();
+
+        for (auto framebuffer : framebuffers) {
+            vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
+        }
+    };
+
+    clear_cmds_func(true);
+
+    delete m_commandBuffer;
+    m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
+    clear_cmds_func(false);
+
+    vk::DestroyRenderPass(m_device->handle(), renderpass, nullptr);
+}
+
 TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     TEST_DESCRIPTION("Test graphics pipeline creation with dynamic rendering.");
 
