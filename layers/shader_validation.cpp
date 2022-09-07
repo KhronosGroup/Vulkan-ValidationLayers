@@ -766,8 +766,10 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     std::vector<Variable> variables;
 
     uint32_t num_vertices = 0;
+    uint32_t num_primitives = 0;
     bool is_iso_lines = false;
     bool is_point_mode = false;
+    bool is_xfb_execution_mode = false;
 
     auto entrypoint_variables = FindEntrypointInterfaces(entrypoint);
 
@@ -812,11 +814,29 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                         case spv::ExecutionModePointMode:
                             is_point_mode = true;
                             break;
+                        case spv::ExecutionModeOutputPrimitivesEXT:  // alias ExecutionModeOutputPrimitivesNV
+                            num_primitives = insn.Word(3);
+                            break;
+                        case spv::ExecutionModeXfb:
+                            is_xfb_execution_mode = true;
+                            break;
                     }
                 }
                 break;
             default:
                 break;
+        }
+    }
+
+    if (is_xfb_execution_mode) {
+        for (auto &stage : pipeline->stage_state) {
+            if (stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT || stage.stage_flag == VK_SHADER_STAGE_TASK_BIT_EXT) {
+                skip |=
+                    LogError(pipeline->pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
+                             "If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
+                             "stages in the pipeline there must not be any shader stage in the pipeline with a Xfb execution mode");
+                break;
+            }
         }
     }
 
@@ -1043,7 +1063,40 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
         case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
         case VK_SHADER_STAGE_TASK_BIT_NV:
+            break;
+
         case VK_SHADER_STAGE_MESH_BIT_NV:
+            if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+                if (num_vertices > phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices) {
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
+                                     "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
+                                     "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
+                                     phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices,
+                                     num_vertices - phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices);
+                }
+                if (num_primitives > phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives) {
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07114",
+                                     "Invalid Pipeline CreateInfo State: Mesh shader output primitives count exceeds the "
+                                     "maxMeshOutputPrimitives of %" PRIu32 " by %" PRIu32,
+                                     phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives,
+                                     num_primitives - phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives);
+                }
+            } else if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+                if (num_vertices > phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices) {
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07115",
+                                     "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
+                                     "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
+                                     phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices,
+                                     num_vertices - phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices);
+                }
+                if (num_primitives > phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives) {
+                    skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07116",
+                                     "Invalid Pipeline CreateInfo State: Mesh shader output primitives count exceeds the "
+                                     "maxMeshOutputPrimitives of %u by %u ",
+                                     phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives,
+                                     num_primitives - phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives);
+                }
+            }
             break;
 
         default:
@@ -1766,6 +1819,7 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
     bool skip = false;
 
     uint32_t vertices_out = 0;
+    uint32_t primitives_out = 0;
     uint32_t invocations = 0;
 
     const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
@@ -2012,6 +2066,11 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                     break;
                 }
 
+                case spv::ExecutionModeOutputPrimitivesEXT: {  // alias ExecutionModeOutputPrimitivesNV
+                    primitives_out = insn->Word(3);
+                    break;
+                }
+
                 case spv::ExecutionModeInvocations: {
                     invocations = insn->Word(3);
                     break;
@@ -2084,6 +2143,38 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                              "than or equal to maxGeometryShaderInvocations. "
                              "Invocations=%d, maxGeometryShaderInvocations=%d",
                              invocations, phys_dev_props.limits.maxGeometryShaderInvocations);
+        }
+    }
+
+    if ((IsExtEnabled(device_extensions.vk_nv_mesh_shader) && entrypoint.Word(1) == spv::ExecutionModelMeshNV) ||
+        (IsExtEnabled(device_extensions.vk_ext_mesh_shader) && entrypoint.Word(1) == spv::ExecutionModelMeshEXT)) {
+        uint32_t max_mesh_output_vertices = 0;
+        uint32_t max_mesh_output_primitives = 0;
+
+        if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+            max_mesh_output_vertices = phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices;
+            max_mesh_output_primitives = phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives;
+        } else if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+            max_mesh_output_vertices = phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices;
+            max_mesh_output_primitives = phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives;
+        }
+
+        if (vertices_out == 0 || vertices_out > max_mesh_output_vertices) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-stage-02093",
+                             "Mesh shader entry point must have an OpExecutionMode instruction that "
+                             "specifies a maximum output vertex count that is greater than 0 and less "
+                             "than or equal to maxMeshOutputVertices. "
+                             "OutputVertices=%d, maxMeshOutputVertices=%d",
+                             vertices_out, max_mesh_output_vertices);
+        }
+
+        if (primitives_out == 0 || primitives_out > max_mesh_output_primitives) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-stage-02094",
+                             "Mesh shader entry point must have an OpExecutionMode instruction that "
+                             "specifies a maximum output primitive count that is greater than 0 and less "
+                             "than or equal to maxMeshOutputPrimitives. "
+                             "OutputPrimitives=%d, maxMeshOutputPrimitives=%d",
+                             primitives_out, max_mesh_output_primitives);
         }
     }
     return skip;
@@ -3100,6 +3191,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
         skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
+    } else if (pStage->stage == VK_SHADER_STAGE_TASK_BIT_EXT || pStage->stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+        skip |= ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
     }
 
     return skip;
@@ -3755,6 +3848,109 @@ bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module
                     phys_dev_props_core11.subgroupSize);
             }
         }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
+                                                const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                                uint32_t local_size_z) const {
+    bool skip = false;
+    // If spec constants were used then the local size are already found if possible
+    if (local_size_x == 0) {
+        if (!module_state.FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z)) {
+            return skip;  // no local size found
+        }
+    }
+
+    uint32_t max_local_size_x = 0;
+    uint32_t max_local_size_y = 0;
+    uint32_t max_local_size_z = 0;
+    uint32_t max_workgroup_size = 0;
+    const char *x_vuid;
+    const char *y_vuid;
+    const char *z_vuid;
+    const char *workgroup_size_vuid;
+    const uint32_t shader_stage = entrypoint.Word(1);
+
+    switch (shader_stage) {
+        case spv::ExecutionModelTaskNV: {
+            return skip;
+        }
+
+        case spv::ExecutionModelMeshNV: {
+            return skip;
+        }
+
+        case spv::ExecutionModelTaskEXT: {
+            x_vuid = "VUID-RuntimeSpirv-TaskEXT-07291";
+            y_vuid = "VUID-RuntimeSpirv-TaskEXT-07292";
+            z_vuid = "VUID-RuntimeSpirv-TaskEXT-07293";
+            workgroup_size_vuid = "VUID-RuntimeSpirv-TaskEXT-07294";
+            max_local_size_x = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[0];
+            max_local_size_y = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[1];
+            max_local_size_z = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[2];
+            max_workgroup_size = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupInvocations;
+            break;
+        }
+
+        case spv::ExecutionModelMeshEXT: {
+            x_vuid = "VUID-RuntimeSpirv-MeshEXT-07295";
+            y_vuid = "VUID-RuntimeSpirv-MeshEXT-07296";
+            z_vuid = "VUID-RuntimeSpirv-MeshEXT-07297";
+            workgroup_size_vuid = "VUID-RuntimeSpirv-MeshEXT-07298";
+            max_local_size_x = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[0];
+            max_local_size_y = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[1];
+            max_local_size_z = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[2];
+            max_workgroup_size = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupInvocations;
+            break;
+        }
+
+        default: {
+            // must match one of the above case
+            return skip;
+        }
+    }
+
+    if (local_size_x > max_local_size_x) {
+        skip |= LogError(module_state.vk_shader_module(), x_vuid,
+                         "%s shader local workgroup size in X dimension (%" PRIu32
+                         ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
+                         string_SpvExecutionModel(shader_stage), local_size_x, max_local_size_x);
+    }
+
+    if (local_size_y > max_local_size_y) {
+        skip |= LogError(module_state.vk_shader_module(), y_vuid,
+                         "%s shader local workgroup size in Y dimension (%" PRIu32
+                         ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
+                         string_SpvExecutionModel(shader_stage), local_size_y, max_local_size_y);
+    }
+
+    if (local_size_z > max_local_size_z) {
+        skip |= LogError(module_state.vk_shader_module(), z_vuid,
+                         "%s shader local workgroup size in Z dimension (%" PRIu32
+                         ") must be less than or equal to the max workgroup size (%" PRIu32 ").",
+                         string_SpvExecutionModel(shader_stage), local_size_z, max_local_size_z);
+    }
+
+    uint64_t invocations = local_size_x * local_size_y;
+    // Prevent overflow.
+    bool fail = false;
+    if (invocations > UINT32_MAX || invocations > max_workgroup_size) {
+        fail = true;
+    }
+    if (!fail) {
+        invocations *= local_size_z;
+        if (invocations > UINT32_MAX || invocations > max_workgroup_size) {
+            fail = true;
+        }
+    }
+    if (fail) {
+        skip |= LogError(module_state.vk_shader_module(), workgroup_size_vuid,
+                         "%s shader total invocation size (%" PRIu32 "* %" PRIu32 "* %" PRIu32 " = %" PRIu32
+                         ") must be less than or equal to max workgroup invocations (%" PRIu32 ").",
+                         string_SpvExecutionModel(shader_stage), local_size_x, local_size_y, local_size_z,
+                         local_size_x * local_size_y * local_size_z, max_workgroup_size);
     }
     return skip;
 }

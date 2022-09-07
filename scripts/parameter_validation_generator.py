@@ -205,6 +205,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawMeshTasksNV',
             'vkCmdDrawMeshTasksIndirectNV',
             'vkCmdDrawMeshTasksIndirectCountNV',
+            'vkCmdDrawMeshTasksEXT',
+            'vkCmdDrawMeshTasksIndirectEXT',
             'vkAllocateMemory',
             'vkCreateAccelerationStructureNV',
             'vkCreateAccelerationStructureKHR',

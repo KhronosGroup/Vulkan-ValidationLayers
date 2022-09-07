@@ -20487,6 +20487,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksEXT(
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdDrawMeshTasksEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksEXT", VK_EXT_MESH_SHADER_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksEXT(commandBuffer, groupCountX, groupCountY, groupCountZ);
     return skip;
 }
 
@@ -20501,6 +20502,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectEXT(
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_mesh_shader)) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectEXT", VK_EXT_MESH_SHADER_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawMeshTasksIndirectEXT", "buffer", buffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(commandBuffer, buffer, offset, drawCount, stride);
     return skip;
 }
 

@@ -10529,6 +10529,8 @@ TEST_F(VkLayerTest, CopyImageRemainingLayers) {
 
     m_commandBuffer->end();
 }
+
+
 TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
     TEST_DESCRIPTION("Call CmdEndRenderPass when transform feedback is active");
 

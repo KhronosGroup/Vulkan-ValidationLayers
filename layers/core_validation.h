@@ -149,6 +149,9 @@ struct DrawDispatchVuid {
     const char* dynamic_shading_rate_image_enable = kVUIDUndefined;
     const char* primitives_generated = kVUIDUndefined;
     const char* primitives_generated_streams = kVUIDUndefined;
+    const char* mesh_shader_stages = kVUIDUndefined;
+    const char* invalid_mesh_shader_stages = kVUIDUndefined;
+    const char* missing_mesh_shader_stages = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
@@ -1335,6 +1338,8 @@ class CoreChecks : public ValidationStateTracker {
                                            VkIndexType indexType) const override;
     bool PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                              const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const override;
+    bool ValidateVTGShaderStages(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type) const;
+    bool ValidateMeshShaderStage(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, bool is_NV) const;
     bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                                 uint32_t firstInstance) const override;
     bool PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, uint32_t drawCount, const VkMultiDrawInfoEXT* pVertexInfo,
@@ -1663,6 +1668,13 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride) const override;
+    bool PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                            uint32_t groupCountZ) const override;
+    bool PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    uint32_t drawCount, uint32_t stride) const override;
+    bool PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                         uint32_t maxDrawCount, uint32_t stride) const override;
     bool ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo, const char* apiName) const;
     bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) const override;
     bool PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) const override;
@@ -1685,6 +1697,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
                                        const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                        uint32_t local_size_z) const;
+    bool ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
+                                        const PipelineStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
+                                        uint32_t local_size_z) const;
 
     bool ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery, uint32_t queryCount,
                             const char* vuid_badfirst, const char* vuid_badrange, const char* apiName) const;

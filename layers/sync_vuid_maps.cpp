@@ -41,8 +41,8 @@ const std::map<VkPipelineStageFlags2KHR, std::string> kFeatureNameMap{
     {VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT, "conditionalRendering"},
     {VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT, "fragmentDensity"},
     {VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT, "transformFeedback"},
-    {VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV, "meshShader"},
-    {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV, "taskShader"},
+    {VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT, "meshShader"},
+    {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT, "taskShader"},
     {VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "shadingRate"},
     {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "rayTracing"},
     {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracing"},
@@ -148,7 +148,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Struct::VkSubpassDependency2, Field::srcStageMask), "VUID-VkSubpassDependency2-srcStageMask-04090"},
          {Key(Struct::VkSubpassDependency2, Field::dstStageMask), "VUID-VkSubpassDependency2-dstStageMask-04090"},
      }},
-    {VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_NV,
+    {VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT,
      {
          {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-03934"},
          {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-03934"},
@@ -172,7 +172,7 @@ static const std::map<VkPipelineStageFlags2KHR, std::vector<Entry>> kStageMaskEr
          {Key(Struct::VkSubpassDependency2, Field::srcStageMask), "VUID-VkSubpassDependency2-srcStageMask-04095"},
          {Key(Struct::VkSubpassDependency2, Field::dstStageMask), "VUID-VkSubpassDependency2-dstStageMask-04095"},
      }},
-    {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_NV,
+    {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT,
      {
          {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-03935"},
          {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-03935"},

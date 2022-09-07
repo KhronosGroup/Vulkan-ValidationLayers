@@ -147,6 +147,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDraw-None-07649";
         primitives_generated               = "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDraw-stage-06481";
     }
 };
 
@@ -254,6 +255,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMultiEXT-None-07649";
         primitives_generated               = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiEXT-stage-06481";
     }
 };
 
@@ -362,6 +364,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexed-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexed-stage-06481";
     }
 };
 
@@ -470,6 +473,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMultiIndexedEXT-None-07649";
         primitives_generated               = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiIndexedEXT-stage-06481";
     }
 };
 
@@ -579,6 +583,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirect-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirext-stage-06481";
     }
 };
 
@@ -689,6 +694,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexedIndirect-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirect-stage-06481";
     }
 };
 
@@ -861,6 +867,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirectCount-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectCount-stage-06481";
     }
 };
 
@@ -974,6 +981,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexedIndirectCount-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirectCount-stage-06481";
     }
 };
 
@@ -1192,6 +1200,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksNV-None-07649";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksNV-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080";
     }
 };
 
@@ -1293,6 +1303,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07649";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081";
+        
     }
 };
 
@@ -1397,6 +1410,31 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07649";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082";
+    }
+};
+
+struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
+    DispatchVuidsCmdDrawMeshTasksEXT() : DrawDispatchVuid() {
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksEXT-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087";
+    }
+};
+
+struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
+    DispatchVuidsCmdDrawMeshTasksIndirectEXT() : DrawDispatchVuid() {
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091";
+    }
+};
+
+struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
+    DispatchVuidsCmdDrawMeshTasksIndirectCountEXT() : DrawDispatchVuid() {
+        mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-06480";
+        missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100";
+        indirect_count_contiguous_memory   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714";
+        indirect_count_buffer_bit          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715";
     }
 };
 
@@ -1506,6 +1544,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectByteCountEXT-stage-06481";
     }
 };
 
@@ -1559,6 +1598,9 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> kDrawdispatchVuid = {
     {CMD_DRAWMESHTASKSNV, DispatchVuidsCmdDrawMeshTasksNV()},
     {CMD_DRAWMESHTASKSINDIRECTNV, DispatchVuidsCmdDrawMeshTasksIndirectNV()},
     {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, DispatchVuidsCmdDrawMeshTasksIndirectCountNV()},
+    {CMD_DRAWMESHTASKSEXT, DispatchVuidsCmdDrawMeshTasksEXT()},
+    {CMD_DRAWMESHTASKSINDIRECTEXT, DispatchVuidsCmdDrawMeshTasksIndirectEXT()},
+    {CMD_DRAWMESHTASKSINDIRECTCOUNTEXT, DispatchVuidsCmdDrawMeshTasksIndirectCountEXT()},
     {CMD_DRAWINDIRECTBYTECOUNTEXT, DispatchVuidsCmdDrawIndirectByteCountEXT()},
     {CMD_DISPATCHBASE, DispatchVuidsCmdDispatchBase()},
     {CMD_DISPATCHBASEKHR, DispatchVuidsCmdDispatchBase()},
@@ -1606,12 +1648,54 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_node, uint32
     return skip;
 }
 
+bool CoreChecks::ValidateVTGShaderStages(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *api_name = CommandTypeString(cmd_type);
+
+    const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    if (pipeline_state && pipeline_state->active_shaders & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        skip |= LogError(
+            cb_state.commandBuffer(), vuid.invalid_mesh_shader_stages,
+            "%s : The bound graphics pipeline must not have been created with "
+            "VK_SHADER_STAGE_TASK_BIT_EXT or VK_SHADER_STAGE_MESH_BIT_EXT. Active shader stages on the bound pipeline are %s.",
+            api_name, string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateMeshShaderStage(const CMD_BUFFER_STATE &cb_state, CMD_TYPE cmd_type, bool is_NV) const {
+    bool skip = false;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *api_name = CommandTypeString(cmd_type);
+
+    const auto *pipeline_state = cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    if (pipeline_state && !(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        skip |= LogError(cb_state.commandBuffer(), vuid.missing_mesh_shader_stages,
+                         "%s : The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a shader stage using the "
+                         "%s Execution Model. Active shader stages on the bound pipeline are %s.",
+                         api_name, is_NV ? "MeshNV" : "MeshEXT", string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+    }
+    if (pipeline_state &&
+        (pipeline_state->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                                           VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT))) {
+        skip |= LogError(cb_state.commandBuffer(), vuid.mesh_shader_stages,
+                         "%s : The bound graphics pipeline must not have been created with "
+                         "VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, "
+                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT or VK_SHADER_STAGE_GEOMETRY_BIT. Active shader stages on the "
+                         "bound pipeline are %s.",
+                         api_name, string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                         uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAW);
     skip |= ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAW);
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAW);
     return skip;
 }
 
@@ -1633,6 +1717,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWMULTIEXT);
     skip |= ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMULTIEXT);
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWMULTIEXT);
     return skip;
 }
 
@@ -1663,6 +1748,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     skip |= ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED);
     skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, indexCount, firstIndex, "vkCmdDrawIndexed()",
                                              "VUID-vkCmdDrawIndexed-firstIndex-04932");
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWINDEXED);
     return skip;
 }
 
@@ -1691,6 +1777,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
         skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, info_ptr->indexCount, info_ptr->firstIndex,
                                                  "vkCmdDrawMultiIndexedEXT()", "VUID-vkCmdDrawMultiIndexedEXT-firstIndex-04938");
     }
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWMULTIINDEXEDEXT);
     return skip;
 }
 
@@ -1712,6 +1799,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                          "or equal to the size of buffer (%" PRIu64 ").",
                          (offset + sizeof(VkDrawIndirectCommand)), buffer_state->createInfo.size);
     }
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWINDIRECT);
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
     return skip;
@@ -1736,6 +1824,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
             "or equal to the size of buffer (%" PRIu64 ").",
             (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->createInfo.size);
     }
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWINDEXEDINDIRECT);
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
     // 'buffer'.
@@ -1824,6 +1913,7 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCountCmd(*count_buffer_state, countBufferOffset, cmd_type);
+    skip |= ValidateVTGShaderStages(*cb_state, cmd_type);
     return skip;
 }
 
@@ -1866,6 +1956,7 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCountCmd(*count_buffer_state, countBufferOffset, cmd_type);
+    skip |= ValidateVTGShaderStages(*cb_state, cmd_type);
     return skip;
 }
 
@@ -1903,6 +1994,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
     skip |= ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTBYTECOUNTEXT);
     auto counter_buffer_state = Get<BUFFER_STATE>(counterBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *counter_buffer_state, CMD_DRAWINDIRECTBYTECOUNTEXT);
+    skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWINDIRECTBYTECOUNTEXT);
     return skip;
 }
 
@@ -2078,6 +2170,7 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV);
+    skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSNV, true);
     return skip;
 }
 
@@ -2091,7 +2184,13 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
                                                 "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 drawCount, offset, buffer_state.get());
+    } else if (drawCount == 1 && ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > buffer_state.get()->createInfo.size)) {
+        skip |=
+            LogError(device, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156",
+                     "(offset + sizeof(VkDrawMeshTasksIndirectNV)) (%" PRIu64 ") is greater than the size of buffer (%" PRIu64 ").",
+                     offset + sizeof(VkDrawMeshTasksIndirectCommandNV), buffer_state->createInfo.size);
     }
+    skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSINDIRECTNV, true);
     return skip;
 }
 
@@ -2111,5 +2210,66 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                                 "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 maxDrawCount, offset, buffer_state.get());
     }
+    skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSINDIRECTCOUNTNV, true);
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                                    uint32_t groupCountZ) const {
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    bool skip = ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSEXT);
+    skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSEXT, false);
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                            uint32_t drawCount, uint32_t stride) const {
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    bool skip = ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSINDIRECTEXT);
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTEXT);
+    if (drawCount > 1) {
+        skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088", stride,
+                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT));
+        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride,
+                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                                drawCount, offset, buffer_state.get());
+    }
+    if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089",
+                         "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(vkCmdDrawMeshTasksIndirectEXT)) (%" PRIu64
+                         ") is not less than "
+                         "or equal to the size of buffer (%" PRIu64 ").",
+                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->createInfo.size);
+    }
+    skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSINDIRECTEXT, false);
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                 VkDeviceSize offset, VkBuffer countBuffer,
+                                                                 VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                 uint32_t stride) const {
+    const CMD_TYPE cmd_type = CMD_DRAWMESHTASKSINDIRECTCOUNTEXT;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
+    const char *caller_name = CommandTypeString(cmd_type);
+
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+    bool skip = ValidateCmdDrawType(*cb_state, false, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
+    auto buffer_state = Get<BUFFER_STATE>(buffer);
+    auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
+    skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state.get(), caller_name, vuid.indirect_count_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(count_buffer_state.get(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                     vuid.indirect_count_buffer_bit, "vkCmdDrawMeshTasksIndirectCountEXT()",
+                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
+                                            "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    if (maxDrawCount > 1) {
+        skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
+                                                "VkDrawMeshTasksIndirectCommandEXT", sizeof(VkDrawMeshTasksIndirectCommandEXT),
+                                                maxDrawCount, offset, buffer_state.get());
+    }
+    skip |= ValidateMeshShaderStage(*cb_state, cmd_type, false);
     return skip;
 }

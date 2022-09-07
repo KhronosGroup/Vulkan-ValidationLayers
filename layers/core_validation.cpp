@@ -2334,7 +2334,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Tessellation Shader not supported.",
                              pipe_index);
         }
-        if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+        if (IsExtEnabled(device_extensions.vk_nv_mesh_shader) || IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
             // VS or mesh is required
             if (!(pipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_NV))) {
                 skip |=
@@ -2353,6 +2353,24 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                  "or all VTG (vertex, tess control, tess eval, geom).",
                                  pipe_index);
             }
+        } else if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+            // VS or mesh is required
+            if (!(pipeline->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT))) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-02096",
+                             "Invalid Pipeline CreateInfo[%" PRIu32 "] State: Vertex Shader or Mesh Shader required.", pipe_index);
+            }
+            // Can't mix mesh and VTG
+            if ((pipeline->active_shaders & (VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT)) &&
+                (pipeline->active_shaders &
+                 (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
+                  VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT))) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02095",
+                                 "Invalid Pipeline CreateInfo[%" PRIu32
+                                 "] State: Geometric shader stages must either be all mesh (mesh | task) "
+                                 "or all VTG (vertex, tess control, tess eval, geom).",
+                                 pipe_index);
+            }
         } else {
             // VS is required if this is a "normal" pipeline or is a pre-raster graphics library
             if (pipeline->pre_raster_state && !(pipeline->active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) {
@@ -2362,16 +2380,16 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
-        if (!enabled_features.mesh_shader_features.meshShader && (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
-            skip |=
-                LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Mesh Shader not supported.", pipe_index);
+        // VK_SHADER_STAGE_MESH_BIT_EXT and VK_SHADER_STAGE_MESH_BIT_NV are equivalent
+        if (!(enabled_features.mesh_shader_features.meshShader) && (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02091",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Mesh Shader feature is not enabled.", pipe_index);
         }
 
-        if (!enabled_features.mesh_shader_features.taskShader && (pipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_NV)) {
-            skip |=
-                LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Task Shader not supported.", pipe_index);
+        // VK_SHADER_STAGE_TASK_BIT_EXT and VK_SHADER_STAGE_TASK_BIT_NV are equivalent
+        if (!(enabled_features.mesh_shader_features.taskShader) && (pipeline->active_shaders & VK_SHADER_STAGE_TASK_BIT_EXT)) {
+            skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-stage-02092",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Task Shader feature is not enabled.", pipe_index);
         }
 
         // Either both or neither TC/TE shaders should be defined
@@ -2692,6 +2710,36 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     pipe_index, rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
             }
+        }
+    }
+
+    if (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) {
+        if (IsDynamic(pipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) ||
+            IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065",
+                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "] pDynamicState must not contain "
+                             "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT or VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT because "
+                             "the pipeline contains a mesh shader.",
+                             pipe_index);
+        }
+
+        if (IsDynamic(pipeline, VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT) ||
+            IsDynamic(pipeline, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066",
+                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "] pDynamicState must not contain "
+                             "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT or VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT because "
+                             "the pipeline contains a mesh shader.",
+                             pipe_index);
+        }
+
+        if (IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+            skip |= LogError(
+                device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067",
+                "Invalid Pipeline CreateInfo[%" PRIu32
+                "] pDynamicState must not contain VK_DYNAMIC_STATE_VERTEX_INPUT_EXT because the pipeline contains a mesh shader.",
+                pipe_index);
         }
     }
 
@@ -3612,6 +3660,16 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              ") and "
                              "multiviewGeometryShader is not enabled, contains geometry shader",
                              pipe_index, rendering_struct->viewMask);
+        }
+
+        if ((rendering_struct->viewMask != 0) && !enabled_features.mesh_shader_features.multiviewMeshShader &&
+            (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064",
+                         "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                         ") and "
+                         "multiviewMeshShader is not enabled, contains mesh shader",
+                         pipe_index, rendering_struct->viewMask);
         }
 
         for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
