@@ -185,6 +185,14 @@ class Image : public IMAGE_STATE {
 
     IMAGE_SUBRESOURCE_USAGE_BP GetUsage(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level]; }
 
+    uint32_t UpdateQueueFamily(uint32_t queue_family) {
+        auto last = last_queue_family;
+        last_queue_family = queue_family;
+        return last;
+    }
+
+    uint32_t GetLastQueueFamily() { return last_queue_family; }
+
   private:
     void SetupUsages() {
         usages_.resize(createInfo.arrayLayers);
@@ -197,6 +205,7 @@ class Image : public IMAGE_STATE {
     // Aspects are generally read and written together,
     // and tracking them independently could be misleading.
     std::vector<std::vector<IMAGE_SUBRESOURCE_USAGE_BP>> usages_;
+    uint32_t last_queue_family = VK_QUEUE_FAMILY_IGNORED;
 };
 
 using ImageNoBinding = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableNoMemoryTracker>;
@@ -692,7 +701,8 @@ class BestPractices : public ValidationStateTracker {
                             IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& range);
     void QueueValidateImage(QueueCallbacks& func, const char* function_name, std::shared_ptr<bp_state::Image>& state,
                             IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
-    void ValidateImageInQueue(const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+    void ValidateImageInQueue(const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs,
+                              const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                               uint32_t array_layer, uint32_t mip_level);
     void ValidateImageInQueueArmImg(const char* function_name, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                  IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
