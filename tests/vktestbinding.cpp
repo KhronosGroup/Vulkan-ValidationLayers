@@ -144,7 +144,7 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
     uint32_t extension_count = 32;
     std::vector<VkExtensionProperties> extensions(extension_count);
     for (;;) {
-        err = vk::EnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
+        err = vk::EnumerateInstanceExtensionProperties(pLayerName, &extension_count, extensions.data());
         if (err == VK_SUCCESS) {
             extensions.resize(extension_count);
             return extensions;
