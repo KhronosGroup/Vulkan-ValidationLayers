@@ -73,6 +73,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDraw-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDraw-None-02859";
         rasterization_samples              = "VUID-vkCmdDraw-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDraw-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDraw-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688";
@@ -103,6 +104,9 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDraw-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDraw-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDraw-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDraw-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDraw-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDraw-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDraw-OpTypeImage-07030";
@@ -144,6 +148,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawMultiEXT-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMultiEXT-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawMultiEXT-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawMultiEXT-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDrawMultiEXT-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDrawMultiEXT-maxMultiviewInstanceIndex-02688";
@@ -174,6 +179,9 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawMultiEXT-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMultiEXT-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMultiEXT-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawMultiEXT-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07030";
@@ -215,6 +223,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexed-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexed-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndexed-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexed-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDrawIndexed-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexed-maxMultiviewInstanceIndex-02688";
@@ -245,6 +254,9 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndexed-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndexed-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndexed-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndexed-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawIndexed-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawIndexed-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexed-OpTypeImage-07030";
@@ -286,6 +298,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMultiIndexedEXT-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawMultiIndexedEXT-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02707";
         protected_command_buffer           = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02712";
         max_multiview_instance_index       = "VUID-vkCmdDrawMultiIndexedEXT-maxMultiviewInstanceIndex-02688";
@@ -316,6 +329,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawMultiIndexedEXT-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMultiIndexedEXT-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMultiIndexedEXT-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawMultiIndexedEXT-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07030";
@@ -360,6 +376,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirect-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirect-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndirect-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndirect-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirect-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirect-None-02693";
@@ -389,6 +406,9 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndirect-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndirect-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndirect-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndirect-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndirect-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndirect-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawIndirect-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawIndirect-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndirect-OpTypeImage-07030";
@@ -433,6 +453,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexedIndirect-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirect-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndexedIndirect-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndexedIndirect-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirect-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirect-None-02693";
@@ -462,6 +483,9 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndexedIndirect-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndexedIndirect-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndexedIndirect-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndexedIndirect-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndexedIndirect-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndexedIndirect-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07030";
@@ -567,6 +591,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirectCount-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectCount-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndirectCount-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndirectCount-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectCount-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirectCount-None-02693";
@@ -596,6 +621,9 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndirectCount-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndirectCount-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndirectCount-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndirectCount-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndirectCount-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndirectCount-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07030";
@@ -643,6 +671,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndexedIndirectCount-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndexedIndirectCount-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndexedIndirectCount-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndexedIndirectCount-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02693";
@@ -672,6 +701,9 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndexedIndirectCount-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndexedIndirectCount-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndexedIndirectCount-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndexedIndirectCount-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndexedIndirectCount-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndexedIndirectCount-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07030";
@@ -825,6 +857,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksNV-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawMeshTasksNV-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawMeshTasksNV-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksNV-None-02693";
@@ -851,6 +884,9 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawMeshTasksNV-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMeshTasksNV-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksNV-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawMeshTasksNV-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawMeshTasksNV-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawMeshTasksNV-multisampledRenderToSingleSampled-07287";
         storage_image_read_without_format  = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07028";
         storage_image_write_without_format = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07027";
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07030";
@@ -891,6 +927,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawMeshTasksIndirectNV-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02693";
@@ -936,6 +973,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawMeshTasksIndirectNV-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMeshTasksIndirectNV-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawMeshTasksIndirectNV-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawMeshTasksIndirectNV-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawMeshTasksIndirectNV-multisampledRenderToSingleSampled-07287";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
@@ -974,6 +1014,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         sampler_bias_offset                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02704";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02693";
@@ -1019,6 +1060,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-multisampledRenderToSingleSampled-07287";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06666";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
@@ -1058,6 +1102,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_binding_attribute           = "VUID-vkCmdDrawIndirectByteCountEXT-None-02721";
         dynamic_state_setting_commands     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02859";
         rasterization_samples              = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizationSamples-04740";
+        msrtss_rasterization_samples       = "VUID-vkCmdDrawIndirectByteCountEXT-multisampledRenderToSingleSampled-07284";
         unprotected_command_buffer         = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02707";
         max_multiview_instance_index       = "VUID-vkCmdDrawIndirectByteCountEXT-maxMultiviewInstanceIndex-02688";
         img_filter_cubic                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02693";
@@ -1106,6 +1151,9 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_rendering_06189            = "VUID-vkCmdDrawIndirectByteCountEXT-pDepthAttachment-06189";
         dynamic_rendering_06190            = "VUID-vkCmdDrawIndirectByteCountEXT-pStencilAttachment-06190";
         dynamic_rendering_06198            = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-06198";
+        dynamic_rendering_07285            = "VUID-vkCmdDrawIndirectByteCountEXT-multisampledRenderToSingleSampled-07285";
+        dynamic_rendering_07286            = "VUID-vkCmdDrawIndirectByteCountEXT-multisampledRenderToSingleSampled-07286";
+        dynamic_rendering_07287            = "VUID-vkCmdDrawIndirectByteCountEXT-multisampledRenderToSingleSampled-07287";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirectByteCountEXT-None-06666";
         primitives_generated               = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
