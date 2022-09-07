@@ -59,7 +59,6 @@ struct DrawDispatchVuid {
     const char* viewport_scissor_count = kVUIDUndefined;
     const char* primitive_topology = kVUIDUndefined;
     const char* corner_sampled_address_mode = kVUIDUndefined;
-    // subpass input doesn't validate anything because those checks were done in ValidateCreateGraphicsPipelines
     const char* subpass_input = kVUIDUndefined;
     const char* imageview_atomic = kVUIDUndefined;
     const char* push_constants_set = kVUIDUndefined;
