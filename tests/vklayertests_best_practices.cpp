@@ -1947,6 +1947,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     const auto image_view = image.targetView(image_info.format);
 
+    // Prepare graphics
+
     // Setup RenderPass
     VkAttachmentDescription attachment{};
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -1988,9 +1990,6 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     VkCommandBufferObj graphics_buffer(m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
 
-    // Record graphics command buffer
-    graphics_buffer.begin();
-
     VkClearValue cv;
     cv.color = VkClearColorValue{};
     std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
@@ -2003,21 +2002,13 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     begin_info.renderArea.extent.height = h;
     begin_info.framebuffer = fb.handle();
 
-    graphics_buffer.BeginRenderPass(begin_info);
-
-    graphics_buffer.EndRenderPass();
-
-    graphics_buffer.end();
-
-    graphics_buffer.QueueCommandBuffer();
-
-    // Record compute command buffer
+    // Prepare compute
 
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1, local_size_y=1) in;
     layout(set=0, binding=0, rgba32f) uniform image2D img;
     void main(){
-        vec4 v = imageLoad(img, gl_GlobalInvocationID.xy);
+        vec4 v = imageLoad(img, ivec2(gl_GlobalInvocationID.xy));
     }
     )glsl";
 
@@ -2040,7 +2031,72 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     VkCommandBufferObj compute_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
 
+    // Record command buffers without queue transition
+
+    // Record graphics command buffer
+    graphics_buffer.begin();
+
+    graphics_buffer.BeginRenderPass(begin_info);
+
+    graphics_buffer.EndRenderPass();
+
+    graphics_buffer.end();
+
+    graphics_buffer.QueueCommandBuffer();
+
+    // Record compute command buffer
     compute_buffer.begin();
+
+    vk::CmdBindPipeline(compute_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    vk::CmdBindDescriptorSets(compute_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    vk::CmdDispatch(compute_buffer.handle(), w, h, 1);
+
+    compute_buffer.end();
+
+    compute_buffer.QueueCommandBuffer();
+
+    vk::ResetCommandPool(device(), graphics_pool.handle(), 0);
+    vk::ResetCommandPool(device(), compute_pool.handle(), 0);
+
+    // Record command buffers with queue transition
+
+    // Queue transition barrier, same for release and acquire
+    VkImageMemoryBarrier barrier = LvlInitStruct<VkImageMemoryBarrier>();
+    barrier.image = image.handle();
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  // only matters for release
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;             // only matters for acquire
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = graphics_queue->get_family_index();
+    barrier.dstQueueFamilyIndex = compute_queue->get_family_index();
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+    // Record graphics command buffer
+    graphics_buffer.begin();
+
+    graphics_buffer.BeginRenderPass(begin_info);
+
+    graphics_buffer.EndRenderPass();
+
+    vk::CmdPipelineBarrier(graphics_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    graphics_buffer.end();
+
+    graphics_buffer.QueueCommandBuffer();
+
+    // Record compute command buffer
+    compute_buffer.begin();
+
+    vk::CmdPipelineBarrier(compute_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vk::CmdBindPipeline(compute_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
 
     vk::CmdBindDescriptorSets(compute_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
