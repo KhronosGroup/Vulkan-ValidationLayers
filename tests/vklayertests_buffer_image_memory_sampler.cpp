@@ -13287,6 +13287,7 @@ TEST_F(VkLayerTest, InvalidImageSplitInstanceBindRegionCount) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01627");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01633");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryDeviceGroupInfo-deviceIndexCount-01634");
     vkBindImageMemory2Function(device(), 1, &bindInfo);
     m_errorMonitor->VerifyFound();
 }
