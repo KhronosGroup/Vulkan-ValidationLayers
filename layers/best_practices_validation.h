@@ -177,35 +177,30 @@ class Image : public IMAGE_STATE {
         SetupUsages();
     }
 
-    IMAGE_SUBRESOURCE_USAGE_BP UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage) {
-        auto last_usage = usages_[array_layer][mip_level];
-        usages_[array_layer][mip_level] = usage;
+    IMAGE_SUBRESOURCE_USAGE_BP UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage,
+                                           uint32_t queue_family) {
+        auto last_usage = usages_[array_layer][mip_level].first;
+        usages_[array_layer][mip_level] = std::make_pair(usage, queue_family);
         return last_usage;
     }
 
-    IMAGE_SUBRESOURCE_USAGE_BP GetUsage(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level]; }
+    IMAGE_SUBRESOURCE_USAGE_BP GetUsage(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level].first; }
 
-    uint32_t UpdateQueueFamily(uint32_t queue_family) {
-        auto last = last_queue_family;
-        last_queue_family = queue_family;
-        return last;
-    }
-
-    uint32_t GetLastQueueFamily() { return last_queue_family; }
+    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level].second; }
 
   private:
     void SetupUsages() {
         usages_.resize(createInfo.arrayLayers);
         for (auto& mip_vec : usages_) {
-            mip_vec.resize(createInfo.mipLevels, IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED);
+            mip_vec.resize(createInfo.mipLevels, std::make_pair(IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED));
         }
     }
     // A 2d vector for all the array layers and mip levels.
     // This does not split usages per aspect.
     // Aspects are generally read and written together,
     // and tracking them independently could be misleading.
-    std::vector<std::vector<IMAGE_SUBRESOURCE_USAGE_BP>> usages_;
-    uint32_t last_queue_family = VK_QUEUE_FAMILY_IGNORED;
+    // second/uint32_t is last queue family usage
+    std::vector<std::vector<std::pair<IMAGE_SUBRESOURCE_USAGE_BP, uint32_t>>> usages_;
 };
 
 using ImageNoBinding = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableNoMemoryTracker>;
