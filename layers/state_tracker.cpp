@@ -896,8 +896,15 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     const auto *device_group_ci = LvlFindInChain<VkDeviceGroupDeviceCreateInfo>(pCreateInfo->pNext);
     if (device_group_ci) {
         physical_device_count = device_group_ci->physicalDeviceCount;
+        if (physical_device_count == 0) {
+            physical_device_count =
+                1;  // see https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDeviceGroupDeviceCreateInfo.html
+        }
         device_group_create_info = *device_group_ci;
     } else {
+        device_group_create_info = LvlInitStruct<VkDeviceGroupDeviceCreateInfo>();
+        device_group_create_info.physicalDeviceCount = 1;  // see previous VkDeviceGroupDeviceCreateInfo link
+        device_group_create_info.pPhysicalDevices = &physical_device;
         physical_device_count = 1;
     }
 
