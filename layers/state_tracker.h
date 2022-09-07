@@ -1424,7 +1424,8 @@ class ValidationStateTracker : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props;
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_NV;
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props;
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;

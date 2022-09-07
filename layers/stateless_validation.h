@@ -72,6 +72,7 @@ class StatelessValidation : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_propsEXT;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
@@ -1620,6 +1621,11 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                                   uint32_t groupCountZ) const;
+    bool manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           uint32_t drawCount, uint32_t stride) const;
 
     bool manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
                                                                   uint32_t *pPropertyCount,

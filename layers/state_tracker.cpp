@@ -920,7 +920,15 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.shading_rate_image_features = *shading_rate_image_features;
         }
 
-        const auto *mesh_shader_features = LvlFindInChain<VkPhysicalDeviceMeshShaderFeaturesNV>(pCreateInfo->pNext);
+        const auto *mesh_shader_features_NV = LvlFindInChain<VkPhysicalDeviceMeshShaderFeaturesNV>(pCreateInfo->pNext);
+        if (mesh_shader_features_NV) {
+            enabled_features.mesh_shader_features.sType = mesh_shader_features_NV->sType;
+            enabled_features.mesh_shader_features.pNext = mesh_shader_features_NV->pNext;
+            enabled_features.mesh_shader_features.meshShader = mesh_shader_features_NV->meshShader;
+            enabled_features.mesh_shader_features.taskShader = mesh_shader_features_NV->taskShader;
+        }
+
+        const auto *mesh_shader_features = LvlFindInChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
         if (mesh_shader_features) {
             enabled_features.mesh_shader_features = *mesh_shader_features;
         }
@@ -1456,7 +1464,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     // Extensions with properties to extract to DeviceExtensionProperties
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_khr_push_descriptor, &phys_dev_props->push_descriptor_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_shading_rate_image, &phys_dev_props->shading_rate_image_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props_NV);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_mesh_shader, &phys_dev_props->mesh_shader_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_inline_uniform_block,
                                    &phys_dev_props->inline_uniform_block_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_vertex_attribute_divisor,

@@ -352,6 +352,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.mesh_shader_props = mesh_shader_props;
     }
 
+    if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+        // Get the needed mesh shader EXT limits
+        auto mesh_shader_propsEXT = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&mesh_shader_propsEXT);
+        GetPhysicalDeviceProperties2(physicalDevice, prop2);
+        phys_dev_ext_props.mesh_shader_propsEXT = mesh_shader_propsEXT;
+    }
+
     if (IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
         // Get the needed ray tracing limits
         auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
@@ -5658,6 +5666,83 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
                          "vkCmdDrawMeshTasksIndirectCountNV() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
                          "), is not a multiple of 4.",
                          countBufferOffset);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer, uint32_t groupCountX,
+                                                                    uint32_t groupCountY, uint32_t groupCountZ) const {
+    bool skip = false;
+
+    if (groupCountX > phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[0]) {
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322",
+            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountX (0x%" PRIxLEAST32
+            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[0] (0x%" PRIxLEAST32
+            ").",
+            groupCountX, phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[0]);
+    }
+    if (groupCountY > phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[1]) {
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323",
+            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountY (0x%" PRIxLEAST32
+            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[1] (0x%" PRIxLEAST32
+            ").",
+            groupCountY, phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[1]);
+    }
+    if (groupCountZ > phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[2]) {
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324",
+            "vkCmdDrawMeshTasksEXT() parameter, uint32_t groupCountZ (0x%" PRIxLEAST32
+            "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupCount[2] (0x%" PRIxLEAST32
+            ").",
+            groupCountZ, phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupCount[2]);
+    }
+
+    uint32_t maxTaskWorkGroupTotalCount = phys_dev_ext_props.mesh_shader_propsEXT.maxTaskWorkGroupTotalCount;
+    uint64_t invocations = static_cast<uint64_t>(groupCountX) * static_cast<uint64_t>(groupCountY);
+    // Prevent overflow.
+    bool fail = false;
+    if (invocations > layer_data::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
+        fail = true;
+    }
+    if (!fail) {
+        invocations *= static_cast<uint64_t>(groupCountZ);
+        if (invocations > layer_data::MaxTypeValue(maxTaskWorkGroupTotalCount) || invocations > maxTaskWorkGroupTotalCount) {
+            fail = true;
+        }
+    }
+    if (fail) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325",
+                         "The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32
+                         ") and groupCountZ (0x%" PRIxLEAST32
+                         ") must be less than or equal to "
+                         "VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (0x%" PRIxLEAST32 ").",
+                         groupCountX, groupCountY, groupCountZ, maxTaskWorkGroupTotalCount);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                            VkDeviceSize offset, uint32_t drawCount,
+                                                                            uint32_t stride) const {
+    bool skip = false;
+
+    // TODO: vkMapMemory() and check the contents of buffer at offset
+    // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
+    if (!physical_device_features.multiDrawIndirect && ((drawCount > 1))) {
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718",
+            "vkCmdDrawMeshTasksIndirectEXT(): Device feature multiDrawIndirect disabled: count must be 0 or 1 but is %" PRIu32 "",
+            drawCount);
+    }
+    if (drawCount > device_limits.maxDrawIndirectCount) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719",
+                         "vkCmdDrawMeshTasksIndirectEXT: drawCount (%" PRIu32
+                         ") is not less than or equal to the maximum allowed (%" PRIu32 ").",
+                         drawCount, device_limits.maxDrawIndirectCount);
     }
 
     return skip;
