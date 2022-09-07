@@ -1019,7 +1019,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     }
                 }
             }
-        } else {
+        } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
             if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
                 for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
                     if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView !=
@@ -1029,7 +1029,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
                         if (samples != GetNumSamples(pPipeline)) {
-                            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_multi_sample,
+                            const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                          ? vuid.dynamic_rendering_07285
+                                                          : vuid.dynamic_rendering_multi_sample;
+                            skip |= LogError(pCB->commandBuffer(), vuid_string,
                                              "%s: Color attachment (%" PRIu32
                                              ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
                                              "sample count (%s)",
@@ -1046,7 +1049,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
                 const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
                 if (depth_image_samples != GetNumSamples(pPipeline)) {
-                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06189,
+                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                  ? vuid.dynamic_rendering_07286
+                                                  : vuid.dynamic_rendering_06189;
+                    skip |= LogError(pCB->commandBuffer(), vuid_string,
                                      "%s: Depth attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
                                      caller, string_VkSampleCountFlagBits(depth_image_samples),
@@ -1060,7 +1066,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
                 const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
                 if (stencil_image_samples != GetNumSamples(pPipeline)) {
-                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06190,
+                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                  ? vuid.dynamic_rendering_07287
+                                                  : vuid.dynamic_rendering_06190;
+                    skip |= LogError(pCB->commandBuffer(), vuid_string,
                                      "%s: Stencil attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
                                      caller, string_VkSampleCountFlagBits(stencil_image_samples),
@@ -1349,14 +1358,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
 
                 if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
-                      IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples)) &&
+                      IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
+                      enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
                     ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
                     LogObjectList objlist(pPipeline->pipeline());
                     objlist.add(pCB->activeRenderPass->renderPass());
-                skip |=
-                    LogError(objlist, vuid.rasterization_samples,
-                             "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.", caller,
-                             report_data->FormatHandle(pPipeline->pipeline()).c_str(), string_VkSampleCountFlagBits(pso_num_samples),
+                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                  ? vuid.msrtss_rasterization_samples
+                                                  : vuid.rasterization_samples;
+                    skip |= LogError(objlist, vuid_string,
+                                     "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
+                                     caller, report_data->FormatHandle(pPipeline->pipeline()).c_str(),
+                                     string_VkSampleCountFlagBits(pso_num_samples),
                                      report_data->FormatHandle(pCB->activeRenderPass->renderPass()).c_str(),
                                      string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
                 }

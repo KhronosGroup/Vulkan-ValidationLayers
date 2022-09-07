@@ -72,6 +72,7 @@ struct DrawDispatchVuid {
     const char* vertex_binding_attribute = kVUIDUndefined;
     const char* dynamic_state_setting_commands = kVUIDUndefined;
     const char* rasterization_samples = kVUIDUndefined;
+    const char* msrtss_rasterization_samples = kVUIDUndefined;
     const char* unprotected_command_buffer = kVUIDUndefined;
     const char* protected_command_buffer = kVUIDUndefined;
     const char* ray_query_protected_cb = kVUIDUndefined;
@@ -104,6 +105,9 @@ struct DrawDispatchVuid {
     const char* dynamic_rendering_06189 = kVUIDUndefined;
     const char* dynamic_rendering_06190 = kVUIDUndefined;
     const char* dynamic_rendering_06198 = kVUIDUndefined;
+    const char* dynamic_rendering_07285 = kVUIDUndefined;
+    const char* dynamic_rendering_07286 = kVUIDUndefined;
+    const char* dynamic_rendering_07287 = kVUIDUndefined;
     const char* storage_image_read_without_format = kVUIDUndefined;
     const char* storage_image_write_without_format = kVUIDUndefined;
     const char* storage_texel_buffer_read_without_format = kVUIDUndefined;
