@@ -2568,9 +2568,9 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* functi
 
 void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* function_name, std::shared_ptr<bp_state::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
-    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](const ValidationStateTracker&, const QUEUE_STATE&,
-                                                                                const CMD_BUFFER_STATE&) -> bool {
-        ValidateImageInQueue(function_name, *state, usage, array_layer, mip_level);
+    funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
+                        const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs) -> bool {
+        ValidateImageInQueue(vst, qs, cbs, function_name, *state, usage, array_layer, mip_level);
         return false;
     });
 }
@@ -2649,9 +2649,11 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
     }
 }
 
-void BestPractices::ValidateImageInQueue(const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
+void BestPractices::ValidateImageInQueue(const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs,
+                                         const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
                                          uint32_t array_layer, uint32_t mip_level) {
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage);
+    auto last_queue_family = state.UpdateQueueFamily(qs.queueFamilyIndex);
 
     // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
     if (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
