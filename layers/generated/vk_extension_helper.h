@@ -434,6 +434,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_image_view_min_lod{kNotEnabled};
     ExtEnabled vk_ext_index_type_uint8{kNotEnabled};
     ExtEnabled vk_ext_inline_uniform_block{kNotEnabled};
+    ExtEnabled vk_ext_legacy_dithering{kNotEnabled};
     ExtEnabled vk_ext_line_rasterization{kNotEnabled};
     ExtEnabled vk_ext_load_store_op_none{kNotEnabled};
     ExtEnabled vk_ext_memory_budget{kNotEnabled};
@@ -772,6 +773,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE_1_EXTENSION_NAME}}})},
+            {VK_EXT_LEGACY_DITHERING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_legacy_dithering, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_line_rasterization, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_load_store_op_none, {})},
@@ -780,7 +783,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_MESH_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_mesh_shader, {{
-                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {VK_EXT_METAL_OBJECTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
 #endif
@@ -1391,6 +1395,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME,
     VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+    VK_EXT_LEGACY_DITHERING_EXTENSION_NAME,
     VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME,
     VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,

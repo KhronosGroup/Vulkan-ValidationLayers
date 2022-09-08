@@ -6209,6 +6209,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT> {
     typedef VkShaderModuleIdentifierEXT Type;
 };
 
+// Map type VkPhysicalDeviceLegacyDitheringFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceLegacyDitheringFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT> {
+    typedef VkPhysicalDeviceLegacyDitheringFeaturesEXT Type;
+};
+
 // Map type VkPhysicalDeviceTilePropertiesFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM
 template <> struct LvlTypeMap<VkPhysicalDeviceTilePropertiesFeaturesQCOM> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM;
