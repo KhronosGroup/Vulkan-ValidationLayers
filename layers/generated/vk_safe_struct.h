@@ -11944,6 +11944,21 @@ struct safe_VkShaderModuleIdentifierEXT {
     VkShaderModuleIdentifierEXT const *ptr() const { return reinterpret_cast<VkShaderModuleIdentifierEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 legacyDithering;
+    safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const VkPhysicalDeviceLegacyDitheringFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& operator=(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT();
+    ~safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT();
+    void initialize(const VkPhysicalDeviceLegacyDitheringFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT* copy_src);
+    VkPhysicalDeviceLegacyDitheringFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceLegacyDitheringFeaturesEXT *>(this); }
+    VkPhysicalDeviceLegacyDitheringFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceLegacyDitheringFeaturesEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM {
     VkStructureType sType;
     void* pNext{};

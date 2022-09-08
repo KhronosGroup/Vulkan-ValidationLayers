@@ -54627,6 +54627,62 @@ void safe_VkShaderModuleIdentifierEXT::initialize(const safe_VkShaderModuleIdent
     }
 }
 
+safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const VkPhysicalDeviceLegacyDitheringFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    legacyDithering(in_struct->legacyDithering)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT),
+    pNext(nullptr),
+    legacyDithering()
+{}
+
+safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    legacyDithering = copy_src.legacyDithering;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::operator=(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    legacyDithering = copy_src.legacyDithering;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::~safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::initialize(const VkPhysicalDeviceLegacyDitheringFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    legacyDithering = in_struct->legacyDithering;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT::initialize(const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    legacyDithering = copy_src->legacyDithering;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM::safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(const VkPhysicalDeviceTilePropertiesFeaturesQCOM* in_struct) :
     sType(in_struct->sType),
     tileProperties(in_struct->tileProperties)
@@ -58279,6 +58335,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT:
             safe_pNext = new safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT(reinterpret_cast<const VkPipelineShaderStageModuleIdentifierCreateInfoEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceLegacyDitheringFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
             safe_pNext = new safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(pNext));
             break;
@@ -59594,6 +59653,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkPipelineShaderStageModuleIdentifierCreateInfoEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LEGACY_DITHERING_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceLegacyDitheringFeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(header);

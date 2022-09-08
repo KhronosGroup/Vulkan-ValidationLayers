@@ -2004,6 +2004,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_depth_clip_enable", "d3demulation"},
     {"VK_EXT_device_memory_report", "devtools"},
     {"VK_EXT_image_2d_view_of_3d", "glemulation"},
+    {"VK_EXT_legacy_dithering", "glemulation"},
     {"VK_EXT_line_rasterization", "cadsupport"},
     {"VK_EXT_non_seamless_cube_map", "d3demulation, glemulation"},
     {"VK_EXT_pipeline_creation_feedback", "devtools"},
