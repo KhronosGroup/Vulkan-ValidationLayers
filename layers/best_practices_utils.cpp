@@ -2059,8 +2059,10 @@ void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cmd_
 template <typename Func>
 static void ForEachSubresource(const IMAGE_STATE& image, const VkImageSubresourceRange& range, Func&& func)
 {
-    const uint32_t layerCount = (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? image.full_range.layerCount : range.layerCount;
-    const uint32_t levelCount = (range.levelCount == VK_REMAINING_MIP_LEVELS) ? image.full_range.levelCount : range.levelCount;
+    const uint32_t layerCount =
+        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image.full_range.layerCount - range.baseArrayLayer) : range.layerCount;
+    const uint32_t levelCount =
+        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image.full_range.levelCount - range.baseMipLevel) : range.levelCount;
 
     for (uint32_t i = 0; i < layerCount; ++i) {
         const uint32_t layer = range.baseArrayLayer + i;
