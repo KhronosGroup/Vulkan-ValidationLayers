@@ -741,14 +741,18 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     pipeline_rendering_info.stencilAttachmentFormat = depth_format;
 
     VkImageObj image(m_device);
-    image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    // 3 array layers
+    image.Init(image.ImageCreateInfo2D(32, 32, 1, 3, depth_format,
+                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                       VK_IMAGE_TILING_OPTIMAL, 0));
     ASSERT_TRUE(image.initialized());
 
     VkImageViewCreateInfo image_view_ci = LvlInitStruct<VkImageViewCreateInfo>();
     image_view_ci.image = image.handle();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = depth_format;
-    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    // rendering to layer index 1
+    image_view_ci.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1, 1};
 
     vk_testing::ImageView depth_image_view(*m_device, image_view_ci);
 
@@ -778,7 +782,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     discard_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     discard_barrier.image = image.handle();
-    discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    discard_barrier.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                        VK_REMAINING_ARRAY_LAYERS};
 
     VkImageMemoryBarrier2 discard_barrier2 = LvlInitStruct<VkImageMemoryBarrier2>();
     discard_barrier2.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
@@ -786,7 +791,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_ZcullDirection)
     discard_barrier2.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     discard_barrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     discard_barrier2.image = image.handle();
-    discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
+                                         VK_REMAINING_ARRAY_LAYERS};
 
     VkDependencyInfo discard_dependency_info = LvlInitStruct<VkDependencyInfo>();
     discard_dependency_info.imageMemoryBarrierCount = 1;
