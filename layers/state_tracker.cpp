@@ -1740,12 +1740,21 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                 }
             }
         }
+        auto timeline_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(bind_info.pNext);
         CB_SUBMISSION submission;
         for (uint32_t i = 0; i < bind_info.waitSemaphoreCount; ++i) {
-            submission.AddWaitSemaphore(Get<SEMAPHORE_STATE>(bind_info.pWaitSemaphores[i]), 0);
+            uint64_t payload = 0;
+            if (timeline_info && i < timeline_info->waitSemaphoreValueCount) {
+                payload = timeline_info->pWaitSemaphoreValues[i];
+            }
+            submission.AddWaitSemaphore(Get<SEMAPHORE_STATE>(bind_info.pWaitSemaphores[i]), payload);
         }
         for (uint32_t i = 0; i < bind_info.signalSemaphoreCount; ++i) {
-            submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(bind_info.pSignalSemaphores[i]), 0);
+            uint64_t payload = 0;
+            if (timeline_info && i < timeline_info->signalSemaphoreValueCount) {
+                payload = timeline_info->pSignalSemaphoreValues[i];
+            }
+            submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(bind_info.pSignalSemaphores[i]), payload);
         }
         if (bind_idx == (bindInfoCount - 1)) {
             submission.AddFence(Get<FENCE_STATE>(fence));
