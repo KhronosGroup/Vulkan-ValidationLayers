@@ -12632,6 +12632,7 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
 
     ms_render_to_single_sampled_features.multisampledRenderToSingleSampled = true;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkAttachmentReference2 attachmentRef = LvlInitStruct<VkAttachmentReference2>();
     attachmentRef.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -12901,6 +12902,33 @@ TEST_F(VkLayerTest, MultisampledRenderToSingleSampled) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06863");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
+
+    // Positive Test: Image view with VK_SAMPLE_COUNT_1_BIT should not get error 07285 in pipeline created with attachment with VK_SAMPLE_COUNT_2_BIT
+    CreatePipelineHelper dr_pipe_helper(*this);
+    dr_pipe_helper.InitInfo();
+    dr_pipe_helper.InitState();
+    dr_pipe_helper.gp_ci_.renderPass = VK_NULL_HANDLE;
+    dr_pipe_helper.pipe_ms_state_ci_ = ms_state;
+    dr_pipe_helper.CreateGraphicsPipeline();
+    begin_rendering_info.pNext = nullptr;
+    color_attachment.resolveImageView = VK_NULL_HANDLE;
+    color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe_helper.pipeline_);
+    m_commandBuffer->Draw(1, 1, 0, 0);
+    m_commandBuffer->EndRendering();
+    color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+
+    // Positive Test: Same as previous test but using render pass and should not get error 07284
+    CreatePipelineHelper test_pipe(*this);
+    test_pipe.InitInfo();
+    test_pipe.InitState();
+    test_pipe.pipe_ms_state_ci_ = ms_state;
+    test_pipe.CreateGraphicsPipeline();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, test_pipe.pipeline_);
+    m_commandBuffer->Draw(1, 1, 0, 0);
+    m_commandBuffer->EndRenderPass();
 
     // Find an image format that can't be sampled
     image_format_prop = LvlInitStruct<VkImageFormatProperties2>();
