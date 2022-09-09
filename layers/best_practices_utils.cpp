@@ -2570,7 +2570,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const char* functi
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     funcs.push_back([this, function_name, state, usage, array_layer, mip_level](
                         const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs) -> bool {
-        ValidateImageInQueue(vst, qs, cbs, function_name, *state, usage, array_layer, mip_level);
+        ValidateImageInQueue(qs, cbs, function_name, *state, usage, array_layer, mip_level);
         return false;
     });
 }
@@ -2649,10 +2649,30 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
     }
 }
 
-void BestPractices::ValidateImageInQueue(const ValidationStateTracker& vst, const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs,
-                                         const char* function_name, bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                         uint32_t array_layer, uint32_t mip_level) {
-    auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, qs.queueFamilyIndex);
+void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, const char* function_name,
+                                         bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
+                                         uint32_t mip_level) {
+    auto last_queue_family = state.GetLastQueueFamily(array_layer, mip_level);
+    auto queue_family = qs.queueFamilyIndex;
+    auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
+
+    // Concurrent sharing usage of image with exclusive sharing mode
+    if (state.createInfo.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_queue_family != queue_family) {
+        // if UNDEFINED then first use/acquisition of subresource
+        if (last_usage != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
+            // If usage might read from the subresource, as contents are undefined
+            // so write only is fine
+            if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE || usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ ||
+                usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS) {
+                LogWarning(
+                    state.Handle().Cast<VkImage>(), kVUID_BestPractices_ConcurrentUsageOfExclusiveImage,
+                    "%s : Subresource (arrayLayer: %u, mipLevel: %u) of image is used on queue family index %u after being used on "
+                    "queue family index %u, "
+                    "but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer operation",
+                    function_name, array_layer, mip_level, queue_family, last_queue_family);
+            }
+        }
+    }
 
     // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
     if (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
