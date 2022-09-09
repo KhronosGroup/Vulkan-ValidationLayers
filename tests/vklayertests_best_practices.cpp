@@ -1893,3 +1893,161 @@ TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
 
     if (device) vk::DestroyDevice(device, nullptr);
 }
+
+TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
+    TEST_DESCRIPTION("Test for using a queue exclusive image on multiple queues");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkQueueObj *graphics_queue = m_device->GetDefaultQueue();
+
+    VkQueueObj *compute_queue = nullptr;
+    for (uint32_t i = 0; i < m_device->compute_queues().size(); ++i) {
+        auto cqi = m_device->compute_queues()[i];
+        if (cqi->get_family_index() != graphics_queue->get_family_index()) {
+            compute_queue = cqi;
+            break;
+        }
+    }
+
+    VkQueueObj *transfer_queue = nullptr;
+    for (uint32_t i = 0; i < m_device->dma_queues().size(); ++i) {
+        auto tqi = m_device->dma_queues()[i];
+        if (tqi->get_family_index() != graphics_queue->get_family_index()) {
+            if (compute_queue == nullptr || tqi->get_family_index() != compute_queue->get_family_index()) {
+                transfer_queue = tqi;
+                break;
+            }
+        }
+    }
+
+    if (compute_queue == nullptr) {
+        GTEST_SKIP() << "No separate queue family from graphics queue";
+    }
+
+    // Setup necessary objects correctly
+
+    const unsigned int w = 100;
+    const unsigned int h = 100;
+
+    // Setup Image
+    VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
+    image_info.extent = {w, h, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImageObj image(m_device);
+    image.init(&image_info);
+
+    const auto image_view = image.targetView(image_info.format);
+
+    // Setup RenderPass
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;    // Write to image
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  // Store written image
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.format = image_info.format;
+
+    VkAttachmentReference ar{};
+    ar.attachment = 0;
+    ar.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription spd{};
+    spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    spd.colorAttachmentCount = 1;
+    spd.pColorAttachments = &ar;
+
+    VkRenderPassCreateInfo rp_info = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &spd;
+
+    vk_testing::RenderPass rp(*m_device, rp_info);
+
+    // Setup Framebuffer
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.width = w;
+    fb_info.height = h;
+    fb_info.layers = 1;
+    fb_info.renderPass = rp.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &image_view;
+
+    vk_testing::Framebuffer fb(*m_device, fb_info);
+
+    VkCommandPoolObj graphics_pool(m_device, graphics_queue->get_family_index());
+
+    VkCommandBufferObj graphics_buffer(m_device, &graphics_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, graphics_queue);
+
+    // Record graphics command buffer
+    graphics_buffer.begin();
+
+    VkClearValue cv;
+    cv.color = VkClearColorValue{};
+    std::fill(std::begin(cv.color.float32), std::begin(cv.color.float32) + 4, 1.0f);
+
+    VkRenderPassBeginInfo begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    begin_info.clearValueCount = 1;
+    begin_info.pClearValues = &cv;
+    begin_info.renderPass = rp.handle();
+    begin_info.renderArea.extent.width = w;
+    begin_info.renderArea.extent.height = h;
+    begin_info.framebuffer = fb.handle();
+
+    graphics_buffer.BeginRenderPass(begin_info);
+
+    graphics_buffer.EndRenderPass();
+
+    graphics_buffer.end();
+
+    graphics_buffer.QueueCommandBuffer();
+
+    // Record compute command buffer
+
+    const char *cs = R"glsl(#version 450
+    layout(local_size_x=1, local_size_y=1) in;
+    layout(set=0, binding=0, rgba32f) uniform image2D img;
+    void main(){
+        vec4 v = imageLoad(img, gl_GlobalInvocationID.xy);
+    }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_ = layer_data::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.InitDescriptorSetInfo();
+    pipe.dsl_bindings_[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    pipe.dsl_bindings_[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+
+    VkSamplerObj sampler(m_device);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                   VK_IMAGE_LAYOUT_GENERAL);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    VkCommandPoolObj compute_pool(m_device, compute_queue->get_family_index());
+
+    VkCommandBufferObj compute_buffer(m_device, &compute_pool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, compute_queue);
+
+    compute_buffer.begin();
+
+    vk::CmdBindDescriptorSets(compute_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+
+    vk::CmdDispatch(compute_buffer.handle(), w, h, 1);
+
+    compute_buffer.end();
+
+    compute_buffer.QueueCommandBuffer();
+}
