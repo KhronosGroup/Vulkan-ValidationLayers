@@ -118,6 +118,15 @@ class StatelessValidation : public ValidationObject {
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
+    // VK_EXT_pipeline_robustness functionality changes depending on whether a device supports the
+    // robustBufferAccess2 or robustImageAccess features, these features do not need to be enabled
+    // for the functionality to be used
+    struct DeviceRobustnessExtensionFeatures {
+        VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
+        VkPhysicalDeviceImageRobustnessFeaturesEXT image_robustness_features;
+    };
+    DeviceRobustnessExtensionFeatures phys_dev_robustness_ext_features = {};
+
     struct SubpassesUsageStates {
         layer_data::unordered_set<uint32_t> subpasses_using_color_attachment;
         layer_data::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
@@ -1395,6 +1404,7 @@ class StatelessValidation : public ValidationObject {
     void PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                           const VkAllocationCallbacks *pAllocator) override;
     void GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2 &pProperties) const;
+    void GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 &pFeatures) const;
     void PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                     const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) override;
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
@@ -1477,6 +1487,8 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
                                                 const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
+    bool ValidatePipelineRobustnessCreateInfo(const char *func_name, const char *parameter_name,
+                                              const VkPipelineRobustnessCreateInfoEXT &create_info) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;

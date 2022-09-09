@@ -271,6 +271,14 @@ void StatelessValidation::GetPhysicalDeviceProperties2(VkPhysicalDevice physical
     }
 }
 
+void StatelessValidation::GetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 &pFeatures) const {
+    if (api_version >= VK_API_VERSION_1_1) {
+        DispatchGetPhysicalDeviceFeatures2(physicalDevice, &pFeatures);
+    } else if (IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) {
+        DispatchGetPhysicalDeviceFeatures2KHR(physicalDevice, &pFeatures);
+    }
+}
+
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
@@ -356,6 +364,18 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&maintance4_props);
         GetPhysicalDeviceProperties2(physicalDevice, prop2);
         phys_dev_ext_props.maintenance4_props = maintance4_props;
+    }
+
+    if (IsExtEnabled(device_extensions.vk_ext_pipeline_robustness)) {
+        auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+        auto image_robustness_features = LvlInitStruct<VkPhysicalDeviceImageRobustnessFeaturesEXT>(&robustness2_features);
+
+        auto feat2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&image_robustness_features);
+
+        GetPhysicalDeviceFeatures2(physicalDevice, feat2);
+
+        stateless_validation->phys_dev_robustness_ext_features.robustness2_features = robustness2_features;
+        stateless_validation->phys_dev_robustness_ext_features.image_robustness_features = image_robustness_features;
     }
 
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
@@ -1765,6 +1785,96 @@ bool StatelessValidation::manual_PreCallValidateCreatePipelineLayout(VkDevice de
     return skip;
 }
 
+bool StatelessValidation::ValidatePipelineRobustnessCreateInfo(const char *func_name, const char *parameter_name,
+                                                               const VkPipelineRobustnessCreateInfoEXT &create_info) const {
+    bool skip = false;
+
+    const auto *pipeline_robustness_features =
+        LvlFindInChain<VkPhysicalDevicePipelineRobustnessFeaturesEXT>(device_createinfo_pnext);
+
+    if (pipeline_robustness_features && pipeline_robustness_features->pipelineRobustness) {
+        if (!phys_dev_robustness_ext_features.image_robustness_features.robustImageAccess) {
+            if (create_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT) {
+                skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-robustImageAccess-06930",
+                                 "%s(): %s "
+                                 "has VkPipelineRobustnessCreateInfoEXT::images == "
+                                 "VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT "
+                                 "but robustImageAccess2 is not supported.",
+                                 func_name, parameter_name);
+            }
+        }
+
+        if (!phys_dev_robustness_ext_features.robustness2_features.robustBufferAccess2) {
+            if (create_info.storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) {
+                skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06931",
+                                 "%s(): %s "
+                                 "has VkPipelineRobustnessCreateInfoEXT::storageBuffers == "
+                                 "VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT "
+                                 "robustBufferAccess2 is not supported.",
+                                 func_name, parameter_name);
+            }
+            if (create_info.uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) {
+                skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06932",
+                                 "%s(): %s "
+                                 "has VkPipelineRobustnessCreateInfoEXT::uniformBuffers == "
+                                 "VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT "
+                                 "robustBufferAccess2 is not supported.",
+                                 func_name, parameter_name);
+            }
+            if (create_info.vertexInputs == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT) {
+                skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-robustBufferAccess2-06933",
+                                 "%s(): %s "
+                                 "has VkPipelineRobustnessCreateInfoEXT::vertexInputs == "
+                                 "VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2_EXT "
+                                 "but robustBufferAccess2 is not supported.",
+                                 func_name, parameter_name);
+            }
+        }
+
+        if (!phys_dev_robustness_ext_features.robustness2_features.robustImageAccess2) {
+            if (create_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT) {
+                skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-robustImageAccess2-06934",
+                                 "%s(): %s "
+                                 "has VkPipelineRobustnessCreateInfoEXT::images == "
+                                 "VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2_EXT "
+                                 "but robustImageAccess2 is not supported.",
+                                 func_name, parameter_name);
+            }
+        }
+    } else {
+        if (create_info.storageBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06926",
+                             "%s(): %s "
+                             "has VkPipelineRobustnessCreateInfoEXT::storageBuffers == %s "
+                             "but VkPhysicalDevicePipelineRobustnessFeaturesEXT::pipelineRobustness == VK_FALSE",
+                             func_name, parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.storageBuffers));
+        }
+        if (create_info.uniformBuffers != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06927",
+                             "%s(): %s "
+                             "has VkPipelineRobustnessCreateInfoEXT::uniformBuffers == %s "
+                             "but VkPhysicalDevicePipelineRobustnessFeaturesEXT::pipelineRobustness == VK_FALSE",
+                             func_name, parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.uniformBuffers));
+        }
+        if (create_info.vertexInputs != VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06928",
+                             "%s(): %s "
+                             "has VkPipelineRobustnessCreateInfoEXT::vertexInputs == %s "
+                             "but VkPhysicalDevicePipelineRobustnessFeaturesEXT::pipelineRobustness == VK_FALSE",
+                             func_name, parameter_name, string_VkPipelineRobustnessBufferBehaviorEXT(create_info.vertexInputs));
+        }
+        if (create_info.images != VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DEVICE_DEFAULT_EXT) {
+            skip |= LogError(device, "VUID-VkPipelineRobustnessCreateInfoEXT-pipelineRobustness-06929",
+                             "%s(): %s "
+                             "has VkPipelineRobustnessCreateInfoEXT::images == %s "
+                             "but VkPhysicalDevicePipelineRobustnessFeaturesEXT::pipelineRobustness == VK_FALSE",
+                             func_name, parameter_name, string_VkPipelineRobustnessImageBehaviorEXT(create_info.images));
+        }
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
                                                                  const VkPipelineShaderStageCreateInfo *pCreateInfo) const {
     bool skip = false;
@@ -1780,6 +1890,11 @@ bool StatelessValidation::ValidatePipelineShaderStageCreateInfo(const char *func
                 "VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT is included in the pNext chain.",
                 func_name, msg, pCreateInfo->flags);
         }
+    }
+
+    const auto pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfo->pNext);
+    if (pipeline_robustness_info) {
+        skip |= ValidatePipelineRobustnessCreateInfo(func_name, msg, *pipeline_robustness_info);
     }
 
     return skip;
@@ -3792,6 +3907,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "VK_PIPELINE_CREATE_RAY_TRACING_ALLOW_MOTION_BIT_NV.",
                                  i, flags);
             }
+
+            const auto pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(create_info.pNext);
+            if (pipeline_robustness_info) {
+                std::stringstream parameter_name;
+                parameter_name << "pCreateInfos[" << i << "]";
+                skip |= ValidatePipelineRobustnessCreateInfo("vkCreateGraphicsPipelines", parameter_name.str().c_str(),
+                                                             *pipeline_robustness_info);
+            }
         }
     }
 
@@ -3927,6 +4050,14 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                      i, pCreateInfos[i].basePipelineIndex, createInfoCount);
                 }
             }
+        }
+
+        const auto pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
+        if (pipeline_robustness_info) {
+            std::stringstream parameter_name;
+            parameter_name << "pCreateInfos[" << i << "]";
+            skip |= ValidatePipelineRobustnessCreateInfo("vkCreateComputePipelines", parameter_name.str().c_str(),
+                                                         *pipeline_robustness_info);
         }
 
         std::stringstream msg;
@@ -6679,6 +6810,14 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                                      i, j, string_VkDynamicState(pCreateInfos[i].pDynamicState->pDynamicStates[j]));
                 }
             }
+        }
+
+        const auto pipeline_robustness_info = LvlFindInChain<VkPipelineRobustnessCreateInfoEXT>(pCreateInfos[i].pNext);
+        if (pipeline_robustness_info) {
+            std::stringstream parameter_name;
+            parameter_name << "pCreateInfos[" << i << "]";
+            skip |= ValidatePipelineRobustnessCreateInfo("vkCreateRayTracingPipelinesKHR", parameter_name.str().c_str(),
+                                                         *pipeline_robustness_info);
         }
     }
 
