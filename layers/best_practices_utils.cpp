@@ -2792,6 +2792,12 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
                 continue;
             }
 
+            // If renderpass doesn't load attachment, no need to validate image in queue
+            if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT) ||
+                (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_NONE_EXT)) {
+                continue;
+            }
+
             IMAGE_SUBRESOURCE_USAGE_BP usage = IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED;
 
             if ((!FormatIsStencilOnly(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) ||
@@ -2824,6 +2830,12 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
             const auto& attachment = rp_state->createInfo.pAttachments[att];
 
             if (!RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
+                continue;
+            }
+
+            // If renderpass doesn't store attachment, no need to validate image in queue
+            if ((!FormatIsStencilOnly(attachment.format) && attachment.storeOp == VK_ATTACHMENT_STORE_OP_NONE) ||
+                (FormatHasStencil(attachment.format) && attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_NONE)) {
                 continue;
             }
 
