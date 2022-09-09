@@ -2663,7 +2663,8 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
             // If usage might read from the subresource, as contents are undefined
             // so write only is fine
             if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE || usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ ||
-                usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS) {
+                usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS ||
+                usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 LogWarning(
                     state.Handle().Cast<VkImage>(), kVUID_BestPractices_ConcurrentUsageOfExclusiveImage,
                     "%s : Subresource (arrayLayer: %u, mipLevel: %u) of image is used on queue family index %u after being used on "
@@ -5053,6 +5054,22 @@ template <typename ImageMemoryBarrier>
 void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) {
     auto cb = Get<bp_state::CommandBuffer>(commandBuffer);
     assert(cb);
+
+    // Is a queue ownership acquisition barrier
+    if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
+        barrier.dstQueueFamilyIndex == cb->command_pool->queueFamilyIndex) {
+        auto image = Get<bp_state::Image>(barrier.image);
+        auto subresource_range = barrier.subresourceRange;
+        cb->queue_submit_functions.push_back([this, image, subresource_range](const ValidationStateTracker& vst,
+                                                                              const QUEUE_STATE& qs,
+                                                                              const CMD_BUFFER_STATE& cbs) -> bool {
+            ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
+                // Update queue family index without changing usage, signifying a correct queue family transfer
+                image->UpdateUsage(layer, level, image->GetUsage(layer, level), qs.queueFamilyIndex);
+            });
+            return false;
+        });
+    }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         RecordResetZcullDirection(*cb, barrier.image, barrier.subresourceRange);
