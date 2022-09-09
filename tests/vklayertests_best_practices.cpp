@@ -2056,7 +2056,10 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     compute_buffer.end();
 
+    // Warning should trigger as we are potentially accessing undefined resources
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-ConcurrentUsageOfExclusiveImage");
     compute_buffer.QueueCommandBuffer();
+    m_errorMonitor->VerifyFound();
 
     vk::ResetCommandPool(device(), graphics_pool.handle(), 0);
     vk::ResetCommandPool(device(), compute_pool.handle(), 0);
@@ -2105,5 +2108,8 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     compute_buffer.end();
 
+    // Warning shouldn't trigger
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-ConcurrentUsageOfExclusiveImage");
     compute_buffer.QueueCommandBuffer();
+    m_errorMonitor->Finish();
 }
