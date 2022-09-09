@@ -1672,12 +1672,12 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachment.format = image_info.format;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
-    ar.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    ar.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription spd{};
     spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1772,12 +1772,12 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;        // Clearing as only modification
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;  // Dont care even though we will load afterwards
     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     attachment.format = image_info.format;
 
     VkAttachmentReference ar{};
     ar.attachment = 0;
-    ar.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    ar.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription spd{};
     spd.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -1795,8 +1795,8 @@ TEST_F(VkBestPracticesLayerTest, DontCareThenLoad) {
     // Setup second RenderPass
     attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;  // Loading even though was stored with dont care
     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     vk_testing::RenderPass rp2(*m_device, rp_info);
 
