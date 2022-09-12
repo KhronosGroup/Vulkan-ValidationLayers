@@ -269,6 +269,7 @@ source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
     "layers/generated",
+    "$vvl_spirv_headers_dir/include",
   ]
   sources = [
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",

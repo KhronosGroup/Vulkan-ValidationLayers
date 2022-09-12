@@ -662,6 +662,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderModuleId(const SHADER_MODULE_STATE& module_state, const PipelineStageState& stage_state,
                                 const safe_VkPipelineShaderStageCreateInfo* pStage, const VkPipelineCreateFlags flags) const;
     bool ValidateShaderClock(const SHADER_MODULE_STATE& module_state, spirv_inst_iter& insn) const;
+    bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state, spirv_inst_iter& insn) const;
 
     template <typename RegionType>
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,

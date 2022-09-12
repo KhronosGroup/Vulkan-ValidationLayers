@@ -1,4 +1,4 @@
-# Copyright (c) 2019,2021 LunarG, Inc.
+# Copyright (c) 2019,2021-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 # Paths to validation layer dependencies
 vulkan_headers_dir = "//external/Vulkan-Headers"
 vvl_spirv_tools_dir = "//external/SPIRV-Tools"
+vvl_spirv_headers_dir = "//external/SPIRV-Headers"
 vvl_glslang_dir = "//external/glslang/"
 robin_hood_headers_dir = "//external/robin-hood-hashing/src/include"
 

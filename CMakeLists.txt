@@ -372,6 +372,7 @@ target_include_directories(VkLayer_utils
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR}
+                                  ${SPIRV_HEADERS_INCLUDE_DIR}
                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if (USE_ROBIN_HOOD_HASHING)
