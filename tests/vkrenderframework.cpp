@@ -657,6 +657,9 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     if (is_instance_ext) {
         const auto &info = InstanceExtensions::get_info(ext_name);
         for (const auto &req : info.requirements) {
+            if (0 == strncmp(req.name, "VK_VERSION", 10)) {
+                continue;
+            }
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
             }
