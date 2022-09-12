@@ -2727,6 +2727,37 @@ bool CoreChecks::ValidateShaderClock(const SHADER_MODULE_STATE &module_state, sp
     return skip;
 }
 
+bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, spirv_inst_iter &insn) const {
+    bool skip = false;
+
+    if (insn.opcode() == spv::OpImageWrite) {
+        // guaranteed by spirv-val to be an OpTypeImage
+        const uint32_t image = module_state.GetTypeId(insn.word(1));
+        const spirv_inst_iter image_def = module_state.get_def(image);
+        const uint32_t image_format = image_def.word(8);
+        // If format is 'Unknown' then need to wait until a descriptor is bound to it
+        if (image_format != spv::ImageFormatUnknown) {
+            const VkFormat compatible_format = CompatibleSpirvImageFormat(image_format);
+            if (compatible_format != VK_FORMAT_UNDEFINED) {
+                const uint32_t format_component_count = FormatComponentCount(compatible_format);
+                const spirv_inst_iter texel_def = module_state.get_def(insn.word(3));
+                const spirv_inst_iter texel_type = module_state.get_def(texel_def.word(1));
+                const uint32_t texel_component_count = (texel_type.opcode() == spv::OpTypeVector) ? texel_type.word(3) : 1;
+                if (texel_component_count < format_component_count) {
+                    skip |= LogError(device, " VUID-RuntimeSpirv-OpImageWrite-07112",
+                                     "%s: OpImageWrite Texel operand only contains %" PRIu32
+                                     " components, but the OpImage format mapping to %s has %" PRIu32 " components.\n%s\n%s",
+                                     report_data->FormatHandle(module_state.vk_shader_module()).c_str(), texel_component_count,
+                                     string_VkFormat(compatible_format), format_component_count,
+                                     module_state.DescribeInstruction(insn).c_str(),
+                                     module_state.DescribeInstruction(image_def).c_str());
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, const PipelineStageState &stage_state,
                                              bool check_point_size) const {
     bool skip = false;
@@ -2976,6 +3007,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         skip |= ValidateShaderClock(module_state, insn);
         skip |= ValidateShaderStageGroupNonUniform(module_state, pStage->stage, insn);
         skip |= ValidateMemoryScope(module_state, insn);
+        skip |= ValidateImageWrite(module_state, insn);
     }
 
     skip |= ValidateTransformFeedback(module_state);
