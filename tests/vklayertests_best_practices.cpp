@@ -1911,17 +1911,6 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
         }
     }
 
-    VkQueueObj *transfer_queue = nullptr;
-    for (uint32_t i = 0; i < m_device->dma_queues().size(); ++i) {
-        auto tqi = m_device->dma_queues()[i];
-        if (tqi->get_family_index() != graphics_queue->get_family_index()) {
-            if (compute_queue == nullptr || tqi->get_family_index() != compute_queue->get_family_index()) {
-                transfer_queue = tqi;
-                break;
-            }
-        }
-    }
-
     if (compute_queue == nullptr) {
         GTEST_SKIP() << "No separate queue family from graphics queue";
     }
