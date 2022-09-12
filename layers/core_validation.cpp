@@ -1621,7 +1621,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                     // ?
                                     if (subpass_input_views.count(image_view) == 0) {
                                         result |=
-                                            LogError(image_view, "UNASSIGNED-input-attachment-descriptor-not-in-subpass",
+                                            LogError(image_view, kVUID_Core_InputDescriptorInvalid,
                                                      "Input attachment descriptor image view is not a subpass input attachment");
                                     } else {
                                         subpass_input_views.erase(image_view);
