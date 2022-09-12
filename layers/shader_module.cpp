@@ -1196,18 +1196,18 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(spirv_inst_iter builtin_instr, spirv_
 // Used by the collection functions to help aid in state tracking
 struct shader_module_used_operators {
     bool updated;
-    std::vector<uint32_t> image_read_members;
-    std::vector<uint32_t> image_write_members;
-    std::vector<uint32_t> atomic_members;
-    std::vector<uint32_t> store_members;
-    std::vector<uint32_t> atomic_store_members;
-    std::vector<uint32_t> sampler_implicitLod_dref_proj_members;  // sampler Load id
-    std::vector<uint32_t> sampler_bias_offset_members;            // sampler Load id
-    std::vector<uint32_t> image_dref_members;
-    std::vector<std::pair<uint32_t, uint32_t>> sampled_image_members;  // <image,sampler> Load id
-    layer_data::unordered_map<uint32_t, uint32_t> load_members;
-    layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;
-    layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;
+    std::vector<uint32_t> image_read_load_ids;
+    std::vector<uint32_t> image_write_load_ids;
+    std::vector<uint32_t> atomic_pointer_ids;
+    std::vector<uint32_t> store_pointer_ids;
+    std::vector<uint32_t> atomic_store_pointer_ids;
+    std::vector<uint32_t> sampler_implicitLod_dref_proj_load_ids;
+    std::vector<uint32_t> sampler_bias_offset_load_ids;
+    std::vector<uint32_t> image_dref_load_ids;
+    std::vector<std::pair<uint32_t, uint32_t>> sampled_image_load_ids;                       // <image, sampler>
+    layer_data::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
+    layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
+    layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
 
     shader_module_used_operators() : updated(false) {}
 
@@ -1233,10 +1233,10 @@ struct shader_module_used_operators {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
                     auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
-                    sampler_implicitLod_dref_proj_members.emplace_back(load_id);
+                    sampler_implicitLod_dref_proj_load_ids.emplace_back(load_id);
                     // ImageOperands in index: 5
                     if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
-                        sampler_bias_offset_members.emplace_back(load_id);
+                        sampler_bias_offset_load_ids.emplace_back(load_id);
                     }
                     break;
                 }
@@ -1245,7 +1245,7 @@ struct shader_module_used_operators {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
                     auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(3) : insn.word(3);
-                    image_dref_members.emplace_back(load_id);
+                    image_dref_load_ids.emplace_back(load_id);
                     break;
                 }
                 case spv::OpImageSampleDrefImplicitLod:
@@ -1261,11 +1261,11 @@ struct shader_module_used_operators {
                     auto sampler_load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
                     auto image_load_id = (id.opcode() == spv::OpSampledImage) ? id.word(3) : insn.word(3);
 
-                    image_dref_members.emplace_back(image_load_id);
-                    sampler_implicitLod_dref_proj_members.emplace_back(sampler_load_id);
+                    image_dref_load_ids.emplace_back(image_load_id);
+                    sampler_implicitLod_dref_proj_load_ids.emplace_back(sampler_load_id);
                     // ImageOperands in index: 6
                     if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
-                        sampler_bias_offset_members.emplace_back(sampler_load_id);
+                        sampler_bias_offset_load_ids.emplace_back(sampler_load_id);
                     }
                     break;
                 }
@@ -1276,26 +1276,26 @@ struct shader_module_used_operators {
                         // combined image samples are just OpLoad, but also can be separate image and sampler
                         auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                         auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
-                        sampler_bias_offset_members.emplace_back(load_id);
+                        sampler_bias_offset_load_ids.emplace_back(load_id);
                     }
                     break;
                 }
                 case spv::OpStore: {
-                    store_members.emplace_back(insn.word(1));  // object id or AccessChain id
+                    store_pointer_ids.emplace_back(insn.word(1));  // object id or AccessChain id
                     break;
                 }
                 case spv::OpImageRead:
                 case spv::OpImageSparseRead: {
-                    image_read_members.emplace_back(insn.word(3));  // Load id
+                    image_read_load_ids.emplace_back(insn.word(3));
                     break;
                 }
                 case spv::OpImageWrite: {
-                    image_write_members.emplace_back(insn.word(1));  // Load id
+                    image_write_load_ids.emplace_back(insn.word(1));
                     break;
                 }
                 case spv::OpSampledImage: {
                     // 3: image load id, 4: sampler load id
-                    sampled_image_members.emplace_back(std::pair<uint32_t, uint32_t>(insn.word(3), insn.word(4)));
+                    sampled_image_load_ids.emplace_back(std::pair<uint32_t, uint32_t>(insn.word(3), insn.word(4)));
                     break;
                 }
                 case spv::OpLoad: {
@@ -1323,9 +1323,10 @@ struct shader_module_used_operators {
                 default: {
                     if (AtomicOperation(insn.opcode())) {
                         if (insn.opcode() == spv::OpAtomicStore) {
-                            atomic_store_members.emplace_back(insn.word(1));  // ImageTexelPointer id
+                            atomic_store_pointer_ids.emplace_back(insn.word(1));
+                            atomic_pointer_ids.emplace_back(insn.word(1));
                         } else {
-                            atomic_members.emplace_back(insn.word(3));  // ImageTexelPointer id
+                            atomic_pointer_ids.emplace_back(insn.word(3));
                         }
                     }
                     break;
@@ -1390,36 +1391,34 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                 bool is_image_without_format = false;
                 if (type.word(7) == 2) is_image_without_format = type.word(8) == spv::ImageFormatUnknown;
 
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_write_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_write_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_writable = true;
                     if (is_image_without_format) out_interface_var.is_write_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_read_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_read_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_readable = true;
                     if (is_image_without_format) out_interface_var.is_read_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_sampler_implicitLod_dref_proj = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_bias_offset_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_bias_offset_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_sampler_bias_offset = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_members, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members) ||
-                    CheckObjectIDFromOpLoad(id, used_operators.atomic_store_members, used_operators.image_texel_pointer_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_pointer_ids, used_operators.image_texel_pointer_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_atomic_operation = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_dref_members, used_operators.load_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.image_dref_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_dref_operation = true;
                 }
 
-                for (auto &itp_id : used_operators.sampled_image_members) {
+                for (auto &itp_id : used_operators.sampled_image_load_ids) {
                     // Find if image id match.
                     uint32_t image_index = 0;
                     auto load_it = used_operators.load_members.find(itp_id.first);
@@ -1468,11 +1467,11 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                         }
 
                         // Need to check again for these properties in case not using a combined image sampler
-                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_implicitLod_dref_proj_members,
+                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_implicitLod_dref_proj_load_ids,
                                                     used_operators.load_members, used_operators.accesschain_members)) {
                             out_interface_var.is_sampler_implicitLod_dref_proj = true;
                         }
-                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_bias_offset_members,
+                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_bias_offset_load_ids,
                                                     used_operators.load_members, used_operators.accesschain_members)) {
                             out_interface_var.is_sampler_bias_offset = true;
                         }
@@ -1499,7 +1498,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
             if (is_storage_buffer && nonwritable_members.size() != type.len() - 2) {
                 used_operators.update(this);
 
-                for (auto oid : used_operators.store_members) {
+                for (auto oid : used_operators.store_pointer_ids) {
                     if (id == oid) {
                         out_interface_var.is_writable = true;
                         return;
@@ -1513,7 +1512,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                         return;
                     }
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_store_members, used_operators.image_texel_pointer_members,
+                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_store_pointer_ids, used_operators.image_texel_pointer_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_writable = true;
                     return;
@@ -1556,14 +1555,14 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
     const spirv_inst_iter &entrypoint) const {
     layer_data::unordered_set<uint32_t> location_list;
     const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
-    layer_data::unordered_set<uint32_t> store_members;
+    layer_data::unordered_set<uint32_t> store_pointer_ids;
     layer_data::unordered_map<uint32_t, uint32_t> accesschain_members;
 
     for (auto insn : *this) {
         switch (insn.opcode()) {
             case spv::OpStore:
             case spv::OpAtomicStore: {
-                store_members.insert(insn.word(1));  // object id or AccessChain id
+                store_pointer_ids.insert(insn.word(1));  // object id or AccessChain id
                 break;
             }
             case spv::OpAccessChain:
@@ -1576,18 +1575,18 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
                 break;
         }
     }
-    if (store_members.empty()) {
+    if (store_pointer_ids.empty()) {
         return location_list;
     }
     for (auto output : outputs) {
-        auto store_it = store_members.find(output.second.id);
-        if (store_it != store_members.end()) {
+        auto store_it = store_pointer_ids.find(output.second.id);
+        if (store_it != store_pointer_ids.end()) {
             location_list.insert(output.first.first);
-            store_members.erase(store_it);
+            store_pointer_ids.erase(store_it);
             continue;
         }
-        store_it = store_members.begin();
-        while (store_it != store_members.end()) {
+        store_it = store_pointer_ids.begin();
+        while (store_it != store_pointer_ids.end()) {
             auto accesschain_it = accesschain_members.find(*store_it);
             if (accesschain_it == accesschain_members.end()) {
                 ++store_it;
@@ -1595,7 +1594,7 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
             }
             if (accesschain_it->second == output.second.id) {
                 location_list.insert(output.first.first);
-                store_members.erase(store_it);
+                store_pointer_ids.erase(store_it);
                 accesschain_members.erase(accesschain_it);
                 break;
             }
