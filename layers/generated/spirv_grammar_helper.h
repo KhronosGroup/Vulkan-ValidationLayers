@@ -50,4 +50,5 @@ uint32_t ImageOperandsParamCount(uint32_t opcode);
 
 const char* string_SpvOpcode(uint32_t opcode);
 const char* string_SpvStorageClass(uint32_t storage_class);
+const char* string_SpvExecutionModel(uint32_t execution_model);
 

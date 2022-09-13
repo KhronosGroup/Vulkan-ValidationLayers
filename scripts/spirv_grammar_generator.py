@@ -97,6 +97,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         self.imageSampleOps = []
         self.imageFetchOps = []
         self.storageClass = []
+        self.executionModel = []
         # Need range to be large as largest possible operand index
         self.imageOperandsParamCount = [[] for i in range(3)]
 
@@ -222,6 +223,12 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
                     for enum in operandKind['enumerants']:
                         if enum['value'] not in values:
                             self.storageClass.append(enum['enumerant'])
+                            values.append(enum['value'])
+                if operandKind['kind'] == 'ExecutionModel':
+                    values = [] # prevent alias from being duplicatd
+                    for enum in operandKind['enumerants']:
+                        if enum['value'] not in values:
+                            self.executionModel.append(enum['enumerant'])
                             values.append(enum['value'])
 
             for instruction in instructions:
@@ -462,6 +469,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         if self.headerFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode);\n'
             output +=  'const char* string_SpvStorageClass(uint32_t storage_class);\n'
+            output +=  'const char* string_SpvExecutionModel(uint32_t execution_model);\n'
         elif self.sourceFile:
             output =  'const char* string_SpvOpcode(uint32_t opcode) {\n'
             output += '    auto format_info = kInstructionTable.find(opcode);\n'
@@ -479,5 +487,14 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
             output += '        default:\n'
             output += '            return \"unknown\";\n'
             output += '    }\n'
-            output += '};'
+            output += '};\n'
+            output += '\nconst char* string_SpvExecutionModel(uint32_t execution_model) {\n'
+            output += '    switch(execution_model) {\n'
+            for executionModel in self.executionModel:
+                output += '        case spv::ExecutionModel{}:\n'.format(executionModel)
+                output += '            return \"{}\";\n'.format(executionModel)
+            output += '        default:\n'
+            output += '            return \"unknown\";\n'
+            output += '    }\n'
+            output += '};\n'
         return output

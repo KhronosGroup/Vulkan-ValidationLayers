@@ -150,6 +150,10 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
             return VK_SHADER_STAGE_TASK_BIT_NV;
         case spv::ExecutionModelMeshNV:
             return VK_SHADER_STAGE_MESH_BIT_NV;
+        case spv::ExecutionModelTaskEXT:
+            return VK_SHADER_STAGE_TASK_BIT_EXT;
+        case spv::ExecutionModelMeshEXT:
+            return VK_SHADER_STAGE_MESH_BIT_EXT;
         default:
             return 0;
     }

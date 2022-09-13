@@ -759,3 +759,45 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "unknown";
     }
 };
+
+const char* string_SpvExecutionModel(uint32_t execution_model) {
+    switch(execution_model) {
+        case spv::ExecutionModelVertex:
+            return "Vertex";
+        case spv::ExecutionModelTessellationControl:
+            return "TessellationControl";
+        case spv::ExecutionModelTessellationEvaluation:
+            return "TessellationEvaluation";
+        case spv::ExecutionModelGeometry:
+            return "Geometry";
+        case spv::ExecutionModelFragment:
+            return "Fragment";
+        case spv::ExecutionModelGLCompute:
+            return "GLCompute";
+        case spv::ExecutionModelKernel:
+            return "Kernel";
+        case spv::ExecutionModelTaskNV:
+            return "TaskNV";
+        case spv::ExecutionModelMeshNV:
+            return "MeshNV";
+        case spv::ExecutionModelRayGenerationNV:
+            return "RayGenerationNV";
+        case spv::ExecutionModelIntersectionNV:
+            return "IntersectionNV";
+        case spv::ExecutionModelAnyHitNV:
+            return "AnyHitNV";
+        case spv::ExecutionModelClosestHitNV:
+            return "ClosestHitNV";
+        case spv::ExecutionModelMissNV:
+            return "MissNV";
+        case spv::ExecutionModelCallableNV:
+            return "CallableNV";
+        case spv::ExecutionModelTaskEXT:
+            return "TaskEXT";
+        case spv::ExecutionModelMeshEXT:
+            return "MeshEXT";
+        default:
+            return "unknown";
+    }
+};
+
