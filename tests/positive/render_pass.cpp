@@ -1253,3 +1253,76 @@ TEST_F(VkPositiveLayerTest, QueriesInMultiviewRenderPass) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(VkPositiveLayerTest, FragmentShadingRateAttachment) {
+    TEST_DESCRIPTION("Create framebuffer with a fragment shading rate attachment that has layout count 1.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>(&fsr_features);
+    auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
+    if (multiview_features.multiview == VK_FALSE) {
+        GTEST_SKIP() << "multiview feature not supported";
+        return;
+    }
+    if (fsr_features.attachmentFragmentShadingRate != VK_TRUE) {
+        GTEST_SKIP() << "VkPhysicalDeviceFragmentShadingRateFeaturesKHR::attachmentFragmentShadingRate not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkAttachmentReference2 attach = LvlInitStruct<VkAttachmentReference2>();
+    attach.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attach.attachment = 0;
+
+    auto fsr_properties = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+    GetPhysicalDeviceProperties2(fsr_properties);
+
+    VkFragmentShadingRateAttachmentInfoKHR fsr_attachment = LvlInitStruct<VkFragmentShadingRateAttachmentInfoKHR>();
+    fsr_attachment.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
+    fsr_attachment.pFragmentShadingRateAttachment = &attach;
+
+    VkSubpassDescription2 subpass = LvlInitStruct<VkSubpassDescription2>(&fsr_attachment);
+    subpass.viewMask = 0x2;
+
+    auto attach_desc = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc.format = VK_FORMAT_R8_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderPassCreateInfo2 rpci = LvlInitStruct<VkRenderPassCreateInfo2>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass rp(*m_device, rpci, true);
+    ASSERT_TRUE(rp.initialized());
+
+    VkImageObj image(m_device);
+    image.InitNoLayout(1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL,
+                       0);
+    VkImageView imageView = image.targetView(VK_FORMAT_R8_UINT);
+
+    VkFramebufferCreateInfo fb_info = LvlInitStruct<VkFramebufferCreateInfo>();
+    fb_info.renderPass = rp.handle();
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &imageView;
+    fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
+    fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
+    fb_info.layers = 1;
+
+    vk_testing::Framebuffer fb(*m_device, fb_info);
+    ASSERT_TRUE(fb.initialized());
+}
