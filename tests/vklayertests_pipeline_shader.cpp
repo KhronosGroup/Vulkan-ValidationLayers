@@ -17683,3 +17683,182 @@ TEST_F(VkLayerTest, ShaderModuleIdentifierFeatures) {
     vkGetShaderModuleCreateInfoIdentifierEXT(device(), &sm_ci, &get_identifier);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, StorageImageWriteLessComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Rgba8ui) uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
+    //
+    // Rgba8ui == 4-component but only writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Rgba8ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage image";
+    }
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
+}
+
+TEST_F(VkLayerTest, StorageImageWriteSpecConstantLessComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // not valid GLSL, but would look like:
+    // layout (constant_id = 0) const uint sc = 1;
+    // layout(set = 0, binding = 0, Rgba8ui) uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, sc, sc + 1));
+    //
+    // Rgba8ui == 4-component but only writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Rgba8ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+         %sc = OpSpecConstant %uint 1
+      %sc_p1 = OpSpecConstantOp %uint IAdd %sc %uint_1
+    %texelU3 = OpSpecConstantComposite %v3uint %uint_1 %sc %sc_p1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage image";
+    }
+
+    uint32_t data = 2;
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(
+            new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
+}
+
+TEST_F(VkLayerTest, StorageTexelBufferWriteLessComponent) {
+    TEST_DESCRIPTION("Test writing to texel buffer with less components.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Rgba8ui) uniform uimageBuffer storageTexelBuffer;
+    // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
+    //
+    // Rgba8ui == 4-component but only writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpCapability ImageBuffer
+               OpCapability StorageImageExtendedFormats
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint Buffer 0 0 0 2 Rgba8ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+     %v3uint = OpTypeVector %uint 3
+      %int_1 = OpConstant %int 1
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %int_1 %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UINT;  // Rgba8ui
+    if (!BufferFormatAndFeaturesSupported(gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage texel buffer";
+    }
+
+    const auto set_info = [&](CreateComputePipelineHelper &helper) {
+        helper.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+        helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
+}

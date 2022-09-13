@@ -2934,3 +2934,384 @@ TEST_F(VkPositiveLayerTest, OpTypeStructRuntimeArray) {
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(VkPositiveLayerTest, StorageImageWriteMoreComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    if (!available_features.shaderStorageImageExtendedFormats) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Rg32ui) uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
+    //
+    // Rg32ui == 2-component but writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpCapability StorageImageExtendedFormats
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Rg32ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    const VkFormat format = VK_FORMAT_R32G32_UINT;  // Rg32ui
+    if (!ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage image";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = image.targetView(format);
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, StorageImageUnknownWriteMoreComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components for Unknown for OpTypeImage.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    if (!available_features.shaderStorageImageExtendedFormats) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    } else if (!available_features.shaderStorageImageWriteWithoutFormat) {
+        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Unknown) readonly uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, 1, 1));
+    //
+    // Unknown will become a 2-component but writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpCapability StorageImageExtendedFormats
+               OpCapability StorageImageWriteWithoutFormat
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+               OpDecorate %var NonReadable
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Unknown
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    const VkFormat format = VK_FORMAT_R32G32_UINT;
+    if (!ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage image";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = image.targetView(format);
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+}
+
+TEST_F(VkPositiveLayerTest, StorageImageWriteSpecConstantMoreComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components with Texel being a spec constant.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    if (!available_features.shaderStorageImageExtendedFormats) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+
+    // not valid GLSL, but would look like:
+    // layout (constant_id = 0) const uint sc = 1;
+    // layout(set = 0, binding = 0, Rg32ui) uniform uimage2D storageImage;
+    // imageStore(storageImage, ivec2(1, 1), uvec3(1, sc, sc + 1));
+    //
+    // Rg32ui == 2-component but writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpCapability StorageImageExtendedFormats
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint 2D 0 0 0 2 Rg32ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+      %v2int = OpTypeVector %int 2
+      %int_1 = OpConstant %int 1
+      %coord = OpConstantComposite %v2int %int_1 %int_1
+     %v3uint = OpTypeVector %uint 3
+     %uint_1 = OpConstant %uint 1
+         %sc = OpSpecConstant %uint 1
+      %sc_p1 = OpSpecConstantOp %uint IAdd %sc %uint_1
+    %texelU3 = OpSpecConstantComposite %v3uint %uint_1 %sc %sc_p1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %coord %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    const VkFormat format = VK_FORMAT_R32G32_UINT;  // Rg32ui
+    if (!ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage image";
+    }
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_TILING_OPTIMAL);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = image.targetView(format);
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptor_write.pImageInfo = &image_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    uint32_t data = 2;
+    VkSpecializationMapEntry entry;
+    entry.constantID = 0;
+    entry.offset = 0;
+    entry.size = sizeof(uint32_t);
+    VkSpecializationInfo specialization_info = {};
+    specialization_info.mapEntryCount = 1;
+    specialization_info.pMapEntries = &entry;
+    specialization_info.dataSize = sizeof(uint32_t);
+    specialization_info.pData = &data;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(
+        new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM, &specialization_info));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, StorageTexelBufferWriteMoreComponent) {
+    TEST_DESCRIPTION("Test writing to image with less components.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+    if (!available_features.shaderStorageImageExtendedFormats) {
+        GTEST_SKIP() << "shaderStorageImageExtendedFormats is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&available_features));
+
+    // not valid GLSL, but would look like:
+    // layout(set = 0, binding = 0, Rg32ui) uniform uimageBuffer storageTexelBuffer;
+    // imageStore(storageTexelBuffer, 1, uvec3(1, 1, 1));
+    //
+    // Rg32ui == 2-component but writing 3 texels to it
+    const char *source = R"(
+               OpCapability Shader
+               OpCapability ImageBuffer
+               OpCapability StorageImageExtendedFormats
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %var
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+       %uint = OpTypeInt 32 0
+      %image = OpTypeImage %uint Buffer 0 0 0 2 Rg32ui
+        %ptr = OpTypePointer UniformConstant %image
+        %var = OpVariable %ptr UniformConstant
+     %v3uint = OpTypeVector %uint 3
+      %int_1 = OpConstant %int 1
+     %uint_1 = OpConstant %uint 1
+    %texelU3 = OpConstantComposite %v3uint %uint_1 %uint_1 %uint_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %image %var
+               OpImageWrite %load %int_1 %texelU3 ZeroExtend
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                     });
+
+    const VkFormat format = VK_FORMAT_R32G32_UINT;  // Rg32ui
+    if (!BufferFormatAndFeaturesSupported(gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Format doesn't support stroage texel buffer";
+    }
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_create_info);
+
+    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.format = format;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    VkBufferView buffer_view;
+    vk::CreateBufferView(m_device->device(), &buff_view_ci, NULL, &buffer_view);
+
+    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    descriptor_write.pTexelBufferView = &buffer_view;
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &ds.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
+}
