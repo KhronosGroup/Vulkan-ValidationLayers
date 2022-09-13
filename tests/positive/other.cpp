@@ -834,3 +834,32 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
 
     vk::QueueWaitIdle(m_device->m_queue);
 }
+
+TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
+    TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    auto ici = GetInstanceCreateInfo();
+
+    VkInstance test_instance = VK_NULL_HANDLE;
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &test_instance));
+    DebugReporter debug_reporter;
+    debug_reporter.Create(test_instance);
+
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, nullptr);
+    std::vector<VkPhysicalDeviceGroupProperties> device_groups(physical_device_group_count,
+                                                               {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, device_groups.data());
+
+    if (physical_device_group_count > 0) {
+        VkPhysicalDevice physicalDevice = device_groups[0].physicalDevices[0];
+
+        uint32_t queueFamilyPropertyCount = 0;
+        vk::GetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamilyPropertyCount, nullptr);
+    }
+
+    debug_reporter.Destroy(test_instance);
+    vk::DestroyInstance(test_instance, nullptr);
+}
