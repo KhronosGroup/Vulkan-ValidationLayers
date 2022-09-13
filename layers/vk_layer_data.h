@@ -782,11 +782,12 @@ class optional {
     void reset() { DeInit(); }
 
     template <typename... Args>
-    T &emplace(const Args &...args) {
+    T &emplace(Args &&...args) {
         init_ = true;
-        new (&store_.backing) T(args...);
+        new (&store_.backing) T(std::forward<Args>(args)...);
         return store_.obj;
     }
+
     T *operator&() {
         if (init_) return &store_.obj;
         return nullptr;
