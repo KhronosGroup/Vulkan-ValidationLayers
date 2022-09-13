@@ -1598,9 +1598,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
                         auto index = subpass.pInputAttachments[i].attachment;
                         if (index != VK_ATTACHMENT_UNUSED) {
-                            VkImageView input_attachment_view =
-                                cb_node->activeFramebuffer->attachments_view_state[index]->Handle().Cast<VkImageView>();
-                            subpass_input_views.insert(std::make_pair(input_attachment_view, i));
+                            auto &view_states = *cb_node->active_attachments;
+                            if (view_states.size() > index && view_states[index] != nullptr) {
+                                VkImageView input_attachment_view = view_states[index]->image_view();
+                                subpass_input_views.insert(std::make_pair(input_attachment_view, i));
+                            }
                         }
                     }
 
