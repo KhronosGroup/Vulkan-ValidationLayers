@@ -2652,31 +2652,33 @@ void BestPractices::ValidateImageInQueueArmImg(const char* function_name, const 
 void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER_STATE& cbs, const char* function_name,
                                          bp_state::Image& state, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
                                          uint32_t mip_level) {
-    auto last_queue_family = state.GetLastQueueFamily(array_layer, mip_level);
     auto queue_family = qs.queueFamilyIndex;
     auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (state.createInfo.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_queue_family != queue_family) {
+    if (state.createInfo.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
         // if UNDEFINED then first use/acquisition of subresource
-        if (last_usage != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
+        if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined
             // so write only is fine
             if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE || usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 LogWarning(
-                    state.Handle().Cast<VkImage>(), kVUID_BestPractices_ConcurrentUsageOfExclusiveImage,
-                    "%s : Subresource (arrayLayer: %u, mipLevel: %u) of image is used on queue family index %u after being used on "
-                    "queue family index %u, "
+                    state.image(), kVUID_BestPractices_ConcurrentUsageOfExclusiveImage,
+                    "%s : Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                    ") of image is used on queue family index %" PRIu32
+                    " after being used on "
+                    "queue family index %" PRIu32
+                    ", "
                     "but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer operation",
-                    function_name, array_layer, mip_level, queue_family, last_queue_family);
+                    function_name, array_layer, mip_level, queue_family, last_usage.queue_family_index);
             }
         }
     }
 
     // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
-    if (last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
+    if (last_usage.type == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
         usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE) {
         LogWarning(device, kVUID_BestPractices_StoreOpDontCareThenLoadOpLoad,
                    "Trying to load an attachment with LOAD_OP_LOAD that was previously stored with STORE_OP_DONT_CARE. This may "
@@ -2684,7 +2686,7 @@ void BestPractices::ValidateImageInQueue(const QUEUE_STATE& qs, const CMD_BUFFER
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
-        ValidateImageInQueueArmImg(function_name, state, last_usage, usage, array_layer, mip_level);
+        ValidateImageInQueueArmImg(function_name, state, last_usage.type, usage, array_layer, mip_level);
     }
 }
 
@@ -5076,7 +5078,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
                                                                         const CMD_BUFFER_STATE& cbs) -> bool {
             ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
                 // Update queue family index without changing usage, signifying a correct queue family transfer
-                image->UpdateUsage(layer, level, image->GetUsage(layer, level), qs.queueFamilyIndex);
+                image->UpdateUsage(layer, level, image->GetUsageType(layer, level), qs.queueFamilyIndex);
             });
             return false;
         });
