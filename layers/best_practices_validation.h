@@ -177,22 +177,33 @@ class Image : public IMAGE_STATE {
         SetupUsages();
     }
 
-    IMAGE_SUBRESOURCE_USAGE_BP UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage,
-                                           uint32_t queue_family) {
-        auto last_usage = usages_[array_layer][mip_level].first;
-        usages_[array_layer][mip_level] = std::make_pair(usage, queue_family);
+    struct Usage {
+        IMAGE_SUBRESOURCE_USAGE_BP type;
+        uint32_t queue_family_index;
+    };
+
+    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
+        auto last_usage = usages_[array_layer][mip_level];
+        usages_[array_layer][mip_level].type = usage;
+        usages_[array_layer][mip_level].queue_family_index = queue_family;
         return last_usage;
     }
 
-    IMAGE_SUBRESOURCE_USAGE_BP GetUsage(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level].first; }
+    Usage GetUsage(uint32_t array_layer, uint32_t mip_level) const { return usages_[array_layer][mip_level]; }
 
-    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) { return usages_[array_layer][mip_level].second; }
+    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(uint32_t array_layer, uint32_t mip_level) const {
+        return GetUsage(array_layer, mip_level).type;
+    }
+
+    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) const {
+        return GetUsage(array_layer, mip_level).queue_family_index;
+    }
 
   private:
     void SetupUsages() {
         usages_.resize(createInfo.arrayLayers);
         for (auto& mip_vec : usages_) {
-            mip_vec.resize(createInfo.mipLevels, std::make_pair(IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED));
+            mip_vec.resize(createInfo.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
         }
     }
     // A 2d vector for all the array layers and mip levels.
@@ -200,7 +211,7 @@ class Image : public IMAGE_STATE {
     // Aspects are generally read and written together,
     // and tracking them independently could be misleading.
     // second/uint32_t is last queue family usage
-    std::vector<std::vector<std::pair<IMAGE_SUBRESOURCE_USAGE_BP, uint32_t>>> usages_;
+    std::vector<std::vector<Usage>> usages_;
 };
 
 using ImageNoBinding = MEMORY_TRACKED_RESOURCE_STATE<Image, BindableNoMemoryTracker>;
