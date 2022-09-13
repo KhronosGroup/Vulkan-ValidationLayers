@@ -12336,7 +12336,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     if (highest_view_bit >= 0) {
                                         fsr_non_zero_viewmasks = true;
                                     }
-                                    if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit) {
+                                    if (static_cast<int32_t>(subresource_range.layerCount) <= highest_view_bit &&
+                                        subresource_range.layerCount != 1) {
                                         skip |= LogError(
                                             device, "VUID-VkFramebufferCreateInfo-flags-04537",
                                             "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has a layer count (%u) "
