@@ -372,7 +372,7 @@ void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
 }
 
 gpu_utils_state::Queue::Queue(GpuAssistedBase &state, VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties)
-    : QUEUE_STATE(q, index, flags, queueFamilyProperties), state_(state) {}
+    : QUEUE_STATE(state, q, index, flags, queueFamilyProperties), state_(state) {}
 
 gpu_utils_state::Queue::~Queue() {
     if (barrier_command_buffer_) {

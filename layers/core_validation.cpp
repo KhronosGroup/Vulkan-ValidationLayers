@@ -18203,13 +18203,12 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
             skip |= LogError(semaphore, semaphore_type_vuid, "%s: %s is not a VK_SEMAPHORE_TYPE_BINARY", func_name,
                              report_data->FormatHandle(semaphore).c_str());
         } else if (semaphore_state->Scope() == kSyncScopeInternal) {
-            auto last_op = semaphore_state->LastOp();
             // TODO: VUIDs 01779 and 01781 cover the case where there are pending wait or signal operations on the
             // semaphore. But we don't currently have a good enough way to track when acquire & present operations
             // are completed. So it is possible to get in a condition where the semaphore is doing
             // acquire / wait / acquire and the first acquire (and thus the wait) have completed, but our state
             // isn't aware of it yet. This results in MANY false positives.
-            if (!last_op && !semaphore_state->Completed().CanBeSignaled()) {
+            if (!semaphore_state->CanBeSignaled()) {
                 const char *vuid = version == ACQUIRE_VERSION_2 ? "VUID-VkAcquireNextImageInfoKHR-semaphore-01288"
                                                                 : "VUID-vkAcquireNextImageKHR-semaphore-01286";
                 skip |= LogError(semaphore, vuid, "%s: Semaphore must not be currently signaled.", func_name);
