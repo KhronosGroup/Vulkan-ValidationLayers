@@ -1442,6 +1442,9 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
         return;
     }
 
+    VkSurfaceCapabilitiesKHR surface_caps{};
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &surface_caps);
+
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
@@ -1449,7 +1452,7 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     swapchain_create_info.pNext = 0;
     swapchain_create_info.surface = m_surface;
-    swapchain_create_info.minImageCount = 2;
+    swapchain_create_info.minImageCount = std::max(2u, surface_caps.minImageCount);
     swapchain_create_info.imageFormat = m_surface_formats[0].format;
     swapchain_create_info.imageColorSpace = m_surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = {m_surface_capabilities.minImageExtent.width, m_surface_capabilities.minImageExtent.height};
