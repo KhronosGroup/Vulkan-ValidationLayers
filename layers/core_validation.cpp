@@ -15813,50 +15813,40 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                      sub_cb_state->beginInfo.pInheritanceInfo->subpass, cb_state->activeSubpass);
                 } else if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
                     if (sub_cb_state->beginInfo.pInheritanceInfo->renderPass != VK_NULL_HANDLE) {
-                        LogObjectList objlist(pCommandBuffers[i]);
-                        objlist.add(cb_state->activeRenderPass->renderPass());
-                        skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pBeginInfo-06025",
-                                         "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                         "by %s(), but "
-                                         "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
-                                         report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                         report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                         cb_state->begin_rendering_func_name.c_str());
+                        skip |= LogError(
+                            pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pBeginInfo-06025",
+                            "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance scope begun "
+                            "by %s(), but "
+                            "VkCommandBufferInheritanceInfo::pInheritanceInfo::renderPass is not VK_NULL_HANDLE.",
+                            report_data->FormatHandle(pCommandBuffers[i]).c_str(), cb_state->begin_rendering_func_name.c_str());
                     }
 
                     if (sub_cb_state->activeRenderPass->use_dynamic_rendering_inherited) {
                         if (sub_cb_state->activeRenderPass->inheritance_rendering_info.flags !=
                             (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags &
                              ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR)) {
-                            LogObjectList objlist(pCommandBuffers[i]);
-                            objlist.add(cb_state->activeRenderPass->renderPass());
-                            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-flags-06026",
-                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                             "by %s(), but VkCommandBufferInheritanceRenderingInfo::flags (%u) does "
-                                             "not match VkRenderingInfo::flags (%u), excluding "
-                                             "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
-                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                             cb_state->begin_rendering_func_name.c_str(),
-                                             sub_cb_state->activeRenderPass->inheritance_rendering_info.flags,
-                                             cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags);
+                            skip |= LogError(
+                                pCommandBuffers[i], "VUID-vkCmdExecuteCommands-flags-06026",
+                                "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance scope begun "
+                                "by %s(), but VkCommandBufferInheritanceRenderingInfo::flags (%u) does "
+                                "not match VkRenderingInfo::flags (%u), excluding "
+                                "VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR.",
+                                report_data->FormatHandle(pCommandBuffers[i]).c_str(), cb_state->begin_rendering_func_name.c_str(),
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.flags,
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.flags);
                         }
 
                         if (sub_cb_state->activeRenderPass->inheritance_rendering_info.colorAttachmentCount !=
                             cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount) {
-                            LogObjectList objlist(pCommandBuffers[i]);
-                            objlist.add(cb_state->activeRenderPass->renderPass());
-                            skip |=
-                                LogError(objlist, "VUID-vkCmdExecuteCommands-colorAttachmentCount-06027",
-                                         "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                         "by %s(), but "
-                                         "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%u) does "
-                                         "not match VkRenderingInfo::colorAttachmentCount (%u).",
-                                         report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                         report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                         cb_state->begin_rendering_func_name.c_str(),
-                                         sub_cb_state->activeRenderPass->inheritance_rendering_info.colorAttachmentCount,
-                                         cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
+                            skip |= LogError(
+                                pCommandBuffers[i], "VUID-vkCmdExecuteCommands-colorAttachmentCount-06027",
+                                "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance scope begun "
+                                "by %s(), but "
+                                "VkCommandBufferInheritanceRenderingInfo::colorAttachmentCount (%u) does "
+                                "not match VkRenderingInfo::colorAttachmentCount (%u).",
+                                report_data->FormatHandle(pCommandBuffers[i]).c_str(), cb_state->begin_rendering_func_name.c_str(),
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.colorAttachmentCount,
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount);
                         }
 
                         for (uint32_t index = 0;
@@ -15871,16 +15861,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                                 if (image_view_state->create_info.format !=
                                     sub_cb_state->activeRenderPass->inheritance_rendering_info.pColorAttachmentFormats[index]) {
-                                    LogObjectList objlist(pCommandBuffers[i]);
-                                    objlist.add(cb_state->activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        objlist, "VUID-vkCmdExecuteCommands-imageView-06028",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-imageView-06028",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                        "scope begun "
                                         "by %s(), but "
                                         "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats at index (%u) does "
                                         "not match the format of the imageView in VkRenderingInfo::pColorAttachments.",
                                         report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
                                         cb_state->begin_rendering_func_name.c_str(), index);
                                 }
                             }
@@ -15894,17 +15882,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if (image_view_state->create_info.format !=
                                 sub_cb_state->activeRenderPass->inheritance_rendering_info.depthAttachmentFormat) {
-                                LogObjectList objlist(pCommandBuffers[i]);
-                                objlist.add(cb_state->activeRenderPass->renderPass());
-                                skip |=
-                                    LogError(objlist, "VUID-vkCmdExecuteCommands-pDepthAttachment-06029",
-                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                             "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat does "
-                                             "not match the format of the imageView in VkRenderingInfo::pDepthAttachment.",
-                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                             cb_state->begin_rendering_func_name.c_str());
+                                skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pDepthAttachment-06029",
+                                                 "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                                 "instance scope begun "
+                                                 "by %s(), but "
+                                                 "VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat does "
+                                                 "not match the format of the imageView in VkRenderingInfo::pDepthAttachment.",
+                                                 report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                                 cb_state->begin_rendering_func_name.c_str());
                             }
                         }
 
@@ -15916,34 +15901,28 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                             if (image_view_state->create_info.format !=
                                 sub_cb_state->activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat) {
-                                LogObjectList objlist(pCommandBuffers[i]);
-                                objlist.add(cb_state->activeRenderPass->renderPass());
-                                skip |=
-                                    LogError(objlist, "VUID-vkCmdExecuteCommands-pStencilAttachment-06030",
-                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                             "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat does "
-                                             "not match the format of the imageView in VkRenderingInfo::pStencilAttachment.",
-                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                             cb_state->begin_rendering_func_name.c_str());
+                                skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pStencilAttachment-06030",
+                                                 "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                                 "instance scope begun "
+                                                 "by %s(), but "
+                                                 "VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat does "
+                                                 "not match the format of the imageView in VkRenderingInfo::pStencilAttachment.",
+                                                 report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                                 cb_state->begin_rendering_func_name.c_str());
                             }
                         }
 
                         if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask !=
                             sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask) {
-                            LogObjectList objlist(pCommandBuffers[i]);
-                            objlist.add(cb_state->activeRenderPass->renderPass());
-                            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-viewMask-06031",
-                                             "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                             "by %s(), but "
-                                             "VkCommandBufferInheritanceRenderingInfo::viewMask (%u) does "
-                                             "not match VkRenderingInfo::viewMask (%u).",
-                                             report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                             report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(),
-                                             cb_state->begin_rendering_func_name.c_str(),
-                                             sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask,
-                                             cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
+                            skip |= LogError(
+                                pCommandBuffers[i], "VUID-vkCmdExecuteCommands-viewMask-06031",
+                                "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance scope begun "
+                                "by %s(), but "
+                                "VkCommandBufferInheritanceRenderingInfo::viewMask (%u) does "
+                                "not match VkRenderingInfo::viewMask (%u).",
+                                report_data->FormatHandle(pCommandBuffers[i]).c_str(), cb_state->begin_rendering_func_name.c_str(),
+                                sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask,
+                                cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask);
                         }
 
                         // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
@@ -15961,17 +15940,15 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                             .imageView);
 
                                     if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
-                                        LogObjectList objlist(pCommandBuffers[i]);
-                                        objlist.add(cb_state->activeRenderPass->renderPass());
                                         skip |= LogError(
-                                            objlist, "VUID-vkCmdExecuteCommands-pNext-06032",
-                                            "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                            pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06032",
+                                            "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                            "scope begun "
                                             "by vkCmdBeginRenderingKHR(), but "
                                             "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%u) "
                                             "does "
                                             "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
-                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                            report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), index);
+                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
                                     }
                                 }
                             }
@@ -15983,16 +15960,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                     cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
 
                                 if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
-                                    LogObjectList objlist(pCommandBuffers[i]);
-                                    objlist.add(cb_state->activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06033",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06033",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                        "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pDepthAttachment.",
-                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
 
@@ -16005,16 +15980,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                                               .pStencilAttachment->imageView);
 
                                 if (image_view_state->samples != amd_sample_count->depthStencilAttachmentSamples) {
-                                    LogObjectList objlist(pCommandBuffers[i]);
-                                    objlist.add(cb_state->activeRenderPass->renderPass());
                                     skip |= LogError(
-                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06034",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06034",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                        "scope begun "
                                         "by vkCmdBeginRenderingKHR(), but "
                                         "VkAttachmentSampleCountInfo(AMD/NV)::depthStencilAttachmentSamples does "
                                         "not match the sample count of the imageView in VkRenderingInfoKHR::pStencilAttachment.",
-                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
                         } else {
@@ -16029,16 +16002,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                                     if (image_view_state->samples !=
                                         sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
-                                        LogObjectList objlist(pCommandBuffers[i]);
-                                        objlist.add(cb_state->activeRenderPass->renderPass());
                                         skip |= LogError(
-                                            objlist, "VUID-vkCmdExecuteCommands-pNext-06035",
-                                            "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
+                                            pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06035",
+                                            "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                            "scope begun "
                                             "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%u) of "
                                             "VkRenderingInfoKHR::pColorAttachments does not match "
                                             "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                            report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str(), index);
+                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
                                     }
                                 }
                             }
@@ -16051,16 +16022,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                                 if (image_view_state->samples !=
                                     sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
-                                    LogObjectList objlist(pCommandBuffers[i]);
-                                    objlist.add(cb_state->activeRenderPass->renderPass());
-                                    skip |= LogError(
-                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06036",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
-                                        "VkRenderingInfoKHR::pDepthAttachment does not match "
-                                        "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                    skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06036",
+                                                     "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                                     "instance scope begun "
+                                                     "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
+                                                     "VkRenderingInfoKHR::pDepthAttachment does not match "
+                                                     "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                                     report_data->FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
 
@@ -16074,16 +16042,13 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                                 if (image_view_state->samples !=
                                     sub_cb_state->activeRenderPass->inheritance_rendering_info.rasterizationSamples) {
-                                    LogObjectList objlist(pCommandBuffers[i]);
-                                    objlist.add(cb_state->activeRenderPass->renderPass());
-                                    skip |= LogError(
-                                        objlist, "VUID-vkCmdExecuteCommands-pNext-06037",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a %s instance scope begun "
-                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
-                                        "VkRenderingInfoKHR::pStencilAttachment does not match "
-                                        "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                                    skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06037",
+                                                     "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                                     "instance scope begun "
+                                                     "by vkCmdBeginRenderingKHR(), but the sample count of the image view for "
+                                                     "VkRenderingInfoKHR::pStencilAttachment does not match "
+                                                     "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                                     report_data->FormatHandle(pCommandBuffers[i]).c_str());
                                 }
                             }
                         }
