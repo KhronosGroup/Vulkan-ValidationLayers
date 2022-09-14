@@ -5212,3 +5212,108 @@ TEST_F(VkLayerTest, TestSuspendingRenderPassInstanceQueueSubmit2) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DynamicNullDepthStencilExecuteCommands) {
+    TEST_DESCRIPTION(
+        "Test for NULL depth stencil attachments in dynamic rendering with secondary command buffer with depth stencil format "
+        "inheritance info");
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&dynamic_rendering_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    // Create secondary command buffer
+    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
+    VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+
+    if (depth_stencil_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "No found depth stencil format";
+    }
+
+    auto cbiri = LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
+    // format is defined, although no image view provided in dynamic rendering
+    cbiri.depthAttachmentFormat = depth_stencil_format;
+    cbiri.stencilAttachmentFormat = depth_stencil_format;
+    cbiri.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    auto cbii = LvlInitStruct<VkCommandBufferInheritanceInfo>(&cbiri);
+
+    auto cbbi = LvlInitStruct<VkCommandBufferBeginInfo>();
+    cbbi.pInheritanceInfo = &cbii;
+    cbbi.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    // Prepare primary dynamic rendering cmd buffer
+    VkDepthStencilObj depth_stencil(m_device);
+    depth_stencil.Init(m_device, 32, 32, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                       VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    auto rai = LvlInitStruct<VkRenderingAttachmentInfo>();
+    rai.imageView = *depth_stencil.BindInfo();
+    rai.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    auto ri = LvlInitStruct<VkRenderingInfoKHR>();
+    ri.flags = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR;
+    ri.layerCount = 1;
+    ri.pDepthAttachment = &rai;
+    ri.pStencilAttachment = &rai;
+
+    // Record secondary cmd buffer with depth stencil format
+    secondary.begin(&cbbi);
+    secondary.end();
+
+    // Record primary cmd buffer with depth stencil
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(ri);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    // Retry with null depth stencil attachment image view
+    rai.imageView = VK_NULL_HANDLE;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(ri);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pDepthAttachment-06774");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pStencilAttachment-06775");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    // Retry with nullptr attachment struct
+    ri.pDepthAttachment = nullptr;
+    ri.pStencilAttachment = nullptr;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(ri);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pDepthAttachment-06774");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pStencilAttachment-06775");
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+
+    // Retry with no format in inheritance info
+    cbiri.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    cbiri.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+    secondary.begin(&cbbi);
+    secondary.end();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(ri);
+    vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
+}
