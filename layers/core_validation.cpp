@@ -15913,6 +15913,38 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             }
                         }
 
+                        if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment == nullptr ||
+                            cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView ==
+                                VK_NULL_HANDLE) {
+                            VkFormat format = sub_cb_state->activeRenderPass->inheritance_rendering_info.depthAttachmentFormat;
+                            if (format != VK_FORMAT_UNDEFINED) {
+                                skip |= LogError(
+                                    pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pDepthAttachment-06774",
+                                    "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                    "instance scope begun by %s(), and VkRenderingInfo::pDepthAttachment does not define an "
+                                    "image view but VkCommandBufferInheritanceRenderingInfo::depthAttachmentFormat "
+                                    "is %s instead of VK_FORMAT_UNDEFINED.",
+                                    report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                    cb_state->begin_rendering_func_name.c_str(), string_VkFormat(format));
+                            }
+                        }
+
+                        if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment == nullptr ||
+                            cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView ==
+                                VK_NULL_HANDLE) {
+                            VkFormat format = sub_cb_state->activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat;
+                            if (format != VK_FORMAT_UNDEFINED) {
+                                skip |= LogError(
+                                    pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pStencilAttachment-06775",
+                                    "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass "
+                                    "instance scope begun by %s(), and VkRenderingInfo::pStencilAttachment does not define an "
+                                    "image view but VkCommandBufferInheritanceRenderingInfo::stencilAttachmentFormat "
+                                    "is %s instead of VK_FORMAT_UNDEFINED.",
+                                    report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                    cb_state->begin_rendering_func_name.c_str(), string_VkFormat(format));
+                            }
+                        }
+
                         if (cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask !=
                             sub_cb_state->activeRenderPass->inheritance_rendering_info.viewMask) {
                             skip |= LogError(
