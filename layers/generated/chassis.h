@@ -47,6 +47,7 @@
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
+#include "layer_options.h"
 
 
 extern std::atomic<uint64_t> global_unique_id;
@@ -3882,7 +3883,7 @@ public:
     VkPhysicalDeviceProperties properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
-
+/*
 typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
@@ -3939,7 +3940,7 @@ typedef enum EnableFlags {
 
 typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
 typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
-
+*/
 #if defined(__GNUC__) || defined(__clang__)
 #define DECORATE_PRINTF(_fmt_argnum, _first_param_num)  __attribute__((format (printf, _fmt_argnum, _first_param_num)))
 #else
@@ -3957,9 +3958,6 @@ class ValidationObject {
 
         InstanceExtensions instance_extensions;
         DeviceExtensions device_extensions = {};
-        CHECK_DISABLED disabled = {};
-        CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{true};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -4001,9 +3999,6 @@ class ValidationObject {
 
         void FinalizeInstanceValidationObject(ValidationObject *framework, VkInstance inst) {
             instance_dispatch_table = framework->instance_dispatch_table;
-            enabled = framework->enabled;
-            disabled = framework->disabled;
-            fine_grained_locking = framework->fine_grained_locking;
             instance = inst;
         }
 
@@ -4016,9 +4011,6 @@ class ValidationObject {
                 report_data = inst_obj->report_data;
                 device_dispatch_table = dev_obj->device_dispatch_table;
                 api_version = dev_obj->api_version;
-                disabled = inst_obj->disabled;
-                enabled = inst_obj->enabled;
-                fine_grained_locking = inst_obj->fine_grained_locking;
                 instance_dispatch_table = inst_obj->instance_dispatch_table;
                 instance_extensions = inst_obj->instance_extensions;
                 device_extensions = dev_obj->device_extensions;

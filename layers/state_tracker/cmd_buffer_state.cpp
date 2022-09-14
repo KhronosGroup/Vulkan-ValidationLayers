@@ -22,6 +22,7 @@
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/image_state.h"
+#include "layer_options.h"
 
 COMMAND_POOL_STATE::COMMAND_POOL_STATE(ValidationStateTracker *dev, VkCommandPool cp, const VkCommandPoolCreateInfo *pCreateInfo,
                                        VkQueueFlags flags)
@@ -519,7 +520,7 @@ void CMD_BUFFER_STATE::BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBegi
 
     if (activeRenderPass) {
         // Connect this RP to cmdBuffer
-        if (!dev_data->disabled[command_buffer_state]) {
+        if (Settings::Get().core.check_command_buffer) {
             AddChild(activeRenderPass);
         }
 
@@ -673,14 +674,14 @@ void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginI
 
     if (bound_video_session) {
         // Connect this video session to cmdBuffer
-        if (!dev_data->disabled[command_buffer_state]) {
+        if (!Settings::Get().core.check_command_buffer) {
             AddChild(bound_video_session);
         }
     }
 
     if (bound_video_session_parameters) {
         // Connect this video session parameters object to cmdBuffer
-        if (!dev_data->disabled[command_buffer_state]) {
+        if (!Settings::Get().core.check_command_buffer) {
             AddChild(bound_video_session_parameters);
         }
     }
@@ -898,7 +899,7 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                         UpdateAttachmentsView(nullptr);
 
                         // Connect this framebuffer and its children to this cmdBuffer
-                        if (!dev_data->disabled[command_buffer_state]) {
+                        if (Settings::Get().core.check_command_buffer) {
                             AddChild(activeFramebuffer);
                         }
                     }
@@ -1104,7 +1105,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                                                 // Update if descriptor set (or contents) has changed
                                                 set_info.validated_set != descriptor_set.get() ||
                                                 set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                                                (!dev_data->disabled[image_layout_validation] &&
+                                                (Settings::Get().core.check_image_layout &&
                                                  set_info.validated_set_image_layout_change_count != image_layout_change_count);
             const bool need_update =
                 descriptor_set_changed ||
@@ -1113,7 +1114,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                                binding_req_map.begin(), binding_req_map.end());
 
             if (need_update) {
-                if (!dev_data->disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
+                if (Settings::Get().core.check_command_buffer && !descriptor_set->IsPushDescriptor()) {
                     AddChild(descriptor_set);
                 }
 
@@ -1319,7 +1320,7 @@ void CMD_BUFFER_STATE::SetImageLayout(const IMAGE_STATE &image_state, const VkIm
 
 // Set the initial image layout for all slices of an image view
 void CMD_BUFFER_STATE::SetImageViewInitialLayout(const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
-    if (dev_data->disabled[image_layout_validation]) {
+    if (!Settings::Get().core.check_image_layout) {
         return;
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
@@ -1401,7 +1402,7 @@ static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags2KHR stageMask,
 
 void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(cmd_type);
-    if (!dev_data->disabled[command_buffer_state]) {
+    if (Settings::Get().core.check_command_buffer) {
         auto event_state = dev_data->Get<EVENT_STATE>(event);
         if (event_state) {
             AddChild(event_state);
@@ -1418,7 +1419,7 @@ void CMD_BUFFER_STATE::RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipeli
 
 void CMD_BUFFER_STATE::RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
     RecordCmd(cmd_type);
-    if (!dev_data->disabled[command_buffer_state]) {
+    if (Settings::Get().core.check_command_buffer) {
         auto event_state = dev_data->Get<EVENT_STATE>(event);
         if (event_state) {
             AddChild(event_state);
@@ -1438,7 +1439,7 @@ void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, 
                                         VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(cmd_type);
     for (uint32_t i = 0; i < eventCount; ++i) {
-        if (!dev_data->disabled[command_buffer_state]) {
+        if (Settings::Get().core.check_command_buffer) {
             auto event_state = dev_data->Get<EVENT_STATE>(pEvents[i]);
             if (event_state) {
                 AddChild(event_state);
@@ -1452,7 +1453,7 @@ void CMD_BUFFER_STATE::RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, 
 void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                       uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                       uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    if (dev_data->disabled[command_buffer_state]) return;
+    if (!Settings::Get().core.check_command_buffer) return;
 
     for (uint32_t i = 0; i < bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data->Get<BUFFER_STATE>(pBufferMemoryBarriers[i].buffer);
@@ -1469,7 +1470,7 @@ void CMD_BUFFER_STATE::RecordBarriers(uint32_t memoryBarrierCount, const VkMemor
 }
 
 void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
-    if (dev_data->disabled[command_buffer_state]) return;
+    if (!Settings::Get().core.check_command_buffer) return;
 
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         auto buffer_state = dev_data->Get<BUFFER_STATE>(dep_info.pBufferMemoryBarriers[i].buffer);
@@ -1488,9 +1489,9 @@ void CMD_BUFFER_STATE::RecordBarriers(const VkDependencyInfoKHR &dep_info) {
 void CMD_BUFFER_STATE::RecordWriteTimestamp(CMD_TYPE cmd_type, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
                                             uint32_t slot) {
     RecordCmd(cmd_type);
-    if (dev_data->disabled[query_validation]) return;
+    if (!Settings::Get().core.check_query) return;
 
-    if (!dev_data->disabled[command_buffer_state]) {
+    if (Settings::Get().core.check_command_buffer) {
         auto pool_state = dev_data->Get<QUERY_POOL_STATE>(queryPool);
         AddChild(pool_state);
     }

@@ -511,7 +511,8 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
     bool skip = false;
 
     vvl::unordered_set<int> active_types;
-    if (!disabled[query_validation]) {
+
+    if (Settings::Get().core.check_query) {
         for (const auto &query_object : cb_state.activeQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
             if (query_pool_state) {

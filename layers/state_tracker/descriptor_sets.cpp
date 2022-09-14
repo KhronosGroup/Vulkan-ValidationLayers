@@ -18,6 +18,7 @@
 
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "layer_options.h"
 
 static DESCRIPTOR_POOL_STATE::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
     DESCRIPTOR_POOL_STATE::TypeCountMap counts;
@@ -585,7 +586,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
-    if (device_data->disabled[image_layout_validation]) {
+    if (!Settings::Get().core.check_image_layout) {
         return;
     }
 

@@ -32,6 +32,7 @@
 #include "gpu_pre_draw_vert.h"
 #include "gpu_pre_dispatch_comp.h"
 #include "gpu_as_inspection_comp.h"
+#include "layer_options.h"
 
 // Keep in sync with the GLSL shader below.
 struct GpuAccelerationStructureBuildValidationBuffer {
@@ -104,12 +105,22 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
     GpuAssistedBase::CreateDevice(pCreateInfo);
 
-    buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
-    const bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
-    validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
-    validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
-    warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
+    const Settings &settings = Settings::Get();
+
+    buffer_oob_enabled = settings.shader_based.gpu_assisted.check_buffer_oob;
+    bool validate_descriptor_indexing = settings.shader_based.gpu_assisted.check_descriptor_indexing;
+    validate_draw_indirect = settings.shader_based.gpu_assisted.check_draw_indirect;
+    validate_dispatch_indirect = settings.shader_based.gpu_assisted.check_dispatch_indirect;
+    warn_on_robust_oob = settings.shader_based.gpu_assisted.warn_on_robust_oob;
+    const bool use_linear_output_pool = settings.shader_based.gpu_assisted.vma_mode == Settings::VMA_LINEAR;
     validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
+
+    //buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
+    //const bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
+    //validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
+    //validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
+    //warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
+    //validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
@@ -142,7 +153,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
-    const bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
+    //const bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
     if (use_linear_output_pool) {
         auto output_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         output_buffer_create_info.size = output_buffer_size;
@@ -861,8 +872,11 @@ void GpuAssisted::DestroyBuffer(GpuAssistedAccelerationStructureBuildValidationB
 
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                             VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
+    const Settings &settings = Settings::Get();
+    
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
+    if (settings.shader_based.gpu_assisted.reserve_binding_slot && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
+    //if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
@@ -875,8 +889,12 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
 
 void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                              VkPhysicalDeviceProperties2 *pPhysicalDeviceProperties2) {
+    const Settings &settings = Settings::Get();
+
     // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
+    //if (enabled[gpu_validation_reserve_binding_slot] && pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
+    if (settings.shader_based.gpu_assisted.reserve_binding_slot &&
+        pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 0) {
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {

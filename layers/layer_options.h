@@ -16,12 +16,106 @@
  * limitations under the License.
  */
 
+#ifndef LAYER_OPTIONS_H
+#define LAYER_OPTIONS_H
+
 #include "chassis.h"
+
+class Settings {
+  public:
+    enum DebugAction {
+        DEBUG_ACTION_LOG_MSG_BIT = (1 << 0),
+        DEBUG_ACTION_CALLBACK_BIT = (1 << 1),
+        DEBUG_ACTION_DEBUG_ACTION_BIT = (1 << 2),
+        DEBUG_ACTION_BREAK_BIT = (1 << 3)
+    };
+
+    enum Report {
+        REPORT_INFO_BIT = (1 << 0),
+        REPORT_WARN_BIT = (1 << 1),
+        REPORT_PERF_BIT = (1 << 2),
+        REPORT_ERROR_BIT = (1 << 3),
+        REPORT_DEBUG_BIT = (1 << 4)
+    };
+
+    enum Locking { GLOBAL = 0, FINE_GRAIN };
+
+    enum ShaderBased { SHADER_BASED_NONE = 0, SHADER_BASED_DEBUG_PRINTF, SHADER_BASED_GPU_ASSISTED };
+
+    enum VMAMode { VMA_LINEAR = 0, VMA_BEST };
+
+    enum BestPracticesVendor {
+        BEST_ARM_BIT = (1 << 0),  // validate_best_practices_arm
+        BEST_AMD_BIT = (1 << 1),  // validate_best_practices_amd
+        BEST_IMG_BIT = (1 << 2),  // validate_best_practices_img
+        BEST_NV_BIT = (1 << 3)    // validate_best_practices_nv
+    };
+
+  private:
+    Settings();
+
+  public:
+    static const Settings& Get();
+
+    struct {
+        DebugAction debug_action;                       // debug_action
+        std::string log_filename;                       // log_filename
+        Report report_flags;                            // report_flags
+        bool enable_message_limit;                      // enable_message_limit
+        int duplicate_message_limit;                    // duplicate_message_limit
+        std::vector<uint32_t> message_id_filter;        // message_id_filter
+    } log;
+
+    struct {
+        bool enabled;                     // validate_core
+        Locking locking;                  // validate_core_locking
+        bool check_image_layout;     // core_check_image_layout
+        bool check_command_buffer;   // core_check_command_buffer
+        bool check_object_in_use;    // core_check_object_in_use
+        bool check_query;            // core_check_query
+        bool check_shaders;          // core_check_shaders
+        bool check_shaders_caching;  // core_check_shaders_caching
+    } core;
+
+    bool validate_unique_handles;   // validate_unique_handles
+    bool validate_object_lifetime;  // validate_object_lifetime
+    bool validate_stateless_param;  // validate_stateless_param
+    bool validate_thread_safety;    // validate_thread_safety
+
+    struct {
+        bool enabled;               // validate_sync
+        bool sync_queue_submit;  // validate_sync_queue_submit
+    } sync;
+
+    struct {
+        bool enabled;                     // validate_best_practices
+        int vendors;
+    } best;
+
+    struct {
+        ShaderBased mode;
+
+        struct {
+            bool to_stdout;        // debug_printf_to_stdout
+            bool verbose;          // debug_printf_verbose
+            uint32_t buffer_size;  // debug_printf_buffer_size
+        } debug_printf;
+
+        struct {
+            bool reserve_binding_slot;       // gpuav_reserve_binding_slot
+            VMAMode vma_mode;                // gpuav_vma_mode
+            bool check_descriptor_indexing;  // gpuav_check_descriptor_indexing
+            bool check_buffer_oob;           // gpuav_check_buffer_oob
+            bool check_draw_indirect;        // gpuav_check_draw_indirect
+            bool check_dispatch_indirect;    // gpuav_check_dispatch_indirect
+            bool warn_on_robust_oob;         // gpuav_warn_on_robust_oob
+        } gpu_assisted;
+    } shader_based;
+};
 
 extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
-// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
-
+/*
 typedef struct {
     const char *layer_description;
     const void *pnext_chain;
@@ -31,75 +125,20 @@ typedef struct {
     int32_t *duplicate_message_limit;
     bool *fine_grained_locking;
 } ConfigAndEnvSettings;
+*/
 
-static const vvl::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
-    {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT},
-    {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
-};
+/*
+// Process validation features, flags and settings specified through extensions, a layer settings file, or environment variables
 
-static const vvl::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
-    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
-     VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
-};
-
-static const vvl::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
-    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION},
-};
-
-static const vvl::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
-    {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
-    {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
-    {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
-    {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
-};
-
-static const vvl::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA},
-    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
-    {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
-     VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT},
-};
-
-// This should mirror the 'DisableFlags' enumerated type
-static const std::vector<std::string> DisableFlagNameHelper = {
-    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",               // command_buffer_state,
-    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                      // object_in_use,
-    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                   // query_validation,
-    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",            // image_layout_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",          // object_tracking,
-    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",               // core_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",             // thread_safety,
-    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",            // stateless_checks,
-    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",            // handle_wrapping,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                   // shader_validation,
-    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT"  // shader_validation_caching
-};
-
-// This should mirror the 'EnableFlags' enumerated type
-static const std::vector<std::string> EnableFlagNameHelper = {
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",                       // gpu_validation,
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",  // gpu_validation_reserve_binding_slot,
-    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
-    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
-    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION",             // sync_validation,
-    "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",     // queuesubmit time sync_validation,
-};
+extern const layer_data::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup;
+extern const layer_data::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup;
+extern const layer_data::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2;
+extern const layer_data::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup;
+extern const layer_data::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup;
+extern const std::vector<std::string> DisableFlagNameHelper;
+extern const std::vector<std::string> EnableFlagNameHelper;
 
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data);
+*/
+
+#endif//LAYER_OPTIONS_H

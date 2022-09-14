@@ -21,27 +21,34 @@
 #include <iostream>
 #include "layer_chassis_dispatch.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "layer_options.h"
 
 // Perform initializations that can be done at Create Device time.
 void DebugPrintf::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
-    if (enabled[gpu_validation]) {
+    const Settings& settings = Settings::Get();
+
+    if (settings.shader_based.mode == Settings::SHADER_BASED_GPU_ASSISTED) {
         ReportSetupProblem(device,
                            "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
                            "Debug Printf disabled.");
         aborted = true;
         return;
     }
-    const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
-    output_buffer_size = *size_string ? atoi(size_string) : 1024;
 
-    std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
-    transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
-    verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
+    //const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
+    //output_buffer_size = *size_string ? atoi(size_string) : 1024;
+    output_buffer_size = settings.shader_based.debug_printf.buffer_size;
 
-    std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
-    transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
-    use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
-    if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
+    //std::string verbose_string = getLayerOption("khronos_validation.printf_verbose");
+    //transform(verbose_string.begin(), verbose_string.end(), verbose_string.begin(), ::tolower);
+    //verbose = verbose_string.length() ? !verbose_string.compare("true") : false;
+    verbose = settings.shader_based.debug_printf.verbose;
+
+    //std::string stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
+    //transform(stdout_string.begin(), stdout_string.end(), stdout_string.begin(), ::tolower);
+    //use_stdout = stdout_string.length() ? !stdout_string.compare("true") : false;
+    //if (getenv("DEBUG_PRINTF_TO_STDOUT")) use_stdout = true;
+    use_stdout = settings.shader_based.debug_printf.to_stdout;
 
     // GpuAssistedBase::CreateDevice will set up bindings
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,

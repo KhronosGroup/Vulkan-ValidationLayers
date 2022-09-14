@@ -18,6 +18,7 @@
 #include "gpu_validation/gpu_utils.h"
 #include "state_tracker/descriptor_sets.h"
 #include "sync/sync_utils.h"
+#include "layer_options.h"
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -243,7 +244,7 @@ gpu_utils_state::CommandBuffer::CommandBuffer(GpuAssistedBase *ga, VkCommandBuff
     : CMD_BUFFER_STATE(ga, cb, pCreateInfo, pool) {}
 
 ReadLockGuard GpuAssistedBase::ReadLock() const {
-    if (fine_grained_locking) {
+    if (Settings::Get().core.locking == Settings::FINE_GRAIN) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return ReadLockGuard(validation_object_mutex);
@@ -251,7 +252,7 @@ ReadLockGuard GpuAssistedBase::ReadLock() const {
 }
 
 WriteLockGuard GpuAssistedBase::WriteLock() {
-    if (fine_grained_locking) {
+    if (Settings::Get().core.locking == Settings::FINE_GRAIN) {
         return WriteLockGuard(validation_object_mutex, std::defer_lock);
     } else {
         return WriteLockGuard(validation_object_mutex);

@@ -19,6 +19,91 @@
 #include "layer_options.h"
 #include "xxhash.h"
 
+const Settings &Settings::Get() { 
+    static Settings* instance(nullptr);
+    if (instance == nullptr) {
+        instance = new Settings;
+    }
+
+    return *instance;
+}
+
+Settings::Settings() {
+
+}
+/*
+const layer_data::unordered_map<std::string, VkValidationFeatureDisableEXT> VkValFeatureDisableLookup = {
+    {"VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT", VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT", VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT", VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT", VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT", VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT", VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT},
+    {"VK_VALIDATION_FEATURE_DISABLE_ALL_EXT", VK_VALIDATION_FEATURE_DISABLE_ALL_EXT},
+};
+
+const layer_data::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
+    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
+     VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT},
+    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT},
+};
+
+const layer_data::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
+    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION},
+};
+
+const layer_data::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
+    {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
+    {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
+    {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
+    {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
+};
+
+const layer_data::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
+    {"VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
+     VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT},
+};
+
+// This should mirror the 'DisableFlags' enumerated type
+const std::vector<std::string> DisableFlagNameHelper = {
+    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",               // command_buffer_state,
+    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",                      // object_in_use,
+    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",                   // query_validation,
+    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",            // image_layout_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",          // object_tracking,
+    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",               // core_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",             // thread_safety,
+    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",            // stateless_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",            // handle_wrapping,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",                   // shader_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHING_EXT"  // shader_validation_caching
+};
+
+// This should mirror the 'EnableFlags' enumerated type
+const std::vector<std::string> EnableFlagNameHelper = {
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",                       // gpu_validation,
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",  // gpu_validation_reserve_binding_slot,
+    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",                         // vendor_specific_amd,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",                         // vendor_specific_img,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
+    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
+    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION",             // sync_validation,
+    "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",     // queuesubmit time sync_validation,
+};
+*/
+
+/*
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
@@ -161,7 +246,7 @@ void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_d
         SetValidationFeatureEnable(enable_data, val_features_struct->pEnabledValidationFeatures[i]);
     }
 }
-
+*/
 std::string GetNextToken(std::string *token_list, const std::string &delimiter, size_t *pos) {
     std::string token;
     *pos = token_list->find(delimiter);
@@ -182,7 +267,7 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
     }
     return token;
 }
-
+/*
 // Given a string representation of a list of enable enum values, call the appropriate setter function
 void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, CHECK_ENABLED &enables) {
     size_t pos = 0;
@@ -227,7 +312,7 @@ void SetLocalDisableSetting(std::string list_of_disables, const std::string &del
         }
     }
 }
-
+*/
 uint32_t TokenToUint(std::string &token) {
     uint32_t int_id = 0;
     if ((token.find("0x") == 0) || token.find("0X") == 0) {  // Handle hex format
@@ -328,7 +413,7 @@ static bool SetBool(std::string &config_string, std::string &env_string, bool de
     }
     return result;
 }
-
+/*
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // If not cleared, garbage has been seen in some Android run effecting the error message
@@ -429,3 +514,4 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
     *settings_data->fine_grained_locking = SetBool(config_fine_grained_locking, env_fine_grained_locking, true);
 }
+*/

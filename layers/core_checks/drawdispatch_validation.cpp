@@ -2844,7 +2844,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                         // Revalidate if descriptor set (or contents) has changed
                         set_info.validated_set != descriptor_set ||
                         set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                        (!disabled[image_layout_validation] &&
+                        (Settings::Get().core.check_image_layout &&
                          set_info.validated_set_image_layout_change_count != cb_state.image_layout_change_count);
                     bool need_validate =
                         descriptor_set_changed ||

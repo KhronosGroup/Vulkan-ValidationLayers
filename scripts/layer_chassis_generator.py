@@ -237,6 +237,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include "vk_extension_helper.h"
 #include "vk_safe_struct.h"
 #include "vk_typemap_helper.h"
+#include "layer_options.h"
 
 
 extern std::atomic<uint64_t> global_unique_id;
@@ -293,7 +294,7 @@ public:
     VkPhysicalDeviceProperties properties;
     std::vector<VkQueueFamilyProperties> queue_family_properties;
 };
-
+/*
 typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE,
     VALIDATION_CHECK_DISABLE_OBJECT_IN_USE,
@@ -350,7 +351,7 @@ typedef enum EnableFlags {
 
 typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
 typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
-
+*/
 #if defined(__GNUC__) || defined(__clang__)
 #define DECORATE_PRINTF(_fmt_argnum, _first_param_num)  __attribute__((format (printf, _fmt_argnum, _first_param_num)))
 #else
@@ -368,9 +369,6 @@ class ValidationObject {
 
         InstanceExtensions instance_extensions;
         DeviceExtensions device_extensions = {};
-        CHECK_DISABLED disabled = {};
-        CHECK_ENABLED enabled = {};
-        bool fine_grained_locking{true};
 
         VkInstance instance = VK_NULL_HANDLE;
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
@@ -412,9 +410,6 @@ class ValidationObject {
 
         void FinalizeInstanceValidationObject(ValidationObject *framework, VkInstance inst) {
             instance_dispatch_table = framework->instance_dispatch_table;
-            enabled = framework->enabled;
-            disabled = framework->disabled;
-            fine_grained_locking = framework->fine_grained_locking;
             instance = inst;
         }
 
@@ -427,9 +422,6 @@ class ValidationObject {
                 report_data = inst_obj->report_data;
                 device_dispatch_table = dev_obj->device_dispatch_table;
                 api_version = dev_obj->api_version;
-                disabled = inst_obj->disabled;
-                enabled = inst_obj->enabled;
-                fine_grained_locking = inst_obj->fine_grained_locking;
                 instance_dispatch_table = inst_obj->instance_dispatch_table;
                 instance_extensions = inst_obj->instance_extensions;
                 device_extensions = dev_obj->device_extensions;
@@ -660,6 +652,7 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
 static void DeviceExtensionWarnlist(ValidationObject *layer_data, const VkDeviceCreateInfo *pCreateInfo, VkDevice device);
 
 void OutputLayerStatusInfo(ValidationObject *context) {
+/*
     std::string list_of_enables;
     std::string list_of_disables;
     for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
@@ -680,7 +673,7 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     if (list_of_disables.size() == 0) {
         list_of_disables.append("None");
     }
-
+*/
     auto settings_info = GetLayerSettingsFileInfo();
     std::string settings_status;
     if (!settings_info->file_found) {
@@ -708,14 +701,14 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     // Output layer status information message
     context->LogInfo(context->instance, kVUID_Core_CreatInstance_Status,
         "Khronos Validation Layer Active:\\n    Settings File: %s\\n    Current Enables: %s.\\n    Current Disables: %s.\\n",
-        settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
+        settings_status.c_str(), "None", "None");
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
     context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Debug_Warning,
         "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
 #endif
-    if (!context->fine_grained_locking) {
+    if (Settings::Get().core.locking == Settings::GLOBAL) {
         context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Locking_Warning,
                                        "Fine-grained locking is disabled, this will adversely affect performance of multithreaded applications.");
     }
@@ -808,13 +801,17 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
 
-    // Set up enable and disable features flags
-    CHECK_ENABLED local_enables {};
-    CHECK_DISABLED local_disables {};
-    bool lock_setting;
-    ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
-        report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
-    ProcessConfigAndEnvSettings(&config_and_env_settings_data);
+    const Settings& settings = Settings::Get();
+
+    const bool lock_setting = settings.core.locking == Settings::FINE_GRAIN;
+
+    report_data->duplicate_message_limit = settings.log.duplicate_message_limit;
+    report_data->filter_message_ids = settings.log.message_id_filter;
+
+    //bool lock_setting;
+    //ConfigAndEnvSettings config_and_env_settings_data {OBJECT_LAYER_DESCRIPTION, pCreateInfo->pNext, local_enables, local_disables,
+    //    report_data->filter_message_ids, &report_data->duplicate_message_limit, &lock_setting};
+    //ProcessConfigAndEnvSettings(&config_and_env_settings_data);
     layer_debug_messenger_actions(report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
@@ -822,31 +819,31 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
     auto thread_checker_obj = new ThreadSafety(nullptr);
-    thread_checker_obj->RegisterValidationObject(!local_disables[thread_safety], api_version, report_data, local_object_dispatch);
+    thread_checker_obj->RegisterValidationObject(settings.validate_thread_safety, api_version, report_data, local_object_dispatch);
 
     auto parameter_validation_obj = new StatelessValidation;
-    parameter_validation_obj->RegisterValidationObject(!local_disables[stateless_checks], api_version, report_data, local_object_dispatch);
+    parameter_validation_obj->RegisterValidationObject(settings.validate_stateless_param, api_version, report_data, local_object_dispatch);
 
     auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->RegisterValidationObject(!local_disables[object_tracking], api_version, report_data, local_object_dispatch);
+    object_tracker_obj->RegisterValidationObject(settings.validate_object_lifetime, api_version, report_data, local_object_dispatch);
 
     auto core_checks_obj = new CoreChecks;
-    core_checks_obj->RegisterValidationObject(!local_disables[core_checks], api_version, report_data, local_object_dispatch);
+    core_checks_obj->RegisterValidationObject(settings.core.enabled, api_version, report_data, local_object_dispatch);
 
     auto best_practices_obj = new BestPractices;
-    best_practices_obj->RegisterValidationObject(local_enables[best_practices], api_version, report_data, local_object_dispatch);
+    best_practices_obj->RegisterValidationObject(settings.best.enabled, api_version, report_data, local_object_dispatch);
 
     auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->RegisterValidationObject(local_enables[gpu_validation], api_version, report_data, local_object_dispatch);
+    gpu_assisted_obj->RegisterValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_GPU_ASSISTED, api_version, report_data, local_object_dispatch);
 
     auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->RegisterValidationObject(local_enables[debug_printf], api_version, report_data, local_object_dispatch);
+    debug_printf_obj->RegisterValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_DEBUG_PRINTF, api_version, report_data, local_object_dispatch);
 
     auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->RegisterValidationObject(local_enables[sync_validation], api_version, report_data, local_object_dispatch);
+    sync_validation_obj->RegisterValidationObject(settings.sync.enabled, api_version, report_data, local_object_dispatch);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
-    if (local_disables[handle_wrapping]) {
+    if (!settings.validate_unique_handles) {
         wrap_handles = false;
     }
 
@@ -869,9 +866,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     framework->object_dispatch = local_object_dispatch;
     framework->container_type = LayerObjectTypeInstance;
-    framework->disabled = local_disables;
-    framework->enabled = local_enables;
-    framework->fine_grained_locking = lock_setting;
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
@@ -1010,32 +1004,34 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->report_data = instance_interceptor->report_data;
 
     // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
-    auto disables = instance_interceptor->disabled;
-    auto enables = instance_interceptor->enabled;
+    //auto disables = instance_interceptor->disabled;
+    //auto enables = instance_interceptor->enabled;
+
+    const Settings& settings = Settings::Get();
 
     auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
-    thread_safety_obj->InitDeviceValidationObject(!disables[thread_safety], instance_interceptor, device_interceptor);
+    thread_safety_obj->InitDeviceValidationObject(settings.validate_thread_safety, instance_interceptor, device_interceptor);
 
     auto stateless_validation_obj = new StatelessValidation;
-    stateless_validation_obj->InitDeviceValidationObject(!disables[stateless_checks], instance_interceptor, device_interceptor);
+    stateless_validation_obj->InitDeviceValidationObject(settings.validate_stateless_param, instance_interceptor, device_interceptor);
 
     auto object_tracker_obj = new ObjectLifetimes;
-    object_tracker_obj->InitDeviceValidationObject(!disables[object_tracking], instance_interceptor, device_interceptor);
+    object_tracker_obj->InitDeviceValidationObject(settings.validate_object_lifetime, instance_interceptor, device_interceptor);
 
     auto core_checks_obj = new CoreChecks;
-    core_checks_obj->InitDeviceValidationObject(!disables[core_checks], instance_interceptor, device_interceptor);
+    core_checks_obj->InitDeviceValidationObject(settings.core.enabled, instance_interceptor, device_interceptor);
 
     auto best_practices_obj = new BestPractices;
-    best_practices_obj->InitDeviceValidationObject(enables[best_practices], instance_interceptor, device_interceptor);
+    best_practices_obj->InitDeviceValidationObject(settings.best.enabled, instance_interceptor, device_interceptor);
 
     auto gpu_assisted_obj = new GpuAssisted;
-    gpu_assisted_obj->InitDeviceValidationObject(enables[gpu_validation], instance_interceptor, device_interceptor);
+    gpu_assisted_obj->InitDeviceValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_GPU_ASSISTED, instance_interceptor, device_interceptor);
 
     auto debug_printf_obj = new DebugPrintf;
-    debug_printf_obj->InitDeviceValidationObject(enables[debug_printf], instance_interceptor, device_interceptor);
+    debug_printf_obj->InitDeviceValidationObject(settings.shader_based.mode == Settings::SHADER_BASED_DEBUG_PRINTF, instance_interceptor, device_interceptor);
 
     auto sync_validation_obj = new SyncValidator;
-    sync_validation_obj->InitDeviceValidationObject(enables[sync_validation], instance_interceptor, device_interceptor);
+    sync_validation_obj->InitDeviceValidationObject(settings.sync.enabled, instance_interceptor, device_interceptor);
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject *> local_objs = {

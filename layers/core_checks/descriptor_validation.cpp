@@ -21,6 +21,7 @@
 #include "core_validation_error_enums.h"
 #include "core_checks/core_validation.h"
 #include "state_tracker/descriptor_sets.h"
+#include "layer_options.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;
@@ -952,7 +953,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         // NOTE: Submit time validation of UPDATE_AFTER_BIND image layout is not possible with the
         // image layout tracking as currently implemented, so only record_time_validation is done
-        if (!disabled[image_layout_validation] && context.record_time_validate) {
+        if (Settings::Get().core.check_image_layout && context.record_time_validate) {
             VkImageLayout image_layout = image_descriptor.GetImageLayout();
             // Verify Image Layout
             // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
@@ -4360,7 +4361,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     VkDescriptorPoolResetFlags flags) const {
     // Make sure sets being destroyed are not currently in-use
-    if (disabled[object_in_use]) return false;
+    if (!Settings::Get().core.check_object_in_use) return false;
     bool skip = false;
     auto pool = Get<DESCRIPTOR_POOL_STATE>(descriptorPool);
     if (pool && pool->InUse()) {
@@ -4399,7 +4400,7 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
 bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) const {
-    if (disabled[object_in_use]) return false;
+    if (!Settings::Get().core.check_object_in_use) return false;
     bool skip = false;
     auto set_node = Get<cvdescriptorset::DescriptorSet>(set);
     if (set_node) {
