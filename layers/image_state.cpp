@@ -586,7 +586,7 @@ SWAPCHAIN_NODE::SWAPCHAIN_NODE(ValidationStateTracker *dev_data_, const VkSwapch
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_) {}
 
-void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
+void SWAPCHAIN_NODE::PresentImage(uint32_t image_index, uint64_t present_id) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     acquired_images--;
@@ -596,6 +596,9 @@ void SWAPCHAIN_NODE::PresentImage(uint32_t image_index) {
         if (image_state) {
             image_state->layout_locked = true;
         }
+    }
+    if (present_id > max_present_id) {
+        max_present_id = present_id;
     }
 }
 

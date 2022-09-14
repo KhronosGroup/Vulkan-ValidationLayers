@@ -303,7 +303,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
     VkSwapchainKHR swapchain() const { return handle_.Cast<VkSwapchainKHR>(); }
 
-    void PresentImage(uint32_t image_index);
+    void PresentImage(uint32_t image_index, uint64_t present_id);
 
     void AcquireImage(uint32_t image_index);
 

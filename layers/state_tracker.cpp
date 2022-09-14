@@ -612,7 +612,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 }
 
 std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties) {
-    return std::make_shared<QUEUE_STATE>(q, index, flags, queueFamilyProperties);
+    return std::make_shared<QUEUE_STATE>(*this, q, index, flags, queueFamilyProperties);
 }
 
 void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
@@ -1531,6 +1531,9 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     buffer_view_map_.clear();
     buffer_map_.clear();
     // Queues persist until device is destroyed
+    for (auto &entry : queue_map_.snapshot()) {
+        entry.second->Destroy();
+    }
     queue_map_.clear();
 }
 
@@ -1587,7 +1590,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
     }
 
     if (early_retire_seq) {
-        queue_state->Retire(early_retire_seq);
+        queue_state->NotifyAndWait(early_retire_seq);
     }
 }
 
@@ -1626,7 +1629,7 @@ void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCo
         early_retire_seq = std::max(early_retire_seq, submit_seq);
     }
     if (early_retire_seq) {
-        queue_state->Retire(early_retire_seq);
+        queue_state->NotifyAndWait(early_retire_seq);
     }
 }
 
@@ -1764,7 +1767,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
     }
 
     if (early_retire_seq) {
-        queue_state->Retire(early_retire_seq);
+        queue_state->NotifyAndWait(early_retire_seq);
     }
 }
 
@@ -1772,7 +1775,7 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    Add(std::make_shared<SEMAPHORE_STATE>(*pSemaphore, pCreateInfo));
+    Add(std::make_shared<SEMAPHORE_STATE>(*this, *pSemaphore, pCreateInfo));
 }
 
 void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
@@ -1818,7 +1821,7 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
         for (uint32_t i = 0; i < fenceCount; i++) {
             auto fence_state = Get<FENCE_STATE>(pFences[i]);
             if (fence_state) {
-                fence_state->Retire();
+                fence_state->NotifyAndWait();
             }
         }
     }
@@ -1837,7 +1840,7 @@ void ValidationStateTracker::RecordWaitSemaphores(VkDevice device, const VkSemap
         for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
             auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
             if (semaphore_state) {
-                semaphore_state->RetireTimeline(pWaitInfo->pValues[i]);
+                semaphore_state->NotifyAndWait(pWaitInfo->pValues[i]);
             }
         }
     }
@@ -1859,7 +1862,7 @@ void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkS
 
     auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
     if (semaphore_state) {
-        semaphore_state->RetireTimeline(*pValue);
+        semaphore_state->NotifyAndWait(*pValue);
     }
 }
 
@@ -1876,7 +1879,7 @@ void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFen
     if (VK_SUCCESS != result) return;
     auto fence_state = Get<FENCE_STATE>(fence);
     if (fence_state) {
-        fence_state->Retire();
+        fence_state->NotifyAndWait();
     }
 }
 
@@ -1904,14 +1907,14 @@ void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult
     if (VK_SUCCESS != result) return;
     auto queue_state = Get<QUEUE_STATE>(queue);
     if (queue_state) {
-        queue_state->Retire();
+        queue_state->NotifyAndWait();
     }
 }
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queue_map_.snapshot()) {
-        queue.second->Retire();
+        queue.second->NotifyAndWait();
     }
 }
 
@@ -2172,7 +2175,7 @@ void ValidationStateTracker::PreCallRecordDestroyRenderPass(VkDevice device, VkR
 void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
-    Add(std::make_shared<FENCE_STATE>(*pFence, pCreateInfo));
+    Add(std::make_shared<FENCE_STATE>(*this, *pFence, pCreateInfo));
 }
 
 std::shared_ptr<PIPELINE_STATE> ValidationStateTracker::CreateGraphicsPipelineState(
@@ -3622,12 +3625,26 @@ void ValidationStateTracker::PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice
 }
 
 void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
+    // spec: If vkQueuePresentKHR fails to enqueue the corresponding set of queue operations, it may return
+    // VK_ERROR_OUT_OF_HOST_MEMORY or VK_ERROR_OUT_OF_DEVICE_MEMORY. If it does, the implementation must ensure that the state and
+    // contents of any resources or synchronization primitives referenced is unaffected by the call or its failure.
+    //
+    // If vkQueuePresentKHR fails in such a way that the implementation is unable to make that guarantee, the implementation must
+    // return VK_ERROR_DEVICE_LOST.
+    //
+    // However, if the presentation request is rejected by the presentation engine with an error VK_ERROR_OUT_OF_DATE_KHR,
+    // VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue operations are still considered
+    // to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will execute when the corresponding queue
+    // operation is complete.
+    if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_DEVICE_LOST) {
+        return;
+    }
     auto queue_state = Get<QUEUE_STATE>(queue);
-    // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
+    CB_SUBMISSION submission;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state) {
-            semaphore_state->EnqueuePresent(queue_state.get());
+            submission.AddWaitSemaphore(std::move(semaphore_state), 0);
         }
     }
 
@@ -3640,13 +3657,14 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         // Mark the image as having been released to the WSI
         auto swapchain_data = Get<SWAPCHAIN_NODE>(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
-            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i]);
-            if (present_id_info) {
-                if (i < present_id_info->swapchainCount && present_id_info->pPresentIds[i] > swapchain_data->max_present_id) {
-                    swapchain_data->max_present_id = present_id_info->pPresentIds[i];
-                }
-            }
+            uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id);
         }
+    }
+
+    auto early_retire_seq = queue_state->Submit(std::move(submission));
+    if (early_retire_seq) {
+        queue_state->NotifyAndWait(early_retire_seq);
     }
 }
 
