@@ -10673,13 +10673,20 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
-    VkSampler sampler;
-    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler);
+    VkSampler sampler_filter;
+    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler_filter);
+
+    sampler_ci.minFilter = VK_FILTER_NEAREST;
+    sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // turned off feature bit for test
+    VkSampler sampler_mipmap;
+    err = vk::CreateSampler(device(), &sampler_ci, NULL, &sampler_mipmap);
+
     ASSERT_VK_SUCCESS(err);
-    VkDescriptorImageInfo combined_sampler_info = {sampler, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    VkDescriptorImageInfo combined_sampler_info = {sampler_filter, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     VkDescriptorImageInfo seperate_sampled_image_info = {VK_NULL_HANDLE, imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-    VkDescriptorImageInfo seperate_sampler_info = {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
+    VkDescriptorImageInfo seperate_sampler_info = {sampler_filter, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
 
     // first item is combined, second/third item are seperate
     VkWriteDescriptorSet descriptor_writes[3] = {};
@@ -10708,34 +10715,68 @@ TEST_F(VkLayerTest, SampledInvalidImageViews) {
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     // Unused is a valid version of the combined pipeline/descriptors
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
                               &combined_descriptor_set.set_, 0, nullptr);
     m_commandBuffer->Draw(1, 0, 0, 0);
 
-    // Same descriptor set as combined test
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-    m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
+    // Test magFilter
+    {
+        // Same descriptor set as combined test
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    // Draw with invalid combined image sampler
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-    m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
+        // Draw with invalid combined image sampler
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
 
-    // Same error, but not with seperate descriptors
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
-                              &seperate_descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
-    m_commandBuffer->Draw(1, 0, 0, 0);
-    m_errorMonitor->VerifyFound();
+        // Same error, but not with seperate descriptors
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
+                                  1, &seperate_descriptor_set.set_, 0, nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-magFilter-04553");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Same test but for mipmap, so need to update descriptors
+    {
+        combined_sampler_info.sampler = sampler_mipmap;
+        seperate_sampler_info.sampler = sampler_mipmap;
+        vk::UpdateDescriptorSets(m_device->device(), 3, descriptor_writes, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0,
+                                  1, &combined_descriptor_set.set_, 0, nullptr);
+
+        // Same descriptor set as combined test
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.handle());
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        // Draw with invalid combined image sampler
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.handle());
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        // Same error, but not with seperate descriptors
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.handle());
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0,
+                                  1, &seperate_descriptor_set.set_, 0, nullptr);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-mipmapMode-04770");
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+    }
 
     // cleanup
-    vk::DestroySampler(device(), sampler, nullptr);
+    vk::DestroySampler(device(), sampler_filter, nullptr);
+    vk::DestroySampler(device(), sampler_mipmap, nullptr);
 }
 
 TEST_F(VkLayerTest, ShaderDrawParametersNotEnabled10) {
