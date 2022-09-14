@@ -53,7 +53,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDraw-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDraw-subpass-02685";
         sample_location                    = "VUID-vkCmdDraw-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDraw-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDraw-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDraw-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDraw-None-02692";
         viewport_count                     = "VUID-vkCmdDraw-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDraw-scissorCount-03418";
@@ -128,7 +129,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawMultiEXT-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMultiEXT-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawMultiEXT-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawMultiEXT-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawMultiEXT-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawMultiEXT-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawMultiEXT-None-02692";
         viewport_count                     = "VUID-vkCmdDrawMultiEXT-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMultiEXT-scissorCount-03418";
@@ -203,7 +205,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndexed-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndexed-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndexed-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndexed-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndexed-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndexed-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndexed-None-02692";
         viewport_count                     = "VUID-vkCmdDrawIndexed-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawIndexed-scissorCount-03418";
@@ -278,7 +281,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawMultiIndexedEXT-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMultiIndexedEXT-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawMultiIndexedEXT-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawMultiIndexedEXT-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawMultiIndexedEXT-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawMultiIndexedEXT-None-02692";
         viewport_count                     = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMultiIndexedEXT-scissorCount-03418";
@@ -353,7 +357,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndirect-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndirect-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndirect-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndirect-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndirect-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndirect-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndirect-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndirect-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawIndirect-buffer-02708";
@@ -430,7 +435,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndexedIndirect-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndexedIndirect-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndexedIndirect-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndexedIndirect-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndexedIndirect-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawIndexedIndirect-buffer-02708";
@@ -502,7 +508,8 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdDispatch-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatch-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatch-None-02697";
-        linear_sampler                     = "VUID-vkCmdDispatch-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDispatch-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDispatch-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDispatch-None-02692";
         corner_sampled_address_mode        = "VUID-vkCmdDispatch-flags-02696";
         imageview_atomic                   = "VUID-vkCmdDispatch-None-02691";
@@ -530,7 +537,8 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdDispatchIndirect-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchIndirect-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchIndirect-None-02697";
-        linear_sampler                     = "VUID-vkCmdDispatchIndirect-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDispatchIndirect-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDispatchIndirect-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDispatchIndirect-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDispatchIndirect-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDispatchIndirect-buffer-02708";
@@ -565,7 +573,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndirectCount-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndirectCount-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndirectCount-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndirectCount-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndirectCount-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndirectCount-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndirectCount-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndirectCount-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawIndirectCount-buffer-02708";
@@ -645,7 +654,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndexedIndirectCount-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndexedIndirectCount-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndexedIndirectCount-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndexedIndirectCount-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708";
@@ -720,7 +730,8 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdTraceRaysNV-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysNV-None-02697";
-        linear_sampler                     = "VUID-vkCmdTraceRaysNV-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdTraceRaysNV-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdTraceRaysNV-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdTraceRaysNV-None-02692";
         corner_sampled_address_mode        = "VUID-vkCmdTraceRaysNV-flags-02696";
         imageview_atomic                   = "VUID-vkCmdTraceRaysNV-None-02691";
@@ -748,7 +759,8 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdTraceRaysKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysKHR-None-02697";
-        linear_sampler                     = "VUID-vkCmdTraceRaysKHR-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdTraceRaysKHR-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdTraceRaysKHR-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdTraceRaysKHR-None-02692";
         corner_sampled_address_mode        = "VUID-vkCmdTraceRaysKHR-flags-02696";
         imageview_atomic                   = "VUID-vkCmdTraceRaysKHR-None-02691";
@@ -776,7 +788,8 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirectKHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirectKHR-None-02697";
-        linear_sampler                     = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdTraceRaysIndirectKHR-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdTraceRaysIndirectKHR-None-02692";
         indirect_contiguous_memory         = "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03632";
         indirect_buffer_bit                = "VUID-vkCmdTraceRaysIndirectKHR-indirectDeviceAddress-03633";
@@ -806,7 +819,8 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirect2KHR-None-02700";
         dynamic_state                      = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirect2KHR-None-02697";
-        linear_sampler                     = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdTraceRaysIndirect2KHR-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdTraceRaysIndirect2KHR-None-02692";
         indirect_contiguous_memory         = "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03632";
         indirect_buffer_bit                = "VUID-vkCmdTraceRaysIndirect2KHR-indirectDeviceAddress-03633";
@@ -839,7 +853,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawMeshTasksNV-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawMeshTasksNV-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawMeshTasksNV-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawMeshTasksNV-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawMeshTasksNV-None-02692";
         viewport_count                     = "VUID-vkCmdDrawMeshTasksNV-viewportCount-03417";
         scissor_count                      = "VUID-vkCmdDrawMeshTasksNV-scissorCount-03418";
@@ -906,7 +921,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawMeshTasksIndirectNV-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawMeshTasksIndirectNV-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawMeshTasksIndirectNV-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708";
@@ -976,7 +992,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02711";
         indirect_contiguous_memory         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708";
@@ -1051,7 +1068,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         render_pass_compatible             = "VUID-vkCmdDrawIndirectByteCountEXT-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawIndirectByteCountEXT-subpass-02685";
         sample_location                    = "VUID-vkCmdDrawIndirectByteCountEXT-sampleLocationsEnable-02689";
-        linear_sampler                     = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDrawIndirectByteCountEXT-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDrawIndirectByteCountEXT-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-02692";
         indirect_protected_cb              = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02646";
         indirect_contiguous_memory         = "VUID-vkCmdDrawIndirectByteCountEXT-counterBuffer-04567",
@@ -1123,7 +1141,8 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         pipeline_bound                     = "VUID-vkCmdDispatchBase-None-02700";
         dynamic_state                      = "VUID-vkCmdDispatchBase-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchBase-None-02697";
-        linear_sampler                     = "VUID-vkCmdDispatchBase-magFilter-04553";
+        linear_filter_sampler              = "VUID-vkCmdDispatchBase-magFilter-04553";
+        linear_mipmap_sampler              = "VUID-vkCmdDispatchBase-mipmapMode-04770";
         cubic_sampler                      = "VUID-vkCmdDispatchBase-None-02692";
         corner_sampled_address_mode        = "VUID-vkCmdDispatchBase-flags-02696";
         imageview_atomic                   = "VUID-vkCmdDispatchBase-None-02691";

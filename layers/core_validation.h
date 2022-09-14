@@ -46,7 +46,8 @@ struct DrawDispatchVuid {
     const char* render_pass_compatible = kVUIDUndefined;
     const char* subpass_index = kVUIDUndefined;
     const char* sample_location = kVUIDUndefined;
-    const char* linear_sampler = kVUIDUndefined;
+    const char* linear_filter_sampler = kVUIDUndefined;
+    const char* linear_mipmap_sampler = kVUIDUndefined;
     const char* cubic_sampler = kVUIDUndefined;
     const char* indirect_protected_cb = kVUIDUndefined;
     const char* indirect_contiguous_memory = kVUIDUndefined;

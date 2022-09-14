@@ -1182,26 +1182,43 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     string_VkFormat(image_view_state->create_info.format));
                 }
             }
-            VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
-            VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
-            VkBool32 sampler_compare_enable = sampler_state->createInfo.compareEnable;
-            if ((sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) &&
-                (sampler_compare_enable == VK_FALSE) &&
+            const VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
+            const VkFilter sampler_min_filter = sampler_state->createInfo.minFilter;
+            const VkBool32 sampler_compare_enable = sampler_state->createInfo.compareEnable;
+            if ((sampler_compare_enable == VK_FALSE) &&
                 !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-                auto set = context.descriptor_set->GetSet();
-                LogObjectList objlist(set);
-                objlist.add(sampler_state->sampler());
-                objlist.add(image_view_state->image_view());
-                return LogError(objlist, context.vuids.linear_sampler,
-                                "Descriptor set %s encountered the following validation error at %s time: Sampler "
-                                "(%s) is set to use VK_FILTER_LINEAR with "
-                                "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not "
-                                "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
-                                report_data->FormatHandle(set).c_str(), context.caller,
-                                report_data->FormatHandle(sampler_state->sampler()).c_str(),
-                                report_data->FormatHandle(image_view_state->image_view()).c_str(),
-                                string_VkFormat(image_view_state->create_info.format));
+                if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
+                    auto set = context.descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(sampler_state->sampler());
+                    objlist.add(image_view_state->image_view());
+                    return LogError(objlist, context.vuids.linear_filter_sampler,
+                                    "Descriptor set %s encountered the following validation error at %s time: Sampler "
+                                    "(%s) is set to use VK_FILTER_LINEAR with "
+                                    "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not "
+                                    "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
+                                    report_data->FormatHandle(set).c_str(), context.caller,
+                                    report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                    report_data->FormatHandle(image_view_state->image_view()).c_str(),
+                                    string_VkFormat(image_view_state->create_info.format));
+                }
+                if (sampler_state->createInfo.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
+                    auto set = context.descriptor_set->GetSet();
+                    LogObjectList objlist(set);
+                    objlist.add(sampler_state->sampler());
+                    objlist.add(image_view_state->image_view());
+                    return LogError(objlist, context.vuids.linear_mipmap_sampler,
+                                    "Descriptor set %s encountered the following validation error at %s time: Sampler "
+                                    "(%s) is set to use VK_SAMPLER_MIPMAP_MODE_LINEAR with "
+                                    "compareEnable is set to VK_FALSE, but image view's (%s) format (%s) does not "
+                                    "contain VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT in its format features.",
+                                    report_data->FormatHandle(set).c_str(), context.caller,
+                                    report_data->FormatHandle(sampler_state->sampler()).c_str(),
+                                    report_data->FormatHandle(image_view_state->image_view()).c_str(),
+                                    string_VkFormat(image_view_state->create_info.format));
+                }
             }
+
             if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
                 if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
                     auto set = context.descriptor_set->GetSet();
