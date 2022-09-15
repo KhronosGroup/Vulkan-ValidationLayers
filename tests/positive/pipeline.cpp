@@ -7094,3 +7094,47 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, ShaderZeroInitializeWorkgroupMemoryFeature) {
+    TEST_DESCRIPTION("Enable and use shaderZeroInitializeWorkgroupMemory feature");
+
+    AddRequiredExtensions(VK_KHR_ZERO_INITIALIZE_WORKGROUP_MEMORY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " required but not supported";
+    }
+
+    auto zero_initialize_work_group_memory_features = LvlInitStruct<VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(zero_initialize_work_group_memory_features);
+    if (!zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
+        GTEST_SKIP() << "VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR::shaderZeroInitializeWorkgroupMemory is required but not enabled.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    const char *spv_source = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %counter "counter"
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+%_ptr_Workgroup_uint = OpTypePointer Workgroup %uint
+  %zero_uint = OpConstantNull %uint
+    %counter = OpVariable %_ptr_Workgroup_uint Workgroup %zero_uint
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    auto cs = VkShaderObj::CreateFromASM(*this, VK_SHADER_STAGE_COMPUTE_BIT, spv_source, "main", nullptr);
+    const auto set_info = [&cs](CreateComputePipelineHelper &helper) { helper.cs_ = std::move(cs); };
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+}
