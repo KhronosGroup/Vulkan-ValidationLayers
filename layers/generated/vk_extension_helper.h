@@ -443,6 +443,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_metal_objects{kNotEnabled};
     ExtEnabled vk_ext_multi_draw{kNotEnabled};
     ExtEnabled vk_ext_multisampled_render_to_single_sampled{kNotEnabled};
+    ExtEnabled vk_ext_mutable_descriptor_type{kNotEnabled};
     ExtEnabled vk_ext_non_seamless_cube_map{kNotEnabled};
     ExtEnabled vk_ext_pageable_device_local_memory{kNotEnabled};
     ExtEnabled vk_ext_pci_bus_info{kNotEnabled};
@@ -792,6 +793,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_multisampled_render_to_single_sampled, {{
                            {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_depth_stencil_resolve, VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME}}})},
+            {VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_mutable_descriptor_type, {{
+                           {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
             {VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_non_seamless_cube_map, {})},
             {VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pageable_device_local_memory, {{
                            {&DeviceExtensions::vk_ext_memory_priority, VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME}}})},
@@ -1406,6 +1409,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_EXT_MULTI_DRAW_EXTENSION_NAME,
     VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME,
+    VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME,
     VK_EXT_NON_SEAMLESS_CUBE_MAP_EXTENSION_NAME,
     VK_EXT_PAGEABLE_DEVICE_LOCAL_MEMORY_EXTENSION_NAME,
     VK_EXT_PCI_BUS_INFO_EXTENSION_NAME,

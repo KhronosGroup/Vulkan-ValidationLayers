@@ -5556,22 +5556,22 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EX
 };
 
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
-// Map type VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE
-template <> struct LvlTypeMap<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE;
+// Map type VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
 };
 
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_VALVE> {
-    typedef VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE Type;
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT> {
+    typedef VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT Type;
 };
 
-// Map type VkMutableDescriptorTypeCreateInfoVALVE to id VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE
-template <> struct LvlTypeMap<VkMutableDescriptorTypeCreateInfoVALVE> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE;
+// Map type VkMutableDescriptorTypeCreateInfoEXT to id VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkMutableDescriptorTypeCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT;
 };
 
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_VALVE> {
-    typedef VkMutableDescriptorTypeCreateInfoVALVE Type;
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT> {
+    typedef VkMutableDescriptorTypeCreateInfoEXT Type;
 };
 
 // Map type VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT

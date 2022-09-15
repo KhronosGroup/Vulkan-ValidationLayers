@@ -10792,49 +10792,49 @@ struct safe_VkDirectFBSurfaceCreateInfoEXT {
 };
 #endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
-struct safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE {
+struct safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
     VkBool32 mutableDescriptorType;
-    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* in_struct);
-    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& copy_src);
-    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& operator=(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE& copy_src);
-    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE();
-    ~safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE();
-    void initialize(const VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* in_struct);
-    void initialize(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE* copy_src);
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *ptr() { return reinterpret_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE *>(this); }
-    VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE const *>(this); }
+    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT(const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& operator=(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT();
+    ~safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT();
+    void initialize(const VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT* copy_src);
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *>(this); }
+    VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT const *>(this); }
 };
 
-struct safe_VkMutableDescriptorTypeListVALVE {
+struct safe_VkMutableDescriptorTypeListEXT {
     uint32_t descriptorTypeCount;
     const VkDescriptorType* pDescriptorTypes{};
-    safe_VkMutableDescriptorTypeListVALVE(const VkMutableDescriptorTypeListVALVE* in_struct);
-    safe_VkMutableDescriptorTypeListVALVE(const safe_VkMutableDescriptorTypeListVALVE& copy_src);
-    safe_VkMutableDescriptorTypeListVALVE& operator=(const safe_VkMutableDescriptorTypeListVALVE& copy_src);
-    safe_VkMutableDescriptorTypeListVALVE();
-    ~safe_VkMutableDescriptorTypeListVALVE();
-    void initialize(const VkMutableDescriptorTypeListVALVE* in_struct);
-    void initialize(const safe_VkMutableDescriptorTypeListVALVE* copy_src);
-    VkMutableDescriptorTypeListVALVE *ptr() { return reinterpret_cast<VkMutableDescriptorTypeListVALVE *>(this); }
-    VkMutableDescriptorTypeListVALVE const *ptr() const { return reinterpret_cast<VkMutableDescriptorTypeListVALVE const *>(this); }
+    safe_VkMutableDescriptorTypeListEXT(const VkMutableDescriptorTypeListEXT* in_struct);
+    safe_VkMutableDescriptorTypeListEXT(const safe_VkMutableDescriptorTypeListEXT& copy_src);
+    safe_VkMutableDescriptorTypeListEXT& operator=(const safe_VkMutableDescriptorTypeListEXT& copy_src);
+    safe_VkMutableDescriptorTypeListEXT();
+    ~safe_VkMutableDescriptorTypeListEXT();
+    void initialize(const VkMutableDescriptorTypeListEXT* in_struct);
+    void initialize(const safe_VkMutableDescriptorTypeListEXT* copy_src);
+    VkMutableDescriptorTypeListEXT *ptr() { return reinterpret_cast<VkMutableDescriptorTypeListEXT *>(this); }
+    VkMutableDescriptorTypeListEXT const *ptr() const { return reinterpret_cast<VkMutableDescriptorTypeListEXT const *>(this); }
 };
 
-struct safe_VkMutableDescriptorTypeCreateInfoVALVE {
+struct safe_VkMutableDescriptorTypeCreateInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     uint32_t mutableDescriptorTypeListCount;
-    safe_VkMutableDescriptorTypeListVALVE* pMutableDescriptorTypeLists{};
-    safe_VkMutableDescriptorTypeCreateInfoVALVE(const VkMutableDescriptorTypeCreateInfoVALVE* in_struct);
-    safe_VkMutableDescriptorTypeCreateInfoVALVE(const safe_VkMutableDescriptorTypeCreateInfoVALVE& copy_src);
-    safe_VkMutableDescriptorTypeCreateInfoVALVE& operator=(const safe_VkMutableDescriptorTypeCreateInfoVALVE& copy_src);
-    safe_VkMutableDescriptorTypeCreateInfoVALVE();
-    ~safe_VkMutableDescriptorTypeCreateInfoVALVE();
-    void initialize(const VkMutableDescriptorTypeCreateInfoVALVE* in_struct);
-    void initialize(const safe_VkMutableDescriptorTypeCreateInfoVALVE* copy_src);
-    VkMutableDescriptorTypeCreateInfoVALVE *ptr() { return reinterpret_cast<VkMutableDescriptorTypeCreateInfoVALVE *>(this); }
-    VkMutableDescriptorTypeCreateInfoVALVE const *ptr() const { return reinterpret_cast<VkMutableDescriptorTypeCreateInfoVALVE const *>(this); }
+    safe_VkMutableDescriptorTypeListEXT* pMutableDescriptorTypeLists{};
+    safe_VkMutableDescriptorTypeCreateInfoEXT(const VkMutableDescriptorTypeCreateInfoEXT* in_struct);
+    safe_VkMutableDescriptorTypeCreateInfoEXT(const safe_VkMutableDescriptorTypeCreateInfoEXT& copy_src);
+    safe_VkMutableDescriptorTypeCreateInfoEXT& operator=(const safe_VkMutableDescriptorTypeCreateInfoEXT& copy_src);
+    safe_VkMutableDescriptorTypeCreateInfoEXT();
+    ~safe_VkMutableDescriptorTypeCreateInfoEXT();
+    void initialize(const VkMutableDescriptorTypeCreateInfoEXT* in_struct);
+    void initialize(const safe_VkMutableDescriptorTypeCreateInfoEXT* copy_src);
+    VkMutableDescriptorTypeCreateInfoEXT *ptr() { return reinterpret_cast<VkMutableDescriptorTypeCreateInfoEXT *>(this); }
+    VkMutableDescriptorTypeCreateInfoEXT const *ptr() const { return reinterpret_cast<VkMutableDescriptorTypeCreateInfoEXT const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT {

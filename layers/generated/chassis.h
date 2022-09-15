@@ -3330,6 +3330,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
