@@ -67,7 +67,7 @@ struct FORMAT_INFO {
 namespace std {
 template <>
 struct hash<VkFormat> {
-    size_t operator()(VkFormat fmt) const NOEXCEPT {
+    size_t operator()(VkFormat fmt) const noexcept {
         return hash<uint32_t>()(static_cast<uint32_t>(fmt));
     }
 };

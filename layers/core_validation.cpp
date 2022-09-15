@@ -64,7 +64,6 @@
 #include <sys/types.h>
 #endif
 
-#include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
 #include "convert_to_renderpass2.h"
@@ -1153,8 +1152,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.vertex_binding,
                                  "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
-                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[" PRINTF_SIZE_T_SPECIFIER
-                                 "].binding value is %u.",
+                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(), vertex_binding, i,
                                  vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer_state == nullptr) &&
@@ -1162,8 +1160,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 skip |= LogError(pCB->commandBuffer(), vuid.vertex_binding_null,
                                  "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
-                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[" PRINTF_SIZE_T_SPECIFIER
-                                 "].binding value is %u.",
+                                 "vkCmdBindVertexBuffers. This is because pVertexBindingDescriptions[%zu].binding value is %u.",
                                  caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  vertex_binding, i, vertex_binding);
             }
@@ -1206,8 +1203,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     objlist.add(state.pipeline_state->pipeline());
                     skip |= LogError(objlist, vuid.vertex_binding_attribute,
                                      "%s: Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
-                                     ") is not aligned in pVertexAttributeDescriptions[" PRINTF_SIZE_T_SPECIFIER
-                                     "] (binding=%u location=%u) where attribAddress = vertex buffer offset (%" PRIu64
+                                     ") is not aligned in pVertexAttributeDescriptions[%zu]"
+                                     "(binding=%u location=%u) where attribAddress = vertex buffer offset (%" PRIu64
                                      ") + binding stride (%u) + attribute offset (%u).",
                                      caller, string_VkFormat(attribute_description.format), vtx_attrib_req_alignment,
                                      attrib_address, i, vertex_binding, attribute_description.location, vertex_buffer_offset,
@@ -1217,8 +1214,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 LogObjectList objlist(pCB->commandBuffer());
                 objlist.add(state.pipeline_state->pipeline());
                 skip |= LogError(objlist, vuid.vertex_binding_attribute,
-                                 "%s: binding #%" PRIu32 " in pVertexAttributeDescriptions[" PRINTF_SIZE_T_SPECIFIER
-                                 "] of %s is an invalid value for command buffer %s.",
+                                 "%s: binding #%" PRIu32
+                                 " in pVertexAttributeDescriptions[%zu]"
+                                 " of %s is an invalid value for command buffer %s.",
                                  caller, vertex_binding, i, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  report_data->FormatHandle(pCB->commandBuffer()).c_str());
             }
@@ -2137,8 +2135,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
-                                     "].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                     "].srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
                                      "enabled.",
                                      pipe_index, i, pipe_attachments[i].srcColorBlendFactor);
                 }
@@ -2150,8 +2148,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
-                                     "].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                     "].dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
                                      "enabled.",
                                      pipe_index, i, pipe_attachments[i].dstColorBlendFactor);
                 }
@@ -2163,8 +2161,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
-                                     "].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                     "].srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
                                      "enabled.",
                                      pipe_index, i, pipe_attachments[i].srcAlphaBlendFactor);
                 }
@@ -2176,8 +2174,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
-                                     "].pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                     "].dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
                                      "enabled.",
                                      pipe_index, i, pipe_attachments[i].dstAlphaBlendFactor);
                 }
@@ -16274,10 +16272,8 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
             if (pMemRanges[i].size == VK_WHOLE_SIZE) {
                 if (mem_info->mapped_range.offset > pMemRanges[i].offset) {
                     skip |= LogError(pMemRanges[i].memory, "VUID-VkMappedMemoryRange-size-00686",
-                                     "%s: Flush/Invalidate offset (" PRINTF_SIZE_T_SPECIFIER
-                                     ") is less than Memory Object's offset (" PRINTF_SIZE_T_SPECIFIER ").",
-                                     funcName, static_cast<size_t>(pMemRanges[i].offset),
-                                     static_cast<size_t>(mem_info->mapped_range.offset));
+                                     "%s: Flush/Invalidate offset (%zu) is less than Memory Object's offset (%zu).", funcName,
+                                     static_cast<size_t>(pMemRanges[i].offset), static_cast<size_t>(mem_info->mapped_range.offset));
                 }
             } else {
                 const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
@@ -16286,8 +16282,8 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
                 if ((mem_info->mapped_range.offset > pMemRanges[i].offset) ||
                     (data_end < (pMemRanges[i].offset + pMemRanges[i].size))) {
                     skip |= LogError(pMemRanges[i].memory, "VUID-VkMappedMemoryRange-size-00685",
-                                     "%s: Flush/Invalidate size or offset (" PRINTF_SIZE_T_SPECIFIER ", " PRINTF_SIZE_T_SPECIFIER
-                                     ") exceed the Memory Object's upper-bound (" PRINTF_SIZE_T_SPECIFIER ").",
+                                     "%s: Flush/Invalidate size or offset (%zu, %zu) "
+                                     "exceed the Memory Object's upper-bound (%zu).",
                                      funcName, static_cast<size_t>(pMemRanges[i].offset + pMemRanges[i].size),
                                      static_cast<size_t>(pMemRanges[i].offset), static_cast<size_t>(data_end));
                 }

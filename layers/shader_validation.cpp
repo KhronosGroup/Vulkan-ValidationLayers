@@ -491,7 +491,7 @@ bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state
             if (spec->pMapEntries[i].offset >= spec->dataSize) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-VkSpecializationInfo-offset-00773",
                                  "Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided).",
+                                 "data (bytes %u..%zu; %zu bytes provided).",
                                  i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
                                  spec->pMapEntries[i].offset + spec->dataSize - 1, spec->dataSize);
 
@@ -500,7 +500,7 @@ bool CoreChecks::ValidateSpecializations(const SHADER_MODULE_STATE &module_state
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-VkSpecializationInfo-pMapEntries-00774",
                                  "Specialization entry %u (for constant id %u) references memory outside provided specialization "
-                                 "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided).",
+                                 "data (bytes %u..%zu; %zu bytes provided).",
                                  i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
                                  spec->pMapEntries[i].offset + spec->pMapEntries[i].size - 1, spec->dataSize);
             }
@@ -3597,8 +3597,7 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
 
     if (!have_glsl_shader && (pCreateInfo->codeSize % 4)) {
         skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01376",
-                         "SPIR-V module not valid: Codesize must be a multiple of 4 but is " PRINTF_SIZE_T_SPECIFIER ".",
-                         pCreateInfo->codeSize);
+                         "SPIR-V module not valid: Codesize must be a multiple of 4 but is %zu", pCreateInfo->codeSize);
     } else {
         auto cache = GetValidationCacheInfo(pCreateInfo);
         uint32_t hash = 0;

@@ -46,7 +46,7 @@ namespace {
     } while (0)
 
 #define NON_DISPATCHABLE_HANDLE_DTOR(cls, destroy_func) \
-    cls::~cls() NOEXCEPT {                              \
+    cls::~cls() noexcept {                              \
         if (initialized()) {                            \
             destroy_func(device(), handle(), NULL);     \
             handle_ = VK_NULL_HANDLE;                   \
@@ -236,7 +236,7 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
     }
 }
 
-Device::~Device() NOEXCEPT {
+Device::~Device() noexcept {
     if (!initialized()) return;
 
     vk::DestroyDevice(handle(), NULL);
@@ -450,7 +450,7 @@ VkResult Queue::wait() {
     return result;
 }
 
-DeviceMemory::~DeviceMemory() NOEXCEPT {
+DeviceMemory::~DeviceMemory() noexcept {
     if (initialized()) vk::FreeMemory(device(), handle(), NULL);
 }
 
@@ -914,7 +914,7 @@ DescriptorSet *DescriptorPool::alloc_sets(const Device &dev, const DescriptorSet
     return (set.empty()) ? NULL : set[0];
 }
 
-DescriptorSet::~DescriptorSet() NOEXCEPT {
+DescriptorSet::~DescriptorSet() noexcept {
     if (initialized()) {
         // Only call vk::Free* on sets allocated from pool with usage *_DYNAMIC
         if (containing_pool_->getDynamicUsage()) {
@@ -930,7 +930,7 @@ void CommandPool::init(const Device &dev, const VkCommandPoolCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateCommandPool, dev, &info);
 }
 
-CommandBuffer::~CommandBuffer() NOEXCEPT {
+CommandBuffer::~CommandBuffer() noexcept {
     if (initialized()) {
         VkCommandBuffer cmds[] = {handle()};
         vk::FreeCommandBuffers(dev_handle_, cmd_pool_, 1, cmds);
@@ -1026,7 +1026,7 @@ VkSamplerYcbcrConversionCreateInfo SamplerYcbcrConversion::DefaultConversionInfo
     return ycbcr_create_info;
 }
 
-SamplerYcbcrConversion::~SamplerYcbcrConversion() NOEXCEPT {
+SamplerYcbcrConversion::~SamplerYcbcrConversion() noexcept {
     if (initialized()) {
         if (!khr_) {
             vk::DestroySamplerYcbcrConversion(device(), handle(), nullptr);

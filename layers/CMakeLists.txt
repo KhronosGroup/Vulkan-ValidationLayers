@@ -58,7 +58,6 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_logging.h
         vk_layer_utils.h
         vk_layer_utils.cpp
-        vk_loader_platform.h
         xxhash.h
         xxhash.c
         generated/vk_format_utils.h

@@ -39,11 +39,6 @@ option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=addres
 
 option(BUILD_TESTS "Build the tests" OFF)
 
-# API_NAME allows renaming builds to avoid conflicts with installed SDKs.  It is referenced by layers/vk_loader_platform.h
-set(API_NAME "Vulkan" CACHE STRING "API name to use when building")
-string(TOLOWER ${API_NAME} API_LOWERCASE)
-add_definitions(-DAPI_NAME="${API_NAME}")
-
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 

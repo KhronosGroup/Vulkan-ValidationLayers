@@ -36,13 +36,13 @@
 #include <atomic>
 
 // Intentionally ignore VulkanTypedHandle::node, it is optional
-inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) NOEXCEPT {
+inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) noexcept {
     return a.handle == b.handle && a.type == b.type;
 }
 namespace std {
 template <>
 struct hash<VulkanTypedHandle> {
-    size_t operator()(VulkanTypedHandle obj) const NOEXCEPT { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
+    size_t operator()(VulkanTypedHandle obj) const noexcept { return hash<uint64_t>()(obj.handle) ^ hash<uint32_t>()(obj.type); }
 };
 }  // namespace std
 

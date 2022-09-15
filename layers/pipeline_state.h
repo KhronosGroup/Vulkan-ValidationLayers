@@ -91,9 +91,9 @@ struct DescriptorRequirement {
     DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 
-inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs == b.reqs; }
+inline bool operator==(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs == b.reqs; }
 
-inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) NOEXCEPT { return a.reqs < b.reqs; }
+inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs < b.reqs; }
 
 typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
 
