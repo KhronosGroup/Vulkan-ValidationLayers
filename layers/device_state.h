@@ -86,7 +86,6 @@ struct DeviceFeatures {
     VkPhysicalDeviceRayTracingMotionBlurFeaturesNV ray_tracing_motion_blur_features;
     VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR shader_integer_dot_product_features;
     VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT primitive_topology_list_restart_features;
-    VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeaturesKHR zero_initialize_work_group_memory_features;
     VkPhysicalDeviceRGBA10X6FormatsFeaturesEXT rgba10x6_formats_features;
     VkPhysicalDeviceImageViewMinLodFeaturesEXT image_view_min_lod_features;
     VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT primitives_generated_query_features;

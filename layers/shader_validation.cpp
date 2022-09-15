@@ -2478,7 +2478,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
         if (storage_class == spv::StorageClassWorkgroup) {
             // If Workgroup variable is initalized, make sure the feature is enabled
             if (insn.len() > 4 &&
-                !enabled_features.zero_initialize_work_group_memory_features.shaderZeroInitializeWorkgroupMemory) {
+                !enabled_features.core13.shaderZeroInitializeWorkgroupMemory) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_zero_initialize_workgroup_memory)
                                        ? "VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372"
                                        : "VUID-RuntimeSpirv-OpVariable-06373";
