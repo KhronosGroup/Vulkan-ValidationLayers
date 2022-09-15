@@ -47,7 +47,7 @@ ErrorMonitor::ErrorMonitor() {
     ExpectSuccess(kErrorBit);
 }
 
-ErrorMonitor::~ErrorMonitor() NOEXCEPT {}
+ErrorMonitor::~ErrorMonitor() noexcept {}
 
 void ErrorMonitor::MonitorReset() {
     message_flags_ = kErrorBit;
@@ -225,7 +225,7 @@ bool ErrorMonitor::IgnoreMessage(string const &msg) const {
                         [&msg](string const &str) { return msg.find(str) != string::npos; }) != ignore_message_strings_.end();
 }
 
-void DebugReporter::Create(VkInstance instance) NOEXCEPT {
+void DebugReporter::Create(VkInstance instance) noexcept {
     assert(instance);
     assert(!debug_obj_);
 
@@ -236,7 +236,7 @@ void DebugReporter::Create(VkInstance instance) NOEXCEPT {
     if (err) debug_obj_ = VK_NULL_HANDLE;
 }
 
-void DebugReporter::Destroy(VkInstance instance) NOEXCEPT {
+void DebugReporter::Destroy(VkInstance instance) noexcept {
     assert(instance);
     assert(debug_obj_);  // valid to call with null object, but probably bug
 
@@ -1314,7 +1314,7 @@ VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
 
 VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
 
-VkDescriptorSetObj::~VkDescriptorSetObj() NOEXCEPT {
+VkDescriptorSetObj::~VkDescriptorSetObj() noexcept {
     if (m_set) {
         delete m_set;
     }

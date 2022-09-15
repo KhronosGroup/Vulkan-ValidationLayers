@@ -36,7 +36,7 @@ struct DescriptorSlot {
     DescriptorSlot(uint32_t s, uint32_t b) : set(s), binding(b) {}
 };
 
-inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) NOEXCEPT {
+inline bool operator==(const DescriptorSlot &lhs, const DescriptorSlot &rhs) noexcept {
     return lhs.set == rhs.set && lhs.binding == rhs.binding;
 }
 
@@ -45,18 +45,18 @@ struct SamplerUsedByImage {
     uint32_t sampler_index;
 };
 
-inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) NOEXCEPT {
+inline bool operator==(const SamplerUsedByImage &a, const SamplerUsedByImage &b) noexcept {
     return a.sampler_slot == b.sampler_slot && a.sampler_index == b.sampler_index;
 }
 
 namespace std {
 template <>
 struct hash<DescriptorSlot> {
-    size_t operator()(DescriptorSlot slot) const NOEXCEPT { return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding); }
+    size_t operator()(DescriptorSlot slot) const noexcept { return hash<uint32_t>()(slot.set) ^ hash<uint32_t>()(slot.binding); }
 };
 template <>
 struct hash<SamplerUsedByImage> {
-    size_t operator()(SamplerUsedByImage s) const NOEXCEPT {
+    size_t operator()(SamplerUsedByImage s) const noexcept {
         return hash<DescriptorSlot>()(s.sampler_slot) ^ hash<uint32_t>()(s.sampler_index);
     }
 };

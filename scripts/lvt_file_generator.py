@@ -26,7 +26,54 @@ from common_codegen import *
 
 funcptr_source_preamble = '''
 #include "lvt_function_pointers.h"
-#include <stdio.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+
+#ifdef _WIN32
+// Dynamic Loading:
+typedef HMODULE dl_handle;
+static dl_handle open_library(const char *lib_path) {
+    // Try loading the library the original way first.
+    dl_handle lib_handle = LoadLibrary(lib_path);
+    if (lib_handle == NULL && GetLastError() == ERROR_MOD_NOT_FOUND) {
+        // If that failed, then try loading it with broader search folders.
+        lib_handle = LoadLibraryEx(lib_path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+    }
+    return lib_handle;
+}
+static char *open_library_error(const char *libPath) {
+    static char errorMsg[164];
+    (void)snprintf(errorMsg, 163, "Failed to open dynamic library \\\"%s\\\" with error %lu", libPath, GetLastError());
+    return errorMsg;
+}
+static void *get_proc_address(dl_handle library, const char *name) {
+    assert(library);
+    assert(name);
+    return (void *)GetProcAddress(library, name);
+}
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+
+#include <dlfcn.h>
+
+typedef void *dl_handle;
+static inline dl_handle open_library(const char *libPath) {
+    // When loading the library, we use RTLD_LAZY so that not all symbols have to be
+    // resolved at this time (which improves performance). Note that if not all symbols
+    // can be resolved, this could cause crashes later. Use the LD_BIND_NOW environment
+    // variable to force all symbols to be resolved here.
+    return dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
+}
+static inline const char *open_library_error(const char *libPath) { return dlerror(); }
+static inline void *get_proc_address(dl_handle library, const char *name) {
+    assert(library);
+    assert(name);
+    return dlsym(library, name);
+}
+#else
+#error Dynamic library functions must be defined for this OS.
+#endif
+
 
 namespace vk {
 
@@ -34,7 +81,18 @@ namespace vk {
 
 funcptr_header_preamble = '''
 #include <vulkan/vulkan.h>
-#include "vk_loader_platform.h"
+
+#ifdef _WIN32
+/* Windows-specific common code: */
+// WinBase.h defines CreateSemaphore and synchapi.h defines CreateEvent
+//  undefine them to avoid conflicts with VkLayerDispatchTable struct members.
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+#ifdef CreateEvent
+#undef CreateEvent
+#endif
+#endif
 
 namespace vk {
 
@@ -216,10 +274,10 @@ class LvtFileOutputGenerator(OutputGenerator):
         table += '    const char filename[] = "libvulkan.so";\n'
         table += '#endif\n'
         table += '\n'
-        table += '    auto loader_handle = loader_platform_open_library(filename);\n'
+        table += '    auto lib_handle = open_library(filename);\n'
         table += '\n'
-        table += '    if (loader_handle == nullptr) {\n'
-        table += '        printf("%s\\n", loader_platform_open_library_error(filename));\n'
+        table += '    if (lib_handle == nullptr) {\n'
+        table += '        printf("%s\\n", open_library_error(filename));\n'
         table += '        exit(1);\n'
         table += '    }\n\n'
 
@@ -229,7 +287,7 @@ class LvtFileOutputGenerator(OutputGenerator):
 
             if item[1] is not None:
                 table += '#ifdef %s\n' % item[1]
-            table += '    %s = reinterpret_cast<PFN_%s>(loader_platform_get_proc_address(loader_handle, "%s"));\n' % (base_name, item[0], item[0])
+            table += '    %s = reinterpret_cast<PFN_%s>(get_proc_address(lib_handle, "%s"));\n' % (base_name, item[0], item[0])
             if item[1] is not None:
                 table += '#endif // %s\n' % item[1]
         table += '}\n\n'

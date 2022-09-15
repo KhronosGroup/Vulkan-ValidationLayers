@@ -50,7 +50,6 @@ action("vulkan_clean_old_validation_layer_objects") {
 config("vulkan_internal_config") {
   defines = [
     "VULKAN_NON_CMAKE_BUILD",
-    "API_NAME=\"Vulkan\"",
     "VK_ENABLE_BETA_EXTENSIONS",
   ]
 
@@ -296,7 +295,6 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_logging.h",
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
-    "layers/vk_loader_platform.h",
     "layers/vk_mem_alloc.h",
     "layers/xxhash.c",
     "layers/xxhash.h",
