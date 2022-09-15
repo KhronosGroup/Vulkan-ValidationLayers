@@ -1990,6 +1990,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_NV_fragment_shader_barycentric", {kExtPromoted, "VK_KHR_fragment_shader_barycentric"}},
     {"VK_NV_glsl_shader", {kExtDeprecated, ""}},
     {"VK_NV_win32_keyed_mutex", {kExtPromoted, "VK_KHR_win32_keyed_mutex"}},
+    {"VK_VALVE_mutable_descriptor_type", {kExtPromoted, "VK_EXT_mutable_descriptor_type"}},
 };
 
 const layer_data::unordered_map<std::string, std::string> special_use_extensions = {
@@ -2006,6 +2007,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_image_2d_view_of_3d", "glemulation"},
     {"VK_EXT_legacy_dithering", "glemulation"},
     {"VK_EXT_line_rasterization", "cadsupport"},
+    {"VK_EXT_mutable_descriptor_type", "d3demulation"},
     {"VK_EXT_non_seamless_cube_map", "d3demulation, glemulation"},
     {"VK_EXT_pipeline_creation_feedback", "devtools"},
     {"VK_EXT_primitive_topology_list_restart", "glemulation"},
