@@ -77,7 +77,7 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
         CreateObject(*pSetLayout);
 
         // Check whether any binding uses read_only
-        bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE) != 0;
+        bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
         if (!read_only) {
             const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
             if (flags_create_info) {

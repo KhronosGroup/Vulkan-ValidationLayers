@@ -305,10 +305,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
                 }
             }
-            if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE) {
+            if (descriptor_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
                 skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616",
                                  "vkCmdBindDescriptorSets(): pDescriptorSets[%" PRIu32
-                                 "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE.",
+                                 "] was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.",
                                  set_idx);
             }
         } else {
@@ -442,10 +442,10 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
             }
         }
 
-        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && binding_info.pImmutableSamplers != nullptr) {
+        if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT && binding_info.pImmutableSamplers != nullptr) {
             skip |= LogError(device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-04605",
                              "vkCreateDescriptorSetLayout(): pBindings[%u] has descriptorType "
-                             "VK_DESCRIPTOR_TYPE_MUTABLE_VALVE but pImmutableSamplers is not NULL.",
+                             "VK_DESCRIPTOR_TYPE_MUTABLE_EXT but pImmutableSamplers is not NULL.",
                              i);
         }
 
@@ -1739,7 +1739,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     *error_code = "VUID-VkCopyDescriptorSet-srcSet-00349";
     auto src_type = src_layout->GetTypeFromBinding(update->srcBinding);
     auto dst_type = dst_layout->GetTypeFromBinding(update->dstBinding);
-    if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && dst_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE && src_type != dst_type) {
+    if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT && dst_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT && src_type != dst_type) {
         *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02632";
         std::stringstream error_str;
         error_str << "Attempting copy update to descriptorSet " << report_data->FormatHandle(dst_set->GetSet()) << " binding #"
@@ -1772,15 +1772,16 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type)) {
+    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type) ||
+        IsExtEnabled(device_extensions.vk_ext_mutable_descriptor_type)) {
         if (!(src_layout->GetCreateFlags() & (VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT |
-                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) &&
+                                              VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT)) &&
             (dst_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
             *error_code = "VUID-VkCopyDescriptorSet-srcSet-04885";
             std::stringstream error_str;
             error_str << "If pname:srcSet's (" << report_data->FormatHandle(update->srcSet)
                       << ") layout was created with neither ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT nor "
-                         "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE flags set, then pname:dstSet's ("
+                         "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT flags set, then pname:dstSet's ("
                       << report_data->FormatHandle(update->dstSet)
                       << ") layout must: have been created without the "
                          "ename:VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT flag set";
@@ -1818,15 +1819,16 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
 
-    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type)) {
+    if (IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type) ||
+        IsExtEnabled(device_extensions.vk_ext_mutable_descriptor_type)) {
         if (!(src_set->GetPoolState()->createInfo.flags &
-              (VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE)) &&
+              (VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT)) &&
             (dst_set->GetPoolState()->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)) {
             *error_code = "VUID-VkCopyDescriptorSet-srcSet-04887";
             std::stringstream error_str;
             error_str << "If the descriptor pool from which pname:srcSet (" << report_data->FormatHandle(update->srcSet)
                       << ") was allocated was created with neither ename:VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT nor "
-                         "ename:VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE flags set, then the descriptor pool from which "
+                         "ename:VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT flags set, then the descriptor pool from which "
                          "pname:dstSet ("
                       << report_data->FormatHandle(update->dstSet)
                       << ") was allocated must: have been created without the "
@@ -1877,26 +1879,26 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         }
     }
 
-    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+        if (src_type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
             if (!dst_layout->IsTypeMutable(src_type, update->dstBinding)) {
                 *error_code = "VUID-VkCopyDescriptorSet-dstSet-04612";
                 std::stringstream error_str;
-                error_str << "Attempting copy update with dstBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the new "
+                error_str << "Attempting copy update with dstBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new "
                              "active descriptor type "
                           << string_VkDescriptorType(src_type) << " is not in the corresponding pMutableDescriptorTypeLists list.";
                 *error_msg = error_str.str();
                 return false;
             }
         }
-    } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         auto src_iter = src_set->FindDescriptor(update->srcBinding, update->srcArrayElement);
         for (uint32_t i = 0; i < update->descriptorCount; i++, ++src_iter) {
             const auto &mutable_src = static_cast<const cvdescriptorset::MutableDescriptor &>(*src_iter);
             if (mutable_src.ActiveType() != dst_type) {
                 *error_code = "VUID-VkCopyDescriptorSet-srcSet-04613";
                 std::stringstream error_str;
-                error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but the "
+                error_str << "Attempting copy update with srcBinding descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the "
                              "active descriptor type ("
                           << string_VkDescriptorType(mutable_src.ActiveType()) << ") does not match the dstBinding descriptor type "
                           << string_VkDescriptorType(dst_type) << ".";
@@ -1906,8 +1908,8 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         }
     }
 
-    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
-        if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
+        if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
             const auto &mutable_src_types = src_layout->GetMutableTypes(update->srcBinding);
             const auto &mutable_dst_types = dst_layout->GetMutableTypes(update->dstBinding);
             bool complete_match = mutable_src_types.size() == mutable_dst_types.size();
@@ -1924,7 +1926,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
                 *error_code = "VUID-VkCopyDescriptorSet-dstSet-04614";
                 std::stringstream error_str;
                 error_str << "Attempting copy update with dstBinding and new active descriptor type being "
-                             "VK_DESCRIPTOR_TYPE_MUTABLE_VALVE, but their corresponding pMutableDescriptorTypeLists do not match.";
+                             "VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but their corresponding pMutableDescriptorTypeLists do not match.";
                 *error_msg = error_str.str();
                 return false;
             }
@@ -1932,10 +1934,10 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     }
 
     // Update mutable types
-    if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         src_type = static_cast<const cvdescriptorset::MutableDescriptor*>(src_set->GetDescriptorFromBinding(update->srcBinding, update->srcArrayElement))->ActiveType();
     }
-    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    if (dst_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         dst_type = static_cast<const cvdescriptorset::MutableDescriptor*>(dst_set->GetDescriptorFromBinding(update->dstBinding, update->dstArrayElement))->ActiveType();
     }
 
@@ -2840,12 +2842,12 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                     "vkAllocateDescriptorSets(): Descriptor set layout create flags and pool create flags mismatch for index (%d)",
                     i);
             }
-            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE &&
-                !(pool_state->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE)) {
+            if (layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT &&
+                !(pool_state->createInfo.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT)) {
                 skip |= LogError(device, "VUID-VkDescriptorSetAllocateInfo-pSetLayouts-04610",
                                  "vkAllocateDescriptorSets(): pSetLayouts[%d].flags contain "
-                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE bit, but the pool was not created "
-                                 "with the VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE bit.",
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit, but the pool was not created "
+                                 "with the VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT bit.",
                                  i);
             }
         }
@@ -2945,7 +2947,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         return false;
     }
     // We know that binding is valid, verify update and do update on each descriptor
-    if ((dest->type != VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) && (dest->type != update->descriptorType)) {
+    if ((dest->type != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) && (dest->type != update->descriptorType)) {
         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00319";
         std::stringstream error_str;
         error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
@@ -3080,14 +3082,14 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         *error_msg = error_str.str();
         return false;
     }
-    if (orig_binding != nullptr && orig_binding->type == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+    if (orig_binding != nullptr && orig_binding->type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         // Check if the new descriptor descriptor type is in the list of allowed mutable types for this binding
         if (!dest_set->Layout().IsTypeMutable(update->descriptorType, update->dstBinding)) {
             *error_code = "VUID-VkWriteDescriptorSet-dstSet-04611";
             std::stringstream error_str;
             error_str << "Write update type is " << string_VkDescriptorType(update->descriptorType)
-                      << ", but descriptor set layout binding was created with type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE and used type "
-                         "is not in VkMutableDescriptorTypeListVALVE::pDescriptorTypes for this binding.";
+                      << ", but descriptor set layout binding was created with type VK_DESCRIPTOR_TYPE_MUTABLE_EXT and used type "
+                         "is not in VkMutableDescriptorTypeListEXT::pDescriptorTypes for this binding.";
             *error_msg = error_str.str();
             return false;
         }

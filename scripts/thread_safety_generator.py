@@ -442,7 +442,7 @@ public:
     //     and UAB as reads then they'd appear to conflict with each other.
     // (2) Avoid additional tracking of descriptor binding state in the descriptor set
     //     layout, and tracking of which bindings are accessed by a VkDescriptorUpdateTemplate.
-    // Descriptor sets using VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE can also
+    // Descriptor sets using VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT can also
     // be used simultaneously in multiple threads
     vl_concurrent_unordered_map<VkDescriptorSetLayout, bool, 4> dsl_read_only_map;
     vl_concurrent_unordered_map<VkDescriptorSet, bool, 6> ds_read_only_map;
@@ -688,7 +688,7 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
         CreateObject(*pSetLayout);
 
         // Check whether any binding uses read_only
-        bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE) != 0;
+        bool read_only = (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) != 0;
         if (!read_only) {
             const auto *flags_create_info = LvlFindInChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(pCreateInfo->pNext);
             if (flags_create_info) {

@@ -15875,13 +15875,13 @@ TEST_F(VkLayerTest, QueueFamilyMemoryScope) {
 TEST_F(VkLayerTest, CreatePipelineLayoutWithInvalidSetLayoutFlags) {
     TEST_DESCRIPTION("Validate setLayout flags in create pipeline layout.");
 
-    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto mut_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto mut_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mut_features);
     if (!mut_features.mutableDescriptorType) {
         GTEST_SKIP() << "mutableDescriptorType not supported.";
@@ -15897,7 +15897,7 @@ TEST_F(VkLayerTest, CreatePipelineLayoutWithInvalidSetLayoutFlags) {
     layout_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE;
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT;
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &layout_binding;
 

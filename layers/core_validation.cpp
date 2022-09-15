@@ -7390,10 +7390,10 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
             set_layouts[i] = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
             if (set_layouts[i]) {
                 if (set_layouts[i]->IsPushDescriptor()) ++push_descriptor_set_count;
-                if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE) {
+                if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT) {
                     skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-04606",
                                      "vkCreatePipelineLayout(): pCreateInfo->pSetLayouts[%" PRIu32
-                                     "] was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE bit.",
+                                     "] was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit.",
                                      i);
                 }
             }
@@ -18296,11 +18296,11 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
         }
     } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType) {
         for (const auto &binding : layout->GetBindings()) {
-            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_VALVE) {
+            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
                 skip |= LogError(
                     device, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-04615",
                     "%s: pCreateInfo->templateType is VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET, but "
-                    "pCreateInfo->descriptorSetLayout contains a binding with descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_VALVE.",
+                    "pCreateInfo->descriptorSetLayout contains a binding with descriptor type VK_DESCRIPTOR_TYPE_MUTABLE_EXT.",
                     func_name);
             }
         }
