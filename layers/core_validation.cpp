@@ -1601,38 +1601,42 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
             // Check if all input attachments are bound
             // VUID-vkCmdDraw-None-02686
-            std::unordered_map<VkImageView, uint32_t> subpass_input_views;
-            const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-            for (const auto &stage : pipe->stage_state) {
-                if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                    // Get all subpass input attachment indices
-                    for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-                        auto index = subpass.pInputAttachments[i].attachment;
-                        if (index != VK_ATTACHMENT_UNUSED) {
-                            auto &view_states = *cb_node->active_attachments;
-                            if (view_states.size() > index && view_states[index] != nullptr) {
-                                VkImageView input_attachment_view = view_states[index]->image_view();
-                                subpass_input_views.insert(std::make_pair(input_attachment_view, i));
-                            }
+            {
+                const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
+                std::unordered_map<VkImageView, uint32_t> subpass_input_views(subpass.inputAttachmentCount);
+                // Get all subpass input attachment indices
+                for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
+                    auto index = subpass.pInputAttachments[i].attachment;
+                    if (index != VK_ATTACHMENT_UNUSED) {
+                        auto &view_states = *cb_node->active_attachments;
+                        if (view_states.size() > index && view_states[index] != nullptr) {
+                            VkImageView input_attachment_view = view_states[index]->image_view();
+                            subpass_input_views.insert(std::make_pair(input_attachment_view, i));
                         }
                     }
+                }
 
+                // If no subpasses, skip checking pipeline layout
+                if (!subpass_input_views.empty()) {
                     // Remove input attachment views that are bound
-                    for (const auto set : cb_node->validated_descriptor_sets) {
-                        for (const auto &binding : *set) {
-                            if (binding->type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                                for (uint32_t i = 0; i < binding->count; ++i) {
-                                    auto descriptor = binding->GetDescriptor(i);
-                                    if (!descriptor) {
-                                        continue;
-                                    }
-                                    // Input attachment is ImageDescriptor
+                    // Look into pipeline layout for input attachments
+                    const auto &set_layouts = pipe->PipelineLayoutState()->set_layouts;
+                    for (uint32_t set_index = 0; set_index < set_layouts.size(); ++set_index) {
+                        const auto &set_layout = set_layouts[set_index];
+                        for (const auto &binding : set_layout->GetBindings()) {
+                            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                                // Layout binding is input so get descriptors at that set/binding
+                                const auto set = state.per_set[set_index].bound_descriptor_set;
+                                if (!set) continue;
+                                const auto count = set->GetDescriptorCountFromBinding(binding.binding);
+                                for (uint32_t i = 0; i < count; ++i) {
+                                    const auto descriptor = set->GetDescriptorFromBinding(binding.binding, i);
+                                    if (!descriptor) continue;
+
                                     const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor *>(descriptor);
                                     VkImageView image_view = image_descriptor->GetImageView();
-
-                                    // Image view isn't used by subpass as an input attachment with this framebuffer, is this a VUID
-                                    // ?
                                     if (subpass_input_views.count(image_view) == 0) {
+                                        // Image view isn't used by subpass as an input attachment with this framebuffer
                                         result |=
                                             LogError(image_view, kVUID_Core_InputDescriptorInvalid,
                                                      "Input attachment descriptor image view is not a subpass input attachment");
@@ -1643,17 +1647,15 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                             }
                         }
                     }
-
-                    break;
                 }
-            }
 
-            // Report error for every unbound input attachment
-            for (auto view : subpass_input_views) {
-                result |=
-                    LogError(view.first, vuid.subpass_input,
-                             "%s(): Input attachment index %" PRIu32 " of subpass %" PRIu32 " is not bound by descriptor sets.",
-                             CommandTypeString(cmd_type), view.second, cb_node->activeSubpass);
+                // Report error for every unbound input attachment
+                for (auto view : subpass_input_views) {
+                    result |=
+                        LogError(view.first, vuid.subpass_input,
+                                 "%s(): Input attachment index %" PRIu32 " of subpass %" PRIu32 " is not bound by descriptor sets.",
+                                 CommandTypeString(cmd_type), view.second, cb_node->activeSubpass);
+                }
             }
         }
     }
