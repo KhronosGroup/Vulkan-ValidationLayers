@@ -13451,12 +13451,12 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBindings) {
 TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
     TEST_DESCRIPTION("Create invalid descriptor set layout.");
 
-    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -13470,18 +13470,18 @@ TEST_F(VkLayerTest, InvalidDescriptorSetLayoutBinding) {
 
     VkDescriptorSetLayoutBinding binding = {};
     binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     binding.descriptorCount = 1;
     binding.stageFlags = VK_SHADER_STAGE_ALL;
     binding.pImmutableSamplers = &sampler;
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-    VkMutableDescriptorTypeListVALVE mutable_descriptor_type_list = {};
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
     mutable_descriptor_type_list.descriptorTypeCount = 1;
     mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
 
-    VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
 
@@ -14461,14 +14461,15 @@ TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
 }
 
 TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
-    TEST_DESCRIPTION("Try to bind a descriptor set that was allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE.");
+    TEST_DESCRIPTION(
+        "Try to bind a descriptor set that was allocated from a pool with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
 
-    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mutdesc_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto mutdesc_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     GetPhysicalDeviceFeatures2(mutdesc_features);
     if (!mutdesc_features.mutableDescriptorType) {
         GTEST_SKIP() << "mutableDescriptorType feature not supported.";
@@ -14480,7 +14481,7 @@ TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
     ds_type_count.descriptorCount = 1;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
-    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_VALVE;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
@@ -14519,12 +14520,12 @@ TEST_F(VkLayerTest, TestBindingDescriptorSetFromHostOnlyPool) {
 TEST_F(VkLayerTest, CopyMutableDescriptors) {
     TEST_DESCRIPTION("Copy mutable descriptors.");
 
-    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -14535,18 +14536,18 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
 
-        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_list = {};
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
         mutable_descriptor_type_list.descriptorTypeCount = 1;
         mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
 
-        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
         mdtci.mutableDescriptorTypeListCount = 1;
         mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
 
         VkDescriptorPoolSize pool_sizes[2] = {};
         pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         pool_sizes[0].descriptorCount = 2;
-        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         pool_sizes[1].descriptorCount = 2;
 
         VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
@@ -14559,7 +14560,7 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
 
         VkDescriptorSetLayoutBinding bindings[2] = {};
         bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         bindings[0].descriptorCount = 1;
         bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
         bindings[0].pImmutableSamplers = nullptr;
@@ -14622,18 +14623,18 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
-        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_lists[2] = {};
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
         mutable_descriptor_type_lists[0].descriptorTypeCount = 1;
         mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
         mutable_descriptor_type_lists[1].descriptorTypeCount = 2;
         mutable_descriptor_type_lists[1].pDescriptorTypes = descriptor_types;
 
-        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
         mdtci.mutableDescriptorTypeListCount = 2;
         mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
         VkDescriptorPoolSize pool_size = {};
-        pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         pool_size.descriptorCount = 4;
 
         VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
@@ -14646,12 +14647,12 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
 
         VkDescriptorSetLayoutBinding bindings[2] = {};
         bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         bindings[0].descriptorCount = 1;
         bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
         bindings[0].pImmutableSamplers = nullptr;
         bindings[1].binding = 1;
-        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         bindings[1].descriptorCount = 1;
         bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
         bindings[1].pImmutableSamplers = nullptr;
@@ -14709,18 +14710,18 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     {
         VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_SAMPLER};
 
-        VkMutableDescriptorTypeListVALVE mutable_descriptor_type_lists[2] = {};
+        VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
         mutable_descriptor_type_lists[0].descriptorTypeCount = 2;
         mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
         mutable_descriptor_type_lists[1].descriptorTypeCount = 0;
         mutable_descriptor_type_lists[1].pDescriptorTypes = nullptr;
 
-        VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+        VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
         mdtci.mutableDescriptorTypeListCount = 2;
         mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
         VkDescriptorPoolSize pool_sizes[3] = {};
-        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         pool_sizes[0].descriptorCount = 4;
         pool_sizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLER;
         pool_sizes[1].descriptorCount = 4;
@@ -14737,7 +14738,7 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
 
         VkDescriptorSetLayoutBinding bindings[2] = {};
         bindings[0].binding = 0;
-        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
         bindings[0].descriptorCount = 2;
         bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
         bindings[0].pImmutableSamplers = nullptr;
@@ -14829,12 +14830,12 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
 TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
     TEST_DESCRIPTION("Validate updating mutable descriptors.");
 
-    AddRequiredExtensions(VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE>();
+    auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
         printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
@@ -14844,18 +14845,18 @@ TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
 
     VkDescriptorType descriptor_types[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
 
-    VkMutableDescriptorTypeListVALVE mutable_descriptor_type_list = {};
+    VkMutableDescriptorTypeListEXT mutable_descriptor_type_list = {};
     mutable_descriptor_type_list.descriptorTypeCount = 1;
     mutable_descriptor_type_list.pDescriptorTypes = descriptor_types;
 
-    VkMutableDescriptorTypeCreateInfoVALVE mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoVALVE>();
+    VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
     mdtci.mutableDescriptorTypeListCount = 1;
     mdtci.pMutableDescriptorTypeLists = &mutable_descriptor_type_list;
 
     VkDescriptorPoolSize pool_sizes[2] = {};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[0].descriptorCount = 2;
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     pool_sizes[1].descriptorCount = 2;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
@@ -14868,7 +14869,7 @@ TEST_F(VkLayerTest, ValidateUpdatingMutableDescriptors) {
 
     VkDescriptorSetLayoutBinding bindings[2] = {};
     bindings[0].binding = 0;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_VALVE;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     bindings[0].descriptorCount = 1;
     bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
     bindings[0].pImmutableSamplers = nullptr;

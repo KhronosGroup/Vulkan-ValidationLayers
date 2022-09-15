@@ -160,7 +160,7 @@ cvdescriptorset::DescriptorClass cvdescriptorset::DescriptorTypeToClass(VkDescri
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
             return AccelerationStructure;
-        case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return Mutable;
 	default:
 	    break;
@@ -199,7 +199,7 @@ cvdescriptorset::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescript
         sorted_bindings.emplace(p_create_info->pBindings + i, flags);
     }
 
-    const auto *mutable_descriptor_type_create_info = LvlFindInChain<VkMutableDescriptorTypeCreateInfoVALVE>(p_create_info->pNext);
+    const auto *mutable_descriptor_type_create_info = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(p_create_info->pNext);
     if (mutable_descriptor_type_create_info) {
         mutable_types_.resize(mutable_descriptor_type_create_info->mutableDescriptorTypeListCount);
         for (uint32_t i = 0; i < mutable_descriptor_type_create_info->mutableDescriptorTypeListCount; ++i) {
@@ -341,8 +341,8 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsTypeMutable(const VkDescriptorTy
             return false;
         }
     }
-    // If mutableDescriptorTypeListCount is zero or if VkMutableDescriptorTypeCreateInfoVALVE structure is not included in the pNext
-    // chain, the VkMutableDescriptorTypeListVALVE for each element is considered to be zero or NULL for each member.
+    // If mutableDescriptorTypeListCount is zero or if VkMutableDescriptorTypeCreateInfoEXT structure is not included in the pNext
+    // chain, the VkMutableDescriptorTypeListEXT for each element is considered to be zero or NULL for each member.
     return false;
 }
 
@@ -909,7 +909,7 @@ void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(DescriptorSet 
 cvdescriptorset::MutableDescriptor::MutableDescriptor()
     : Descriptor(),
       buffer_size_(0),
-      active_descriptor_type_(VK_DESCRIPTOR_TYPE_MUTABLE_VALVE),
+      active_descriptor_type_(VK_DESCRIPTOR_TYPE_MUTABLE_EXT),
       immutable_(false),
       image_layout_(VK_IMAGE_LAYOUT_UNDEFINED),
       offset_(0),

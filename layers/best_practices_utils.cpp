@@ -4908,7 +4908,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                             break;
                         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
                         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                        case VK_DESCRIPTOR_TYPE_MUTABLE_VALVE:
+                        case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
                             descriptor_type_size = 16;
                             break;
                         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:

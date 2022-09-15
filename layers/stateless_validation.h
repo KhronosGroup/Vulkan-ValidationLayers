@@ -1461,7 +1461,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const;
     bool ValidateMutableDescriptorTypeCreateInfo(const VkDescriptorSetLayoutCreateInfo &create_info,
-                                                 const VkMutableDescriptorTypeCreateInfoVALVE &mutable_create_info,
+                                                 const VkMutableDescriptorTypeCreateInfoEXT &mutable_create_info,
                                                  const char *func_name) const;
     bool manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,

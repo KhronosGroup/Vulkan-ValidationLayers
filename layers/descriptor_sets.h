@@ -666,7 +666,7 @@ class MutableDescriptor : public Descriptor {
 
     private:
       VkDeviceSize buffer_size_{0};
-      VkDescriptorType active_descriptor_type_{VK_DESCRIPTOR_TYPE_MUTABLE_VALVE};
+      VkDescriptorType active_descriptor_type_{VK_DESCRIPTOR_TYPE_MUTABLE_EXT};
 
       // Sampler and ImageSampler Descriptor
       bool immutable_{false};
