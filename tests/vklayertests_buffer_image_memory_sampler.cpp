@@ -16438,3 +16438,102 @@ TEST_F(VkLayerTest, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     m_errorMonitor->VerifyFound();
 }
+TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    if (!CheckSynchronization2SupportAndInitState(this)) {
+        GTEST_SKIP() << "Synchronization2 not supported";
+    }
+
+    VkImageCreateInfo info = vk_testing::Image::create_info();
+    info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    info.usage =
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
+    VkImageObj image{m_device};
+    image.init(&info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-attachmentFeedbackLoopLayout-07313");
+    image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
+    m_errorMonitor->VerifyFound();
+    
+    m_commandBuffer->begin();
+    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+    img_barrier.image = image.handle();
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+
+    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &img_barrier;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-attachmentFeedbackLoopLayout-07313");
+    m_commandBuffer->PipelineBarrier2KHR(&dep_info);
+    m_errorMonitor->VerifyFound();
+
+    VkAttachmentReference attach = {};
+    attach.layout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    VkSubpassDescription subpass = {};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attach;
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    rpci.pAttachments = &attach_desc;
+    VkRenderPass rp;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07310");
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07309");
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference-attachmentFeedbackLoopLayout-07311");
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+
+    VkAttachmentReference2 attach2 = LvlInitStruct<VkAttachmentReference2>();
+    attach2.layout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    VkSubpassDescription2 subpass2 = LvlInitStruct<VkSubpassDescription2>();
+    subpass2.colorAttachmentCount = 1;
+    subpass2.pColorAttachments = &attach2;
+    VkRenderPassCreateInfo2 rpci2 = LvlInitStruct<VkRenderPassCreateInfo2>();
+    rpci2.subpassCount = 1;
+    rpci2.pSubpasses = &subpass2;
+    rpci2.attachmentCount = 1;
+    VkAttachmentDescription2 attach_desc2 = LvlInitStruct<VkAttachmentDescription2>();
+    attach_desc2.format = VK_FORMAT_B8G8R8A8_UNORM;
+    // Set loadOp to CLEAR
+    attach_desc2.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc2.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc2.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    rpci2.pAttachments = &attach_desc2;
+    VkRenderPass rp2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07310");
+    vk::CreateRenderPass2(m_device->device(), &rpci2, NULL, &rp2);
+    m_errorMonitor->VerifyFound();
+
+    attach_desc2.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc2.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07309");
+    vk::CreateRenderPass2(m_device->device(), &rpci2, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAttachmentReference2-attachmentFeedbackLoopLayout-07311");
+    attach_desc2.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    vk::CreateRenderPass2(m_device->device(), &rpci2, NULL, &rp);
+    m_errorMonitor->VerifyFound();
+}
