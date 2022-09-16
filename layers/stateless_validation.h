@@ -1025,6 +1025,12 @@ class StatelessValidation : public ValidationObject {
                 separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
         }
 
+        VkBool32 attachment_feedback_loop_layout = false;
+        const auto *attachment_feedback_loop_layout_features =
+                LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
+        if (attachment_feedback_loop_layout_features)
+            attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
+
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
             // if not null, also confirms rp2 is being used
             const auto *attachment_description_stencil_layout =
@@ -1067,6 +1073,26 @@ class StatelessValidation : public ValidationObject {
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
                         func_name, i);
+                }
+            }
+            if (!attachment_feedback_loop_layout) {
+                if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07309"
+                                   : "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07309";
+                    skip |= LogError(device, vuid,
+                                     "%s: pCreateInfo->pAttachments[%" PRIu32
+                                     "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                     "attachmentFeedbackLoopLayout feature is not enabled",
+                                     func_name, i);
+                }
+                if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-attachmentFeedbackLoopLayout-07310"
+                                   : "VUID-VkAttachmentDescription-attachmentFeedbackLoopLayout-07310";
+                    skip |= LogError(device, vuid,
+                                     "%s: pCreateInfo->pAttachments[%" PRIu32
+                                     "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                     "attachmentFeedbackLoopLayout feature is not enabled",
+                                     func_name, i);
                 }
             }
             if (!FormatIsDepthOrStencil(attachment_format)) {

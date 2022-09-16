@@ -13395,6 +13395,16 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                                  function_name, error_type, string_VkImageLayout(reference.layout));
             }
             break;
+        case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
+            if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
+                auto vuid = (rp_version == RENDER_PASS_VERSION_2) ? "VUID-VkAttachmentReference2-attachmentFeedbackLoopLayout-07311"
+                                                                  : "VUID-VkAttachmentReference-attachmentFeedbackLoopLayout-07311";
+                skip |= LogError(device, vuid,
+                                 "%s: Layout for %s is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
+                                 "attachmentFeedbackLoopLayout feature is not enabled",
+                                 function_name, error_type);
+            }
+            break;
 
         default:
             break;
