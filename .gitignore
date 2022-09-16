@@ -36,3 +36,4 @@ build-android/third_party
 .vscode/
 .DS_Store
 .editorconfig
+scripts/.vs
