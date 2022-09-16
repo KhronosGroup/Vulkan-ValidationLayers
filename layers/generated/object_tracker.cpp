@@ -2092,6 +2092,20 @@ bool ObjectLifetimes::PreCallValidateEnumeratePhysicalDeviceGroups(
     return skip;
 }
 
+void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroups(
+    VkInstance                                  instance,
+    uint32_t*                                   pPhysicalDeviceGroupCount,
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS && result != VK_INCOMPLETE) return;
+    if (pPhysicalDeviceGroupProperties) {
+        for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
+            PostCallRecordEnumeratePhysicalDevices(instance, &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount, pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, VK_SUCCESS);
+        }
+    }
+
+}
+
 bool ObjectLifetimes::PreCallValidateGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
@@ -3854,6 +3868,20 @@ bool ObjectLifetimes::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, false, "VUID-vkEnumeratePhysicalDeviceGroups-instance-parameter", kVUIDUndefined);
 
     return skip;
+}
+
+void ObjectLifetimes::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
+    VkInstance                                  instance,
+    uint32_t*                                   pPhysicalDeviceGroupCount,
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS && result != VK_INCOMPLETE) return;
+    if (pPhysicalDeviceGroupProperties) {
+        for (uint32_t device_group_index = 0; device_group_index < *pPhysicalDeviceGroupCount; device_group_index++) {
+            PostCallRecordEnumeratePhysicalDevices(instance, &pPhysicalDeviceGroupProperties[device_group_index].physicalDeviceCount, pPhysicalDeviceGroupProperties[device_group_index].physicalDevices, VK_SUCCESS);
+        }
+    }
+
 }
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(
