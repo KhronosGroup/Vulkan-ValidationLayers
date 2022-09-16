@@ -6374,9 +6374,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
 
+        const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
         const auto *pipeline_cache_contol_features =
             LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
-        if (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE) {
+        if ((!vulkan_13_features || vulkan_13_features->pipelineCreationCacheControl == VK_FALSE) &&
+            (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE)) {
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
                                          VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905",
@@ -6521,9 +6523,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoKHR::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
+        const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
         const auto *pipeline_cache_contol_features =
             LvlFindInChain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
-        if (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE) {
+        if ((!vulkan_13_features || vulkan_13_features->pipelineCreationCacheControl == VK_FALSE) &&
+            (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE)) {
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
                                          VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905",
