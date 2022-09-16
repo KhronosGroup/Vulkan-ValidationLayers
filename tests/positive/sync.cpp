@@ -2057,3 +2057,71 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
 
     thread.join();
 }
+
+TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
+    TEST_DESCRIPTION("Submit a CB and Fence but synchronize with vkQueueWaitIdle() (Issue 2756)");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping CmdCopySwapchainImage test";
+    }
+    uint32_t image_index, image_count;
+    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> swapchainImages(image_count, VK_NULL_HANDLE);
+    vk::GetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages.data());
+
+    auto fence_create_info = LvlInitStruct<VkFenceCreateInfo>();
+    vk_testing::Fence fence(*m_device, fence_create_info);
+
+    vk_testing::Semaphore sem(*m_device);
+
+    auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    layer_data::optional<vk_testing::CommandPool> command_pool(layer_data::in_place, *m_device, pool_create_info);
+
+    // create a raw command buffer because we'll just the destroy the pool.
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    auto alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    alloc_info.commandPool = command_pool->handle();
+    alloc_info.commandBufferCount = 1;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+    auto err = vk::AllocateCommandBuffers(m_device->handle(), &alloc_info, &command_buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, sem.handle(), VK_NULL_HANDLE, &image_index);
+    ASSERT_VK_SUCCESS(err);
+
+    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    err = vk::BeginCommandBuffer(command_buffer, &begin_info);
+    ASSERT_VK_SUCCESS(err);
+
+    vk::CmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                           nullptr, 0, nullptr);
+
+    VkViewport viewport{};
+    viewport.maxDepth = 1.0f;
+    viewport.minDepth = 0.0f;
+    viewport.width = 512;
+    viewport.height = 512;
+    viewport.x = 0;
+    viewport.y = 0;
+    vk::CmdSetViewport(command_buffer, 0, 1, &viewport);
+    err = vk::EndCommandBuffer(command_buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    command_pool.reset();
+}
