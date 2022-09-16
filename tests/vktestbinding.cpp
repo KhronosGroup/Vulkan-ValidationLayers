@@ -498,10 +498,98 @@ VkResult Fence::wait(uint64_t timeout) const {
     return vk::WaitForFences(device(), 1, &fence, VK_TRUE, timeout);
 }
 
+VkResult Fence::reset() {
+    VkFence fence = handle();
+    return vk::ResetFences(device(), 1, &fence);
+}
+
+VkResult Fence::export_handle(Fence::ExternalHandle &ext_handle, VkExternalFenceHandleTypeFlagBits handle_type) {
+#ifdef _WIN32
+    auto ghi = LvlInitStruct<VkFenceGetWin32HandleInfoKHR>();
+    ghi.fence = handle();
+    ghi.handleType = handle_type;
+    auto vkGetFenceWin32HandleKHR = (PFN_vkGetFenceWin32HandleKHR)vk::GetDeviceProcAddr(device(), "vkGetFenceWin32HandleKHR");
+    return vkGetFenceWin32HandleKHR(device(), &ghi, &ext_handle);
+#else
+    auto gfi = LvlInitStruct<VkFenceGetFdInfoKHR>();
+    gfi.fence = handle();
+    gfi.handleType = handle_type;
+    auto vkGetFenceFdKHR = (PFN_vkGetFenceFdKHR)vk::GetDeviceProcAddr(device(), "vkGetFenceFdKHR");
+    return vkGetFenceFdKHR(device(), &gfi, &ext_handle);
+#endif
+}
+
+VkResult Fence::import_handle(Fence::ExternalHandle ext_handle, VkExternalFenceHandleTypeFlagBits handle_type,
+                              VkFenceImportFlags flags) {
+#ifdef _WIN32
+    auto ifi = LvlInitStruct<VkImportFenceWin32HandleInfoKHR>();
+    ifi.fence = handle();
+    ifi.handleType = handle_type;
+    ifi.handle = ext_handle;
+    ifi.flags = flags;
+    auto vkImportFenceWin32HandleKHR =
+        reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(vk::GetDeviceProcAddr(device(), "vkImportFenceWin32HandleKHR"));
+    return vkImportFenceWin32HandleKHR(device(), &ifi);
+#else
+    auto ifi = LvlInitStruct<VkImportFenceFdInfoKHR>();
+    ifi.fence = handle();
+    ifi.handleType = handle_type;
+    ifi.fd = ext_handle;
+    ifi.flags = flags;
+    auto vkImportFenceFdKHR = reinterpret_cast<PFN_vkImportFenceFdKHR>(vk::GetDeviceProcAddr(device(), "vkImportFenceFdKHR"));
+    return vkImportFenceFdKHR(device(), &ifi);
+#endif
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(Semaphore, vk::DestroySemaphore)
 
 void Semaphore::init(const Device &dev, const VkSemaphoreCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateSemaphore, dev, &info);
+}
+
+VkResult Semaphore::export_handle(Semaphore::ExternalHandle &ext_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type) {
+#ifdef _WIN32
+    ext_handle = nullptr;
+    auto ghi = LvlInitStruct<VkSemaphoreGetWin32HandleInfoKHR>();
+    ghi.semaphore = handle();
+    ghi.handleType = handle_type;
+    auto vkGetSemaphoreWin32HandleKHR =
+        reinterpret_cast<PFN_vkGetSemaphoreWin32HandleKHR>(vk::GetDeviceProcAddr(device(), "vkGetSemaphoreWin32HandleKHR"));
+    return vkGetSemaphoreWin32HandleKHR(device(), &ghi, &ext_handle);
+#else
+    ext_handle = -1;
+    auto ghi = LvlInitStruct<VkSemaphoreGetFdInfoKHR>();
+    ghi.semaphore = handle();
+    ghi.handleType = handle_type;
+    auto vkGetSemaphoreFdKHR = reinterpret_cast<PFN_vkGetSemaphoreFdKHR>(vk::GetDeviceProcAddr(device(), "vkGetSemaphoreFdKHR"));
+    return vkGetSemaphoreFdKHR(device(), &ghi, &ext_handle);
+#endif
+}
+
+VkResult Semaphore::import_handle(Semaphore::ExternalHandle ext_handle, VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                  VkSemaphoreImportFlags flags) {
+#ifdef _WIN32
+    auto ihi = LvlInitStruct<VkImportSemaphoreWin32HandleInfoKHR>();
+    ihi.semaphore = handle();
+    ihi.handleType = handle_type;
+    ihi.handle = ext_handle;
+    ihi.flags = flags;
+
+    auto vkImportSemaphoreWin32HandleKHR =
+        reinterpret_cast<PFN_vkImportSemaphoreWin32HandleKHR>(vk::GetDeviceProcAddr(device(), "vkImportSemaphoreWin32HandleKHR"));
+    return vkImportSemaphoreWin32HandleKHR(device(), &ihi);
+#else
+    // Import opaque handle exported above
+    auto ihi = LvlInitStruct<VkImportSemaphoreFdInfoKHR>();
+    ihi.semaphore = handle();
+    ihi.handleType = handle_type;
+    ihi.fd = ext_handle;
+    ihi.flags = flags;
+
+    auto vkImportSemaphoreFdKHR =
+        reinterpret_cast<PFN_vkImportSemaphoreFdKHR>(vk::GetDeviceProcAddr(device(), "vkImportSemaphoreFdKHR"));
+    return vkImportSemaphoreFdKHR(device(), &ihi);
+#endif
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Event, vk::DestroyEvent)

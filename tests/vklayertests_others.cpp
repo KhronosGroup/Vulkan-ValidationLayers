@@ -1445,37 +1445,31 @@ TEST_F(VkLayerTest, MismatchedQueueFamiliesOnSubmit) {
 }
 
 TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
-#ifdef _WIN32
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
-    // Check for external semaphore instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Check for external semaphore device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
-        m_device_extension_names.push_back(extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
-    } else {
-        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     // Check for external semaphore import and export capability
-    VkPhysicalDeviceExternalSemaphoreInfoKHR esi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR, nullptr,
-                                                    handle_type};
-    VkExternalSemaphorePropertiesKHR esp = {VK_STRUCTURE_TYPE_EXTERNAL_SEMAPHORE_PROPERTIES_KHR, nullptr};
+    auto esi = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>();
+    esi.handleType = handle_type;
+
+    auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
+
     auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
         (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
             instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
@@ -1483,218 +1477,455 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
 
     if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("%s External semaphore does not support importing and exporting, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
     }
 
     VkResult err;
 
     // Create a semaphore to export payload from
-    VkExportSemaphoreCreateInfoKHR esci = {VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO_KHR, nullptr, handle_type};
-    VkSemaphoreCreateInfo sci = LvlInitStruct<VkSemaphoreCreateInfo>(&esci);
-    sci.flags = 0;
+    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfoKHR>();
+    esci.handleTypes = handle_type;
+    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&esci);
 
-    VkSemaphore export_semaphore;
-    err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &export_semaphore);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Semaphore export_semaphore(*m_device, sci);
 
     // Create a semaphore to import payload into
     sci.pNext = nullptr;
-    VkSemaphore import_semaphore;
-    err = vk::CreateSemaphore(m_device->device(), &sci, nullptr, &import_semaphore);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Semaphore import_semaphore(*m_device, sci);
 
-#ifdef _WIN32
-    // Export semaphore payload to an opaque handle
-    HANDLE handle = nullptr;
-    VkSemaphoreGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_semaphore,
-                                            handle_type};
-    auto vkGetSemaphoreWin32HandleKHR =
-        (PFN_vkGetSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreWin32HandleKHR");
-    err = vkGetSemaphoreWin32HandleKHR(m_device->device(), &ghi, &handle);
+    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    err = export_semaphore.export_handle(ext_handle, handle_type);
     ASSERT_VK_SUCCESS(err);
-
-    // Import opaque handle exported above *temporarily*
-    VkImportSemaphoreWin32HandleInfoKHR ihi = {VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR,
-                                               nullptr,
-                                               import_semaphore,
-                                               VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR,
-                                               handle_type,
-                                               handle,
-                                               nullptr};
-    auto vkImportSemaphoreWin32HandleKHR =
-        (PFN_vkImportSemaphoreWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreWin32HandleKHR");
-    err = vkImportSemaphoreWin32HandleKHR(m_device->device(), &ihi);
+    err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
     ASSERT_VK_SUCCESS(err);
-#else
-    // Export semaphore payload to an opaque handle
-    int fd = 0;
-    VkSemaphoreGetFdInfoKHR ghi = {VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR, nullptr, export_semaphore, handle_type};
-    auto vkGetSemaphoreFdKHR = (PFN_vkGetSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreFdKHR");
-    err = vkGetSemaphoreFdKHR(m_device->device(), &ghi, &fd);
-    ASSERT_VK_SUCCESS(err);
-
-    // Import opaque handle exported above *temporarily*
-    VkImportSemaphoreFdInfoKHR ihi = {VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR, nullptr,     import_semaphore,
-                                      VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR,          handle_type, fd};
-    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
-    err = vkImportSemaphoreFdKHR(m_device->device(), &ihi);
-    ASSERT_VK_SUCCESS(err);
-#endif
 
     // Wait on the imported semaphore twice in vk::QueueSubmit, the second wait should be an error
     VkPipelineStageFlags flags = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    VkSubmitInfo si[] = {
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, &flags, 0, nullptr, 1, &export_semaphore},
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &import_semaphore, &flags, 0, nullptr, 0, nullptr},
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 0, nullptr, &flags, 0, nullptr, 1, &export_semaphore},
-        {VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &import_semaphore, &flags, 0, nullptr, 0, nullptr},
-    };
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has no way to be signaled");
-    vk::QueueSubmit(m_device->m_queue, 4, si, VK_NULL_HANDLE);
+    std::vector<VkSubmitInfo> si(4, LvlInitStruct<VkSubmitInfo>());
+    si[0].signalSemaphoreCount = 1;
+    si[0].pSignalSemaphores = &export_semaphore.handle();
+
+    si[1].waitSemaphoreCount = 1;
+    si[1].pWaitSemaphores = &import_semaphore.handle();
+    si[1].pWaitDstStageMask = &flags;
+
+    si[2] = si[0];
+    si[3] = si[1];
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress");
+    vk::QueueSubmit(m_device->m_queue, si.size(), si.data(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     auto index = m_device->graphics_queue_node_index_;
     if (m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
         // Wait on the imported semaphore twice in vk::QueueBindSparse, the second wait should be an error
-        VkBindSparseInfo bi[] = {
-            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
-            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
-            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
-            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
-        };
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "has no way to be signaled");
-        vk::QueueBindSparse(m_device->m_queue, 4, bi, VK_NULL_HANDLE);
+        std::vector<VkBindSparseInfo> bi(4, LvlInitStruct<VkBindSparseInfo>());
+        bi[0].signalSemaphoreCount = 1;
+        bi[0].pSignalSemaphores = &export_semaphore.handle();
+
+        bi[1].waitSemaphoreCount = 1;
+        bi[1].pWaitSemaphores = &import_semaphore.handle();
+
+        bi[2] = bi[0];
+        bi[3] = bi[1];
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-QueueForwardProgress");
+        vk::QueueBindSparse(m_device->m_queue, bi.size(), bi.data(), VK_NULL_HANDLE);
         m_errorMonitor->VerifyFound();
     }
 
     // Cleanup
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
-    vk::DestroySemaphore(m_device->device(), export_semaphore, nullptr);
-    vk::DestroySemaphore(m_device->device(), import_semaphore, nullptr);
+}
+
+TEST_F(VkLayerTest, ExternalTimelineSemaphore) {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
+    const char *no_tempory_tl_vuid = "VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322";
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const char *no_tempory_tl_vuid = "VUID-VkImportSemaphoreFdInfoKHR-flags-03323";
+#endif
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore not supported";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // Check for external semaphore import and export capability
+    {
+        auto sti = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+        sti.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        auto esi = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>(&sti);
+        esi.handleType = handle_type;
+
+        auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
+
+        auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
+            (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
+                instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+        vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+
+        if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+            !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+            GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
+        }
+    }
+
+    VkResult err;
+
+    // Create a semaphore to export payload from
+    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfoKHR>();
+    esci.handleTypes = handle_type;
+    auto stci = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>(&esci);
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE_KHR;
+    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&stci);
+
+    vk_testing::Semaphore export_semaphore(*m_device, sci);
+
+    // Create a semaphore to import payload into
+    stci.pNext = nullptr;
+    vk_testing::Semaphore import_semaphore(*m_device, sci);
+
+    vk_testing::Semaphore::ExternalHandle ext_handle{};
+    err = export_semaphore.export_handle(ext_handle, handle_type);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, no_tempory_tl_vuid);
+    err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+
+    err = import_semaphore.import_handle(ext_handle, handle_type);
+    ASSERT_VK_SUCCESS(err);
+}
+
+TEST_F(VkLayerTest, ExternalSyncFdSemaphore) {
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore not supported";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // Check for external semaphore import and export capability
+    auto esi = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>();
+    esi.handleType = handle_type;
+
+    auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
+
+    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
+        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
+            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
+
+    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External semaphore does not support importing and exporting";
+    }
+
+    if (!(esp.compatibleHandleTypes & handle_type)) {
+        GTEST_SKIP() << "External semaphore does not support VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT";
+    }
+
+    VkResult err;
+
+    // create a timeline semaphore.
+    // Note that adding a sync fd VkExportSemaphoreCreateInfo will cause creation to fail.
+    auto stci = LvlInitStruct<VkSemaphoreTypeCreateInfoKHR>();
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&stci);
+
+    vk_testing::Semaphore timeline_sem(*m_device, sci);
+
+    // binary semaphore works fine.
+    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfo>();
+    esci.handleTypes = handle_type;
+    stci.pNext = &esci;
+
+    stci.semaphoreType = VK_SEMAPHORE_TYPE_BINARY;
+    vk_testing::Semaphore binary_sem(*m_device, sci);
+
+    // Create a semaphore to import payload into
+    vk_testing::Semaphore import_semaphore(*m_device);
+
+    vk_testing::Semaphore::ExternalHandle ext_handle{};
+
+    // timeline not allowed
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03253");
+    timeline_sem.export_handle(ext_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    // must have pending signal
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254");
+    binary_sem.export_handle(ext_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    auto si = LvlInitStruct<VkSubmitInfo>();
+    si.signalSemaphoreCount = 1;
+    si.pSignalSemaphores = &binary_sem.handle();
+
+    err = vk::QueueSubmit(m_device->m_queue, 1, &si, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(err);
+
+    err = binary_sem.export_handle(ext_handle, handle_type);
+    ASSERT_VK_SUCCESS(err);
+
+    // must be temporary
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-07307");
+    import_semaphore.import_handle(ext_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    err = import_semaphore.import_handle(ext_handle, handle_type, VK_SEMAPHORE_IMPORT_TEMPORARY_BIT);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
 }
 
 TEST_F(VkLayerTest, TemporaryExternalFence) {
-#ifdef _WIN32
+#ifdef VK_USE_PLATFORM_WIN32_KHR
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
 #else
     const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
-    // Check for external fence instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    // Check for external fence device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
-        m_device_extension_names.push_back(extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
-    } else {
-        printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     // Check for external fence import and export capability
-    VkPhysicalDeviceExternalFenceInfoKHR efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
     efi.handleType = handle_type;
-    VkExternalFencePropertiesKHR efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
     auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
         instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
     vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
 
     if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("%s External fence does not support importing and exporting, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
     }
 
     VkResult err;
 
     // Create a fence to export payload from
-    VkFence export_fence;
-    {
-        VkExportFenceCreateInfoKHR efci = {VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO_KHR, nullptr, handle_type};
-        VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, &efci, 0};
-        err = vk::CreateFence(m_device->device(), &fci, nullptr, &export_fence);
-        ASSERT_VK_SUCCESS(err);
-    }
+    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    efci.handleTypes = handle_type;
+    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    vk_testing::Fence export_fence(*m_device, fci);
 
     // Create a fence to import payload into
-    VkFence import_fence;
-    {
-        VkFenceCreateInfo fci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
-        err = vk::CreateFence(m_device->device(), &fci, nullptr, &import_fence);
-        ASSERT_VK_SUCCESS(err);
-    }
+    fci.pNext = nullptr;
+    vk_testing::Fence import_fence(*m_device, fci);
 
-#ifdef _WIN32
     // Export fence payload to an opaque handle
-    HANDLE handle = nullptr;
-    {
-        VkFenceGetWin32HandleInfoKHR ghi = {VK_STRUCTURE_TYPE_FENCE_GET_WIN32_HANDLE_INFO_KHR, nullptr, export_fence, handle_type};
-        auto vkGetFenceWin32HandleKHR =
-            (PFN_vkGetFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceWin32HandleKHR");
-        err = vkGetFenceWin32HandleKHR(m_device->device(), &ghi, &handle);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    // Import opaque handle exported above
-    {
-        VkImportFenceWin32HandleInfoKHR ifi = {VK_STRUCTURE_TYPE_IMPORT_FENCE_WIN32_HANDLE_INFO_KHR,
-                                               nullptr,
-                                               import_fence,
-                                               VK_FENCE_IMPORT_TEMPORARY_BIT_KHR,
-                                               handle_type,
-                                               handle,
-                                               nullptr};
-        auto vkImportFenceWin32HandleKHR =
-            (PFN_vkImportFenceWin32HandleKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceWin32HandleKHR");
-        err = vkImportFenceWin32HandleKHR(m_device->device(), &ifi);
-        ASSERT_VK_SUCCESS(err);
-    }
-#else
-    // Export fence payload to an opaque handle
-    int fd = 0;
-    {
-        VkFenceGetFdInfoKHR gfi = {VK_STRUCTURE_TYPE_FENCE_GET_FD_INFO_KHR, nullptr, export_fence, handle_type};
-        auto vkGetFenceFdKHR = (PFN_vkGetFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetFenceFdKHR");
-        err = vkGetFenceFdKHR(m_device->device(), &gfi, &fd);
-        ASSERT_VK_SUCCESS(err);
-    }
-
-    // Import opaque handle exported above
-    {
-        VkImportFenceFdInfoKHR ifi = {VK_STRUCTURE_TYPE_IMPORT_FENCE_FD_INFO_KHR, nullptr,     import_fence,
-                                      VK_FENCE_IMPORT_TEMPORARY_BIT_KHR,          handle_type, fd};
-        auto vkImportFenceFdKHR = (PFN_vkImportFenceFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportFenceFdKHR");
-        err = vkImportFenceFdKHR(m_device->device(), &ifi);
-        ASSERT_VK_SUCCESS(err);
-    }
-#endif
+    vk_testing::Fence::ExternalHandle ext_fence{};
+    err = export_fence.export_handle(ext_fence, handle_type);
+    ASSERT_VK_SUCCESS(err);
+    err = import_fence.import_handle(ext_fence, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT_KHR);
+    ASSERT_VK_SUCCESS(err);
 
     // Undo the temporary import
-    vk::ResetFences(m_device->device(), 1, &import_fence);
+    vk::ResetFences(m_device->device(), 1, &import_fence.handle());
 
     // Signal the previously imported fence twice, the second signal should produce a validation error
-    vk::QueueSubmit(m_device->m_queue, 0, nullptr, import_fence);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "is already in use by another submission.");
-    vk::QueueSubmit(m_device->m_queue, 0, nullptr, import_fence);
+    vk::QueueSubmit(m_device->m_queue, 0, nullptr, import_fence.handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00064");
+    vk::QueueSubmit(m_device->m_queue, 0, nullptr, import_fence.handle());
     m_errorMonitor->VerifyFound();
 
-    // Cleanup
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
-    vk::DestroyFence(m_device->device(), export_fence, nullptr);
-    vk::DestroyFence(m_device->device(), import_fence, nullptr);
+
+    // Signal without reseting
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-fence-00063");
+    vk::QueueSubmit(m_device->m_queue, 0, nullptr, import_fence.handle());
+    m_errorMonitor->VerifyFound();
+    err = vk::QueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+}
+
+TEST_F(VkLayerTest, InvalidExternalFence) {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    const auto other_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT; 
+    const auto bad_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const char *bad_export_type_vuid = "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01452";
+    const char *other_export_type_vuid = "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448";
+    const char *bad_import_type_vuid = "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01457";
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto other_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+    const auto bad_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
+    const char *bad_export_type_vuid = "VUID-VkFenceGetFdInfoKHR-handleType-01456";
+    const char *other_export_type_vuid = "VUID-VkFenceGetFdInfoKHR-handleType-01453";
+    const char *bad_import_type_vuid = "VUID-VkImportFenceFdInfoKHR-handleType-01464";
+#endif
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // Check for external fence import and export capability
+    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    efi.handleType = handle_type;
+    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
+        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
+    }
+
+    // Create a fence to export payload from
+    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    efci.handleTypes = handle_type;
+    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    vk_testing::Fence export_fence(*m_device, fci);
+
+    // Create a fence to import payload into
+    fci.pNext = nullptr;
+    vk_testing::Fence import_fence(*m_device, fci);
+
+    vk_testing::Fence::ExternalHandle ext_handle{};
+
+    // windows vs unix mismatch
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_export_type_vuid);
+    export_fence.export_handle(ext_handle, bad_type);
+    m_errorMonitor->VerifyFound();
+
+    // a valid type for the platform which we didn't ask for during create
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, other_export_type_vuid);
+    if (other_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+        // SYNC_FD is a special snowflake
+        m_errorMonitor->SetAllowedFailureMsg("VUID-VkFenceGetFdInfoKHR-handleType-01454");
+    }
+    export_fence.export_handle(ext_handle, other_type);
+    m_errorMonitor->VerifyFound();
+
+    export_fence.export_handle(ext_handle, handle_type);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_import_type_vuid);
+    import_fence.import_handle(ext_handle, bad_type);
+    m_errorMonitor->VerifyFound();
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    auto ifi = LvlInitStruct<VkImportFenceWin32HandleInfoKHR>();
+    ifi.fence = import_fence.handle();
+    ifi.handleType = handle_type;
+    ifi.handle = ext_handle;
+    ifi.flags = 0;
+    ifi.name = L"something";
+
+    auto vkImportFenceWin32HandleKHR =
+        reinterpret_cast<PFN_vkImportFenceWin32HandleKHR>(vk::GetDeviceProcAddr(device(), "vkImportFenceWin32HandleKHR"));
+
+    // If handleType is not VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT, name must be NULL
+    // However, it looks like at least some windows drivers don't support exporting KMT handles for fences
+    if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01459");
+    }
+    // If handle is not NULL, name must be NULL
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceWin32HandleInfoKHR-handle-01462");
+    vkImportFenceWin32HandleKHR(m_device->device(), &ifi);
+    m_errorMonitor->VerifyFound();
+#endif
+    auto err = import_fence.import_handle(ext_handle, handle_type);
+    ASSERT_VK_SUCCESS(err);
+}
+
+TEST_F(VkLayerTest, ExternalSyncFdFence) {
+    const auto handle_type = VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    // Check for external fence import and export capability
+    auto efi = LvlInitStruct<VkPhysicalDeviceExternalFenceInfoKHR>();
+    efi.handleType = handle_type;
+    auto efp = LvlInitStruct<VkExternalFencePropertiesKHR>();
+    auto vkGetPhysicalDeviceExternalFencePropertiesKHR = (PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR)vk::GetInstanceProcAddr(
+        instance(), "vkGetPhysicalDeviceExternalFencePropertiesKHR");
+    vkGetPhysicalDeviceExternalFencePropertiesKHR(gpu(), &efi, &efp);
+
+    if (!(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(efp.externalFenceFeatures & VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External fence does not support importing and exporting, skipping test.";
+    }
+
+    // Create a fence to export payload from
+    auto efci = LvlInitStruct<VkExportFenceCreateInfoKHR>();
+    efci.handleTypes = handle_type;
+    auto fci = LvlInitStruct<VkFenceCreateInfo>(&efci);
+    vk_testing::Fence export_fence(*m_device, fci);
+
+    // Create a fence to import payload into
+    fci.pNext = nullptr;
+    vk_testing::Fence import_fence(*m_device, fci);
+
+    vk_testing::Fence::ExternalHandle ext_handle{};
+
+    // SYNC_FD must have a pending signal for export
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFenceGetFdInfoKHR-handleType-01454");
+    export_fence.export_handle(ext_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueSubmit(m_device->m_queue, 0, nullptr, export_fence.handle());
+
+    export_fence.export_handle(ext_handle, handle_type);
+
+    // must be temporary
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportFenceFdInfoKHR-handleType-07306");
+    import_fence.import_handle(ext_handle, handle_type);
+    m_errorMonitor->VerifyFound();
+
+    import_fence.import_handle(ext_handle, handle_type, VK_FENCE_IMPORT_TEMPORARY_BIT);
+
+    import_fence.wait(1000000000);
 }
 
 TEST_F(VkLayerTest, InvalidCmdBufferEventDestroyed) {
@@ -7869,54 +8100,80 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
 TEST_F(VkLayerTest, InvalidExternalSemaphore) {
     TEST_DESCRIPTION("Import and export invalid external semaphores, no queue sumbits involved.");
-#ifdef _WIN32
-    printf("%s Test doesn't currently support Win32 semaphore, skipping test\n", kSkipPrefix);
-    return;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
+    const auto bad_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto other_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    const char *bad_export_type_vuid = "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01131";
+    const char *other_export_type_vuid = "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126";
+    const char *bad_import_type_vuid = "VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01140";
 #else
     const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    const auto bad_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT_KHR;
+    const auto other_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR;
+    const char *bad_export_type_vuid = "VUID-VkSemaphoreGetFdInfoKHR-handleType-01136";
+    const char *other_export_type_vuid = "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132";
+    const char *bad_import_type_vuid = "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143";
+#endif
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(extension_name);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
 
-    // Check for external semaphore instance extensions
-    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Check for external semaphore device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
-        m_device_extension_names.push_back(extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
-    } else {
-        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    // Check for external semaphore import and export capability
+    auto esi = LvlInitStruct<VkPhysicalDeviceExternalSemaphoreInfoKHR>();
+    esi.handleType = handle_type;
 
-    // Create a semaphore fpr importing
-    VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
-    semaphore_create_info.flags = 0;
-    VkSemaphore import_semaphore;
-    VkResult err = vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &import_semaphore);
-    ASSERT_VK_SUCCESS(err);
+    auto esp = LvlInitStruct<VkExternalSemaphorePropertiesKHR>();
 
-    int fd = 0;
-    VkImportSemaphoreFdInfoKHR import_semaphore_fd_info = LvlInitStruct<VkImportSemaphoreFdInfoKHR>();
-    import_semaphore_fd_info.semaphore = import_semaphore;
-    import_semaphore_fd_info.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
-    import_semaphore_fd_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
-    import_semaphore_fd_info.fd = fd;
-    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
+    auto vkGetPhysicalDeviceExternalSemaphorePropertiesKHR =
+        (PFN_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR)vk::GetInstanceProcAddr(
+            instance(), "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR");
+    vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(gpu(), &esi, &esp);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143");
-    vkImportSemaphoreFdKHR(device(), &import_semaphore_fd_info);
+    if (!(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT_KHR) ||
+        !(esp.externalSemaphoreFeatures & VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT_KHR)) {
+        GTEST_SKIP() << "External semaphore does not support importing and exporting, skipping test";
+    }
+    // Create a semaphore to export payload from
+    auto esci = LvlInitStruct<VkExportSemaphoreCreateInfoKHR>();
+    esci.handleTypes = handle_type;
+    auto sci = LvlInitStruct<VkSemaphoreCreateInfo>(&esci);
+
+    vk_testing::Semaphore export_semaphore(*m_device, sci);
+
+    // Create a semaphore for importing
+    vk_testing::Semaphore import_semaphore(*m_device);
+
+    vk_testing::Semaphore::ExternalHandle ext_handle{};
+
+    // windows vs unix mismatch
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_export_type_vuid);
+    export_semaphore.export_handle(ext_handle, bad_type);
     m_errorMonitor->VerifyFound();
 
-    // Cleanup
-    vk::DestroySemaphore(device(), import_semaphore, nullptr);
-#endif
+    // not specified during create
+    if (other_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
+        // SYNC_FD must have pending signal
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254");
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, other_export_type_vuid);
+    export_semaphore.export_handle(ext_handle, other_type);
+    m_errorMonitor->VerifyFound();
+
+    export_semaphore.export_handle(ext_handle, handle_type);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, bad_import_type_vuid);
+    export_semaphore.import_handle(ext_handle, bad_type);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
