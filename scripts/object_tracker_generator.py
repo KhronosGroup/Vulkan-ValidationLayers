@@ -147,6 +147,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkCreateInstance',
             'vkCreateDevice',
             'vkEnumeratePhysicalDevices',
+            #'vkEnumeratePhysicalDeviceGroups',            
             'vkGetPhysicalDeviceQueueFamilyProperties',
             'vkGetPhysicalDeviceQueueFamilyProperties2',
             'vkGetPhysicalDeviceQueueFamilyProperties2KHR',
@@ -744,6 +745,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent
             indent = self.decIndent(indent)
+        # Physical device groups are not handles, but a set of handles, they need to be tracked as well
+        elif handle_type.text == 'VkPhysicalDeviceGroupProperties':
+            create_obj_code += f"""{indent}if ({cmd_info[-1].name}) {{
+{indent}{indent}for (uint32_t device_group_index = 0; device_group_index < *{cmd_info[-2].name}; device_group_index++) {{
+{indent}{indent}{indent}PostCallRecordEnumeratePhysicalDevices({cmd_info[0].name}, &{cmd_info[-1].name}[device_group_index].physicalDeviceCount, {cmd_info[-1].name}[device_group_index].physicalDevices, VK_SUCCESS);
+{indent}{indent}}}
+{indent}}}\n"""
 
         return create_obj_code
 
@@ -1080,9 +1088,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
 
                     if result_type.text == 'VkResult':
                         post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
+                        failure_condition = 'result != VK_SUCCESS'
+                        # VK_INCOMPLETE is considered a success
+                        if 'EnumeratePhysicalDeviceGroups' in cmdname:
+                            failure_condition += ' && result != VK_INCOMPLETE'
                         # The two createpipelines APIs may create on failure -- skip the success result check
                         if 'CreateGraphicsPipelines' not in cmdname and 'CreateComputePipelines' not in cmdname and 'CreateRayTracingPipelines' not in cmdname:
-                            post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
+                            post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (%s) return;' % failure_condition)
                     elif result_type.text == 'VkDeviceAddress':
                         post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkDeviceAddress                             result)')
                     self.appendSection('command', post_cr_func_decl)
