@@ -2181,11 +2181,15 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         maintenance2Supported = true;
     }
 
-    auto attachment_feedback_loop_layout_features =
-        LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&attachment_feedback_loop_layout_features);
-    GetPhysicalDeviceFeatures2(features2);
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (feedback_loop_layout) {
+        auto attachment_feedback_loop_layout_features = LvlInitStruct<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>();
+        auto features2 = GetPhysicalDeviceFeatures2(attachment_feedback_loop_layout_features);
+        attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout = true;
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    }
+    
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
