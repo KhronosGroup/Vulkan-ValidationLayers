@@ -2348,6 +2348,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     present.pImageIndices = &current_buffer;
     present.swapchainCount = 1;
     vk::QueuePresentKHR(m_device->m_queue, &present);
+    vk::QueueWaitIdle(m_device->m_queue);
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);

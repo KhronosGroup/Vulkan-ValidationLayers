@@ -8349,6 +8349,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
         semaphore_signal_info.value--;
         ASSERT_VK_SUCCESS(vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info));
 
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+
         vk::DestroySemaphore(m_device->device(), sem, nullptr);
 
         // Regression test for value difference validations ran against binary semaphores
@@ -8383,6 +8385,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
             semaphore_signal_info.semaphore = timeline_sem;
             semaphore_signal_info.value = 1;
             vkSignalSemaphoreKHR(m_device->device(), &semaphore_signal_info);
+
+            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
 
             vk::DestroySemaphore(m_device->device(), binary_sem, nullptr);
             vk::DestroySemaphore(m_device->device(), timeline_sem, nullptr);
