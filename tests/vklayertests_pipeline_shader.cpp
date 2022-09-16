@@ -13909,6 +13909,35 @@ TEST_F(VkLayerTest, ComputeSharedMemoryOverLimit) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ComputeSharedMemoryBooleanOverLimit) {
+    TEST_DESCRIPTION("Validate compute shader shared memory does not exceed maxComputeSharedMemorySize with booleans");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
+    const uint32_t max_shared_bools = max_shared_memory_size / 4;
+
+    std::stringstream csSource;
+    // Make sure compute pipeline has a compute shader stage set
+    csSource << R"glsl(
+        #version 450
+        shared bool a[)glsl";
+    csSource << (max_shared_bools + 16);
+    csSource << R"glsl(];
+        void main(){
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.InitState();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-Workgroup-06530");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ComputeSharedMemoryOverLimitWorkgroupMemoryExplicitLayout) {
     TEST_DESCRIPTION(
         "Validate compute shader shared memory does not exceed maxComputeSharedMemorySize when using "

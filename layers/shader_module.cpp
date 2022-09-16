@@ -1855,6 +1855,11 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const spirv_inst_iter &iter) const
     } else if (opcode == spv::OpVariable) {
         const auto type = get_def(iter.word(1));
         return GetTypeBitsSize(type);
+    } else if (opcode == spv::OpTypeBool) {
+        // The Spec states:
+        // "Boolean values considered as 32-bit integer values for the purpose of this calculation"
+        // when getting the size for the limits
+        return 32;
     }
     return 0;
 }

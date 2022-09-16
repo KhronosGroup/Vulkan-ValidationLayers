@@ -384,6 +384,31 @@ TEST_F(VkPositiveLayerTest, ComputeSharedMemoryAtLimit) {
     pipe.CreateComputePipeline();
 }
 
+TEST_F(VkPositiveLayerTest, ComputeSharedMemoryBooleanAtLimit) {
+    TEST_DESCRIPTION("Validate compute shader shared memory is valid at the exact maxComputeSharedMemorySize using Booleans");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const uint32_t max_shared_memory_size = m_device->phy().properties().limits.maxComputeSharedMemorySize;
+    // "Boolean values considered as 32-bit integer values for the purpose of this calculation."
+    const uint32_t max_shared_bools = max_shared_memory_size / 4;
+
+    std::stringstream csSource;
+    csSource << R"glsl(
+        #version 450
+        shared bool a[)glsl";
+    csSource << (max_shared_bools);
+    csSource << R"glsl(];
+        void main(){}
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
+    pipe.InitState();
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(VkPositiveLayerTest, ComputeWorkGroupSizePrecedenceOverLocalSize) {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
