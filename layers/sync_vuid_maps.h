@@ -68,6 +68,7 @@ enum class ImageError {
     kNoMemory = 0,
     kConflictingLayout,
     kBadLayout,
+    kBadAttFeedbackLoopLayout,
     kNotColorAspect,
     kNotColorAspectYcbcr,
     kBadMultiplanarAspect,

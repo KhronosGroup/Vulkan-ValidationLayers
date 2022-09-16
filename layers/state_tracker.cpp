@@ -1237,6 +1237,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (shader_module_identifier_features) {
             enabled_features.shader_module_identifier_features = *shader_module_identifier_features;
         }
+
+        const auto attachment_feedback_loop_layout =
+            LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(pCreateInfo->pNext);
+        if (attachment_feedback_loop_layout) {
+            enabled_features.attachment_feedback_loop_layout_features = *attachment_feedback_loop_layout;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

@@ -5610,6 +5610,17 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
                          layout_loc.Message().c_str());
         }
     }
+    
+    if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+        if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
+            auto layout_loc = loc.dot(Field::newLayout);
+            const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(loc, sync_vuid_maps::ImageError::kBadAttFeedbackLoopLayout);
+            skip |= LogError(cb_state->commandBuffer(), vuid,
+                             "%s Image Layout cannot be transitioned to VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT if "
+                             "the attachmentFeedbackLoopLayout feature is not enabled",
+                             layout_loc.Message().c_str());
+        }
+    }
 
     auto image_data = Get<IMAGE_STATE>(mem_barrier.image);
     if (image_data) {
