@@ -386,8 +386,7 @@ bool CoreChecks::IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState
 }
 
 // Validate state stored as flags at time of draw call
-bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPELINE_STATE *pPipe, bool indexed,
-                                        const char *msg_code) const {
+bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPELINE_STATE *pPipe, const char *msg_code) const {
     bool result = false;
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
@@ -416,10 +415,6 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
                                  "Dynamic stencil write mask state not set for this command buffer", msg_code);
         result |= ValidateStatus(pCB, CBSTATUS_STENCIL_REFERENCE_SET,
                                  "Dynamic stencil reference state not set for this command buffer", msg_code);
-    }
-    if (indexed) {
-        result |= ValidateStatus(pCB, CBSTATUS_INDEX_BUFFER_BOUND,
-                                 "Index buffer object not bound to this command buffer when Indexed Draw attempted", msg_code);
     }
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
@@ -1543,7 +1538,7 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
 }
 
 // Validate overall state at the time of a draw call
-bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
+bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type,
                                          const VkPipelineBindPoint bind_point) const {
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *function = CommandTypeString(cmd_type);
@@ -1561,7 +1556,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         // First check flag states
-        result |= ValidateDrawStateFlags(cb_node, pipe, indexed, vuid.dynamic_state);
+        result |= ValidateDrawStateFlags(cb_node, pipe, vuid.dynamic_state);
 
         if (cb_node->activeRenderPass && cb_node->activeFramebuffer) {
             // Verify attachments for unprotected/protected command buffer.
