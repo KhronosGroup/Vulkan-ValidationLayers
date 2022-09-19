@@ -455,6 +455,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void EndQuery(const QueryObject &query_obj);
     void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
     void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
+    bool UpdatesQuery(const QueryObject &query_obj) const;
 
     void BeginRenderPass(CMD_TYPE cmd_type, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
     void NextSubpass(CMD_TYPE cmd_type, VkSubpassContents contents);
