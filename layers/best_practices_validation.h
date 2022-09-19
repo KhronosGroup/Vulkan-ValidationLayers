@@ -543,7 +543,8 @@ class BestPractices : public ValidationStateTracker {
                                             const VkSubpassBeginInfo* pSubpassBeginInfo) const override;
     bool PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo) const override;
-    void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, const char* function_name);
+    void ValidateBoundDescriptorSets(bp_state::CommandBuffer& commandBuffer, VkPipelineBindPoint bind_point,
+                                     const char* function_name);
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer) const override;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer) const override;
 

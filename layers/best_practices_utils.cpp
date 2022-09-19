@@ -3523,7 +3523,7 @@ void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, u
         cmd_state->small_indexed_draw_call_count++;
     }
 
-    ValidateBoundDescriptorSets(*cmd_state, "vkCmdDrawIndexed()");
+    ValidateBoundDescriptorSets(*cmd_state, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexed()");
 }
 
 void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
@@ -3771,9 +3771,13 @@ void BestPractices::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
     RecordCmdDrawType(commandBuffer, count, "vkCmdDrawMultiEXT()");
 }
 
-void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_state, const char* function_name) {
-    for (auto descriptor_set : cb_state.validated_descriptor_sets) {
-        for (const auto& binding : *descriptor_set) {
+void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
+                                                const char* function_name) {
+    auto lvl_bind_point = ConvertToLvlBindPoint(bind_point);
+    auto& state = cb_state.lastBound[lvl_bind_point];
+
+    for (auto descriptor_set : state.per_set) {
+        for (const auto& binding : *descriptor_set.bound_descriptor_set) {
             // For bindless scenarios, we should not attempt to track descriptor set state.
             // It is highly uncertain which resources are actually bound.
             // Resources which are written to such a descriptor should be marked as indeterminate w.r.t. state.
@@ -3820,19 +3824,19 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
 void BestPractices::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance) {
     const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, "vkCmdDraw()");
+    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDraw()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride) {
     const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, "vkCmdDrawIndirect()");
+    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirect()");
 }
 
 void BestPractices::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride) {
     const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, "vkCmdDrawIndexedIndirect()");
+    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirect()");
 }
 
 bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
@@ -4002,12 +4006,12 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
 
 void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, "vkCmdDispatch()");
+    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatch()");
 }
 
 void BestPractices::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
     const auto cb_node = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    ValidateBoundDescriptorSets(*cb_node, "vkCmdDispatchIndirect()");
+    ValidateBoundDescriptorSets(*cb_node, VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatchIndirect()");
 }
 
 bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
