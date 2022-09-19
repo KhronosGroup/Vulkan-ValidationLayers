@@ -3219,3 +3219,336 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         vk::QueueWaitIdle(m_device->m_queue);
     }
 }
+
+TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
+    TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    InitDebugPrintfFramework();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&multi_draw_features);
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+
+    auto features = m_device->phy().features();
+    if (!features.vertexPipelineStoresAndAtomics || !features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "GPU-Assisted printf test requires vertexPipelineStoresAndAtomics and fragmentStoresAndAtomics";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+    // Make a uniform buffer to be passed to the shader that contains the test number
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bci.size = 8;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer0;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer0.init(*m_device, bci, mem_props);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    VkDescriptorBufferInfo buffer_info[2] = {};
+    buffer_info[0].buffer = buffer0.handle();
+    buffer_info[0].offset = 0;
+    buffer_info[0].range = sizeof(uint32_t);
+
+    VkWriteDescriptorSet descriptor_writes[1] = {};
+    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
+    descriptor_writes[0].dstSet = descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].pBufferInfo = buffer_info;
+    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) uniform ufoo {
+            int whichtest;
+        } u_info;
+        void main() {
+            float myfloat = 3.1415f;
+            int foo = -135;
+            if (gl_VertexIndex == 0) {
+                switch(u_info.whichtest) {
+                    case 0:
+                        debugPrintfEXT("Here are two float values %f, %f", 1.0, myfloat);
+                        break;
+                    case 1:
+                        debugPrintfEXT("Here's a smaller float value %1.2f", myfloat);
+                        break;
+                    case 2:
+                        debugPrintfEXT("Here's an integer %i with text before and after it", foo);
+                        break;
+                    case 3:
+                        foo = 256;
+                        debugPrintfEXT("Here's an integer in octal %o and hex 0x%x", foo, foo);
+                        break;
+                    case 4:
+                        debugPrintfEXT("%d is a negative integer", foo);
+                        break;
+                    case 5:
+                        vec4 floatvec = vec4(1.2f, 2.2f, 3.2f, 4.2f);
+                        debugPrintfEXT("Here's a vector of floats %1.2v4f", floatvec);
+                        break;
+                    case 6:
+                        debugPrintfEXT("Here's a float in sn %e", myfloat);
+                        break;
+                    case 7:
+                        debugPrintfEXT("Here's a float in sn %1.2e", myfloat);
+                        break;
+                    case 8:
+                        debugPrintfEXT("Here's a float in shortest %g", myfloat);
+                        break;
+                    case 9:
+                        debugPrintfEXT("Here's a float in hex %1.9a", myfloat);
+                        break;
+                    case 10:
+                        debugPrintfEXT("First printf with a %% and no value");
+                        debugPrintfEXT("Second printf with a value %i", foo);
+                        break;
+                }
+            }
+            gl_Position = vec4(0.0);
+        }
+    )glsl";
+
+    CreatePipelineHelper vi(*this);
+    vi.InitVertexInputLibInfo();
+    vi.InitState();
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(layer_data::span<const uint32_t>{vs_spv});
+
+    CreatePipelineHelper pre_raster(*this);
+    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitState();
+    pre_raster.gp_ci_.layout = pipeline_layout.handle();
+    pre_raster.CreateGraphicsPipeline(true, false);
+
+    const auto render_pass = pre_raster.gp_ci_.renderPass;
+    const auto subpass = pre_raster.gp_ci_.subpass;
+
+    CreatePipelineHelper fragment(*this);
+    fragment.InitFragmentLibInfo(0, nullptr);
+    fragment.gp_ci_.layout = pipeline_layout.handle();
+    fragment.gp_ci_.renderPass = render_pass;
+    fragment.gp_ci_.subpass = subpass;
+    fragment.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper frag_out(*this);
+    frag_out.InitFragmentOutputLibInfo();
+    frag_out.gp_ci_.renderPass = render_pass;
+    frag_out.gp_ci_.subpass = subpass;
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+
+    std::array<VkPipeline, 4> libraries = {
+        vi.pipeline_,
+        pre_raster.pipeline_,
+        fragment.pipeline_,
+        frag_out.pipeline_,
+    };
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    begin_info.pInheritanceInfo = &hinfo;
+
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    std::vector<char const *> messages;
+    messages.push_back("Here are two float values 1.000000, 3.141500");
+    messages.push_back("Here's a smaller float value 3.14");
+    messages.push_back("Here's an integer -135 with text before and after it");
+    messages.push_back("Here's an integer in octal 400 and hex 0x100");
+    messages.push_back("-135 is a negative integer");
+    messages.push_back("Here's a vector of floats 1.20, 2.20, 3.20, 4.20");
+    messages.push_back("Here's a float in sn 3.141500e+00");
+    messages.push_back("Here's a float in sn 3.14e+00");
+    messages.push_back("Here's a float in shortest 3.1415");
+    messages.push_back("Here's a float in hex 0x1.921cac000p+1");
+    // Two error messages have to be last in the vector
+    messages.push_back("First printf with a % and no value");
+    messages.push_back("Second printf with a value -135");
+    for (uint32_t i = 0; i < messages.size(); i++) {
+        VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = i;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i]);
+        if (10 == i) {
+            m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[i + 1]);
+            i++;
+        }
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (multi_draw_features.multiDraw) {
+        auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
+        auto vkCmdDrawMultiIndexedEXT =
+            (PFN_vkCmdDrawMultiIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiIndexedEXT");
+        assert(vkCmdDrawMultiEXT != nullptr && vkCmdDrawMultiIndexedEXT != nullptr);
+        VkMultiDrawInfoEXT multi_draws[3] = {};
+        multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
+        VkMultiDrawIndexedInfoEXT multi_draw_indices[3] = {};
+        multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
+        vkCmdDrawMultiEXT(m_commandBuffer->handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 0;
+        buffer0.memory().unmap();
+        for (auto i = 0; i < 3; i++) {
+            m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[0]);
+        }
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+
+        VkBufferObj buffer;
+        buffer.init(*m_device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        uint16_t *ptr = static_cast<uint16_t *>(buffer.memory().map());
+        ptr[0] = 0;
+        ptr[1] = 1;
+        ptr[2] = 2;
+        buffer.memory().unmap();
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
+        m_commandBuffer->BindIndexBuffer(&buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdDrawMultiIndexedEXT(m_commandBuffer->handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 1;
+        buffer0.memory().unmap();
+        for (auto i = 0; i < 3; i++) {
+            m_errorMonitor->SetDesiredFailureMsg(kInformationBit, messages[1]);
+        }
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (features.shaderInt64) {
+        char const *shader_source_int64 = R"glsl(
+            #version 450
+            #extension GL_EXT_debug_printf : enable
+            #extension GL_ARB_gpu_shader_int64 : enable
+            layout(set = 0, binding = 0) uniform ufoo {
+                int whichtest;
+            } u_info;
+            void main() {
+                uint64_t bigvar = 0x2000000000000001ul;
+                if (gl_VertexIndex == 0) {
+                    switch(u_info.whichtest) {
+                        case 0:
+                            debugPrintfEXT("Here's an unsigned long 0x%ul", bigvar);
+                            break;
+                        case 1:
+                            u64vec4 vecul = u64vec4(bigvar, bigvar, bigvar, bigvar);
+                            debugPrintfEXT("Here's a vector of ul %v4ul", vecul);
+                            break;
+                        case 2:
+                            debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);
+                            break;
+                    }
+                }
+                gl_Position = vec4(0.0);
+            }
+        )glsl";
+        const auto vs_i64_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source_int64);
+        vk_testing::GraphicsPipelineLibraryStage pre_raster_i64_stage(vs_i64_spv);
+
+        CreatePipelineHelper pre_raster_i64(*this);
+        pre_raster_i64.InitPreRasterLibInfo(1, &pre_raster_i64_stage.stage_ci);
+        pre_raster_i64.gp_ci_.layout = pipeline_layout.handle();
+        pre_raster_i64.gp_ci_.renderPass = render_pass;
+        pre_raster_i64.gp_ci_.subpass = subpass;
+        pre_raster_i64.CreateGraphicsPipeline(true, false);
+
+        std::array<VkPipeline, 4> libraries_i64 = {
+            vi.pipeline_,
+            pre_raster_i64.pipeline_,
+            fragment.pipeline_,
+            frag_out.pipeline_,
+        };
+
+        vk_testing::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64);
+
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 0;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Here's an unsigned long 0x2000000000000001");
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+
+        data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 1;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(
+            kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+
+        data = (VkDeviceAddress *)buffer0.memory().map();
+        data[0] = 2;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
+                                             "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
+        ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE));
+        ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+        m_errorMonitor->VerifyFound();
+    }
+}
