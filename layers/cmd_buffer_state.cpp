@@ -326,6 +326,8 @@ void CMD_BUFFER_STATE::Reset() {
     startedQueries.clear();
     image_layout_map.clear();
     aliased_image_layout_map.clear();
+    descriptorset_cache.clear();
+    validated_descriptor_sets.clear();
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
     vertex_buffer_used = false;
     primaryCommandBuffer = VK_NULL_HANDLE;
@@ -813,6 +815,10 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     if (CB_RECORDED == state || CB_INVALID_COMPLETE == state) {
         Reset();
     }
+
+    descriptorset_cache.clear();
+    validated_descriptor_sets.clear();
+
     // Set updated state here in case implicit reset occurs above
     state = CB_RECORDING;
     beginInfo = *pBeginInfo;
