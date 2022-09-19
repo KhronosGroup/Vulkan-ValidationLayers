@@ -321,7 +321,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // If primary, the secondary command buffers we will call.
-    // If secondary, the primary command buffers we will be called by.
     layer_data::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const ValidationStateTracker &device_data, const class QUEUE_STATE &queue_state,
@@ -334,8 +333,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
     std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> eventUpdates;
-    std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                   uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                   QueryMap *localQueryToStateMap)>>
         queryUpdates;
     layer_data::unordered_set<const cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     layer_data::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
