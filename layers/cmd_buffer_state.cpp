@@ -327,7 +327,6 @@ void CMD_BUFFER_STATE::Reset() {
     image_layout_map.clear();
     aliased_image_layout_map.clear();
     descriptorset_cache.clear();
-    validated_descriptor_sets.clear();
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
     vertex_buffer_used = false;
     primaryCommandBuffer = VK_NULL_HANDLE;
@@ -817,7 +816,6 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     }
 
     descriptorset_cache.clear();
-    validated_descriptor_sets.clear();
 
     // Set updated state here in case implicit reset occurs above
     state = CB_RECORDING;
@@ -889,7 +887,6 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 void CMD_BUFFER_STATE::End(VkResult result) {
     // Cached validation is specific to a specific recording of a specific command buffer.
     descriptorset_cache.clear();
-    validated_descriptor_sets.clear();
     if (VK_SUCCESS == result) {
         state = CB_RECORDED;
     }
@@ -1184,10 +1181,6 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
                 assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
             } else {
                 last_bound.per_set[set_idx].dynamicOffsets.clear();
-            }
-            if (!descriptor_set->IsPushDescriptor()) {
-                // Can't cache validation of push_descriptors
-                validated_descriptor_sets.insert(descriptor_set.get());
             }
         }
     }
