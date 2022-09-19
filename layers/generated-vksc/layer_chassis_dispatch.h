@@ -1264,3 +1264,16 @@ void                                    DispatchCmdSetColorWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables);
+#ifdef VK_USE_PLATFORM_SCI
+VkResult DispatchCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool);
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+void DispatchDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator);
+#endif // VK_USE_PLATFORM_SCI

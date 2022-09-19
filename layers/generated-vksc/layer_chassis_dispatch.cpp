@@ -47,6 +47,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+#ifdef VK_USE_PLATFORM_SCI 
+            case VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV: {
+                    safe_VkSemaphoreSciSyncCreateInfoNV *safe_struct = reinterpret_cast<safe_VkSemaphoreSciSyncCreateInfoNV *>(cur_pnext);
+                    if (safe_struct->semaphorePool) {
+                        safe_struct->semaphorePool = layer_data->Unwrap(safe_struct->semaphorePool);
+                    }
+                } break;
+#endif // VK_USE_PLATFORM_SCI 
+
             case VK_STRUCTURE_TYPE_IMAGE_SWAPCHAIN_CREATE_INFO_KHR: {
                     safe_VkImageSwapchainCreateInfoKHR *safe_struct = reinterpret_cast<safe_VkImageSwapchainCreateInfoKHR *>(cur_pnext);
                     if (safe_struct->swapchain) {
@@ -1605,7 +1614,16 @@ VkResult DispatchCreateSemaphore(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
-    VkResult result = layer_data->device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
+    safe_VkSemaphoreCreateInfo var_local_pCreateInfo;
+    safe_VkSemaphoreCreateInfo *local_pCreateInfo = NULL;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+            WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateSemaphore(device, (const VkSemaphoreCreateInfo*)local_pCreateInfo, pAllocator, pSemaphore);
     if (VK_SUCCESS == result) {
         *pSemaphore = layer_data->WrapNew(*pSemaphore);
     }
@@ -5285,3 +5303,42 @@ void                                    DispatchCmdSetColorWriteEnableEXT(
     layer_data->device_dispatch_table.CmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
 
 }
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VkResult DispatchCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+    VkResult result = layer_data->device_dispatch_table.CreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+    if (VK_SUCCESS == result) {
+        *pSemaphorePool = layer_data->WrapNew(*pSemaphorePool);
+    }
+    return result;
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void DispatchDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+    uint64_t semaphorePool_id = reinterpret_cast<uint64_t &>(semaphorePool);
+    auto iter = unique_id_mapping.pop(semaphorePool_id);
+    if (iter != unique_id_mapping.end()) {
+        semaphorePool = (VkSemaphoreSciSyncPoolNV)iter->second;
+    } else {
+        semaphorePool = (VkSemaphoreSciSyncPoolNV)0;
+    }
+    layer_data->device_dispatch_table.DestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+
+}
+#endif // VK_USE_PLATFORM_SCI

@@ -25920,6 +25920,274 @@ void safe_VkApplicationParametersEXT::initialize(const safe_VkApplicationParamet
     value = copy_src->value;
     pNext = SafePnextCopy(copy_src->pNext);
 }
+#ifdef VK_USE_PLATFORM_SCI
+
+
+safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::safe_VkPhysicalDeviceExternalSciSync2FeaturesNV(const VkPhysicalDeviceExternalSciSync2FeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    sciSyncFence(in_struct->sciSyncFence),
+    sciSyncSemaphore2(in_struct->sciSyncSemaphore2),
+    sciSyncImport(in_struct->sciSyncImport),
+    sciSyncExport(in_struct->sciSyncExport)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::safe_VkPhysicalDeviceExternalSciSync2FeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV),
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::safe_VkPhysicalDeviceExternalSciSync2FeaturesNV(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    sciSyncFence = copy_src.sciSyncFence;
+    sciSyncSemaphore2 = copy_src.sciSyncSemaphore2;
+    sciSyncImport = copy_src.sciSyncImport;
+    sciSyncExport = copy_src.sciSyncExport;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::operator=(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    sciSyncFence = copy_src.sciSyncFence;
+    sciSyncSemaphore2 = copy_src.sciSyncSemaphore2;
+    sciSyncImport = copy_src.sciSyncImport;
+    sciSyncExport = copy_src.sciSyncExport;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::~safe_VkPhysicalDeviceExternalSciSync2FeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::initialize(const VkPhysicalDeviceExternalSciSync2FeaturesNV* in_struct)
+{
+    sType = in_struct->sType;
+    sciSyncFence = in_struct->sciSyncFence;
+    sciSyncSemaphore2 = in_struct->sciSyncSemaphore2;
+    sciSyncImport = in_struct->sciSyncImport;
+    sciSyncExport = in_struct->sciSyncExport;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceExternalSciSync2FeaturesNV::initialize(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    sciSyncFence = copy_src->sciSyncFence;
+    sciSyncSemaphore2 = copy_src->sciSyncSemaphore2;
+    sciSyncImport = copy_src->sciSyncImport;
+    sciSyncExport = copy_src->sciSyncExport;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+
+safe_VkSemaphoreSciSyncPoolCreateInfoNV::safe_VkSemaphoreSciSyncPoolCreateInfoNV(const VkSemaphoreSciSyncPoolCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    handle(in_struct->handle)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkSemaphoreSciSyncPoolCreateInfoNV::safe_VkSemaphoreSciSyncPoolCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_POOL_CREATE_INFO_NV),
+    pNext(nullptr)
+{}
+
+safe_VkSemaphoreSciSyncPoolCreateInfoNV::safe_VkSemaphoreSciSyncPoolCreateInfoNV(const safe_VkSemaphoreSciSyncPoolCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkSemaphoreSciSyncPoolCreateInfoNV& safe_VkSemaphoreSciSyncPoolCreateInfoNV::operator=(const safe_VkSemaphoreSciSyncPoolCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    handle = copy_src.handle;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkSemaphoreSciSyncPoolCreateInfoNV::~safe_VkSemaphoreSciSyncPoolCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSemaphoreSciSyncPoolCreateInfoNV::initialize(const VkSemaphoreSciSyncPoolCreateInfoNV* in_struct)
+{
+    sType = in_struct->sType;
+    handle = in_struct->handle;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkSemaphoreSciSyncPoolCreateInfoNV::initialize(const safe_VkSemaphoreSciSyncPoolCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    handle = copy_src->handle;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+
+safe_VkSemaphoreSciSyncCreateInfoNV::safe_VkSemaphoreSciSyncCreateInfoNV(const VkSemaphoreSciSyncCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    semaphorePool(in_struct->semaphorePool),
+    pFence(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFence) {
+        pFence = new NvSciSyncFence(*in_struct->pFence);
+    }
+}
+
+safe_VkSemaphoreSciSyncCreateInfoNV::safe_VkSemaphoreSciSyncCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV),
+    pNext(nullptr),
+    pFence(nullptr)
+{}
+
+safe_VkSemaphoreSciSyncCreateInfoNV::safe_VkSemaphoreSciSyncCreateInfoNV(const safe_VkSemaphoreSciSyncCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    semaphorePool = copy_src.semaphorePool;
+    pFence = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFence) {
+        pFence = new NvSciSyncFence(*copy_src.pFence);
+    }
+}
+
+safe_VkSemaphoreSciSyncCreateInfoNV& safe_VkSemaphoreSciSyncCreateInfoNV::operator=(const safe_VkSemaphoreSciSyncCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pFence)
+        delete pFence;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphorePool = copy_src.semaphorePool;
+    pFence = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (copy_src.pFence) {
+        pFence = new NvSciSyncFence(*copy_src.pFence);
+    }
+
+    return *this;
+}
+
+safe_VkSemaphoreSciSyncCreateInfoNV::~safe_VkSemaphoreSciSyncCreateInfoNV()
+{
+    if (pFence)
+        delete pFence;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkSemaphoreSciSyncCreateInfoNV::initialize(const VkSemaphoreSciSyncCreateInfoNV* in_struct)
+{
+    sType = in_struct->sType;
+    semaphorePool = in_struct->semaphorePool;
+    pFence = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pFence) {
+        pFence = new NvSciSyncFence(*in_struct->pFence);
+    }
+}
+
+void safe_VkSemaphoreSciSyncCreateInfoNV::initialize(const safe_VkSemaphoreSciSyncCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    semaphorePool = copy_src->semaphorePool;
+    pFence = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (copy_src->pFence) {
+        pFence = new NvSciSyncFence(*copy_src->pFence);
+    }
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+
+safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV(const VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* in_struct) :
+    sType(in_struct->sType),
+    semaphoreSciSyncPoolRequestCount(in_struct->semaphoreSciSyncPoolRequestCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV() :
+    sType(VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV),
+    pNext(nullptr)
+{}
+
+safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& copy_src)
+{
+    sType = copy_src.sType;
+    semaphoreSciSyncPoolRequestCount = copy_src.semaphoreSciSyncPoolRequestCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::operator=(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    semaphoreSciSyncPoolRequestCount = copy_src.semaphoreSciSyncPoolRequestCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::~safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::initialize(const VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* in_struct)
+{
+    sType = in_struct->sType;
+    semaphoreSciSyncPoolRequestCount = in_struct->semaphoreSciSyncPoolRequestCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV::initialize(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* copy_src)
+{
+    sType = copy_src->sType;
+    semaphoreSciSyncPoolRequestCount = copy_src->semaphoreSciSyncPoolRequestCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+#endif // VK_USE_PLATFORM_SCI
+
 
 char *SafeStringCopy(const char *in_string) {
     if (nullptr == in_string) return nullptr;
@@ -26468,6 +26736,15 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV:
             safe_pNext = new safe_VkPhysicalDeviceExternalSciBufFeaturesNV(reinterpret_cast<const VkPhysicalDeviceExternalSciBufFeaturesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceExternalSciSync2FeaturesNV(reinterpret_cast<const VkPhysicalDeviceExternalSciSync2FeaturesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV:
+            safe_pNext = new safe_VkSemaphoreSciSyncCreateInfoNV(reinterpret_cast<const VkSemaphoreSciSyncCreateInfoNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV:
+            safe_pNext = new safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV(reinterpret_cast<const VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV *>(pNext));
             break;
 #endif // VK_USE_PLATFORM_SCI
         default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain
@@ -27024,6 +27301,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_BUF_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceExternalSciBufFeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV:
+            delete reinterpret_cast<const safe_VkSemaphoreSciSyncCreateInfoNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV:
+            delete reinterpret_cast<const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV *>(header);
             break;
 #endif // VK_USE_PLATFORM_SCI
         default: // Encountered an unknown sType

@@ -67,7 +67,7 @@
         "cmake_options" : [
           "-DVulkanSC=TRUE"
         ],
-        "commit" : "vksc1.0.10"
+        "commit" : "vksc1.0.11"
     }
   ],
   "install_names" : {

@@ -252,6 +252,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_synchronization2{kNotEnabled};
     ExtEnabled vk_nv_external_memory_sci_buf{kNotEnabled};
     ExtEnabled vk_nv_external_sci_sync{kNotEnabled};
+    ExtEnabled vk_nv_external_sci_sync2{kNotEnabled};
+    ExtEnabled vk_nv_private_vendor_info{kNotEnabled};
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::* enabled;
@@ -345,6 +347,11 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_EXTERNAL_SCI_SYNC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_sci_sync, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
 #endif
+#ifdef VK_USE_PLATFORM_SCI
+            {VK_NV_EXTERNAL_SCI_SYNC_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_external_sci_sync2, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
+#endif
+            {VK_NV_PRIVATE_VENDOR_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_private_vendor_info, {})},
         };
 
         return info_map;
@@ -467,6 +474,10 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_SCI
     VK_NV_EXTERNAL_SCI_SYNC_EXTENSION_NAME,
 #endif
+#ifdef VK_USE_PLATFORM_SCI
+    VK_NV_EXTERNAL_SCI_SYNC_2_EXTENSION_NAME,
+#endif
+    VK_NV_PRIVATE_VENDOR_INFO_EXTENSION_NAME,
 };
 
 

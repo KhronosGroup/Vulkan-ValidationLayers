@@ -1316,6 +1316,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display);
@@ -1637,6 +1638,20 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables);
 
+
+#ifdef VK_USE_PLATFORM_SCI
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool);
+
+VKAPI_ATTR void VKAPI_CALL DestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator);
+#endif // VK_USE_PLATFORM_SCI
 
 
 
@@ -2857,6 +2872,16 @@ class ValidationObject {
         virtual bool PreCallValidateCmdSetColorWriteEnableEXT(VkCommandBuffer       commandBuffer, uint32_t                                attachmentCount, const VkBool32*   pColorWriteEnables) const { return false; };
         virtual void PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer       commandBuffer, uint32_t                                attachmentCount, const VkBool32*   pColorWriteEnables) {};
         virtual void PostCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer       commandBuffer, uint32_t                                attachmentCount, const VkBool32*   pColorWriteEnables) {};
+#ifdef VK_USE_PLATFORM_SCI
+        virtual bool PreCallValidateCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool) const { return false; };
+        virtual void PreCallRecordCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool) {};
+        virtual void PostCallRecordCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool, VkResult result) {};
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+        virtual bool PreCallValidateDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) const { return false; };
+        virtual void PreCallRecordDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) {};
+        virtual void PostCallRecordDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) {};
+#endif
 
 #if defined(VK_EXT_validation_cache)
         virtual VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) { return VK_SUCCESS; };

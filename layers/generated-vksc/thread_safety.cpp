@@ -4814,3 +4814,45 @@ void ThreadSafety::PostCallRecordCmdSetColorWriteEnableEXT(
     FinishWriteObject(commandBuffer, "vkCmdSetColorWriteEnableEXT");
     // Host access to commandBuffer must be externally synchronized
 }
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void ThreadSafety::PreCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool) {
+    StartReadObjectParentInstance(device, "vkCreateSemaphoreSciSyncPoolNV");
+}
+
+void ThreadSafety::PostCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreateSemaphoreSciSyncPoolNV");
+    if (result == VK_SUCCESS) {
+        CreateObject(*pSemaphorePool);
+    }
+}
+
+void ThreadSafety::PreCallRecordDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) {
+    StartReadObjectParentInstance(device, "vkDestroySemaphoreSciSyncPoolNV");
+    StartWriteObject(semaphorePool, "vkDestroySemaphoreSciSyncPoolNV");
+    // Host access to semaphorePool must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) {
+    FinishReadObjectParentInstance(device, "vkDestroySemaphoreSciSyncPoolNV");
+    FinishWriteObject(semaphorePool, "vkDestroySemaphoreSciSyncPoolNV");
+    DestroyObject(semaphorePool);
+    // Host access to semaphorePool must be externally synchronized
+}
+#endif // VK_USE_PLATFORM_SCI

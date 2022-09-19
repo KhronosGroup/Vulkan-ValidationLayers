@@ -1690,6 +1690,24 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSciBufAttributesNV(
 
 #endif // VK_USE_PLATFORM_SCI
 
+#ifdef VK_USE_PLATFORM_SCI
+
+void BestPractices::PostCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_INITIALIZATION_FAILED,VK_ERROR_OUT_OF_HOST_MEMORY};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkCreateSemaphoreSciSyncPoolNV", result, error_codes, success_codes);
+    }
+}
+
+#endif // VK_USE_PLATFORM_SCI
+
 
 
 

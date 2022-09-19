@@ -425,6 +425,14 @@ typedef struct VkLayerDispatchTable_ {
 
     // ---- VK_EXT_color_write_enable extension commands
     PFN_vkCmdSetColorWriteEnableEXT CmdSetColorWriteEnableEXT;
+
+    // ---- VK_NV_external_sci_sync2 extension commands
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkCreateSemaphoreSciSyncPoolNV CreateSemaphoreSciSyncPoolNV;
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    PFN_vkDestroySemaphoreSciSyncPoolNV DestroySemaphoreSciSyncPoolNV;
+#endif // VK_USE_PLATFORM_SCI
 } VkLayerDispatchTable;
 
 

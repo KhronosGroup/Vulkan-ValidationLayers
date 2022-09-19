@@ -68,6 +68,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeFramebuffer, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSemaphoreSciSyncPoolNV, error_code);
     return skip;
 }
 
@@ -100,6 +101,7 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeFramebuffer);
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeSamplerYcbcrConversion);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSemaphoreSciSyncPoolNV);
 }
 
 
@@ -3610,5 +3612,53 @@ bool ObjectLifetimes::PreCallValidateCmdSetColorWriteEnableEXT(
 
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateSemaphoreSciSyncPoolNV-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool,
+    VkResult                                    result) {
+    if (result != VK_SUCCESS) return;
+    CreateObject(*pSemaphorePool, kVulkanObjectTypeSemaphoreSciSyncPoolNV, pAllocator);
+
+}
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+
+bool ObjectLifetimes::PreCallValidateDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroySemaphoreSciSyncPoolNV-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(semaphorePool, kVulkanObjectTypeSemaphoreSciSyncPoolNV, true, "VUID-vkDestroySemaphoreSciSyncPoolNV-semaphorePool-parameter", "VUID-vkDestroySemaphoreSciSyncPoolNV-semaphorePool-parent");
+    skip |= ValidateDestroyObject(semaphorePool, kVulkanObjectTypeSemaphoreSciSyncPoolNV, pAllocator, kVUIDUndefined, kVUIDUndefined);
+
+    return skip;
+}
+
+void ObjectLifetimes::PreCallRecordDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) {
+    RecordDestroyObject(semaphorePool, kVulkanObjectTypeSemaphoreSciSyncPoolNV);
+
+}
+#endif // VK_USE_PLATFORM_SCI
 
 

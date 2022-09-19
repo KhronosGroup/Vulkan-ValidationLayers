@@ -337,6 +337,9 @@ public:
     counter<VkSampler> c_VkSampler;
     counter<VkSamplerYcbcrConversion> c_VkSamplerYcbcrConversion;
     counter<VkSemaphore> c_VkSemaphore;
+#ifdef VK_USE_PLATFORM_SCI
+    counter<VkSemaphoreSciSyncPoolNV> c_VkSemaphoreSciSyncPoolNV;
+#endif
     counter<VkSurfaceKHR> c_VkSurfaceKHR;
     counter<VkSwapchainKHR> c_VkSwapchainKHR;
 
@@ -384,6 +387,9 @@ public:
           c_VkSampler("VkSampler", kVulkanObjectTypeSampler, this),
           c_VkSamplerYcbcrConversion("VkSamplerYcbcrConversion", kVulkanObjectTypeSamplerYcbcrConversion, this),
           c_VkSemaphore("VkSemaphore", kVulkanObjectTypeSemaphore, this),
+#ifdef VK_USE_PLATFORM_SCI
+          c_VkSemaphoreSciSyncPoolNV("VkSemaphoreSciSyncPoolNV", kVulkanObjectTypeSemaphoreSciSyncPoolNV, this),
+#endif
           c_VkSurfaceKHR("VkSurfaceKHR", kVulkanObjectTypeSurfaceKHR, this),
           c_VkSwapchainKHR("VkSwapchainKHR", kVulkanObjectTypeSwapchainKHR, this),
 
@@ -465,6 +471,9 @@ WRAPPER(VkRenderPass)
 WRAPPER(VkSampler)
 WRAPPER(VkSamplerYcbcrConversion)
 WRAPPER(VkSemaphore)
+#ifdef VK_USE_PLATFORM_SCI
+WRAPPER(VkSemaphoreSciSyncPoolNV)
+#endif
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
 
@@ -3273,4 +3282,30 @@ void PostCallRecordCmdSetColorWriteEnableEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkBool32*                             pColorWriteEnables) override;
+
+#ifdef VK_USE_PLATFORM_SCI
+
+void PreCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool) override;
+
+void PostCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool,
+    VkResult                                    result) override;
+
+void PreCallRecordDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) override;
+
+void PostCallRecordDestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) override;
+#endif // VK_USE_PLATFORM_SCI
 };

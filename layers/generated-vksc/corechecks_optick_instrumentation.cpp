@@ -4411,4 +4411,40 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetColorWriteEnableEXT(VkCom
     CoreChecks::PostCallRecordCmdSetColorWriteEnableEXT(commandBuffer, attachmentCount, pColorWriteEnables);
 }
 
+#ifdef VK_USE_PLATFORM_SCI
+bool CoreChecksOptickInstrumented::PreCallValidateCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool, result);
+}
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+bool CoreChecksOptickInstrumented::PreCallValidateDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+}
+
+#endif // VK_USE_PLATFORM_SCI
 #endif // INSTRUMENT_OPTICK

@@ -5746,6 +5746,7 @@ VKAPI_ATTR void VKAPI_CALL CmdResolveImage2KHR(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL ReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display) {
@@ -7050,6 +7051,55 @@ VKAPI_ATTR void                                    VKAPI_CALL CmdSetColorWriteEn
 }
 
 
+#ifdef VK_USE_PLATFORM_SCI
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCreateSemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+        if (skip) return VK_ERROR_VALIDATION_FAILED;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCreateSemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+    }
+    VkResult result = DispatchCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCreateSemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCreateSemaphoreSciSyncPoolNV(device, pCreateInfo, pAllocator, pSemaphorePool, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroySemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    VkSemaphoreSciSyncPoolNV                    semaphorePool,
+    const VkAllocationCallbacks*                pAllocator) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateDestroySemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+        if (skip) return;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordDestroySemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+    }
+    DispatchDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordDestroySemaphoreSciSyncPoolNV]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordDestroySemaphoreSciSyncPoolNV(device, semaphorePool, pAllocator);
+    }
+}
+#endif // VK_USE_PLATFORM_SCI
+
 // Map of intercepted ApiName to its associated function data
 #ifdef _MSC_VER
 #pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
@@ -7349,6 +7399,12 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdSetLogicOpEXT", {kFuncTypeDev, (void*)CmdSetLogicOpEXT}},
     {"vkCmdSetPrimitiveRestartEnableEXT", {kFuncTypeDev, (void*)CmdSetPrimitiveRestartEnableEXT}},
     {"vkCmdSetColorWriteEnableEXT", {kFuncTypeDev, (void*)CmdSetColorWriteEnableEXT}},
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkCreateSemaphoreSciSyncPoolNV", {kFuncTypeDev, (void*)CreateSemaphoreSciSyncPoolNV}},
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    {"vkDestroySemaphoreSciSyncPoolNV", {kFuncTypeDev, (void*)DestroySemaphoreSciSyncPoolNV}},
+#endif
 };
 
 

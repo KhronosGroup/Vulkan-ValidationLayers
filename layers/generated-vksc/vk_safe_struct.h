@@ -5573,7 +5573,7 @@ struct safe_VkImportFenceSciSyncInfoNV {
     const void* pNext;
     VkFence fence;
     VkExternalFenceHandleTypeFlagBits handleType;
-    const void* handle;
+    void* handle;
     safe_VkImportFenceSciSyncInfoNV(const VkImportFenceSciSyncInfoNV* in_struct);
     safe_VkImportFenceSciSyncInfoNV(const safe_VkImportFenceSciSyncInfoNV& copy_src);
     safe_VkImportFenceSciSyncInfoNV& operator=(const safe_VkImportFenceSciSyncInfoNV& copy_src);
@@ -5645,7 +5645,7 @@ struct safe_VkImportSemaphoreSciSyncInfoNV {
     const void* pNext;
     VkSemaphore semaphore;
     VkExternalSemaphoreHandleTypeFlagBits handleType;
-    const void* handle;
+    void* handle;
     safe_VkImportSemaphoreSciSyncInfoNV(const VkImportSemaphoreSciSyncInfoNV* in_struct);
     safe_VkImportSemaphoreSciSyncInfoNV(const safe_VkImportSemaphoreSciSyncInfoNV& copy_src);
     safe_VkImportSemaphoreSciSyncInfoNV& operator=(const safe_VkImportSemaphoreSciSyncInfoNV& copy_src);
@@ -5849,3 +5849,75 @@ struct safe_VkApplicationParametersEXT {
     VkApplicationParametersEXT *ptr() { return reinterpret_cast<VkApplicationParametersEXT *>(this); }
     VkApplicationParametersEXT const *ptr() const { return reinterpret_cast<VkApplicationParametersEXT const *>(this); }
 };
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkPhysicalDeviceExternalSciSync2FeaturesNV {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 sciSyncFence;
+    VkBool32 sciSyncSemaphore2;
+    VkBool32 sciSyncImport;
+    VkBool32 sciSyncExport;
+    safe_VkPhysicalDeviceExternalSciSync2FeaturesNV(const VkPhysicalDeviceExternalSciSync2FeaturesNV* in_struct);
+    safe_VkPhysicalDeviceExternalSciSync2FeaturesNV(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& operator=(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV& copy_src);
+    safe_VkPhysicalDeviceExternalSciSync2FeaturesNV();
+    ~safe_VkPhysicalDeviceExternalSciSync2FeaturesNV();
+    void initialize(const VkPhysicalDeviceExternalSciSync2FeaturesNV* in_struct);
+    void initialize(const safe_VkPhysicalDeviceExternalSciSync2FeaturesNV* copy_src);
+    VkPhysicalDeviceExternalSciSync2FeaturesNV *ptr() { return reinterpret_cast<VkPhysicalDeviceExternalSciSync2FeaturesNV *>(this); }
+    VkPhysicalDeviceExternalSciSync2FeaturesNV const *ptr() const { return reinterpret_cast<VkPhysicalDeviceExternalSciSync2FeaturesNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkSemaphoreSciSyncPoolCreateInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    NvSciSyncObj handle;
+    safe_VkSemaphoreSciSyncPoolCreateInfoNV(const VkSemaphoreSciSyncPoolCreateInfoNV* in_struct);
+    safe_VkSemaphoreSciSyncPoolCreateInfoNV(const safe_VkSemaphoreSciSyncPoolCreateInfoNV& copy_src);
+    safe_VkSemaphoreSciSyncPoolCreateInfoNV& operator=(const safe_VkSemaphoreSciSyncPoolCreateInfoNV& copy_src);
+    safe_VkSemaphoreSciSyncPoolCreateInfoNV();
+    ~safe_VkSemaphoreSciSyncPoolCreateInfoNV();
+    void initialize(const VkSemaphoreSciSyncPoolCreateInfoNV* in_struct);
+    void initialize(const safe_VkSemaphoreSciSyncPoolCreateInfoNV* copy_src);
+    VkSemaphoreSciSyncPoolCreateInfoNV *ptr() { return reinterpret_cast<VkSemaphoreSciSyncPoolCreateInfoNV *>(this); }
+    VkSemaphoreSciSyncPoolCreateInfoNV const *ptr() const { return reinterpret_cast<VkSemaphoreSciSyncPoolCreateInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkSemaphoreSciSyncCreateInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphoreSciSyncPoolNV semaphorePool;
+    const NvSciSyncFence* pFence;
+    safe_VkSemaphoreSciSyncCreateInfoNV(const VkSemaphoreSciSyncCreateInfoNV* in_struct);
+    safe_VkSemaphoreSciSyncCreateInfoNV(const safe_VkSemaphoreSciSyncCreateInfoNV& copy_src);
+    safe_VkSemaphoreSciSyncCreateInfoNV& operator=(const safe_VkSemaphoreSciSyncCreateInfoNV& copy_src);
+    safe_VkSemaphoreSciSyncCreateInfoNV();
+    ~safe_VkSemaphoreSciSyncCreateInfoNV();
+    void initialize(const VkSemaphoreSciSyncCreateInfoNV* in_struct);
+    void initialize(const safe_VkSemaphoreSciSyncCreateInfoNV* copy_src);
+    VkSemaphoreSciSyncCreateInfoNV *ptr() { return reinterpret_cast<VkSemaphoreSciSyncCreateInfoNV *>(this); }
+    VkSemaphoreSciSyncCreateInfoNV const *ptr() const { return reinterpret_cast<VkSemaphoreSciSyncCreateInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI
+
+#ifdef VK_USE_PLATFORM_SCI
+struct safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t semaphoreSciSyncPoolRequestCount;
+    safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV(const VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* in_struct);
+    safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& copy_src);
+    safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& operator=(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV& copy_src);
+    safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV();
+    ~safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV();
+    void initialize(const VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* in_struct);
+    void initialize(const safe_VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV* copy_src);
+    VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV *ptr() { return reinterpret_cast<VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV *>(this); }
+    VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV const *ptr() const { return reinterpret_cast<VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV const *>(this); }
+};
+#endif // VK_USE_PLATFORM_SCI

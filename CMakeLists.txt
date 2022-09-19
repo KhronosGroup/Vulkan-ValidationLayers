@@ -45,6 +45,14 @@ option(VULKANSC "User defined variable for VulkanSC Mode to be passed in through
 if (VULKANSC)
     set(API_NAME "VulkanSC" CACHE STRING "API name to use when building")
     add_definitions(-DVULKANSC)
+    # Temp : define VK_USE_PLATFORM_SCI unconditionally when building
+    # for Vulkan SC. VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV is
+    # currently protected by an ifdef VK_USE_PLATFORM_SCI in Vulkan SC
+    # headers and will cause build errors if not defined. Conditional
+    # can be added back when headers are fixed.
+    #if(BUILD_WSI_SCI_SUPPORT)
+        add_definitions(-DVK_USE_PLATFORM_SCI)
+    #endif()
     set(GENERATED_DIR "generated-vksc")
 else()
     set(API_NAME "Vulkan" CACHE STRING "API name to use when building")

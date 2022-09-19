@@ -2935,6 +2935,50 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_APPLICATION_PARAMETERS_EXT> {
     typedef VkApplicationParametersEXT Type;
 };
 
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkPhysicalDeviceExternalSciSync2FeaturesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV
+template <> struct LvlTypeMap<VkPhysicalDeviceExternalSciSync2FeaturesNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SCI_SYNC_2_FEATURES_NV> {
+    typedef VkPhysicalDeviceExternalSciSync2FeaturesNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkSemaphoreSciSyncPoolCreateInfoNV to id VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_POOL_CREATE_INFO_NV
+template <> struct LvlTypeMap<VkSemaphoreSciSyncPoolCreateInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_POOL_CREATE_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_POOL_CREATE_INFO_NV> {
+    typedef VkSemaphoreSciSyncPoolCreateInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkSemaphoreSciSyncCreateInfoNV to id VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV
+template <> struct LvlTypeMap<VkSemaphoreSciSyncCreateInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_SCI_SYNC_CREATE_INFO_NV> {
+    typedef VkSemaphoreSciSyncCreateInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+// Map type VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV to id VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV
+template <> struct LvlTypeMap<VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_SEMAPHORE_SCI_SYNC_POOL_RESERVATION_CREATE_INFO_NV> {
+    typedef VkDeviceSemaphoreSciSyncPoolReservationCreateInfoNV Type;
+};
+
+#endif // VK_USE_PLATFORM_SCI
 // Find an entry of the given type in the pNext chain
 template <typename T> const T *LvlFindInChain(const void *next) {
     const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);

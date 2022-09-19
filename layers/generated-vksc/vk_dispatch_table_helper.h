@@ -199,6 +199,12 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBiasEnableEXT(VkCommandBuffer c
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) {  };
 static VKAPI_ATTR void                                    VKAPI_CALL StubCmdSetColorWriteEnableEXT(VkCommandBuffer       commandBuffer, uint32_t                                attachmentCount, const VkBool32*   pColorWriteEnables) {  };
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateSemaphoreSciSyncPoolNV(VkDevice device, const VkSemaphoreSciSyncPoolCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkSemaphoreSciSyncPoolNV* pSemaphorePool) { return VK_SUCCESS; };
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+static VKAPI_ATTR void VKAPI_CALL StubDestroySemaphoreSciSyncPoolNV(VkDevice device, VkSemaphoreSciSyncPoolNV semaphorePool, const VkAllocationCallbacks* pAllocator) {  };
+#endif // VK_USE_PLATFORM_SCI
 
 
 
@@ -345,6 +351,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkCreateRenderPass2KHR", "VK_KHR_create_renderpass2"},
     {"vkCreateSamplerYcbcrConversion", "VK_VERSION_1_1"},
     {"vkCreateSamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion"},
+    {"vkCreateSemaphoreSciSyncPoolNV", "VK_NV_external_sci_sync2"},
     {"vkCreateSharedSwapchainsKHR", "VK_KHR_display_swapchain"},
     {"vkCreateSwapchainKHR", "VK_KHR_swapchain"},
     {"vkCreateValidationCacheEXT", "VK_EXT_validation_cache"},
@@ -365,6 +372,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkDestroyPrivateDataSlotEXT", "VK_EXT_private_data"},
     {"vkDestroySamplerYcbcrConversion", "VK_VERSION_1_1"},
     {"vkDestroySamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion"},
+    {"vkDestroySemaphoreSciSyncPoolNV", "VK_NV_external_sci_sync2"},
     {"vkDestroySwapchainKHR", "VK_KHR_swapchain"},
     {"vkDestroyValidationCacheEXT", "VK_EXT_validation_cache"},
     {"vkDestroyVideoSessionKHR", "VK_KHR_video_queue"},
@@ -851,6 +859,14 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdSetPrimitiveRestartEnableEXT == nullptr) { table->CmdSetPrimitiveRestartEnableEXT = (PFN_vkCmdSetPrimitiveRestartEnableEXT)StubCmdSetPrimitiveRestartEnableEXT; }
     table->CmdSetColorWriteEnableEXT = (PFN_vkCmdSetColorWriteEnableEXT) gpa(device, "vkCmdSetColorWriteEnableEXT");
     if (table->CmdSetColorWriteEnableEXT == nullptr) { table->CmdSetColorWriteEnableEXT = (PFN_vkCmdSetColorWriteEnableEXT)StubCmdSetColorWriteEnableEXT; }
+#ifdef VK_USE_PLATFORM_SCI
+    table->CreateSemaphoreSciSyncPoolNV = (PFN_vkCreateSemaphoreSciSyncPoolNV) gpa(device, "vkCreateSemaphoreSciSyncPoolNV");
+    if (table->CreateSemaphoreSciSyncPoolNV == nullptr) { table->CreateSemaphoreSciSyncPoolNV = (PFN_vkCreateSemaphoreSciSyncPoolNV)StubCreateSemaphoreSciSyncPoolNV; }
+#endif // VK_USE_PLATFORM_SCI
+#ifdef VK_USE_PLATFORM_SCI
+    table->DestroySemaphoreSciSyncPoolNV = (PFN_vkDestroySemaphoreSciSyncPoolNV) gpa(device, "vkDestroySemaphoreSciSyncPoolNV");
+    if (table->DestroySemaphoreSciSyncPoolNV == nullptr) { table->DestroySemaphoreSciSyncPoolNV = (PFN_vkDestroySemaphoreSciSyncPoolNV)StubDestroySemaphoreSciSyncPoolNV; }
+#endif // VK_USE_PLATFORM_SCI
 }
 
 

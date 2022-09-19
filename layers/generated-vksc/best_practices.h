@@ -955,11 +955,24 @@ void PostCallRecordGetPhysicalDeviceSciBufAttributesNV(
 
 #endif // VK_USE_PLATFORM_SCI
 
+#ifdef VK_USE_PLATFORM_SCI
+
+void PostCallRecordCreateSemaphoreSciSyncPoolNV(
+    VkDevice                                    device,
+    const VkSemaphoreSciSyncPoolCreateInfoNV*   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkSemaphoreSciSyncPoolNV*                   pSemaphorePool,
+    VkResult                                    result) override;
+
+
+#endif // VK_USE_PLATFORM_SCI
+
 
 
 
 
 const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extensions = {
+    {"VK_NV_external_sci_sync", {kExtDeprecated, "VK_NV_external_sci_sync2"}},
 };
 
 const layer_data::unordered_map<std::string, std::string> special_use_extensions = {

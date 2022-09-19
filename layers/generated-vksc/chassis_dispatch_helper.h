@@ -656,6 +656,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetColorWriteEnableEXT,
     InterceptIdPreCallRecordCmdSetColorWriteEnableEXT,
     InterceptIdPostCallRecordCmdSetColorWriteEnableEXT,
+    InterceptIdPreCallValidateCreateSemaphoreSciSyncPoolNV,
+    InterceptIdPreCallRecordCreateSemaphoreSciSyncPoolNV,
+    InterceptIdPostCallRecordCreateSemaphoreSciSyncPoolNV,
+    InterceptIdPreCallValidateDestroySemaphoreSciSyncPoolNV,
+    InterceptIdPreCallRecordDestroySemaphoreSciSyncPoolNV,
+    InterceptIdPostCallRecordDestroySemaphoreSciSyncPoolNV,
     InterceptIdCount,
 } InterceptId;
 
@@ -1401,5 +1407,15 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetColorWriteEnableEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetColorWriteEnableEXT);
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateSemaphoreSciSyncPoolNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateSemaphoreSciSyncPoolNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateSemaphoreSciSyncPoolNV);
+#endif
+#ifdef VK_USE_PLATFORM_SCI
+    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySemaphoreSciSyncPoolNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySemaphoreSciSyncPoolNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySemaphoreSciSyncPoolNV);
+#endif
 };
 

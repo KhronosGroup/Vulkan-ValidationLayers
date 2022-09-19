@@ -67,7 +67,8 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeDisplayKHR = 28,
     kVulkanObjectTypeDisplayModeKHR = 29,
     kVulkanObjectTypeDebugUtilsMessengerEXT = 30,
-    kVulkanObjectTypeMax = 31,
+    kVulkanObjectTypeSemaphoreSciSyncPoolNV = 31,
+    kVulkanObjectTypeMax = 32,
     // Aliases for backwards compatibilty of "promoted" types
 } VulkanObjectType;
 
@@ -104,6 +105,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkDisplayKHR",
     "VkDisplayModeKHR",
     "VkDebugUtilsMessengerEXT",
+    "VkSemaphoreSciSyncPoolNV",
 };
 
 // Helper function to get Official Vulkan VkObjectType enum from the internal layers version
@@ -139,6 +141,7 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeDisplayKHR: return VK_OBJECT_TYPE_DISPLAY_KHR;
         case kVulkanObjectTypeDisplayModeKHR: return VK_OBJECT_TYPE_DISPLAY_MODE_KHR;
         case kVulkanObjectTypeDebugUtilsMessengerEXT: return VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+        case kVulkanObjectTypeSemaphoreSciSyncPoolNV: return VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
 };
@@ -176,6 +179,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_DISPLAY_KHR: return kVulkanObjectTypeDisplayKHR;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR: return kVulkanObjectTypeDisplayModeKHR;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT: return kVulkanObjectTypeDebugUtilsMessengerEXT;
+        case VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV: return kVulkanObjectTypeSemaphoreSciSyncPoolNV;
         default: return kVulkanObjectTypeUnknown;
     }
 };
@@ -483,6 +487,18 @@ template <> struct VkHandleInfo<VkSemaphore> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeSemaphore> {
     typedef VkSemaphore Type;
 };
+#ifdef VK_USE_PLATFORM_SCI
+template <> struct VkHandleInfo<VkSemaphoreSciSyncPoolNV> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeSemaphoreSciSyncPoolNV;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV;
+    static const char* Typename() {
+        return "VkSemaphoreSciSyncPoolNV";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeSemaphoreSciSyncPoolNV> {
+    typedef VkSemaphoreSciSyncPoolNV Type;
+};
+#endif
 template <> struct VkHandleInfo<VkSurfaceKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeSurfaceKHR;
     static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_SURFACE_KHR;
