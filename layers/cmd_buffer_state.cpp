@@ -562,6 +562,13 @@ void CMD_BUFFER_STATE::EndQuery(const QueryObject &query_obj) {
     updatedQueries.insert(query_obj);
 }
 
+bool CMD_BUFFER_STATE::UpdatesQuery(const QueryObject &query_obj) const {
+    // Clear out the perf_pass from the caller because it isn't known when the command buffer is recorded.
+    auto key = query_obj;
+    key.perf_pass = 0;
+    return updatedQueries.find(key) != updatedQueries.end();
+}
+
 static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
                                QueryMap *localQueryToStateMap) {
     for (uint32_t i = 0; i < queryCount; i++) {

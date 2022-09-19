@@ -135,12 +135,15 @@ void QUEUE_STATE::Retire(uint64_t until_seq) {
 
         auto is_query_updated_after = [this](const QueryObject &query_object) {
             for (const auto &submission : submissions_) {
+                if (query_object.perf_pass != submission.perf_submit_pass) {
+                    continue;
+                }
                 for (uint32_t j = 0; j < submission.cbs.size(); ++j) {
                     const auto &next_cb_node = submission.cbs[j];
                     if (!next_cb_node) {
                         continue;
                     }
-                    if (next_cb_node->updatedQueries.find(query_object) != next_cb_node->updatedQueries.end()) {
+                    if (next_cb_node->UpdatesQuery(query_object)) {
                         return true;
                     }
                 }
