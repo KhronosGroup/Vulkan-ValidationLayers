@@ -287,7 +287,7 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     cb_state_ = from.cb_state_;
     queue_flags_ = from.queue_flags_;
     destroyed_ = from.destroyed_;
-    access_log_ = from.access_log_;  // potentially large, but no choice given tagging lookup.
+    access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
     command_number_ = from.command_number_;
     subcommand_number_ = from.subcommand_number_;
     reset_count_ = from.reset_count_;
@@ -310,11 +310,11 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
 }
 
 std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) const {
-    if (tag >= access_log_.size()) return std::string();
+    if (tag >= access_log_->size()) return std::string();
 
     std::stringstream out;
-    assert(tag < access_log_.size());
-    const auto &record = access_log_[tag];
+    assert(tag < access_log_->size());
+    const auto &record = (*access_log_)[tag];
     out << record;
     if (cb_state_.get() != record.cb_state) {
         out << ", " << SyncNodeFormatter(*sync_state_, record.cb_state);
@@ -835,6 +835,25 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
     if (subpass_dep.barrier_to_external.size()) {
         dst_external_ = TrackBack(this, queue_flags, subpass_dep.barrier_to_external);
     }
+}
+
+void AccessContext::Trim() {
+    auto normalize = [](AccessAddressType address_type, ResourceAccessRangeMap::value_type &access) { access.second.Normalize(); };
+    ForAll(normalize);
+
+    // TODO consolidate map after normalization
+#if 0
+    for (auto& map : access_state_maps_) {
+        map.consolidate();
+    }
+#endif
+}
+
+void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
+    auto gather = [&used](AccessAddressType address_type, const ResourceAccessRangeMap::value_type &access) {
+        access.second.GatherReferencedTags(used);
+    };
+    ConstForAll(gather);
 }
 
 template <typename Detector>
@@ -2479,21 +2498,21 @@ ResourceUsageRange CommandExecutionContext::ImportRecordedAccessLog(const Comman
 }
 
 void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &recorded_context) {
-    cbs_referenced_.emplace(recorded_context.GetCBStateShared());
-    access_log_.insert(access_log_.end(), recorded_context.access_log_.cbegin(), recorded_context.access_log_.end());
+    cbs_referenced_->emplace(recorded_context.GetCBStateShared());
+    access_log_->insert(access_log_->end(), recorded_context.access_log_->cbegin(), recorded_context.access_log_->cend());
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
-    ResourceUsageTag next = access_log_.size();
-    access_log_.emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_.get(), reset_count_);
+    ResourceUsageTag next = access_log_->size();
+    access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_.get(), reset_count_);
     return next;
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
     command_number_++;
     subcommand_number_ = 0;
-    ResourceUsageTag next = access_log_.size();
-    access_log_.emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_.get(), reset_count_);
+    ResourceUsageTag next = access_log_->size();
+    access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_.get(), reset_count_);
     return next;
 }
 
@@ -3453,6 +3472,19 @@ void ResourceAccessState::ClearRead() {
     last_read_stages = VK_PIPELINE_STAGE_2_NONE;
 }
 
+void ResourceAccessState::ClearPending() {
+    pending_write_dep_chain = VK_PIPELINE_STAGE_2_NONE;
+    pending_layout_transition = false;
+    pending_write_barriers.reset();
+    pending_layout_ordering_ = OrderingBarrier();
+}
+
+void ResourceAccessState::ClearFirstUse() {
+    first_accesses_.clear();
+    first_read_stages_ = VK_PIPELINE_STAGE_2_NONE;
+    first_write_layout_ordering_ = OrderingBarrier();
+}
+
 // Apply the memory barrier without updating the existing barriers.  The execution barrier
 // changes the "chaining" state, but to keep barriers independent, we defer this until all barriers
 // of the batch have been processed. Also, depending on whether layout transition happens, we'll either
@@ -3711,6 +3743,39 @@ bool ResourceAccessState::WriteInChainedScope(VkPipelineStageFlags2KHR src_exec_
     return WriteInChain(src_exec_scope) && WriteBarrierInScope(src_access_scope);
 }
 
+// As ReadStates must be unique by stage, this is as good a sort as needed
+bool operator<(const ResourceAccessState::ReadState &lhs, const ResourceAccessState::ReadState &rhs) {
+    return lhs.stage < rhs.stage;
+}
+
+void ResourceAccessState::Normalize() {
+    if (!last_write.any()) {
+        ClearWrite();
+    }
+    if (!last_reads.size()) {
+        ClearRead();
+    } else {
+        // Sort the reads in stage order for consistent comparisons
+        std::sort(last_reads.begin(), last_reads.end());
+        for (auto &read_access : last_reads) {
+            read_access.Normalize();
+        }
+    }
+
+    ClearPending();
+    ClearFirstUse();
+}
+
+void ResourceAccessState::GatherReferencedTags(ResourceUsageTagSet &used) const {
+    if (last_write.any()) {
+        used.insert(write_tag);
+    }
+
+    for (const auto &read_access : last_reads) {
+        used.insert(read_access.tag);
+    }
+}
+
 bool ResourceAccessState::IsRAWHazard(VkPipelineStageFlags2KHR usage_stage, const SyncStageAccessFlags &usage) const {
     assert(IsRead(usage));
     // Only RAW vs. last_write if it doesn't happen-after any other read because either:
@@ -3900,10 +3965,9 @@ struct QueueSubmitCmdState {
     std::shared_ptr<const QueueSyncState> queue;
     std::shared_ptr<QueueBatchContext> last_batch;
     std::string submit_func_name;
-    AccessLogger logger;
     SignaledSemaphores signaled;
-    QueueSubmitCmdState(const char *func_name, const AccessLogger &parent_log, const SignaledSemaphores &parent_semaphores)
-        : submit_func_name(func_name), logger(&parent_log), signaled(parent_semaphores) {}
+    QueueSubmitCmdState(const char *func_name, const SignaledSemaphores &parent_semaphores)
+        : submit_func_name(func_name), signaled(parent_semaphores) {}
 };
 
 bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, QueueSubmitCmdState &cmd_state,
@@ -3912,7 +3976,10 @@ bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, Q
 
     //  For each submit in the batch...
     for (const auto &cb : command_buffers_) {
-        if (cb.cb->GetTagLimit() == 0) continue;  // Skip empty CB's
+        if (cb.cb->GetTagLimit() == 0) {
+            batch_.cb_index++;
+            continue;  // Skip empty CB's but also skip the unused index for correct reporting
+        }
         skip |= cb.cb->ValidateFirstUse(*this, cmd_state.submit_func_name.c_str(), cb.index);
 
         // The barriers have already been applied in ValidatFirstUse
@@ -6162,6 +6229,12 @@ bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineSt
     return has_barrier;
 }
 
+void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {
+    if (first_scope) {
+        first_scope->AddReferencedTags(referenced);
+    }
+}
+
 SyncOpBarriers::SyncOpBarriers(CMD_TYPE cmd_type, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                                VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount,
@@ -6994,8 +7067,10 @@ void SyncOpSetEvent::ReplayRecord(CommandExecutionContext &exec_context, Resourc
     AccessContext *access_context = exec_context.GetCurrentAccessContext();
     const QueueId queue_id = exec_context.GetQueueId();
 
+    // Note: merged_context is a copy of the access_context, combined with the recorded context
     auto merged_context = std::make_shared<AccessContext>(*access_context);
     merged_context->ResolveFromContext(QueueTagOffsetBarrierAction(queue_id, tag), *recorded_context_);
+    merged_context->Trim();  // Ensure the copy is minimal and normalized
     DoRecord(queue_id, tag, merged_context, events_context);
 }
 
@@ -7279,7 +7354,7 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     // Since this early return is above the TlsGuard, the Record phase must also be.
     if (!enabled[sync_validation_queue_submit]) return skip;
 
-    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, global_access_log_, signaled_semaphores_);
+    layer_data::TlsGuard<QueueSubmitCmdState> cmd_state(&skip, func_name, signaled_semaphores_);
     cmd_state->queue = GetQueueSyncStateShared(queue);
     if (!cmd_state->queue) return skip;  // Invalid Queue
 
@@ -7293,14 +7368,13 @@ bool SyncValidator::ValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
     std::shared_ptr<QueueBatchContext> batch;
     for (uint32_t batch_idx = 0; batch_idx < submitCount; batch_idx++) {
         const VkSubmitInfo2 &submit = pSubmits[batch_idx];
-        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue);
+        batch = std::make_shared<QueueBatchContext>(*this, *cmd_state->queue, submit_id, batch_idx);
         batch->SetupCommandBufferInfo(submit);
         batch->SetupAccessContext(last_batch, submit, cmd_state->signaled);
 
         // Skip import and validation of empty batches
         if (batch->GetTagRange().size()) {
-            batch->SetBatchLog(cmd_state->logger, submit_id, batch_idx);
-
+            batch->SetupBatchTags();
             skip |= batch->DoQueueSubmitValidate(*this, *cmd_state, submit);
         }
 
@@ -7352,10 +7426,11 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
     for (auto &sig_sem : cmd_state->signaled) {
         if (sig_sem.second && sig_sem.second->batch) {
             auto &sig_batch = sig_sem.second->batch;
-            sig_batch->ResetAccessLog();
             // Batches retained for signalled semaphore don't need to retain event data, unless it's the last batch in the submit
             if (sig_batch != cmd_state->last_batch) {
                 sig_batch->ResetEventsContext();
+                // Make sure that retained batches are minimal, and trim after the events contexts has been cleared.
+                sig_batch->Trim();
             }
         }
         signaled_semaphores_.Import(sig_sem.first, std::move(sig_sem.second));
@@ -7364,19 +7439,15 @@ void SyncValidator::RecordQueueSubmit(VkQueue queue, VkFence fence, VkResult res
 
     // Update the queue to point to the last batch from the submit
     if (cmd_state->last_batch) {
-        cmd_state->last_batch->ResetAccessLog();
-
         // Clean up the events data in the previous last batch on queue, as only the subsequent batches have valid use for them
         // and the QueueBatchContext::Setup calls have be copying them along from batch to batch during submit.
         auto last_batch = queue_state->LastBatch();
         if (last_batch) {
             last_batch->ResetEventsContext();
         }
+        cmd_state->last_batch->Trim();
         queue_state->SetLastBatch(std::move(cmd_state->last_batch));
     }
-
-    // Update the global access log from the one built during validation
-    global_access_log_.MergeMove(std::move(cmd_state->logger));
 
     ResourceUsageRange fence_tag_range = ReserveGlobalTagRange(1U);
     UpdateFenceWaitInfo(fence, queue_state->GetQueueId(), fence_tag_range.begin);
@@ -7527,12 +7598,37 @@ SyncEventsContext &SyncEventsContext::DeepCopy(const SyncEventsContext &from) {
     return *this;
 }
 
-QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state)
+void SyncEventsContext::AddReferencedTags(ResourceUsageTagSet &referenced) const {
+    for (const auto &event : map_) {
+        const std::shared_ptr<const SyncEventState> &event_state = event.second;
+        if (event_state) {
+            event_state->AddReferencedTags(referenced);
+        }
+    }
+}
+
+QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const QueueSyncState &queue_state, uint64_t submit_index,
+                                     uint32_t batch_index)
     : CommandExecutionContext(&sync_state),
       queue_state_(&queue_state),
       tag_range_(0, 0),
       current_access_context_(&access_context_),
-      batch_log_(nullptr) {}
+      batch_log_(),
+      batch_(queue_state, submit_index, batch_index) {}
+
+void QueueBatchContext::Trim() {
+    // Clean up unneeded access context contents and log information
+    access_context_.Trim();
+
+    ResourceUsageTagSet used_tags;
+    access_context_.AddReferencedTags(used_tags);
+
+    // Note: AccessContexts in the SyncEventsState are trimmed when created.
+    events_context_.AddReferencedTags(used_tags);
+
+    // Only conserve AccessLog references that are referenced by used_tags
+    batch_log_.Trim(used_tags);
+}
 
 void QueueBatchContext::ResolveSubmittedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset) {
     GetCurrentAccessContext()->ResolveFromContext(QueueTagOffsetBarrierAction(GetQueueId(), offset), recorded_context);
@@ -7671,15 +7767,23 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
     // If there are no semaphores to the previous batch, make sure a "submit order" non-barriered import is done
     if (prev && !layer_data::Contains(batches_resolved, prev)) {
         access_context_.ResolveFromContext(NoopBarrierAction(), prev->access_context_);
+        batches_resolved.emplace(prev);
+    }
+
+    // Get all the log information for the resolved contexts
+    for (const auto &batch : batches_resolved) {
+        batch_log_.Import(batch->batch_log_);
     }
 
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
     async_batches_ =
-        sync_state_->GetQueueLastBatchSnapshot([&batches_resolved, &prev](const std::shared_ptr<const QueueBatchContext> &batch) {
-            return (batch != prev) && !layer_data::Contains(batches_resolved, batch);
+        sync_state_->GetQueueLastBatchSnapshot([&batches_resolved](const std::shared_ptr<const QueueBatchContext> &batch) {
+            return !layer_data::Contains(batches_resolved, batch);
         });
     for (const auto &async_batch : async_batches_) {
         access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext());
+        // We need to snapshot the async log information for async hazard reporting
+        batch_log_.Import(async_batch->batch_log_);
     }
 }
 
@@ -7700,11 +7804,10 @@ void QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info)
 
 // Look up the usage informaiton from the local or global logger
 std::string QueueBatchContext::FormatUsage(ResourceUsageTag tag) const {
-    const AccessLogger &use_logger = (logger_) ? *logger_ : sync_state_->global_access_log_;
     std::stringstream out;
-    AccessLogger::AccessRecord access = use_logger[tag];
+    BatchAccessLog::AccessRecord access = batch_log_[tag];
     if (access.IsValid()) {
-        const AccessLogger::BatchRecord &batch = *access.batch;
+        const BatchAccessLog::BatchRecord &batch = *access.batch;
         const ResourceUsageRecord &record = *access.record;
         // Queue and Batch information
         out << SyncNodeFormatter(*sync_state_, batch.queue->GetQueueState());
@@ -7725,18 +7828,16 @@ QueueId QueueBatchContext::GetQueueId() const {
     return id;
 }
 
-void QueueBatchContext::SetBatchLog(AccessLogger &logger, uint64_t submit_id, uint32_t batch_id) {
+void QueueBatchContext::SetupBatchTags() {
     // Need new global tags for all accesses... the Reserve updates a mutable atomic
     ResourceUsageRange global_tags = sync_state_->ReserveGlobalTagRange(GetTagRange().size());
     SetTagBias(global_tags.begin);
-    // Add an access log for the batches range and point the batch at it.
-    logger_ = &logger;
-    batch_log_ = logger.AddBatch(queue_state_, submit_id, batch_id, global_tags);
 }
 
 void QueueBatchContext::InsertRecordedAccessLogEntries(const CommandBufferAccessContext &submitted_cb) {
-    assert(batch_log_);  // Don't import command buffer contexts until you've set up the log for the batch context
-    batch_log_->Append(submitted_cb.GetAccessLog());
+    const ResourceUsageTag end_tag = batch_log_.Import(batch_, submitted_cb);
+    batch_.bias = end_tag;
+    batch_.cb_index++;
 }
 
 void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
@@ -7744,28 +7845,7 @@ void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
     tag_range_.begin = bias;
     tag_range_.end = bias + size;
     access_context_.SetStartTag(bias);
-}
-
-AccessLogger::BatchLog *AccessLogger::AddBatch(const QueueSyncState *queue_state, uint64_t submit_id, uint32_t batch_id,
-                                               const ResourceUsageRange &range) {
-    const auto inserted = access_log_map_.insert(std::make_pair(range, BatchLog(BatchRecord(queue_state, submit_id, batch_id))));
-    assert(inserted.second);
-    return &inserted.first->second;
-}
-
-void AccessLogger::MergeMove(AccessLogger &&child) {
-    for (auto &range : child.access_log_map_) {
-        BatchLog &child_batch = range.second;
-        auto insert_pair = access_log_map_.insert(std::make_pair(range.first, BatchLog()));
-        insert_pair.first->second = std::move(child_batch);
-        assert(insert_pair.second);
-    }
-    child.Reset();
-}
-
-void AccessLogger::Reset() {
-    prev_ = nullptr;
-    access_log_map_.clear();
+    batch_.bias = bias;
 }
 
 // Since we're updating the QueueSync state, this is Record phase and the access log needs to point to the global one
@@ -7774,7 +7854,6 @@ void AccessLogger::Reset() {
 //       the contexts Resolve all history from previous all contexts when created
 void QueueSyncState::SetLastBatch(std::shared_ptr<QueueBatchContext> &&last) {
     last_batch_ = std::move(last);
-    last_batch_->ResetAccessLog();
 }
 
 // Note that function is const, but updates mutable submit_index to allow Validate to create correct tagging for command invocation
@@ -7782,34 +7861,6 @@ void QueueSyncState::SetLastBatch(std::shared_ptr<QueueBatchContext> &&last) {
 // Given that queue submits are supposed to be externally synchronized for the same queue, this should safe without being
 // atomic... but as the ops are per submit, the performance cost is negible for the peace of mind.
 uint64_t QueueSyncState::ReserveSubmitId() const { return submit_index_.fetch_add(1); }
-
-void AccessLogger::BatchLog::Append(const CommandExecutionContext::AccessLog &other) {
-    log_.insert(log_.end(), other.cbegin(), other.cend());
-    for (const auto &record : other) {
-        assert(record.cb_state);
-        cbs_referenced_.insert(record.cb_state->shared_from_this());
-    }
-}
-
-AccessLogger::AccessRecord AccessLogger::BatchLog::operator[](size_t index) const {
-    assert(index < log_.size());
-    return AccessRecord{&batch_, &log_[index]};
-}
-
-AccessLogger::AccessRecord AccessLogger::operator[](ResourceUsageTag tag) const {
-    AccessRecord access_record = {nullptr, nullptr};
-
-    auto found_range = access_log_map_.find(tag);
-    if (found_range != access_log_map_.cend()) {
-        const ResourceUsageTag bias = found_range->first.begin;
-        assert(tag >= bias);
-        access_record = found_range->second[tag - bias];
-    } else if (prev_) {
-        access_record = (*prev_)[tag];
-    }
-
-    return access_record;
-}
 
 // This is a const method, force the returned value to be const
 std::shared_ptr<const SignaledSemaphores::Signal> SignaledSemaphores::GetPrev(VkSemaphore sem) const {
@@ -7881,4 +7932,90 @@ SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo *inf
         info_store.emplace_back(infos[batch]);
         info2s.emplace_back(info_store.back().info2);
     }
+}
+
+ResourceUsageTag BatchAccessLog::Import(const BatchRecord &batch, const CommandBufferAccessContext &cb_access) {
+    ResourceUsageTag bias = batch.bias;
+    ResourceUsageTag tag_limit = bias + cb_access.GetTagLimit();
+    ResourceUsageRange import_range = {bias, tag_limit};
+    log_map_.insert(std::make_pair(import_range, CBSubmitLog(batch, cb_access)));
+    return tag_limit;
+}
+
+void BatchAccessLog::Import(const BatchAccessLog &other) {
+    for (const auto &entry : other.log_map_) {
+        log_map_.insert(entry);
+    }
+}
+
+// Trim: Remove any unreferenced AccessLog ranges from a BatchAccessLog
+//
+// In order to contain memory growth in the AccessLog information regarding prior submitted command buffers,
+// the Trim call removes any AccessLog references that do not correspond to any tags in use. The set of referenced tag, used_tags,
+// is generated by scanning the AccessContext and EventContext of the containing QueueBatchContext.
+//
+// Upon return the BatchAccessLog should only contain references to the AccessLog information needed by the
+// containing parent QueueBatchContext.
+//
+// The algorithm used is another example of the "parallel iteration" pattern common within SyncVal.  In this case we are
+// traversing the ordered range_map containing the AccessLog references and the ordered set of tags in use.
+//
+// To efficiently perform the parallel iteration, optimizations within this function include:
+//  * when ranges are detected that have no tags referenced, all ranges between the last tag and the current tag are erased
+//  * when used tags prior to the current range are found, all tags up to the current range are skipped
+//  * when a tag is found within the current range, that range is skipped (and thus kept in the map), and further used tags
+//    within the range are skipped.
+//
+// Note that for each subcase, any "next steps" logic is designed to be handled within the subsequent iteration -- meaning that
+// each subcase simply handles the specifics of the current update/skip/erase action needed, and leaves the iterators in a sensible
+// state for the top of loop... intentionally eliding special case handling.
+void BatchAccessLog::Trim(const ResourceUsageTagSet &used_tags) {
+    auto current_tag = used_tags.cbegin();
+    const auto end_tag = used_tags.cend();
+    auto current_map_range = log_map_.begin();
+    const auto end_map = log_map_.end();
+
+    while (current_map_range != end_map) {
+        if (current_tag == end_tag) {
+            // We're out of tags, the rest of the map isn't referenced, so erase it
+            current_map_range = log_map_.erase(current_map_range, end_map);
+        } else {
+            auto &range = current_map_range->first;
+            const ResourceUsageTag tag = *current_tag;
+            if (tag < range.begin) {
+                // Skip to the next tag potentially in range
+                // if this is end_tag, we'll handle that next iteration
+                current_tag = used_tags.lower_bound(range.begin);
+            } else if (tag >= range.end) {
+                // This tag is beyond the current range, delete all ranges between current_map_range,
+                // and the next that includes the tag.  Next is not erased.
+                auto next_used = log_map_.lower_bound(ResourceUsageRange(tag, tag + 1));
+                current_map_range = log_map_.erase(current_map_range, next_used);
+            } else {
+                // Skip the rest of the tags in this range
+                // If this is end, the next iteration will handle
+                current_tag = used_tags.lower_bound(range.end);
+
+                // This is a range we will keep, advance to the next. Next iteration handles end condition
+                ++current_map_range;
+            }
+        }
+    }
+}
+
+BatchAccessLog::AccessRecord BatchAccessLog::operator[](ResourceUsageTag tag) const {
+    auto found_log = log_map_.find(tag);
+    if (found_log != log_map_.cend()) {
+        return found_log->second[tag];
+    }
+    assert("tag not found" == nullptr);
+    return AccessRecord();
+}
+
+BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsageTag tag) const {
+    assert(tag >= batch_.bias);
+    const size_t index = tag - batch_.bias;
+    assert(log_);
+    assert(index < log_->size());
+    return AccessRecord{&batch_, &(*log_)[index]};
 }
