@@ -7164,21 +7164,31 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
         "supportedOperations, quadOperationsInAllStages.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    // Don't enable the extenion on purpose
-    const bool extension_support_partitioned =
-        DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    // 1.1 and up only.
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
-        printf("%s Vulkan 1.1 not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't support Vulkan 1.1+";
     }
+
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.vertexPipelineStoresAndAtomics == VK_FALSE) {
+        GTEST_SKIP() << "vertexPipelineStoresAndAtomics not supported";
+    }
+
+    features = {};
+    features.vertexPipelineStoresAndAtomics = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    // 1.1 and up only.
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Vulkan 1.1 not supported, skipping test";
+    }
+
+    // Don't enable the extension on purpose
+    const bool extension_support_partitioned =
+        DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Gather all aspects supported
     VkPhysicalDeviceSubgroupProperties subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
