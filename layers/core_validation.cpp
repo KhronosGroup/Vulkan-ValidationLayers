@@ -13331,6 +13331,8 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
                                              const VkFormat attachment_format, bool input, const char *error_type,
                                              const char *function_name) const {
     bool skip = false;
+    const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
+    const char *vuid;
 
     // Currently all VUs require attachment to not be UNUSED
     assert(reference.attachment != VK_ATTACHMENT_UNUSED);
@@ -13341,7 +13343,8 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
         case VK_IMAGE_LAYOUT_UNDEFINED:
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-            skip |= LogError(device, "VUID-VkAttachmentReference2-layout-03077",
+            vuid = (use_rp2) ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-03077";
+            skip |= LogError(device, vuid,
                              "%s: Layout for %s is %s but must not be VK_IMAGE_LAYOUT_[UNDEFINED|PREINITIALIZED|PRESENT_SRC_KHR].",
                              function_name, error_type, string_VkImageLayout(reference.layout));
             break;
@@ -13392,7 +13395,9 @@ bool CoreChecks::ValidateAttachmentReference(RenderPassCreateVersion rp_version,
         case VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR:
         case VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR:
             if (!enabled_features.core13.synchronization2) {
-                skip |= LogError(device, "VUID-VkAttachmentReference2-synchronization2-06910",
+                vuid = (use_rp2) ? "VUID-VkAttachmentReference2-synchronization2-06910"
+                                 : "VUID-VkAttachmentReference-synchronization2-06910";
+                skip |= LogError(device, vuid,
                                  "%s: Layout for %s is %s but without synchronization2 enabled the layout must not "
                                  "be VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR.",
                                  function_name, error_type, string_VkImageLayout(reference.layout));
