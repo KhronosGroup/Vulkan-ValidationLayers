@@ -2810,3 +2810,212 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         vk::QueueWaitIdle(m_device->m_queue);
     }
 }
+
+TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+
+    auto validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&robustness2_features);
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!robustness2_features.nullDescriptor) {
+        GTEST_SKIP() << "nullDescriptor feature not supported";
+    }
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    features2.features.robustBufferAccess = VK_FALSE;
+    robustness2_features.robustBufferAccess2 = VK_FALSE;
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkBufferObj offset_buffer;
+    VkBufferObj write_buffer;
+    VkBufferObj uniform_texel_buffer;
+    VkBufferObj storage_texel_buffer;
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    offset_buffer.init(*m_device, 4, reqs);
+    write_buffer.init_as_storage(*m_device, 16, reqs);
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    uint32_t queue_family_index = 0;
+    buffer_create_info.size = 16;
+    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    uniform_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    storage_texel_buffer.init(*m_device, buffer_create_info, reqs);
+    VkBufferViewCreateInfo bvci = LvlInitStruct<VkBufferViewCreateInfo>();
+    bvci.buffer = uniform_texel_buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+    vk_testing::BufferView uniform_buffer_view(*m_device, bvci);
+    bvci.buffer = storage_texel_buffer.handle();
+    vk_testing::BufferView storage_buffer_view(*m_device, bvci);
+
+    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet common_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet fragment_set(m_device,
+                                     {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                      {2, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout_vs(m_device, {&vertex_set.layout_, &common_set.layout_, nullptr}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const VkPipelineLayoutObj pipeline_layout_fs(m_device, {nullptr, &common_set.layout_, &fragment_set.layout_}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &common_set.layout_, &fragment_set.layout_}, {},
+                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vertex_set.WriteDescriptorBufferInfo(0, write_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.UpdateDescriptorSets();
+    common_set.WriteDescriptorBufferInfo(0, offset_buffer.handle(), 0, 4);
+    common_set.UpdateDescriptorSets();
+    fragment_set.WriteDescriptorBufferInfo(0, VK_NULL_HANDLE, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.WriteDescriptorBufferView(1, uniform_buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER);
+    fragment_set.WriteDescriptorBufferView(2, storage_buffer_view.handle(), VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    fragment_set.UpdateDescriptorSets();
+
+    const std::array<VkDescriptorSet, 3> desc_sets = {vertex_set.set_, common_set.set_, fragment_set.set_};
+
+    static const char vertshader[] = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
+        layout(set = 0, binding = 0) buffer StorageBuffer { uint data[]; } Data;  // data[4]
+        const vec2 vertices[3] = vec2[](
+            vec2(-1.0, -1.0),
+            vec2(1.0, -1.0),
+            vec2(0.0, 1.0)
+        );
+        void main() {
+            if (u_index.index[0] == 8) {
+                Data.data[u_index.index[0]] = 0xdeadca71;
+            } else if (u_index.index[0] == 0) {
+                Data.data[0] = u_index.index[4];
+            }
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+
+    CreatePipelineHelper vi(*this);
+    vi.InitVertexInputLibInfo();
+    vi.InitState();
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+
+    VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state.dynamicStateCount = size(dyn_states);
+    dyn_state.pDynamicStates = dyn_states;
+    CreatePipelineHelper pre_raster(*this);
+    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitState();
+    pre_raster.gp_ci_.layout = pipeline_layout_vs.handle();
+    pre_raster.gp_ci_.pDynamicState = &dyn_state;
+    pre_raster.CreateGraphicsPipeline(true, false);
+
+    static const char frag_shader[] = R"glsl(
+        #version 450
+        layout(set = 1, binding = 0) uniform ufoo { uint index[]; } u_index;      // index[1]
+        layout(set = 2, binding = 0) buffer NullBuffer { uint data[]; } Null;     // VK_NULL_HANDLE
+        layout(set = 2, binding = 1) uniform samplerBuffer u_buffer;              // texel_buffer[4]
+        layout(set = 2, binding = 2, r32f) uniform imageBuffer s_buffer;          // texel_buffer[4]
+        layout(location = 0) out vec4 c_out;
+        void main() {
+            vec4 x;
+            if (u_index.index[0] == 2) {
+                x = texelFetch(u_buffer, 5);
+            } else if (u_index.index[0] == 3) {
+                x = imageLoad(s_buffer, 5);
+            } else if (u_index.index[0] == 4) {
+                imageStore(s_buffer, 5, x);
+            } else if (u_index.index[0] == 5) { // No Error
+                imageStore(s_buffer, 0, x);
+            } else if (u_index.index[0] == 6) { // No Error
+                x = imageLoad(s_buffer, 0);
+            }
+            c_out = x;
+        }
+    )glsl";
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
+    vk_testing::GraphicsPipelineLibraryStage fragment_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper fragment(*this);
+    fragment.InitFragmentLibInfo(1, &fragment_stage.stage_ci);
+    fragment.gp_ci_.layout = pipeline_layout_fs.handle();
+    fragment.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper frag_out(*this);
+    frag_out.InitFragmentOutputLibInfo();
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+
+    std::array<VkPipeline, 4> libraries = {
+        vi.pipeline_,
+        pre_raster.pipeline_,
+        fragment.pipeline_,
+        frag_out.pipeline_,
+    };
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    struct TestCase {
+        bool positive;
+        uint32_t index;
+        char const *expected_error;
+    };
+    std::vector<TestCase> tests;
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    // tests.push_back({false, 8, "Descriptor size is 16 and highest byte accessed was 35"});
+    // Uniform buffer stride rounded up to the alignment of a vec4 (16 bytes)
+    // so u_index.index[4] accesses bytes 64, 65, 66, and 67
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    // tests.push_back({false, 0, "Descriptor size is 4 and highest byte accessed was 67"});
+    // tests.push_back({true, 1, ""});
+    // "VUID-vkCmdDispatchBase-None-02705" Uniform
+    tests.push_back({false, 2, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 3, "Descriptor size is 4 texels and highest texel accessed was 5"});
+    // "VUID-vkCmdDispatchBase-None-02706" Storage
+    tests.push_back({false, 4, "Descriptor size is 4 texels and highest texel accessed was 5"});
+
+    for (const auto &test : tests) {
+        uint32_t *data = (uint32_t *)offset_buffer.memory().map();
+        *data = test.index;
+        offset_buffer.memory().unmap();
+        if (test.positive) {
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test.expected_error);
+        }
+        m_commandBuffer->QueueCommandBuffer();
+        if (test.positive) {
+        } else {
+            m_errorMonitor->VerifyFound();
+        }
+        vk::QueueWaitIdle(m_device->m_queue);
+    }
+}
