@@ -1100,13 +1100,13 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
 
     // Use UNDEFINED layout
     refs[0].layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference2-layout-03077",
-                         nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+                         "VUID-VkAttachmentReference2-layout-03077");
 
     // Use PREINITIALIZED layout
     refs[0].layout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference2-layout-03077",
-                         nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentReference-layout-03077",
+                         "VUID-VkAttachmentReference2-layout-03077");
 
     if (rp2Supported) {
         safe_VkRenderPassCreateInfo2 rpci2;
@@ -1252,13 +1252,13 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidSync2Layout) {
 
     // Use ATTACHMENT_OPTIMAL_KHR layout
     refs[0].layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkAttachmentReference2-synchronization2-06910",
-                         nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
+                         "VUID-VkAttachmentReference2-synchronization2-06910");
 
     // Use READ_ONLY_OPTIMAL_KHR layout
     refs[0].layout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkAttachmentReference2-synchronization2-06910",
-                         nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, true, "VUID-VkAttachmentReference-synchronization2-06910",
+                         "VUID-VkAttachmentReference2-synchronization2-06910");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
