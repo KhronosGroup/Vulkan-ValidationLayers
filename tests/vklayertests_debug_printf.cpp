@@ -758,3 +758,310 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+
+    InitDebugPrintfFramework();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    uint32_t queue_family_index = 0;
+    buffer_create_info.size = 4;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    VkBufferObj vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+
+    // "Normal" sets
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &fragment_set.layout_});
+    const auto vs_layout = pipeline_layout.handle();
+    const auto fs_layout = pipeline_layout.handle();
+    const auto layout = pipeline_layout.handle();
+
+    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.UpdateDescriptorSets();
+    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.UpdateDescriptorSets();
+
+    {
+        layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
+                                             buffer_create_info.size / sizeof(uint32_t));
+        for (auto &v : vert_data) {
+            v = 0x01030507;
+        }
+        vs_buffer.memory().unmap();
+    }
+    {
+        layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
+                                             buffer_create_info.size / sizeof(uint32_t));
+        for (auto &v : frag_data) {
+            v = 0x02040608;
+        }
+        fs_buffer.memory().unmap();
+    }
+
+    const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
+
+    CreatePipelineHelper vi(*this);
+    vi.InitVertexInputLibInfo();
+    vi.InitState();
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+
+    static const char vertshader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        const vec2 vertices[3] = vec2[](
+            vec2(-1.0, -1.0),
+            vec2(1.0, -1.0),
+            vec2(0.0, 1.0)
+        );
+        void main() {
+            if (gl_VertexIndex == 0) {
+                const uint t = v_in.u_buffer[0];
+                debugPrintfEXT("Vertex shader %i, 0x%x", gl_VertexIndex, t);
+            }
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+
+    VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state.dynamicStateCount = size(dyn_states);
+    dyn_state.pDynamicStates = dyn_states;
+    CreatePipelineHelper pre_raster(*this);
+    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitState();
+    pre_raster.gp_ci_.layout = vs_layout;
+    pre_raster.gp_ci_.pDynamicState = &dyn_state;
+    pre_raster.CreateGraphicsPipeline(true, false);
+
+    static const char frag_shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(location = 0) out vec4 c_out;
+        void main() {
+            c_out = vec4(1.0);
+            const uint t = f_in.u_buffer[0];
+            debugPrintfEXT("Fragment shader 0x%x\n", t);
+        }
+    )glsl";
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper fragment(*this);
+    fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+    fragment.gp_ci_.layout = fs_layout;
+    fragment.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper frag_out(*this);
+    frag_out.InitFragmentOutputLibInfo();
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+
+    std::array<VkPipeline, 4> libraries = {
+        vi.pipeline_,
+        pre_raster.pipeline_,
+        fragment.pipeline_,
+        frag_out.pipeline_,
+    };
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+
+    InitDebugPrintfFramework();
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    uint32_t queue_family_index = 0;
+    buffer_create_info.size = 4;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    VkBufferObj vs_buffer(*m_device, buffer_create_info, reqs), fs_buffer(*m_device, buffer_create_info, reqs);
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    OneOffDescriptorSet vertex_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}});
+    OneOffDescriptorSet fragment_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+
+    // Independent sets
+    const VkPipelineLayoutObj pipeline_layout_vs(m_device, {&vertex_set.layout_, nullptr}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto vs_layout = pipeline_layout_vs.handle();
+    const VkPipelineLayoutObj pipeline_layout_fs(m_device, {nullptr, &fragment_set.layout_}, {},
+                                                 VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto fs_layout = pipeline_layout_fs.handle();
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&vertex_set.layout_, &fragment_set.layout_}, {},
+                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const auto layout = pipeline_layout.handle();
+
+    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.UpdateDescriptorSets();
+    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.UpdateDescriptorSets();
+
+    {
+        layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
+                                             buffer_create_info.size / sizeof(uint32_t));
+        for (auto &v : vert_data) {
+            v = 0x01030507;
+        }
+        vs_buffer.memory().unmap();
+    }
+    {
+        layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
+                                             buffer_create_info.size / sizeof(uint32_t));
+        for (auto &v : frag_data) {
+            v = 0x02040608;
+        }
+        fs_buffer.memory().unmap();
+    }
+
+    const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
+
+    CreatePipelineHelper vi(*this);
+    vi.InitVertexInputLibInfo();
+    vi.InitState();
+    ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
+
+    static const char vertshader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        const vec2 vertices[3] = vec2[](
+            vec2(-1.0, -1.0),
+            vec2(1.0, -1.0),
+            vec2(0.0, 1.0)
+        );
+        void main() {
+            if (gl_VertexIndex == 0) {
+                const uint t = v_in.u_buffer[0];
+                debugPrintfEXT("Vertex shader %i, 0x%x", gl_VertexIndex, t);
+            }
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vertshader);
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vs_spv);
+
+    VkDynamicState dyn_states[2] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    auto dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state.dynamicStateCount = size(dyn_states);
+    dyn_state.pDynamicStates = dyn_states;
+    CreatePipelineHelper pre_raster(*this);
+    pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
+    pre_raster.InitState();
+    pre_raster.gp_ci_.layout = vs_layout;
+    pre_raster.gp_ci_.pDynamicState = &dyn_state;
+    pre_raster.CreateGraphicsPipeline(true, false);
+
+    static const char frag_shader[] = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(location = 0) out vec4 c_out;
+        void main() {
+            c_out = vec4(1.0);
+            const uint t = f_in.u_buffer[0];
+            debugPrintfEXT("Fragment shader 0x%x\n", t);
+        }
+    )glsl";
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_shader);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper fragment(*this);
+    fragment.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+    fragment.gp_ci_.layout = fs_layout;
+    fragment.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper frag_out(*this);
+    frag_out.InitFragmentOutputLibInfo();
+    ASSERT_VK_SUCCESS(frag_out.CreateGraphicsPipeline(true, false));
+
+    std::array<VkPipeline, 4> libraries = {
+        vi.pipeline_,
+        pre_raster.pipeline_,
+        fragment.pipeline_,
+        frag_out.pipeline_,
+    };
+    vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    VkViewport viewport = {0, 0, 1, 1, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {1, 1}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Vertex shader 0, 0x1030507");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "Fragment shader 0x2040608");
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyFound();
+}

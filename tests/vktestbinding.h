@@ -425,6 +425,9 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
   public:
     explicit Buffer() : NonDispHandle() {}
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info); }
+    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props) {
+        init(dev, info, mem_props);
+    }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
 
@@ -1192,13 +1195,15 @@ struct GraphicsPipelineLibraryStage {
     VkShaderModuleCreateInfo shader_ci;
     VkPipelineShaderStageCreateInfo stage_ci;
 
-    GraphicsPipelineLibraryStage(layer_data::span<const uint32_t> spv, const char *name = "main") : spv(spv) {
+    GraphicsPipelineLibraryStage(layer_data::span<const uint32_t> spv, VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT,
+                                 const char *name = "main")
+        : spv(spv) {
         shader_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
         shader_ci.codeSize = spv.size() * sizeof(uint32_t);
         shader_ci.pCode = spv.data();
 
         stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&shader_ci);
-        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.stage = stage;
         stage_ci.module = VK_NULL_HANDLE;
         stage_ci.pName = name;
     }
@@ -1209,13 +1214,25 @@ struct GraphicsPipelineFromLibraries {
     VkPipelineLibraryCreateInfoKHR link_info;
     vk_testing::Pipeline pipe;
 
-    GraphicsPipelineFromLibraries(const Device &dev, layer_data::span<VkPipeline> libs) : libs(libs) {
+    GraphicsPipelineFromLibraries(const Device &dev, layer_data::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo *ci = nullptr)
+        : libs(libs) {
         link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = libs.size();
         link_info.pLibraries = libs.data();
 
-        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
-        pipe.init(dev, exe_pipe_ci);
+        if (ci) {
+            // This is an ugly cast, but only used in testing for convenience of extending pNext chain
+            VkBaseOutStructure **prev =
+                const_cast<VkBaseOutStructure **>(reinterpret_cast<const VkBaseOutStructure **>(&ci->pNext));
+            while (*prev) {
+                prev = &(*prev)->pNext;
+            }
+            *prev = reinterpret_cast<VkBaseOutStructure *>(&link_info);
+            pipe.init(dev, *ci);
+        } else {
+            auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+            pipe.init(dev, exe_pipe_ci);
+        }
         assert(pipe.initialized());
     }
 
