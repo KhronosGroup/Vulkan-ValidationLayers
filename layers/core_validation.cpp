@@ -1621,7 +1621,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     // Remove input attachment views that are bound
                     // Look into pipeline layout for input attachments
                     const auto &set_layouts = pipe->PipelineLayoutState()->set_layouts;
-                    for (uint32_t set_index = 0; set_index < set_layouts.size(); ++set_index) {
+                    for (uint32_t set_index = 0; set_index < set_layouts.size() && set_index < state.per_set.size(); ++set_index) {
                         const auto &set_layout = set_layouts[set_index];
                         for (const auto &binding : set_layout->GetBindings()) {
                             if (binding.descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
