@@ -6425,7 +6425,7 @@ TEST_F(VkLayerTest, DSUpdateOutOfBounds) {
     VkDescriptorBufferInfo buff_info = {};
     buff_info.buffer = buffer_test.GetBuffer();
     buff_info.offset = 0;
-    buff_info.range = 1024;
+    buff_info.range = VK_WHOLE_SIZE;
 
     VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = descriptor_set.set_;
