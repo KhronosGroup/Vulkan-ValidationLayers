@@ -1187,6 +1187,41 @@ inline VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool cons
     return info;
 }
 
+struct GraphicsPipelineLibraryStage {
+    layer_data::span<const uint32_t> spv;
+    VkShaderModuleCreateInfo shader_ci;
+    VkPipelineShaderStageCreateInfo stage_ci;
+
+    GraphicsPipelineLibraryStage(layer_data::span<const uint32_t> spv, const char *name = "main") : spv(spv) {
+        shader_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        shader_ci.codeSize = spv.size() * sizeof(uint32_t);
+        shader_ci.pCode = spv.data();
+
+        stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&shader_ci);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = name;
+    }
+};
+
+struct GraphicsPipelineFromLibraries {
+    layer_data::span<VkPipeline> libs;
+    VkPipelineLibraryCreateInfoKHR link_info;
+    vk_testing::Pipeline pipe;
+
+    GraphicsPipelineFromLibraries(const Device &dev, layer_data::span<VkPipeline> libs) : libs(libs) {
+        link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = libs.size();
+        link_info.pLibraries = libs.data();
+
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        pipe.init(dev, exe_pipe_ci);
+        assert(pipe.initialized());
+    }
+
+    operator VkPipeline() const { return pipe.handle(); }
+};
+
 }  // namespace vk_testing
 
 #endif  // VKTESTBINDING_H

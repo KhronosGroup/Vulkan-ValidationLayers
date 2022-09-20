@@ -780,7 +780,7 @@ class span {
     template <typename Iterator>
     span(Iterator start, Iterator end) : data_(&(*start)), count_(end - start) {}
     template <typename Container>
-    span(const Container &c) : data_(c.data()), count_(c.size()) {}
+    span(Container &c) : data_(c.data()), count_(c.size()) {}
 
     iterator begin() { return data_; }
     const_iterator begin() const { return data_; }
