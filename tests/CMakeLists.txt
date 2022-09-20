@@ -71,6 +71,7 @@ set(COMMON_CPP
     vklayertests_arm_best_practices.cpp
     vklayertests_amd_best_practices.cpp
     vklayertests_gpu.cpp
+    vklayertests_debug_printf.cpp
     vklayertests_descriptor_renderpass_framebuffer.cpp
     vklayertests_dynamic_rendering.cpp
     vklayertests_command.cpp
