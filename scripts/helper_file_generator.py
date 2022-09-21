@@ -1600,7 +1600,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);\n'
                     '    else\n'
                     '        pRasterizationState = NULL;\n'
-                    '    if (in_struct->pMultisampleState && (has_rasterization || is_graphics_library))\n'
+                    '    if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))\n'
                     '        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);\n'
                     '    else\n'
                     '        pMultisampleState = NULL; // original pMultisampleState pointer ignored\n'
