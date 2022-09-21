@@ -11748,9 +11748,15 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    VkPhysicalDeviceFragmentDensityMapFeaturesEXT density_map_features =
+        LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
     VkPhysicalDeviceFragmentDensityMap2FeaturesEXT density_map2_features =
-        LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>();
+        LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>(&density_map_features);
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(density_map2_features);
+
+    if (density_map_features.fragmentDensityMapDynamic == VK_FALSE) {
+        GTEST_SKIP() << "fragmentDensityMapDynamic not supported";
+    }
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
@@ -11760,6 +11766,7 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&density_map2_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
+    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&density_map2_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     // Test sampler parameters
