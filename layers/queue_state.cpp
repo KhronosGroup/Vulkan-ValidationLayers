@@ -220,10 +220,16 @@ void FENCE_STATE::Retire(const QUEUE_STATE *queue_state, uint64_t seq) {
 
 void FENCE_STATE::Reset() {
     auto guard = WriteLock();
+    queue_ = nullptr;
+    seq_ = 0;
+    // spec: If any member of pFences currently has its payload imported with temporary permanence,
+    // that fence’s prior permanent payload is first restored. The remaining operations described
+    // therefore operate on the restored payload.
+    if (scope_ == kSyncScopeExternalTemporary) {
+        scope_ = kSyncScopeInternal;
+    }
     if (scope_ == kSyncScopeInternal) {
         state_ = FENCE_UNSIGNALED;
-    } else if (scope_ == kSyncScopeExternalTemporary) {
-        scope_ = kSyncScopeInternal;
     }
 }
 
