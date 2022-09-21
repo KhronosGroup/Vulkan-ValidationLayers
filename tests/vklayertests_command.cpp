@@ -8922,7 +8922,18 @@ TEST_F(VkLayerTest, CommandBufferMissingOcclusionQueryEnabled) {
     TEST_DESCRIPTION(
         "Test executing secondary command buffer without VkCommandBufferInheritanceInfo::occlusionQueryEnable enabled while "
         "occlusion query is active.");
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    VkPhysicalDeviceFeatures features{};
+    GetPhysicalDeviceFeatures(&features);
+    if (features.inheritedQueries == VK_FALSE) {
+        GTEST_SKIP() << "inheritedQueries not supported";
+    }
+
+    features = {};
+    features.inheritedQueries = VK_TRUE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkQueryPoolCreateInfo qpci = LvlInitStruct<VkQueryPoolCreateInfo>();
