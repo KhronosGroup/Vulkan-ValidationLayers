@@ -3604,7 +3604,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                          "them is an advance blend operation.",
                                                          i, attachment_index, string_VkBlendOp(attachment_state.colorBlendOp),
                                                          string_VkBlendOp(attachment_state.alphaBlendOp));
-                                    } else if (color_attachment_count >=
+                                    } else if (color_attachment_count >
                                                phys_dev_ext_props.blend_operation_advanced_props.advancedBlendMaxColorAttachments) {
                                         // color_attachment_count is found one of multiple spots above
                                         //
