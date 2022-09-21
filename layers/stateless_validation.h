@@ -1743,8 +1743,32 @@ class StatelessValidation : public ValidationObject {
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion) const;
+
+    bool ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
+                                             VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                             VkExternalSemaphoreHandleTypeFlags allowed_types) const;
+    bool ValidateExternalFenceHandleType(VkFence fence, const char *vuid, const char *caller,
+                                         VkExternalFenceHandleTypeFlagBits handle_type,
+                                         VkExternalFenceHandleTypeFlags allowed_types) const;
     bool manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device,
                                                     const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const;
+    bool manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd) const;
+
+    bool manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) const;
+    bool manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd) const;
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool manual_PreCallValidateImportSemaphoreWin32HandleKHR(
+        VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo) const;
+    bool manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
+                                                          const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                          HANDLE *pHandle) const;
+
+    bool manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
+                                                         const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) const;
+    bool manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                      HANDLE *pHandle) const;
+#endif
 
     bool manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                                     const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const;

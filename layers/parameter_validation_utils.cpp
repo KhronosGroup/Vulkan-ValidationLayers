@@ -7126,21 +7126,146 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
                                                 "vkCreateSamplerYcbcrConversionKHR");
 }
 
-bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
-    VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const {
+bool StatelessValidation::ValidateExternalSemaphoreHandleType(VkSemaphore semaphore, const char *vuid, const char *caller,
+                                                              VkExternalSemaphoreHandleTypeFlagBits handle_type,
+                                                              VkExternalSemaphoreHandleTypeFlags allowed_types) const {
     bool skip = false;
-    VkExternalSemaphoreHandleTypeFlags supported_handle_types =
-        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
-
-    if (0 == (pImportSemaphoreFdInfo->handleType & supported_handle_types)) {
-        skip |= LogError(device, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143",
-                         "vkImportSemaphoreFdKHR() to semaphore %s handleType %s is not one of the supported handleTypes (%s).",
-                         report_data->FormatHandle(pImportSemaphoreFdInfo->semaphore).c_str(),
-                         string_VkExternalSemaphoreHandleTypeFlagBits(pImportSemaphoreFdInfo->handleType),
-                         string_VkExternalSemaphoreHandleTypeFlags(supported_handle_types).c_str());
+    if (0 == (handle_type & allowed_types)) {
+        skip |= LogError(semaphore, vuid, "%s(): handleType %s is not one of the supported handleTypes (%s).", caller,
+                         string_VkExternalSemaphoreHandleTypeFlagBits(handle_type),
+                         string_VkExternalSemaphoreHandleTypeFlags(allowed_types).c_str());
     }
     return skip;
 }
+
+bool StatelessValidation::ValidateExternalFenceHandleType(VkFence fence, const char *vuid, const char *caller,
+                                                          VkExternalFenceHandleTypeFlagBits handle_type,
+                                                          VkExternalFenceHandleTypeFlags allowed_types) const {
+    bool skip = false;
+    if (0 == (handle_type & allowed_types)) {
+        skip |= LogError(fence, vuid, "%s(): handleType %s is not one of the supported handleTypes (%s).", caller,
+                         string_VkExternalFenceHandleTypeFlagBits(handle_type),
+                         string_VkExternalFenceHandleTypeFlags(allowed_types).c_str());
+    }
+    return skip;
+}
+
+static constexpr VkExternalSemaphoreHandleTypeFlags kSemFdHandleTypes =
+    VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+
+bool StatelessValidation::manual_PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info,
+                                                                  int *pFd) const {
+    return ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkSemaphoreGetFdInfoKHR-handleType-01136",
+                                               "vkGetSemaphoreFdKHR", info->handleType, kSemFdHandleTypes);
+}
+
+bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device,
+                                                                     const VkImportSemaphoreFdInfoKHR *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportSemaphoreFdKHR";
+
+    skip |= ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143", func_name,
+                                                info->handleType, kSemFdHandleTypes);
+
+    if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT &&
+        (info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) == 0) {
+        skip |= LogError(info->semaphore, "VUID-VkImportSemaphoreFdInfoKHR-handleType-07307",
+                         "%s(): handleType is VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT so"
+                         " VK_SEMAPHORE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
+                         func_name, info->flags);
+    }
+    return skip;
+}
+
+static constexpr VkExternalFenceHandleTypeFlags kFenceFdHandleTypes =
+    VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
+
+bool StatelessValidation::manual_PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd) const {
+    return ValidateExternalFenceHandleType(info->fence, "VUID-VkFenceGetFdInfoKHR-handleType-01456", "vkGetFenceFdKHR",
+                                           info->handleType, kFenceFdHandleTypes);
+}
+
+bool StatelessValidation::manual_PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportFenceFdKHR";
+
+    skip |= ValidateExternalFenceHandleType(info->fence, "VUID-VkImportFenceFdInfoKHR-handleType-01464", func_name,
+                                            info->handleType, kFenceFdHandleTypes);
+
+    if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && (info->flags & VK_FENCE_IMPORT_TEMPORARY_BIT) == 0) {
+        skip |= LogError(info->fence, "VUID-VkImportFenceFdInfoKHR-handleType-07306",
+                         "%s(): handleType is VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT so"
+                         " VK_FENCE_IMPORT_TEMPORARY_BIT must be set, but flags is 0x%x",
+                         func_name, info->flags);
+    }
+    return skip;
+}
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+static constexpr VkExternalSemaphoreHandleTypeFlags kSemWin32HandleTypes =
+    VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT |
+    VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
+
+bool StatelessValidation::manual_PreCallValidateImportSemaphoreWin32HandleKHR(
+    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportSemaphoreWin32HandleKHR";
+
+    skip |= ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01140",
+                                                func_name, info->handleType, kSemWin32HandleTypes);
+
+    static constexpr auto kNameAllowedTypes =
+        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
+    if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
+        skip |= LogError(info->semaphore, "VUID-VkImportSemaphoreWin32HandleInfoKHR-handleType-01466",
+                         "%s(): name (%p) must be NULL if handleType is %s", func_name, info->name,
+                         string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
+    }
+    if (info->handle && info->name) {
+        skip |= LogError(info->semaphore, "VUID-VkImportSemaphoreWin32HandleInfoKHR-handle-01469",
+                         "%s(): both handle (%p) and name (%p) are non-NULL", func_name, info->handle, info->name);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device,
+                                                                           const VkSemaphoreGetWin32HandleInfoKHR *info,
+                                                                           HANDLE *pHandle) const {
+    return ValidateExternalSemaphoreHandleType(info->semaphore, "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01131",
+                                               "vkGetSemaphoreWin32HandleKHR", info->handleType, kSemWin32HandleTypes);
+}
+
+static constexpr VkExternalFenceHandleTypeFlags kFenceWin32HandleTypes =
+    VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT | VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
+
+bool StatelessValidation::manual_PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
+                                                                          const VkImportFenceWin32HandleInfoKHR *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportFenceWin32HandleKHR";
+
+    skip |= ValidateExternalFenceHandleType(info->fence, func_name, "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01457",
+                                            info->handleType, kFenceWin32HandleTypes);
+
+    static constexpr auto kNameAllowedTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    if ((info->handleType & kNameAllowedTypes) == 0 && info->name) {
+        skip |= LogError(info->fence, "VUID-VkImportFenceWin32HandleInfoKHR-handleType-01459",
+                         "%s(): name (%p) must be NULL if handleType is %s", func_name, info->name,
+                         string_VkExternalFenceHandleTypeFlagBits(info->handleType));
+    }
+    if (info->handle && info->name) {
+        skip |= LogError(info->fence, "VUID-VkImportFenceWin32HandleInfoKHR-handle-01462",
+                         "%s(): both handle (%p) and name (%p) are non-NULL", func_name, info->handle, info->name);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info,
+                                                                       HANDLE *pHandle) const {
+    return ValidateExternalFenceHandleType(info->fence, "vkGetFenceWin32HandleKHR",
+                                           "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01452", info->handleType,
+                                           kFenceWin32HandleTypes);
+}
+#endif
 
 bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
