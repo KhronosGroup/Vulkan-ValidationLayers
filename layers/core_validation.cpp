@@ -17338,26 +17338,81 @@ bool CoreChecks::PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSema
     return ValidateSignalSemaphore(device, pSignalInfo, "vkSignalSemaphoreKHR");
 }
 
-bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) const {
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                              const VkImportSemaphoreWin32HandleInfoKHR *info) const {
     bool skip = false;
-    auto sema_node = Get<SEMAPHORE_STATE>(semaphore);
-    if (sema_node) {
-        skip |= ValidateObjectNotInUse(sema_node.get(), caller_name, kVUIDUndefined);
+    const char *func_name = "vkImportSemaphoreWin32HandleKHR";
+    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    if (sem_state) {
+        skip |= ValidateObjectNotInUse(sem_state.get(), func_name, kVUIDUndefined);
+
+        if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            skip |= LogError(
+                sem_state->Handle(), "VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-03322",
+                "vkImportSemaphoreWin32HandleKHR(): VK_SEMAPHORE_IMPORT_TEMPORARY_BIT not allowed for timeline semaphores");
+        }
     }
     return skip;
 }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
-    VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo) const {
-    return ValidateImportSemaphore(pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
+bool CoreChecks::PreCallValidateGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR *info,
+                                                           HANDLE *pHandle) const {
+    bool skip = false;
+    const char *func_name = "vkGetSemaphoreWin32HandleKHR";
+    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    if (sem_state) {
+        if ((info->handleType & sem_state->exportHandleTypes) == 0) {
+            skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-01126",
+                             "%s: handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+                             string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
+                             string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
+        }
+    }
+    return skip;
 }
-
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device,
-                                                     const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const {
-    return ValidateImportSemaphore(pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
+bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportSemaphoreFdKHR";
+    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    if (sem_state) {
+        skip |= ValidateObjectNotInUse(sem_state.get(), func_name, kVUIDUndefined);
+
+        if ((info->flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT) != 0 && sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            skip |= LogError(sem_state->Handle(), "VUID-VkImportSemaphoreFdInfoKHR-flags-03323",
+                             "%s(): VK_SEMAPHORE_IMPORT_TEMPORARY_BIT not allowed for timeline semaphores", func_name);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *info, int *pFd) const {
+    bool skip = false;
+    const char *func_name = "vkGetSemaphoreFdKHR";
+    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    if (sem_state) {
+        if ((info->handleType & sem_state->exportHandleTypes) == 0) {
+            skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-01132",
+                             "%s(): handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+                             string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType),
+                             string_VkExternalSemaphoreHandleTypeFlags(sem_state->exportHandleTypes).c_str());
+        }
+
+        if (info->handleType == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
+            if (sem_state->type != VK_SEMAPHORE_TYPE_BINARY) {
+                skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-03253",
+                                 "%s(): can only export binary semaphores to %s", func_name,
+                                 string_VkExternalSemaphoreHandleTypeFlagBits(info->handleType));
+            }
+            if (!sem_state->CanBeWaited()) {
+                skip |= LogError(sem_state->Handle(), "VUID-VkSemaphoreGetFdInfoKHR-handleType-03254",
+                                 "%s(): must be signaled or have a pending signal operation", func_name);
+            }
+        }
+    }
+    return skip;
 }
 
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char *caller_name) const {
@@ -17374,12 +17429,48 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char
 bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) const {
     return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "VUID-vkImportFenceWin32HandleKHR-fence-04448",
-                               "vkImportFenceWin32HandleKHR()");
+                               "vkImportFenceWin32HandleKHR");
+}
+
+bool CoreChecks::PreCallValidateGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *info,
+                                                       HANDLE *pHandle) const {
+    bool skip = false;
+    const char *func_name = "vkGetFenceWin32HandleKHR";
+    auto fence_state = Get<FENCE_STATE>(info->fence);
+    if (fence_state) {
+        if ((info->handleType & fence_state->exportHandleTypes) == 0) {
+            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetWin32HandleInfoKHR-handleType-01448",
+                             "%s: handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+                             string_VkExternalFenceHandleTypeFlagBits(info->handleType),
+                             string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
+        }
+    }
+    return skip;
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) const {
-    return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463", "vkImportFenceFdKHR()");
+    return ValidateImportFence(pImportFenceFdInfo->fence, "VUID-vkImportFenceFdKHR-fence-01463", "vkImportFenceFdKHR");
+}
+
+bool CoreChecks::PreCallValidateGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *info, int *pFd) const {
+    bool skip = false;
+    const char *func_name = "vkGetFenceFdKHR";
+    auto fence_state = Get<FENCE_STATE>(info->fence);
+    if (fence_state) {
+        if ((info->handleType & fence_state->exportHandleTypes) == 0) {
+            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetFdInfoKHR-handleType-01453",
+                             "%s: handleType %s was not VkExportFenceCreateInfo::handleTypes (%s)", func_name,
+                             string_VkExternalFenceHandleTypeFlagBits(info->handleType),
+                             string_VkExternalFenceHandleTypeFlags(fence_state->exportHandleTypes).c_str());
+        }
+        if (info->handleType == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT && fence_state->State() == FENCE_UNSIGNALED) {
+            skip |= LogError(fence_state->Handle(), "VUID-VkFenceGetFdInfoKHR-handleType-01454",
+                             "%s(): cannot export to %s unless the fence has a pending signal operation or is already signaled",
+                             func_name, string_VkExternalFenceHandleTypeFlagBits(info->handleType));
+        }
+    }
+    return skip;
 }
 
 static VkImageCreateInfo GetSwapchainImpliedImageCreateInfo(VkSwapchainCreateInfoKHR const *pCreateInfo) {

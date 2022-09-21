@@ -47,7 +47,8 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     // Default constructor
     FENCE_STATE(VkFence f, const VkFenceCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(f, kVulkanObjectTypeFence),
-          createInfo(*pCreateInfo),
+          flags(pCreateInfo->flags),
+          exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED),
           scope_(kSyncScopeInternal) {}
 
@@ -65,7 +66,8 @@ class FENCE_STATE : public REFCOUNTED_NODE {
 
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
 
-    const VkFenceCreateInfo createInfo;
+    const VkFenceCreateFlags flags;
+    const VkExternalFenceHandleTypeFlags exportHandleTypes;
 
     SyncScope Scope() const { return scope_; }
     FENCE_STATUS State() const { return state_; }
@@ -73,6 +75,10 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     uint64_t QueueSeq() const { return seq_; }
 
   private:
+    static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateInfo *info) {
+        auto export_info = LvlFindInChain<VkExportFenceCreateInfo>(info->pNext);
+        return export_info ? export_info->handleTypes : 0;
+    }
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
@@ -142,15 +148,25 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
         return retval;
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    VkExternalSemaphoreHandleTypeFlags GetExportHandleTypes(const VkSemaphoreCreateInfo *pCreateInfo) {
+        auto export_info = LvlFindInChain<VkExportSemaphoreCreateInfo>(pCreateInfo->pNext);
+        return export_info ? export_info->handleTypes : 0;
+    }
 
-    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info, const VkSemaphoreCreateInfo *pCreateInfo)
+    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreCreateInfo *pCreateInfo)
+        : SEMAPHORE_STATE(sem, LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo) {}
+
+    SEMAPHORE_STATE(VkSemaphore sem, const VkSemaphoreTypeCreateInfo *type_create_info,
+                    const VkSemaphoreCreateInfo *pCreateInfo)
         : REFCOUNTED_NODE(sem, kVulkanObjectTypeSemaphore),
 #ifdef VK_USE_PLATFORM_METAL_EXT
           metal_semaphore_export(GetMetalExport(pCreateInfo)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
+          exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
           completed_{kNone, nullptr, 0, type_create_info ? type_create_info->initialValue : 0},
-          next_payload_(completed_.payload + 1) {}
+          next_payload_(completed_.payload + 1) {
+    }
 
     VkSemaphore semaphore() const { return handle_.Cast<VkSemaphore>(); }
     SyncScope Scope() const {
@@ -197,6 +213,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     const bool metal_semaphore_export;
 #endif  // VK_USE_PLATFORM_METAL_EXT
     const VkSemaphoreType type;
+    const VkExternalSemaphoreHandleTypeFlags exportHandleTypes;
 
   private:
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
