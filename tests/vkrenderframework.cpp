@@ -758,13 +758,7 @@ void VkRenderFramework::ShutdownFramework() {
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
-    if (NULL == m_device) {
-        VkDeviceObj *temp_device = new VkDeviceObj(0, gpu_, m_device_extension_names);
-        *features = temp_device->phy().features();
-        delete (temp_device);
-    } else {
-        *features = m_device->phy().features();
-    }
+    vk::GetPhysicalDeviceFeatures(gpu(), features);
 }
 
 // static
