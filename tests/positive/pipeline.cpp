@@ -837,6 +837,18 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         1.0f   // lineWidth
     };
 
+    const VkPipelineMultisampleStateCreateInfo pipeline_multisample_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        nullptr,  // pNext
+        0,        // flags
+        VK_SAMPLE_COUNT_1_BIT,
+        VK_FALSE,  // sample shading
+        0.0f,      // minSampleShading
+        nullptr,   // pSampleMask
+        VK_FALSE,  // alphaToCoverageEnable
+        VK_FALSE   // alphaToOneEnable
+    };
+
     vk_testing::PipelineLayout pipeline_layout;
     {
         VkPipelineLayoutCreateInfo pipeline_layout_create_info{
@@ -869,7 +881,7 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
             reinterpret_cast<const VkPipelineTessellationStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineViewportStateCreateInfo *>(hopefully_undereferencable_pointer),
             &pipeline_rasterization_state_create_info,
-            reinterpret_cast<const VkPipelineMultisampleStateCreateInfo *>(hopefully_undereferencable_pointer),
+            &pipeline_multisample_state_create_info,
             reinterpret_cast<const VkPipelineDepthStencilStateCreateInfo *>(hopefully_undereferencable_pointer),
             reinterpret_cast<const VkPipelineColorBlendStateCreateInfo *>(hopefully_undereferencable_pointer),
             nullptr,  // dynamic states
@@ -884,18 +896,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
         m_commandBuffer->begin();
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
     }
-
-    const VkPipelineMultisampleStateCreateInfo pipeline_multisample_state_create_info{
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        nullptr,  // pNext
-        0,        // flags
-        VK_SAMPLE_COUNT_1_BIT,
-        VK_FALSE,  // sample shading
-        0.0f,      // minSampleShading
-        nullptr,   // pSampleMask
-        VK_FALSE,  // alphaToCoverageEnable
-        VK_FALSE   // alphaToOneEnable
-    };
 
     // try enabled rasterizer but no subpass attachments
     {
