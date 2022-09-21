@@ -1824,6 +1824,45 @@ bool update_range_value(Map &map, const Range &range, MapValue &&value, value_pr
     return updated;
 }
 
+//  combines directly adjacent ranges with equal RangeMap::mapped_type .
+template <typename RangeMap>
+void consolidate(RangeMap &map) {
+    using Value = typename RangeMap::value_type;
+    using Key = typename RangeMap::key_type;
+    using It = typename RangeMap::iterator;
+
+    It current = map.begin();
+    const It map_end = map.end();
+
+    // To be included in a merge range there must be no gap in the Key space, and the mapped_type values must match
+    auto can_merge = [](const It &last, const It &cur) {
+        return cur->first.begin == last->first.end && cur->second == last->second;
+    };
+
+    while (current != map_end) {
+        // Establish a trival merge range at the current location, advancing current. Merge range is inclusive of merge_last
+        const It merge_first = current;
+        It merge_last = current;
+        ++current;
+
+        // Expand the merge range as much as possible
+        while (current != map_end && can_merge(merge_last, current)) {
+            merge_last = current;
+            ++current;
+        }
+
+        // Current isn't in the active merge range. If there is a non-trivial merge range, we resolve it here.
+        if (merge_first != merge_last) {
+            // IFF there is more than one range in (merge_first, merge_last)  <- again noting the *inclusive* last
+            // Create a new Val spanning (first, last), substitute it for the multiple entries.
+            Value merged_value = std::make_pair(Key(merge_first->first.begin, merge_last->first.end), merge_last->second);
+            // Note that current points to merge_last + 1, and is valid even if at map_end for these operations
+            map.erase(merge_first, current);
+            map.insert(current, std::move(merged_value));
+        }
+    }
+}
+
 }  // namespace sparse_container
 
 #endif

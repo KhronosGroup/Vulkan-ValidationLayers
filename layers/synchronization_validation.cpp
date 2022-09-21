@@ -841,12 +841,10 @@ void AccessContext::Trim() {
     auto normalize = [](AccessAddressType address_type, ResourceAccessRangeMap::value_type &access) { access.second.Normalize(); };
     ForAll(normalize);
 
-    // TODO consolidate map after normalization
-#if 0
+    // Consolidate map after normalization, combines directly adjacent ranges with common values.
     for (auto& map : access_state_maps_) {
-        map.consolidate();
+        sparse_container::consolidate(map);
     }
-#endif
 }
 
 void AccessContext::AddReferencedTags(ResourceUsageTagSet &used) const {
