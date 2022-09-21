@@ -1763,7 +1763,7 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    Add(std::make_shared<SEMAPHORE_STATE>(*pSemaphore, LvlFindInChain<VkSemaphoreTypeCreateInfo>(pCreateInfo->pNext), pCreateInfo));
+    Add(std::make_shared<SEMAPHORE_STATE>(*pSemaphore, pCreateInfo));
 }
 
 void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBits handle_type,
