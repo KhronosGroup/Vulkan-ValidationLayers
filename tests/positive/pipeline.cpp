@@ -7210,4 +7210,5 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
 
     VkPipeline library = VK_NULL_HANDLE;
     vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::DestroyPipeline(device(), library, nullptr);
 }
