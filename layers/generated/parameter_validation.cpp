@@ -12220,6 +12220,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
 
         skip |= validate_flags("vkImportSemaphoreWin32HandleKHR", "pImportSemaphoreWin32HandleInfo->flags", "VkSemaphoreImportFlagBits", AllVkSemaphoreImportFlagBits, pImportSemaphoreWin32HandleInfo->flags, kOptionalFlags, "VUID-VkImportSemaphoreWin32HandleInfoKHR-flags-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
     return skip;
 }
 
@@ -12240,6 +12241,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(
         skip |= validate_flags("vkGetSemaphoreWin32HandleKHR", "pGetWin32HandleInfo->handleType", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, pGetWin32HandleInfo->handleType, kRequiredSingleBit, "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-parameter", "VUID-VkSemaphoreGetWin32HandleInfoKHR-handleType-parameter");
     }
     skip |= validate_required_pointer("vkGetSemaphoreWin32HandleKHR", "pHandle", pHandle, "VUID-vkGetSemaphoreWin32HandleKHR-pHandle-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     return skip;
 }
 
@@ -12283,6 +12285,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreFdKHR(
         skip |= validate_flags("vkGetSemaphoreFdKHR", "pGetFdInfo->handleType", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, pGetFdInfo->handleType, kRequiredSingleBit, "VUID-VkSemaphoreGetFdInfoKHR-handleType-parameter", "VUID-VkSemaphoreGetFdInfoKHR-handleType-parameter");
     }
     skip |= validate_required_pointer("vkGetSemaphoreFdKHR", "pFd", pFd, "VUID-vkGetSemaphoreFdKHR-pFd-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetSemaphoreFdKHR(device, pGetFdInfo, pFd);
     return skip;
 }
 
@@ -12739,6 +12742,7 @@ bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
 
         skip |= validate_flags("vkImportFenceWin32HandleKHR", "pImportFenceWin32HandleInfo->flags", "VkFenceImportFlagBits", AllVkFenceImportFlagBits, pImportFenceWin32HandleInfo->flags, kOptionalFlags, "VUID-VkImportFenceWin32HandleInfoKHR-flags-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
     return skip;
 }
 
@@ -12759,6 +12763,7 @@ bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(
         skip |= validate_flags("vkGetFenceWin32HandleKHR", "pGetWin32HandleInfo->handleType", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, pGetWin32HandleInfo->handleType, kRequiredSingleBit, "VUID-VkFenceGetWin32HandleInfoKHR-handleType-parameter", "VUID-VkFenceGetWin32HandleInfoKHR-handleType-parameter");
     }
     skip |= validate_required_pointer("vkGetFenceWin32HandleKHR", "pHandle", pHandle, "VUID-vkGetFenceWin32HandleKHR-pHandle-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     return skip;
 }
 
@@ -12781,6 +12786,7 @@ bool StatelessValidation::PreCallValidateImportFenceFdKHR(
 
         skip |= validate_flags("vkImportFenceFdKHR", "pImportFenceFdInfo->handleType", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, pImportFenceFdInfo->handleType, kRequiredSingleBit, "VUID-VkImportFenceFdInfoKHR-handleType-parameter", "VUID-VkImportFenceFdInfoKHR-handleType-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateImportFenceFdKHR(device, pImportFenceFdInfo);
     return skip;
 }
 
@@ -12801,6 +12807,7 @@ bool StatelessValidation::PreCallValidateGetFenceFdKHR(
         skip |= validate_flags("vkGetFenceFdKHR", "pGetFdInfo->handleType", "VkExternalFenceHandleTypeFlagBits", AllVkExternalFenceHandleTypeFlagBits, pGetFdInfo->handleType, kRequiredSingleBit, "VUID-VkFenceGetFdInfoKHR-handleType-parameter", "VUID-VkFenceGetFdInfoKHR-handleType-parameter");
     }
     skip |= validate_required_pointer("vkGetFenceFdKHR", "pFd", pFd, "VUID-vkGetFenceFdKHR-pFd-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetFenceFdKHR(device, pGetFdInfo, pFd);
     return skip;
 }
 
