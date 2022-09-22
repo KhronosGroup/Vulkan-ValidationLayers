@@ -505,7 +505,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void Submit(uint32_t perf_submit_pass);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
-    uint32_t GetDynamicColorAttachmentCount() {
+    uint32_t GetDynamicColorAttachmentCount() const {
         if (activeRenderPass) {
             if (activeRenderPass->use_dynamic_rendering_inherited) {
                 return activeRenderPass->inheritance_rendering_info.colorAttachmentCount;
@@ -516,12 +516,13 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         }
         return 0;
     }
-    uint32_t GetDynamicColorAttachmentImageIndex(uint32_t index) { return index; }
-    uint32_t GetDynamicColorResolveAttachmentImageIndex(uint32_t index) { return index + GetDynamicColorAttachmentCount(); }
-    uint32_t GetDynamicDepthAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount(); }
-    uint32_t GetDynamicDepthResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 1; }
-    uint32_t GetDynamicStencilAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 2; }
-    uint32_t GetDynamicStencilResolveAttachmentImageIndex() { return 2 * GetDynamicColorAttachmentCount() + 3; }
+    bool IsValidDynamicColorAttachmentImageIndex(uint32_t index) const { return index < GetDynamicColorAttachmentCount(); }
+    uint32_t GetDynamicColorAttachmentImageIndex(uint32_t index) const { return index; }
+    uint32_t GetDynamicColorResolveAttachmentImageIndex(uint32_t index) const { return index + GetDynamicColorAttachmentCount(); }
+    uint32_t GetDynamicDepthAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount(); }
+    uint32_t GetDynamicDepthResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 1; }
+    uint32_t GetDynamicStencilAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 2; }
+    uint32_t GetDynamicStencilResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 3; }
 
     bool RasterizationDisabled() const;
     inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
