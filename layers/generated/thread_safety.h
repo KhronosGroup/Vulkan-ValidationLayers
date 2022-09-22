@@ -3281,11 +3281,11 @@ void PostCallRecordCmdControlVideoCodingKHR(
 
 void PreCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) override;
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) override;
 
 void PostCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) override;
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) override;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCmdBeginRenderingKHR(

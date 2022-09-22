@@ -1246,7 +1246,7 @@ void DispatchCmdControlVideoCodingKHR(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 void DispatchCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo);
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo);
 #endif // VK_ENABLE_BETA_EXTENSIONS
 void DispatchCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,

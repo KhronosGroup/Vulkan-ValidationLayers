@@ -3495,17 +3495,6 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-// Map type VkVideoDecodeH264MvcInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_MVC_INFO_EXT
-template <> struct LvlTypeMap<VkVideoDecodeH264MvcInfoEXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_MVC_INFO_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_MVC_INFO_EXT> {
-    typedef VkVideoDecodeH264MvcInfoEXT Type;
-};
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 // Map type VkVideoDecodeH264DpbSlotInfoEXT to id VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT
 template <> struct LvlTypeMap<VkVideoDecodeH264DpbSlotInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_DPB_SLOT_INFO_EXT;

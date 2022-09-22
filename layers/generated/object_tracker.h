@@ -1629,7 +1629,7 @@ bool PreCallValidateCmdControlVideoCodingKHR(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) const override;
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) const override;
 #endif // VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,

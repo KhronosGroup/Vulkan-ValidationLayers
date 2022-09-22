@@ -3518,7 +3518,7 @@ bool ObjectLifetimes::PreCallValidateDestroyVideoSessionKHR(
     const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyVideoSessionKHR-device-parameter", kVUIDUndefined);
-    skip |= ValidateObject(videoSession, kVulkanObjectTypeVideoSessionKHR, false, "VUID-vkDestroyVideoSessionKHR-videoSession-parameter", "VUID-vkDestroyVideoSessionKHR-videoSession-parent");
+    skip |= ValidateObject(videoSession, kVulkanObjectTypeVideoSessionKHR, true, "VUID-vkDestroyVideoSessionKHR-videoSession-parameter", "VUID-vkDestroyVideoSessionKHR-videoSession-parent");
     skip |= ValidateDestroyObject(videoSession, kVulkanObjectTypeVideoSessionKHR, pAllocator, kVUIDUndefined, kVUIDUndefined);
 
     return skip;
@@ -3619,7 +3619,7 @@ bool ObjectLifetimes::PreCallValidateDestroyVideoSessionParametersKHR(
     const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyVideoSessionParametersKHR-device-parameter", kVUIDUndefined);
-    skip |= ValidateObject(videoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, false, "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-parameter", kVUIDUndefined);
+    skip |= ValidateObject(videoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, true, "VUID-vkDestroyVideoSessionParametersKHR-videoSessionParameters-parameter", kVUIDUndefined);
     skip |= ValidateDestroyObject(videoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, pAllocator, kVUIDUndefined, kVUIDUndefined);
 
     return skip;
@@ -3685,21 +3685,21 @@ bool ObjectLifetimes::PreCallValidateCmdControlVideoCodingKHR(
 
 bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) const {
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) const {
     bool skip = false;
     skip |= ValidateObject(commandBuffer, kVulkanObjectTypeCommandBuffer, false, "VUID-vkCmdDecodeVideoKHR-commandBuffer-parameter", kVUIDUndefined);
-    if (pFrameInfo) {
-        skip |= ValidateObject(pFrameInfo->srcBuffer, kVulkanObjectTypeBuffer, false, "VUID-VkVideoDecodeInfoKHR-srcBuffer-parameter", kVUIDUndefined);
-        skip |= ValidateObject(pFrameInfo->dstPictureResource.imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
-        if (pFrameInfo->pSetupReferenceSlot) {
-            if (pFrameInfo->pSetupReferenceSlot->pPictureResource) {
-                skip |= ValidateObject(pFrameInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
+    if (pDecodeInfo) {
+        skip |= ValidateObject(pDecodeInfo->srcBuffer, kVulkanObjectTypeBuffer, false, "VUID-VkVideoDecodeInfoKHR-srcBuffer-parameter", kVUIDUndefined);
+        skip |= ValidateObject(pDecodeInfo->dstPictureResource.imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
+        if (pDecodeInfo->pSetupReferenceSlot) {
+            if (pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
+                skip |= ValidateObject(pDecodeInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
             }
         }
-        if (pFrameInfo->pReferenceSlots) {
-            for (uint32_t index1 = 0; index1 < pFrameInfo->referenceSlotCount; ++index1) {
-                if (pFrameInfo->pReferenceSlots[index1].pPictureResource) {
-                    skip |= ValidateObject(pFrameInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
+        if (pDecodeInfo->pReferenceSlots) {
+            for (uint32_t index1 = 0; index1 < pDecodeInfo->referenceSlotCount; ++index1) {
+                if (pDecodeInfo->pReferenceSlots[index1].pPictureResource) {
+                    skip |= ValidateObject(pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding, kVulkanObjectTypeImageView, false, "VUID-VkVideoPictureResourceInfoKHR-imageViewBinding-parameter", kVUIDUndefined);
                 }
             }
         }

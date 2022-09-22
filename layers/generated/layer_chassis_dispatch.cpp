@@ -5606,41 +5606,41 @@ void DispatchCmdControlVideoCodingKHR(
 
 void DispatchCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo)
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, pFrameInfo);
-    safe_VkVideoDecodeInfoKHR var_local_pFrameInfo;
-    safe_VkVideoDecodeInfoKHR *local_pFrameInfo = NULL;
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
+    safe_VkVideoDecodeInfoKHR var_local_pDecodeInfo;
+    safe_VkVideoDecodeInfoKHR *local_pDecodeInfo = NULL;
     {
-        if (pFrameInfo) {
-            local_pFrameInfo = &var_local_pFrameInfo;
-            local_pFrameInfo->initialize(pFrameInfo);
-            if (pFrameInfo->srcBuffer) {
-                local_pFrameInfo->srcBuffer = layer_data->Unwrap(pFrameInfo->srcBuffer);
+        if (pDecodeInfo) {
+            local_pDecodeInfo = &var_local_pDecodeInfo;
+            local_pDecodeInfo->initialize(pDecodeInfo);
+            if (pDecodeInfo->srcBuffer) {
+                local_pDecodeInfo->srcBuffer = layer_data->Unwrap(pDecodeInfo->srcBuffer);
             }
-            if (pFrameInfo->dstPictureResource.imageViewBinding) {
-                local_pFrameInfo->dstPictureResource.imageViewBinding = layer_data->Unwrap(pFrameInfo->dstPictureResource.imageViewBinding);
+            if (pDecodeInfo->dstPictureResource.imageViewBinding) {
+                local_pDecodeInfo->dstPictureResource.imageViewBinding = layer_data->Unwrap(pDecodeInfo->dstPictureResource.imageViewBinding);
             }
-            if (local_pFrameInfo->pSetupReferenceSlot) {
-                if (local_pFrameInfo->pSetupReferenceSlot->pPictureResource) {
-                    if (pFrameInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding) {
-                        local_pFrameInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding = layer_data->Unwrap(pFrameInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding);
+            if (local_pDecodeInfo->pSetupReferenceSlot) {
+                if (local_pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
+                    if (pDecodeInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding) {
+                        local_pDecodeInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding = layer_data->Unwrap(pDecodeInfo->pSetupReferenceSlot->pPictureResource->imageViewBinding);
                     }
                 }
             }
-            if (local_pFrameInfo->pReferenceSlots) {
-                for (uint32_t index1 = 0; index1 < local_pFrameInfo->referenceSlotCount; ++index1) {
-                    if (local_pFrameInfo->pReferenceSlots[index1].pPictureResource) {
-                        if (pFrameInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding) {
-                            local_pFrameInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding = layer_data->Unwrap(pFrameInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding);
+            if (local_pDecodeInfo->pReferenceSlots) {
+                for (uint32_t index1 = 0; index1 < local_pDecodeInfo->referenceSlotCount; ++index1) {
+                    if (local_pDecodeInfo->pReferenceSlots[index1].pPictureResource) {
+                        if (pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding) {
+                            local_pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding = layer_data->Unwrap(pDecodeInfo->pReferenceSlots[index1].pPictureResource->imageViewBinding);
                         }
                     }
                 }
             }
         }
     }
-    layer_data->device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, (const VkVideoDecodeInfoKHR*)local_pFrameInfo);
+    layer_data->device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, (const VkVideoDecodeInfoKHR*)local_pDecodeInfo);
 
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
