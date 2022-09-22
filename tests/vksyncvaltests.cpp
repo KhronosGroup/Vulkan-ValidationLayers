@@ -4247,7 +4247,11 @@ struct QSTestContext {
     VkBufferObj buffer_b;
     VkBufferObj buffer_c;
 
-    VkBufferCopy region;
+    VkBufferCopy full_buffer;
+    VkBufferCopy first_half;
+    VkBufferCopy second_half;
+    VkBufferCopy first_to_second;
+    VkBufferCopy second_to_first;
     VkCommandPoolObj pool;
 
     VkCommandBufferObj cba;
@@ -4273,10 +4277,10 @@ struct QSTestContext {
     void BeginC() { Begin(cbc); }
 
     void End();
-
-    void Copy(VkBufferObj& from, VkBufferObj& to) {
-        vk::CmdCopyBuffer(current_cb->handle(), from.handle(), to.handle(), 1, &region);
+    void Copy(VkBufferObj& from, VkBufferObj& to, const VkBufferCopy& copy_region) {
+        vk::CmdCopyBuffer(current_cb->handle(), from.handle(), to.handle(), 1, &copy_region);
     }
+    void Copy(VkBufferObj& from, VkBufferObj& to) { Copy(from, to, full_buffer); }
     void CopyAToB() { Copy(buffer_a, buffer_b); }
     void CopyAToC() { Copy(buffer_a, buffer_c); }
 
@@ -4291,8 +4295,11 @@ struct QSTestContext {
                          &region);
     };
 
-    VkBufferMemoryBarrier InitBufferBarrier(const VkBufferObj& buffer);
-    void TransferBarrier(const VkBufferObj& buffer);
+    VkBufferMemoryBarrier InitBufferBarrier(const VkBufferObj& buffer, VkAccessFlags src, VkAccessFlags dst);
+    VkBufferMemoryBarrier InitBufferBarrierRAW(const VkBufferObj& buffer);
+    VkBufferMemoryBarrier InitBufferBarrierWAR(const VkBufferObj& buffer);
+    void TransferBarrierWAR(const VkBufferObj& buffer);
+    void TransferBarrierRAW(const VkBufferObj& buffer);
     void TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier);
 
     void Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait = VK_NULL_HANDLE,
@@ -4323,7 +4330,7 @@ struct QSTestContext {
     }
     void SetEvent(VkPipelineStageFlags src_mask) { event.cmd_set(*current_cb, src_mask); }
     void WaitEventBufferTransfer(VkBufferObj& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask) {
-        std::vector<VkBufferMemoryBarrier> buffer_barriers(1, InitBufferBarrier(buffer));
+        std::vector<VkBufferMemoryBarrier> buffer_barriers(1, InitBufferBarrierWAR(buffer));
         event.cmd_wait(*current_cb, src_mask, dst_mask, std::vector<VkMemoryBarrier>(), buffer_barriers,
                        std::vector<VkImageMemoryBarrier>());
     }
@@ -4332,7 +4339,8 @@ struct QSTestContext {
     void QueueWait1() { QueueWait(q1); }
     void DeviceWait() { vk::DeviceWaitIdle(dev->handle()); }
 
-    void RecordCopy(VkCommandBufferObj& cb, VkBufferObj& from, VkBufferObj& to);
+    void RecordCopy(VkCommandBufferObj& cb, VkBufferObj& from, VkBufferObj& to, const VkBufferCopy& copy_region);
+    void RecordCopy(VkCommandBufferObj& cb, VkBufferObj& from, VkBufferObj& to) { RecordCopy(cb, from, to, full_buffer); }
 };
 
 QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueObj* force_q1)
@@ -4376,7 +4384,13 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
     buffer_b.init_as_src_and_dst(*device, 256, mem_prop);
     buffer_c.init_as_src_and_dst(*device, 256, mem_prop);
 
-    region = {0, 0, 256};
+    VkDeviceSize size = 256;
+    VkDeviceSize half_size = size / 2;
+    full_buffer = {0, 0, size};
+    first_half = {0, 0, half_size};
+    second_half = {half_size, half_size, half_size};
+    first_to_second = {0, half_size, half_size};
+    second_to_first = {half_size, 0, half_size};
 
     pool.Init(device, q_fam, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
@@ -4411,14 +4425,22 @@ void QSTestContext::End() {
     current_cb = nullptr;
 }
 
-VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const VkBufferObj& buffer) {
+VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const VkBufferObj& buffer, VkAccessFlags src, VkAccessFlags dst) {
     auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
-    buffer_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    buffer_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_barrier.srcAccessMask = src;
+    buffer_barrier.dstAccessMask = dst;
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.offset = 0;
     buffer_barrier.size = 256;
     return buffer_barrier;
+}
+
+VkBufferMemoryBarrier QSTestContext::InitBufferBarrierRAW(const VkBufferObj& buffer) {
+    return InitBufferBarrier(buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+}
+
+VkBufferMemoryBarrier QSTestContext::InitBufferBarrierWAR(const VkBufferObj& buffer) {
+    return InitBufferBarrier(buffer, VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
 }
 
 void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier) {
@@ -4426,7 +4448,8 @@ void QSTestContext::TransferBarrier(const VkBufferMemoryBarrier& buffer_barrier)
                            &buffer_barrier, 0, nullptr);
 }
 
-void QSTestContext::TransferBarrier(const VkBufferObj& buffer) { TransferBarrier(InitBufferBarrier(buffer)); }
+void QSTestContext::TransferBarrierWAR(const VkBufferObj& buffer) { TransferBarrier(InitBufferBarrierWAR(buffer)); }
+void QSTestContext::TransferBarrierRAW(const VkBufferObj& buffer) { TransferBarrier(InitBufferBarrierRAW(buffer)); }
 
 void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                            VkFence fence) {
@@ -4473,9 +4496,9 @@ void QSTestContext::SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait,
     vk::QueueSubmit2(q, 1, &submit1, fence);
 }
 
-inline void QSTestContext::RecordCopy(VkCommandBufferObj& cb, VkBufferObj& from, VkBufferObj& to) {
+void QSTestContext::RecordCopy(VkCommandBufferObj& cb, VkBufferObj& from, VkBufferObj& to, const VkBufferCopy& copy_region) {
     Begin(cb);
-    Copy(from, to);
+    Copy(from, to, copy_region);
     End();
 }
 
@@ -4517,6 +4540,20 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
     test.Submit0(test.cbb);
     m_errorMonitor->VerifyFound();
+
+    test.DeviceWait();
+
+    // A little grey box testing to ensure the trim code is referenced
+    test.BeginA();
+    test.Copy(test.buffer_a, test.buffer_c, test.first_half);
+    test.Copy(test.buffer_a, test.buffer_c, test.second_half);
+    test.End();
+    test.Submit0(test.cba);
+    test.BeginB();
+    test.TransferBarrierWAR(test.buffer_a);
+    test.Copy(test.buffer_b, test.buffer_a);
+    test.End();
+    test.Submit0(test.cbb);
 
     test.DeviceWait();
 }
@@ -4668,7 +4705,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
 
     // Use the barrier to clean up the WAR, which will work for command buffers ealier in queue submission order, or with
     // correct semaphore operations between queues.
-    test.TransferBarrier(test.buffer_a);
+    test.TransferBarrierWAR(test.buffer_a);
     test.CopyCToA();
     test.End();
 
