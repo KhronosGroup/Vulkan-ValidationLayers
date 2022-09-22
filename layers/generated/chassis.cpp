@@ -6519,22 +6519,22 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(
 
 VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) {
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDecodeVideoKHR]) {
         auto lock = intercept->ReadLock();
-        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
         if (skip) return;
     }
     for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDecodeVideoKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PreCallRecordCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+        intercept->PreCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     }
-    DispatchCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+    DispatchCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDecodeVideoKHR]) {
         auto lock = intercept->WriteLock();
-        intercept->PostCallRecordCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+        intercept->PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS

@@ -4656,7 +4656,8 @@ void ThreadSafety::PreCallRecordDestroyVideoSessionKHR(
     VkVideoSessionKHR                           videoSession,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyVideoSessionKHR");
-    StartReadObject(videoSession, "vkDestroyVideoSessionKHR");
+    StartWriteObject(videoSession, "vkDestroyVideoSessionKHR");
+    // Host access to videoSession must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyVideoSessionKHR(
@@ -4664,7 +4665,9 @@ void ThreadSafety::PostCallRecordDestroyVideoSessionKHR(
     VkVideoSessionKHR                           videoSession,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyVideoSessionKHR");
-    FinishReadObject(videoSession, "vkDestroyVideoSessionKHR");
+    FinishWriteObject(videoSession, "vkDestroyVideoSessionKHR");
+    DestroyObject(videoSession);
+    // Host access to videoSession must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordGetVideoSessionMemoryRequirementsKHR(
@@ -4692,7 +4695,8 @@ void ThreadSafety::PreCallRecordBindVideoSessionMemoryKHR(
     uint32_t                                    bindSessionMemoryInfoCount,
     const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos) {
     StartReadObjectParentInstance(device, "vkBindVideoSessionMemoryKHR");
-    StartReadObject(videoSession, "vkBindVideoSessionMemoryKHR");
+    StartWriteObject(videoSession, "vkBindVideoSessionMemoryKHR");
+    // Host access to videoSession must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordBindVideoSessionMemoryKHR(
@@ -4702,7 +4706,8 @@ void ThreadSafety::PostCallRecordBindVideoSessionMemoryKHR(
     const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkBindVideoSessionMemoryKHR");
-    FinishReadObject(videoSession, "vkBindVideoSessionMemoryKHR");
+    FinishWriteObject(videoSession, "vkBindVideoSessionMemoryKHR");
+    // Host access to videoSession must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCreateVideoSessionParametersKHR(
@@ -4747,7 +4752,8 @@ void ThreadSafety::PreCallRecordDestroyVideoSessionParametersKHR(
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyVideoSessionParametersKHR");
-    StartReadObject(videoSessionParameters, "vkDestroyVideoSessionParametersKHR");
+    StartWriteObject(videoSessionParameters, "vkDestroyVideoSessionParametersKHR");
+    // Host access to videoSessionParameters must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyVideoSessionParametersKHR(
@@ -4755,43 +4761,51 @@ void ThreadSafety::PostCallRecordDestroyVideoSessionParametersKHR(
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyVideoSessionParametersKHR");
-    FinishReadObject(videoSessionParameters, "vkDestroyVideoSessionParametersKHR");
+    FinishWriteObject(videoSessionParameters, "vkDestroyVideoSessionParametersKHR");
+    DestroyObject(videoSessionParameters);
+    // Host access to videoSessionParameters must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoBeginCodingInfoKHR*            pBeginInfo) {
-    StartReadObject(commandBuffer, "vkCmdBeginVideoCodingKHR");
+    StartWriteObject(commandBuffer, "vkCmdBeginVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoBeginCodingInfoKHR*            pBeginInfo) {
-    FinishReadObject(commandBuffer, "vkCmdBeginVideoCodingKHR");
+    FinishWriteObject(commandBuffer, "vkCmdBeginVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEndCodingInfoKHR*              pEndCodingInfo) {
-    StartReadObject(commandBuffer, "vkCmdEndVideoCodingKHR");
+    StartWriteObject(commandBuffer, "vkCmdEndVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEndCodingInfoKHR*              pEndCodingInfo) {
-    FinishReadObject(commandBuffer, "vkCmdEndVideoCodingKHR");
+    FinishWriteObject(commandBuffer, "vkCmdEndVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) {
-    StartReadObject(commandBuffer, "vkCmdControlVideoCodingKHR");
+    StartWriteObject(commandBuffer, "vkCmdControlVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) {
-    FinishReadObject(commandBuffer, "vkCmdControlVideoCodingKHR");
+    FinishWriteObject(commandBuffer, "vkCmdControlVideoCodingKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -4799,14 +4813,16 @@ void ThreadSafety::PostCallRecordCmdControlVideoCodingKHR(
 
 void ThreadSafety::PreCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) {
-    StartReadObject(commandBuffer, "vkCmdDecodeVideoKHR");
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) {
+    StartWriteObject(commandBuffer, "vkCmdDecodeVideoKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkVideoDecodeInfoKHR*                 pFrameInfo) {
-    FinishReadObject(commandBuffer, "vkCmdDecodeVideoKHR");
+    const VkVideoDecodeInfoKHR*                 pDecodeInfo) {
+    FinishWriteObject(commandBuffer, "vkCmdDecodeVideoKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5748,13 +5764,15 @@ void ThreadSafety::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR
 void ThreadSafety::PreCallRecordCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {
-    StartReadObject(commandBuffer, "vkCmdEncodeVideoKHR");
+    StartWriteObject(commandBuffer, "vkCmdEncodeVideoKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdEncodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEncodeInfoKHR*                 pEncodeInfo) {
-    FinishReadObject(commandBuffer, "vkCmdEncodeVideoKHR");
+    FinishWriteObject(commandBuffer, "vkCmdEncodeVideoKHR");
+    // Host access to commandBuffer must be externally synchronized
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 

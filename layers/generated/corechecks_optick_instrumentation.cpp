@@ -4163,20 +4163,20 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdControlVideoCodingKHR(VkComm
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-bool CoreChecksOptickInstrumented::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pFrameInfo) const {
+bool CoreChecksOptickInstrumented::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) const {
     OPTICK_EVENT();
-    auto result = CoreChecks::PreCallValidateCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+    auto result = CoreChecks::PreCallValidateCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     return result;
 }
 
-void CoreChecksOptickInstrumented::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pFrameInfo) {
+void CoreChecksOptickInstrumented::PreCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
     OPTICK_EVENT();
-    CoreChecks::PreCallRecordCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+    CoreChecks::PreCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
 }
 
-void CoreChecksOptickInstrumented::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pFrameInfo) {
+void CoreChecksOptickInstrumented::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) {
     OPTICK_EVENT();
-    CoreChecks::PostCallRecordCmdDecodeVideoKHR(commandBuffer, pFrameInfo);
+    CoreChecks::PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
 }
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
