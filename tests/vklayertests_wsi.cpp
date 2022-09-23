@@ -159,12 +159,10 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     image_swapchain_create_info.swapchain = m_swapchain;
     image_create_info.pNext = &image_swapchain_create_info;
 
-    VkImage image_from_swapchain;
-    VkResult err = vk::CreateImage(device(), &image_create_info, NULL, &image_from_swapchain);
-    ASSERT_VK_SUCCESS(err);
+    vk_testing::Image image_from_swapchain(*m_device, image_create_info, vk_testing::no_mem);
 
     VkMemoryRequirements mem_reqs = {};
-    vk::GetImageMemoryRequirements(device(), image_from_swapchain, &mem_reqs);
+    vk::GetImageMemoryRequirements(device(), image_from_swapchain.handle(), &mem_reqs);
 
     auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.memoryTypeIndex = 0;
@@ -182,7 +180,7 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     }
 
     auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
-    bind_info.image = image_from_swapchain;
+    bind_info.image = image_from_swapchain.handle();
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -214,8 +212,6 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
     bind_info.memory = VK_NULL_HANDLE;
     bind_swapchain_info.imageIndex = 0;
     vk::BindImageMemory2(m_device->device(), 1, &bind_info);
-
-    vk::DestroyImage(m_device->device(), image_from_swapchain, nullptr);
 }
 
 TEST_F(VkLayerTest, ValidSwapchainImage) {
