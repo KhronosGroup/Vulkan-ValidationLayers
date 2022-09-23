@@ -100,7 +100,6 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     TEST_DESCRIPTION("Create an instance with a deprecated extension.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
 
@@ -111,6 +110,8 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
