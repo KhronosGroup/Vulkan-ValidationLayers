@@ -1869,6 +1869,10 @@ TEST_F(VkBestPracticesLayerTest, LoadDeprecatedExtension) {
 
     const char *extension = VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
 
+    if (!DeviceExtensionSupported(extension)) {
+        GTEST_SKIP() << extension << " not supported.";
+    }
+
     VkDeviceQueueCreateInfo qci = LvlInitStruct<VkDeviceQueueCreateInfo>();
     qci.queueFamilyIndex = 0;
     float priority = 1;
