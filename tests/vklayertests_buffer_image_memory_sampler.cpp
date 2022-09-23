@@ -11463,6 +11463,10 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
         }
     }
 
+    if (deviceCoherentMemoryTypeIndex == memory_info.memoryTypeCount) {
+        GTEST_SKIP() << "Valid memory type index not found";
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAllocateMemory-deviceCoherentMemory-02790");
 
     VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
