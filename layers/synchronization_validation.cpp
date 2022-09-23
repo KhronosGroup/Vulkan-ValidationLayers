@@ -3876,6 +3876,7 @@ void SyncValidator::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) {
     QueueBatchContext::BatchSet queue_batch_contexts = GetQueueBatchSnapshot();
     for (auto &batch : queue_batch_contexts) {
         batch->ApplyTaggedWait(queue_id, tag);
+        batch->Trim();
     }
 }
 
@@ -7650,6 +7651,7 @@ void QueueBatchContext::ApplyTaggedWait(QueueId queue_id, ResourceUsageTag tag) 
 void QueueBatchContext::ApplyDeviceWait() {
     access_context_.Reset();
     events_context_.ApplyTaggedWait(GetQueueFlags(), ResourceUsageRecord::kMaxIndex);
+    Trim();
 }
 
 HazardResult QueueBatchContext::DetectFirstUseHazard(const ResourceUsageRange &tag_range) {
