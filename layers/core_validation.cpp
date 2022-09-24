@@ -18801,7 +18801,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
                                      index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
                 }
                 for (const auto &query_object : cb_state->startedQueries) {
-                    if (query_object.query == query) {
+                    if (query_object.pool == queryPool && query_object.query == query) {
                         if (query_object.index != index) {
                             skip |= LogError(cb_state->commandBuffer(), "VUID-vkCmdEndQueryIndexedEXT-queryType-06696",
                                              "vkCmdEndQueryIndexedEXT(): queryPool is of type %s, but "
