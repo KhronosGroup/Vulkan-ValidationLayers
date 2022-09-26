@@ -332,7 +332,7 @@ TEST_F(VkLayerTest, IndexBufferBadBindOffset) {
 TEST_F(VkLayerTest, MissingClearAttachment) {
     TEST_DESCRIPTION("Points to a wrong colorAttachment index in a VkClearAttachment structure passed to vkCmdClearAttachments");
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-02501");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
 
     VKTriangleTest(BsoFailCmdClearAttachments);
     m_errorMonitor->VerifyFound();
@@ -955,12 +955,12 @@ TEST_F(VkLayerTest, ClearColorAttachmentsDepthStencil) {
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-02502");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-02503");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
     attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
