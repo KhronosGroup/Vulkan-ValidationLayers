@@ -33,6 +33,7 @@
 #define draw_stride push_constant_word_3
 
 layout(set = 0, binding = 0) buffer OutputBuffer {
+    uint flags;
     uint output_buffer_count;
     uint output_buffer[];
 };

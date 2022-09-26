@@ -570,10 +570,12 @@ The format of this buffer is as follows:
 ```C
 struct DebugOutputBuffer_t
 {
+   uint flags;
    uint DataWrittenLength;
    uint Data[];
 }
 ```
+`flags` is a word of flag bits used to dynamically control the instrumentation code's behavior
 
 `DataWrittenLength` is the number of uint32_t words that have been attempted to be written.
 It should be initialized to 0.

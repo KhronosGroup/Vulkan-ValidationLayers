@@ -291,20 +291,21 @@ void snprintf_with_malloc(std::stringstream &shader_message, const DPFSubstring 
 void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                              uint32_t operation_index, uint32_t *const debug_output_buffer) {
     // Word         Content
-    //    0         Size of output record, including this word
-    //    1         Shader ID
-    //    2         Instruction Position
-    //    3         Stage Ordinal
-    //    4         Stage - specific Info Word 0
-    //    5         Stage - specific Info Word 1
-    //    6         Stage - specific Info Word 2
-    //    7         Printf Format String Id
-    //    8         Printf Values Word 0 (optional)
-    //    9         Printf Values Word 1 (optional)
-    uint32_t expect = debug_output_buffer[0];
+    //    0         Must be zero
+    //    1         Size of output record, including this word
+    //    2         Shader ID
+    //    3         Instruction Position
+    //    4         Stage Ordinal
+    //    5         Stage - specific Info Word 0
+    //    6         Stage - specific Info Word 1
+    //    7         Stage - specific Info Word 2
+    //    8         Printf Format String Id
+    //    9         Printf Values Word 0 (optional)
+    //    10         Printf Values Word 1 (optional)
+    uint32_t expect = debug_output_buffer[1];
     if (!expect) return;
 
-    uint32_t index = 1;
+    uint32_t index = spvtools::kDebugOutputDataOffset;
     while (debug_output_buffer[index]) {
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
@@ -405,11 +406,11 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         }
         index += debug_record->size;
     }
-    if ((index - 1) != expect) {
+    if ((index - spvtools::kDebugOutputDataOffset) != expect) {
         LogWarning(device, "UNASSIGNED-DEBUG-PRINTF",
                    "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
-    memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
+    memset(debug_output_buffer, 0, 4 * (debug_output_buffer[spvtools::kDebugOutputSizeOffset] + spvtools::kDebugOutputDataOffset));
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
