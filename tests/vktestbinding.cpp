@@ -425,7 +425,10 @@ VkResult Queue::wait() {
 }
 
 DeviceMemory::~DeviceMemory() NOEXCEPT {
+// Not supported by VulkanSC
+#if !defined(VULKANSC)
     if (initialized()) vk::FreeMemory(device(), handle(), NULL);
+#endif
 }
 
 void DeviceMemory::init(const Device &dev, const VkMemoryAllocateInfo &info) {
@@ -494,7 +497,14 @@ void Event::cmd_reset(const CommandBuffer &cmd, VkPipelineStageFlags stage_mask)
 
 void Event::reset() { EXPECT(vk::ResetEvent(device(), handle()) == VK_SUCCESS); }
 
+// Not supported by VulkanSC
+#if !defined(VULKANSC)
 NON_DISPATCHABLE_HANDLE_DTOR(QueryPool, vk::DestroyQueryPool)
+#else
+QueryPool::~QueryPool() {
+
+}
+#endif
 
 void QueryPool::init(const Device &dev, const VkQueryPoolCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateQueryPool, dev, &info);
@@ -610,6 +620,7 @@ void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImageView, dev, &info);
 }
 
+#if defined(VK_NV_ray_tracing)
 AccelerationStructure::~AccelerationStructure() {
     if (initialized()) {
         PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV =
@@ -619,7 +630,9 @@ AccelerationStructure::~AccelerationStructure() {
         vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
     }
 }
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
 AccelerationStructureKHR::~AccelerationStructureKHR() {
     if (initialized()) {
         PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
@@ -628,6 +641,8 @@ AccelerationStructureKHR::~AccelerationStructureKHR() {
         vkDestroyAccelerationStructureKHR(device(), handle(), nullptr);
     }
 }
+#endif
+#if defined(VK_NV_ray_tracing)
 VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
     PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
         (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vk::GetDeviceProcAddr(device(),
@@ -700,7 +715,8 @@ void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buf
     }
     buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
-
+#endif // defined(VK_NV_ray_tracing)
+#if defined(VK_KHR_acceleration_structure)
 void AccelerationStructureKHR::init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory) {
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR =
         (PFN_vkCreateAccelerationStructureKHR)vk::GetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureKHR");
@@ -721,7 +737,10 @@ void AccelerationStructureKHR::create_scratch_buffer(const Device &dev, Buffer *
     }
     buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
+#endif // defined(VK_KHR_acceleration_structure)
 
+// Not supported in VulkanSC
+#if !defined(VULKANSC)
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
 
 void ShaderModule::init(const Device &dev, const VkShaderModuleCreateInfo &info) {
@@ -736,6 +755,7 @@ VkResult ShaderModule::init_try(const Device &dev, const VkShaderModuleCreateInf
 
     return err;
 }
+#endif
 
 NON_DISPATCHABLE_HANDLE_DTOR(Pipeline, vk::DestroyPipeline)
 
@@ -805,7 +825,14 @@ void DescriptorSetLayout::init(const Device &dev, const VkDescriptorSetLayoutCre
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateDescriptorSetLayout, dev, &info);
 }
 
+// Not supported in VulkanSC
+#if !defined(VULKANSC)
 NON_DISPATCHABLE_HANDLE_DTOR(DescriptorPool, vk::DestroyDescriptorPool)
+#else
+DescriptorPool::~DescriptorPool() {
+
+}
+#endif
 
 void DescriptorPool::init(const Device &dev, const VkDescriptorPoolCreateInfo &info) {
     setDynamicUsage(info.flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
@@ -857,7 +884,14 @@ DescriptorSet::~DescriptorSet() NOEXCEPT {
     }
 }
 
+// Not supported in VulkanSC
+#if !defined(VULKANSC)
 NON_DISPATCHABLE_HANDLE_DTOR(CommandPool, vk::DestroyCommandPool)
+#else
+CommandPool::~CommandPool() {
+
+}
+#endif
 
 void CommandPool::init(const Device &dev, const VkCommandPoolCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateCommandPool, dev, &info);

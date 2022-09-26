@@ -43,7 +43,11 @@
 // sdk_platform header redefines NOMINMAX
 #undef NOMINMAX
 #include <vulkan/vk_sdk_platform.h>
+#if defined(VULKANSC)
+#include <vulkan/vulkan_sc.h>
+#else
 #include <vulkan/vulkan.h>
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -122,11 +126,20 @@ static inline const char *vk_result_string(VkResult err) {
         STR(VK_SUBOPTIMAL_KHR);
         STR(VK_ERROR_OUT_OF_DATE_KHR);
         STR(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR);
+// VK_ERROR_VALIDATION_FAILED_EXT is promoted to core in VulkanSC.
+#if defined(VULKANSC)
+        STR(VK_ERROR_VALIDATION_FAILED);
+#else
         STR(VK_ERROR_VALIDATION_FAILED_EXT);
+#endif
+#if defined(VK_NV_glsl_shader)
         STR(VK_ERROR_INVALID_SHADER_NV);
+#endif
         STR(VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT);
         STR(VK_ERROR_NOT_PERMITTED_EXT);
+#if defined(VK_EXT_full_screen_exclusive)
         STR(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT);
+#endif
 #undef STR
         default:
             return "UNKNOWN_RESULT";

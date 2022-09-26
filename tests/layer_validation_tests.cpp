@@ -136,6 +136,7 @@ bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkF
     return (features == (phy_features & features));
 }
 
+#if defined(VK_KHR_push_descriptor)
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
     // Find address of extension call and make the call -- assumes needed extensions are enabled.
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
@@ -148,6 +149,7 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
     vkGetPhysicalDeviceProperties2KHR(gpu, &prop2);
     return push_descriptor_prop;
 }
+#endif
 
 VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu) {
     auto subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
@@ -255,8 +257,11 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 
     if (rp2_supported && rp2_vuid) {
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+#endif
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
@@ -264,9 +269,12 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         error_monitor->SetUnexpectedError("VUID-VkSubpassDescription2-None-04439");
 
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
         if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyFound();
+#endif
 
         // For api version >= 1.2, try core entrypoint
         PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
@@ -293,40 +301,72 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     error_monitor->VerifyNotFound();
 
     if (rp2_supported) {
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+#endif
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
         error_monitor->ExpectSuccess();
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+        err = vk::CreateRenderPass2(device, create_info2.ptr(), nullptr, &render_pass);
+#else
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
+#endif
         if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyNotFound();
     }
 }
 
 void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+                                      const VkRenderPassCreateInfo2 *create_info) {
+#else
                                       const VkRenderPassCreateInfo2KHR *create_info) {
+#endif
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
         (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
 
     error_monitor->ExpectSuccess();
+
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
+#else
+    err = vk::CreateRenderPass2(device, create_info, nullptr, &render_pass);
+#endif
     if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
     error_monitor->VerifyNotFound();
 }
 
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2 *create_info,
+#else
 void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
+#endif
                               const char *rp2_vuid) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
         (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+#endif
 
     error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+    err = vk::CreateRenderPass2(device, create_info, nullptr, &render_pass);
+#else
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
+#endif
     if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
     error_monitor->VerifyFound();
 }
@@ -344,16 +384,29 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vk::ResetCommandBuffer(command_buffer, 0);
     }
     if (rp2Supported && rp2_vuid) {
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
         PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR =
             (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
+#else
+        VkSubpassBeginInfo subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO, nullptr, VK_SUBPASS_CONTENTS_INLINE};
+#endif
         vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+        vk::CmdBeginRenderPass2(command_buffer, begin_info, &subpass_begin_info);
+#else
         vkCmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
+#endif
         error_monitor->VerifyFound();
         vk::ResetCommandBuffer(command_buffer, 0);
 
         // For api version >= 1.2, try core entrypoint
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+// ???: skip for vulkansc this is already done above.
+#if !defined(VULKANSC)
         PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2 =
             (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2");
         if (vkCmdBeginRenderPass2) {
@@ -363,6 +416,7 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
             error_monitor->VerifyFound();
             vk::ResetCommandBuffer(command_buffer, 0);
         }
+#endif
     }
 }
 
@@ -549,7 +603,12 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
     return VK_FORMAT_UNDEFINED;
 }
 
+// VK_KHR_get_memory_requirements2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2 fp, VkImage mp_image,
+#else
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
+#endif
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
     VkImagePlaneMemoryRequirementsInfo image_plane_req = {};
     image_plane_req.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO;
@@ -753,6 +812,8 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFor
 }
 
 bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vector<const char *> &device_extension_names) {
+// The extensions here are promoted to core in VulkanSC
+#if !defined(VULKANSC)
     if (renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
         device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
         device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
@@ -760,19 +821,27 @@ bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vect
         return true;
     }
     return false;
+#else
+    return true;
+#endif
 }
 
 bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFramework,
                                                     std::vector<const char *> &instance_extension_names,
                                                     std::vector<const char *> &device_extension_names,
                                                     VkValidationFeaturesEXT *features, void *userData) {
+// VK_KHR_get_physical_device_properties2 promoted to core in VulkanSC
+#if !defined(VULKANSC)
     bool descriptor_indexing = renderFramework->InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (descriptor_indexing) {
         instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
+#endif
     renderFramework->InitFramework(userData, features);
-    descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr,
-                                                                                           VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+// VK_KHR_maintenance3 and VK_EXT_descriptor_indexing promoted to core in VulkanSC
+#if !defined(VULKANSC)
+    descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported
+                                                     renderFramework->gpu(), nullptr, VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
     descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(
                                                      renderFramework->gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     if (descriptor_indexing) {
@@ -781,15 +850,25 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
         return true;
     }
     return false;
+#else
+    return true;
+#endif
 }
 
 bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework) {
+// VK_KHR_get_physical_device_properties2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
                                                                      "vkGetPhysicalDeviceFeatures2KHR");
     auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
     vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), &features2);
+#else
+    auto timeline_semaphore_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&timeline_semaphore_features);
+    vk::GetPhysicalDeviceFeatures2(renderFramework->gpu(), &features2);
+#endif
     if (!timeline_semaphore_features.timelineSemaphore) {
         return false;
     }
@@ -811,6 +890,8 @@ bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     return true;
 }
 
+// Test needs to be rewritten for VulkanSC to use precompiled pipelines
+#if !defined(VULKANSC)
 void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_TRUE(m_device && m_device->initialized());  // VKTriangleTest assumes Init() has finished
 
@@ -1023,6 +1104,7 @@ void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPi
     vk::CmdBindPipeline(commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
     commandBuffer->BindDescriptorSet(descriptorSet);
 }
+#endif // !defined(VULKANSC)
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
                        const VkCommandPoolCreateFlags flags, void *instance_pnext) {
@@ -1042,6 +1124,7 @@ VkLayerTest::VkLayerTest() {
 
     instance_layers_.push_back(kValidationLayerName);
 
+#if !defined(VULKANSC)
     if (VkTestFramework::m_devsim_layer) {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
             instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
@@ -1053,6 +1136,10 @@ VkLayerTest::VkLayerTest() {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
             instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
     }
+#else
+    if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
+        instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+#endif
 
     if (InstanceLayerSupported(kSynchronization2LayerName)) {
         instance_layers_.push_back(kSynchronization2LayerName);
@@ -1292,6 +1379,8 @@ VkBufferTest::~VkBufferTest() {
     if (CreateCurrent) {
         vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
     }
+// vkFreeMemory is not supported in VulkanSC
+#if !defined(VULKANSC)
     if (AllocateCurrent) {
         if (InvalidDeleteEn) {
             auto bad_memory = CastFromUint64<VkDeviceMemory>(CastToUint64(VulkanMemory) + 1);
@@ -1299,6 +1388,7 @@ VkBufferTest::~VkBufferTest() {
         }
         vk::FreeMemory(VulkanDevice, VulkanMemory, nullptr);
     }
+#endif
 }
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout) {
@@ -1465,6 +1555,7 @@ VkVerticesObj::~VkVerticesObj() {
     }
 }
 
+#if !defined(VULKANSC)
 bool VkVerticesObj::AddVertexInputToPipe(VkPipelineObj &aPipelineObj) {
     aPipelineObj.AddVertexInputAttribs(VertexInputAttributeDescription, AttributeCount);
     aPipelineObj.AddVertexInputBindings(VertexInputBindingDescription, BindingCount);
@@ -1478,6 +1569,7 @@ bool VkVerticesObj::AddVertexInputToPipeHelpr(CreatePipelineHelper *pipelineHelp
     pipelineHelper->vi_ci_.vertexAttributeDescriptionCount = AttributeCount;
     return true;
 }
+#endif
 
 void VkVerticesObj::BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned aOffsetCount, VkDeviceSize *aOffsetList) {
     VkDeviceSize *offsetList;
@@ -1516,16 +1608,21 @@ OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bi
     err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 
+#if defined(VK_KHR_push_descriptor)
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) == 0) {
         VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, allocate_pnext, pool_, 1,
                                                   &layout_.handle()};
         err = vk::AllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
     }
+#endif
 }
 
 OneOffDescriptorSet::~OneOffDescriptorSet() {
+// vkDestroyDescriptorPool not supported on VulkanSC
+#if !defined(VULKANSC)
     // No need to destroy set-- it's going away with the pool.
     vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
+#endif
 }
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
@@ -1621,6 +1718,10 @@ void OneOffDescriptorSet::UpdateDescriptorSets() {
     vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 }
 
+// VulkanSC only supports precompiled pipelines. Cutting out
+// source related to pipelines until it can be rewritten for
+// VulkanSC.
+#if !defined(VULKANSC)
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
 
 CreatePipelineHelper::~CreatePipelineHelper() {
@@ -1888,6 +1989,7 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool implicit_destro
     return err;
 }
 
+#if defined(VK_NV_ray_tracing)
 CreateNVRayTracingPipelineHelper::CreateNVRayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) {}
 CreateNVRayTracingPipelineHelper::~CreateNVRayTracingPipelineHelper() {
     VkDevice device = layer_test_.device();
@@ -2140,6 +2242,8 @@ VkResult CreateNVRayTracingPipelineHelper::CreateKHRRayTracingPipeline(bool impl
     err = vkCreateRayTracingPipelinesKHR(layer_test_.device(), 0, pipeline_cache_, 1, &rp_ci_KHR_, nullptr, &pipeline_);
     return err;
 }
+#endif // defined(VK_NV_ray_tracing)
+#endif // !defined(VULKANSC)
 
 namespace chain_util {
 const void *ExtensionChain::Head() const { return head_; }
@@ -2324,6 +2428,7 @@ void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string 
     context_->Reset();
 };
 
+#if !defined(VULKANSC)
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
                                     std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data, bool need_gpu_validation,
@@ -3456,6 +3561,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
     }
 }
+#endif
 
 void VkSyncValTest::InitSyncValFramework() {
     // Enable synchronization validation

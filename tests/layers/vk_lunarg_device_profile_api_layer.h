@@ -23,7 +23,11 @@
 #ifndef __VK_DEVICE_PROFILE_API_H__
 #define __VK_DEVICE_PROFILE_API_H__
 
+#if defined(VULKANSC)
+#include "vulkan/vulkan_sc.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus

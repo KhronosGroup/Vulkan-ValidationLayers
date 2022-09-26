@@ -123,17 +123,22 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
     using std::vector;
     const auto multiview_info = LvlFindInChain<VkRenderPassMultiviewCreateInfo>(in_struct.pNext);
     const auto* input_attachment_aspect_info = LvlFindInChain<VkRenderPassInputAttachmentAspectCreateInfo>(in_struct.pNext);
+#if defined(VK_EXT_fragment_density_map)
     const auto fragment_density_map_info = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(in_struct.pNext);
+#endif
 
     out_struct->~safe_VkRenderPassCreateInfo2();
     out_struct->sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
 
     // Fixup RPCI2 pNext chain.  Only FDM2 is valid on both chains.
+#if defined(VK_EXT_fragment_density_map)
     if (fragment_density_map_info) {
         out_struct->pNext = SafePnextCopy(fragment_density_map_info);
         auto base_struct = reinterpret_cast<const VkBaseOutStructure*>(out_struct->pNext);
         const_cast<VkBaseOutStructure*>(base_struct)->pNext = nullptr;
-    } else {
+    } else
+#endif
+    {
         out_struct->pNext = nullptr;
     }
 

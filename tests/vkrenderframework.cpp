@@ -150,7 +150,11 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
 
 vector<string> ErrorMonitor::GetOtherFailureMsgs() const { return other_messages_; }
 
+#if defined(VK_EXT_debug_report)
 VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() { return message_flags_; }
+#else
+VkFlags ErrorMonitor::GetMessageFlags() { return message_flags_; }
+#endif
 
 bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
 
@@ -179,7 +183,11 @@ void ErrorMonitor::DumpFailureMsgs() const {
     }
 }
 
+#if defined(VK_EXT_debug_report)
 void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
+#else
+void ErrorMonitor::ExpectSuccess(VkFlags const message_flag_mask) {
+#endif
     // Match ANY message matching specified type
     test_platform_thread_lock_mutex(&mutex_);
     desired_message_strings_.insert("");
@@ -354,7 +362,9 @@ bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, con
 bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
     // WARNING: assume debug and validation feature extensions are always supported, which are usually provided by layers
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+#if defined(VK_EXT_debug_report)
     if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+#endif
     if (0 == strncmp(extension_name, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
 
     const auto extensions = vk_testing::GetGlobalExtensions();
@@ -468,10 +478,13 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
 
     static bool driver_printed = false;
     static bool print_driver_info = GetEnvironment("VK_LAYER_TESTS_PRINT_DRIVER") != "";
+// VK_KHR_get_physical_device_properties2 is promoted to core in VulkanSC
+#if !defined(VULKANSC)
     if (print_driver_info && !driver_printed &&
         InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         instance_extensions_.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
+#endif
 
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
     RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
@@ -935,10 +948,12 @@ int IgnoreXErrors(Display *, XErrorEvent *) { return 0; }
 #endif
 
 void VkRenderFramework::DestroySwapchain() {
+#if !defined(VULKANSC)
     if (m_swapchain != VK_NULL_HANDLE) {
         vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
         m_swapchain = VK_NULL_HANDLE;
     }
+#endif
     if (m_surface != VK_NULL_HANDLE) {
         vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
         m_surface = VK_NULL_HANDLE;
@@ -1141,6 +1156,10 @@ void VkRenderFramework::DestroyRenderTarget() {
     m_framebuffer = VK_NULL_HANDLE;
 }
 
+// VkPhysicalDeviceFeatures2KHR is promoted to core in VulkanSC
+#if defined(VULKANSC)
+bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2 &features2) {
+#else
 bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2KHR &features2) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -1150,6 +1169,7 @@ bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeature
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return false;
     }
+#endif
     InitFramework();
 
     // Cycle through device extensions and check for support
@@ -1159,6 +1179,10 @@ bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeature
             return false;
         }
     }
+#if defined(VULKANSC)
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    return true;
+#else
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(),
             "vkGetPhysicalDeviceFeatures2KHR");
@@ -1171,6 +1195,7 @@ bool VkRenderFramework::InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeature
         printf("Cannot use vkGetPhysicalDeviceFeatures to determine available features\n");
         return false;
     }
+#endif
 }
 
 VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device(obj), id(id) {
@@ -1231,11 +1256,13 @@ VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
 
 VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
 
+#if !defined(VULKANSC)
 VkDescriptorSetObj::~VkDescriptorSetObj() NOEXCEPT {
     if (m_set) {
         delete m_set;
     }
 }
+#endif
 
 int VkDescriptorSetObj::AppendDummy() {
     /* request a descriptor but do not update it */
@@ -1544,18 +1571,32 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
         VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT |
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT |
         VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+#if defined(VK_IMG_filter_cubic)
     if (m_device->IsEnabledExtension(VK_IMG_FILTER_CUBIC_EXTENSION_NAME)) {
         all_feature_flags |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG;
     }
+#endif
 
+// VK_KHR_maintenance1 is promoted to core in VulkanSC
+#if defined(VK_KHR_maintenance1)
     if (m_device->IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
         all_feature_flags |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR;
     }
+#elif defined(VULKANSC)
+    all_feature_flags |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+#endif
 
+// VK_EXT_sampler_filter_minmax is promoted to core in VulkanSC
+#if defined(VK_EXT_sampler_filter_minmax)
     if (m_device->IsEnabledExtension(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
         all_feature_flags |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT_EXT;
     }
+#elif defined(VULKANSC)
+    all_feature_flags |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_MINMAX_BIT;
+#endif
 
+// VK_KHR_sampler_ycbcr_conversion is promoted to core in VulkanSC
+#if defined(VK_KHR_sampler_ycbcr_conversion)
     if (m_device->IsEnabledExtension(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
         all_feature_flags |= VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT_KHR |
                              VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT_KHR |
@@ -1564,6 +1605,14 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
                              VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT_KHR |
                              VK_FORMAT_FEATURE_DISJOINT_BIT_KHR | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT_KHR;
     }
+#elif defined(VULKANSC)
+    all_feature_flags |= VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT |
+                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT |
+                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT |
+                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_BIT |
+                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_CHROMA_RECONSTRUCTION_EXPLICIT_FORCEABLE_BIT |
+                         VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
+#endif
 
     if ((features & all_feature_flags) == 0) return false;  // whole format unsupported
 
@@ -1573,6 +1622,8 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
     if ((usages & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) && !(features & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))
         return false;
 
+// VK_KHR_maintenance1 is promoted to core in VulkanSC
+#if defined(VK_KHR_maintenance1)
     if (m_device->IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
         // WORKAROUND: for DevSim not reporting extended enums, and possibly some drivers too
         const auto all_nontransfer_feature_flags =
@@ -1583,6 +1634,7 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
             if ((usages & VK_IMAGE_USAGE_TRANSFER_DST_BIT) && !(features & VK_FORMAT_FEATURE_TRANSFER_DST_BIT_KHR)) return false;
         }
     }
+#endif
 
     return true;
 }
@@ -1972,6 +2024,9 @@ VkConstantBufferObj::VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize alloc
     this->m_descriptorBufferInfo.range = allocationSize;
 }
 
+// VulkanSC only supports precompiled pipelines. Remove source
+// related to pipelines until it can be rewritten for VulkanSC.
+#if !defined(VULKANSC)
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name, const VkSpecializationInfo *specInfo)
@@ -2287,6 +2342,7 @@ VkResult VkPipelineObj::CreateVKPipeline(VkPipelineLayout layout, VkRenderPass r
 
     return init_try(*m_device, *gp_ci);
 }
+#endif // !defined(VULKANSC)
 
 VkCommandBufferObj::VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level, VkQueueObj *queue) {
     m_device = device;
@@ -2382,6 +2438,7 @@ void VkCommandBufferObj::ClearDepthStencilImage(VkImage image, VkImageLayout ima
     vk::CmdClearDepthStencilImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
 }
 
+#if defined(VK_NV_ray_tracing)
 void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer) {
     BuildAccelerationStructure(as, scratchBuffer, VK_NULL_HANDLE);
 }
@@ -2394,6 +2451,7 @@ void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *
     vkCmdBuildAccelerationStructureNV(handle(), &as->info(), instanceData, 0, VK_FALSE, as->handle(), VK_NULL_HANDLE, scratchBuffer,
                                       0);
 }
+#endif
 
 void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts,
                                             VkDepthStencilObj *depth_stencil_att) {

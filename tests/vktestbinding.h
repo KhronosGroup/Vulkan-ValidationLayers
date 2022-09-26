@@ -604,6 +604,7 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
     void init(const Device &dev, const VkImageViewCreateInfo &info);
 };
 
+#if defined(VK_NV_ray_tracing)
 class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStructureNV> {
   public:
     explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
@@ -630,7 +631,9 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
     DeviceMemory memory_;
     uint64_t opaque_handle_;
 };
+#endif
 
+#if defined(VK_KHR_acceleration_structure)
 class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationStructureKHR> {
   public:
     explicit AccelerationStructureKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info,
@@ -653,7 +656,9 @@ class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationSt
     DeviceMemory memory_;
     uint64_t opaque_handle_;
 };
+#endif
 
+#if !defined(VULKANSC)
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
     ~ShaderModule() NOEXCEPT;
@@ -664,6 +669,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 
     static VkShaderModuleCreateInfo create_info(size_t code_size, const uint32_t *code, VkFlags flags);
 };
+#endif
 
 class Pipeline : public internal::NonDispHandle<VkPipeline> {
   public:
@@ -1021,6 +1027,7 @@ inline VkExtent3D Image::extent(const VkExtent3D &extent, uint32_t mip_level) {
     return Image::extent(width, height, depth);
 }
 
+#if !defined(VULKANSC)
 inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, const uint32_t *code, VkFlags flags) {
     VkShaderModuleCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -1029,6 +1036,7 @@ inline VkShaderModuleCreateInfo ShaderModule::create_info(size_t code_size, cons
     info.flags = flags;
     return info;
 }
+#endif
 
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type, uint32_t count,

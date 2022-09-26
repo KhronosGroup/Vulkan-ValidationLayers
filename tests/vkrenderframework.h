@@ -126,14 +126,22 @@ class ErrorMonitor {
     void SetAllowedFailureMsg(const char *const msg);
 
     VkBool32 CheckForDesiredMsg(const char *const msgString);
+#if !defined(VULKANSC)
     VkDebugReportFlagsEXT GetMessageFlags();
+#else
+    VkFlags GetMessageFlags();
+#endif
     void SetError(const char *const errorString);
     void SetBailout(bool *bailout);
 
     // Helpers
 
     // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
+#if !defined(VULKANSC)
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
+#else
+    void ExpectSuccess(VkFlags const message_flag_mask = kErrorBit);
+#endif
     bool ExpectingSuccess() const {
         return (desired_message_strings_.size() == 1) &&
                (desired_message_strings_.count("") == 1 && ignore_message_strings_.size() == 0);
@@ -274,7 +282,12 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
+// VkPhysicalDeviceFeatures2KHR is promoted to core in VulkanSC
+#if defined(VULKANSC)
+    bool InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2 &features2);
+#else
     bool InitFrameworkAndRetrieveFeatures(VkPhysicalDeviceFeatures2KHR &features2);
+#endif
 
     bool IsDriver(VkDriverId driver_id);
     bool IsPlatform(PlatformType platform);
@@ -404,8 +417,10 @@ class VkPipelineObj;
 typedef vk_testing::Event VkEventObj;
 typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Buffer VkBufferObj;
+#if defined(VK_KHR_acceleration_structure)
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
 typedef vk_testing::AccelerationStructureKHR VkAccelerationStructurekhrObj;
+#endif
 class VkCommandPoolObj : public vk_testing::CommandPool {
   public:
     VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
@@ -445,8 +460,10 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          const VkImageSubresourceRange *pRanges);
     void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
                                 uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
+#if defined(VK_KHR_acceleration_structure)
     void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer);
     void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData);
+#endif
     void SetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_set(*this, stageMask); }
     void ResetEvent(VkEventObj &event, VkPipelineStageFlags stageMask) { event.cmd_reset(*this, stageMask); }
     void WaitEvents(uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags srcStageMask,
@@ -646,6 +663,7 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     vk_testing::DescriptorSet *m_set = NULL;
 };
 
+#if !defined(VULKANSC)
 class VkShaderObj : public vk_testing::ShaderModule {
   public:
     VkShaderObj(VkDeviceObj &device, VkShaderStageFlagBits stage, char const *name = "main",
@@ -733,6 +751,7 @@ class VkShaderObj : public vk_testing::ShaderModule {
     VkPipelineShaderStageCreateInfo m_stage_info;
     VkDeviceObj &m_device;
 };
+#endif // !defined(VULKANSC)
 
 class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
   public:
@@ -750,6 +769,10 @@ class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
     void Reset();
 };
 
+// VulkanSC only supports precompiled pipelines. Cutting out
+// source related to pipelines until it can be rewritten for
+// VulkanSC.
+#if !defined(VULKANSC)
 class VkPipelineObj : public vk_testing::Pipeline {
   public:
     VkPipelineObj(VkDeviceObj *device);
@@ -798,5 +821,5 @@ class VkPipelineObj : public vk_testing::Pipeline {
     std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
     std::vector<VkPipelineColorBlendAttachmentState> m_colorAttachments;
 };
-
+#endif  // !defined(VULKANSC)
 #endif  // VKRENDERFRAMEWORK_H

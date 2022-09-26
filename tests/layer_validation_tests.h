@@ -30,7 +30,11 @@
 #ifdef ANDROID
 #include "vulkan_wrapper.h"
 #else
+#if defined(VULKANSC)
+#include <vulkan/vulkan_sc.h>
+#else
 #include <vulkan/vulkan.h>
+#endif
 #endif
 
 #include "layers/vk_device_profile_api_layer.h"
@@ -437,6 +441,12 @@ bool IsValidVkStruct(const T &s) {
     return LvlTypeMap<T>::kSType == s.sType;
 }
 
+// Pipeline code needs to be rewriten for VulkanSC as it uses
+// precompiled pipeline caches when creating pipelines. ifdef
+// out pipeline related test source for now. Follow up changes
+// will add code for VulkanSC and enable source related to
+// pipelines.
+#if !defined(VULKANSC)
 // Helper class for tersely creating create pipeline tests
 //
 // Designed with minimal error checking to ensure easy error state creation
@@ -658,6 +668,7 @@ struct CreateNVRayTracingPipelineHelper {
         test.Monitor().VerifyNotFound();
     }
 };
+#endif // !defined(VULKANSC)
 
 namespace chain_util {
 template <typename T>
@@ -695,7 +706,9 @@ class ExtensionChain {
 }  // namespace chain_util
 
 // PushDescriptorProperties helper
+#if defined(VK_KHR_push_descriptor)
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu);
+#endif
 
 // Subgroup properties helper
 VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu);
@@ -800,10 +813,18 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
                           bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid);
 void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
                                   bool rp2_supported);
+// VK_KHR_create_renderpass2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
+                                      const VkRenderPassCreateInfo2 *create_info);
+void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2 *create_info,
+                              const char *rp2_vuid);
+#else
 void PositiveTestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device,
                                       const VkRenderPassCreateInfo2KHR *create_info);
 void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo2KHR *create_info,
                               const char *rp2_vuid);
+#endif
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 
@@ -835,8 +856,14 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
+// VK_KHR_get_memory_requirements2 is promoted to core in VulkanSC
+#if defined(VULKANSC)
+void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2 fp, VkImage mp_image,
+                            VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane);
+#else
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
                             VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane);
+#endif
 
 void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor);
 
@@ -850,14 +877,18 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code = "");
 
+#if !defined(VULKANSC)
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
                                     std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data,
                                     bool need_gpu_validation = false, bool need_push_descriptors = false,
                                     bool deferred_state_init = false, VkPhysicalDeviceFeatures2KHR *features2 = nullptr);
+#endif
 
+#if defined(VK_NV_ray_tracing)
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
                                                     VkGeometryNV *geometry);
+#endif
 
 void print_android(const char *c);
 #endif  // VKLAYERTEST_H

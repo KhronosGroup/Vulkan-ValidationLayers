@@ -92,7 +92,10 @@ TEST_F(VkPositiveLayerTest, ValidationInstanceExtensions) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     std::string layer_name = "VK_LAYER_KHRONOS_validation";
-    std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+    std::vector<std::string> extensions = {VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#if defined(VK_EXT_debug_report)
+                                           VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
+#endif
                                            VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};
     uint32_t property_count;
     vk::EnumerateInstanceExtensionProperties(layer_name.c_str(), &property_count, NULL);
