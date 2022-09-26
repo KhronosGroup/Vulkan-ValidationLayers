@@ -105,12 +105,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     }
     GpuAssistedBase::CreateDevice(pCreateInfo);
 
-    if (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2) {
-        buffer_oob_enabled = false;
-    } else {
-        buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
-    }
-
+    buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
     bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
     validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
     validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
@@ -130,14 +125,19 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
         return;
     }
 
+    shaderInt64 = supported_features.shaderInt64;
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        !supported_features.shaderInt64) {
+        !shaderInt64) {
         LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
                    "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
-    shaderInt64 = supported_features.shaderInt64;
-    output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
+    buffer_device_address = ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
+                              IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
+                             shaderInt64 && enabled_features.core12.bufferDeviceAddress);
+
+    output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + spvtools::kDebugOutputDataOffset);
+
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
@@ -962,7 +962,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
 }
 
 // Generate the part of the message describing the violation.
-bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg,
+bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, bool &oob_access,
                                const GpuAssistedBufferInfo &buf_info, GpuAssisted *gpu_assisted) {
     using namespace spvtools;
     std::ostringstream strm;
@@ -975,6 +975,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                   "If this asserts then SPIRV-Tools was updated with a new instrument.hpp and kInstValidationOutError was updated. "
                   "This needs to be changed in GPU-AV so that the GLSL gpu_shaders can read the constants.");
     const GpuVuid vuid = GetGpuVuid(buf_info.cmd_type);
+    oob_access = false;
     switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
             strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
@@ -986,6 +987,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         case kInstErrorBuffAddrUnallocRef: {
+            oob_access = true;
             uint64_t *ptr = (uint64_t *)&debug_record[kInstBuffAddrUnallocOutDescPtrLo];
             strm << "Device address 0x" << std::hex << *ptr << " access out of bounds. ";
             vuid_msg = "UNASSIGNED-Device address out of bounds";
@@ -997,6 +999,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
                 vuid_msg = "UNASSIGNED-Descriptor uninitialized";
             } else {
+                oob_access = true;
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " and highest byte accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
@@ -1013,6 +1016,7 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex] << " is uninitialized.";
                 vuid_msg = "UNASSIGNED-Descriptor uninitialized";
             } else {
+                oob_access = true;
                 strm << "Descriptor index " << debug_record[kInstBindlessBuffOOBOutDescIndex]
                      << " access out of bounds. Descriptor size is " << debug_record[kInstBindlessBuffOOBOutBuffSize]
                      << " texels and highest texel accessed was " << debug_record[kInstBindlessBuffOOBOutBuffOff];
@@ -1093,13 +1097,14 @@ bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, s
 void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, GpuAssistedBufferInfo &buffer_info,
                                              uint32_t operation_index, uint32_t *const debug_output_buffer) {
     using namespace spvtools;
-    const uint32_t total_words = debug_output_buffer[0];
+    const uint32_t total_words = debug_output_buffer[kDebugOutputSizeOffset];
+    bool oob_access;
     // A zero here means that the shader instrumentation didn't write anything.
     // If you have nothing to say, don't say it here.
     if (0 == total_words) {
         return;
     }
-    // The first word in the debug output buffer is the number of words that would have
+    // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
     // we provide via the descriptor.  So, we process only the number of words that can fit in the
@@ -1127,22 +1132,28 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pipeline_handle = it->second.pipeline;
         pgm = it->second.pgm;
     }
-    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, buffer_info, this);
+    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, oob_access, buffer_info, this);
     if (gen_full_message) {
         UtilGenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
             buffer_info.pipeline_bind_point, operation_index, common_message);
         UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
-        LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
-            filename_message.c_str(), source_message.c_str());
+        if (buffer_info.uses_robustness && oob_access) {
+            LogWarning(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
+                       stage_message.c_str(), filename_message.c_str(), source_message.c_str());
+        } else {
+            LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(),
+                     stage_message.c_str(), filename_message.c_str(), source_message.c_str());
+        }
     }
     else {
         LogError(queue, vuid_msg.c_str(), "%s", validation_message.c_str());
     }
-    // The debug record at word kInstCommonOutSize is the number of words in the record
-    // written by the shader.  Clear the entire record plus the total_words word at the start.
-    const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], static_cast<uint32_t>(kInstMaxOutCnt));
-    memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
+
+    // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
+    const uint32_t words_to_clear = std::min(total_words, output_buffer_size - kDebugOutputDataOffset);
+    debug_output_buffer[kDebugOutputSizeOffset] = 0;
+    memset(&debug_output_buffer[kDebugOutputDataOffset], 0, sizeof(uint32_t) * words_to_clear);
 }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
@@ -1936,6 +1947,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     auto const &last_bound = cb_node->lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
+    bool uses_robustness = false;
 
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
@@ -1965,11 +1977,16 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         return;
     }
 
-    // Clear the output block to zeros so that only error information from the gpu will be present
     uint32_t *data_ptr;
     result = vmaMapMemory(vmaAllocator, output_block.allocation, reinterpret_cast<void **>(&data_ptr));
     if (result == VK_SUCCESS) {
         memset(data_ptr, 0, output_buffer_size);
+        if (buffer_oob_enabled || buffer_device_address) {
+            uses_robustness =
+                (enabled_features.core.robustBufferAccess || enabled_features.robustness2_features.robustBufferAccess2 ||
+                 pipeline_state->uses_pipeline_robustness);
+            data_ptr[spvtools::kDebugOutputFlagsOffset] = spvtools::kInstBufferOOBEnable;;
+        }
         vmaUnmapMemory(vmaAllocator, output_block.allocation);
     }
 
@@ -2114,9 +2131,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         desc_count++;
     }
 
-    if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
-         IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&
-        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
+    if (buffer_device_address) {
         auto address_ranges = GetBufferAddressRanges();
         if (address_ranges.size() > 0) {
             // Example BDA input buffer assuming 2 buffers using BDA:
@@ -2202,7 +2217,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         } else {
             // Record buffer and memory info in CB state tracking
             cb_node->per_draw_buffer_list.emplace_back(output_block, bda_input_block, pre_draw_resources, pre_dispatch_resources,
-                                                       desc_sets[0], desc_pool, bind_point, cmd_type);
+                                                       desc_sets[0], desc_pool, bind_point, uses_robustness, cmd_type);
         }
     } else {
         ReportSetupProblem(device, "Unable to find pipeline state");

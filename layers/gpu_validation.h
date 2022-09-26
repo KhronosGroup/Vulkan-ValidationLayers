@@ -57,11 +57,12 @@ struct GpuAssistedBufferInfo {
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
+    bool uses_robustness;
     CMD_TYPE cmd_type;
     GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block,
                           GpuAssistedDeviceMemoryBlock bda_input_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
                           GpuAssistedPreDispatchResources pre_dispatch_resources, VkDescriptorSet desc_set,
-                          VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, CMD_TYPE cmd_type)
+                          VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, bool uses_robustness, CMD_TYPE cmd_type)
         : output_mem_block(output_mem_block),
           bda_input_mem_block(bda_input_mem_block),
           pre_draw_resources(pre_draw_resources),
@@ -69,6 +70,7 @@ struct GpuAssistedBufferInfo {
           desc_set(desc_set),
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point),
+          uses_robustness(uses_robustness),
           cmd_type(cmd_type){};
 };
 
@@ -306,4 +308,5 @@ class GpuAssisted : public GpuAssistedBase {
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
 
     bool descriptor_indexing = false;
+    bool buffer_device_address;
 };
