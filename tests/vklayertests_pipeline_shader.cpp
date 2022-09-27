@@ -4076,7 +4076,7 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     clear_rect.rect.extent.width = (uint32_t)m_width;
     clear_rect.baseArrayLayer = 1;
     clear_rect.layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00017");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
@@ -4084,7 +4084,7 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     clear_rect.rect.extent.width = (uint32_t)m_width;
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-00017");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 
