@@ -255,26 +255,37 @@ TEST_F(VkPositiveLayerTest, CmdClearAttachmentTestsDynamicRendering) {
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
 
-    clear_rect.rect.extent.width = renderPassBeginInfo().renderArea.extent.width + 4;
-    clear_rect.rect.extent.height = clear_rect.rect.extent.height / 2;
+    clear_rect.rect.extent.width = renderPassBeginInfo().renderArea.extent.width;
+    clear_rect.rect.extent.height = renderPassBeginInfo().renderArea.extent.height;
 
-    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    auto color_attachment_info = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment_info.imageView = m_renderTargets[0]->targetView(m_renderTargets[0]->format());
+
+    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
     begin_rendering_info.renderArea = clear_rect.rect;
     begin_rendering_info.layerCount = 1;
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment_info;
 
-    // baseLayer >= view layers
-    clear_rect.rect.extent.width = (uint32_t)m_width;
-    clear_rect.baseArrayLayer = 1;
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 1;
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 
+    // baseLayer >= view layers
+    clear_rect.baseArrayLayer = 1;
+    clear_rect.layerCount = 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
+
     // baseLayer + layerCount > view layers
-    clear_rect.rect.extent.width = (uint32_t)m_width;
     clear_rect.baseArrayLayer = 0;
     clear_rect.layerCount = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pRects-06937");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRendering();
     m_commandBuffer->end();
