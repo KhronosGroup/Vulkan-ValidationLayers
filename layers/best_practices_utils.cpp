@@ -1133,10 +1133,9 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             }
         }
 
-        if ((pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
+        if ((pCreateInfos[i].pRasterizationState) && (pCreateInfos[i].pRasterizationState->depthBiasEnable) &&
             (pCreateInfos[i].pRasterizationState->depthBiasConstantFactor == 0.0f) &&
-            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) &&
-            VendorCheckEnabled(kBPVendorArm)) {
+            (pCreateInfos[i].pRasterizationState->depthBiasSlopeFactor == 0.0f) && VendorCheckEnabled(kBPVendorArm)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_CreatePipelines_DepthBias_Zero,
                 "%s Performance Warning: This vkCreateGraphicsPipelines call is created with depthBiasEnable set to true "
