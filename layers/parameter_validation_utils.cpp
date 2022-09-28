@@ -1147,6 +1147,31 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "VkImageDrmFormatModifierListCreateInfoEXT or VkImageDrmFormatModifierExplicitCreateInfoEXT "
                                  "in the pNext chain");
             }
+
+            if (drm_format_mod_explict != nullptr && drm_format_mod_explict->pPlaneLayouts != nullptr) {
+                for (uint32_t i = 0; i < drm_format_mod_explict->drmFormatModifierPlaneCount; ++i) {
+                    if (drm_format_mod_explict->pPlaneLayouts[i].size != 0) {
+                        skip |= LogError(device, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267",
+                                         "vkCreateImage(): size is nonzero (%" PRIu64 ") in element %" PRIu32
+                                         " of  VkImageDrmFormatModifierListCreateInfoEXT->pPlanedLayouts.",
+                                         drm_format_mod_explict->pPlaneLayouts[i].size, i);
+                    }
+                    if (pCreateInfo->arrayLayers == 1 && drm_format_mod_explict->pPlaneLayouts[i].arrayPitch != 0) {
+                        skip |= LogError(device, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268",
+                                         "vkCreateImage(): arrayPitch is nonzero (%" PRIu64 ") in element %" PRIu32
+                                         " of VkImageDrmFormatModifierListCreateInfoEXT->pPlanedLayouts "
+                                         "with pCreateInfo->arrayLayers being 1.",
+                                         drm_format_mod_explict->pPlaneLayouts[i].arrayPitch, i);
+                    }
+                    if (pCreateInfo->extent.depth == 1 && drm_format_mod_explict->pPlaneLayouts[i].depthPitch != 0) {
+                        skip |= LogError(device, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269",
+                                         "vkCreateImage(): depthPitch is nonzero (%" PRIu64 ") in element %" PRIu32
+                                         " of VkImageDrmFormatModifierListCreateInfoEXT->pPlanedLayouts "
+                                         "with pCreateInfo->extext.depth being 1.",
+                                         drm_format_mod_explict->pPlaneLayouts[i].depthPitch, i);
+                    }
+                }
+            }
         }
 
         static const uint64_t drm_format_mod_linear = 0;

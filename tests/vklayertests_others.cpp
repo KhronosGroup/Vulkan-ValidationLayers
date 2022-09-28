@@ -8622,6 +8622,21 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     vk::CreateImage(device(), &image_info, nullptr, &image);
     m_errorMonitor->VerifyFound();
 
+    // Having wrong size, arrayPitch and depthPitch in VkSubresourceLayout
+    dummyPlaneLayout.size = 1;
+    dummyPlaneLayout.arrayPitch = 1;
+    dummyPlaneLayout.depthPitch = 1;
+
+    image_info.pNext = (void *)&drm_format_mod_explicit;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+
+    // reset dummy plane layout
+    memset(&dummyPlaneLayout, 0, sizeof(dummyPlaneLayout));
+
     auto drm_format_modifier = LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
     drm_format_modifier.drmFormatModifier = dummy_modifiers[1];
     image_format_info.pNext = &drm_format_modifier;
