@@ -1645,14 +1645,16 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     region.imageOffset = {1, 1, 0};
     region.imageExtent = {1, 1, 1};
     // imageOffset not a multiple of block size
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-imageOffset-00205");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-pRegions-07274");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-pRegions-07275");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
     vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16.handle(), 1, &region);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-vkCmdCopyBufferToImage-imageOffset-00205");  // imageOffset not a multiple of block size
+    // imageOffset not a multiple of block size
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07274");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07275");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyBufferToImage-imageOffset-01793");  // image transfer granularity
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
@@ -1675,8 +1677,9 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
                                                                         VK_IMAGE_LAYOUT_GENERAL,
                                                                         1,
                                                                         &region2};
-        m_errorMonitor->SetDesiredFailureMsg(
-            kErrorBit, "VUID-VkCopyBufferToImageInfo2-imageOffset-00205");  // imageOffset not a multiple of block size
+        // imageOffset not a multiple of block size
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2-pRegions-07274");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCopyBufferToImageInfo2-pRegions-07275");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-VkCopyBufferToImageInfo2-imageOffset-01793");  // image transfer granularity
         vkCmdCopyBufferToImage2Function(m_commandBuffer->handle(), &copy_buffer_to_image_info2);
@@ -2262,7 +2265,8 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
             region.imageOffset = {0, 0, 0};
 
             // buffer offset must be a multiple of texel block size (16)
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-bufferOffset-00206");
+            // 01558 and 07273 are the same
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImageToBuffer-pRegions-07273");
             vuid =
                 mp_extensions ? "VUID-vkCmdCopyImageToBuffer-bufferOffset-01558" : "VUID-vkCmdCopyImageToBuffer-bufferOffset-00193";
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
@@ -2344,6 +2348,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
             // buffer offset must be a multiple of texel block size for VK_FORMAT_R8G8_UNORM (2)
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-bufferOffset-01559");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07273");
             mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
             mp_region.bufferOffset = 5;
             mp_region.imageExtent = {8, 8, 1};
@@ -2410,7 +2415,9 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     // BufferOffset must be a multiple of the calling command's VkImage parameter's texel size
     // Introduce failure by setting bufferOffset to 1 and 1/2 texels
     region.bufferOffset = 4;
+    // 00193 and 07273 are the same
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-bufferOffset-00193");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07273");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();
@@ -2975,30 +2982,28 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
 
     // Src, Dest offsets must be multiples of compressed block sizes {4, 4, 1}
     // Image transfer granularity gets set to compressed block size, so an ITG error is also (unavoidably) triggered.
-    vuid = ycbcr ? "VUID-vkCmdCopyImage-srcImage-01727" : "VUID-vkCmdCopyImage-srcImage-01727";
     copy_region.srcOffset = {2, 4, 0};  // source width
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07278");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-srcOffset-01783");  // srcOffset image transfer granularity
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {12, 1, 0};  // source height
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07279");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-srcOffset-01783");  // srcOffset image transfer granularity
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {0, 0, 0};
 
-    vuid = ycbcr ? "VUID-vkCmdCopyImage-dstImage-01731" : "VUID-vkCmdCopyImage-dstImage-01731";
     copy_region.dstOffset = {1, 0, 0};  // dest width
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07281");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-dstOffset-01784");  // dstOffset image transfer granularity
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.dstOffset = {4, 1, 0};  // dest height
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07282");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                          "VUID-vkCmdCopyImage-dstOffset-01784");  // dstOffset image transfer granularity
     m_commandBuffer->CopyImage(image_1.image(), VK_IMAGE_LAYOUT_GENERAL, image_2.image(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
@@ -3120,7 +3125,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
 
     // Src offsets must be multiples of compressed block sizes
     copy_region.srcOffset = {3, 4, 0};  // source offset x
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01727");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07278");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcOffset-01783");
     m_commandBuffer->CopyImage(image_422.image(), VK_IMAGE_LAYOUT_GENERAL, image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3129,7 +3134,7 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
 
     // Dst offsets must be multiples of compressed block sizes
     copy_region.dstOffset = {1, 0, 0};
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01731");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-07281");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-01784");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-00150");
     m_commandBuffer->CopyImage(image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
@@ -5071,7 +5076,9 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
 
+    // 00193 and 07273 are the same
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-bufferOffset-00193");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-pRegions-07273");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyBufferToImage-commandBuffer-04052");
     vk::CmdCopyBufferToImage(command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
