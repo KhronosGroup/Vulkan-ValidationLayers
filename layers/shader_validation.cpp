@@ -2888,7 +2888,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                                : "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06719";
         std::vector<uint32_t> specialized_spirv;
         auto const optimized =
-            optimizer.Run(module_state.words.data(), module_state.words.size(), &specialized_spirv, options, false);
+            optimizer.Run(module_state.words.data(), module_state.words.size(), &specialized_spirv, options, true);
         if (optimized) {
             spv_context ctx = spvContextCreate(spirv_environment);
             spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
