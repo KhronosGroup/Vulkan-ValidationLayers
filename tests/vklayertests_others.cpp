@@ -14464,6 +14464,100 @@ TEST_F(VkLayerTest, IncompatibleRenderPass2) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, UpdateAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Test for updating an acceleration structure without a srcAccelerationStructure");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto buffer_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_address_features);
+    auto features2 = GetPhysicalDeviceFeatures2(acc_structure_features);
+    if (acc_structure_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature not supported";
+    }
+    if (buffer_address_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
+    }
+
+    buffer_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_address_features);
+    features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&acc_structure_features);
+    acc_structure_features.accelerationStructure = VK_TRUE;
+    buffer_address_features.bufferDeviceAddress = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdBuildAccelerationStructuresKHR =
+        (PFN_vkCmdBuildAccelerationStructuresKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBuildAccelerationStructuresKHR");
+    assert(vkCmdBuildAccelerationStructuresKHR);
+
+    auto vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+    assert(vkGetBufferDeviceAddressKHR);
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = buffer.handle();
+    as_create_info.createFlags = 0;
+    as_create_info.offset = 0;
+    as_create_info.size = 0;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = 0;
+    VkAccelerationStructurekhrObj bot_level_as(*m_device, as_create_info);
+
+    VkBufferCreateInfo scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    scratch_buffer_ci.size = 1ULL << 4;
+    scratch_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferObj scratch_buffer;
+    bot_level_as.create_scratch_buffer(*m_device, &scratch_buffer, &scratch_buffer_ci, true);
+
+    VkBufferDeviceAddressInfo scratch_buffer_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    scratch_buffer_device_address_info.buffer = scratch_buffer.handle();
+    VkDeviceAddress scratch_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &scratch_buffer_device_address_info);
+
+    auto build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info_khr.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    build_info_khr.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info_khr.dstAccelerationStructure = bot_level_as.handle();
+    build_info_khr.geometryCount = 0;
+    build_info_khr.pGeometries = nullptr;
+    build_info_khr.ppGeometries = nullptr;
+    build_info_khr.scratchData.deviceAddress = scratch_address;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.firstVertex = 0;
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 3;
+    build_range_info.transformOffset = 0;
+
+    VkAccelerationStructureBuildRangeInfoKHR *p_build_range_info = &build_range_info;
+
+    m_commandBuffer->begin();
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+
+    build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630");
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+    m_errorMonitor->VerifyFound();
+
+    build_info_khr.srcAccelerationStructure = bot_level_as.handle();
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+    m_commandBuffer->end();
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 TEST_F(VkLayerTest, ExportMetalObjects) {
     TEST_DESCRIPTION("Test VK_EXT_metal_objects VUIDs");
