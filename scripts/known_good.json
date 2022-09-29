@@ -22,11 +22,11 @@
         },
         {
             "name": "SPIRV-Headers",
-            "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+            "url": "https://github.com/ewerness-nv/SPIRV-Headers.git",
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "87d5b782bec60822aa878941e6b13c0a9a954c9b"
+            "commit": "d2b45422b5ae65bb4c000d50af6beb9b0d78f1b8"
         },
         {
             "name": "SPIRV-Tools",
