@@ -1568,6 +1568,41 @@ VkResult DispatchBuildAccelerationStructuresKHR(
     return result;
 }
 
+void DispatchGetAccelerationStructureBuildSizesKHR(
+    VkDevice                                    device,
+    VkAccelerationStructureBuildTypeKHR         buildType,
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+    const uint32_t*                             pMaxPrimitiveCounts,
+    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+    safe_VkAccelerationStructureBuildGeometryInfoKHR var_local_pBuildInfo;
+    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pBuildInfo = NULL;
+    {
+        if (pBuildInfo) {
+            local_pBuildInfo = &var_local_pBuildInfo;
+            local_pBuildInfo->initialize(pBuildInfo, false, nullptr);
+            if (pBuildInfo->srcAccelerationStructure) {
+                local_pBuildInfo->srcAccelerationStructure = layer_data->Unwrap(pBuildInfo->srcAccelerationStructure);
+            }
+            if (pBuildInfo->dstAccelerationStructure) {
+                local_pBuildInfo->dstAccelerationStructure = layer_data->Unwrap(pBuildInfo->dstAccelerationStructure);
+            }
+            for (uint32_t geometry_index = 0; geometry_index < local_pBuildInfo->geometryCount; ++geometry_index) {
+                safe_VkAccelerationStructureGeometryKHR &geometry_info = local_pBuildInfo->pGeometries != nullptr ? local_pBuildInfo->pGeometries[geometry_index] : *(local_pBuildInfo->ppGeometries[geometry_index]);
+                if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                    WrapPnextChainHandles(layer_data, geometry_info.geometry.triangles.pNext);
+                }
+            }
+        }
+    }
+    layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+
+}
+
+
+
 
 
 // Skip vkCreateInstance dispatch, manually generated
@@ -11219,32 +11254,7 @@ void DispatchGetDeviceAccelerationStructureCompatibilityKHR(
 
 }
 
-void DispatchGetAccelerationStructureBuildSizesKHR(
-    VkDevice                                    device,
-    VkAccelerationStructureBuildTypeKHR         buildType,
-    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
-    const uint32_t*                             pMaxPrimitiveCounts,
-    VkAccelerationStructureBuildSizesInfoKHR*   pSizeInfo)
-{
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
-    safe_VkAccelerationStructureBuildGeometryInfoKHR var_local_pBuildInfo;
-    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pBuildInfo = NULL;
-    {
-        if (pBuildInfo) {
-            local_pBuildInfo = &var_local_pBuildInfo;
-            local_pBuildInfo->initialize(pBuildInfo, false, nullptr);
-            if (pBuildInfo->srcAccelerationStructure) {
-                local_pBuildInfo->srcAccelerationStructure = layer_data->Unwrap(pBuildInfo->srcAccelerationStructure);
-            }
-            if (pBuildInfo->dstAccelerationStructure) {
-                local_pBuildInfo->dstAccelerationStructure = layer_data->Unwrap(pBuildInfo->dstAccelerationStructure);
-            }
-        }
-    }
-    layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, (const VkAccelerationStructureBuildGeometryInfoKHR*)local_pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
-
-}
+// Skip vkGetAccelerationStructureBuildSizesKHR dispatch, manually generated
 
 void DispatchCmdTraceRaysKHR(
     VkCommandBuffer                             commandBuffer,
