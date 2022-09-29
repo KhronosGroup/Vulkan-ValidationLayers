@@ -3841,4 +3841,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
         // --allow-localsizeid
         options.SetAllowLocalSizeId(true);
     }
+
+    // Faster validation without friendly names.
+    options.SetFriendlyNames(false);
 }
