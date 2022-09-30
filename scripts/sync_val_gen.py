@@ -34,9 +34,34 @@ debug_bubble_insert = False
 experimental_ordering = False
 
 # Some DRY constants
+vvl_fake_extension = '_SYNCVAL'
+present_stage = 'VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT' + vvl_fake_extension
+presenting_access = 'VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT' + vvl_fake_extension  # Treated as read
+presented_access = 'VK_ACCESS_2_PRESENT_PRESENTED_BIT' + vvl_fake_extension  # Treated as write
+present_engine_accesses = (presenting_access, presented_access)
+
 host_stage = 'VK_PIPELINE_STAGE_2_HOST_BIT'
+no_top_bottom_stages = { host_stage, present_stage }
 top_stage ='VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT'
 bot_stage ='VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT'
+
+sync_enum_stage_type = 'VkPipelineStageFlagBits2'
+sync_enum_access_type = 'VkAccessFlagBits2'
+sync_enum_types = (sync_enum_stage_type, sync_enum_access_type)
+
+def FauxStageAccess() :
+    return { presented_access: [present_stage], presenting_access: [present_stage] }
+
+def DeclareFauxConst(enums_in_bit_order) :
+    lines = ["// Fake stages and accesses for acquire present support"]
+    for enum_type in sync_enum_types:
+        enum_list =enums_in_bit_order[enum_type]
+        format_string = "static const " + enum_type + " {name} = 0x{mask:016X}ULL;"
+        for enum_info in enum_list:
+            if (not vvl_fake_extension in enum_info['name']) :
+                continue
+            lines.append(format_string.format(**enum_info))
+    return lines
 
 def ParseAccessMasks(valid_usage_path, all_stages):
     vu_json_filename = os.path.join(valid_usage_path + os.sep, 'validusage.json')
@@ -164,6 +189,10 @@ def ParseQueueCaps(table_text):
             if(debug_table_parse):
                 print('// access_stage_table[{}]: {}'.format(access_enum, '|'.join(access_stage_table[access_enum])))
 
+
+    # Add in the fake stage
+    access_stage_table[present_stage] = []
+
     return access_stage_table
 
 def CreateStageAccessTable(stage_order, access_stage_table):
@@ -263,6 +292,7 @@ unordered_stages =  [
   'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
   'VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV',
   'VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT',
+  present_stage,
 ]
 
 pipeline_name_labels = {
@@ -286,14 +316,14 @@ def BubbleInsertStages(stage_order, prior, subseq):
     #     spoonerism -- https://en.wikipedia.org/wiki/Spoonerism
     stage_spooner = list()
     acme = '_AAAAAA'
-    stage_spooner = sorted([ stage.replace('_BIT', acme)[::-1] for stage in stage_set if stage != host_stage])
+    stage_spooner = sorted([ stage.replace('_BIT', acme)[::-1] for stage in stage_set if stage not in no_top_bottom_stages])
     print('ZZZ BUBBLE spooner\n', '\n '.join(stage_spooner))
 
     # De-spoonerize
     stage_set_ordered = [ stage[::-1].replace(acme, '_BIT') for stage in stage_spooner]
     print('ZZZ BUBBLE de-spooner\n', '\n '.join(stage_set_ordered))
 
-    stage_set_ordered.append(host_stage)
+    stage_set_ordered = stage_set_ordered | no_top_bottom_stages
     stages = [ stage_set_ordered.pop(0) ]
 
     for stage in stage_set_ordered:
@@ -395,11 +425,11 @@ def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
     # Make sure top and bottom got added to every prior and subseq (respectively) except for HOST
     # and the every stage is prior and susequent to bottom and top (respectively) also except for HOST
     for stage, prior_stages in prior.items():
-        if stage == host_stage: continue
+        if stage in no_top_bottom_stages: continue
         prior_stages.add(top_stage)
         subseq[top_stage].add(stage)
     for stage, subseq_stages in subseq.items():
-        if stage == host_stage: continue
+        if stage in no_top_bottom_stages: continue
         subseq_stages.add(bot_stage)
         prior[bot_stage].add(stage)
 
@@ -468,8 +498,6 @@ VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
 VK_PIPELINE_STAGE_2_HOST_BIT
 '''
 
-sync_enum_types = ('VkPipelineStageFlagBits2', 'VkAccessFlagBits2' )
-
 def InBitOrder(tag, enum_elem):
     # The input may be unordered or sparse w.r.t. the mask field, sort and gap fill
     found = []
@@ -493,6 +521,22 @@ def InBitOrder(tag, enum_elem):
 
     return in_bit_order
 
+
+def EnumsInBitOrder(sync_enum):
+    enum_in_bit_order = dict()
+    for enum_type in sync_enum_types:
+        enum_in_bit_order[enum_type] = InBitOrder(enum_type, sync_enum[enum_type])
+
+    # add the fake present engine enums
+    stage_bitpos = enum_in_bit_order[sync_enum_stage_type][-1]['bitpos'] + 1
+    enum_in_bit_order[sync_enum_stage_type].append({'name': present_stage, 'mask': (1 << stage_bitpos), 'bitpos': stage_bitpos})
+
+    access_bitpos = enum_in_bit_order[sync_enum_access_type][-1]['bitpos']
+    for name in present_engine_accesses:
+        access_bitpos = access_bitpos + 1
+        enum_in_bit_order[sync_enum_access_type].append({'name': name, 'mask': (1 << access_bitpos), 'bitpos': access_bitpos})
+
+    return enum_in_bit_order
 
 # Snipped from chapters/synchronization.adoc -- tag v1.3.230
 # manual fixups:
@@ -545,7 +589,7 @@ snippet_pipeline_stages_supported = '''
 '''
 
 def BitSuffixed(name):
-    alt_bit = ('_ANDROID', '_EXT', '_IMG', '_KHR', '_NV', '_NVX')
+    alt_bit = ('_ANDROID', '_EXT', '_IMG', '_KHR', '_NV', '_NVX', vvl_fake_extension)
     bit_suf = name + '_BIT'
     # Since almost every bit ends with _KHR, just ignore it.
     # Otherwise some generated names end up with every other word being KHR.
@@ -737,13 +781,9 @@ def DoubleCrossReferenceTable(table_name, table_desc, stage_keys, access_keys, s
 
     return table
 
-def StageAccessCrossReference(sync_enum, stage_access_combinations, config):
+def StageAccessCrossReference(enum_in_bit_order, stage_access_combinations, config):
     output = []
     # Setup the cross reference tables
-    enum_in_bit_order = dict()
-    for enum_type in sync_enum_types:
-        enum_in_bit_order[enum_type] = InBitOrder(enum_type, sync_enum[enum_type])
-
     stages_in_bit_order =  enum_in_bit_order['VkPipelineStageFlagBits2']
     access_in_bit_order =  enum_in_bit_order['VkAccessFlagBits2']
     stage_access_mask_stage_map = { e['name']: [] for e in stages_in_bit_order }
@@ -822,7 +862,7 @@ def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
     expanded = ('VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT', 'VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT',
                 'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT', 'VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT')
     for stage in stage_order:
-        if stage in expanded:
+        if (stage in expanded) or (vvl_fake_extension in stage) : 
             continue
 
         queue_flag_list = stage_queue_table[stage]
@@ -891,6 +931,8 @@ def ShaderStageAndSyncStageAccessMap(config):
     return output
 
 def GenSyncTypeHelper(gen, is_source) :
+    lines = []
+
     config = {
         'var_prefix': 'sync',
         'type_prefix': 'Sync',
@@ -906,21 +948,30 @@ def GenSyncTypeHelper(gen, is_source) :
     config['ordinal_name'] = '{}StageAccessIndex'.format(config['type_prefix'])
     config['bits_name'] = '{}StageAccessFlags'.format(config['type_prefix'])
 
+    enums_in_bit_order = EnumsInBitOrder(gen.sync_enum)
+
     if config['is_source']:
-        lines = ['#include "synchronization_validation_types.h"', '']
+        lines.extend(('#include "synchronization_validation_types.h"', ''))
     else:
-        lines = ['#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
-                 '#include "vk_layer_data.h"']
+        lines.extend(('#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
+                 '#include "vk_layer_data.h"'))
         lines.extend(('using {} = {};'.format(config['sync_mask_name'], config['sync_mask_base_type']), ''))
     lines.extend(['// clang-format off', ''])
 
+    if not config['is_source']:
+        lines.extend(DeclareFauxConst(enums_in_bit_order))
+        lines.append('')
+
+
     stage_order = pipeline_order.split()
+    stage_order.append(present_stage)
     access_types = {stage:list() for stage in stage_order}
     if debug_top_level:
         lines.append('// Access types \n//    ' + '\n//    '.join(access_types) +  '\n' * 2)
 
     stage_order_map = ParsePipelineStageOrder(stage_order, snippet_pipeline_stages_order, config)
     access_stage_table = ParseAccessMasks(gen.genOpts.valid_usage_path, stage_order)
+    access_stage_table.update(FauxStageAccess());
     stage_queue_cap_table = ParseQueueCaps(snippet_pipeline_stages_supported)
     stage_access_table = CreateStageAccessTable(stage_order, access_stage_table)
     stage_access_combinations = CreateStageAccessCombinations(config, stage_order, stage_access_table)
@@ -928,7 +979,7 @@ def GenSyncTypeHelper(gen, is_source) :
 
     lines.extend(ReadWriteMasks(stage_access_combinations, config))
 
-    lines.extend(StageAccessCrossReference(gen.sync_enum, stage_access_combinations, config))
+    lines.extend(StageAccessCrossReference(enums_in_bit_order, stage_access_combinations, config))
     lines.extend(AllCommandsByQueueCapability(stage_order, stage_queue_cap_table, config))
     lines.extend(PipelineOrderMaskMap(stage_order, stage_order_map, config))
     lines.extend(ShaderStageAndSyncStageAccessMap(config))
