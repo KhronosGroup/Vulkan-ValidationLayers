@@ -1659,6 +1659,13 @@ void PostCallRecordSetPrivateDataEXT(
     VkResult                                    result) override;
 
 
+void PostCallRecordGetDeviceFaultInfoEXT(
+    VkDevice                                    device,
+    VkDeviceFaultCountsEXT*                     pFaultCounts,
+    VkDeviceFaultInfoEXT*                       pFaultInfo,
+    VkResult                                    result) override;
+
+
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 void PostCallRecordAcquireWinrtDisplayNV(
@@ -1813,6 +1820,79 @@ void PostCallRecordCreateScreenSurfaceQNX(
 
 
 #endif // VK_USE_PLATFORM_SCREEN_QNX
+
+void PostCallRecordCreateMicromapEXT(
+    VkDevice                                    device,
+    const VkMicromapCreateInfoEXT*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkMicromapEXT*                              pMicromap,
+    VkResult                                    result) override;
+
+
+void PostCallRecordBuildMicromapsEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    uint32_t                                    infoCount,
+    const VkMicromapBuildInfoEXT*               pInfos,
+    VkResult                                    result) override;
+
+
+void PostCallRecordCopyMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapInfoEXT*                pInfo,
+    VkResult                                    result) override;
+
+
+void PostCallRecordCopyMicromapToMemoryEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMicromapToMemoryInfoEXT*        pInfo,
+    VkResult                                    result) override;
+
+
+void PostCallRecordCopyMemoryToMicromapEXT(
+    VkDevice                                    device,
+    VkDeferredOperationKHR                      deferredOperation,
+    const VkCopyMemoryToMicromapInfoEXT*        pInfo,
+    VkResult                                    result) override;
+
+
+void PostCallRecordWriteMicromapsPropertiesEXT(
+    VkDevice                                    device,
+    uint32_t                                    micromapCount,
+    const VkMicromapEXT*                        pMicromaps,
+    VkQueryType                                 queryType,
+    size_t                                      dataSize,
+    void*                                       pData,
+    size_t                                      stride,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetPhysicalDeviceOpticalFlowImageFormatsNV(
+    VkPhysicalDevice                            physicalDevice,
+    const VkOpticalFlowImageFormatInfoNV*       pOpticalFlowImageFormatInfo,
+    uint32_t*                                   pFormatCount,
+    VkOpticalFlowImageFormatPropertiesNV*       pImageFormatProperties,
+    VkResult                                    result) override;
+
+
+void PostCallRecordCreateOpticalFlowSessionNV(
+    VkDevice                                    device,
+    const VkOpticalFlowSessionCreateInfoNV*     pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkOpticalFlowSessionNV*                     pSession,
+    VkResult                                    result) override;
+
+
+void PostCallRecordBindOpticalFlowSessionImageNV(
+    VkDevice                                    device,
+    VkOpticalFlowSessionNV                      session,
+    VkOpticalFlowSessionBindingPointNV          bindingPoint,
+    VkImageView                                 view,
+    VkImageLayout                               layout,
+    VkResult                                    result) override;
+
 
 void PostCallRecordGetFramebufferTilePropertiesQCOM(
     VkDevice                                    device,
@@ -2003,6 +2083,7 @@ const layer_data::unordered_map<std::string, std::string> special_use_extensions
     {"VK_EXT_debug_utils", "debugging"},
     {"VK_EXT_depth_clip_control", "glemulation"},
     {"VK_EXT_depth_clip_enable", "d3demulation"},
+    {"VK_EXT_device_address_binding_report", "debugging, devtools"},
     {"VK_EXT_device_memory_report", "devtools"},
     {"VK_EXT_image_2d_view_of_3d", "glemulation"},
     {"VK_EXT_legacy_dithering", "glemulation"},

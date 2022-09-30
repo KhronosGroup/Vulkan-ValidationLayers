@@ -1687,6 +1687,32 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, build_range_info->primitiveOffset, build_range_info->primitiveCount));\n'
                     '        }\n'
                     '    }\n',
+                'VkMicromapBuildInfoEXT':
+                    '   pNext = SafePnextCopy(in_struct->pNext);\n'
+                    '   if (in_struct->pUsageCounts) {\n'
+                    '       pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
+                    '       memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
+                    '   }\n'
+                    '   if (in_struct->ppUsageCounts) {\n'
+                    '       VkMicromapUsageEXT** pointer_array  = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
+                    '       for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
+                    '           pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
+                    '       }\n'
+                    '       ppUsageCounts = pointer_array;\n'
+                    '   }\n',
+                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
+                    '   pNext = SafePnextCopy(in_struct->pNext);\n'
+                    '   if (in_struct->pUsageCounts) {\n'
+                    '       pUsageCounts = new VkMicromapUsageEXT[in_struct->usageCountsCount];\n'
+                    '       memcpy ((void *)pUsageCounts, (void *)in_struct->pUsageCounts, sizeof(VkMicromapUsageEXT)*in_struct->usageCountsCount);\n'
+                    '   }\n'
+                    '   if (in_struct->ppUsageCounts) {\n'
+                    '       VkMicromapUsageEXT** pointer_array = new VkMicromapUsageEXT*[in_struct->usageCountsCount];\n'
+                    '       for (uint32_t i = 0; i < in_struct->usageCountsCount; ++i) {\n'
+                    '           pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
+                    '       }\n'
+                    '       ppUsageCounts = pointer_array;\n'
+                    '   }\n'
             }
 
             custom_copy_txt = {
@@ -1830,6 +1856,28 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '    if (iter != as_geom_khr_host_alloc.end()) {\n'
                     '        delete iter->second;\n'
                     '    }\n',
+                'VkMicromapBuildInfoEXT':
+                    '    if (pUsageCounts)\n'
+                    '        delete[] pUsageCounts;\n'
+                    '    if (ppUsageCounts) {\n'
+                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
+                    '             delete ppUsageCounts[i];\n'
+                    '        }\n'
+                    '        delete[] ppUsageCounts;\n'
+                    '    }\n'
+                    '    if (pNext)\n'
+                    '        FreePnextChain(pNext);\n',
+                'VkAccelerationStructureTrianglesOpacityMicromapEXT':
+                    '    if (pUsageCounts)\n'
+                    '        delete[] pUsageCounts;\n'
+                    '    if (ppUsageCounts) {\n'
+                    '        for (uint32_t i = 0; i < usageCountsCount; ++i) {\n'
+                    '             delete ppUsageCounts[i];\n'
+                    '        }\n'
+                    '        delete[] ppUsageCounts;\n'
+                    '    }\n'
+                    '    if (pNext)\n'
+                    '        FreePnextChain(pNext);\n',
            }
             copy_pnext = ''
             copy_strings = ''

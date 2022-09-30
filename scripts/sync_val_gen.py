@@ -174,7 +174,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
-# Snipped from chapters/synchronization.txt -- tag v1.3.226
+# Snipped from chapters/synchronization.adoc -- tag v1.3.230
 # manual fixups:
 # - add back TOP_OF_PIPE and BOTTOM_OF_PIPE stages to everything
 # - sync2-ify stage names
@@ -261,6 +261,8 @@ unordered_stages =  [
   'VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR',
   'VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR',
   'VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI',
+  'VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV',
+  'VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT',
 ]
 
 pipeline_name_labels = {
@@ -460,6 +462,8 @@ VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR
 VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR
 VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR
 VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI
+VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV
+VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT
 VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT
 VK_PIPELINE_STAGE_2_HOST_BIT
 '''
@@ -490,7 +494,7 @@ def InBitOrder(tag, enum_elem):
     return in_bit_order
 
 
-# Snipped from chapters/synchronization.txt -- tag v1.3.224
+# Snipped from chapters/synchronization.adoc -- tag v1.3.230
 # manual fixups:
 # - sync2-ify stage names
 # - remove ifdefs
@@ -533,6 +537,8 @@ snippet_pipeline_stages_supported = '''
 |ename:VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR           | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
 |ename:VK_PIPELINE_STAGE_2_SUBPASS_SHADING_BIT_HUAWEI         | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_2_OPTICAL_FLOW_BIT_NV                | ename:VK_QUEUE_OPTICAL_FLOW_BIT_NV
+|ename:VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT             | ename:VK_QUEUE_COMPUTE_BIT
 |ename:VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_DECODE_BIT_KHR
 |ename:VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR                 | ename:VK_QUEUE_VIDEO_ENCODE_BIT_KHR
 |====
