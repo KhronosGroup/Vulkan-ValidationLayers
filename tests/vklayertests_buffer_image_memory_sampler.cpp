@@ -833,7 +833,7 @@ TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
     VkResult err;
     bool pass;
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01044");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-07460");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -1350,14 +1350,14 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
 
         err = vk::BindImageMemory(device(), image, image_mem, 0);
         ASSERT_VK_SUCCESS(err);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01044");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-07460");
         err = vk::BindImageMemory(device(), image, image_mem, 0);
         (void)err;  // This may very well return an error.
         m_errorMonitor->VerifyFound();
 
         err = vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
         ASSERT_VK_SUCCESS(err);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-01029");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-buffer-07459");
         err = vk::BindBufferMemory(device(), buffer, buffer_mem, 0);
         (void)err;  // This may very well return an error.
         m_errorMonitor->VerifyFound();

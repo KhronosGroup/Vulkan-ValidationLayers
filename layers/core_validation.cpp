@@ -284,42 +284,30 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_b
         if (mem_info) {
             const auto *prev_binding = mem_binding.MemState();
             if (prev_binding) {
-                if (!prev_binding->Destroyed()) {
-                    const char *error_code = nullptr;
-                    if (typed_handle.type == kVulkanObjectTypeBuffer) {
-                        if (strcmp(apiName, "vkBindBufferMemory()") == 0) {
-                            error_code = "VUID-vkBindBufferMemory-buffer-01029";
-                        } else {
-                            error_code = "VUID-VkBindBufferMemoryInfo-buffer-01029";
-                        }
-                    } else if (typed_handle.type == kVulkanObjectTypeImage) {
-                        if (strcmp(apiName, "vkBindImageMemory()") == 0) {
-                            error_code = "VUID-vkBindImageMemory-image-01044";
-                        } else {
-                            error_code = "VUID-VkBindImageMemoryInfo-image-01044";
-                        }
+                const char *error_code = nullptr;
+                if (typed_handle.type == kVulkanObjectTypeBuffer) {
+                    if (strcmp(apiName, "vkBindBufferMemory()") == 0) {
+                        error_code = "VUID-vkBindBufferMemory-buffer-07459";
                     } else {
-                        // Unsupported object type
-                        assert(false);
+                        error_code = "VUID-VkBindBufferMemoryInfo-buffer-07459";
                     }
+                } else if (typed_handle.type == kVulkanObjectTypeImage) {
+                    if (strcmp(apiName, "vkBindImageMemory()") == 0) {
+                        error_code = "VUID-vkBindImageMemory-image-07460";
+                    } else {
+                        error_code = "VUID-VkBindImageMemoryInfo-image-07460";
+                    }
+                } else {
+                    // Unsupported object type
+                    assert(false);
+                }
 
-                    LogObjectList objlist(mem);
-                    objlist.add(typed_handle);
-                    objlist.add(prev_binding->mem());
-                    skip |=
-                        LogError(objlist, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.",
+                LogObjectList objlist(mem);
+                objlist.add(typed_handle);
+                objlist.add(prev_binding->mem());
+                skip |= LogError(objlist, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.",
                                  apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                                  report_data->FormatHandle(prev_binding->mem()).c_str());
-                } else {
-                    LogObjectList objlist(mem);
-                    objlist.add(typed_handle);
-                    skip |=
-                        LogError(objlist, kVUID_Core_MemTrack_RebindObject,
-                                 "In %s, attempting to bind %s to %s which was previous bound to memory that has "
-                                 "since been freed. Memory bindings are immutable in "
-                                 "Vulkan so this attempt to bind to new memory is not allowed.",
-                                 apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str());
-                }
             }
         }
     }
