@@ -4,13 +4,13 @@
       "name" : "shaderc",
       "url" : "https://github.com/google/shaderc.git",
       "sub_dir" : "shaderc",
-      "commit" : "551f106dc64a1cacb298cc2f05613d142b53302f"
+      "commit": "7ea834ecc59258a5c13c3d3e6fa0582bdde7c543"
     },
     {
       "name" : "glslang",
       "url" : "https://github.com/KhronosGroup/glslang.git",
       "sub_dir" : "shaderc/third_party/glslang",
-      "commit" : "73c9630da979017b2f7e19c6549e2bdb93d9b238"
+      "commit" : "28b53119bdfbc43eae532641337a7adbb315b273"
     },
     {
       "name" : "Vulkan-Headers",
@@ -28,7 +28,7 @@
       "name" : "SPIRV-Tools",
       "url" : "https://github.com/KhronosGroup/SPIRV-Tools.git",
       "sub_dir" : "shaderc/third_party/spirv-tools",
-      "commit" : "4c456f7da67c5437a6fb7d4d20d78e2a5ae2acf2"
+      "commit" : "4dbc66380dd63aabbd33c38198008449d0a5807a"
     },
     {
       "name" : "SPIRV-Headers",
