@@ -42,6 +42,11 @@ using SyncStageAccessFlags = std::bitset<128>;
 
 // clang-format off
 
+// Fake stages and accesses for acquire present support
+static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x0000020000000000ULL;
+static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x0000400000000000ULL;
+static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x0000800000000000ULL;
+
 // Unique number for each  stage/access combination
 enum SyncStageAccessIndex {
     SYNC_ACCESS_INDEX_NONE = 0,
@@ -138,8 +143,10 @@ enum SyncStageAccessIndex {
     SYNC_MICROMAP_BUILD_EXT_MICROMAP_WRITE_EXT = 91,
     SYNC_HOST_HOST_READ = 92,
     SYNC_HOST_HOST_WRITE = 93,
-    SYNC_IMAGE_LAYOUT_TRANSITION = 94,
-    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 95,
+    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL = 94,
+    SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL = 95,
+    SYNC_IMAGE_LAYOUT_TRANSITION = 96,
+    SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER = 97,
 };
 
 // Unique bit for each  stage/access combination
@@ -236,6 +243,8 @@ static const SyncStageAccessFlags SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_READ_BIT_
 static const SyncStageAccessFlags SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_WRITE_BIT_EXT = (SyncStageAccessFlags(1) << SYNC_MICROMAP_BUILD_EXT_MICROMAP_WRITE_EXT);
 static const SyncStageAccessFlags SYNC_HOST_HOST_READ_BIT = (SyncStageAccessFlags(1) << SYNC_HOST_HOST_READ);
 static const SyncStageAccessFlags SYNC_HOST_HOST_WRITE_BIT = (SyncStageAccessFlags(1) << SYNC_HOST_HOST_WRITE);
+static const SyncStageAccessFlags SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = (SyncStageAccessFlags(1) << SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL);
+static const SyncStageAccessFlags SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL = (SyncStageAccessFlags(1) << SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
 static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageAccessFlags(1) << SYNC_IMAGE_LAYOUT_TRANSITION);
 static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (SyncStageAccessFlags(1) << SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER);
 
@@ -251,7 +260,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-extern const std::array<SyncStageAccessInfoType, 96> syncStageAccessInfoByStageAccessIndex;
+extern const std::array<SyncStageAccessInfoType, 98> syncStageAccessInfoByStageAccessIndex;
 
 // Constants defining the mask of all read and write stage_access states
 static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
@@ -321,7 +330,8 @@ static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all re
     SYNC_SUBPASS_SHADING_HUAWEI_INPUT_ATTACHMENT_READ_BIT |
     SYNC_OPTICAL_FLOW_BIT_NV_OPTICAL_FLOW_READ_BIT_NV |
     SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_READ_BIT_EXT |
-    SYNC_HOST_HOST_READ_BIT
+    SYNC_HOST_HOST_READ_BIT |
+    SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_ACQUIRE_READ_BIT_SYNCVAL
 );
 
 static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all write StageAccess bits
@@ -351,6 +361,7 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
     SYNC_OPTICAL_FLOW_BIT_NV_OPTICAL_FLOW_WRITE_BIT_NV |
     SYNC_MICROMAP_BUILD_BIT_EXT_MICROMAP_WRITE_BIT_EXT |
     SYNC_HOST_HOST_WRITE_BIT |
+    SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL |
     SYNC_IMAGE_LAYOUT_TRANSITION_BIT |
     SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT
 );
