@@ -286,8 +286,10 @@ static const std::array<CommandSupportedQueueType, CMD_RANGE_SIZE> kGeneratedQue
                     flags.append("VK_QUEUE_VIDEO_DECODE_BIT_KHR")
                 elif queue == 'encode':
                     flags.append("VK_QUEUE_VIDEO_ENCODE_BIT_KHR")
+                elif queue == 'opticalflow':
+                    flags.append("VK_QUEUE_OPTICAL_FLOW_BIT_NV")
                 else:
-                    print("A new queue type %s was added to VkQueueFlagBits and need to update generation code", queue)
+                    print(f'A new queue type {queue} was added to VkQueueFlagBits and need to update generation code')
                     sys.exit(1)
             vuid = 'VUID-' + name + '-commandBuffer-cmdpool'
             if vuid not in self.valid_vuids:

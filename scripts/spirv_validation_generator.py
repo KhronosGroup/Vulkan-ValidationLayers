@@ -99,6 +99,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             'TextureBlockMatchQCOM',
             'TextureBoxFilterQCOM',
             'TextureSampleWeightedQCOM',
+            'RayTracingOpacityMicromapEXT', # waiting for https://github.com/KhronosGroup/SPIRV-Headers/pull/292
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
