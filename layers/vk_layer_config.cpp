@@ -3,6 +3,7 @@
  * Copyright 2014-2021 Valve Software
  * Copyright 2015-2021 Google Inc.
  * Copyright 2019-2021 LunarG, Inc.
+ * Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

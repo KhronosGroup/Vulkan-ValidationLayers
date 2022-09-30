@@ -3,6 +3,7 @@
 # Copyright 2017 The Glslang Authors. All rights reserved.
 # Copyright (c) 2018 Valve Corporation
 # Copyright (c) 2018-2021 LunarG, Inc.
+# Copyright (c) 2021-2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
