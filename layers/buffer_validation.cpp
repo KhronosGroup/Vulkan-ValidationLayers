@@ -6024,10 +6024,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                     VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                         VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV |
-                                        VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
+                                        VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT | VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM |
+                                        VK_IMAGE_USAGE_SAMPLE_BLOCK_MATCH_BIT_QCOM,
                                     false, "VUID-VkImageViewCreateInfo-image-04441", "vkCreateImageView()",
                                     "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|"
-                                    "TRANSIENT_ATTACHMENT|SHADING_RATE_IMAGE|FRAGMENT_DENSITY_MAP]_BIT");
+                                    "TRANSIENT_ATTACHMENT|SHADING_RATE_IMAGE|FRAGMENT_DENSITY_MAP|"
+                                    "SAMPLE_WEIGHT|BLOCK_MATCH]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
         skip |= ValidateMemoryIsBoundToImage(image_state.get(), "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
         // Checks imported from image layer
@@ -6490,6 +6492,170 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     device, "VUID-VkImageViewCreateInfo-format-06415",
                     "vkCreateImageView(): Format %s requires a VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
                     string_VkFormat(view_format));
+            }
+        }
+
+        auto sample_weight_info = LvlFindInChain<VkImageViewSampleWeightCreateInfoQCOM>(pCreateInfo->pNext);
+        if (IsExtEnabled(device_extensions.vk_qcom_image_processing) && (sample_weight_info != nullptr)) {
+            if ((enabled_features.image_processing_features.textureSampleWeighted == VK_FALSE)) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-pNext-06944",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "but textureSampleWeighted feature is not enabled.");
+            }
+
+            // Validate VkImage and VkImageView compatibility with  VkImageViewSampleWeightCreateInfoQCOM
+            if ((image_usage & VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM) == 0) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06945",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "but image not created with VK_IMAGE_USAGE_SAMPLE_WEIGHT_BIT_QCOM.");
+            }
+            if (!IsIdentitySwizzle(pCreateInfo->components)) {
+                skip |= LogError(
+                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06946",
+                    "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                    "but the component swizzles ( r = %s, g = %s, b = %s, a = %s)"
+                    " are not VK_COMPONENT_SWIZZLE_IDENTITY for all components.",
+                    string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
+                    string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
+            }
+            if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06947",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "but the subresource range aspect mask (%s) is not VK_IMAGE_ASPECT_COLOR_BIT.",
+                                 string_VkImageAspectFlags(aspect_mask).c_str());
+            }
+            if (pCreateInfo->subresourceRange.levelCount != 1) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06948",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "but the subresource level count (%" PRIu32 ") is not equal to 1.",
+                                 pCreateInfo->subresourceRange.levelCount);
+            }
+            if ((pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_1D_ARRAY) && (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06949",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "but the view type (%s) is not VK_IMAGE_VIEW_TYPE_1D_ARRAY or VK_IMAGE_VIEW_TYPE_2D_ARRAY.",
+                                 string_VkImageViewType(pCreateInfo->viewType));
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) && (image_type != VK_IMAGE_TYPE_1D)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06950",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "and the viewType is VK_IMAGE_VIEW_TYPE_1D_ARRAY but the image type (%s) is not VK_IMAGE_TYPE_1D.",
+                                 string_VkImageType(image_type));
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) && (layer_count != 2)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06951",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "and the view type is VK_IMAGE_VIEW_TYPE_1D_ARRAY but the subresourceRange layerCount (%" PRIu32
+                                 ") is not 2.",
+                                 layer_count);
+            }
+            auto filter_width_aligned_to_four = (sample_weight_info->filterSize.width + 3) & ~(3);
+            auto min_image_width =
+                sample_weight_info->numPhases * (std::max(filter_width_aligned_to_four, sample_weight_info->filterSize.height));
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY) &&
+                (image_state->createInfo.extent.width < min_image_width)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06952",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "for a VK_IMAGE_VIEW_TYPE_1D_ARRAY with an image created with extent.width (%" PRIu32
+                                 "), but numPhases (%" PRIu32 "), filterSize.width (%" PRIu32 "), and filterSize.height (%" PRIu32
+                                 ") requires an image extent.width greater than or equal to (%" PRIu32 ").",
+                                 image_state->createInfo.extent.width, sample_weight_info->numPhases,
+                                 sample_weight_info->filterSize.width, sample_weight_info->filterSize.height, min_image_width);
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) && (image_type != VK_IMAGE_TYPE_2D)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06953",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "and the view type is VK_IMAGE_VIEW_TYPE_2D_ARRAY but the image created type (%s) is "
+                                 "not VK_IMAGE_TYPE_2D.",
+                                 string_VkImageType(image_type));
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) && (layer_count < (sample_weight_info->numPhases))) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06954",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "and the view type is VK_IMAGE_VIEW_TYPE_1D_ARRAY but the subresourceRange "
+                                 "layerCount (%" PRIu32
+                                 ") is not greater than or equal to "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::numPhases (%" PRIu32 ").",
+                                 layer_count, sample_weight_info->numPhases);
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) &&
+                (image_state->createInfo.extent.width < sample_weight_info->filterSize.width)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06955",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "for a VK_IMAGE_VIEW_TYPE_2D_ARRAY but the created image extent.width (%" PRIu32
+                                 ") is not greater than or equal to filerSize.width (%" PRIu32 ").",
+                                 image_state->createInfo.extent.width, sample_weight_info->filterSize.width);
+            }
+            if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY) &&
+                (image_state->createInfo.extent.width < sample_weight_info->filterSize.height)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06956",
+                                 "vkCreateImageView(): pNext chain includes VkImageViewSampleWeightCreateInfoQCOM "
+                                 "for a VK_IMAGE_VIEW_TYPE_2D_ARRAY but the created image extent.height (%" PRIu32
+                                 ") is not greater than or equal to filerSize.height (%" PRIu32 ").",
+                                 image_state->createInfo.extent.height, sample_weight_info->filterSize.height);
+            }
+            if ((sample_weight_info->filterSize.height >
+                 phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.height)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-pNext-06957",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterSize.height (%" PRIu32
+                                 ") is not less than or equal to "
+                                 "VkPhysicalDeviceImageProcessingPropertiesQCOM::maxWeightFilterDimension.height (%" PRIu32 ").",
+                                 sample_weight_info->filterSize.height,
+                                 phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.height);
+            }
+
+            // Valiate VkImageViewSampleWeightCreateInfoQCOM
+            if ((sample_weight_info->filterSize.width > phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.width)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06958",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterSize.width (%" PRIu32
+                                 ") is not less than or equal to "
+                                 "VkPhysicalDeviceImageProcessingPropertiesQCOM::maxWeightFilterDimension.width (%" PRIu32 ").",
+                                 sample_weight_info->filterSize.width,
+                                 phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.width);
+            }
+            if ((sample_weight_info->filterSize.height >
+                 phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.height)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06959",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterSize.height (%" PRIu32
+                                 ") is not less than or equal to "
+                                 "VkPhysicalDeviceImageProcessingPropertiesQCOM::maxWeightFilterDimension.height (%" PRIu32 ").",
+                                 sample_weight_info->filterSize.width,
+                                 phys_dev_ext_props.image_processing_props.maxWeightFilterDimension.width);
+            }
+            if ((static_cast<uint32_t>(sample_weight_info->filterCenter.x) >= sample_weight_info->filterSize.width)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06960",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterCenter.x (%" PRId32
+                                 ") is not less than "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterSize.width (%" PRIu32 ").",
+                                 sample_weight_info->filterCenter.x, sample_weight_info->filterSize.width);
+            }
+            if ((static_cast<uint32_t>(sample_weight_info->filterCenter.y) >= sample_weight_info->filterSize.height)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterCenter.y (%" PRId32
+                                 ") is not less than "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::filterSize.height (%" PRIu32 ").",
+                                 sample_weight_info->filterCenter.y, sample_weight_info->filterSize.height);
+            }
+            if (!IsPowerOfTwo(sample_weight_info->numPhases) || (MostSignificantBit(sample_weight_info->numPhases) % 2 != 0)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06962",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::numPhasaes (%" PRIu32
+                                 ") is not a power of two squared "
+                                 "value (i.e., 1, 4, 16, 64, 256, etc.)",
+                                 sample_weight_info->numPhases);
+            }
+            if ((sample_weight_info->numPhases > phys_dev_ext_props.image_processing_props.maxWeightFilterPhases)) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06963",
+                                 "vkCreateImageView():  "
+                                 "VkImageViewSampleWeightCreateInfoQCOM::numPhases (%" PRIu32
+                                 " ) is not less than or equal to "
+                                 "VkPhysicalDeviceImageProcessingPropertiesQCOM::maxWeightFilterPhases (%" PRIu32 ")",
+                                 sample_weight_info->numPhases, phys_dev_ext_props.image_processing_props.maxWeightFilterPhases);
             }
         }
     }

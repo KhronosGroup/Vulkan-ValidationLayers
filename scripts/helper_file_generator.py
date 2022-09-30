@@ -1514,6 +1514,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:\n'
                     '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:\n'
                     '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:\n'
+                    '        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:\n'
                     '        if (descriptorCount && in_struct->pImageInfo) {\n'
                     '            pImageInfo = new VkDescriptorImageInfo[descriptorCount];\n'
                     '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
