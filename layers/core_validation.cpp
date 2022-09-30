@@ -7359,6 +7359,8 @@ std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
                             break;
                         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
                         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                        case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
+                        case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
                             stage_sum[DSL_TYPE_SAMPLED_IMAGES] += binding->descriptorCount;
                             break;
                         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:

@@ -4170,6 +4170,61 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         }
     }
 
+    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM) != 0) {
+        if ((pCreateInfo->minFilter != VK_FILTER_NEAREST) || (pCreateInfo->magFilter != VK_FILTER_NEAREST)) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06964",
+                             "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->minFilter (%s) must be VK_FILTER_NEAREST and "
+                             "pCreateInfo->magFilter (%s) must be VK_FILTER_NEAREST.",
+                             string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+        }
+        if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06965",
+                             "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                             string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+        }
+        if ((pCreateInfo->minLod != 0) || (pCreateInfo->maxLod != 0)) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06966",
+                             "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->minLod (%f) and pCreateInfo->maxLod (%f) must be 0.",
+                             pCreateInfo->minLod, pCreateInfo->maxLod);
+        }
+        if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
+            ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+             (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06967",
+                             "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->addressModeU (%s) and pCreateInfo->addressModeU (%s) must be either "
+                             "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER.",
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                             string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+        }
+        if (((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
+             (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) &&
+            (pCreateInfo->borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)) {
+            skip |=
+                LogError(device, "VUID-VkSamplerCreateInfo-flags-06968",
+                         "vkCreateSampler(): when pCreateInfo->flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                         "and if pCreateInfo->addressModeU (%s) or  pCreateInfo->addressModeV (%s) are "
+                         "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, then"
+                         "pCreateInfo->borderColor (%s) must be VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK.",
+                         string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                         string_VkSamplerAddressMode(pCreateInfo->addressModeV), string_VkBorderColor(pCreateInfo->borderColor));
+        }
+        if (pCreateInfo->anisotropyEnable) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06969",
+                             "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->anisotropyEnable must be VK_FALSE");
+        }
+        if (pCreateInfo->compareEnable) {
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-06970",
+                             "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM, "
+                             "pCreateInfo->compareEnable must be VK_FALSE");
+        }
+    }
+
     return skip;
 }
 
@@ -4571,6 +4626,21 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
             } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
                        (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
                 // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
+            } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM) ||
+                       (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM)) {
+                if (pDescriptorWrites[i].pImageInfo == nullptr) {
+                    if (!isPushDescriptor) {
+                        // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM,
+                        // or VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, pImageInfo must be a pointer to an array
+                        // of descriptorCount valid VkDescriptorImageInfo structures.
+                        skip |= LogError(device, "VUID-vkUpdateDescriptorSets-pDescriptorWrites-06941",
+                                         "%s(): if pDescriptorWrites[%" PRIu32
+                                         "].descriptorType is VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM, "
+                                         "or VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM, pDescriptorWrites[%" PRIu32
+                                         "].pImageInfo must not be NULL.",
+                                         vkCallingFunction, i, i);
+                    }
+                }
             }
 
             if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||

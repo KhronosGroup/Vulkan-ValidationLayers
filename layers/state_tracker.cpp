@@ -1249,6 +1249,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (pipeline_protected_access_features) {
             enabled_features.pipeline_protected_access_features = *pipeline_protected_access_features;
         }
+
+        const auto shader_image_proc_features = LvlFindInChain<VkPhysicalDeviceImageProcessingFeaturesQCOM>(pCreateInfo->pNext);
+        if (shader_image_proc_features) {
+            enabled_features.image_processing_features = *shader_image_proc_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
@@ -1457,6 +1462,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                                    &phys_dev_props->conservative_rasterization_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control,
                                    &phys_dev_props->subgroup_size_control_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing,&phys_dev_props->image_processing_props);
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_properties);
     }
