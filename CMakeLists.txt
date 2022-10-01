@@ -172,11 +172,6 @@ if(UNIX AND NOT APPLE) # i.e. Linux
     if(BUILD_WSI_XLIB_SUPPORT)
         find_package(X11 REQUIRED)
     endif()
-
-    if(BUILD_WSI_WAYLAND_SUPPORT)
-        find_package(Wayland REQUIRED)
-        include_directories(${WAYLAND_CLIENT_INCLUDE_DIR})
-    endif()
 endif()
 
 # Platform-specific compiler switches
