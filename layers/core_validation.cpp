@@ -3022,6 +3022,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
     skip |= ValidatePipelineCacheControlFlags(pipeline->GetPipelineCreateFlags(), pipe_index, "vkCreateGraphicsPipelines",
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
+    skip |= ValidatePipelineProtectedAccessFlags(pipeline->GetPipelineCreateFlags(), pipe_index);
 
     // VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03378
     if (api_version < VK_API_VERSION_1_3 && !enabled_features.extended_dynamic_state_features.extendedDynamicState &&
@@ -3528,6 +3529,41 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                          "library included in VkPipelineLibraryCreateInfoKHR was created with a shader stage with "
                                          "VkPipelineShaderStageModuleIdentifierCreateInfoEXT and identifierSize not equal to 0",
                                          pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str());
+                    }
+                    struct check_struct {
+                        VkPipelineCreateFlagBits bit;
+                        std::string first_vuid;
+                        std::string second_vuid;
+                    };
+                    static const std::array<check_struct, 2> check_infos = {
+                        {{VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404",
+                          "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405"},
+                         {VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
+                          "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407"}}};
+                    for (auto check_info : check_infos) {
+                        if ((pipeline->GetPipelineCreateFlags() & check_info.bit)) {
+                            if (!(lib->GetPipelineCreateFlags() & check_info.bit)) {
+                                LogObjectList objs(device);
+                                objs.add(lib->Handle());
+                                skip |= LogError(objs, check_info.first_vuid.c_str(),
+                                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                                 "] has the %s bit set, but "
+                                                 "the pLibraries[%" PRIu32
+                                                 "] library included in VkPipelineLibraryCreateInfoKHR was created without it",
+                                                 pipe_index, string_VkPipelineCreateFlagBits(check_info.bit), i);
+                            }
+                        } else {
+                            if ((lib->GetPipelineCreateFlags() & check_info.bit)) {
+                                LogObjectList objs(device);
+                                objs.add(lib->Handle());
+                                skip |= LogError(objs, check_info.second_vuid.c_str(),
+                                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                                 "] does not have the %s bit set, but "
+                                                 "the pLibraries[%" PRIu32
+                                                 "] library included in VkPipelineLibraryCreateInfoKHR was created with it set",
+                                                 pipe_index, string_VkPipelineCreateFlagBits(check_info.bit), i);
+                            }
+                        }
                     }
                 }
             }
@@ -6948,6 +6984,29 @@ bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, 
     return skip;
 }
 
+bool CoreChecks::ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, uint32_t index) const {
+    bool skip = false;
+    if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess == VK_FALSE) {
+        const VkPipelineCreateFlags invalid_flags =
+            VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+        if ((flags & invalid_flags) != 0) {
+            skip |= LogError(
+                device, "VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368",
+                "vkCreateGraphicsPipelines(): pipelineProtectedAccess is turned off but pipeline[%u] has VkPipelineCreateFlags (%s) "
+                "that contain VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT or VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT",
+                index, string_VkPipelineCreateFlags(flags).c_str());
+        }
+    }
+    if ((flags & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) && (flags & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT)) {
+        skip |= LogError(
+            device, "VUID-VkGraphicsPipelineCreateInfo-flags-07369",
+            "vkCreateGraphicsPipelines(): pipeline[%u] has VkPipelineCreateFlags that "
+            "contains both VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT and VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT",
+            index);
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator,
                                                     VkPipelineCache *pPipelineCache) const {
@@ -9585,6 +9644,21 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                             break;
                         }
                     }
+                }
+            }
+        }
+        if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
+            if (cb_state->unprotected) {
+                if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
+                    skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409",
+                                     "vkCmdBindPipeline(): Binding pipeline created with "
+                                     "VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT in an unprotected command buffer");
+                }
+            } else {
+                if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT) {
+                    skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408",
+                                     "vkCmdBindPipeline(): Binding pipeline created with "
+                                     "VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT in a protected command buffer");
                 }
             }
         }
