@@ -1243,6 +1243,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (attachment_feedback_loop_layout) {
             enabled_features.attachment_feedback_loop_layout_features = *attachment_feedback_loop_layout;
         }
+
+        const auto pipeline_protected_access_features =
+            LvlFindInChain<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(pCreateInfo->pNext);
+        if (pipeline_protected_access_features) {
+            enabled_features.pipeline_protected_access_features = *pipeline_protected_access_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

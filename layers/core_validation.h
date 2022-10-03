@@ -266,6 +266,7 @@ class CoreChecks : public ValidationStateTracker {
                                         const VkGraphicsPipelineCreateInfo* pipe_cis) const;
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char* caller_name,
                                            const char* vuid) const;
+    bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, uint32_t index) const;
     template <typename ImgBarrier>
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, CMD_BUFFER_STATE* cb_state,
                                                          const ImgBarrier& barrier);
