@@ -1095,6 +1095,44 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
     pipeline_cache_ = pipelineCache;
 }
 
+// This function validates that the output of one shader is fully consumed by the consumer shader in the pipeline for performance
+// reasons
+bool BestPractices::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, spirv_inst_iter producer_entrypoint,
+                                                   shader_stage_attributes const* producer_stage,
+                                                   const SHADER_MODULE_STATE& consumer, spirv_inst_iter consumer_entrypoint,
+                                                   shader_stage_attributes const* consumer_stage) const {
+    bool skip = false;
+
+    auto check_unconsumed_attrib = [this](const SHADER_MODULE_STATE& producer, shader_stage_attributes const* producer_stage,
+                                          const ShaderAttribute& out, const SHADER_MODULE_STATE& consumer,
+                                          shader_stage_attributes const* consumer_stage, const ShaderAttribute& in) -> bool {
+        bool skip = false;
+
+        if (out.IsPartiallyUnconsumedBy(in)) {
+            if (enabled_features.core13.maintenance4) {
+                std::string msg = std::string{producer_stage->name} + " writes to output location " + std::to_string(out.location) +
+                                  '.' + std::to_string(out.component) + " which is not consumed by " + consumer_stage->name + ". ";
+                skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
+            }
+        }
+
+        if (out.IsFullyUnconsumedBy(in)) {
+            // out attribute is completely unconsumed
+            std::string msg = std::string{producer_stage->name} + " writes to output location " + std::to_string(out.location) +
+                              '.' + std::to_string(out.component) + " which is completely not consumed by " + consumer_stage->name +
+                              ". ";
+            skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
+        }
+
+        return skip;
+    };
+
+    skip |= IterateInterfaceBetweenStages(check_unconsumed_attrib, producer, producer_entrypoint, producer_stage, consumer,
+                                          consumer_entrypoint, consumer_stage);
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1111,6 +1149,26 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
             "Performance Warning: This vkCreateGraphicsPipelines call is creating multiple pipelines but is not using a "
             "pipeline cache, which may help with performance");
+    }
+
+    for (const auto& pipeline : cgpl_state->pipe_state) {
+        const PipelineStageState* fragment_stage = nullptr;
+        for (auto& stage : pipeline->stage_state) {
+            if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                fragment_stage = &stage;
+            }
+        }
+
+        const auto this_validate_interface_between_stages =
+            [this](const SHADER_MODULE_STATE& producer, spirv_inst_iter producer_entrypoint,
+                   shader_stage_attributes const* producer_stage, const SHADER_MODULE_STATE& consumer,
+                   spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) {
+                return ValidateInterfaceBetweenStages(producer, producer_entrypoint, producer_stage, consumer, consumer_entrypoint,
+                                                      consumer_stage);
+            };
+
+        skip |= ValidateInterfaceBetweenAllPipelineStages(pipeline->stage_state, fragment_stage, shader_stage_attribs,
+                                                          this_validate_interface_between_stages);
     }
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
