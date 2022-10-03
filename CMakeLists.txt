@@ -42,7 +42,7 @@ option(BUILD_TESTS "Build the tests" OFF)
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
@@ -50,7 +50,9 @@ if (UPDATE_DEPS)
     if (CMAKE_GENERATOR_PLATFORM)
         set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
     else()
-        message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
+        if (MSVC_IDE)
+            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
+        endif()
         set(_target_arch x64)
     endif()
 
@@ -138,6 +140,9 @@ if(USE_CCACHE)
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
+set(CMAKE_C_VISIBILITY_PRESET "hidden")
+set(CMAKE_VISIBILITY_INLINES_HIDDEN "YES")
 
 include(GNUInstallDirs)
 
@@ -194,8 +199,7 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
                         -fno-strict-aliasing
-                        -fno-builtin-memcmp
-                        -fvisibility=hidden)
+                        -fno-builtin-memcmp)
 
     # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
     if(BUILD_WERROR OR

@@ -7,6 +7,7 @@ This project provides the Khronos official Vulkan validation layers for Windows,
 |:------------|
 | [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_windows.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 | [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
+| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_macos.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 | [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux_gn.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 | [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_android.yml/badge.svg?branch=master)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 

@@ -56,4 +56,4 @@ jobs:
       - name: Generate build files and dependencies
         run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
       - name: Build Vulkan-ValidationLayers
-        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu)
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}

@@ -662,7 +662,7 @@ def main():
         dest='arch',
         choices=['32', '64', 'x86', 'x64', 'win32', 'win64'],
         type=str.lower,
-        help="Set build files architecture (Windows)",
+        help="Set build files architecture (Visual Studio Generator Only)",
         default='64')
     parser.add_argument(
         '--config',
