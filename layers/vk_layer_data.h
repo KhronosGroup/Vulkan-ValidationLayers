@@ -1007,6 +1007,26 @@ typename Container::size_type EraseIf(Container &c, Predicate &&p) {
 }
 
 template <typename T>
+constexpr T MaxTypeValue(T) {
+    return std::numeric_limits<T>::max();
+}
+
+template <typename T>
+constexpr T MaxTypeValue() {
+    return std::numeric_limits<T>::max();
+}
+
+template <typename T>
+constexpr T MinTypeValue(T) {
+    return std::numeric_limits<T>::min();
+}
+
+template <typename T>
+constexpr T MinTypeValue() {
+    return std::numeric_limits<T>::min();
+}
+
+template <typename T>
 T GetQuotientCeil(T numerator, T denominator) {
     denominator = std::max(denominator, T{1});
     return static_cast<T>(std::ceil(static_cast<double>(numerator) / static_cast<double>(denominator)));
