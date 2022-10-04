@@ -23,6 +23,8 @@
 #ifndef LAYER_DATA_H
 #define LAYER_DATA_H
 
+#include <cmath>
+
 #include <cassert>
 #include <limits>
 #include <memory>
@@ -1002,6 +1004,12 @@ typename Container::size_type EraseIf(Container &c, Predicate &&p) {
         }
     }
     return before_size - c.size();
+}
+
+template <typename T>
+T GetQuotientCeil(T numerator, T denominator) {
+    denominator = std::max(denominator, T{1});
+    return static_cast<T>(std::ceil(static_cast<double>(numerator) / static_cast<double>(denominator)));
 }
 
 }  // namespace layer_data
