@@ -2058,6 +2058,24 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
 
     TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid,
                         vuid);
+
+    m_renderPassBeginInfo.renderArea.offset.x = 1;
+    m_renderPassBeginInfo.renderArea.extent.width = layer_data::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width) - 1;
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid,
+                        vuid);
+
+    m_renderPassBeginInfo.renderArea.offset.x = layer_data::MaxTypeValue(m_renderPassBeginInfo.renderArea.offset.x);
+    m_renderPassBeginInfo.renderArea.extent.width = layer_data::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.width);
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid,
+                        vuid);
+
+    vuid = device_group_supported ? "VUID-VkRenderPassBeginInfo-pNext-02853" : "VUID-VkRenderPassBeginInfo-renderArea-02849";
+    m_renderPassBeginInfo.renderArea.offset.x = 0;
+    m_renderPassBeginInfo.renderArea.extent.width = 256;
+    m_renderPassBeginInfo.renderArea.offset.y = 1;
+    m_renderPassBeginInfo.renderArea.extent.height = layer_data::MaxTypeValue(m_renderPassBeginInfo.renderArea.extent.height) - 1;
+    TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &m_renderPassBeginInfo, rp2Supported, vuid,
+                        vuid);
 }
 
 TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
