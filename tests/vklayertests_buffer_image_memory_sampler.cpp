@@ -16462,7 +16462,7 @@ TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-attachmentFeedbackLoopLayout-07313");
     image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
     m_errorMonitor->VerifyFound();
-    
+
     m_commandBuffer->begin();
     auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
     img_barrier.image = image.handle();

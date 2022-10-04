@@ -713,7 +713,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
                 auto image_view = attachments[attachment_ref.attachment];
                 auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
-                
+
                 if (view_state) {
                     skip |= ValidateRenderPassLayoutAgainstFramebufferImageUsage(
                         rp_version, attachment_ref.layout, *view_state, framebuffer, render_pass, attachment_ref.attachment,
@@ -5779,7 +5779,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
                          layout_loc.Message().c_str());
         }
     }
-    
+
     if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
         if (!enabled_features.attachment_feedback_loop_layout_features.attachmentFeedbackLoopLayout) {
             auto layout_loc = loc.dot(Field::newLayout);
