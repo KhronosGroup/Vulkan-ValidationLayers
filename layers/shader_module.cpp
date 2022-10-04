@@ -1205,6 +1205,7 @@ struct shader_module_used_operators {
     std::vector<uint32_t> atomic_pointer_ids;
     std::vector<uint32_t> store_pointer_ids;
     std::vector<uint32_t> atomic_store_pointer_ids;
+    std::vector<uint32_t> sampler_load_ids;  // tracks all sampling operations
     std::vector<uint32_t> sampler_implicitLod_dref_proj_load_ids;
     std::vector<uint32_t> sampler_bias_offset_load_ids;
     std::vector<uint32_t> image_dref_load_ids;
@@ -1237,6 +1238,7 @@ struct shader_module_used_operators {
                     // combined image samples are just OpLoad, but also can be separate image and sampler
                     auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                     auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
+                    sampler_load_ids.emplace_back(load_id);
                     sampler_implicitLod_dref_proj_load_ids.emplace_back(load_id);
                     // ImageOperands in index: 5
                     if (insn.len() > 5 && CheckImageOperandsBiasOffset(insn.word(5))) {
@@ -1266,6 +1268,7 @@ struct shader_module_used_operators {
                     auto image_load_id = (id.opcode() == spv::OpSampledImage) ? id.word(3) : insn.word(3);
 
                     image_dref_load_ids.emplace_back(image_load_id);
+                    sampler_load_ids.emplace_back(sampler_load_id);
                     sampler_implicitLod_dref_proj_load_ids.emplace_back(sampler_load_id);
                     // ImageOperands in index: 6
                     if (insn.len() > 6 && CheckImageOperandsBiasOffset(insn.word(6))) {
@@ -1280,6 +1283,7 @@ struct shader_module_used_operators {
                         // combined image samples are just OpLoad, but also can be separate image and sampler
                         auto id = module_state->get_def(insn.word(3));  // <id> Sampled Image
                         auto load_id = (id.opcode() == spv::OpSampledImage) ? id.word(4) : insn.word(3);
+                        sampler_load_ids.emplace_back(load_id);
                         sampler_bias_offset_load_ids.emplace_back(load_id);
                     }
                     break;
@@ -1405,6 +1409,10 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                     out_interface_var.is_readable = true;
                     if (is_image_without_format) out_interface_var.is_read_without_format = true;
                 }
+                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_load_ids, used_operators.load_members,
+                                            used_operators.accesschain_members)) {
+                    out_interface_var.is_sampler_sampled = true;
+                }
                 if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_load_ids, used_operators.load_members,
                                             used_operators.accesschain_members)) {
                     out_interface_var.is_sampler_implicitLod_dref_proj = true;
@@ -1471,6 +1479,10 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const spirv_inst_iter &id_it,
                         }
 
                         // Need to check again for these properties in case not using a combined image sampler
+                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_load_ids, used_operators.load_members,
+                                                    used_operators.accesschain_members)) {
+                            out_interface_var.is_sampler_sampled = true;
+                        }
                         if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_implicitLod_dref_proj_load_ids,
                                                     used_operators.load_members, used_operators.accesschain_members)) {
                             out_interface_var.is_sampler_implicitLod_dref_proj = true;
