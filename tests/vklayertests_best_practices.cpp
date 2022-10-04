@@ -1206,6 +1206,128 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
                                       "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
+TEST_F(VkBestPracticesLayerTest, CreatePipelineVertexOutputNotConsumed) {
+    TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto device_maintenance4 = LvlInitStruct<VkPhysicalDeviceMaintenance4FeaturesKHR>();
+    GetPhysicalDeviceFeatures2(device_maintenance4);
+
+    if (!device_maintenance4.maintenance4) {
+        GTEST_SKIP() << "Maintenance4 is not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_maintenance4));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out vec3 x;
+        layout(location=1) out vec4 y;
+        layout(location=2) out float z;
+        layout(location=3) out float a[2];
+        layout(location=5) out float b[2];
+        layout(location=7) out vec3 c[3];
+        layout(location=10, component = 1) out vec2 vx;
+        
+        void main(){
+           gl_Position = vec4(1);
+           x = vec3(0);
+           y = vec4(0);
+           z = 0;
+        }
+    )glsl";
+
+        char const *fsSource = R"glsl(
+      #version 450
+      layout(location=0) in float x;
+      layout(location=1) in vec3 y;
+      layout(location=5) in float b[1];
+      layout(location=8) in float c;
+
+      layout(location=0) out vec3 outColor;
+
+      void main(){
+        outColor = vec3(x, vec2(y.x+y.y+y.z+b[0])) + c.xxx;
+      }
+  )glsl";
+
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        const std::vector<std::string> expected_errors{
+            "vertex shader writes to output location 0.1 which is not consumed by fragment shader",
+            "vertex shader writes to output location 1.3 which is not consumed by fragment shader",
+            "vertex shader writes to output location 2.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 3.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 4.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 6.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 7.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 8.1 which is not consumed by fragment shader",
+            "vertex shader writes to output location 9.0 which is completely not consumed by fragment shader",
+            "vertex shader writes to output location 10.1 which is completely not consumed by fragment shader",
+        };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, expected_errors);
+    }
+
+    {
+        char const *vsSource = R"glsl(
+        #version 450
+        layout(location=0) out dvec3 x;
+        layout(location=1,component=3) out float y;
+        
+        void main(){
+           gl_Position = vec4(1);
+           x = dvec3(0);
+           y = 0;
+        }
+    )glsl";
+
+        char const *fsSource = R"glsl(
+      #version 450
+      layout(location=0) flat in double x;
+      layout(location=1,component=3) in float y;
+
+      layout(location=0) out vec3 outColor;
+
+      void main(){
+        outColor = vec3(x + y);
+      }
+    )glsl";
+
+        VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        const auto set_info = [&](CreatePipelineHelper &helper) {
+            helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+        const std::vector<std::string> expected_errors{
+            "vertex shader writes to output location 0.1 which is not consumed by fragment shader",
+            "vertex shader writes to output location 1.1 which is not consumed by fragment shader",
+            "vertex shader writes to output location 1.2 which is not consumed by fragment shader"};
+        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, expected_errors);
+    }
+}
+
 TEST_F(VkBestPracticesLayerTest, WorkgroupSizeDeprecated) {
     TEST_DESCRIPTION("SPIR-V 1.6 deprecated WorkgroupSize build-in.");
 
