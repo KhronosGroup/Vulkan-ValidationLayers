@@ -2189,7 +2189,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     } else {
         ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     }
-    
+
 
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;

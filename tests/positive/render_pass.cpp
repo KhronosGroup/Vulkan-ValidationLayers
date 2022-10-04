@@ -1223,7 +1223,7 @@ TEST_F(VkPositiveLayerTest, QueriesInMultiviewRenderPass) {
     vk_testing::QueryPool query_pool;
     query_pool.init(*m_device, qpci);
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(); 
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbi.renderPass = rp.handle();
     rpbi.framebuffer = fb.handle();
     rpbi.renderArea = {{0, 0}, {32, 32}};

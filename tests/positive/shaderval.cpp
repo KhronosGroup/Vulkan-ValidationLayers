@@ -3246,7 +3246,7 @@ TEST_F(VkPositiveLayerTest, StorageImageWriteSpecConstantMoreComponent) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, StorageTexelBufferWriteMoreComponent) {
+TEST_F(VkPositiveLayerTest, StorageTexelBufferWriteMoreComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
