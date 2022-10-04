@@ -42,7 +42,6 @@
 #include <algorithm>
 #include <array>
 #include <assert.h>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -7927,30 +7926,31 @@ static bool UniqueImageViews(const VkRenderingInfo* pRenderingInfo, VkImageView 
     return unique_views;
 }
 
-uint32_t CoreChecks::GetQuotientCeil(uint32_t numerator, uint32_t denominator) const {
-    denominator = std::max(denominator, 1u);
-    return static_cast<uint32_t>(std::ceil(static_cast<float>(numerator) / static_cast<float>(denominator)));
-}
-
 bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view,
                                                  const char *attachment,
                                                  const VkRenderingInfo *pRenderingInfo,
                                                  const char *func_name) const {
     bool skip = false;
 
+    // Upcasting to handle overflow
+    const bool x_extent_valid =
+        static_cast<int64_t>(image_view->image_state->createInfo.extent.width) >=
+        static_cast<int64_t>(pRenderingInfo->renderArea.offset.x) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.width);
+    const bool y_extent_valid =
+        static_cast<int64_t>(image_view->image_state->createInfo.extent.height) >=
+        static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
     if (IsExtEnabled(device_extensions.vk_khr_device_group)) {
         auto device_group_render_pass_begin_info = LvlFindInChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
         if (!device_group_render_pass_begin_info || device_group_render_pass_begin_info->deviceRenderAreaCount == 0) {
-            if (image_view->image_state->createInfo.extent.width <
-                pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) {
+            if (!x_extent_valid) {
                 skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06079",
                                  "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                                  func_name, attachment, image_view->image_state->createInfo.extent.width,
                                  pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
             }
-            if (image_view->image_state->createInfo.extent.height <
-                pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) {
+
+            if (!y_extent_valid) {
                 skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-pNext-06080",
                                  "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
                                  ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
@@ -7959,16 +7959,14 @@ bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMA
             }
         }
     } else {
-        if (image_view->image_state->createInfo.extent.width <
-            pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width) {
+        if (!x_extent_valid) {
             skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06075",
                              "%s(): %s width (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.x (%" PRIu32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
                              func_name, attachment, image_view->image_state->createInfo.extent.width,
                              pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width);
         }
-        if (image_view->image_state->createInfo.extent.height <
-            pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height) {
+        if (!y_extent_valid) {
             skip |= LogError(image_view->Handle(), "VUID-VkRenderingInfo-imageView-06076",
                              "%s(): %s height (%" PRIu32 ") is less than pRenderingInfo->renderArea.offset.y (%" PRIu32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32 ").",
@@ -8011,6 +8009,11 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
     const auto rendering_fragment_shading_rate_attachment_info =
         LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
+    // Upcasting to handle overflow
+    const auto x_adjusted_extent =
+        static_cast<int64_t>(pRenderingInfo->renderArea.offset.x) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.width);
+    const auto y_adjusted_extent =
+        static_cast<int64_t>(pRenderingInfo->renderArea.offset.y) + static_cast<int64_t>(pRenderingInfo->renderArea.extent.height);
     if (rendering_fragment_shading_rate_attachment_info &&
         (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
         auto view_state = Get<IMAGE_VIEW_STATE>(rendering_fragment_shading_rate_attachment_info->imageView);
@@ -8137,9 +8140,10 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
         }
 
         if (!non_zero_device_render_area) {
-            if (view_state->image_state->createInfo.extent.width <
-                GetQuotientCeil(pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width,
-                                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
+            if (static_cast<int64_t>(view_state->image_state->createInfo.extent.width) <
+                layer_data::GetQuotientCeil(
+                    x_adjusted_extent,
+                    static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06119"
                                                                                        : "VUID-VkRenderingInfo-imageView-06117";
                 skip |= LogError(commandBuffer, vuid,
@@ -8151,9 +8155,11 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                  pRenderingInfo->renderArea.extent.width,
                                  rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
             }
-            if (view_state->image_state->createInfo.extent.height <
-                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
-                                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
+
+            if (static_cast<int64_t>(view_state->image_state->createInfo.extent.height) <
+                layer_data::GetQuotientCeil(
+                    y_adjusted_extent,
+                    static_cast<int64_t>(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06121"
                                                                                        : "VUID-VkRenderingInfo-imageView-06118";
                 skip |= LogError(commandBuffer, vuid,
@@ -8176,8 +8182,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
 
                     IMAGE_STATE *image_state = view_state->image_state.get();
                     if (image_state->createInfo.extent.width <
-                        GetQuotientCeil(offset_x + width,
-                                        rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
+                        layer_data::GetQuotientCeil(
+                            offset_x + width,
+                            rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06120",
                                          "%s(): width of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                          ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
@@ -8188,8 +8195,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                                          rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
                     }
                     if (image_state->createInfo.extent.height <
-                        GetQuotientCeil(offset_y + height,
-                                        rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
+                        layer_data::GetQuotientCeil(
+                            offset_y + height,
+                            rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
                         skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pNext-06122",
                                          "%s(): height of VkRenderingFragmentShadingRateAttachmentInfoKHR imageView (%" PRIu32
                                          ") must not be less than (VkDeviceGroupRenderPassBeginInfo::pDeviceRenderAreas[%" PRIu32
@@ -8382,8 +8390,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
             auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
             IMAGE_STATE *image_state = view_state->image_state.get();
             if (image_state->createInfo.extent.width <
-                GetQuotientCeil(pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width,
-                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
+                layer_data::GetQuotientCeil(
+                    x_adjusted_extent,
+                    static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06112"
                                                                                        : "VUID-VkRenderingInfo-imageView-06110";
                 skip |= LogError(
@@ -8397,8 +8406,9 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
             }
             if (image_state->createInfo.extent.height <
-                GetQuotientCeil(pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height,
-                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
+                layer_data::GetQuotientCeil(
+                    y_adjusted_extent,
+                    static_cast<int64_t>(phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height))) {
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_device_group) ? "VUID-VkRenderingInfo-pNext-06114"
                                                                                        : "VUID-VkRenderingInfo-imageView-06111";
                 skip |= LogError(
@@ -8507,8 +8517,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                 auto view_state = Get<IMAGE_VIEW_STATE>(fragment_density_map_attachment_info->imageView);
                 IMAGE_STATE *image_state = view_state->image_state.get();
                 if (image_state->createInfo.extent.width <
-                    GetQuotientCeil(offset_x + width,
-                                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
+                    layer_data::GetQuotientCeil(offset_x + width,
+                                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06113",
                         "%s(): width of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -8520,8 +8530,8 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                         width, phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                 }
                 if (image_state->createInfo.extent.height <
-                    GetQuotientCeil(offset_y + height,
-                                    phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
+                    layer_data::GetQuotientCeil(offset_y + height,
+                                                phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height)) {
                     skip |= LogError(
                         commandBuffer, "VUID-VkRenderingInfo-pNext-06115",
                         "%s(): height of VkRenderingFragmentDensityMapAttachmentInfoEXT imageView (%" PRIu32
@@ -8760,8 +8770,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32 ") must not be negative.", func_name,
                              pRenderingInfo->renderArea.offset.y);
         }
-        if (pRenderingInfo->renderArea.offset.x + pRenderingInfo->renderArea.extent.width >
-            phys_dev_props.limits.maxFramebufferWidth) {
+        if (x_adjusted_extent > phys_dev_props.limits.maxFramebufferWidth) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06073",
                              "%s(): pRenderingInfo->renderArea.offset.x (%" PRIu32
                              ") + pRenderingInfo->renderArea.extent.width (%" PRIu32
@@ -8769,8 +8778,7 @@ bool CoreChecks::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const 
                              func_name, pRenderingInfo->renderArea.offset.x, pRenderingInfo->renderArea.extent.width,
                              phys_dev_props.limits.maxFramebufferWidth);
         }
-        if (pRenderingInfo->renderArea.offset.y + pRenderingInfo->renderArea.extent.height >
-            phys_dev_props.limits.maxFramebufferHeight) {
+        if (y_adjusted_extent > phys_dev_props.limits.maxFramebufferHeight) {
             skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-renderArea-06074",
                              "%s(): pRenderingInfo->renderArea.offset.y (%" PRIu32
                              ") + pRenderingInfo->renderArea.extent.height (%" PRIu32
@@ -12364,7 +12372,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
                             fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
                             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                                uint32_t ceiling_width = GetQuotientCeil(
+                                uint32_t ceiling_width = layer_data::GetQuotientCeil(
                                     pCreateInfo->width,
                                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                                 if (mip_width < ceiling_width) {
@@ -12378,7 +12386,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "width: %u, the ceiling value: %u\n",
                                         i, subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
                                 }
-                                uint32_t ceiling_height = GetQuotientCeil(
+                                uint32_t ceiling_height = layer_data::GetQuotientCeil(
                                     pCreateInfo->height,
                                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
                                 if (mip_height < ceiling_height) {
@@ -14677,7 +14685,10 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
                                  func_name, pRenderPassBegin->renderArea.offset.y);
             }
         }
-        if ((pRenderPassBegin->renderArea.offset.x + pRenderPassBegin->renderArea.extent.width) > framebuffer_info->width) {
+
+        const auto x_adjusted_extent = static_cast<int64_t>(pRenderPassBegin->renderArea.offset.x) +
+                                       static_cast<int64_t>(pRenderPassBegin->renderArea.extent.width);
+        if (x_adjusted_extent > static_cast<int64_t>(framebuffer_info->width)) {
             if (device_group) {
                 skip |=
                     LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02852",
@@ -14696,7 +14707,10 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
                     framebuffer_info->width);
             }
         }
-        if ((pRenderPassBegin->renderArea.offset.y + pRenderPassBegin->renderArea.extent.height) > framebuffer_info->height) {
+
+        const auto y_adjusted_extent = static_cast<int64_t>(pRenderPassBegin->renderArea.offset.y) +
+                                       static_cast<int64_t>(pRenderPassBegin->renderArea.extent.height);
+        if (y_adjusted_extent > static_cast<int64_t>(framebuffer_info->height)) {
             if (device_group) {
                 skip |=
                     LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-pNext-02853",
