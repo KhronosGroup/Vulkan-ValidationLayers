@@ -410,8 +410,6 @@ endif()
 # Add subprojects ----------------------------------------------------------------------------------------------------------------
 
 if(BUILD_TESTS)
-    # Attempt to enable googletest if available.
-    find_package(GTest REQUIRED CONFIG)
     add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
 endif()
 
