@@ -379,20 +379,38 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
           VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_UNDEFINED,
           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
 
-    std::array<VkAttachmentReference, 2> attachment_references = {
-        {{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL}, {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
+    std::array<VkAttachmentReference, 4> attachment_references = {{{0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
+                                                                   {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                                                   {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+                                                                   {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}}};
 
-    VkSubpassDescription subpass_desc{};
-    subpass_desc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_desc.colorAttachmentCount = 1;
-    subpass_desc.pColorAttachments = &attachment_references[1];
-    subpass_desc.pDepthStencilAttachment = &attachment_references[0];
+    std::array<VkSubpassDescription, 2> subpass_descs = {};
+    subpass_descs[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descs[0].colorAttachmentCount = 1;
+    subpass_descs[0].pColorAttachments = &attachment_references[1];
+    subpass_descs[0].pDepthStencilAttachment = &attachment_references[0];
+
+    subpass_descs[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass_descs[1].colorAttachmentCount = 3;
+    subpass_descs[1].pColorAttachments = &attachment_references[1];
+    subpass_descs[1].pDepthStencilAttachment = &attachment_references[0];
+
+    VkSubpassDependency subpass_dependency = {};
+    subpass_dependency.srcSubpass = 0;
+    subpass_dependency.dstSubpass = 1;
+    subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpass_dependency.dstStageMask = subpass_dependency.srcStageMask;
+    subpass_dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpass_dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpass_dependency.dependencyFlags = 0;
 
     auto renderpass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
     renderpass_ci.attachmentCount = static_cast<uint32_t>(attachments.size());
     renderpass_ci.pAttachments = attachments.data();
-    renderpass_ci.subpassCount = 1;
-    renderpass_ci.pSubpasses = &subpass_desc;
+    renderpass_ci.subpassCount = static_cast<uint32_t>(subpass_descs.size());
+    renderpass_ci.pSubpasses = subpass_descs.data();
+    renderpass_ci.dependencyCount = 1;
+    renderpass_ci.pDependencies = &subpass_dependency;
 
     VkRenderPass renderpass = VK_NULL_HANDLE;
     VkResult err = vk::CreateRenderPass(m_device->handle(), &renderpass_ci, nullptr, &renderpass);
@@ -417,7 +435,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     std::fill(&renderpass_clear_values[0].color.float32[0], &renderpass_clear_values[0].color.float32[0] + 4, 0.0f);
     renderpass_bi.pClearValues = renderpass_clear_values.data();
 
-    auto clear_cmds_func = [&](const bool use_dynamic_rendering) {
+    auto clear_cmd_test = [&](const bool use_dynamic_rendering) {
         std::array<VkFramebuffer, 3> framebuffers = {VK_NULL_HANDLE};
 
         m_commandBuffer->begin();
@@ -455,6 +473,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 depth_attachment_info.imageView = depth_stencil_image_view.handle();
                 stencil_attachment_info.imageView = depth_stencil_image_view.handle();
             } else {
+                m_commandBuffer->NextSubpass();
                 m_commandBuffer->EndRenderPass();
 
                 renderpass_image_views[0] = depth_stencil_image_view.handle();
@@ -494,6 +513,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 depth_attachment_info.imageView = depth_stencil_image_view.handle();
                 stencil_attachment_info.imageView = depth_stencil_image_view.handle();
             } else {
+                m_commandBuffer->NextSubpass();
                 m_commandBuffer->EndRenderPass();
 
                 renderpass_image_views[0] = depth_stencil_image_view.handle();
@@ -518,10 +538,6 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
 
                 // issue clear cmd
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkClearAttachment-aspectMask-00019");
-                // supplied color attachment index is valid when using a render pass,
-                // so expect 07270 since the corresponding image view is a depth buffer view
-                if (!use_dynamic_rendering)
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-pAttachments-07270");
                 VkClearAttachment clear_depth_attachment;
                 clear_depth_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
                 clear_depth_attachment.colorAttachment = 0;
@@ -533,6 +549,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 if (use_dynamic_rendering) {
                     m_commandBuffer->EndRendering();
                 } else {
+                    m_commandBuffer->NextSubpass();
                     m_commandBuffer->EndRenderPass();
                 }
             }
@@ -559,8 +576,23 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
                 if (use_dynamic_rendering) {
                     m_commandBuffer->EndRendering();
                 } else {
+                    m_commandBuffer->NextSubpass();
                     m_commandBuffer->EndRenderPass();
                 }
+            }
+
+            // Clear color, subpass has unused attachments
+            if (!use_dynamic_rendering) {
+                m_commandBuffer->BeginRenderPass(renderpass_bi);
+                m_commandBuffer->NextSubpass();
+                std::array<VkClearAttachment, 4> clears = {{{VK_IMAGE_ASPECT_DEPTH_BIT, 0},
+                                                            {VK_IMAGE_ASPECT_COLOR_BIT, 0},
+                                                            {VK_IMAGE_ASPECT_COLOR_BIT, 1},
+                                                            {VK_IMAGE_ASPECT_COLOR_BIT, 2}}};
+                VkClearRect clear_rect{rect, 0, 1};
+                vk::CmdClearAttachments(m_commandBuffer->handle(), static_cast<uint32_t>(clears.size()), clears.data(), 1,
+                                        &clear_rect);
+                m_commandBuffer->EndRenderPass();
             }
         }
 
@@ -571,11 +603,11 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
         }
     };
 
-    clear_cmds_func(true);
+    clear_cmd_test(true);
 
     delete m_commandBuffer;
     m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
-    clear_cmds_func(false);
+    clear_cmd_test(false);
 
     vk::DestroyRenderPass(m_device->handle(), renderpass, nullptr);
 }
