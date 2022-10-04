@@ -3660,14 +3660,19 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                 const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
                 const auto *framebuffer = cb_node->activeFramebuffer.get();
 
-                is_valid_color_attachment_index = (clear_desc->colorAttachment != VK_ATTACHMENT_UNUSED) &&
-                                                  (clear_desc->colorAttachment < renderpass_create_info->attachmentCount);
-                if (framebuffer && (clear_desc->colorAttachment != VK_ATTACHMENT_UNUSED) &&
-                    (clear_desc->colorAttachment < framebuffer->createInfo.attachmentCount)) {
-                    color_view_state = cb_node->GetActiveAttachmentImageViewState(clear_desc->colorAttachment);
-                }
-
+                is_valid_color_attachment_index = (clear_desc->colorAttachment == VK_ATTACHMENT_UNUSED);
                 if (subpass_desc) {
+                    is_valid_color_attachment_index |= clear_desc->colorAttachment < subpass_desc->colorAttachmentCount;
+
+                    if (framebuffer && (clear_desc->colorAttachment != VK_ATTACHMENT_UNUSED) &&
+                        (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
+                        if (subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment <
+                            framebuffer->createInfo.attachmentCount) {
+                            color_view_state = cb_node->GetActiveAttachmentImageViewState(
+                                subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment);
+                        }
+                    }
+
                     color_attachment_count = subpass_desc->colorAttachmentCount;
 
                     has_valid_depth_attachment =
