@@ -96,6 +96,7 @@ struct interface_var {
     bool is_readable;
     bool is_writable;
     bool is_atomic_operation;
+    bool is_sampler_sampled;
     bool is_sampler_implicitLod_dref_proj;
     bool is_sampler_bias_offset;
     bool is_read_without_format;   // For storage images
@@ -113,6 +114,7 @@ struct interface_var {
           is_readable(false),
           is_writable(false),
           is_atomic_operation(false),
+          is_sampler_sampled(false),
           is_sampler_implicitLod_dref_proj(false),
           is_sampler_bias_offset(false),
           is_read_without_format(false),

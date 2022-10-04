@@ -3340,3 +3340,96 @@ TEST_F(VkLayerTest, StorageTexelBufferWriteMoreComponent) {
 
     vk::DestroyBufferView(m_device->handle(), buffer_view, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, UnnormalizedCoordinatesNotSampled) {
+    TEST_DESCRIPTION("If a samper is unnormalizedCoordinates, using COMBINED_IMAGE_SAMPLER, but texelFetch, don't throw error");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // This generates OpImage*Dref* instruction on R8G8B8A8_UNORM format.
+    // Verify that it is allowed on this implementation if
+    // VK_KHR_format_feature_flags2 is available.
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        auto fmt_props_3 = LvlInitStruct<VkFormatProperties3KHR>();
+        auto fmt_props = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
+
+        vk::GetPhysicalDeviceFormatProperties2(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &fmt_props);
+
+        if (!(fmt_props_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT_KHR)) {
+            GTEST_SKIP() << "R8G8B8A8_UNORM does not support OpImage*Dref* operations";
+        }
+    }
+
+    VkShaderObj vs(this, bindStateMinimalShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const char *fsSource = R"(
+               OpCapability Shader
+               OpCapability ImageBuffer
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %var DescriptorSet 0
+               OpDecorate %var Binding 0
+       %void = OpTypeVoid
+       %func = OpTypeFunction %void
+      %float = OpTypeFloat 32
+        %int = OpTypeInt 32 1
+    %v4float = OpTypeVector %float 4
+      %v3int = OpTypeVector %int 3
+ %image_type = OpTypeImage %float 3D 0 0 0 1 Unknown
+%sampled_image = OpTypeSampledImage %image_type
+        %ptr = OpTypePointer UniformConstant %sampled_image
+        %var = OpVariable %ptr UniformConstant
+      %int_1 = OpConstant %int 1
+      %cords = OpConstantComposite %v3int %int_1 %int_1 %int_1
+       %main = OpFunction %void None %func
+      %label = OpLabel
+       %load = OpLoad %sampled_image %var
+      %image = OpImage %image_type %load
+      %fetch = OpImageFetch %v4float %image %cords
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.InitInfo();
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+    g_pipe.InitState();
+    ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    VkImageObj image_3d(m_device);
+    image_3d.Init(image_ci);
+    ASSERT_TRUE(image_3d.initialized());
+
+    // If the sampler is unnormalizedCoordinates, the imageview type shouldn't be 3D, CUBE, 1D_ARRAY, 2D_ARRAY, CUBE_ARRAY.
+    // This causes DesiredFailure.
+    VkImageView view = image_3d.targetView(format, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                           VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_3D);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    sampler_ci.unnormalizedCoordinates = VK_TRUE;
+    sampler_ci.maxLod = 0;
+    vk_testing::Sampler sampler(*m_device, sampler_ci);
+
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    g_pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}

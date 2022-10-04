@@ -1308,7 +1308,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
 
             // UnnormalizedCoordinates sampler validations
-            if (sampler_state->createInfo.unnormalizedCoordinates) {
+            // only check if sampled as could have a texelFetch on a combined image sampler
+            if (sampler_state->createInfo.unnormalizedCoordinates && (reqs & DESCRIPTOR_REQ_SAMPLER_SAMPLED)) {
                 // If ImageView is used by a unnormalizedCoordinates sampler, it needs to check ImageView type
                 if (image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_3D || image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                     image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
