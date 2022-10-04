@@ -68,7 +68,9 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeDisplayKHR = 28,
     kVulkanObjectTypeDisplayModeKHR = 29,
     kVulkanObjectTypeDebugUtilsMessengerEXT = 30,
+#ifdef VK_USE_PLATFORM_SCI
     kVulkanObjectTypeSemaphoreSciSyncPoolNV = 31,
+#endif // VK_USE_PLATFORM_SCI
     kVulkanObjectTypeMax = 32,
     // Aliases for backwards compatibilty of "promoted" types
 } VulkanObjectType;
@@ -142,7 +144,9 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeDisplayKHR: return VK_OBJECT_TYPE_DISPLAY_KHR;
         case kVulkanObjectTypeDisplayModeKHR: return VK_OBJECT_TYPE_DISPLAY_MODE_KHR;
         case kVulkanObjectTypeDebugUtilsMessengerEXT: return VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
+#ifdef VK_USE_PLATFORM_SCI
         case kVulkanObjectTypeSemaphoreSciSyncPoolNV: return VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV;
+#endif // VK_USE_PLATFORM_SCI
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
 };
@@ -180,7 +184,9 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_DISPLAY_KHR: return kVulkanObjectTypeDisplayKHR;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR: return kVulkanObjectTypeDisplayModeKHR;
         case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT: return kVulkanObjectTypeDebugUtilsMessengerEXT;
+#ifdef VK_USE_PLATFORM_SCI
         case VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV: return kVulkanObjectTypeSemaphoreSciSyncPoolNV;
+#endif // VK_USE_PLATFORM_SCI
         default: return kVulkanObjectTypeUnknown;
     }
 };

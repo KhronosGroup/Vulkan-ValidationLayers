@@ -1110,8 +1110,12 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             fixup_name = item[2:]
             enum_entry = 'kVulkanObjectType%s' % fixup_name
             enum_entry_map[item] = enum_entry
+            if fixup_name == 'SemaphoreSciSyncPoolNV':
+                object_types_header += '#ifdef VK_USE_PLATFORM_SCI\n'
             object_types_header += '    ' + enum_entry
             object_types_header += ' = %d,\n' % enum_num
+            if fixup_name == 'SemaphoreSciSyncPoolNV':
+                object_types_header += '#endif // VK_USE_PLATFORM_SCI\n'
             enum_num += 1
             type_list.append(enum_entry)
             object_type_info[enum_entry] = { 'VkType': item , 'Guard': self.object_guards[item]}
@@ -1173,7 +1177,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         for object_type in type_list:
             kenum_type = vko_dict[kenum_to_key(object_type)]
+            if object_type == 'kVulkanObjectTypeSemaphoreSciSyncPoolNV':
+                object_types_header += '#ifdef VK_USE_PLATFORM_SCI\n'
             object_types_header += '        case %s: return %s;\n' % (object_type, kenum_type)
+            if object_type == 'kVulkanObjectTypeSemaphoreSciSyncPoolNV':
+                object_types_header += '#endif // VK_USE_PLATFORM_SCI\n'
             object_type_info[object_type]['VkoType'] = kenum_type
         object_types_header += '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
         object_types_header += '    }\n'
@@ -1187,7 +1195,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
         for object_type in type_list:
             kenum_type = vko_dict[kenum_to_key(object_type)]
+            if object_type == 'kVulkanObjectTypeSemaphoreSciSyncPoolNV':
+                object_types_header += '#ifdef VK_USE_PLATFORM_SCI\n'
             object_types_header += '        case %s: return %s;\n' % (kenum_type, object_type)
+            if object_type == 'kVulkanObjectTypeSemaphoreSciSyncPoolNV':
+                object_types_header += '#endif // VK_USE_PLATFORM_SCI\n'
         object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
         object_types_header += '    }\n'
         object_types_header += '};\n'

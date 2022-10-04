@@ -851,7 +851,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 for enum in groupElem:
                     name = enum.get('name')
                     if name is not None and enum.get('supported') != 'disabled' and (self.genOpts.apiname in enum.get('supported', '') or enum.get('supported', '') == ''):
+                        if name == 'VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV':
+                            enum_entry += '\n#ifdef VK_USE_PLATFORM_SCI\n'
                         enum_entry += '%s, ' % name
+                        if name == 'VK_OBJECT_TYPE_SEMAPHORE_SCI_SYNC_POOL_NV':
+                            enum_entry += '\n#endif // VK_USE_PLATFORM_SCI\n'
                 enum_entry += '};'
                 if self.featureExtraProtect is not None:
                     enum_entry += '\n#endif // %s' % self.featureExtraProtect
