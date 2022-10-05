@@ -533,6 +533,96 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     return;
 }
 
+TEST_F(VkGpuAssistedLayerTest, GpuRobustBufferOOB) {
+    TEST_DESCRIPTION("Check buffer oob validation when per pipeline robustness is enabled");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME);
+
+    VkValidationFeaturesEXT validation_features = GetValidationFeatures();
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CanEnableGpuAV()) {
+        GTEST_SKIP() << "Requirements for GPU-AV are not met";
+    }
+    auto pipeline_robustness_features = LvlInitStruct<VkPhysicalDevicePipelineRobustnessFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(pipeline_robustness_features);
+    features2.features.robustBufferAccess = VK_FALSE;
+    if (!pipeline_robustness_features.pipelineRobustness) {
+        GTEST_SKIP() << "pipelineRobustness feature not supported";
+    }
+    pipeline_robustness_features.pipelineRobustness = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    VkBufferObj uniform_buffer;
+    VkBufferObj storage_buffer;
+    VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    uniform_buffer.init(*m_device, 4, reqs);
+    storage_buffer.init_as_storage(*m_device, 16, reqs);
+    OneOffDescriptorSet descriptor_set(m_device, {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 4);
+    descriptor_set.WriteDescriptorBufferInfo(1, storage_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char *vertshader = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform foo { uint index[]; } u_index;
+        layout(set = 0, binding = 1) buffer StorageBuffer { uint data[]; } Data;
+
+        void main() {
+            vec4 x;
+            if (u_index.index[0] == 0)
+                x[0] = u_index.index[1]; // Uniform read OOB
+            else
+                Data.data[8] = 0xdeadca71; // Storage write OOB
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vertshader, VK_SHADER_STAGE_VERTEX_BIT);
+    auto pipeline_robustness_ci = LvlInitStruct<VkPipelineRobustnessCreateInfoEXT>();
+    VkPipelineObj robust_pipe(m_device);
+    robust_pipe.AddShader(&vs);
+    robust_pipe.AddDefaultColorAttachment();
+    VkGraphicsPipelineCreateInfo gp_ci;
+    robust_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
+    gp_ci.pNext = &pipeline_robustness_ci;
+    pipeline_robustness_ci.uniformBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
+    pipeline_robustness_ci.storageBuffers = VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_EXT;
+    robust_pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    m_commandBuffer->begin(&begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, robust_pipe.handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    uint32_t *data = (uint32_t *)uniform_buffer.memory().map();
+    *data = 0;
+    uniform_buffer.memory().unmap();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Descriptor index 0 access out of bounds. Descriptor size is 4 and highest byte accessed was 19");
+    m_commandBuffer->QueueCommandBuffer();
+    m_errorMonitor->VerifyFound();
+    data = (uint32_t *)uniform_buffer.memory().map();
+    *data = 1;
+    uniform_buffer.memory().unmap();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Descriptor index 0 access out of bounds. Descriptor size is 16 and highest byte accessed was 35");
+    m_commandBuffer->QueueCommandBuffer();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkGpuAssistedLayerTest, GpuBufferOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
