@@ -4258,6 +4258,7 @@ struct QSTestContext {
 
     QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0 = nullptr, VkQueueObj* force_q1 = nullptr);
     VkCommandBuffer InitFromPool(VkCommandBufferObj& cb_obj);
+    void InitBuffer(VkBufferObj& buf);
     bool Valid() const { return q1 != VK_NULL_HANDLE; }
 
     void Begin(VkCommandBufferObj& cb);
@@ -4368,10 +4369,9 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
 
     if (!Valid()) return;
 
-    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    buffer_a.init_as_src_and_dst(*device, 256, mem_prop);
-    buffer_b.init_as_src_and_dst(*device, 256, mem_prop);
-    buffer_c.init_as_src_and_dst(*device, 256, mem_prop);
+    InitBuffer(buffer_a);
+    InitBuffer(buffer_b);
+    InitBuffer(buffer_c);
 
     VkDeviceSize size = 256;
     VkDeviceSize half_size = size / 2;
@@ -4397,6 +4397,11 @@ QSTestContext::QSTestContext(VkDeviceObj* device, VkQueueObj* force_q0, VkQueueO
 VkCommandBuffer QSTestContext::InitFromPool(VkCommandBufferObj& cb_obj) {
     cb_obj.Init(dev, &pool);
     return cb_obj.handle();
+}
+
+void QSTestContext::InitBuffer(VkBufferObj& buf) {
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buf.init_as_src_and_dst(*dev, 256, mem_prop);
 }
 
 void QSTestContext::Begin(VkCommandBufferObj& cb) {
@@ -4685,6 +4690,14 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
         return;
     }
 
+    // Need an extra buffer and CB
+    VkBufferObj buffer_d;
+    test.InitBuffer(buffer_d);
+    VkCommandBufferObj cbd;
+    test.InitFromPool(cbd);
+    // This gives a noop command buffer w.r.t. buffers a, b, and c.
+    test.RecordCopy(cbd, buffer_d, buffer_d, test.first_to_second);
+
     // Command Buffer A reads froms buffer A and writes to buffer B
     test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
 
@@ -4709,8 +4722,16 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
 
     // Submit A and B on the different queues. Since no semaphore is used between the queues, CB B hazards asynchronously with,
     // CB A with A being read and written on independent queues.
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
     test.Submit0(test.cba);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
+    test.Submit1(test.cbb);
+    m_errorMonitor->VerifyFound();
+    m_device->wait();  // DeviceWaitIdle, clearing the field for the next subcase
+
+    // Test full async detection
+    test.Submit0(test.cba);
+    test.Submit0(cbd);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-RACING-READ");
     test.Submit1(test.cbb);
     m_errorMonitor->VerifyFound();
 
