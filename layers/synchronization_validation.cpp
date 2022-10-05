@@ -19,10 +19,12 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 
-#include <limits>
-#include <vector>
-#include <memory>
+#include <algorithm>
 #include <bitset>
+#include <limits>
+#include <memory>
+#include <vector>
+
 #include "synchronization_validation.h"
 #include "sync_utils.h"
 
@@ -807,6 +809,13 @@ void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
 
 void AccessContext::DeleteAccess(const AddressRange &address) { GetAccessStateMap(address.type).erase_range(address.range); }
 
+void AccessContext::RecordRenderpassAsyncContextTags() {
+    // The tags are unknown at Access Context creation
+    for (auto &async_ref : async_) {
+        async_ref.tag = async_ref.context->start_tag_;
+    }
+}
+
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
@@ -825,8 +834,10 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
 
     async_.reserve(subpass_dep.async.size());
     for (const auto async_subpass : subpass_dep.async) {
-        async_.emplace_back(&contexts[async_subpass]);
+        // Start tags are not known at creation time (as it's done at BeginRenderpass)
+        async_.emplace_back(contexts[async_subpass], kInvalidTag);
     }
+
     if (has_barrier_from_external) {
         // Store the barrier from external with the reat, but save pointer for "by subpass" lookups.
         prev_.emplace_back(external_context, queue_flags, subpass_dep.barrier_from_external);
@@ -906,8 +917,8 @@ HazardResult AccessContext::DetectHazard(AccessAddressType type, Detector &detec
     if (static_cast<uint32_t>(options) & DetectOptions::kDetectAsync) {
         // Async checks don't require recursive lookups, as the async lists are exhaustive for the top-level context
         // so we'll check these first
-        for (const auto &async_context : async_) {
-            hazard = async_context->DetectAsyncHazard(type, detector, range);
+        for (const auto &async_ref : async_) {
+            hazard = async_ref.context->DetectAsyncHazard(type, detector, range, async_ref.tag);
             if (hazard.hazard) return hazard;
         }
     }
@@ -952,15 +963,15 @@ HazardResult AccessContext::DetectHazard(AccessAddressType type, Detector &detec
 
 // A non recursive range walker for the asynchronous contexts (those we have no barriers with)
 template <typename Detector>
-HazardResult AccessContext::DetectAsyncHazard(AccessAddressType type, const Detector &detector,
-                                              const ResourceAccessRange &range) const {
+HazardResult AccessContext::DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
+                                              ResourceUsageTag async_tag) const {
     auto &accesses = GetAccessStateMap(type);
     auto pos = accesses.lower_bound(range);
     const auto the_end = accesses.end();
 
     HazardResult hazard;
     while (pos != the_end && pos->first.begin < range.end) {
-        hazard = detector.DetectAsync(pos, start_tag_);
+        hazard = detector.DetectAsync(pos, async_tag);
         if (hazard.hazard) break;
         ++pos;
     }
@@ -1387,7 +1398,11 @@ bool AccessContext::ValidateResolveOperations(const CommandExecutionContext &exe
     return validate_action.GetSkip();
 }
 
-void AccessContext::AddAsyncContext(const AccessContext *context) { async_.emplace_back(context); }
+void AccessContext::AddAsyncContext(const AccessContext *context, ResourceUsageTag tag) {
+    if (context) {
+        async_.emplace_back(*context, tag);
+    }
+}
 
 class HazardDetector {
     SyncStageAccessIndex usage_index_;
@@ -2886,7 +2901,10 @@ RenderPassAccessContext::RenderPassAccessContext(const RENDER_PASS_STATE &rp_sta
 }
 void RenderPassAccessContext::RecordBeginRenderPass(const ResourceUsageTag barrier_tag, const ResourceUsageTag load_tag) {
     assert(0 == current_subpass_);
-    subpass_contexts_[current_subpass_].SetStartTag(barrier_tag);
+    AccessContext &current_context = subpass_contexts_[current_subpass_];
+    current_context.SetStartTag(barrier_tag);
+    current_context.RecordRenderpassAsyncContextTags();
+
     RecordLayoutTransitions(barrier_tag);
     RecordLoadOperations(load_tag);
 }
@@ -2903,7 +2921,10 @@ void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag store_tag
     // Move to the next sub-command for the new subpass. The resolve and store are logically part of the previous
     // subpass, so their tag needs to be different from the layout and load operations below.
     current_subpass_++;
-    subpass_contexts_[current_subpass_].SetStartTag(barrier_tag);
+    AccessContext &current_context = subpass_contexts_[current_subpass_];
+    current_context.SetStartTag(barrier_tag);
+    current_context.RecordRenderpassAsyncContextTags();
+
     RecordLayoutTransitions(barrier_tag);
     RecordLoadOperations(load_tag);
 }
@@ -4493,10 +4514,10 @@ void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     SetCommandBufferResetCallback([this](VkCommandBuffer command_buffer) -> void { ResetCommandBufferCallback(command_buffer); });
     SetCommandBufferFreeCallback([this](VkCommandBuffer command_buffer) -> void { FreeCommandBufferCallback(command_buffer); });
 
-    QueueId queue_id = QueueSyncState::kQueueIdBase;
-    ForEachShared<QUEUE_STATE>([this, &queue_id](const std::shared_ptr<QUEUE_STATE> &queue_state) {
+    ForEachShared<QUEUE_STATE>([this](const std::shared_ptr<QUEUE_STATE> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
-        std::shared_ptr<QueueSyncState> queue_sync_state = std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id++);
+        std::shared_ptr<QueueSyncState> queue_sync_state =
+            std::make_shared<QueueSyncState>(queue_state, queue_flags, queue_id_limit_++);
         queue_sync_states_.emplace(std::make_pair(queue_state->Queue(), std::move(queue_sync_state)));
     });
 }
@@ -7613,7 +7634,8 @@ QueueBatchContext::QueueBatchContext(const SyncValidator &sync_state, const Queu
       tag_range_(0, 0),
       current_access_context_(&access_context_),
       batch_log_(),
-      batch_(queue_state, submit_index, batch_index) {}
+      batch_(queue_state, submit_index, batch_index),
+      queue_sync_tag_(sync_state.GetQueueIdLimit(), ResourceUsageTag(0)) {}
 
 void QueueBatchContext::Trim() {
     // Clean up unneeded access context contents and log information
@@ -7746,6 +7768,15 @@ std::shared_ptr<QueueBatchContext> QueueBatchContext::ResolveOneWaitSemaphore(Vk
     return signal_state->batch;
 }
 
+void QueueBatchContext::ImportSyncTags(const QueueBatchContext &from) {
+    // NOTE: Assumes that from has set it's tag limit in it's own queue_id slot.
+    size_t q_limit = queue_sync_tag_.size();
+    assert(q_limit == from.queue_sync_tag_.size());
+    for (size_t q = 0; q < q_limit; q++) {
+        queue_sync_tag_[q] = std::max(queue_sync_tag_[q], from.queue_sync_tag_[q]);
+    }
+}
+
 void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatchContext> &prev, const VkSubmitInfo2 &submit_info,
                                            SignaledSemaphores &signaled) {
     // Copy in the event state from the previous batch (on this queue)
@@ -7770,9 +7801,10 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
         batches_resolved.emplace(prev);
     }
 
-    // Get all the log information for the resolved contexts
+    // Get all the log and tag sync information for the resolved contexts
     for (const auto &batch : batches_resolved) {
         batch_log_.Import(batch->batch_log_);
+        ImportSyncTags(*batch);
     }
 
     // Gather async context information for hazard checks and conserve the QBC's for the async batches
@@ -7781,7 +7813,17 @@ void QueueBatchContext::SetupAccessContext(const std::shared_ptr<const QueueBatc
             return !layer_data::Contains(batches_resolved, batch);
         });
     for (const auto &async_batch : async_batches_) {
-        access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext());
+        const QueueId async_queue = async_batch->GetQueueId();
+        ResourceUsageTag sync_tag;
+        if (async_queue < queue_sync_tag_.size()) {
+            sync_tag = queue_sync_tag_[async_queue];
+        } else {
+            // If this isn't from a tracked queue, just check the batch itself
+            sync_tag = async_batch->GetTagRange().begin;
+        }
+
+        // The start of the asynchronous access range for a given queue is one more than the highest tagged reference
+        access_context_.AddAsyncContext(async_batch->GetCurrentAccessContext(), sync_tag);
         // We need to snapshot the async log information for async hazard reporting
         batch_log_.Import(async_batch->batch_log_);
     }
@@ -7846,6 +7888,12 @@ void QueueBatchContext::SetTagBias(ResourceUsageTag bias) {
     tag_range_.end = bias + size;
     access_context_.SetStartTag(bias);
     batch_.bias = bias;
+
+    // Needed for ImportSyncTags to pick up the "from" own sync tag.
+    const QueueId this_q = GetQueueId();
+    if (this_q < queue_sync_tag_.size()) {
+        queue_sync_tag_[this_q] = tag_range_.end;
+    }
 }
 
 // Since we're updating the QueueSync state, this is Record phase and the access log needs to point to the global one

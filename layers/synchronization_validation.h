@@ -895,6 +895,7 @@ class AccessContext {
 
     void RecordLayoutTransitions(const RENDER_PASS_STATE &rp_state, uint32_t subpass,
                                  const AttachmentViewGenVector &attachment_views, ResourceUsageTag tag);
+    void RecordRenderpassAsyncContextTags();
 
     HazardResult DetectFirstUseHazard(QueueId queue_id, const ResourceUsageRange &tag_range,
                                       const AccessContext &access_context) const;
@@ -1006,16 +1007,25 @@ class AccessContext {
     void EraseIf(Predicate &&pred);
 
     // For use during queue submit building up the QueueBatchContext AccessContext for validation, otherwise clear.
-    void AddAsyncContext(const AccessContext *context);
+    void AddAsyncContext(const AccessContext *context, ResourceUsageTag tag);
     // For use during queue submit to avoid stale pointers;
     void ClearAsyncContext(const AccessContext *context) { async_.clear(); }
+
+    struct AsyncReference {
+        const AccessContext *context;
+        // For RenderPass time validation this is "start tag", for QueueSubmit, this is the earliest
+        // unsynchronized tag for the Queue being tested against (max synchrononous + 1, perhaps)
+        ResourceUsageTag tag;  // Start of open ended asynchronous range
+        AsyncReference(const AccessContext &async_context, ResourceUsageTag async_tag) : context(&async_context), tag(async_tag) {}
+    };
 
   private:
     template <typename Detector>
     HazardResult DetectHazard(AccessAddressType type, Detector &detector, const ResourceAccessRange &range,
                               DetectOptions options) const;
     template <typename Detector>
-    HazardResult DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range) const;
+    HazardResult DetectAsyncHazard(AccessAddressType type, const Detector &detector, const ResourceAccessRange &range,
+                                   ResourceUsageTag async_tag) const;
     template <typename Detector>
     HazardResult DetectPreviousHazard(AccessAddressType type, Detector &detector, const ResourceAccessRange &range) const;
     void UpdateAccessState(AccessAddressType type, SyncStageAccessIndex current_usage, SyncOrdering ordering_rule,
@@ -1024,7 +1034,7 @@ class AccessContext {
     MapArray access_state_maps_;
     std::vector<TrackBack> prev_;
     std::vector<TrackBack *> prev_by_subpass_;
-    std::vector<const AccessContext *> async_;
+    std::vector<AsyncReference> async_;
     TrackBack *src_external_;
     TrackBack dst_external_;
     ResourceUsageTag start_tag_;
@@ -1505,6 +1515,7 @@ class QueueBatchContext : public CommandExecutionContext {
     std::shared_ptr<QueueBatchContext> ResolveOneWaitSemaphore(VkSemaphore sem, VkPipelineStageFlags2 wait_mask,
                                                                SignaledSemaphores &signaled);
 
+    void ImportSyncTags(const QueueBatchContext &from);
     const QueueSyncState *queue_state_ = nullptr;
     ResourceUsageRange tag_range_ = ResourceUsageRange(0, 0);  // Range of tags referenced by cbs_referenced
 
@@ -1513,6 +1524,7 @@ class QueueBatchContext : public CommandExecutionContext {
     SyncEventsContext events_context_;
     BatchAccessLog batch_log_;
     BatchAccessLog::BatchRecord batch_;
+    std::vector<ResourceUsageTag> queue_sync_tag_;
 
     // Clear these after validation and import
     CommandBuffers command_buffers_;
@@ -1593,6 +1605,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     using QueueSyncStatesMap = layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
+    QueueId queue_id_limit_ = QueueSyncState::kQueueIdBase;
     SignaledSemaphores signaled_semaphores_;
 
     using SignaledFences = layer_data::unordered_map<VkFence, FenceSyncState>;
@@ -1608,6 +1621,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueSyncState *GetQueueSyncState(VkQueue queue);
     std::shared_ptr<const QueueSyncState> GetQueueSyncStateShared(VkQueue queue) const;
     std::shared_ptr<QueueSyncState> GetQueueSyncStateShared(VkQueue queue);
+    QueueId GetQueueIdLimit() const { return queue_id_limit_; }
 
     QueueBatchContext::BatchSet GetQueueBatchSnapshot();
 
