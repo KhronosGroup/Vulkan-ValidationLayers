@@ -359,7 +359,7 @@ class ImageRangeEncoder : public RangeEncoder {
     };
 
     // The default constructor for default iterators
-    ImageRangeEncoder() : image_(nullptr) {}
+    ImageRangeEncoder() {}
 
     ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param);
     explicit ImageRangeEncoder(const IMAGE_STATE& image);
@@ -387,7 +387,6 @@ class ImageRangeEncoder : public RangeEncoder {
     using SubresInfoVector = std::vector<SubresInfo>;
 
   private:
-    const IMAGE_STATE* image_;
     std::vector<double> texel_sizes_;
     SubresInfoVector subres_info_;
     small_vector<IndexType, 4, uint32_t> aspect_sizes_;

@@ -273,9 +273,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image)
     : ImageRangeEncoder(image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
 ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param)
-    : RangeEncoder(image.full_range, param), image_(&image), total_size_(0U) {
-    if (image_->createInfo.extent.depth > 1) {
-        limits_.arrayLayer = image_->createInfo.extent.depth;
+    : RangeEncoder(image.full_range, param), total_size_(0U) {
+    if (image.createInfo.extent.depth > 1) {
+        limits_.arrayLayer = image.createInfo.extent.depth;
     }
     VkSubresourceLayout layout = {};
     VkImageSubresource subres = {};
@@ -283,9 +283,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     linear_image_ = false;
 
     // WORKAROUND for dev_sim and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
-    if (image_->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+    if (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
         subres = {static_cast<VkImageAspectFlags>(AspectBit(0)), 0, 0};
-        DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image(), &subres, &layout);
+        DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
         if (layout.size > 0) {
             linear_image_ = true;
         }
@@ -294,7 +294,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     is_compressed_ = FormatIsCompressed(image.createInfo.format);
     texel_extent_ = FormatTexelBlockExtent(image.createInfo.format);
 
-    is_3_d_ = image_->createInfo.imageType == VK_IMAGE_TYPE_3D;
+    is_3_d_ = image.createInfo.imageType == VK_IMAGE_TYPE_3D;
     y_interleave_ = false;
     for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
         subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
@@ -304,10 +304,10 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;
             subres.mipLevel = mip_index;
-            auto subres_extent = image_->GetSubresourceExtent(subres_layers);
+            auto subres_extent = image.GetSubresourceExtent(subres_layers);
 
             if (linear_image_) {
-                DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image(), &subres, &layout);
+                DispatchGetImageSubresourceLayout(image.store_device_as_workaround, image.image(), &subres, &layout);
                 if (is_3_d_) {
                     if ((layout.depthPitch == 0) && (subres_extent.depth == 1)) {
                         layout.depthPitch = layout.size;  // Certain implmentations don't supply pitches when size is 1
