@@ -1710,7 +1710,7 @@ TEST_F(VkPositiveLayerTest, ExternalFenceSyncFdLoop) {
         err = vk::QueueSubmit(m_device->m_queue, 0, nullptr, fences[submitter].handle());
         ASSERT_VK_SUCCESS(err);
 
-        err = fences[waiter].wait(1000000);
+        err = fences[waiter].wait(kWaitTimeout);
         ASSERT_VK_SUCCESS(err);
 
         vk::QueueSubmit(m_device->m_queue, 0, nullptr, export_fence.handle());
