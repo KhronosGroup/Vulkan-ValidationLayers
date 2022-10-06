@@ -1077,6 +1077,27 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.extended_dynamic_state2_features = *extended_dynamic_state2_features;
         }
 
+        const auto *extended_dynamic_state3_features =
+            LvlFindInChain<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(pCreateInfo->pNext);
+        if (extended_dynamic_state3_features) {
+            enabled_features.extended_dynamic_state3_features = *extended_dynamic_state3_features;
+        }
+
+        const auto *depth_clip_enable_features = LvlFindInChain<VkPhysicalDeviceDepthClipEnableFeaturesEXT>(pCreateInfo->pNext);
+        if (depth_clip_enable_features) {
+            enabled_features.depth_clip_enable_features = *depth_clip_enable_features;
+        }
+
+        const auto *depth_clip_control_features = LvlFindInChain<VkPhysicalDeviceDepthClipControlFeaturesEXT>(pCreateInfo->pNext);
+        if (depth_clip_control_features) {
+            enabled_features.depth_clip_control_features = *depth_clip_control_features;
+        }
+
+        const auto *line_rasterization_features = LvlFindInChain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(pCreateInfo->pNext);
+        if (line_rasterization_features) {
+            enabled_features.line_rasterization_features = *line_rasterization_features;
+        }
+
         const auto *multiview_features = LvlFindInChain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
         if (multiview_features) {
             enabled_features.multiview_features = *multiview_features;

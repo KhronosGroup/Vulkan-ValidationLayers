@@ -75,6 +75,10 @@ struct DeviceFeatures {
     VkPhysicalDeviceConditionalRenderingFeaturesEXT conditional_rendering_features;
     VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR workgroup_memory_explicit_layout_features;
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extended_dynamic_state2_features;
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extended_dynamic_state3_features;
+    VkPhysicalDeviceDepthClipEnableFeaturesEXT depth_clip_enable_features;
+    VkPhysicalDeviceDepthClipControlFeaturesEXT depth_clip_control_features;
+    VkPhysicalDeviceLineRasterizationFeaturesEXT line_rasterization_features;
     VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertex_input_dynamic_state_features;
     VkPhysicalDeviceInheritedViewportScissorFeaturesNV inherited_viewport_scissor_features;
     VkPhysicalDeviceProvokingVertexFeaturesEXT provoking_vertex_features;
