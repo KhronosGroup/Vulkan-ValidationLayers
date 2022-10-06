@@ -309,6 +309,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     SHADER_MODULE_STATE() : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule) {}
 
+    static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
+        uint32_t bit_pos = uint32_t(u_ffs(stage));
+        return bit_pos - 1;
+    }
+
     const std::vector<spirv_inst_iter> &GetDecorationInstructions() const { return static_data_.decoration_inst; }
 
     const std::unordered_map<uint32_t, atomic_instruction> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
