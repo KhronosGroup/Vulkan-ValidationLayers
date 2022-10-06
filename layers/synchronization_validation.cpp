@@ -287,8 +287,6 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     : CommandBufferAccessContext(from.sync_state_) {
     // Copy only the needed fields out of from for a temporary, proxy command buffer context
     cb_state_ = from.cb_state_;
-    queue_flags_ = from.queue_flags_;
-    destroyed_ = from.destroyed_;
     access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
     command_number_ = from.command_number_;
     subcommand_number_ = from.subcommand_number_;
@@ -318,7 +316,7 @@ std::string CommandBufferAccessContext::FormatUsage(const ResourceUsageTag tag) 
     assert(tag < access_log_->size());
     const auto &record = (*access_log_)[tag];
     out << record;
-    if (cb_state_.get() != record.cb_state) {
+    if (cb_state_ != record.cb_state) {
         out << ", " << SyncNodeFormatter(*sync_state_, record.cb_state);
     }
     out << ", reset_no: " << std::to_string(record.reset_count);
@@ -2366,13 +2364,13 @@ void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint
 bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(CMD_TYPE cmd_type) const {
     bool skip = false;
     if (!current_renderpass_context_) return skip;
-    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_.get(), cmd_type);
+    skip |= current_renderpass_context_->ValidateDrawSubpassAttachment(GetExecutionContext(), *cb_state_, cmd_type);
     return skip;
 }
 
 void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag tag) {
     if (current_renderpass_context_) {
-        current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_.get(), tag);
+        current_renderpass_context_->RecordDrawSubpassAttachment(*cb_state_, tag);
     }
 }
 
@@ -2418,13 +2416,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE 
     return barrier_tag;
 }
 
-void CommandBufferAccessContext::RecordDestroyEvent(VkEvent event) {
-    // Erase is okay with the key not being
-    auto event_state = sync_state_->Get<EVENT_STATE>(event);
-    if (event_state) {
-        GetCurrentEventsContext()->Destroy(event_state.get());
-    }
-}
+void CommandBufferAccessContext::RecordDestroyEvent(EVENT_STATE *event_state) { GetCurrentEventsContext()->Destroy(event_state); }
 
 // The is the recorded cb context
 bool CommandBufferAccessContext::ValidateFirstUse(CommandExecutionContext &exec_context, const char *func_name,
@@ -2519,7 +2511,7 @@ void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBuf
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
     ResourceUsageTag next = access_log_->size();
-    access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_.get(), reset_count_);
+    access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_, reset_count_);
     return next;
 }
 
@@ -2527,7 +2519,7 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, Re
     command_number_++;
     subcommand_number_ = 0;
     ResourceUsageTag next = access_log_->size();
-    access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_.get(), reset_count_);
+    access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
     return next;
 }
 
@@ -3998,15 +3990,16 @@ bool QueueBatchContext::DoQueueSubmitValidate(const SyncValidator &sync_state, Q
 
     //  For each submit in the batch...
     for (const auto &cb : command_buffers_) {
-        if (cb.cb->GetTagLimit() == 0) {
+        const auto &cb_access_context = cb.cb->access_context;
+        if (cb_access_context.GetTagLimit() == 0) {
             batch_.cb_index++;
             continue;  // Skip empty CB's but also skip the unused index for correct reporting
         }
-        skip |= cb.cb->ValidateFirstUse(*this, cmd_state.submit_func_name.c_str(), cb.index);
+        skip |= cb_access_context.ValidateFirstUse(*this, cmd_state.submit_func_name.c_str(), cb.index);
 
         // The barriers have already been applied in ValidatFirstUse
-        ResourceUsageRange tag_range = ImportRecordedAccessLog(*cb.cb);
-        ResolveSubmittedCommandBuffer(*cb.cb->GetCurrentAccessContext(), tag_range.begin);
+        ResourceUsageRange tag_range = ImportRecordedAccessLog(cb_access_context);
+        ResolveSubmittedCommandBuffer(*cb_access_context.GetCurrentAccessContext(), tag_range.begin);
     }
     return skip;
 }
@@ -4080,50 +4073,51 @@ void SignaledSemaphores::Reset() {
     signaled_.clear();
     prev_ = nullptr;
 }
+syncval_state::CommandBuffer::CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                            const COMMAND_POOL_STATE *pool)
+    : CMD_BUFFER_STATE(dev, cb, pCreateInfo, pool), access_context(*dev, this) {}
 
-std::shared_ptr<CommandBufferAccessContext> SyncValidator::AccessContextFactory(VkCommandBuffer command_buffer) {
-    // If we don't have one, make it.
-    auto cb_state = Get<CMD_BUFFER_STATE>(command_buffer);
-    assert(cb_state.get());
-    auto queue_flags = cb_state->GetQueueFlags();
-    return std::make_shared<CommandBufferAccessContext>(*this, cb_state, queue_flags);
+void syncval_state::CommandBuffer::Destroy() {
+    access_context.Destroy();  // must be first to clean up self references correctly.
+    CMD_BUFFER_STATE::Destroy();
 }
 
-std::shared_ptr<CommandBufferAccessContext> SyncValidator::GetAccessContextShared(VkCommandBuffer command_buffer) {
-    return GetMappedInsert(cb_access_state, command_buffer,
-                           [this, command_buffer]() { return AccessContextFactory(command_buffer); });
+void syncval_state::CommandBuffer::Reset() {
+    CMD_BUFFER_STATE::Reset();
+    access_context.Reset();
 }
 
-std::shared_ptr<const CommandBufferAccessContext> SyncValidator::GetAccessContextShared(VkCommandBuffer command_buffer) const {
-    return GetMapped(cb_access_state, command_buffer, []() { return std::shared_ptr<CommandBufferAccessContext>(); });
+void syncval_state::CommandBuffer::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
+    for (auto &obj : invalid_nodes) {
+        switch (obj->Type()) {
+            case kVulkanObjectTypeEvent:
+                access_context.RecordDestroyEvent(static_cast<EVENT_STATE *>(obj.get()));
+                break;
+            default:
+                break;
+        }
+        CMD_BUFFER_STATE::NotifyInvalidate(invalid_nodes, unlink);
+    }
+}
+
+std::shared_ptr<CMD_BUFFER_STATE> SyncValidator::CreateCmdBufferState(VkCommandBuffer cb,
+                                                                      const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                      const COMMAND_POOL_STATE *cmd_pool) {
+    auto cb_state = std::make_shared<syncval_state::CommandBuffer>(this, cb, pCreateInfo, cmd_pool);
+    if (cb_state) {
+        cb_state->access_context.SetSelfReference();
+    }
+    return std::static_pointer_cast<CMD_BUFFER_STATE>(cb_state);
 }
 
 const CommandBufferAccessContext *SyncValidator::GetAccessContext(VkCommandBuffer command_buffer) const {
-    return GetMappedPlainFromShared(cb_access_state, command_buffer);
+    auto cb = Get<syncval_state::CommandBuffer>(command_buffer);
+    return cb ? &cb->access_context : nullptr;
 }
 
 CommandBufferAccessContext *SyncValidator::GetAccessContext(VkCommandBuffer command_buffer) {
-    return GetAccessContextShared(command_buffer).get();
-}
-
-CommandBufferAccessContext *SyncValidator::GetAccessContextNoInsert(VkCommandBuffer command_buffer) {
-    return GetMappedPlainFromShared(cb_access_state, command_buffer);
-}
-
-void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {
-    auto *access_context = GetAccessContextNoInsert(command_buffer);
-    if (access_context) {
-        access_context->Reset();
-    }
-}
-
-void SyncValidator::FreeCommandBufferCallback(VkCommandBuffer command_buffer) {
-    auto access_found = cb_access_state.find(command_buffer);
-    if (access_found != cb_access_state.end()) {
-        access_found->second->Reset();
-        access_found->second->MarkDestroyed();
-        cb_access_state.erase(access_found);
-    }
+    auto cb = Get<syncval_state::CommandBuffer>(command_buffer);
+    return cb ? &cb->access_context : nullptr;
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -4185,13 +4179,6 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
             const ResourceAccessRange dst_range = MakeRange(*dst_buffer, copy_region.dstOffset, copy_region.size);
             context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range, tag);
         }
-    }
-}
-
-void SyncValidator::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
-    // Clear out events from the command buffer contexts
-    for (auto &cb_context : cb_access_state) {
-        cb_context.second->RecordDestroyEvent(event);
     }
 }
 
@@ -4509,12 +4496,6 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuff
 void SyncValidator::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     // The state tracker sets up the device state
     StateTracker::CreateDevice(pCreateInfo);
-
-    // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker
-    // refactor would be messier without.
-    // TODO: Find a good way to do this hooklessly.
-    SetCommandBufferResetCallback([this](VkCommandBuffer command_buffer) -> void { ResetCommandBufferCallback(command_buffer); });
-    SetCommandBufferFreeCallback([this](VkCommandBuffer command_buffer) -> void { FreeCommandBufferCallback(command_buffer); });
 
     ForEachShared<QUEUE_STATE>([this](const std::shared_ptr<QUEUE_STATE> &queue_state) {
         auto queue_flags = physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags;
@@ -5049,9 +5030,10 @@ bool SyncValidator::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer,
 template <typename RegionType>
 void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const RegionType *pRegions, VkFilter filter, ResourceUsageTag tag) {
+                                       const RegionType *pRegions, VkFilter filter, CMD_TYPE cmd_type) {
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(cmd_type);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
@@ -5086,32 +5068,24 @@ void SyncValidator::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage sr
 void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                               const VkImageBlit *pRegions, VkFilter filter) {
-    auto *cb_access_context = GetAccessContext(commandBuffer);
-    assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE);
     StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
                                             pRegions, filter);
-    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter, tag);
+    RecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter,
+                       CMD_BLITIMAGE);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
-    auto *cb_access_context = GetAccessContext(commandBuffer);
-    assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE2KHR);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
                        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-                       pBlitImageInfo->filter, tag);
+                       pBlitImageInfo->filter, CMD_BLITIMAGE2KHR);
 }
 
 void SyncValidator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo) {
     StateTracker::PreCallRecordCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
-    auto *cb_access_context = GetAccessContext(commandBuffer);
-    assert(cb_access_context);
-    const auto tag = cb_access_context->NextCommandTag(CMD_BLITIMAGE2);
     RecordCmdBlitImage(commandBuffer, pBlitImageInfo->srcImage, pBlitImageInfo->srcImageLayout, pBlitImageInfo->dstImage,
-        pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
-        pBlitImageInfo->filter, tag);
+                       pBlitImageInfo->dstImageLayout, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions,
+                       pBlitImageInfo->filter, CMD_BLITIMAGE2);
 }
 
 bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_context, const AccessContext &context,
@@ -7838,10 +7812,10 @@ void QueueBatchContext::SetupCommandBufferInfo(const VkSubmitInfo2 &submit_info)
     command_buffers_.reserve(cb_count);
 
     for (const auto &cb_info : layer_data::make_span(cb_infos, cb_count)) {
-        auto cb_context = sync_state_->GetAccessContextShared(cb_info.commandBuffer);
-        if (cb_context) {
-            tag_range_.end += cb_context->GetTagLimit();
-            command_buffers_.emplace_back(static_cast<uint32_t>(&cb_info - cb_infos), std::move(cb_context));
+        auto cb_state = sync_state_->Get<syncval_state::CommandBuffer>(cb_info.commandBuffer);
+        if (cb_state) {
+            tag_range_.end += cb_state->access_context.GetTagLimit();
+            command_buffers_.emplace_back(static_cast<uint32_t>(&cb_info - cb_infos), std::move(cb_state));
         }
     }
 }

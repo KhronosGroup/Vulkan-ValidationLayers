@@ -372,10 +372,6 @@ void CMD_BUFFER_STATE::Reset() {
 
     // Clean up the label data
     ResetCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
-
-    if (dev_data->command_buffer_reset_callback) {
-        (*dev_data->command_buffer_reset_callback)(commandBuffer());
-    }
 }
 
 // Track which resources are in-flight by atomically incrementing their "in_use" count
@@ -443,14 +439,6 @@ void CMD_BUFFER_STATE::ResetPushConstantDataIfIncompatible(const PIPELINE_LAYOUT
 }
 
 void CMD_BUFFER_STATE::Destroy() {
-    // Allow any derived class to clean up command buffer state
-    if (dev_data->command_buffer_reset_callback) {
-        (*dev_data->command_buffer_reset_callback)(commandBuffer());
-    }
-    if (dev_data->command_buffer_free_callback) {
-        (*dev_data->command_buffer_free_callback)(commandBuffer());
-    }
-
     // Remove the cb debug labels
     EraseCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
     {

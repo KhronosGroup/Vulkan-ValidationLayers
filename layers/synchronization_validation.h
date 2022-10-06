@@ -42,6 +42,9 @@ struct ResourceFirstAccess;
 class SyncEventsContext;
 struct SyncEventState;
 class SyncValidator;
+namespace syncval_state {
+class CommandBuffer;
+}
 
 using ImageRangeEncoder = subresource_adapter::ImageRangeEncoder;
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
@@ -110,7 +113,8 @@ struct ResourceUsageRecord {
 
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
-    const CMD_BUFFER_STATE *cb_state = nullptr;  // plain pointer as a shared pointer is held by the context storing this record
+    // plain pointer as a shared pointer is held by the context storing this record
+    const CMD_BUFFER_STATE *cb_state = nullptr;
     Count reset_count;
 
     ResourceUsageRecord() = default;
@@ -1238,8 +1242,6 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     CommandBufferAccessContext(const SyncValidator *sync_validator = nullptr)
         : CommandExecutionContext(sync_validator),
           cb_state_(),
-          queue_flags_(),
-          destroyed_(false),
           access_log_(std::make_shared<AccessLog>()),
           cbs_referenced_(std::make_shared<CommandBufferSet>()),
           command_number_(0),
@@ -1251,25 +1253,33 @@ class CommandBufferAccessContext : public CommandExecutionContext {
           render_pass_contexts_(),
           current_renderpass_context_(),
           sync_ops_() {}
-    CommandBufferAccessContext(SyncValidator &sync_validator, std::shared_ptr<CMD_BUFFER_STATE> &cb_state, VkQueueFlags queue_flags)
+    CommandBufferAccessContext(SyncValidator &sync_validator, CMD_BUFFER_STATE *cb_state)
         : CommandBufferAccessContext(&sync_validator) {
         cb_state_ = cb_state;
-        cbs_referenced_->insert(cb_state_);
-        queue_flags_ = queue_flags;
     }
 
     struct AsProxyContext {};
     CommandBufferAccessContext(const CommandBufferAccessContext &real_context, AsProxyContext dummy);
 
+    // NOTE: because this class is encapsulated in syncval_state::CommandBuffer, it isn't safe
+    // to use shared_from_this from the constructor.
+    void SetSelfReference() { cbs_referenced_->insert(cb_state_->shared_from_this()); }
+
     ~CommandBufferAccessContext() override = default;
     CommandExecutionContext &GetExecutionContext() { return *this; }
     const CommandExecutionContext &GetExecutionContext() const { return *this; }
+
+    void Destroy() {
+        // the cb self reference must be cleared or the command buffer reference count will never go to 0
+        cbs_referenced_.reset();
+        cb_state_ = nullptr;
+    }
 
     void Reset() {
         access_log_ = std::make_shared<AccessLog>();
         cbs_referenced_ = std::make_shared<CommandBufferSet>();
         if (cb_state_) {
-            cbs_referenced_->insert(cb_state_);
+            cbs_referenced_->insert(cb_state_->shared_from_this());
         }
         sync_ops_.clear();
         command_number_ = 0;
@@ -1281,8 +1291,6 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         current_renderpass_context_ = nullptr;
         events_context_.Clear();
     }
-    void MarkDestroyed() { destroyed_ = true; }
-    bool IsDestroyed() const { return destroyed_; }
 
     std::string FormatUsage(ResourceUsageTag tag) const override;
     std::string FormatUsage(const ResourceFirstAccess &access) const;  //  Only command buffers have "first usage"
@@ -1307,7 +1315,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     void RecordDrawSubpassAttachment(ResourceUsageTag tag);
     ResourceUsageTag RecordNextSubpass(CMD_TYPE cmd_type);
     ResourceUsageTag RecordEndRenderPass(CMD_TYPE cmd_type);
-    void RecordDestroyEvent(VkEvent event);
+    void RecordDestroyEvent(EVENT_STATE *event_state);
 
     bool ValidateFirstUse(CommandExecutionContext &exec_context, const char *func_name, uint32_t index) const;
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
@@ -1315,8 +1323,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 
     HazardResult DetectFirstUseHazard(const ResourceUsageRange &tag_range) override;
 
-    const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_.get(); }
-    VkQueueFlags GetQueueFlags() const { return queue_flags_; }
+    const CMD_BUFFER_STATE *GetCommandBufferState() const { return cb_state_; }
+    VkQueueFlags GetQueueFlags() const { return cb_state_ ? cb_state_->GetQueueFlags() : 0; }
 
     ResourceUsageTag NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand);
     ResourceUsageTag GetTagLimit() const override { return access_log_->size(); }
@@ -1331,15 +1339,15 @@ class CommandBufferAccessContext : public CommandExecutionContext {
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextIndexedCommandTag(CMD_TYPE command, uint32_t index);
 
-    std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_; }
+    std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_->shared_from_this(); }
 
     const CMD_BUFFER_STATE &GetCBState() const {
         assert(cb_state_);
-        return *(cb_state_.get());
+        return *cb_state_;
     }
     CMD_BUFFER_STATE &GetCBState() {
         assert(cb_state_);
-        return *(cb_state_.get());
+        return *cb_state_;
     }
 
     template <class T, class... Args>
@@ -1357,9 +1365,9 @@ class CommandBufferAccessContext : public CommandExecutionContext {
   private:
     // As this is passing around a shared pointer to record, move to avoid needless atomics.
     void RecordSyncOp(SyncOpPointer &&sync_op);
-    std::shared_ptr<CMD_BUFFER_STATE> cb_state_;
-    VkQueueFlags queue_flags_;
-    bool destroyed_;
+    // Note: since every CommandBufferAccessContext is encapsulated in its CommandBuffer object,
+    // a reference count is not needed here.
+    CMD_BUFFER_STATE *cb_state_;
 
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
@@ -1376,6 +1384,22 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     RenderPassAccessContext *current_renderpass_context_;
     std::vector<SyncOpEntry> sync_ops_;
 };
+
+namespace syncval_state {
+class CommandBuffer : public CMD_BUFFER_STATE {
+  public:
+    CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                  const COMMAND_POOL_STATE *pool);
+    ~CommandBuffer() { Destroy(); }
+
+    void Destroy() override;
+    void Reset() override;
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
+
+    CommandBufferAccessContext access_context;
+};
+}  // namespace syncval_state
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE);
 
 class QueueSyncState;
 
@@ -1464,8 +1488,8 @@ class QueueBatchContext : public CommandExecutionContext {
     static constexpr bool TruePred(const std::shared_ptr<const QueueBatchContext> &) { return true; }
     struct CmdBufferEntry {
         uint32_t index = 0;
-        std::shared_ptr<const CommandBufferAccessContext> cb;
-        CmdBufferEntry(uint32_t index_, std::shared_ptr<const CommandBufferAccessContext> &&cb_)
+        std::shared_ptr<const syncval_state::CommandBuffer> cb;
+        CmdBufferEntry(uint32_t index_, std::shared_ptr<const syncval_state::CommandBuffer> &&cb_)
             : index(index_), cb(std::move(cb_)) {}
     };
 
@@ -1594,14 +1618,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
   public:
     using StateTracker = ValidationStateTracker;
     SyncValidator() { container_type = LayerObjectTypeSyncValidation; }
-    virtual ~SyncValidator() { ResetCommandBufferCallbacks(); };
 
     // Global tag range for submitted command buffers resource usage logs
     // Started the global tag count at 1 s.t. zero are invalid and ResourceUsageTag normalization can just zero them.
     mutable std::atomic<ResourceUsageTag> tag_limit_{1};  // This is reserved in Validation phase, thus mutable and atomic
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
-
-    layer_data::unordered_map<VkCommandBuffer, std::shared_ptr<CommandBufferAccessContext>> cb_access_state;
 
     using QueueSyncStatesMap = layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
     layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
@@ -1635,15 +1656,11 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot(Predicate &&pred);
     QueueBatchContext::BatchSet GetQueueLastBatchSnapshot() { return GetQueueLastBatchSnapshot(QueueBatchContext::TruePred); };
 
-    std::shared_ptr<CommandBufferAccessContext> AccessContextFactory(VkCommandBuffer command_buffer);
+    std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                           const COMMAND_POOL_STATE *cmd_pool) override;
     CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
-    CommandBufferAccessContext *GetAccessContextNoInsert(VkCommandBuffer command_buffer);
     const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
-    std::shared_ptr<CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer);
-    std::shared_ptr<const CommandBufferAccessContext> GetAccessContextShared(VkCommandBuffer command_buffer) const;
 
-    void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
-    void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type);
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -1671,7 +1688,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy *pRegions) override;
 
-    void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) override;
     bool PreCallValidateCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfos) const override;
     bool PreCallValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfos) const override;
     bool ValidateCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfos, CMD_TYPE cmd_type) const;
@@ -1805,7 +1821,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     template <typename RegionType>
     void RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                             VkImageLayout dstImageLayout, uint32_t regionCount, const RegionType *pRegions, VkFilter filter,
-                            ResourceUsageTag tag);
+                            CMD_TYPE cmd_type);
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions,
                                    VkFilter filter) override;
