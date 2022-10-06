@@ -17932,3 +17932,133 @@ TEST_F(VkLayerTest, StorageTexelBufferWriteLessComponent) {
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpImageWrite-07112");
 }
+
+TEST_F(VkLayerTest, PipelineProtectedAccess) { 
+    TEST_DESCRIPTION("Test VUIDs from VK_EXT_pipeline_protected_access");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    const bool pipeline_libraries = IsExtensionsEnabled(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
+    if (pipeline_libraries) protected_memory_features.pNext = &gpl_features;
+    auto pipeline_protected_access_features = LvlInitStruct<VkPhysicalDevicePipelineProtectedAccessFeaturesEXT>(&protected_memory_features);
+    auto features2 = GetPhysicalDeviceFeatures2(pipeline_protected_access_features);
+    pipeline_protected_access_features.pipelineProtectedAccess = VK_TRUE;
+    
+
+    if (protected_memory_features.protectedMemory == VK_FALSE) {
+        printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
+        return;
+    };
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_PROTECTED_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    const VkPipelineLayoutObj pipeline_layout(m_device);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    VkGraphicsPipelineCreateInfo gp_ci;
+    pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
+    gp_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-flags-07369");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+    m_errorMonitor->VerifyFound();
+    gp_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408");
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_errorMonitor->VerifyFound();
+    VkPipelineObj protected_pipe(m_device);
+    protected_pipe.AddShader(&vs);
+    protected_pipe.AddDefaultColorAttachment();
+    gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+    protected_pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass, &gp_ci);
+    VkCommandPoolObj command_pool(m_device, m_device->graphics_queue_node_index_);
+    VkCommandBufferObj unprotected_cmdbuf(m_device, &command_pool);
+    unprotected_cmdbuf.begin();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
+    vk::CmdBindPipeline(unprotected_cmdbuf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.handle());
+    m_errorMonitor->VerifyFound();
+
+    if (pipeline_libraries) {
+        CreatePipelineHelper pre_raster_lib(*this);
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+        auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+        vs_ci.pCode = vs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
+        pre_raster_lib.InitState();
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline());
+
+        VkPipeline libraries[1] = {
+            pre_raster_lib.pipeline_,
+        };
+        auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+        link_info.libraryCount = size(libraries);
+        link_info.pLibraries = libraries;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07404");
+        auto lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        lib_ci.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+        vk_testing::Pipeline lib(*m_device, lib_ci);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406");
+        lib_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+        vk_testing::Pipeline lib2(*m_device, lib_ci);
+        m_errorMonitor->VerifyFound();
+
+        CreatePipelineHelper protected_pre_raster_lib(*this);
+        protected_pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        protected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
+        protected_pre_raster_lib.InitState();
+        protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+        ASSERT_VK_SUCCESS(protected_pre_raster_lib.CreateGraphicsPipeline());
+        libraries[0] = protected_pre_raster_lib.pipeline_;
+        auto protected_lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407");
+        lib_ci.flags = 0;
+        vk_testing::Pipeline lib3(*m_device, protected_lib_ci);
+        m_errorMonitor->VerifyFound();
+        
+        CreatePipelineHelper unprotected_pre_raster_lib(*this);
+        unprotected_pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
+        unprotected_pre_raster_lib.InitState();
+        unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT_EXT;
+        ASSERT_VK_SUCCESS(unprotected_pre_raster_lib.CreateGraphicsPipeline());
+        libraries[0] = unprotected_pre_raster_lib.pipeline_;
+        auto unprotected_lib_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405");
+        vk_testing::Pipeline lib4(*m_device, unprotected_lib_ci);
+        m_errorMonitor->VerifyFound();
+    }
+ 
+    // Create device without protected access features
+    VkDeviceObj test_device(0, gpu());
+    VkPipelineObj featureless_pipe(&test_device);
+    featureless_pipe.AddShader(&vs);
+    featureless_pipe.AddDefaultColorAttachment();
+    featureless_pipe.InitGraphicsPipelineCreateInfo(&gp_ci);
+    gp_ci.flags = VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT;
+    const VkPipelineLayoutObj test_pipeline_layout(&test_device);
+    VkRenderpassObj test_rp(&test_device);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pipelineProtectedAccess-07368");
+    featureless_pipe.CreateVKPipeline(test_pipeline_layout.handle(), test_rp.handle(), &gp_ci);
+    m_errorMonitor->VerifyFound();
+}
