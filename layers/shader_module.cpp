@@ -1848,6 +1848,23 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
 
 uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
 
+uint32_t SHADER_MODULE_STATE::GetArraySize(const spirv_inst_iter &iter) const {
+    const uint32_t opcode = iter.opcode();
+    if ( opcode == spv::OpTypePointer )
+    {
+      const auto type = get_def(iter.word(3));
+      return GetArraySize(type);
+    } else if (opcode == spv::OpVariable) {
+        const auto type = get_def(iter.word(1));
+        return GetArraySize(type);
+    } else if (opcode == spv::OpTypeArray) {
+        const auto length_type = get_def(iter.word(3));
+        const uint32_t length = GetConstantValue(length_type);
+        return length;
+    }
+    return 1;
+}
+
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)
 // Will return 0 if it can not be determined
 uint32_t SHADER_MODULE_STATE::GetBaseType(const Instruction* insn) const {

@@ -284,6 +284,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     SHADER_MODULE_STATE() : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule) {}
 
+    static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
+        uint32_t bit_pos = uint32_t(u_ffs(stage));
+        return bit_pos - 1;
+    }
+
     const Instruction *FindDef(uint32_t id) const {
         auto it = static_data_.definitions.find(id);
         if (it == static_data_.definitions.end()) return nullptr;
@@ -367,6 +372,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
+    uint32_t GetNumComponentsInBaseType(const spirv_inst_iter &iter) const;
+    uint32_t GetTypeBitsSize(const spirv_inst_iter &iter) const;
+    uint32_t GetTypeBytesSize(const spirv_inst_iter &iter) const;
+    uint32_t GetArraySize(const spirv_inst_iter &iter) const;
+    uint32_t GetBaseType(const spirv_inst_iter &iter) const;
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
     uint32_t GetTypeBytesSize(const Instruction *insn) const;

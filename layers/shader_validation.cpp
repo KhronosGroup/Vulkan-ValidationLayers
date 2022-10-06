@@ -39,13 +39,12 @@
 #include "spirv_grammar_helper.h"
 #include "xxhash.h"
 
-static shader_stage_attributes shader_stage_attribs[] = {
-    {"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
-    {"tessellation control shader", true, true, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
-    {"tessellation evaluation shader", true, false, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
-    {"geometry shader", true, false, VK_SHADER_STAGE_GEOMETRY_BIT},
-    {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT},
-};
+const std::array<shader_stage_attributes, 5> shader_stage_attribs = {
+    {{"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
+     {"tessellation control shader", true, true, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
+     {"tessellation evaluation shader", true, false, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
+     {"geometry shader", true, false, VK_SHADER_STAGE_GEOMETRY_BIT},
+     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT}}};
 
 static const Instruction *GetBaseTypeInstruction(const SHADER_MODULE_STATE &module_state, uint32_t type) {
     const Instruction *insn = module_state.FindDef(type);
@@ -119,11 +118,6 @@ static uint32_t GetFormatType(VkFormat fmt) {
     if (fmt == VK_FORMAT_UNDEFINED) return 0;
     // everything else -- UNORM/SNORM/FLOAT/USCALED/SSCALED is all float in the shader.
     return FORMAT_TYPE_FLOAT;
-}
-
-static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
-    uint32_t bit_pos = uint32_t(u_ffs(stage));
-    return bit_pos - 1;
 }
 
 bool CoreChecks::ValidateViConsistency(safe_VkPipelineVertexInputStateCreateInfo const *vi) const {
@@ -3141,108 +3135,79 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                                                 shader_stage_attributes const *consumer_stage) const {
     bool skip = false;
 
-    auto outputs =
-        producer.CollectInterfaceByLocation(producer_entrypoint, spv::StorageClassOutput, producer_stage->arrayed_output);
-    auto inputs = consumer.CollectInterfaceByLocation(consumer_entrypoint, spv::StorageClassInput, consumer_stage->arrayed_input);
+    auto validate_attrib = [this](const SHADER_MODULE_STATE &producer, shader_stage_attributes const *producer_stage,
+                                  const ShaderAttribute &out, const SHADER_MODULE_STATE &consumer,
+                                  shader_stage_attributes const *consumer_stage, const ShaderAttribute &in) -> bool {
+        bool skip = false;
 
-    auto output_it = outputs.begin();
-    auto input_it = inputs.begin();
-
-    uint32_t output_component = 0;
-    uint32_t input_component = 0;
-
-    // Maps sorted by key (location); walk them together to find mismatches
-    while ((outputs.size() > 0 && output_it != outputs.end()) || (inputs.size() && input_it != inputs.end())) {
-        bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
-        bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
-        auto output_first = output_at_end ? std::make_pair(0u, 0u) : output_it->first;
-        auto input_first = input_at_end ? std::make_pair(0u, 0u) : input_it->first;
-
-        output_first.second += output_component;
-        input_first.second += input_component;
-
-        const auto output_length =
-            output_at_end ? 0 : producer.GetNumComponentsInBaseType(producer.FindDef(output_it->second.type_id));
-        const auto input_length =
-            input_at_end ? 0 : consumer.GetNumComponentsInBaseType(consumer.FindDef(input_it->second.type_id));
-        assert(output_at_end || output_component < output_length);
-        assert(input_at_end || input_component < input_length);
-
-        if (input_at_end || ((!output_at_end) && (output_first < input_first))) {
+        if (out.IsScanCompleted() && out.IsOnlyPartiallyConsumed()) {
             if (!enabled_features.core13.maintenance4) {
-                const std::string msg = std::string{producer_stage->name} + " writes to output location " +
-                                        std::to_string(output_first.first) + "." + std::to_string(output_first.second) +
-                                        " which is not consumed by " + consumer_stage->name +
-                                        ". "
-                                        "Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between "
-                                        "input and output vectors.";
-                // It is not an error if a stage does not consume all outputs from the previous stage
-                skip |= LogPerformanceWarning(producer.vk_shader_module(), kVUID_Core_Shader_OutputNotConsumed, "%s", msg.c_str());
+                const auto &out_components = out.GetComponents();
+                for (uint32_t component_i = 0; component_i < out.GetComponentsCount(); component_i++) {
+                    if (out_components[component_i] == ShaderAttribute::ComponentStatus::Unseen) {
+                        const uint32_t out_location = out.LocationFromComponentsIndex(component_i);
+                        const uint32_t out_component = out.ComponentFromComponentsIndex(component_i);
+
+                        std::string msg =
+                            std::string{producer_stage->name} + " writes to output location " + std::to_string(out_location) + '.' +
+                            std::to_string(out_component) + " which is not consumed by " + consumer_stage->name +
+                            ". Enable VK_KHR_maintenance4 device extension to allow relaxed interface matching between "
+                            "input and output vectors. ";
+                        const char *vuid = IsExtEnabled(device_extensions.vk_khr_maintenance4)
+                                               ? "VUID-RuntimeSpirv-maintenance4-06817"
+                                               : "VUID-RuntimeSpirv-OpTypeVector-06816";
+                        skip |= LogError(producer.vk_shader_module(), vuid, "%s", msg.c_str());
+                    }
+                }
             }
-            if ((input_first.first > output_first.first) || input_at_end || (output_component + 1 == output_length)) {
-                output_it++;
-                output_component = 0;
-            } else {
-                output_component++;
-            }
-        } else if (output_at_end || output_first > input_first) {
-            skip |= LogError(consumer.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
-                             "%s consumes input location %" PRIu32 ".%" PRIu32 " which is not written by %s", consumer_stage->name,
-                             input_first.first, input_first.second, producer_stage->name);
-            if ((output_first.first > input_first.first) || output_at_end || (input_component + 1 == input_length)) {
-                input_it++;
-                input_component = 0;
-            } else {
-                input_component++;
-            }
-        } else {
+        }
+
+        if (out.IsScanCompleted() && in.IsScanCompleted() && out.HasSameLocationAndComponentAs(in)) {
             // subtleties of arrayed interfaces:
             // - if is_patch, then the member is not arrayed, even though the interface may be.
             // - if is_block_member, then the extra array level of an arrayed interface is not
             //   expressed in the member type -- it's expressed in the block type.
-            if (!TypesMatch(producer, consumer, output_it->second.type_id, input_it->second.type_id)) {
+            assert(out.interface);
+            assert(in.interface);
+
+            const uint32_t out_location = out.LocationFromComponentsIndex(0);
+            const uint32_t out_component = out.ComponentFromComponentsIndex(0);
+
+            if (!TypesMatch(producer, consumer, out.interface->type_id, in.interface->type_id)) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                 "Type mismatch on location %" PRIu32 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'",
-                                 output_first.first, output_first.second, producer_stage->name, consumer_stage->name,
-                                 producer.DescribeType(output_it->second.type_id).c_str(),
-                                 consumer.DescribeType(input_it->second.type_id).c_str());
-                output_it++;
-                input_it++;
-                continue;
+                                 "Type mismatch on location %" PRIu32 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'", out_location,
+                                 out_component, producer_stage->name, consumer_stage->name,
+                                 producer.DescribeType(out.interface->type_id).c_str(),
+                                 consumer.DescribeType(in.interface->type_id).c_str());
             }
-            if (output_it->second.is_patch != input_it->second.is_patch) {
+            if (out.interface->is_patch != in.interface->is_patch) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Decoration mismatch on location %" PRIu32 ".%" PRIu32
                                  ": is per-%s in %s stage but per-%s in %s stage",
-                                 output_first.first, output_first.second, output_it->second.is_patch ? "patch" : "vertex",
-                                 producer_stage->name, input_it->second.is_patch ? "patch" : "vertex", consumer_stage->name);
-            }
-            uint32_t output_remaining = output_length - output_component;
-            uint32_t input_remaining = input_length - input_component;
-            if (output_remaining == input_remaining) {  // Sizes match so we can advance both output_it and input_it
-                output_it++;
-                input_it++;
-                output_component = 0;
-                input_component = 0;
-            } else if (output_remaining > input_remaining) {  // a has more components remaining
-                output_component += input_remaining;
-                input_component = 0;
-                input_it++;
-            } else if (input_remaining > output_remaining) {  // b has more components remaining
-                input_component += output_remaining;
-                output_component = 0;
-                output_it++;
-            }
-            if (output_component == 4) {
-                output_component = 0;
-                output_it++;
-            }
-            if (input_component == 4) {
-                input_component = 0;
-                input_it++;
+                                 out_location, out_component, out.interface->is_patch ? "patch" : "vertex", producer_stage->name,
+                                 in.interface->is_patch ? "patch" : "vertex", consumer_stage->name);
             }
         }
-    }
+
+        if (in.IsScanCompleted() && in.DoesConsumeNonExistentOutput()) {
+            const auto &in_components = in.GetComponents();
+            for (uint32_t component_i = 0; component_i < in.GetComponentsCount(); component_i++) {
+                if (in_components[component_i] == ShaderAttribute::ComponentStatus::Unseen) {
+                    const uint32_t in_location = in.LocationFromComponentsIndex(component_i);
+                    const uint32_t in_component = in.ComponentFromComponentsIndex(component_i);
+
+                    skip |= LogError(consumer.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
+                                     "%s consumes input location %" PRIu32 ".%" PRIu32 " which is not written by %s",
+                                     consumer_stage->name, in_location, in_component, producer_stage->name);
+                }
+            }
+        }
+
+        return skip;
+    };
+
+    skip |= IterateInterfaceBetweenStages(validate_attrib, producer, producer_entrypoint, producer_stage, consumer,
+                                          consumer_entrypoint, consumer_stage);
 
     if (consumer_stage->stage != VK_SHADER_STAGE_FRAGMENT_BIT) {
         auto builtins_producer = producer.CollectBuiltinBlockMembers(producer_entrypoint, spv::StorageClassOutput);
@@ -3330,24 +3295,16 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         skip |= ValidateViAgainstVsInputs(vi_state, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
     }
 
-    for (size_t i = 1; i < pipeline->stage_state.size(); i++) {
-        const auto &producer = pipeline->stage_state[i - 1];
-        const auto &consumer = pipeline->stage_state[i];
-        assert(producer.module_state);
-        if (&producer == fragment_stage) {
-            break;
-        }
-        if (consumer.module_state) {
-            if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
-                producer.entrypoint) {
-                auto producer_id = GetShaderStageId(producer.stage_flag);
-                auto consumer_id = GetShaderStageId(consumer.stage_flag);
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *(producer.entrypoint),
-                                                       &shader_stage_attribs[producer_id], *consumer.module_state.get(),
-                                                       *(consumer.entrypoint), &shader_stage_attribs[consumer_id]);
-            }
-        }
-    }
+    const auto this_validate_interface_between_stages =
+        [this](const SHADER_MODULE_STATE &producer, spirv_inst_iter producer_entrypoint,
+               shader_stage_attributes const *producer_stage, const SHADER_MODULE_STATE &consumer,
+               spirv_inst_iter consumer_entrypoint, shader_stage_attributes const *consumer_stage) {
+            return ValidateInterfaceBetweenStages(producer, producer_entrypoint, producer_stage, consumer, consumer_entrypoint,
+                                                  consumer_stage);
+        };
+
+    skip |= ValidateInterfaceBetweenAllPipelineStages(pipeline->stage_state, fragment_stage, shader_stage_attribs,
+                                                      this_validate_interface_between_stages);
 
     if (fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->has_valid_spirv) {
         const auto &rp_state = pipeline->RenderPassState();
