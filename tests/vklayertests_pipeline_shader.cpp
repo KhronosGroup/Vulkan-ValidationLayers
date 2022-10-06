@@ -4316,27 +4316,51 @@ TEST_F(VkLayerTest, InvalidSPIRVMagic) {
 }
 
 TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
-    TEST_DESCRIPTION("Test that a warning is produced for a vertex output that is not consumed by the fragment stage");
-
-    SetTargetApiVersion(VK_API_VERSION_1_0);
+    TEST_DESCRIPTION(
+        "Test that an error is produced for a vertex output that is partially consumed by the fragment stage"
+        " if maintenance4 is not enabled");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(
         #version 450
-        layout(location=0) out float x;
+        layout(location=0) out vec3 x;
+        layout(location=1) out vec4 y;
+        layout(location=2) out float z;
+        
         void main(){
            gl_Position = vec4(1);
-           x = 0;
+           x = vec3(0);
+           y = vec4(0);
+           z = 0;
         }
     )glsl";
+
+    char const *fsSource = R"glsl(
+      #version 450
+      layout(location=0) in float x;
+      layout(location=0) out vec3 outColor;
+
+      void main(){
+        outColor = vec3(x, vec2(0.42));
+      }
+  )glsl";
+
     VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit, "not consumed by fragment shader");
+
+    const std::vector<std::string> expected_errors = {
+        "vertex shader writes to output location 0.1 which is not consumed by fragment shader. Enable VK_KHR_maintenance4 device "
+        "extension to allow relaxed interface matching between input and output vectors.",
+        "vertex shader writes to output location 0.2 which is not consumed by fragment shader. Enable VK_KHR_maintenance4 device "
+        "extension to allow relaxed interface matching between input and output vectors."};
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, expected_errors);
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
@@ -14183,8 +14207,7 @@ TEST_F(VkLayerTest, TestInvalidShaderInputAndOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
-                                          "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpTypeVector-06816");
     }
 
     {
