@@ -20837,14 +20837,126 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer comman
                                         "extendedDynamicState3ColorBlendEnable");
 }
 
+static bool IsAdvancedBlendOp(VkBlendOp const blendOp) {
+    switch (blendOp) {
+    default:
+        return false;
+    case VK_BLEND_OP_ZERO_EXT:
+    case VK_BLEND_OP_SRC_EXT:
+    case VK_BLEND_OP_DST_EXT:
+    case VK_BLEND_OP_SRC_OVER_EXT:
+    case VK_BLEND_OP_DST_OVER_EXT:
+    case VK_BLEND_OP_SRC_IN_EXT:
+    case VK_BLEND_OP_DST_IN_EXT:
+    case VK_BLEND_OP_SRC_OUT_EXT:
+    case VK_BLEND_OP_DST_OUT_EXT:
+    case VK_BLEND_OP_SRC_ATOP_EXT:
+    case VK_BLEND_OP_DST_ATOP_EXT:
+    case VK_BLEND_OP_XOR_EXT:
+    case VK_BLEND_OP_INVERT_EXT:
+    case VK_BLEND_OP_INVERT_RGB_EXT:
+    case VK_BLEND_OP_LINEARDODGE_EXT:
+    case VK_BLEND_OP_LINEARBURN_EXT:
+    case VK_BLEND_OP_VIVIDLIGHT_EXT:
+    case VK_BLEND_OP_LINEARLIGHT_EXT:
+    case VK_BLEND_OP_PINLIGHT_EXT:
+    case VK_BLEND_OP_HARDMIX_EXT:
+    case VK_BLEND_OP_PLUS_EXT:
+    case VK_BLEND_OP_PLUS_CLAMPED_EXT:
+    case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
+    case VK_BLEND_OP_PLUS_DARKER_EXT:
+    case VK_BLEND_OP_MINUS_EXT:
+    case VK_BLEND_OP_MINUS_CLAMPED_EXT:
+    case VK_BLEND_OP_CONTRAST_EXT:
+    case VK_BLEND_OP_INVERT_OVG_EXT:
+    case VK_BLEND_OP_RED_EXT:
+    case VK_BLEND_OP_GREEN_EXT:
+    case VK_BLEND_OP_BLUE_EXT:
+        return true;
+    }
+}
+
 bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                             uint32_t attachmentCount,
                                                             const VkColorBlendEquationEXT *pColorBlendEquations) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETCOLORBLENDEQUATIONEXT,
-                                        enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation,
-                                        "VUID-vkCmdSetColorBlendEquationEXT-extendedDynamicState3ColorBlendEquation-07356",
-                                        "extendedDynamicState3ColorBlendEquation");
+    bool skip = false;
+    skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETCOLORBLENDEQUATIONEXT,
+                                         enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation,
+                                         "VUID-vkCmdSetColorBlendEquationEXT-extendedDynamicState3ColorBlendEquation-07356",
+                                         "extendedDynamicState3ColorBlendEquation");
+    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+        VkColorBlendEquationEXT const &equation = pColorBlendEquations[attachment];
+        if (!enabled_features.core.dualSrcBlend) {
+            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07357
+            if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
+                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+                equation.srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
+                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcColorBlendFactor is %s but the "
+                                 "dualSrcBlend feature is not enabled.",
+                                 attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
+            }
+            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07358
+            if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
+                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+                equation.dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
+                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstColorBlendFactor is %s but the "
+                                 "dualSrcBlend feature is not enabled.",
+                                 attachment, string_VkBlendFactor(equation.dstColorBlendFactor));
+            }
+            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07359
+            if (equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
+                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
+                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcAlphaBlendFactor is %s but the "
+                                 "dualSrcBlend feature is not enabled.",
+                                 attachment, string_VkBlendFactor(equation.srcAlphaBlendFactor));
+            }
+            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07360
+            if (equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
+                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
+                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstAlphaBlendFactor is %s but the "
+                                 "dualSrcBlend feature is not enabled.",
+                                 attachment, string_VkBlendFactor(equation.dstAlphaBlendFactor));
+            }
+        }
+        // VUID-VkColorBlendEquationEXT-colorBlendOp-07361
+        if (IsAdvancedBlendOp(equation.colorBlendOp) || IsAdvancedBlendOp(equation.alphaBlendOp)) {
+            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-colorBlendOp-07361",
+                             "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].colorBlendOp and "
+                             "pColorBlendEquations[%u].alphaBlendOp must not be an advanced blending operation.",
+                             attachment, attachment);
+        }
+        if (IsExtEnabled(device_extensions.vk_khr_portability_subset) &&
+            !enabled_features.portability_subset_features.constantAlphaColorBlendFactors) {
+            // VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362
+            if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
+                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcColorBlendFactor must not be %s "
+                                 "when constantAlphaColorBlendFactors is not supported.",
+                                 attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
+            }
+            // VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363
+            if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
+                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
+                skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363",
+                                 "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstColorBlendFactor must not be %s "
+                                 "constantAlphaColorBlendFactors is not supported.",
+                                 attachment, string_VkBlendFactor(equation.dstColorBlendFactor));
+            }
+        }
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
@@ -20938,10 +21050,39 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
                                                             uint32_t attachmentCount,
                                                             const VkColorBlendAdvancedEXT *pColorBlendAdvanced) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETCOLORBLENDADVANCEDEXT,
-                                        enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced,
-                                        "VUID-vkCmdSetColorBlendAdvancedEXT-extendedDynamicState3ColorBlendAdvanced-07504",
-                                        "extendedDynamicState3ColorBlendAdvanced");
+    bool skip = false;
+    skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETCOLORBLENDADVANCEDEXT,
+                                         enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced,
+                                         "VUID-vkCmdSetColorBlendAdvancedEXT-extendedDynamicState3ColorBlendAdvanced-07504",
+                                         "extendedDynamicState3ColorBlendAdvanced");
+    for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
+        VkColorBlendAdvancedEXT const &advanced = pColorBlendAdvanced[attachment];
+        // VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505
+        if (advanced.srcPremultiplied != VK_FALSE &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
+            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505",
+                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].srcPremultiplied must not be VK_TRUE when "
+                             "advancedBlendNonPremultipliedSrcColor is not supported.",
+                             attachment);
+        }
+        // VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506
+        if (advanced.dstPremultiplied != VK_FALSE &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
+            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506",
+                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].dstPremultiplied must not be VK_TRUE when "
+                             "advancedBlendNonPremultipliedDstColor is not supported.",
+                             attachment);
+        }
+        // VUID-VkColorBlendAdvancedEXT-blendOverlap-07507
+        if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
+            !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
+            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506",
+                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].blendOverlap must br "
+                             "VK_BLEND_OVERLAP_UNCORRELATED_EXT when advancedBlendCorrelatedOverlap is not supported.",
+                             attachment);
+        }
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,
