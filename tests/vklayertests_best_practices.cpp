@@ -1177,7 +1177,8 @@ TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
 TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     char const *vsSource = R"glsl(
@@ -1203,7 +1204,7 @@ TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit | kErrorBit,
+    CreatePipelineHelper::OneshotTest(*this, set_info, kPerformanceWarningBit,
                                       "UNASSIGNED-CoreValidation-Shader-OutputNotConsumed");
 }
 
