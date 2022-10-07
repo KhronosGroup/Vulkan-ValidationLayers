@@ -1277,8 +1277,8 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
             auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
-            for (const auto& builtin : module_state->static_data_.builtin_decoration_list) {
-                if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+            for (const Instruction* inst : module_state->GetBuiltinDecorationList()) {
+                if (inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
                     skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
                                        "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
                                        "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
@@ -1296,8 +1296,8 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     bool skip = false;
     auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
-    if (entrypoint == module_state->end()) return false;
+    const Instruction* entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint) return false;
 
     uint32_t x = 1, y = 1, z = 1;
     module_state->FindLocalSize(entrypoint, x, y, z);

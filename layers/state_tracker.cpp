@@ -4552,14 +4552,6 @@ void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuff
 }
 
 std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
-                                                                                     uint32_t unique_shader_id) const {
-    spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
-    return is_spirv ? std::make_shared<SHADER_MODULE_STATE>(create_info, spirv_environment, unique_shader_id)
-                    : std::make_shared<SHADER_MODULE_STATE>();
-}
-
-std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleState(const VkShaderModuleCreateInfo &create_info,
                                                                                      uint32_t unique_shader_id,
                                                                                      VkShaderModule handle) const {
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));

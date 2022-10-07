@@ -428,7 +428,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
     # The main function to validate all the extensions and capabilities
     def validateFunction(self):
         output = '''
-bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) const {
+bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn) const {
     bool skip = false;
 
     if (insn.opcode() == spv::OpCapability) {
@@ -503,7 +503,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(spirv_inst_iter& insn) 
         }
     } else if (insn.opcode() == spv::OpExtension) {
         static const std::string spv_prefix = "SPV_";
-        std::string extension_name = (char const *)&insn.word(1);
+        std::string extension_name = insn.GetAsString(1);
 
         if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
             if (spirvExtensions.count(extension_name) == 0) {
