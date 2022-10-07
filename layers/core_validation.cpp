@@ -3075,7 +3075,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3TessellationDomainOrigin-07370
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3TessellationDomainOrigin-07370",
@@ -3086,7 +3085,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClampEnable-07371
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClampEnable-07371",
@@ -3097,7 +3095,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3PolygonMode-07372
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3PolygonMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3PolygonMode-07372",
@@ -3108,7 +3105,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationSamples-07373
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RasterizationSamples &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationSamples-07373",
@@ -3119,7 +3115,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleMask-07374
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3SampleMask &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_SAMPLE_MASK_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleMask-07374",
@@ -3130,7 +3125,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToCoverageEnable-07375
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToCoverageEnable-07375",
@@ -3141,7 +3135,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToOneEnable-07376
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3AlphaToOneEnable-07376",
@@ -3152,7 +3145,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LogicOpEnable-07377
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LogicOpEnable-07377",
@@ -3163,7 +3155,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEnable-07378
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEnable-07378",
@@ -3174,7 +3165,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEquation-07379
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendEquation-07379",
@@ -3185,7 +3175,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorWriteMask-07380
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorWriteMask-07380",
@@ -3196,7 +3185,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RasterizationStream &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RasterizationStream-07381",
@@ -3207,7 +3195,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ConservativeRasterizationMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ConservativeRasterizationMode-07382",
@@ -3218,7 +3205,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ExtraPrimitiveOverestimationSize-07383
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ExtraPrimitiveOverestimationSize &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ExtraPrimitiveOverestimationSize-07383",
@@ -3229,7 +3215,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipEnable-07384
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClipEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipEnable-07384",
@@ -3240,7 +3225,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleLocationsEnable-07385
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3SampleLocationsEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3SampleLocationsEnable-07385",
@@ -3251,7 +3235,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendAdvanced-07386
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ColorBlendAdvanced-07386",
@@ -3262,7 +3245,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ProvokingVertexMode-07387
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ProvokingVertexMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ProvokingVertexMode-07387",
@@ -3273,7 +3255,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineRasterizationMode-07388
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LineRasterizationMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineRasterizationMode-07388",
@@ -3284,7 +3265,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineStippleEnable-07389
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3LineStippleEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3LineStippleEnable-07389",
@@ -3295,7 +3275,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipNegativeOneToOne-07390
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3DepthClipNegativeOneToOne &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3DepthClipNegativeOneToOne-07390",
@@ -3306,7 +3285,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportWScalingEnable-07391
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ViewportWScalingEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportWScalingEnable-07391",
@@ -3317,7 +3295,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportSwizzle-07392
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ViewportSwizzle &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ViewportSwizzle-07392",
@@ -3328,7 +3305,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorEnable-07393
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageToColorEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorEnable-07393",
@@ -3339,7 +3315,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorLocation-07394
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageToColorLocation &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageToColorLocation-07394",
@@ -3350,7 +3325,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationMode-07395
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationMode-07395",
@@ -3361,7 +3335,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTableEnable-07396
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationTableEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTableEnable-07396",
@@ -3372,7 +3345,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTable-07397
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageModulationTable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageModulationTable-07397",
@@ -3383,7 +3355,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageReductionMode-07398
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3CoverageReductionMode &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3CoverageReductionMode-07398",
@@ -3394,7 +3365,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RepresentativeFragmentTestEnable-07399
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3RepresentativeFragmentTestEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3RepresentativeFragmentTestEnable-07399",
@@ -3405,7 +3375,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
-    // VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ShadingRateImageEnable-07400
     if (!enabled_features.extended_dynamic_state3_features.extendedDynamicState3ShadingRateImageEnable &&
         IsDynamic(pipeline, VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-extendedDynamicState3ShadingRateImageEnable-07400",
@@ -20763,8 +20732,9 @@ bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuff
         "VUID-vkCmdSetPolygonModeEXT-extendedDynamicState3PolygonMode-07422", "extendedDynamicState3PolygonMode");
     if ((polygonMode == VK_POLYGON_MODE_LINE || polygonMode == VK_POLYGON_MODE_POINT) && !enabled_features.core.alphaToOne) {
         skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424",
-                         "vkCmdSetPolygonModeEXT(): polygonMode is VK_POLYGON_MODE_LINE or VK_POLYGON_MODE_POINT but the "
-                         "fillModeNonSolid feature is not enabled.");
+                         "vkCmdSetPolygonModeEXT(): polygonMode is %s but the "
+                         "fillModeNonSolid feature is not enabled.",
+                         string_VkPolygonMode(polygonMode));
     } else if (polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV && !IsExtEnabled(device_extensions.vk_nv_fill_rectangle)) {
         skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425",
                          "vkCmdSetPolygonModeEXT(): polygonMode is VK_POLYGON_MODE_FILL_RECTANGLE_NV but the VK_NV_fill_rectangle "
@@ -20837,45 +20807,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEnableEXT(VkCommandBuffer comman
                                         "extendedDynamicState3ColorBlendEnable");
 }
 
-static bool IsAdvancedBlendOp(VkBlendOp const blendOp) {
-    switch (blendOp) {
-    default:
-        return false;
-    case VK_BLEND_OP_ZERO_EXT:
-    case VK_BLEND_OP_SRC_EXT:
-    case VK_BLEND_OP_DST_EXT:
-    case VK_BLEND_OP_SRC_OVER_EXT:
-    case VK_BLEND_OP_DST_OVER_EXT:
-    case VK_BLEND_OP_SRC_IN_EXT:
-    case VK_BLEND_OP_DST_IN_EXT:
-    case VK_BLEND_OP_SRC_OUT_EXT:
-    case VK_BLEND_OP_DST_OUT_EXT:
-    case VK_BLEND_OP_SRC_ATOP_EXT:
-    case VK_BLEND_OP_DST_ATOP_EXT:
-    case VK_BLEND_OP_XOR_EXT:
-    case VK_BLEND_OP_INVERT_EXT:
-    case VK_BLEND_OP_INVERT_RGB_EXT:
-    case VK_BLEND_OP_LINEARDODGE_EXT:
-    case VK_BLEND_OP_LINEARBURN_EXT:
-    case VK_BLEND_OP_VIVIDLIGHT_EXT:
-    case VK_BLEND_OP_LINEARLIGHT_EXT:
-    case VK_BLEND_OP_PINLIGHT_EXT:
-    case VK_BLEND_OP_HARDMIX_EXT:
-    case VK_BLEND_OP_PLUS_EXT:
-    case VK_BLEND_OP_PLUS_CLAMPED_EXT:
-    case VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT:
-    case VK_BLEND_OP_PLUS_DARKER_EXT:
-    case VK_BLEND_OP_MINUS_EXT:
-    case VK_BLEND_OP_MINUS_CLAMPED_EXT:
-    case VK_BLEND_OP_CONTRAST_EXT:
-    case VK_BLEND_OP_INVERT_OVG_EXT:
-    case VK_BLEND_OP_RED_EXT:
-    case VK_BLEND_OP_GREEN_EXT:
-    case VK_BLEND_OP_BLUE_EXT:
-        return true;
-    }
-}
-
 bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment,
                                                             uint32_t attachmentCount,
                                                             const VkColorBlendEquationEXT *pColorBlendEquations) const {
@@ -20930,7 +20861,7 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
             }
         }
         // VUID-VkColorBlendEquationEXT-colorBlendOp-07361
-        if (IsAdvancedBlendOp(equation.colorBlendOp) || IsAdvancedBlendOp(equation.alphaBlendOp)) {
+        if (IsAdvanceBlendOperation(equation.colorBlendOp) || IsAdvanceBlendOperation(equation.alphaBlendOp)) {
             skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-colorBlendOp-07361",
                              "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].colorBlendOp and "
                              "pColorBlendEquations[%u].alphaBlendOp must not be an advanced blending operation.",
@@ -20981,7 +20912,9 @@ bool CoreChecks::PreCallValidateCmdSetRasterizationStreamEXT(VkCommandBuffer com
     }
     if (rasterizationStream >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
         skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412",
-                         "vkCmdSetRasterizationStreamEXT(): rasterizationStream must be less than maxTransformFeedbackStreams.");
+                         "vkCmdSetRasterizationStreamEXT(): rasterizationStream (%" PRIu32
+                         ") must be less than maxTransformFeedbackStreams (%" PRIu32 ").",
+                         rasterizationStream, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
     }
     if (rasterizationStream != 0U &&
         phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE) {
@@ -21016,8 +20949,11 @@ bool CoreChecks::PreCallValidateCmdSetExtraPrimitiveOverestimationSizeEXT(VkComm
             phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
         skip |=
             LogError(cb_state->Handle(), "VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428",
-                     "vkCmdSetExtraPrimitiveOverestimationSizeEXT(): extraPrimitiveOverestimationSize less then zero or greater "
-                     "than maxExtraPrimitiveOverestimationSize.");
+                     "vkCmdSetExtraPrimitiveOverestimationSizeEXT(): extraPrimitiveOverestimationSize (%f) must be less then zero "
+                     "or greater "
+                     "than maxExtraPrimitiveOverestimationSize (%f).",
+                     extraPrimitiveOverestimationSize,
+                     phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
     }
     return skip;
 }
