@@ -1047,6 +1047,9 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
             }
             // Pull the set node
             auto &descriptor_set = state.per_set[set_index].bound_descriptor_set;
+            if (!descriptor_set) {
+                continue;
+            }
 
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
