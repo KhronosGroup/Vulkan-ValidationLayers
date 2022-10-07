@@ -2071,6 +2071,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
+            if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(set_binding.first.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
@@ -2202,6 +2203,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         }
         for (const auto &set_binding : stage_state.descriptor_uses) {
             const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
+            if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(set_binding.first.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
