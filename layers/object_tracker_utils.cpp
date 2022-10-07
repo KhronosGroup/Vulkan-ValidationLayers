@@ -1104,7 +1104,7 @@ bool ObjectLifetimes::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice devic
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             if (pCreateInfos[index0].pStages) {
                 for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
-                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, false,
+                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, true,
                                            "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
                 }
             }
