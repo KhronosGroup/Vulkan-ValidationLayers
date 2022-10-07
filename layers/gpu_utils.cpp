@@ -843,8 +843,8 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
 
                     VkShaderModule shader_module;
                     auto create_info = LvlInitStruct<VkShaderModuleCreateInfo>();
-                    create_info.pCode = module_state->words.data();
-                    create_info.codeSize = module_state->words.size() * sizeof(uint32_t);
+                    create_info.pCode = module_state->words_.data();
+                    create_info.codeSize = module_state->words_.size() * sizeof(uint32_t);
                     VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                     if (result == VK_SUCCESS) {
                         Accessor::SetShaderModule(&(*new_pipeline_create_infos)[pipeline], shader_module, stage);
@@ -898,7 +898,7 @@ void GpuAssistedBase::PostCallRecordPipelineCreations(const uint32_t count, cons
             // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
             // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
             // the pipeline is used, so we have to keep another copy.
-            if (module_state && module_state->has_valid_spirv) code = module_state->words;
+            if (module_state && module_state->has_valid_spirv) code = module_state->words_;
 
             shader_map.insert_or_assign(module_state->gpu_validation_shader_id, pipeline_state->pipeline(), shader_module,
                                         std::move(code));
@@ -1125,15 +1125,15 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
-    SHADER_MODULE_STATE shader(pgm);
+    SHADER_MODULE_STATE module_state(pgm);
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
     uint32_t instruction_index = 0;
     uint32_t reported_file_id = 0;
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
-    if (shader.words.size() > 0) {
-        for (const auto &insn : shader) {
+    if (module_state.words_.size() > 0) {
+        for (const auto &insn : module_state) {
             if (insn.opcode() == spv::OpLine) {
                 reported_file_id = insn.word(1);
                 reported_line_number = insn.word(2);
@@ -1158,7 +1158,7 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
         } else {
             prefix = "Shader validation error occurred ";
         }
-        for (const auto &insn : shader) {
+        for (const auto &insn : module_state) {
             if ((insn.opcode() == spv::OpString) && (insn.len() >= 3) && (insn.word(1) == reported_file_id)) {
                 found_opstring = true;
                 reported_filename = (char *)&insn.word(2);
@@ -1187,7 +1187,7 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
     if ((reported_file_id != 0)) {
         // Read the source code and split it up into separate lines.
         std::vector<std::string> opsource_lines;
-        ReadOpSource(shader, reported_file_id, opsource_lines);
+        ReadOpSource(module_state, reported_file_id, opsource_lines);
         // Find the line in the OpSource content that corresponds to the reported error file and line.
         if (!opsource_lines.empty()) {
             uint32_t saved_line_number = 0;

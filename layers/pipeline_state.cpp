@@ -41,15 +41,14 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
 }
 
-static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, spirv_inst_iter entrypoint,
+static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const Instruction *entrypoint,
                                       const SHADER_MODULE_STATE *module_state) {
     bool primitiverate_written = false;
     if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
         stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
-        for (const auto &set : module_state->GetBuiltinDecorationList()) {
-            auto insn = module_state->at(set.offset);
-            if (set.builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-                primitiverate_written = module_state->IsBuiltInWritten(insn, entrypoint);
+        for (const Instruction *inst : module_state->GetBuiltinDecorationList()) {
+            if (inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) {
+                primitiverate_written = module_state->IsBuiltInWritten(inst, entrypoint);
             }
             if (primitiverate_written) {
                 break;
@@ -151,7 +150,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
 PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec &stage_states) {
     PIPELINE_STATE::ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module_state->end()) {
+        if (!stage.entrypoint) {
             continue;
         }
         // Capture descriptor uses for the pipeline
@@ -215,7 +214,7 @@ static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stages) {
 static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
     layer_data::unordered_set<uint32_t> result;
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module_state->end()) {
+        if (!stage.entrypoint) {
             continue;
         }
         if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -230,7 +229,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
                                                    const safe_VkPipelineInputAssemblyStateCreateInfo *assembly_state) {
     VkPrimitiveTopology result = assembly_state ? assembly_state->topology : static_cast<VkPrimitiveTopology>(0);
     for (const auto &stage : stage_states) {
-        if (stage.entrypoint == stage.module_state->end()) {
+        if (!stage.entrypoint) {
             continue;
         }
         auto stage_topo = stage.module_state->GetTopology(stage.entrypoint);

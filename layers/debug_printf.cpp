@@ -241,7 +241,7 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string forma
 std::string DebugPrintf::FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
     SHADER_MODULE_STATE module_state(pgm);
-    if (module_state.words.size() > 0) {
+    if (module_state.words_.size() > 0) {
         for (const auto &insn : module_state) {
             if (insn.opcode() == spv::OpString) {
                 uint32_t offset = insn.offset();

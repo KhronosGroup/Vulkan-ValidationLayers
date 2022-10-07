@@ -795,9 +795,8 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) override;
 
     std::shared_ptr<SHADER_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info,
-                                                                 uint32_t unique_shader_id) const;
-    std::shared_ptr<SHADER_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info,
-                                                                 uint32_t unique_shader_id, VkShaderModule handle) const;
+                                                                 uint32_t unique_shader_id,
+                                                                 VkShaderModule handle = VK_NULL_HANDLE) const;
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state) override;

@@ -146,6 +146,8 @@ core_validation_sources = [
   "layers/range_vector.h",
   "layers/shader_module.cpp",
   "layers/shader_module.h",
+  "layers/shader_instruction.cpp",
+  "layers/shader_instruction.h",
   "layers/shader_validation.cpp",
   "layers/shader_validation.h",
   "layers/state_tracker.cpp",
