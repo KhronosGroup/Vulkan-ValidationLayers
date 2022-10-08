@@ -47,15 +47,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
 
-    if (CMAKE_GENERATOR_PLATFORM)
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
-    else()
-        if (MSVC_IDE)
-            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
-        endif()
-        set(_target_arch x64)
-    endif()
-
     if (NOT CMAKE_BUILD_TYPE)
         message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
         set(_build_type Debug)
@@ -63,40 +54,50 @@ if (UPDATE_DEPS)
         set(_build_type ${CMAKE_BUILD_TYPE})
     endif()
 
+    include(vvl_initial_cache)
+
     message("********************************************************************************")
     message("* NOTE: Adding target vvl_update_deps to run as needed for updating            *")
     message("*       dependencies.                                                          *")
     message("********************************************************************************")
 
+    set(update_deps_py "${PROJECT_SOURCE_DIR}/scripts/update_deps.py")
+    set(known_good_json "${PROJECT_SOURCE_DIR}/scripts/known_good.json")
+    set(external_helper_cmake "${PROJECT_SOURCE_DIR}/external/helper.cmake")
+
     set(_update_deps_arg "")
     if (NOT BUILD_TESTS)
         set(_update_deps_arg "--optional=tests")
     endif()
-        
+
     if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
         set(_update_deps_arg ${_update_deps_arg} "--skip-existing-install")
     endif()
 
     # Add a target so that update_deps.py will run when necessary
-    # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
-                       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
+    # NOTE: This is triggered off of the timestamps of known_good.json, helper.cmake, and vvl_initial_cache
+    add_custom_command(
+        OUTPUT ${external_helper_cmake}
+        COMMAND ${PYTHON_EXECUTABLE} ${update_deps_py} ${_update_deps_arg}
+            --dir ${PROJECT_SOURCE_DIR}/external --config ${_build_type} --initial_cache ${VVL_INITIAL_CACHE}
+        DEPENDS ${known_good_json} ${VVL_INITIAL_CACHE}
+    )
 
-    add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+    add_custom_target(vvl_update_deps DEPENDS ${external_helper_cmake})
 
     # Check if update_deps.py needs to be run on first cmake run
-    if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+    if (${known_good_json} IS_NEWER_THAN ${external_helper_cmake})
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} ${update_deps_py} ${_update_deps_arg}
+                --dir ${PROJECT_SOURCE_DIR}/external --config ${_build_type} --initial_cache ${VVL_INITIAL_CACHE}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             RESULT_VARIABLE _update_deps_result
         )
         if (NOT (${_update_deps_result} EQUAL 0))
             message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
         endif()
     endif()
-    include(${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+    include(${external_helper_cmake})
 else()
     message("********************************************************************************")
     message("* NOTE: Not adding target to run update_deps.py automatically.                 *")

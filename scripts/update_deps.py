@@ -457,26 +457,34 @@ class GoodRepo(object):
         for option in self.cmake_options:
             cmake_cmd.append(escape(option.format(**self.__dict__)))
 
-        # Set build config for single-configuration generators
-        if platform.system() == 'Linux' or platform.system() == 'Darwin':
-            cmake_cmd.append('-DCMAKE_BUILD_TYPE={config}'.format(
-                config=CONFIG_MAP[self._args.config]))
+        # Use the provided initial cache to populate information instead of users args
+        # NOTE: 3.15 provides nicer code injection:
+        # https://cmake.org/cmake/help/latest/command/project.html#code-injection
+        if os.path.exists(self._args.initial_cache):
+            cmake_cmd.append('-C {}'.format(self._args.initial_cache))
+        else:
+            # The user needs to manually provide information
 
-        # Use the CMake -A option to select the platform architecture
-        # without needing a Visual Studio generator.
-        if platform.system() == 'Windows' and self._args.generator != "Ninja":
-            if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
-                cmake_cmd.append('-A')
-                cmake_cmd.append('x64')
-            else:
-                cmake_cmd.append('-A')
-                cmake_cmd.append('Win32')
+            # Set build config for single-configuration generators
+            if platform.system() == 'Linux' or platform.system() == 'Darwin':
+                cmake_cmd.append('-DCMAKE_BUILD_TYPE={config}'.format(
+                    config=CONFIG_MAP[self._args.config]))
 
-        # Apply a generator, if one is specified.  This can be used to supply
-        # a specific generator for the dependent repositories to match
-        # that of the main repository.
-        if self._args.generator is not None:
-            cmake_cmd.extend(['-G', self._args.generator])
+            # Use the CMake -A option to select the platform architecture
+            # without needing a Visual Studio generator.
+            if platform.system() == 'Windows' and self._args.generator != "Ninja":
+                if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
+                    cmake_cmd.append('-A')
+                    cmake_cmd.append('x64')
+                else:
+                    cmake_cmd.append('-A')
+                    cmake_cmd.append('Win32')
+
+            # Apply a generator, if one is specified.  This can be used to supply
+            # a specific generator for the dependent repositories to match
+            # that of the main repository.
+            if self._args.generator is not None:
+                cmake_cmd.extend(['-G', self._args.generator])
 
         if VERBOSE:
             print("CMake command: " + " ".join(cmake_cmd))
@@ -615,6 +623,11 @@ def main():
         dest='dir',
         default='.',
         help="Set target directory for repository roots. Default is \'.\'.")
+    parser.add_argument(
+        '--initial_cache',
+        dest='initial_cache',
+        default='',
+        help="CMake module to initialize CMake cache")
     parser.add_argument(
         '--ref',
         dest='ref',
