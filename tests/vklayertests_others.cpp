@@ -11607,7 +11607,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
@@ -11620,7 +11624,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
 
     auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
-    auto extended_dynamic_state3_features_available = extended_dynamic_state3_features;
 
     // Create a device with all VK_EXT_extended_dynamic_state3 features disabled
     extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin = VK_FALSE;
