@@ -3692,12 +3692,10 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     cb_node->GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment));
                 color_attachment_count = cb_node->GetDynamicColorAttachmentCount();
 
-                has_valid_depth_attachment =
-                    cb_node->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
+                has_valid_depth_attachment = cb_node->HasValidDynamicDepthAttachment();
                 depth_view_state = cb_node->GetActiveAttachmentImageViewState(cb_node->GetDynamicDepthAttachmentImageIndex());
 
-                has_valid_stencil_attachment =
-                    cb_node->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
+                has_valid_stencil_attachment = cb_node->HasValidDynamicStencilAttachment();
                 stencil_view_state = cb_node->GetActiveAttachmentImageViewState(cb_node->GetDynamicStencilAttachmentImageIndex());
 
                 view_mask = cb_node->activeRenderPass->dynamic_rendering_begin_rendering_info.viewMask;

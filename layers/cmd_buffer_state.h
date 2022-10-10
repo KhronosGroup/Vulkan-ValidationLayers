@@ -523,6 +523,28 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t GetDynamicDepthResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 1; }
     uint32_t GetDynamicStencilAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 2; }
     uint32_t GetDynamicStencilResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 3; }
+    bool HasValidDynamicDepthAttachment() const {
+        if (activeRenderPass) {
+            if (activeRenderPass->use_dynamic_rendering_inherited) {
+                return activeRenderPass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
+            }
+            if (activeRenderPass->use_dynamic_rendering) {
+                return activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
+            }
+        }
+        return false;
+    }
+    bool HasValidDynamicStencilAttachment() const {
+        if (activeRenderPass) {
+            if (activeRenderPass->use_dynamic_rendering_inherited) {
+                return activeRenderPass->inheritance_rendering_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED;
+            }
+            if (activeRenderPass->use_dynamic_rendering) {
+                return activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
+            }
+        }
+        return false;
+    }
 
     bool RasterizationDisabled() const;
     inline void BindPipeline(LvlBindPoint bind_point, PIPELINE_STATE *pipe_state) {
