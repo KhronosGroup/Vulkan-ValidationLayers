@@ -18,7 +18,10 @@
 # CMake project initialization ---------------------------------------------------------------------------------------------------
 # This section contains pre-project() initialization, and ends with the project() command.
 
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.15)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+include(vcpkg)
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
@@ -42,94 +45,21 @@ option(BUILD_TESTS "Build the tests" OFF)
 # Enable beta Vulkan extensions
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+# backcompat
+list(APPEND CMAKE_PREFIX_PATH ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET})
+set(GLSLANG_INSTALL_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET} CACHE PATH "")
+set(VULKAN_HEADERS_INSTALL_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET} CACHE PATH "")
+set(ROBIN_HOOD_HASHING_INSTALL_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET} CACHE PATH "")
+set(SPIRV_HEADERS_INSTALL_DIR  ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET} CACHE PATH "")
+set(SPIRV_TOOLS_INSTALL_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET} CACHE PATH "")
 
-if (UPDATE_DEPS)
-    find_package(PythonInterp 3 REQUIRED)
+# https://github.com/KhronosGroup/Vulkan-Headers/pull/207
+find_path(VulkanHeaders_INCLUDE_DIR "vulkan/vulkan.h")
 
-    if (CMAKE_GENERATOR_PLATFORM)
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
-    else()
-        if (MSVC_IDE)
-            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
-        endif()
-        set(_target_arch x64)
-    endif()
-
-    if (NOT CMAKE_BUILD_TYPE)
-        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
-        set(_build_type Debug)
-    else()
-        set(_build_type ${CMAKE_BUILD_TYPE})
-    endif()
-
-    message("********************************************************************************")
-    message("* NOTE: Adding target vvl_update_deps to run as needed for updating            *")
-    message("*       dependencies.                                                          *")
-    message("********************************************************************************")
-
-    set(_update_deps_arg "")
-    if (NOT BUILD_TESTS)
-        set(_update_deps_arg "--optional=tests")
-    endif()
-        
-    if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
-        set(_update_deps_arg ${_update_deps_arg} "--skip-existing-install")
-    endif()
-
-    # Add a target so that update_deps.py will run when necessary
-    # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
-                       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
-
-    add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-
-    # Check if update_deps.py needs to be run on first cmake run
-    if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-        execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-            RESULT_VARIABLE _update_deps_result
-        )
-        if (NOT (${_update_deps_result} EQUAL 0))
-            message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
-        endif()
-    endif()
-    include(${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
-else()
-    message("********************************************************************************")
-    message("* NOTE: Not adding target to run update_deps.py automatically.                 *")
-    message("********************************************************************************")
-    find_package(PythonInterp 3 QUIET)
-endif()
-#backwards compatability settings for other parts of the build system that don't use find_package() variables yet
-if (ROBIN_HOOD_HASHING_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
-endif()
-if (SPIRV_HEADERS_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_HEADERS_INSTALL_DIR})
-endif()
-if (SPIRV_TOOLS_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_TOOLS_INSTALL_DIR})
-endif()
-if (GOOGLETEST_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${GOOGLETEST_INSTALL_DIR})
-endif()
-
-
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
-    get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders REQUIRED)
-
-    # xxxnsubtil: this should eventually be replaced by exported targets
-    add_library(Vulkan-Headers INTERFACE)
-    target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
-    add_library(Vulkan::Headers ALIAS Vulkan-Headers)
-endif()
+find_package(VulkanHeaders REQUIRED)
+add_library(Vulkan-Headers INTERFACE)
+target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
+add_library(Vulkan::Headers ALIAS Vulkan-Headers)
 
 option(USE_CCACHE "Use ccache" OFF)
 if(USE_CCACHE)
@@ -282,7 +212,6 @@ if(BUILD_LAYERS OR BUILD_TESTS)
 endif()
 
 if(BUILD_TESTS)
-    set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
     if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
         message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
     endif()
@@ -349,9 +278,6 @@ if (VVL_ENABLE_ASAN)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI
     target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
 endif()
-if (UPDATE_DEPS)
-    add_dependencies(VkLayer_utils vvl_update_deps)
-endif()
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
     if(MINGW)
@@ -396,8 +322,14 @@ else()
     message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
 endif()
 
+find_package(PythonInterp 3 REQUIRED QUIET)
+
 # Optional codegen target --------------------------------------------------------------------------------------------------------
 if(PYTHONINTERP_FOUND)
+    if (NOT EXISTS "${VulkanRegistry_DIR}/vk.xml")
+        message(FATAL_ERROR "Unable to find vk.xml")
+    endif()
+
     add_custom_target(VulkanVL_generated_source
                       COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
                               ${VulkanRegistry_DIR} ${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/ --incremental

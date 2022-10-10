@@ -1,0 +1,11 @@
+{
+    "name": "vulkan-validation-layers",
+    "dependencies": [
+      "glslang",
+      "vulkan-headers",
+      "spirv-headers",
+      "spirv-tools",
+      "robin-hood-hashing",
+      "gtest"
+    ]
+}

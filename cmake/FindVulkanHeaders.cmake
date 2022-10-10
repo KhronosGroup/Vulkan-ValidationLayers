@@ -61,9 +61,11 @@ if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
       HINTS ${VULKAN_HEADERS_INSTALL_DIR}/include
       NO_CMAKE_FIND_ROOT_PATH
       NO_DEFAULT_PATH)
+
   find_path(VulkanRegistry_DIR
       NAMES vk.xml
-      HINTS ${VULKAN_HEADERS_INSTALL_DIR}/share/vulkan/registry
+      HINTS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}
+      PATH_SUFFIXES "registry"
       NO_CMAKE_FIND_ROOT_PATH
       NO_DEFAULT_PATH)
 else()
