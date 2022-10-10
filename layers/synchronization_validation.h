@@ -1658,8 +1658,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
 
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                            const COMMAND_POOL_STATE *cmd_pool) override;
-    CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer);
-    const CommandBufferAccessContext *GetAccessContext(VkCommandBuffer command_buffer) const;
 
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo, CMD_TYPE cmd_type);
