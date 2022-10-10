@@ -3424,8 +3424,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607",
                                  "pCreateInfos[%" PRIu32
                                  "] does not contain a complete set of state and "
-                                 "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not enabled is "
-                                 "not enabled. The following state is missing: [ %s].",
+                                 "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary is not enabled. "
+                                 "The following state is missing: [ %s].",
                                  pipe_index, full_pipeline_state_msg.c_str());
             }
         }
