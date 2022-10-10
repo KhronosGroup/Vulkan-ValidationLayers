@@ -436,7 +436,7 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
     renderpass_bi.pClearValues = renderpass_clear_values.data();
 
     auto clear_cmd_test = [&](const bool use_dynamic_rendering) {
-        std::array<VkFramebuffer, 3> framebuffers = {VK_NULL_HANDLE};
+        std::array<VkFramebuffer, 4> framebuffers = {VK_NULL_HANDLE};
 
         m_commandBuffer->begin();
 
@@ -597,6 +597,81 @@ TEST_F(VkLayerTest, DynamicRenderingClearAttachments) {
         }
 
         m_commandBuffer->end();
+
+        {
+            delete m_commandBuffer;
+            m_commandBuffer = new VkCommandBufferObj(m_device, m_commandPool);
+
+            std::unique_ptr<VkCommandBufferObj> secondary_cmd_buffer(
+                new VkCommandBufferObj(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY));
+
+            auto inheritance_rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfo>();
+            const VkFormat color_format = VK_FORMAT_R32_SFLOAT;
+            inheritance_rendering_info.colorAttachmentCount = begin_rendering_info.colorAttachmentCount;
+            inheritance_rendering_info.pColorAttachmentFormats = &color_format;
+            inheritance_rendering_info.depthAttachmentFormat = depth_format;
+            inheritance_rendering_info.stencilAttachmentFormat = depth_format;
+            inheritance_rendering_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+            VkCommandBufferBeginInfo cmd_buffer_begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+            cmd_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+            VkCommandBufferInheritanceInfo cmd_buffer_inheritance_info = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+            cmd_buffer_begin_info.pInheritanceInfo = &cmd_buffer_inheritance_info;
+            if (use_dynamic_rendering) {
+                cmd_buffer_inheritance_info.pNext = &inheritance_rendering_info;
+            } else {
+                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[3]);
+                ASSERT_VK_SUCCESS(err);
+                renderpass_bi.framebuffer = framebuffers[3];
+                cmd_buffer_inheritance_info.renderPass = renderpass;
+                cmd_buffer_inheritance_info.subpass = 0;
+                cmd_buffer_inheritance_info.framebuffer = framebuffers[3];
+            }
+
+            secondary_cmd_buffer->begin(&cmd_buffer_begin_info);
+            // issue clear cmd to secondary cmd buffer
+            std::array<VkClearAttachment, 3> clear_attachments = {};
+            clear_attachments[0].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            clear_attachments[0].clearValue.depthStencil.depth = 1.0f;
+            clear_attachments[1].aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            clear_attachments[1].clearValue.depthStencil.depth = 1.0f;
+            clear_attachments[2].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            clear_attachments[2].colorAttachment = 0;
+            VkClearRect clear_rect{rect, 0, 1};
+            // Expected to succeeed
+            vk::CmdClearAttachments(secondary_cmd_buffer->handle(), static_cast<uint32_t>(clear_attachments.size()),
+                                    clear_attachments.data(), 1, &clear_rect);
+
+            // Clear color out of range
+            VkClearAttachment clear_color_out_of_range{VK_IMAGE_ASPECT_COLOR_BIT, 1, VkClearValue{}};
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearAttachments-aspectMask-07271");
+            vk::CmdClearAttachments(secondary_cmd_buffer->handle(), 1, &clear_color_out_of_range, 1, &clear_rect);
+            m_errorMonitor->VerifyFound();
+            secondary_cmd_buffer->end();
+
+            m_commandBuffer->begin();
+
+            // begin rendering
+            if (use_dynamic_rendering) {
+                begin_rendering_info.flags |= VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+                m_commandBuffer->BeginRendering(begin_rendering_info);
+                begin_rendering_info.flags &= ~VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT;
+            } else {
+                m_commandBuffer->BeginRenderPass(renderpass_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+            }
+
+            vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary_cmd_buffer->handle());
+
+            // end rendering
+            if (use_dynamic_rendering) {
+                m_commandBuffer->EndRendering();
+            } else {
+                m_commandBuffer->NextSubpass();
+                m_commandBuffer->EndRenderPass();
+            }
+
+            m_commandBuffer->end();
+        }
 
         for (auto framebuffer : framebuffers) {
             vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
