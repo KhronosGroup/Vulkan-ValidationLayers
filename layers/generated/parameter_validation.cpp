@@ -4365,6 +4365,40 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // No Validation code for VkImportMetalSharedEventInfoEXT structure members  -- Covers VUID-VkImportMetalSharedEventInfoEXT-sType-sType
 
+        // No Validation code for VkPhysicalDeviceDescriptorBufferPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceDescriptorBufferPropertiesEXT-sType-sType
+
+        // No Validation code for VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT structure members  -- Covers VUID-VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT-sType-sType
+
+        // Validation code for VkPhysicalDeviceDescriptorBufferFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceDescriptorBufferFeaturesEXT-sType-sType
+            if (is_const_param) {
+                VkPhysicalDeviceDescriptorBufferFeaturesEXT *structure = (VkPhysicalDeviceDescriptorBufferFeaturesEXT *) header;
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorBufferFeaturesEXT", "descriptorBuffer", structure->descriptorBuffer);
+
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorBufferFeaturesEXT", "descriptorBufferCaptureReplay", structure->descriptorBufferCaptureReplay);
+
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorBufferFeaturesEXT", "descriptorBufferImageLayoutIgnored", structure->descriptorBufferImageLayoutIgnored);
+
+                skip |= validate_bool32("VkPhysicalDeviceDescriptorBufferFeaturesEXT", "descriptorBufferPushDescriptors", structure->descriptorBufferPushDescriptors);
+            }
+        } break;
+
+        // Validation code for VkDescriptorBufferBindingPushDescriptorBufferHandleEXT structure members
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_PUSH_DESCRIPTOR_BUFFER_HANDLE_EXT: { // Covers VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-sType-sType
+            if (is_const_param) {
+                VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *structure = (VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *) header;
+                skip |= validate_required_handle("VkDescriptorBufferBindingPushDescriptorBufferHandleEXT", "buffer", structure->buffer);
+            }
+        } break;
+
+        // Validation code for VkOpaqueCaptureDescriptorDataCreateInfoEXT structure members
+        case VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT: { // Covers VUID-VkOpaqueCaptureDescriptorDataCreateInfoEXT-sType-sType
+            if (is_const_param) {
+                VkOpaqueCaptureDescriptorDataCreateInfoEXT *structure = (VkOpaqueCaptureDescriptorDataCreateInfoEXT *) header;
+                skip |= validate_required_pointer("VkOpaqueCaptureDescriptorDataCreateInfoEXT", "opaqueCaptureDescriptorData", structure->opaqueCaptureDescriptorData, "VUID-VkOpaqueCaptureDescriptorDataCreateInfoEXT-opaqueCaptureDescriptorData-parameter");
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT-sType-sType
             if (is_const_param) {
@@ -17798,6 +17832,227 @@ bool StatelessValidation::PreCallValidateExportMetalObjectsEXT(
 }
 
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSizeEXT(
+    VkDevice                                    device,
+    VkDescriptorSetLayout                       layout,
+    VkDeviceSize*                               pLayoutSizeInBytes) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSizeEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSizeEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSizeEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSizeEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSizeEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_required_handle("vkGetDescriptorSetLayoutSizeEXT", "layout", layout);
+    skip |= validate_required_pointer("vkGetDescriptorSetLayoutSizeEXT", "pLayoutSizeInBytes", pLayoutSizeInBytes, "VUID-vkGetDescriptorSetLayoutSizeEXT-pLayoutSizeInBytes-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutBindingOffsetEXT(
+    VkDevice                                    device,
+    VkDescriptorSetLayout                       layout,
+    uint32_t                                    binding,
+    VkDeviceSize*                               pOffset) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutBindingOffsetEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutBindingOffsetEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutBindingOffsetEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutBindingOffsetEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetDescriptorSetLayoutBindingOffsetEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_required_handle("vkGetDescriptorSetLayoutBindingOffsetEXT", "layout", layout);
+    skip |= validate_required_pointer("vkGetDescriptorSetLayoutBindingOffsetEXT", "pOffset", pOffset, "VUID-vkGetDescriptorSetLayoutBindingOffsetEXT-pOffset-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetDescriptorEXT(
+    VkDevice                                    device,
+    const VkDescriptorGetInfoEXT*               pDescriptorInfo,
+    size_t                                      dataSize,
+    void*                                       pDescriptor) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetDescriptorEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetDescriptorEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetDescriptorEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetDescriptorEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetDescriptorEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetDescriptorEXT", "pDescriptorInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT", pDescriptorInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT, true, "VUID-vkGetDescriptorEXT-pDescriptorInfo-parameter", "VUID-VkDescriptorGetInfoEXT-sType-sType");
+    if (pDescriptorInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetDescriptorEXT", "pDescriptorInfo->pNext", NULL, pDescriptorInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorGetInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= validate_ranged_enum("vkGetDescriptorEXT", "pDescriptorInfo->type", "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorInfo->type, "VUID-VkDescriptorGetInfoEXT-type-parameter");
+    }
+    skip |= validate_array("vkGetDescriptorEXT", "dataSize", "pDescriptor", dataSize, &pDescriptor, true, true, "VUID-vkGetDescriptorEXT-dataSize-arraylength", "VUID-vkGetDescriptorEXT-pDescriptor-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdBindDescriptorBuffersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    bufferCount,
+    const VkDescriptorBufferBindingInfoEXT*     pBindingInfos) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkCmdBindDescriptorBuffersEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkCmdBindDescriptorBuffersEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkCmdBindDescriptorBuffersEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdBindDescriptorBuffersEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkCmdBindDescriptorBuffersEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type_array("vkCmdBindDescriptorBuffersEXT", "bufferCount", "pBindingInfos", "VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT", bufferCount, pBindingInfos, VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT, true, true, "VUID-VkDescriptorBufferBindingInfoEXT-sType-sType", "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-parameter", "VUID-vkCmdBindDescriptorBuffersEXT-bufferCount-arraylength");
+    if (pBindingInfos != NULL)
+    {
+        for (uint32_t bufferIndex = 0; bufferIndex < bufferCount; ++bufferIndex)
+        {
+            const VkStructureType allowed_structs_VkDescriptorBufferBindingInfoEXT[] = { VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_PUSH_DESCRIPTOR_BUFFER_HANDLE_EXT };
+
+            skip |= validate_struct_pnext("vkCmdBindDescriptorBuffersEXT", ParameterName("pBindingInfos[%i].pNext", ParameterName::IndexVector{ bufferIndex }), "VkDescriptorBufferBindingPushDescriptorBufferHandleEXT", pBindingInfos[bufferIndex].pNext, ARRAY_SIZE(allowed_structs_VkDescriptorBufferBindingInfoEXT), allowed_structs_VkDescriptorBufferBindingInfoEXT, GeneratedVulkanHeaderVersion, "VUID-VkDescriptorBufferBindingInfoEXT-pNext-pNext", "VUID-VkDescriptorBufferBindingInfoEXT-sType-unique", false, true);
+
+            skip |= validate_flags("vkCmdBindDescriptorBuffersEXT", ParameterName("pBindingInfos[%i].usage", ParameterName::IndexVector{ bufferIndex }), "VkBufferUsageFlagBits", AllVkBufferUsageFlagBits, pBindingInfos[bufferIndex].usage, kRequiredFlags, "VUID-VkDescriptorBufferBindingInfoEXT-usage-parameter", "VUID-VkDescriptorBufferBindingInfoEXT-usage-requiredbitmask");
+        }
+    }
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipelineLayout                            layout,
+    uint32_t                                    firstSet,
+    uint32_t                                    setCount,
+    const uint32_t*                             pBufferIndices,
+    const VkDeviceSize*                         pOffsets) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkCmdSetDescriptorBufferOffsetsEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkCmdSetDescriptorBufferOffsetsEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkCmdSetDescriptorBufferOffsetsEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdSetDescriptorBufferOffsetsEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkCmdSetDescriptorBufferOffsetsEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_ranged_enum("vkCmdSetDescriptorBufferOffsetsEXT", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pipelineBindPoint-parameter");
+    skip |= validate_required_handle("vkCmdSetDescriptorBufferOffsetsEXT", "layout", layout);
+    skip |= validate_array("vkCmdSetDescriptorBufferOffsetsEXT", "setCount", "pBufferIndices", setCount, &pBufferIndices, true, true, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-setCount-arraylength", "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-parameter");
+    skip |= validate_array("vkCmdSetDescriptorBufferOffsetsEXT", "setCount", "pOffsets", setCount, &pOffsets, true, true, "VUID-vkCmdSetDescriptorBufferOffsetsEXT-setCount-arraylength", "VUID-vkCmdSetDescriptorBufferOffsetsEXT-pOffsets-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplersEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipelineLayout                            layout,
+    uint32_t                                    set) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_ranged_enum("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-pipelineBindPoint-parameter");
+    skip |= validate_required_handle("vkCmdBindDescriptorBufferEmbeddedSamplersEXT", "layout", layout);
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetBufferOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureDescriptorDataEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureDescriptorDataEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureDescriptorDataEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetBufferOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetBufferOpaqueCaptureDescriptorDataEXT", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT", pInfo, VK_STRUCTURE_TYPE_BUFFER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true, "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-pInfo-parameter", "VUID-VkBufferCaptureDescriptorDataInfoEXT-sType-sType");
+    if (pInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetBufferOpaqueCaptureDescriptorDataEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferCaptureDescriptorDataInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= validate_required_handle("vkGetBufferOpaqueCaptureDescriptorDataEXT", "pInfo->buffer", pInfo->buffer);
+    }
+    skip |= validate_required_pointer("vkGetBufferOpaqueCaptureDescriptorDataEXT", "pData", pData, "VUID-vkGetBufferOpaqueCaptureDescriptorDataEXT-pData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetImageOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageCaptureDescriptorDataInfoEXT*  pInfo,
+    void*                                       pData) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetImageOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetImageOpaqueCaptureDescriptorDataEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetImageOpaqueCaptureDescriptorDataEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetImageOpaqueCaptureDescriptorDataEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetImageOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetImageOpaqueCaptureDescriptorDataEXT", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT", pInfo, VK_STRUCTURE_TYPE_IMAGE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true, "VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-pInfo-parameter", "VUID-VkImageCaptureDescriptorDataInfoEXT-sType-sType");
+    if (pInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetImageOpaqueCaptureDescriptorDataEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageCaptureDescriptorDataInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= validate_required_handle("vkGetImageOpaqueCaptureDescriptorDataEXT", "pInfo->image", pInfo->image);
+    }
+    skip |= validate_required_pointer("vkGetImageOpaqueCaptureDescriptorDataEXT", "pData", pData, "VUID-vkGetImageOpaqueCaptureDescriptorDataEXT-pData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetImageViewOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetImageViewOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetImageViewOpaqueCaptureDescriptorDataEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetImageViewOpaqueCaptureDescriptorDataEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetImageViewOpaqueCaptureDescriptorDataEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetImageViewOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetImageViewOpaqueCaptureDescriptorDataEXT", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_EXT", pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true, "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-pInfo-parameter", "VUID-VkImageViewCaptureDescriptorDataInfoEXT-sType-sType");
+    if (pInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetImageViewOpaqueCaptureDescriptorDataEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewCaptureDescriptorDataInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= validate_required_handle("vkGetImageViewOpaqueCaptureDescriptorDataEXT", "pInfo->imageView", pInfo->imageView);
+    }
+    skip |= validate_required_pointer("vkGetImageViewOpaqueCaptureDescriptorDataEXT", "pData", pData, "VUID-vkGetImageViewOpaqueCaptureDescriptorDataEXT-pData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetSamplerOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData) const {
+    bool skip = false;
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetSamplerOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetSamplerOpaqueCaptureDescriptorDataEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetSamplerOpaqueCaptureDescriptorDataEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetSamplerOpaqueCaptureDescriptorDataEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetSamplerOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetSamplerOpaqueCaptureDescriptorDataEXT", "pInfo", "VK_STRUCTURE_TYPE_SAMPLER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT", pInfo, VK_STRUCTURE_TYPE_SAMPLER_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true, "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-pInfo-parameter", "VUID-VkSamplerCaptureDescriptorDataInfoEXT-sType-sType");
+    if (pInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetSamplerOpaqueCaptureDescriptorDataEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkSamplerCaptureDescriptorDataInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+
+        skip |= validate_required_handle("vkGetSamplerOpaqueCaptureDescriptorDataEXT", "pInfo->sampler", pInfo->sampler);
+    }
+    skip |= validate_required_pointer("vkGetSamplerOpaqueCaptureDescriptorDataEXT", "pData", pData, "VUID-vkGetSamplerOpaqueCaptureDescriptorDataEXT-pData-parameter");
+    return skip;
+}
+
+bool StatelessValidation::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData) const {
+    bool skip = false;
+    if (!(IsExtEnabled(device_extensions.vk_khr_acceleration_structure) || IsExtEnabled(device_extensions.vk_nv_ray_tracing))) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME " or " VK_NV_RAY_TRACING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_synchronization2)) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (!IsExtEnabled(device_extensions.vk_ext_descriptor_buffer)) skip |= OutputExtensionError("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    skip |= validate_struct_type("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", "pInfo", "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT", pInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CAPTURE_DESCRIPTOR_DATA_INFO_EXT, true, "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-pInfo-parameter", "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-sType-sType");
+    if (pInfo != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-pNext-pNext", kVUIDUndefined, false, true);
+    }
+    skip |= validate_required_pointer("vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT", "pData", pData, "VUID-vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT-pData-parameter");
+    return skip;
+}
+
+
 
 
 

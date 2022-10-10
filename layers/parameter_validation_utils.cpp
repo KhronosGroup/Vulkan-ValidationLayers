@@ -447,9 +447,11 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
     const std::string portability_extension_name("VK_KHR_portability_subset");
+    const std::string fragmentmask_extension_name("VK_AMD_shader_fragment_mask");
     const auto &dev_extensions = device_extensions_enumerated.at(physicalDevice);
     const bool portability_supported = dev_extensions.count(portability_extension_name) != 0;
     bool portability_requested = false;
+    bool fragmentmask_requested = false;
 
     for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         skip |=
@@ -459,6 +461,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                         pCreateInfo->ppEnabledExtensionNames[i]);
         if (portability_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
             portability_requested = true;
+        }
+        if (fragmentmask_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
+            fragmentmask_requested = true;
         }
     }
 
@@ -484,6 +489,15 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                  "vkCreateDevice(): VkDeviceCreateInfo->ppEnabledExtensionNames must not simultaneously include "
                                  "VK_KHR_maintenance1 and VK_AMD_negative_viewport_height.");
             }
+        }
+    }
+
+    {
+        const auto *descriptor_buffer_features = LvlFindInChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
+        if (descriptor_buffer_features && descriptor_buffer_features->descriptorBuffer && fragmentmask_requested) {
+            skip |= LogError(device, "VUID-VkDeviceCreateInfo-None-08095",
+                             "vkCreateDevice(): If the descriptorBuffer feature is enabled, ppEnabledExtensionNames must not "
+                             "contain VK_AMD_shader_fragment_mask.");
         }
     }
 
@@ -4165,6 +4179,18 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      "].descriptorType is VK_DESCRIPTOR_TYPE_MUTABLE_EXT.",
                                      i);
                 }
+
+                if (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT &&
+                    ((pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
+                     (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC))) {
+                    skip |=
+                        LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08000",
+                                 "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
+                                 "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, but pCreateInfo->pBindings[%" PRIu32
+                                 "].descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or "
+                                 "VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC.",
+                                 i);
+                }
             }
         }
 
@@ -4212,6 +4238,30 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                          "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
                          "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT, but "
                          "VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT::mutableDescriptorType feature is not enabled.");
+    }
+
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT) &&
+        !(pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08001",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT but not "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT.");
+    }
+
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) &&
+        (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT)) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08002",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT and "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT.");
+    }
+
+    if ((pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) &&
+        (pCreateInfo->flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE)) {
+        skip |= LogError(device, "VUID-VkDescriptorSetLayoutCreateInfo-flags-08003",
+                         "vkCreateDescriptorSetLayout(): pCreateInfo->flags contains both "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT and "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_VALVE.");
     }
 
     return skip;
@@ -6149,6 +6199,25 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
             skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-offset-03734",
                              "vkCreateAccelerationStructureKHR(): offset %" PRIu64 " must be a multiple of 256 bytes",
                              pCreateInfo->offset);
+        }
+
+        const auto *descriptor_buffer_features =
+            LvlFindInChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(device_createinfo_pnext);
+        if ((pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+            (!descriptor_buffer_features ||
+             (descriptor_buffer_features && descriptor_buffer_features->descriptorBufferCaptureReplay == VK_FALSE))) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-createFlags-08108",
+                             "vkCreateAccelerationStructureKHR(): the descriptorBufferCaptureReplay device feature is disabled: "
+                             "Acceleration structures cannot be created with "
+                             "the VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT.");
+        }
+
+        const auto *opaque_capture_descriptor_buffer = LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+        if (opaque_capture_descriptor_buffer &&
+            !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109",
+                             "vkCreateAccelerationStructureKHR(): VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain, but "
+                             "VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT is not set.");
         }
     }
     return skip;

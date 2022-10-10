@@ -266,6 +266,13 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                 } break;
 #endif // VK_USE_PLATFORM_METAL_EXT 
 
+            case VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_PUSH_DESCRIPTOR_BUFFER_HANDLE_EXT: {
+                    safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *safe_struct = reinterpret_cast<safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *>(cur_pnext);
+                    if (safe_struct->buffer) {
+                        safe_struct->buffer = layer_data->Unwrap(safe_struct->buffer);
+                    }
+                } break;
+
             case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT: {
                     safe_VkAccelerationStructureTrianglesOpacityMicromapEXT *safe_struct = reinterpret_cast<safe_VkAccelerationStructureTrianglesOpacityMicromapEXT *>(cur_pnext);
                     if (safe_struct->micromap) {
@@ -1601,7 +1608,85 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
 
 }
 
+void DispatchGetDescriptorEXT(
+    VkDevice                                    device,
+    const VkDescriptorGetInfoEXT*               pDescriptorInfo,
+    size_t                                      dataSize,
+    void*                                       pDescriptor)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
+    safe_VkDescriptorGetInfoEXT var_local_pDescriptorInfo;
+    safe_VkDescriptorGetInfoEXT *local_pDescriptorInfo = NULL;
+    {
+        if (pDescriptorInfo) {
+            local_pDescriptorInfo = &var_local_pDescriptorInfo;
+            local_pDescriptorInfo->initialize(pDescriptorInfo);
 
+            switch (pDescriptorInfo->type)
+            {
+                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                {
+                    if (local_pDescriptorInfo->data.pSampler)
+                        *(VkSampler*)local_pDescriptorInfo->data.pSampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
+
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                {
+                    if (local_pDescriptorInfo->data.pCombinedImageSampler) {
+                        if (pDescriptorInfo->data.pCombinedImageSampler->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pCombinedImageSampler->sampler = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->sampler);
+                        }
+                        if (pDescriptorInfo->data.pCombinedImageSampler->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pCombinedImageSampler->imageView = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                {
+                    if (local_pDescriptorInfo->data.pSampledImage) {
+                        if (pDescriptorInfo->data.pSampledImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pSampledImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pSampledImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pSampledImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                {
+                    if (local_pDescriptorInfo->data.pStorageImage) {
+                        if (pDescriptorInfo->data.pStorageImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pStorageImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pStorageImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pStorageImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                {
+                    if (local_pDescriptorInfo->data.pInputAttachmentImage) {
+                        if (pDescriptorInfo->data.pInputAttachmentImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pInputAttachmentImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pInputAttachmentImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pInputAttachmentImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+        }
+    }
+
+    layer_data->device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT*)local_pDescriptorInfo, dataSize, pDescriptor);
+}
 
 
 
@@ -9555,6 +9640,211 @@ void DispatchExportMetalObjectsEXT(
 
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
+
+void DispatchGetDescriptorSetLayoutSizeEXT(
+    VkDevice                                    device,
+    VkDescriptorSetLayout                       layout,
+    VkDeviceSize*                               pLayoutSizeInBytes)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
+    {
+        layout = layer_data->Unwrap(layout);
+    }
+    layer_data->device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
+
+}
+
+void DispatchGetDescriptorSetLayoutBindingOffsetEXT(
+    VkDevice                                    device,
+    VkDescriptorSetLayout                       layout,
+    uint32_t                                    binding,
+    VkDeviceSize*                               pOffset)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
+    {
+        layout = layer_data->Unwrap(layout);
+    }
+    layer_data->device_dispatch_table.GetDescriptorSetLayoutBindingOffsetEXT(device, layout, binding, pOffset);
+
+}
+
+// Skip vkGetDescriptorEXT dispatch, manually generated
+
+void DispatchCmdBindDescriptorBuffersEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    bufferCount,
+    const VkDescriptorBufferBindingInfoEXT*     pBindingInfos)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, pBindingInfos);
+    safe_VkDescriptorBufferBindingInfoEXT *local_pBindingInfos = NULL;
+    {
+        if (pBindingInfos) {
+            local_pBindingInfos = new safe_VkDescriptorBufferBindingInfoEXT[bufferCount];
+            for (uint32_t index0 = 0; index0 < bufferCount; ++index0) {
+                local_pBindingInfos[index0].initialize(&pBindingInfos[index0]);
+                WrapPnextChainHandles(layer_data, local_pBindingInfos[index0].pNext);
+            }
+        }
+    }
+    layer_data->device_dispatch_table.CmdBindDescriptorBuffersEXT(commandBuffer, bufferCount, (const VkDescriptorBufferBindingInfoEXT*)local_pBindingInfos);
+    if (local_pBindingInfos) {
+        delete[] local_pBindingInfos;
+    }
+}
+
+void DispatchCmdSetDescriptorBufferOffsetsEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipelineLayout                            layout,
+    uint32_t                                    firstSet,
+    uint32_t                                    setCount,
+    const uint32_t*                             pBufferIndices,
+    const VkDeviceSize*                         pOffsets)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices, pOffsets);
+    {
+        layout = layer_data->Unwrap(layout);
+    }
+    layer_data->device_dispatch_table.CmdSetDescriptorBufferOffsetsEXT(commandBuffer, pipelineBindPoint, layout, firstSet, setCount, pBufferIndices, pOffsets);
+
+}
+
+void DispatchCmdBindDescriptorBufferEmbeddedSamplersEXT(
+    VkCommandBuffer                             commandBuffer,
+    VkPipelineBindPoint                         pipelineBindPoint,
+    VkPipelineLayout                            layout,
+    uint32_t                                    set)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
+    {
+        layout = layer_data->Unwrap(layout);
+    }
+    layer_data->device_dispatch_table.CmdBindDescriptorBufferEmbeddedSamplersEXT(commandBuffer, pipelineBindPoint, layout, set);
+
+}
+
+VkResult DispatchGetBufferOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    safe_VkBufferCaptureDescriptorDataInfoEXT var_local_pInfo;
+    safe_VkBufferCaptureDescriptorDataInfoEXT *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->buffer) {
+                local_pInfo->buffer = layer_data->Unwrap(pInfo->buffer);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetBufferOpaqueCaptureDescriptorDataEXT(device, (const VkBufferCaptureDescriptorDataInfoEXT*)local_pInfo, pData);
+
+    return result;
+}
+
+VkResult DispatchGetImageOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageCaptureDescriptorDataInfoEXT*  pInfo,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetImageOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    safe_VkImageCaptureDescriptorDataInfoEXT var_local_pInfo;
+    safe_VkImageCaptureDescriptorDataInfoEXT *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->image) {
+                local_pInfo->image = layer_data->Unwrap(pInfo->image);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetImageOpaqueCaptureDescriptorDataEXT(device, (const VkImageCaptureDescriptorDataInfoEXT*)local_pInfo, pData);
+
+    return result;
+}
+
+VkResult DispatchGetImageViewOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetImageViewOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    safe_VkImageViewCaptureDescriptorDataInfoEXT var_local_pInfo;
+    safe_VkImageViewCaptureDescriptorDataInfoEXT *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->imageView) {
+                local_pInfo->imageView = layer_data->Unwrap(pInfo->imageView);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetImageViewOpaqueCaptureDescriptorDataEXT(device, (const VkImageViewCaptureDescriptorDataInfoEXT*)local_pInfo, pData);
+
+    return result;
+}
+
+VkResult DispatchGetSamplerOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetSamplerOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    safe_VkSamplerCaptureDescriptorDataInfoEXT var_local_pInfo;
+    safe_VkSamplerCaptureDescriptorDataInfoEXT *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->sampler) {
+                local_pInfo->sampler = layer_data->Unwrap(pInfo->sampler);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetSamplerOpaqueCaptureDescriptorDataEXT(device, (const VkSamplerCaptureDescriptorDataInfoEXT*)local_pInfo, pData);
+
+    return result;
+}
+
+VkResult DispatchGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, pInfo, pData);
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT var_local_pInfo;
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->accelerationStructure) {
+                local_pInfo->accelerationStructure = layer_data->Unwrap(pInfo->accelerationStructure);
+            }
+            if (pInfo->accelerationStructureNV) {
+                local_pInfo->accelerationStructureNV = layer_data->Unwrap(pInfo->accelerationStructureNV);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetAccelerationStructureOpaqueCaptureDescriptorDataEXT(device, (const VkAccelerationStructureCaptureDescriptorDataInfoEXT*)local_pInfo, pData);
+
+    return result;
+}
 
 void DispatchCmdSetFragmentShadingRateEnumNV(
     VkCommandBuffer                             commandBuffer,

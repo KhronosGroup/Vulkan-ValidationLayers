@@ -380,6 +380,18 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint
     return false;
 }
 
+void cvdescriptorset::DescriptorSetLayout::SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_) {
+    if (layout_size_in_bytes_) {
+        layout_size_in_bytes = std::make_unique<VkDeviceSize>(*layout_size_in_bytes_);
+    } else {
+        layout_size_in_bytes.reset();
+    }
+}
+
+const VkDeviceSize* cvdescriptorset::DescriptorSetLayout::GetLayoutSizeInBytes() const {
+    return layout_size_in_bytes.get();
+}
+
 // If our layout is compatible with rh_ds_layout, return true.
 bool cvdescriptorset::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_layout) const {
     bool compatible = (this == rh_ds_layout) || (GetLayoutDef() == rh_ds_layout->GetLayoutDef());

@@ -129,6 +129,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             # safe_VkAccelerationStructureGeometryKHR needs to know if we're doing a host or device build
             'VkAccelerationStructureGeometryKHR' :
                 ', const bool is_host, const VkAccelerationStructureBuildRangeInfoKHR *build_range_info',
+            # safe_VkDescriptorDataEXT needs to know what field of union is intialized
+            'VkDescriptorDataEXT' :
+                ', const VkDescriptorType type',
         }
 
         # Note that adding an API here requires that all three pre/post routines be added to inline_corechecks_instrumentation_source.
@@ -705,22 +708,31 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 if item.ifdef_protect is not None:
                     safe_struct_header += '#ifdef %s\n' % item.ifdef_protect
                 safe_struct_header += self.structOrUnion[item.name] + ' safe_%s {\n' % (item.name)
+                firstMemberInUnion = True
+                isUnion = self.structOrUnion[item.name] == 'union'
                 for member in item.members:
                     if member.type in self.structNames:
                         member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                         if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                             if member.ispointer:
                                 num_indirections = member.cdecl.count('*')
-                                safe_struct_header += '    safe_%s%s %s{};\n' % (member.type, '*' * num_indirections, member.name)
+                                initString = '{}' if ((not isUnion) or (isUnion and firstMemberInUnion)) else ''
+                                safe_struct_header += '    safe_%s%s %s%s;\n' % (member.type, '*' * num_indirections, member.name, initString)
+                                if isUnion and firstMemberInUnion:
+                                    firstMemberInUnion = False
                             else:
                                 safe_struct_header += '    safe_%s %s;\n' % (member.type, member.name)
                             continue
                     if member.len is not None and (self.TypeContainsObjectHandle(member.type, True) or self.TypeContainsObjectHandle(member.type, False)):
                             safe_struct_header += '    %s* %s{};\n' % (member.type, member.name)
-                    elif member.ispointer:
+                    elif member.ispointer and firstMemberInUnion:
                         safe_struct_header += '%s{};\n' % member.cdecl
+                        if isUnion and firstMemberInUnion:
+                            firstMemberInUnion = False
                     else:
                         safe_struct_header += '%s;\n' % member.cdecl
+                if (isUnion and item.name == 'VkDescriptorDataEXT'):
+                    safe_struct_header += '    char type_at_end[sizeof(%s)+sizeof(%s)];\n' % (item.name, 'VkDescriptorGetInfoEXT::type')
                 safe_struct_header += '    safe_%s(const %s* in_struct%s);\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
                 safe_struct_header += '    safe_%s(const safe_%s& copy_src);\n' % (item.name, item.name)
                 safe_struct_header += '    safe_%s& operator=(const safe_%s& copy_src);\n' % (item.name, item.name)
@@ -937,6 +949,8 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             struct.extend([ '    ExtEnabled vk_feature_version_1_2{kNotEnabled};'])
             struct.extend([ '    ExtEnabled vk_feature_version_1_3{kNotEnabled};'])
             struct.extend([ '    ExtEnabled %s{kNotEnabled};' % field_name[ext_name] for ext_name, info in extension_items])
+            # TODO Issue 4841 -  It looks like framework is not ready for two properties structs per extension (like VK_EXT_descriptor_buffer have). Workarounding.
+            struct.extend([ '    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};'])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
             # The map is contained within a static function member for portability reasons.
@@ -1521,6 +1535,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             construct_txt = ''      # Body of constuctor as well as body of initialize() func following init_func_txt
             destruct_txt = ''
 
+            custom_defeault_construct_txt = {
+                'VkDescriptorDataEXT' :
+                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
+                    '    *pType = VK_DESCRIPTOR_TYPE_MAX_ENUM;\n'
+            }
             custom_construct_txt = {
                 # VkWriteDescriptorSet is special case because pointers may be non-null but ignored
                 'VkWriteDescriptorSet' :
@@ -1752,7 +1771,30 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '           pointer_array[i] = new VkMicromapUsageEXT(*in_struct->ppUsageCounts[i]);\n'
                     '       }\n'
                     '       ppUsageCounts = pointer_array;\n'
-                    '   }\n'
+                    '   }\n',
+                'VkDescriptorDataEXT' :
+                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
+                    '\n'
+                    '    switch (type)\n'
+                    '    {\n'
+                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*in_struct->pSampler); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*in_struct->pCombinedImageSampler); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = in_struct->pSampledImage ? new VkDescriptorImageInfo(*in_struct->pSampledImage) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = in_struct->pStorageImage ? new VkDescriptorImageInfo(*in_struct->pStorageImage) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*in_struct->pInputAttachmentImage); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = in_struct->pUniformTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformTexelBuffer) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = in_struct->pStorageTexelBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageTexelBuffer) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = in_struct->pUniformBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pUniformBuffer) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = in_struct->pStorageBuffer ? new safe_VkDescriptorAddressInfoEXT(in_struct->pStorageBuffer) : nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = in_struct->accelerationStructure; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = in_struct->accelerationStructure; break;\n'
+                    '        default:                                            break;\n'
+                    '    }\n'
+                    '\n'
+                    '    *pType = type;\n',
             }
 
             custom_copy_txt = {
@@ -1877,6 +1919,30 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            as_geom_khr_host_alloc.insert(this, new ASGeomKHRExtraData(allocation, src_alloc->primitiveOffset, src_alloc->primitiveCount));\n'
                     '        }\n'
                     '    }\n',
+                'VkDescriptorDataEXT' :
+                    '    VkDescriptorType* pType = (VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
+                    '    VkDescriptorType type = *(VkDescriptorType*)&copy_src.type_at_end[sizeof(VkDescriptorDataEXT)];\n'
+                    '\n'
+                    '    switch (type)\n'
+                    '    {\n'
+                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    pSampler              = new VkSampler(*copy_src.pSampler); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     pCombinedImageSampler = new VkDescriptorImageInfo(*copy_src.pCombinedImageSampler); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              pSampledImage         = new VkDescriptorImageInfo(*copy_src.pSampledImage); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              pStorageImage         = new VkDescriptorImageInfo(*copy_src.pStorageImage); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           pInputAttachmentImage = new VkDescriptorImageInfo(*copy_src.pInputAttachmentImage); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       pUniformTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformTexelBuffer); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       pStorageTexelBuffer   = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageTexelBuffer); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             pUniformBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pUniformBuffer); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             pStorageBuffer        = new safe_VkDescriptorAddressInfoEXT(*copy_src.pStorageBuffer); break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = copy_src.accelerationStructure; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = copy_src.accelerationStructure; break;\n'
+                    '        default:                                            break;\n'
+                    '    }\n'
+                    '\n'
+                    '    *pType = type;\n',
             }
 
             custom_destruct_txt = {
@@ -1919,7 +1985,31 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '    }\n'
                     '    if (pNext)\n'
                     '        FreePnextChain(pNext);\n',
-           }
+                'VkDescriptorDataEXT' :
+                    '\n'
+                    '    VkDescriptorType& thisType = *(VkDescriptorType*)&type_at_end[sizeof(VkDescriptorDataEXT)];\n'
+                    '\n'
+                    '    switch (thisType)\n'
+                    '    {\n'
+                    '        case VK_DESCRIPTOR_TYPE_MAX_ENUM:                   break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:     break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLER:                    delete pSampler;              pSampler              = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:     delete pCombinedImageSampler; pCombinedImageSampler = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:              delete pSampledImage;         pSampledImage         = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:              delete pStorageImage;         pStorageImage         = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:           delete pInputAttachmentImage; pInputAttachmentImage = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:       delete pUniformTexelBuffer;   pUniformTexelBuffer   = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:       delete pStorageTexelBuffer;   pStorageTexelBuffer   = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:             delete pUniformBuffer;        pUniformBuffer        = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:             delete pStorageBuffer;        pStorageBuffer        = nullptr; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: accelerationStructure = 0ull; break;\n'
+                    '        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:  accelerationStructure = 0ull; break;\n'
+                    '        default:                                            break;\n'
+                    '    }\n'
+                    '\n'
+                    '    thisType = VK_DESCRIPTOR_TYPE_MAX_ENUM;\n',
+            }
             copy_pnext = ''
             copy_strings = ''
             for member in item.members:
@@ -2025,6 +2115,9 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     construct_txt += '        %s = new %s(in_struct->%s);\n' % (member.name, m_type, member.name)
                     destruct_txt += '    if (%s)\n' % member.name
                     destruct_txt += '        delete %s;\n' % member.name
+                elif 'safe_' in m_type and member.type == 'VkDescriptorDataEXT':
+                    init_list += '\n    %s(&in_struct->%s, in_struct->type),' % (member.name, member.name)
+                    init_func_txt += '    %s.initialize(&in_struct->%s, in_struct->type);\n' % (member.name, member.name)
                 elif 'safe_' in m_type:
                     init_list += '\n    %s(&in_struct->%s),' % (member.name, member.name)
                     init_func_txt += '    %s.initialize(&in_struct->%s);\n' % (member.name, member.name)
@@ -2042,7 +2135,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
 
-
             if item.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[item.name]
 
@@ -2057,14 +2149,19 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
 
             if (self.structOrUnion[item.name] == 'union'):
                 # Unions don't allow multiple members in the initialization list, so just call initialize
-                safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n    initialize(in_struct);\n}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, '')))
+                safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), construct_txt))
+                if (item.name == 'VkDescriptorDataEXT'):
+                    default_init_list = ' type_at_end {0},'
             else:
                 safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
             if '' != default_init_list:
                 default_init_list = " :%s" % (default_init_list[:-1])
-            safe_struct_body.append("\n%s::%s()%s\n{}" % (ss_name, ss_name, default_init_list))
+            default_init_body = '\n' + custom_defeault_construct_txt[item.name] if item.name in custom_defeault_construct_txt else ''
+            safe_struct_body.append("\n%s::%s()%s\n{%s}" % (ss_name, ss_name, default_init_list, default_init_body))
             # Create slight variation of init and construct txt for copy constructor that takes a copy_src object reference vs. struct ptr
             copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
+            if item.name == 'VkDescriptorGetInfoEXT':
+                copy_construct_init = copy_construct_init.replace(', copy_src.type', '')
             copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*copy_src.', construct_txt) # Pass object to copy constructors
             copy_construct_txt = copy_construct_txt.replace('in_struct->', 'copy_src.')              # Modify remaining struct refs for copy_src object
             if item.name in custom_copy_txt:

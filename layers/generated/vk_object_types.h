@@ -81,10 +81,10 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeAccelerationStructureNV = 41,
     kVulkanObjectTypePerformanceConfigurationINTEL = 42,
     kVulkanObjectTypeIndirectCommandsLayoutNV = 43,
-    kVulkanObjectTypeBufferCollectionFUCHSIA = 44,
-    kVulkanObjectTypeMicromapEXT = 45,
-    kVulkanObjectTypeOpticalFlowSessionNV = 46,
-    kVulkanObjectTypeAccelerationStructureKHR = 47,
+    kVulkanObjectTypeAccelerationStructureKHR = 44,
+    kVulkanObjectTypeBufferCollectionFUCHSIA = 45,
+    kVulkanObjectTypeMicromapEXT = 46,
+    kVulkanObjectTypeOpticalFlowSessionNV = 47,
     kVulkanObjectTypeMax = 48,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
@@ -138,10 +138,10 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkAccelerationStructureNV",
     "VkPerformanceConfigurationINTEL",
     "VkIndirectCommandsLayoutNV",
+    "VkAccelerationStructureKHR",
     "VkBufferCollectionFUCHSIA",
     "VkMicromapEXT",
     "VkOpticalFlowSessionNV",
-    "VkAccelerationStructureKHR",
 };
 
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version
@@ -198,6 +198,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,   // kVulkanObjectTypeAccelerationStructureNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
 #ifdef VK_USE_PLATFORM_FUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
 #else
@@ -205,7 +206,6 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
 #endif
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeMicromapEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeOpticalFlowSessionNV
-    VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
 };
 
 // Helper function to get Official Vulkan VkObjectType enum from the internal layers version
@@ -258,12 +258,12 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeAccelerationStructureNV: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV;
         case kVulkanObjectTypePerformanceConfigurationINTEL: return VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL;
         case kVulkanObjectTypeIndirectCommandsLayoutNV: return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV;
+        case kVulkanObjectTypeAccelerationStructureKHR: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
 #ifdef VK_USE_PLATFORM_FUCHSIA
         case kVulkanObjectTypeBufferCollectionFUCHSIA: return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
 #endif
         case kVulkanObjectTypeMicromapEXT: return VK_OBJECT_TYPE_MICROMAP_EXT;
         case kVulkanObjectTypeOpticalFlowSessionNV: return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
-        case kVulkanObjectTypeAccelerationStructureKHR: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
 };
@@ -318,12 +318,12 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV: return kVulkanObjectTypeAccelerationStructureNV;
         case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL: return kVulkanObjectTypePerformanceConfigurationINTEL;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV: return kVulkanObjectTypeIndirectCommandsLayoutNV;
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: return kVulkanObjectTypeAccelerationStructureKHR;
 #ifdef VK_USE_PLATFORM_FUCHSIA
         case VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA: return kVulkanObjectTypeBufferCollectionFUCHSIA;
 #endif
         case VK_OBJECT_TYPE_MICROMAP_EXT: return kVulkanObjectTypeMicromapEXT;
         case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV: return kVulkanObjectTypeOpticalFlowSessionNV;
-        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: return kVulkanObjectTypeAccelerationStructureKHR;
         default: return kVulkanObjectTypeUnknown;
     }
 };

@@ -10438,6 +10438,264 @@ struct safe_VkImportMetalSharedEventInfoEXT {
 };
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+struct safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 combinedImageSamplerDescriptorSingleArray;
+    VkBool32 bufferlessPushDescriptors;
+    VkBool32 allowSamplerImageViewPostSubmitCreation;
+    VkDeviceSize descriptorBufferOffsetAlignment;
+    uint32_t maxDescriptorBufferBindings;
+    uint32_t maxResourceDescriptorBufferBindings;
+    uint32_t maxSamplerDescriptorBufferBindings;
+    uint32_t maxEmbeddedImmutableSamplerBindings;
+    uint32_t maxEmbeddedImmutableSamplers;
+    size_t bufferCaptureReplayDescriptorDataSize;
+    size_t imageCaptureReplayDescriptorDataSize;
+    size_t imageViewCaptureReplayDescriptorDataSize;
+    size_t samplerCaptureReplayDescriptorDataSize;
+    size_t accelerationStructureCaptureReplayDescriptorDataSize;
+    size_t samplerDescriptorSize;
+    size_t combinedImageSamplerDescriptorSize;
+    size_t sampledImageDescriptorSize;
+    size_t storageImageDescriptorSize;
+    size_t uniformTexelBufferDescriptorSize;
+    size_t robustUniformTexelBufferDescriptorSize;
+    size_t storageTexelBufferDescriptorSize;
+    size_t robustStorageTexelBufferDescriptorSize;
+    size_t uniformBufferDescriptorSize;
+    size_t robustUniformBufferDescriptorSize;
+    size_t storageBufferDescriptorSize;
+    size_t robustStorageBufferDescriptorSize;
+    size_t inputAttachmentDescriptorSize;
+    size_t accelerationStructureDescriptorSize;
+    VkDeviceSize maxSamplerDescriptorBufferRange;
+    VkDeviceSize maxResourceDescriptorBufferRange;
+    VkDeviceSize samplerDescriptorBufferAddressSpaceSize;
+    VkDeviceSize resourceDescriptorBufferAddressSpaceSize;
+    VkDeviceSize descriptorBufferAddressSpaceSize;
+    safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(const VkPhysicalDeviceDescriptorBufferPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT(const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& operator=(const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT();
+    ~safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT();
+    void initialize(const VkPhysicalDeviceDescriptorBufferPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDescriptorBufferPropertiesEXT* copy_src);
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferPropertiesEXT *>(this); }
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    size_t combinedImageSamplerDensityMapDescriptorSize;
+    safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT(const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT(const safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT& operator=(const safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT();
+    ~safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT();
+    void initialize(const VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT* copy_src);
+    VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT *>(this); }
+    VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 descriptorBuffer;
+    VkBool32 descriptorBufferCaptureReplay;
+    VkBool32 descriptorBufferImageLayoutIgnored;
+    VkBool32 descriptorBufferPushDescriptors;
+    safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT(const VkPhysicalDeviceDescriptorBufferFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT(const safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& operator=(const safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT();
+    ~safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT();
+    void initialize(const VkPhysicalDeviceDescriptorBufferFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceDescriptorBufferFeaturesEXT* copy_src);
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferFeaturesEXT *>(this); }
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDescriptorBufferFeaturesEXT const *>(this); }
+};
+
+struct safe_VkDescriptorAddressInfoEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkDeviceAddress address;
+    VkDeviceSize range;
+    VkFormat format;
+    safe_VkDescriptorAddressInfoEXT(const VkDescriptorAddressInfoEXT* in_struct);
+    safe_VkDescriptorAddressInfoEXT(const safe_VkDescriptorAddressInfoEXT& copy_src);
+    safe_VkDescriptorAddressInfoEXT& operator=(const safe_VkDescriptorAddressInfoEXT& copy_src);
+    safe_VkDescriptorAddressInfoEXT();
+    ~safe_VkDescriptorAddressInfoEXT();
+    void initialize(const VkDescriptorAddressInfoEXT* in_struct);
+    void initialize(const safe_VkDescriptorAddressInfoEXT* copy_src);
+    VkDescriptorAddressInfoEXT *ptr() { return reinterpret_cast<VkDescriptorAddressInfoEXT *>(this); }
+    VkDescriptorAddressInfoEXT const *ptr() const { return reinterpret_cast<VkDescriptorAddressInfoEXT const *>(this); }
+};
+
+struct safe_VkDescriptorBufferBindingInfoEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkDeviceAddress address;
+    VkBufferUsageFlags usage;
+    safe_VkDescriptorBufferBindingInfoEXT(const VkDescriptorBufferBindingInfoEXT* in_struct);
+    safe_VkDescriptorBufferBindingInfoEXT(const safe_VkDescriptorBufferBindingInfoEXT& copy_src);
+    safe_VkDescriptorBufferBindingInfoEXT& operator=(const safe_VkDescriptorBufferBindingInfoEXT& copy_src);
+    safe_VkDescriptorBufferBindingInfoEXT();
+    ~safe_VkDescriptorBufferBindingInfoEXT();
+    void initialize(const VkDescriptorBufferBindingInfoEXT* in_struct);
+    void initialize(const safe_VkDescriptorBufferBindingInfoEXT* copy_src);
+    VkDescriptorBufferBindingInfoEXT *ptr() { return reinterpret_cast<VkDescriptorBufferBindingInfoEXT *>(this); }
+    VkDescriptorBufferBindingInfoEXT const *ptr() const { return reinterpret_cast<VkDescriptorBufferBindingInfoEXT const *>(this); }
+};
+
+struct safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBuffer buffer;
+    safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT(const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* in_struct);
+    safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT(const safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT& copy_src);
+    safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT& operator=(const safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT& copy_src);
+    safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT();
+    ~safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT();
+    void initialize(const VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* in_struct);
+    void initialize(const safe_VkDescriptorBufferBindingPushDescriptorBufferHandleEXT* copy_src);
+    VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *ptr() { return reinterpret_cast<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT *>(this); }
+    VkDescriptorBufferBindingPushDescriptorBufferHandleEXT const *ptr() const { return reinterpret_cast<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT const *>(this); }
+};
+
+union safe_VkDescriptorDataEXT {
+    const VkSampler* pSampler{};
+    const VkDescriptorImageInfo* pCombinedImageSampler;
+    const VkDescriptorImageInfo* pInputAttachmentImage;
+    const VkDescriptorImageInfo* pSampledImage;
+    const VkDescriptorImageInfo* pStorageImage;
+    safe_VkDescriptorAddressInfoEXT* pUniformTexelBuffer;
+    safe_VkDescriptorAddressInfoEXT* pStorageTexelBuffer;
+    safe_VkDescriptorAddressInfoEXT* pUniformBuffer;
+    safe_VkDescriptorAddressInfoEXT* pStorageBuffer;
+     VkDeviceAddress accelerationStructure;
+    char type_at_end[sizeof(VkDescriptorDataEXT)+sizeof(VkDescriptorGetInfoEXT::type)];
+    safe_VkDescriptorDataEXT(const VkDescriptorDataEXT* in_struct, const VkDescriptorType type);
+    safe_VkDescriptorDataEXT(const safe_VkDescriptorDataEXT& copy_src);
+    safe_VkDescriptorDataEXT& operator=(const safe_VkDescriptorDataEXT& copy_src);
+    safe_VkDescriptorDataEXT();
+    ~safe_VkDescriptorDataEXT();
+    void initialize(const VkDescriptorDataEXT* in_struct, const VkDescriptorType type);
+    void initialize(const safe_VkDescriptorDataEXT* copy_src);
+    VkDescriptorDataEXT *ptr() { return reinterpret_cast<VkDescriptorDataEXT *>(this); }
+    VkDescriptorDataEXT const *ptr() const { return reinterpret_cast<VkDescriptorDataEXT const *>(this); }
+};
+
+struct safe_VkDescriptorGetInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkDescriptorType type;
+    safe_VkDescriptorDataEXT data;
+    safe_VkDescriptorGetInfoEXT(const VkDescriptorGetInfoEXT* in_struct);
+    safe_VkDescriptorGetInfoEXT(const safe_VkDescriptorGetInfoEXT& copy_src);
+    safe_VkDescriptorGetInfoEXT& operator=(const safe_VkDescriptorGetInfoEXT& copy_src);
+    safe_VkDescriptorGetInfoEXT();
+    ~safe_VkDescriptorGetInfoEXT();
+    void initialize(const VkDescriptorGetInfoEXT* in_struct);
+    void initialize(const safe_VkDescriptorGetInfoEXT* copy_src);
+    VkDescriptorGetInfoEXT *ptr() { return reinterpret_cast<VkDescriptorGetInfoEXT *>(this); }
+    VkDescriptorGetInfoEXT const *ptr() const { return reinterpret_cast<VkDescriptorGetInfoEXT const *>(this); }
+};
+
+struct safe_VkBufferCaptureDescriptorDataInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkBuffer buffer;
+    safe_VkBufferCaptureDescriptorDataInfoEXT(const VkBufferCaptureDescriptorDataInfoEXT* in_struct);
+    safe_VkBufferCaptureDescriptorDataInfoEXT(const safe_VkBufferCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkBufferCaptureDescriptorDataInfoEXT& operator=(const safe_VkBufferCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkBufferCaptureDescriptorDataInfoEXT();
+    ~safe_VkBufferCaptureDescriptorDataInfoEXT();
+    void initialize(const VkBufferCaptureDescriptorDataInfoEXT* in_struct);
+    void initialize(const safe_VkBufferCaptureDescriptorDataInfoEXT* copy_src);
+    VkBufferCaptureDescriptorDataInfoEXT *ptr() { return reinterpret_cast<VkBufferCaptureDescriptorDataInfoEXT *>(this); }
+    VkBufferCaptureDescriptorDataInfoEXT const *ptr() const { return reinterpret_cast<VkBufferCaptureDescriptorDataInfoEXT const *>(this); }
+};
+
+struct safe_VkImageCaptureDescriptorDataInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkImage image;
+    safe_VkImageCaptureDescriptorDataInfoEXT(const VkImageCaptureDescriptorDataInfoEXT* in_struct);
+    safe_VkImageCaptureDescriptorDataInfoEXT(const safe_VkImageCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkImageCaptureDescriptorDataInfoEXT& operator=(const safe_VkImageCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkImageCaptureDescriptorDataInfoEXT();
+    ~safe_VkImageCaptureDescriptorDataInfoEXT();
+    void initialize(const VkImageCaptureDescriptorDataInfoEXT* in_struct);
+    void initialize(const safe_VkImageCaptureDescriptorDataInfoEXT* copy_src);
+    VkImageCaptureDescriptorDataInfoEXT *ptr() { return reinterpret_cast<VkImageCaptureDescriptorDataInfoEXT *>(this); }
+    VkImageCaptureDescriptorDataInfoEXT const *ptr() const { return reinterpret_cast<VkImageCaptureDescriptorDataInfoEXT const *>(this); }
+};
+
+struct safe_VkImageViewCaptureDescriptorDataInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkImageView imageView;
+    safe_VkImageViewCaptureDescriptorDataInfoEXT(const VkImageViewCaptureDescriptorDataInfoEXT* in_struct);
+    safe_VkImageViewCaptureDescriptorDataInfoEXT(const safe_VkImageViewCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkImageViewCaptureDescriptorDataInfoEXT& operator=(const safe_VkImageViewCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkImageViewCaptureDescriptorDataInfoEXT();
+    ~safe_VkImageViewCaptureDescriptorDataInfoEXT();
+    void initialize(const VkImageViewCaptureDescriptorDataInfoEXT* in_struct);
+    void initialize(const safe_VkImageViewCaptureDescriptorDataInfoEXT* copy_src);
+    VkImageViewCaptureDescriptorDataInfoEXT *ptr() { return reinterpret_cast<VkImageViewCaptureDescriptorDataInfoEXT *>(this); }
+    VkImageViewCaptureDescriptorDataInfoEXT const *ptr() const { return reinterpret_cast<VkImageViewCaptureDescriptorDataInfoEXT const *>(this); }
+};
+
+struct safe_VkSamplerCaptureDescriptorDataInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkSampler sampler;
+    safe_VkSamplerCaptureDescriptorDataInfoEXT(const VkSamplerCaptureDescriptorDataInfoEXT* in_struct);
+    safe_VkSamplerCaptureDescriptorDataInfoEXT(const safe_VkSamplerCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkSamplerCaptureDescriptorDataInfoEXT& operator=(const safe_VkSamplerCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkSamplerCaptureDescriptorDataInfoEXT();
+    ~safe_VkSamplerCaptureDescriptorDataInfoEXT();
+    void initialize(const VkSamplerCaptureDescriptorDataInfoEXT* in_struct);
+    void initialize(const safe_VkSamplerCaptureDescriptorDataInfoEXT* copy_src);
+    VkSamplerCaptureDescriptorDataInfoEXT *ptr() { return reinterpret_cast<VkSamplerCaptureDescriptorDataInfoEXT *>(this); }
+    VkSamplerCaptureDescriptorDataInfoEXT const *ptr() const { return reinterpret_cast<VkSamplerCaptureDescriptorDataInfoEXT const *>(this); }
+};
+
+struct safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    const void* opaqueCaptureDescriptorData{};
+    safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT(const VkOpaqueCaptureDescriptorDataCreateInfoEXT* in_struct);
+    safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT(const safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& copy_src);
+    safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& operator=(const safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT& copy_src);
+    safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT();
+    ~safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT();
+    void initialize(const VkOpaqueCaptureDescriptorDataCreateInfoEXT* in_struct);
+    void initialize(const safe_VkOpaqueCaptureDescriptorDataCreateInfoEXT* copy_src);
+    VkOpaqueCaptureDescriptorDataCreateInfoEXT *ptr() { return reinterpret_cast<VkOpaqueCaptureDescriptorDataCreateInfoEXT *>(this); }
+    VkOpaqueCaptureDescriptorDataCreateInfoEXT const *ptr() const { return reinterpret_cast<VkOpaqueCaptureDescriptorDataCreateInfoEXT const *>(this); }
+};
+
+struct safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT {
+    VkStructureType sType;
+    const void* pNext{};
+    VkAccelerationStructureKHR accelerationStructure;
+    VkAccelerationStructureNV accelerationStructureNV;
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT(const VkAccelerationStructureCaptureDescriptorDataInfoEXT* in_struct);
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT(const safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT& operator=(const safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT& copy_src);
+    safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT();
+    ~safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT();
+    void initialize(const VkAccelerationStructureCaptureDescriptorDataInfoEXT* in_struct);
+    void initialize(const safe_VkAccelerationStructureCaptureDescriptorDataInfoEXT* copy_src);
+    VkAccelerationStructureCaptureDescriptorDataInfoEXT *ptr() { return reinterpret_cast<VkAccelerationStructureCaptureDescriptorDataInfoEXT *>(this); }
+    VkAccelerationStructureCaptureDescriptorDataInfoEXT const *ptr() const { return reinterpret_cast<VkAccelerationStructureCaptureDescriptorDataInfoEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
