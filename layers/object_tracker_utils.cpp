@@ -1237,3 +1237,14 @@ bool ObjectLifetimes::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkEx
     return skip;
 }
 #endif  //  VK_USE_PLATFORM_METAL_EXT
+
+bool ObjectLifetimes::PreCallValidateGetDescriptorEXT(
+    VkDevice                                    device,
+    const VkDescriptorGetInfoEXT*               pDescriptorInfo,
+    size_t                                      dataSize,
+    void*                                       pDescriptor) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
+
+    return skip;
+}

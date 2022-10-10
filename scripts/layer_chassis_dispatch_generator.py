@@ -1466,7 +1466,85 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
 
 }
 
+void DispatchGetDescriptorEXT(
+    VkDevice                                    device,
+    const VkDescriptorGetInfoEXT*               pDescriptorInfo,
+    size_t                                      dataSize,
+    void*                                       pDescriptor)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorEXT(device, pDescriptorInfo, dataSize, pDescriptor);
+    safe_VkDescriptorGetInfoEXT var_local_pDescriptorInfo;
+    safe_VkDescriptorGetInfoEXT *local_pDescriptorInfo = NULL;
+    {
+        if (pDescriptorInfo) {
+            local_pDescriptorInfo = &var_local_pDescriptorInfo;
+            local_pDescriptorInfo->initialize(pDescriptorInfo);
 
+            switch (pDescriptorInfo->type)
+            {
+                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                {
+                    if (local_pDescriptorInfo->data.pSampler)
+                        *(VkSampler*)local_pDescriptorInfo->data.pSampler = layer_data->Unwrap(*pDescriptorInfo->data.pSampler);
+
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                {
+                    if (local_pDescriptorInfo->data.pCombinedImageSampler) {
+                        if (pDescriptorInfo->data.pCombinedImageSampler->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pCombinedImageSampler->sampler = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->sampler);
+                        }
+                        if (pDescriptorInfo->data.pCombinedImageSampler->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pCombinedImageSampler->imageView = layer_data->Unwrap(pDescriptorInfo->data.pCombinedImageSampler->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                {
+                    if (local_pDescriptorInfo->data.pSampledImage) {
+                        if (pDescriptorInfo->data.pSampledImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pSampledImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pSampledImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pSampledImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pSampledImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                {
+                    if (local_pDescriptorInfo->data.pStorageImage) {
+                        if (pDescriptorInfo->data.pStorageImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pStorageImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pStorageImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pStorageImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pStorageImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                {
+                    if (local_pDescriptorInfo->data.pInputAttachmentImage) {
+                        if (pDescriptorInfo->data.pInputAttachmentImage->sampler) {
+                            *(VkSampler*)&local_pDescriptorInfo->data.pInputAttachmentImage->sampler = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->sampler);
+                        }
+                        if (pDescriptorInfo->data.pInputAttachmentImage->imageView) {
+                            *(VkImageView*)&local_pDescriptorInfo->data.pInputAttachmentImage->imageView = layer_data->Unwrap(pDescriptorInfo->data.pInputAttachmentImage->imageView);
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+        }
+    }
+
+    layer_data->device_dispatch_table.GetDescriptorEXT(device, (const VkDescriptorGetInfoEXT*)local_pDescriptorInfo, dataSize, pDescriptor);
+}
 """
     # Separate generated text for source and headers
     ALL_SECTIONS = ['source_file', 'header_file']
@@ -1530,6 +1608,7 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
             'vkSetPrivateData',
             'vkGetPrivateData',
             'vkBuildAccelerationStructuresKHR',
+            'vkGetDescriptorEXT',
             # These are for special-casing the pInheritanceInfo issue (must be ignored for primary CBs)
             'vkAllocateCommandBuffers',
             'vkFreeCommandBuffers',

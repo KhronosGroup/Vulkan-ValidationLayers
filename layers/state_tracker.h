@@ -1357,6 +1357,14 @@ class ValidationStateTracker : public ValidationObject {
                                       VkFence fence) override;
     void PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence) override;
 
+    void PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
+                                                     VkDeviceSize* pLayoutSizeInBytes) override;
+    void PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                       const uint32_t* pBufferIndices, const VkDeviceSize* pOffsets) override;
+    void PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
+                                                  const VkDescriptorBufferBindingInfoEXT* pBindingInfos) override;
+
     void RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo* pInfo, VkDeviceAddress address);
     void PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo* pInfo,
                                               VkDeviceAddress address) override;
@@ -1451,6 +1459,8 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
         VkPhysicalDeviceSubgroupProperties subgroup_properties;
         VkPhysicalDeviceExtendedDynamicState3PropertiesEXT extended_dynamic_state3_props;
+        VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
+        VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
@@ -1473,6 +1483,9 @@ class ValidationStateTracker : public ValidationObject {
     mutable std::shared_mutex buffer_address_lock_;
 
     vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
+    std::atomic<VkDeviceSize> descriptorBufferAddressSpaceSize = {0u};
+    std::atomic<VkDeviceSize> resourceDescriptorBufferAddressSpaceSize = {0u};
+    std::atomic<VkDeviceSize> samplerDescriptorBufferAddressSpaceSize = {0u};
 
   private:
     VALSTATETRACK_MAP_AND_TRAITS(VkQueue, QUEUE_STATE, queue_map_)

@@ -106,6 +106,7 @@ struct InstanceExtensions {
     ExtEnabled vk_nn_vi_surface{kNotEnabled};
     ExtEnabled vk_nv_external_memory_capabilities{kNotEnabled};
     ExtEnabled vk_qnx_screen_surface{kNotEnabled};
+    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};
 
     struct InstanceReq {
         const ExtEnabled InstanceExtensions::* enabled;
@@ -409,6 +410,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_depth_clip_control{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
+    ExtEnabled vk_ext_descriptor_buffer{kNotEnabled};
     ExtEnabled vk_ext_descriptor_indexing{kNotEnabled};
     ExtEnabled vk_ext_device_address_binding_report{kNotEnabled};
     ExtEnabled vk_ext_device_fault{kNotEnabled};
@@ -641,6 +643,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_sec_amigo_profiling{kNotEnabled};
     ExtEnabled vk_valve_descriptor_set_host_mapping{kNotEnabled};
     ExtEnabled vk_valve_mutable_descriptor_type{kNotEnabled};
+    ExtEnabled vk_ext_descriptor_buffer_density{kNotEnabled};
 
     struct DeviceReq {
         const ExtEnabled DeviceExtensions::* enabled;
@@ -724,6 +727,11 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_enable, {})},
             {VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_range_unrestricted, {})},
+            {VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_descriptor_buffer, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_ext_descriptor_indexing, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}}})},
             {VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_descriptor_indexing, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_maintenance3, VK_KHR_MAINTENANCE_3_EXTENSION_NAME}}})},
@@ -1413,6 +1421,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
+    VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
     VK_EXT_DEVICE_ADDRESS_BINDING_REPORT_EXTENSION_NAME,
     VK_EXT_DEVICE_FAULT_EXTENSION_NAME,

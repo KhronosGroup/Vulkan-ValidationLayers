@@ -306,12 +306,15 @@ class DescriptorSetLayout : public BASE_NODE {
     bool IsVariableDescriptorCount(uint32_t binding) const {
         return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
     }
+    void SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_);
+    const VkDeviceSize* GetLayoutSizeInBytes() const;
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
 
   private:
     DescriptorSetLayoutId layout_id_;
+    std::unique_ptr<VkDeviceSize> layout_size_in_bytes;
 };
 
 /*

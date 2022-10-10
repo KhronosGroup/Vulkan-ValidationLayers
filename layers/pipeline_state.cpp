@@ -537,8 +537,9 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       active_shaders(GetActiveShaders(stage_state)),
       topology_at_rasterizer(GetTopologyAtRasterizer(stage_state, create_info.graphics.pInputAssemblyState)),
       uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
-      csm_states(csm_states){
+      csm_states(csm_states) {
     const auto link_info = LvlFindInChain<VkPipelineLibraryCreateInfoKHR>(PNext());
     if (link_info) {
         // accumulate dynamic state
@@ -607,6 +608,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       active_shaders(GetActiveShaders(stage_state)),
       topology_at_rasterizer{},
       uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      descriptor_buffer_mode((create_info.compute.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
       csm_states(csm_states),
       merged_graphics_layout(layout) {
@@ -622,6 +624,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       active_shaders(GetActiveShaders(stage_state)),
       topology_at_rasterizer{},
       uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      descriptor_buffer_mode((create_info.raytracing.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {
@@ -639,6 +642,7 @@ PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const V
       active_shaders(GetActiveShaders(stage_state)),
       topology_at_rasterizer{},
       uses_shader_module_id(UsesShaderModuleId(stage_state)),
+      descriptor_buffer_mode((create_info.graphics.flags & VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(PNext(), stage_state)),
       csm_states(csm_states),
       merged_graphics_layout(std::move(layout)) {

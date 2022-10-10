@@ -1605,6 +1605,39 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     bool result = false;
 
+    if (pipe->descriptor_buffer_mode) {
+        if (!last_bound.per_set.empty()) {
+            bool non_push = false;
+            for (const auto &ds : last_bound.per_set) {
+                non_push = ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor();
+
+                if (non_push) break;
+            }
+
+            if (non_push)
+                result |= LogError(pipe->pipeline(), vuid.descriptor_buffer_bit_not_set,
+                                   "%s: If the descriptors used by the VkPipeline bound to the pipeline bind point were specified via "
+                                   "vkCmdBindDescriptorSets, the bound VkPipeline must have been created without "
+                                   "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT", function);
+        }
+    } else {
+        if (cb_node->descriptor_buffer_bindings.size() > 0)
+            result |= LogError(pipe->pipeline(), vuid.descriptor_buffer_set_offset_missing,
+                               "%s: If the descriptors used by the VkPipeline bound to the pipeline bind point were specified via "
+                               "vkCmdSetDescriptorBufferOffsetsEXT, the bound VkPipeline must have been created with "
+                               "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT", function);
+    }
+
+    if (pipe->descriptor_buffer_mode) {
+        if (!cb_node->descriptor_buffer_bindings.empty()) {
+            // TODO Issue 4832 - VUID 08116 Descriptors in bound descriptor buffers, specified via vkCmdSetDescriptorBufferOffsetsEXT, must be valid
+            // if they are statically used by the VkPipeline bound to the pipeline bind point used by this command and the bound
+            // VkPipeline was created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT
+            // result |= LogError(pipe->pipeline(), vuid.descriptor_buffer_set_offset_dynamic,
+            //                    "TODO: Layers need to have access to content of buffers. GPU AV assistance needed.");
+        }
+    }
+
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         result |= ValidateDrawDynamicState(cb_node, pipe, cmd_type);
         result |= ValidatePipelineDrawtimeState(last_bound, cb_node, cmd_type, pipe);
@@ -1639,6 +1672,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
             // Check if all input attachments are bound
             // VUID-vkCmdDraw-None-02686
+            if (!pipe->descriptor_buffer_mode)
             {
                 const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
                 std::unordered_map<VkImageView, uint32_t> subpass_input_views(subpass.inputAttachmentCount);
@@ -1703,91 +1737,93 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     auto const &pipeline_layout = pipe->PipelineLayoutState();
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
-    if (pipe->active_slots.size() > 0 && !IsBoundSetCompat(pipe->max_active_slot, last_bound, pipeline_layout.get())) {
-        LogObjectList objlist(pipe->pipeline());
-        const auto layouts = pipe->PipelineLayoutStateUnion();
-        std::ostringstream pipe_layouts_log;
-        if (layouts.size() > 1) {
-            pipe_layouts_log << "a union of layouts [ ";
-            for (const auto &layout : layouts) {
-                objlist.add(layout->layout());
-                pipe_layouts_log << report_data->FormatHandle(layout->layout()) << " ";
+    if (!pipe->descriptor_buffer_mode) {
+        if (pipe->active_slots.size() > 0 && !IsBoundSetCompat(pipe->max_active_slot, last_bound, pipeline_layout.get())) {
+            LogObjectList objlist(pipe->pipeline());
+            const auto layouts = pipe->PipelineLayoutStateUnion();
+            std::ostringstream pipe_layouts_log;
+            if (layouts.size() > 1) {
+                pipe_layouts_log << "a union of layouts [ ";
+                for (const auto &layout : layouts) {
+                    objlist.add(layout->layout());
+                    pipe_layouts_log << report_data->FormatHandle(layout->layout()) << " ";
+                }
+                pipe_layouts_log << "]";
+            } else {
+                pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
             }
-            pipe_layouts_log << "]";
+            objlist.add(last_bound.pipeline_layout);
+            result |= LogError(objlist, vuid.compatible_pipeline,
+                               "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
+                               ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
+                               function, report_data->FormatHandle(pipe->pipeline()).c_str(), pipe_layouts_log.str().c_str(),
+                               pipe->max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
         } else {
-            pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
-        }
-        objlist.add(last_bound.pipeline_layout);
-        result |= LogError(objlist, vuid.compatible_pipeline,
-                           "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
-                           ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
-                           function, report_data->FormatHandle(pipe->pipeline()).c_str(), pipe_layouts_log.str().c_str(),
-                           pipe->max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
-    } else {
-        // if the bound set is not copmatible, the rest will just be extra redundant errors
-        for (const auto &set_binding_pair : pipe->active_slots) {
-            uint32_t set_index = set_binding_pair.first;
-            const auto set_info = last_bound.per_set[set_index];
-            if (!set_info.bound_descriptor_set) {
-                result |= LogError(cb_node->commandBuffer(), vuid.compatible_pipeline,
-                                   "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
-                                   report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
-            } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
-                // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-                VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
-                LogObjectList objlist(set_handle);
-                objlist.add(pipeline_layout->layout());
-                result |= LogError(objlist, vuid.compatible_pipeline,
-                                   "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
-                                   report_data->FormatHandle(set_handle).c_str(), set_index,
-                                   report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
-            } else {  // Valid set is bound and layout compatible, validate that it's updated
-                // Pull the set node
-                const auto *descriptor_set = set_info.bound_descriptor_set.get();
-                // Validate the draw-time state for this descriptor set
-                std::string err_str;
-                // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
-                // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
-                // Here, the currently bound pipeline determines whether an image validation check is redundant...
-                // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
-                cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
-                const auto &binding_req_map = reduced_map.FilteredMap(*cb_node, *pipe);
+            // if the bound set is not copmatible, the rest will just be extra redundant errors
+            for (const auto &set_binding_pair : pipe->active_slots) {
+                uint32_t set_index = set_binding_pair.first;
+                const auto set_info = last_bound.per_set[set_index];
+                if (!set_info.bound_descriptor_set) {
+                    result |= LogError(cb_node->commandBuffer(), vuid.compatible_pipeline,
+                                       "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
+                                       report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
+                } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
+                    // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
+                    VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
+                    LogObjectList objlist(set_handle);
+                    objlist.add(pipeline_layout->layout());
+                    result |= LogError(objlist, vuid.compatible_pipeline,
+                                       "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
+                                       report_data->FormatHandle(set_handle).c_str(), set_index,
+                                       report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
+                } else {  // Valid set is bound and layout compatible, validate that it's updated
+                    // Pull the set node
+                    const auto *descriptor_set = set_info.bound_descriptor_set.get();
+                    // Validate the draw-time state for this descriptor set
+                    std::string err_str;
+                    // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
+                    // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
+                    // Here, the currently bound pipeline determines whether an image validation check is redundant...
+                    // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
+                    cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
+                    const auto &binding_req_map = reduced_map.FilteredMap(*cb_node, *pipe);
 
-                // We can skip validating the descriptor set if "nothing" has changed since the last validation.
-                // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
-                // any dynamic descriptors, always revalidate rather than caching the values. We currently only
-                // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
-                // binding_req_map which could potentially be expensive.
-                bool descriptor_set_changed =
-                    !reduced_map.IsManyDescriptors() ||
-                    // Revalidate each time if the set has dynamic offsets
-                    set_info.dynamicOffsets.size() > 0 ||
-                    // Revalidate if descriptor set (or contents) has changed
-                    set_info.validated_set != descriptor_set ||
-                    set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                    (!disabled[image_layout_validation] &&
-                     set_info.validated_set_image_layout_change_count != cb_node->image_layout_change_count);
-                bool need_validate =
-                    descriptor_set_changed ||
-                    // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
-                    !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
-                                   binding_req_map.begin(), binding_req_map.end());
+                    // We can skip validating the descriptor set if "nothing" has changed since the last validation.
+                    // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
+                    // any dynamic descriptors, always revalidate rather than caching the values. We currently only
+                    // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
+                    // binding_req_map which could potentially be expensive.
+                    bool descriptor_set_changed =
+                        !reduced_map.IsManyDescriptors() ||
+                        // Revalidate each time if the set has dynamic offsets
+                        set_info.dynamicOffsets.size() > 0 ||
+                        // Revalidate if descriptor set (or contents) has changed
+                        set_info.validated_set != descriptor_set ||
+                        set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                        (!disabled[image_layout_validation] &&
+                         set_info.validated_set_image_layout_change_count != cb_node->image_layout_change_count);
+                    bool need_validate =
+                        descriptor_set_changed ||
+                        // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
+                        !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
+                                       binding_req_map.begin(), binding_req_map.end());
 
-                if (need_validate) {
-                    if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
-                        // Only validate the bindings that haven't already been validated
-                        BindingReqMap delta_reqs;
-                        std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                            set_info.validated_set_binding_req_map.begin(),
-                                            set_info.validated_set_binding_req_map.end(),
-                                            layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
-                        result |=
-                            ValidateDrawState(descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_node,
-                                              cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
-                    } else {
-                        result |=
-                            ValidateDrawState(descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_node,
-                                              cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
+                    if (need_validate) {
+                        if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
+                            // Only validate the bindings that haven't already been validated
+                            BindingReqMap delta_reqs;
+                            std::set_difference(binding_req_map.begin(), binding_req_map.end(),
+                                                set_info.validated_set_binding_req_map.begin(),
+                                                set_info.validated_set_binding_req_map.end(),
+                                                layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                            result |=
+                                ValidateDrawState(descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_node,
+                                                  cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
+                        } else {
+                            result |=
+                                ValidateDrawState(descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_node,
+                                                  cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
+                        }
                     }
                 }
             }
@@ -3863,6 +3899,9 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
             const bool has_retain_link_time_opt =
                 (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
+
+            unsigned int descriptor_buffer_library_count = 0;
+
             for (decltype(link_info->libraryCount) i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
@@ -3945,7 +3984,18 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                             }
                         }
                     }
+                    if (lib->descriptor_buffer_mode) {
+                        ++descriptor_buffer_library_count;
+                    }
                 }
+            }
+
+            if ((descriptor_buffer_library_count != 0) && (link_info->libraryCount != descriptor_buffer_library_count)) {
+                skip |= LogError(device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096",
+                                 "vkCreateGraphicsPipelines(): All or none of the elements of pCreateInfo[%" PRIu32
+                                 "].pLibraryInfo->pLibraries must be created "
+                                 "with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT.",
+                                 pipe_index);
             }
         }
 
@@ -7002,6 +7052,18 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  api_name);
             }
 
+            if (enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay &&
+                (buffer_state->createInfo.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
+                const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-descriptorBufferCaptureReplay-08112"
+                                                     : "VUID-vkBindBufferMemory-descriptorBufferCaptureReplay-08112";
+                skip |= LogError(
+                    buffer, vuid,
+                    "%s: If buffer was created with the VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
+                    "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
+                    api_name);
+            }
+
             // Validate export memory handles
             if ((mem_info->export_handle_type_flags != 0) &&
                 ((mem_info->export_handle_type_flags & buffer_state->external_memory_handle) == 0)) {
@@ -7728,6 +7790,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                  VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR},
                 {"VUID-VkRayTracingPipelineCreateInfoKHR-flags-04723", VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR},
             };
+            unsigned int descriptor_buffer_library_count = 0;
             for (uint32_t j = 0; j < create_info.pLibraryInfo->libraryCount; ++j) {
                 const auto lib = Get<PIPELINE_STATE>(create_info.pLibraryInfo->pLibraries[j]);
                 if ((lib->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -7735,6 +7798,9 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                         device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381",
                                      "vkCreateRayTracingPipelinesKHR(): pCreateInfo[%" PRIu32 "].pLibraryInfo->pLibraries[%" PRIu32
                                      "] was not created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.", i, j);
+                }
+                if (lib->descriptor_buffer_mode) {
+                    ++descriptor_buffer_library_count;
                 }
                 for (const auto &pair : vuid_map) {
                     if (pipeline->GetPipelineCreateFlags() & pair.second) {
@@ -7748,6 +7814,14 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                         }
                     }
                 }
+            }
+            if ((descriptor_buffer_library_count != 0) &&
+                (create_info.pLibraryInfo->libraryCount != descriptor_buffer_library_count)) {
+                skip |= LogError(device, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096",
+                                 "vkCreateRayTracingPipelinesKHR(): All or none of the elements of pCreateInfo[%" PRIu32
+                                 "].pLibraryInfo->pLibraries must be created "
+                                 "with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT.",
+                                 i);
             }
         }
     }
@@ -7973,6 +8047,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts(pCreateInfo->setLayoutCount, nullptr);
     unsigned int push_descriptor_set_count = 0;
+    unsigned int descriptor_buffer_set_count = 0;
+    unsigned int valid_set_count = 0;
     {
         for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
             set_layouts[i] = Get<cvdescriptorset::DescriptorSetLayout>(pCreateInfo->pSetLayouts[i]);
@@ -7984,8 +8060,18 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
                                      "] was created with VK_DESCRIPTOR_SET_LAYOUT_CREATE_HOST_ONLY_POOL_BIT_EXT bit.",
                                      i);
                 }
+                ++valid_set_count;
+                if (set_layouts[i]->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                    ++descriptor_buffer_set_count;
+                }
             }
         }
+    }
+
+    if ((descriptor_buffer_set_count != 0) && (valid_set_count != descriptor_buffer_set_count)) {
+        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008",
+                         "vkCreatePipelineLayout() All sets must be created with "
+                         "VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT or none of them.");
     }
 
     if (push_descriptor_set_count > 1) {
@@ -17200,6 +17286,19 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     }
                 }
 
+                auto chained_flags_struct = LvlFindInChain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+                if (enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay &&
+                    (image_state->createInfo.flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+                    (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
+                    const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-descriptorBufferCaptureReplay-08113"
+                                                         : "VUID-vkBindImageMemory-descriptorBufferCaptureReplay-08113";
+                    skip |= LogError(
+                        bind_info.image, vuid,
+                        "%s: If image was created with the VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT bit set, "
+                        "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.",
+                        api_name);
+                }
+
                 // Validate export memory handles
                 if ((mem_info->export_handle_type_flags != 0) &&
                     ((mem_info->export_handle_type_flags & image_state->external_memory_handle) == 0)) {
@@ -19660,6 +19759,22 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                          "vkCreateSampler(): flags contains VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT but the "
                          "VK_EXT_non_seamless_cube_map feature has not been enabled.");
     }
+
+    if ((pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
+        !enabled_features.descriptor_buffer_features.descriptorBufferCaptureReplay) {
+        skip |= LogError(
+            device, "VUID-VkSamplerCreateInfo-flags-08110",
+            "vkCreateSampler(): the descriptorBufferCaptureReplay device feature is disabled: Samplers cannot be created with "
+            "the VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT.");
+    }
+
+    auto opaque_capture_descriptor_buffer = LvlFindInChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
+    if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
+        skip |= LogError(device, "VUID-VkSamplerCreateInfo-pNext-08111",
+                         "vkCreateSampler(): VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain, but "
+                         "VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT is not set.");
+    }
+
     return skip;
 }
 

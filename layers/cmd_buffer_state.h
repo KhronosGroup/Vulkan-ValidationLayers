@@ -311,6 +311,13 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
     uint32_t dynamicColorWriteEnableAttachmentCount{0};
+    std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
+    struct DescriptorBufferBinding {
+        uint32_t index;
+        VkDeviceSize offset;
+    };
+    std::vector<DescriptorBufferBinding> descriptor_buffer_bindings;
+
     mutable std::shared_mutex lock;
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }

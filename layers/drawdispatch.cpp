@@ -150,6 +150,10 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDraw-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDraw-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDraw-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDraw-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDraw-None-08117";
     }
 };
 
@@ -260,6 +264,10 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiEXT-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMultiEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMultiEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMultiEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMultiEXT-None-08117";
     }
 };
 
@@ -371,6 +379,10 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexed-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexed-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexed-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndexed-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexed-None-08117";
     }
 };
 
@@ -482,6 +494,10 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiIndexedEXT-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMultiIndexedEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMultiIndexedEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMultiIndexedEXT-None-08117";
     }
 };
 
@@ -594,6 +610,10 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirect-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirect-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirect-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndirect-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirect-None-08117";
     }
 };
 
@@ -707,6 +727,10 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirect-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexedIndirect-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexedIndirect-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndexedIndirect-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexedIndirect-None-08117";
     }
 };
 
@@ -736,6 +760,10 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDispatch-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDispatch-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDispatch-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDispatch-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatch-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDispatch-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatch-None-08117";
     }
 };
 
@@ -767,6 +795,10 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDispatchIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDispatchIndirect-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDispatchIndirect-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDispatchIndirect-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatchIndirect-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDispatchIndirect-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatchIndirect-None-08117";
     }
 };
 
@@ -882,6 +914,10 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectCount-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirectCount-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirectCount-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndirectCount-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirectCount-None-08117";
     }
 };
 
@@ -998,6 +1034,10 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirectCount-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexedIndirectCount-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndexedIndirectCount-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexedIndirectCount-None-08117";
     }
 };
 
@@ -1027,6 +1067,10 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdTraceRaysNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdTraceRaysNV-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdTraceRaysNV-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysNV-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysNV-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdTraceRaysNV-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysNV-None-08117";
     }
 };
 
@@ -1056,6 +1100,10 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdTraceRaysKHR-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdTraceRaysKHR-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysKHR-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysKHR-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdTraceRaysKHR-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysKHR-None-08117";
     }
 };
 
@@ -1087,6 +1135,10 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdTraceRaysIndirectKHR-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdTraceRaysIndirectKHR-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysIndirectKHR-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdTraceRaysIndirectKHR-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysIndirectKHR-None-08117";
     }
 };
 
@@ -1118,6 +1170,10 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdTraceRaysIndirect2KHR-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdTraceRaysIndirect2KHR-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysIndirect2KHR-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdTraceRaysIndirect2KHR-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysIndirect2KHR-None-08117";
     }
 };
 
@@ -1220,6 +1276,10 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksNV-stage-06480";
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksNV-MeshNV-07080";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksNV-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksNV-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksNV-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksNV-None-08117";
     }
 };
 
@@ -1325,7 +1385,10 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480";
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081";
-        
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08117";
     }
 };
 
@@ -1434,6 +1497,10 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480";
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08117";
     }
 };
 
@@ -1441,6 +1508,10 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksEXT() : DrawDispatchVuid() {
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksEXT-stage-06480";
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksEXT-None-08117";
     }
 };
 
@@ -1448,6 +1519,10 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectEXT() : DrawDispatchVuid() {
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-06480";
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08117";
     }
 };
 
@@ -1457,6 +1532,10 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         missing_mesh_shader_stages         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100";
         indirect_count_contiguous_memory   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714";
         indirect_count_buffer_bit          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08117";
     }
 };
 
@@ -1569,6 +1648,10 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         primitives_generated               = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectByteCountEXT-stage-06481";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDrawIndirectByteCountEXT-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirectByteCountEXT-None-08117";
     }
 };
 
@@ -1598,6 +1681,10 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDispatchBase-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDispatchBase-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDispatchBase-None-06479";
+        descriptor_buffer_bit_set          = "VUID-vkCmdDispatchBase-None-08114";
+        descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatchBase-None-08115";
+        descriptor_buffer_set_offset_dynamic = "VUID-vkCmdDispatchBase-None-08116";
+        descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatchBase-None-08117";
     }
 };
 

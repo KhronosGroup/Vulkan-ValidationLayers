@@ -212,6 +212,7 @@ class PIPELINE_STATE : public BASE_NODE {
     const uint32_t active_shaders = 0;
     const VkPrimitiveTopology topology_at_rasterizer;
     const bool uses_shader_module_id;
+    const bool descriptor_buffer_mode = false;
     const bool uses_pipeline_robustness;
 
     CreateShaderModuleStates *csm_states = nullptr;

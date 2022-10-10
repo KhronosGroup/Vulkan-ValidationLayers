@@ -38,6 +38,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor_features;
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image_features;
     VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features;
+    VkPhysicalDeviceDescriptorBufferFeaturesEXT descriptor_buffer_features;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
     VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext_features;

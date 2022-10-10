@@ -875,6 +875,19 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_EXT_descriptor_buffer extension commands
+    PFN_vkGetDescriptorSetLayoutSizeEXT GetDescriptorSetLayoutSizeEXT;
+    PFN_vkGetDescriptorSetLayoutBindingOffsetEXT GetDescriptorSetLayoutBindingOffsetEXT;
+    PFN_vkGetDescriptorEXT GetDescriptorEXT;
+    PFN_vkCmdBindDescriptorBuffersEXT CmdBindDescriptorBuffersEXT;
+    PFN_vkCmdSetDescriptorBufferOffsetsEXT CmdSetDescriptorBufferOffsetsEXT;
+    PFN_vkCmdBindDescriptorBufferEmbeddedSamplersEXT CmdBindDescriptorBufferEmbeddedSamplersEXT;
+    PFN_vkGetBufferOpaqueCaptureDescriptorDataEXT GetBufferOpaqueCaptureDescriptorDataEXT;
+    PFN_vkGetImageOpaqueCaptureDescriptorDataEXT GetImageOpaqueCaptureDescriptorDataEXT;
+    PFN_vkGetImageViewOpaqueCaptureDescriptorDataEXT GetImageViewOpaqueCaptureDescriptorDataEXT;
+    PFN_vkGetSamplerOpaqueCaptureDescriptorDataEXT GetSamplerOpaqueCaptureDescriptorDataEXT;
+    PFN_vkGetAccelerationStructureOpaqueCaptureDescriptorDataEXT GetAccelerationStructureOpaqueCaptureDescriptorDataEXT;
+
     // ---- VK_NV_fragment_shading_rate_enums extension commands
     PFN_vkCmdSetFragmentShadingRateEnumNV CmdSetFragmentShadingRateEnumNV;
 

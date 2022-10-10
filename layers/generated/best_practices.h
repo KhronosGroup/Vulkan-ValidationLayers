@@ -1659,6 +1659,41 @@ void PostCallRecordSetPrivateDataEXT(
     VkResult                                    result) override;
 
 
+void PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetImageOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageCaptureDescriptorDataInfoEXT*  pInfo,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetImageViewOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkImageViewCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetSamplerOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkSamplerCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
+void PostCallRecordGetAccelerationStructureOpaqueCaptureDescriptorDataEXT(
+    VkDevice                                    device,
+    const VkAccelerationStructureCaptureDescriptorDataInfoEXT* pInfo,
+    void*                                       pData,
+    VkResult                                    result) override;
+
+
 void PostCallRecordGetDeviceFaultInfoEXT(
     VkDevice                                    device,
     VkDeviceFaultCountsEXT*                     pFaultCounts,

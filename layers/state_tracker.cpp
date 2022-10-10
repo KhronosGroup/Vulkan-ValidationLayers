@@ -370,6 +370,20 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
             buffer_address_map_.insert({buffer_state->DeviceAddressRange(), buffer_state});
         }
+
+        const VkBufferUsageFlags descriptor_buffer_usages =
+            VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+        if ((pCreateInfo->usage & descriptor_buffer_usages) != 0) {
+            descriptorBufferAddressSpaceSize += pCreateInfo->size;
+
+            if ((pCreateInfo->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+                resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+
+            if ((pCreateInfo->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0)
+                samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
+        }
     }
     Add(std::move(buffer_state));
 }
@@ -468,6 +482,19 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     if (buffer_state) {
         WriteLockGuard guard(buffer_address_lock_);
         buffer_address_map_.erase_range(buffer_state->DeviceAddressRange());
+
+        const VkBufferUsageFlags descriptor_buffer_usages =
+            VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+        if ((buffer_state->createInfo.usage & descriptor_buffer_usages) != 0) {
+            descriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+
+            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)
+                resourceDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+
+            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
+                samplerDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+        }
     }
     Destroy<BUFFER_STATE>(buffer);
 }
@@ -931,6 +958,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         const auto *mesh_shader_features = LvlFindInChain<VkPhysicalDeviceMeshShaderFeaturesEXT>(pCreateInfo->pNext);
         if (mesh_shader_features) {
             enabled_features.mesh_shader_features = *mesh_shader_features;
+        }
+
+        const auto *descriptor_buffer_features = LvlFindInChain<VkPhysicalDeviceDescriptorBufferFeaturesEXT>(pCreateInfo->pNext);
+        if (descriptor_buffer_features) {
+            enabled_features.descriptor_buffer_features = *descriptor_buffer_features;
         }
 
         const auto *transform_feedback_features = LvlFindInChain<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(pCreateInfo->pNext);
@@ -1498,6 +1530,10 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                                    &phys_dev_props->conservative_rasterization_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control,
                                    &phys_dev_props->subgroup_size_control_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer,
+                                   &phys_dev_props->descriptor_buffer_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_descriptor_buffer_density,
+                                   &phys_dev_props->descriptor_buffer_density_props);
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_properties);
     }
