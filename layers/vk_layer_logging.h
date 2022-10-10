@@ -55,7 +55,7 @@
 #include "vk_validation_error_messages.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_safe_struct.h"
-#include "vk_xxhash.h"
+#include "xxhash.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
