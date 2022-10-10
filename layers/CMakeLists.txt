@@ -58,6 +58,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_logging.h
         vk_layer_utils.h
         vk_layer_utils.cpp
+        vk_xxhash.h
         xxhash.h
         xxhash.c
         generated/vk_format_utils.h
@@ -202,7 +203,9 @@ set(CORE_VALIDATION_LIBRARY_FILES
     generated/synchronization_validation_types.cpp
     gpu_validation.cpp
     generated/corechecks_optick_instrumentation.cpp
-    xxhash.c)
+    xxhash.c
+    xxhash.h
+    vk_xxhash.h)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
     generated/object_tracker.cpp

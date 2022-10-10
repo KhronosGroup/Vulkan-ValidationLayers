@@ -247,9 +247,9 @@ void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, s
         token = GetNextToken(&raw_id_list, delimiter, &pos);
         uint32_t int_id = TokenToUint(token);
         if (int_id == 0) {
-            size_t id_hash = XXH32(token.c_str(), strlen(token.c_str()), 8);  // String
+            const uint32_t id_hash = XXH32(token.data(), token.size(), 8);  // String
             if (id_hash != 0) {
-                int_id = static_cast<uint32_t>(id_hash);
+                int_id = id_hash;
             }
         }
         if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
