@@ -44,6 +44,14 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
+# XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
+# We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
+#
+# v0.8.1 also has compilation issues that are removed by setting this define.
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
+add_definitions(-DXXH_NO_LONG_LONG)
+
 # Configure installation of source files that are dependencies of other repos.
 if(BUILD_LAYER_SUPPORT_FILES)
     set(LAYER_UTIL_FILES
@@ -58,7 +66,6 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_logging.h
         vk_layer_utils.h
         vk_layer_utils.cpp
-        vk_xxhash.h
         xxhash.h
         xxhash.c
         generated/vk_format_utils.h
@@ -204,8 +211,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     gpu_validation.cpp
     generated/corechecks_optick_instrumentation.cpp
     xxhash.c
-    xxhash.h
-    vk_xxhash.h)
+    xxhash.h)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
     generated/object_tracker.cpp
