@@ -11903,6 +11903,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             (PFN_vkCmdSetRasterizationStreamEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizationStreamEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetRasterizationStreamEXT-extendedDynamicState3RasterizationStream-07410");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
         vkCmdSetRasterizationStreamEXT(m_commandBuffer.handle(), 0U);
         m_errorMonitor->VerifyFound();
     }
@@ -11928,6 +11930,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             (PFN_vkCmdSetDepthClipEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClipEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetDepthClipEnableEXT-extendedDynamicState3DepthClipEnable-07450");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClipEnableEXT-depthClipEnable-07451");
         vkCmdSetDepthClipEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
@@ -11944,7 +11947,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             (PFN_vkCmdSetColorBlendAdvancedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendAdvancedEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetColorBlendAdvancedEXT-extendedDynamicState3ColorBlendAdvanced-07504");
-        VkColorBlendAdvancedEXT const advanced = {VK_BLEND_OP_BLUE_EXT, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_CONJOINT_EXT,
+        VkColorBlendAdvancedEXT const advanced = {VK_BLEND_OP_BLUE_EXT, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT,
                                                   VK_FALSE};
         vkCmdSetColorBlendAdvancedEXT(m_commandBuffer.handle(), 0U, 1U, &advanced);
         m_errorMonitor->VerifyFound();
@@ -11978,6 +11981,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             m_device->device(), "vkCmdSetDepthClipNegativeOneToOneEXT");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-extendedDynamicState3DepthClipNegativeOneToOne-07452");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClipNegativeOneToOneEXT-depthClipControl-07453");
         vkCmdSetDepthClipNegativeOneToOneEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
@@ -12037,7 +12041,8 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             (PFN_vkCmdSetCoverageModulationTableNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCoverageModulationTableNV");
         m_errorMonitor->SetDesiredFailureMsg(
             kErrorBit, "VUID-vkCmdSetCoverageModulationTableNV-extendedDynamicState3CoverageModulationTable-07352");
-        vkCmdSetCoverageModulationTableNV(m_commandBuffer.handle(), 0U, nullptr);
+        float const modulation = 1.0f;
+        vkCmdSetCoverageModulationTableNV(m_commandBuffer.handle(), 1U, &modulation);
         m_errorMonitor->VerifyFound();
     }
     {
