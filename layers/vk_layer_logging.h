@@ -55,7 +55,7 @@
 #include "vk_validation_error_messages.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_safe_struct.h"
-#include "xxhash.h"
+#include "vk_xxhash.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
@@ -671,7 +671,7 @@ static inline bool LogMsgEnabled(const debug_report_data *debug_data, const std:
         return false;
     }
     // If message is in filter list, bail out very early
-    uint32_t message_id = XXH32(vuid_text.c_str(), strlen(vuid_text.c_str()), 8);
+    const uint32_t message_id = XXH32(vuid_text.data(), vuid_text.size(), 8);
     if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
         != debug_data->filter_message_ids.end()) {
         return false;
