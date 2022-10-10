@@ -296,6 +296,7 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
     "layers/vk_mem_alloc.h",
+    "layers/vk_xxhash.h",
     "layers/xxhash.c",
     "layers/xxhash.h",
   ]
