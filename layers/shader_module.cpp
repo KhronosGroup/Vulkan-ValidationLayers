@@ -166,13 +166,13 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 //
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
 // converting parts of this to be generated from the machine-readable spec instead.
-layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(const Instruction* entrypoint) const {
+layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(layer_data::optional<Instruction> entrypoint) const {
     layer_data::unordered_set<uint32_t> ids;
     if (!entrypoint || !has_valid_spirv) {
         return ids;
     }
     layer_data::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint->Word(2));
+    worklist.insert((*entrypoint).Word(2));
 
     while (!worklist.empty()) {
         auto id_iter = worklist.begin();
@@ -590,21 +590,24 @@ const SHADER_MODULE_STATE::EntryPoint *SHADER_MODULE_STATE::FindEntrypointStruct
     return nullptr;
 }
 
-const Instruction* SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+layer_data::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+    layer_data::optional<Instruction> result;
     auto range = static_data_.entry_points.equal_range(name);
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second.stage == stageBits) {
-            return &it->second.insn;
+            assert(it->second.insn.Opcode() == spv::OpEntryPoint);
+            result.emplace(it->second.insn);
+            break;
         }
     }
-    return nullptr;
+    return result;
 }
 
 // Because the following is legal, need the entry point
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
 // Assumes shader module contains no spec constants used to set the local size values
-bool SHADER_MODULE_STATE::FindLocalSize(const Instruction* entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
+bool SHADER_MODULE_STATE::FindLocalSize(const Instruction& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
                                         uint32_t& local_size_z) const {
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
@@ -622,7 +625,7 @@ bool SHADER_MODULE_STATE::FindLocalSize(const Instruction* entrypoint, uint32_t&
         }
     }
 
-    auto entrypoint_id = entrypoint->Word(2);
+    auto entrypoint_id = entrypoint.Word(2);
     auto it = static_data_.execution_mode_inst.find(entrypoint_id);
     if (it != static_data_.execution_mode_inst.end()) {
         for (const Instruction* insn : it->second) {
@@ -1072,7 +1075,7 @@ uint32_t SHADER_MODULE_STATE::DescriptorTypeToReqs(uint32_t type_id) const {
 
 // For some built-in analysis we need to know if the variable decorated with as the built-in was actually written to.
 // This function examines instructions in the static call tree for a write to this variable.
-bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const Instruction* entrypoint) const {
+bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, const Instruction& entrypoint) const {
     auto type = builtin_insn->Opcode();
     uint32_t target_id = builtin_insn->Word(1);
     bool init_complete = false;
@@ -1114,7 +1117,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
 
     bool found_write = false;
     layer_data::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint->Word(2));
+    worklist.insert(entrypoint.Word(2));
 
     // Follow instructions in call graph looking for writes to target
     while (!worklist.empty() && !found_write) {
@@ -1533,7 +1536,7 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
     return out;
 }
 
-layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction* entrypoint) const {
+layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction& entrypoint) const {
     layer_data::unordered_set<uint32_t> location_list;
     const auto outputs = CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, false);
     layer_data::unordered_set<uint32_t> store_pointer_ids;
@@ -1654,7 +1657,7 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, inte
     return true;
 }
 
-std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocation(const Instruction* entrypoint,
+std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocation(const Instruction& entrypoint,
                                                                                     spv::StorageClass sinterface,
                                                                                     bool is_array_of_verts) const {
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
@@ -1702,7 +1705,7 @@ std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocat
     return out;
 }
 
-std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Instruction* entrypoint, uint32_t storageClass) const {
+std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Instruction& entrypoint, uint32_t storageClass) const {
     // Find all interface variables belonging to the entrypoint and matching the storage class
     std::vector<uint32_t> variables;
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
@@ -1883,20 +1886,18 @@ uint32_t SHADER_MODULE_STATE::GetTypeId(uint32_t id) const {
     return type ? type->Word(type->TypeId()) : 0;
 }
 
-std::vector<uint32_t> FindEntrypointInterfaces(const Instruction* entrypoint) {
-    assert(entrypoint->Opcode() == spv::OpEntryPoint);
-
+std::vector<uint32_t> FindEntrypointInterfaces(const Instruction& entrypoint) {
     std::vector<uint32_t> interfaces;
     // Find the end of the entrypoint's name string. additional zero bytes follow the actual null terminator, to fill out the
     // rest of the word - so we only need to look at the last byte in the word to determine which word contains the terminator.
     uint32_t word = 3;
-    while (entrypoint->Word(word) & 0xff000000u) {
+    while (entrypoint.Word(word) & 0xff000000u) {
         ++word;
     }
     ++word;
 
-    for (; word < entrypoint->Length(); word++) {
-        interfaces.push_back(entrypoint->Word(word));
+    for (; word < entrypoint.Length(); word++) {
+        interfaces.push_back(entrypoint.Word(word));
     }
 
     return interfaces;

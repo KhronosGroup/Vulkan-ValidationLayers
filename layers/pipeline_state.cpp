@@ -41,14 +41,14 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
 }
 
-static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const Instruction *entrypoint,
+static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, layer_data::optional<Instruction> entrypoint,
                                       const SHADER_MODULE_STATE *module_state) {
     bool primitiverate_written = false;
-    if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-        stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
+    if (entrypoint && (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
+                       stage_flag == VK_SHADER_STAGE_MESH_BIT_NV)) {
         for (const Instruction *inst : module_state->GetBuiltinDecorationList()) {
             if (inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) {
-                primitiverate_written = module_state->IsBuiltInWritten(inst, entrypoint);
+                primitiverate_written = module_state->IsBuiltInWritten(inst, *entrypoint);
             }
             if (primitiverate_written) {
                 break;
@@ -218,7 +218,7 @@ static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_S
             continue;
         }
         if (stage.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT) {
-            result = stage.module_state->CollectWritableOutputLocationinFS(stage.entrypoint);
+            result = stage.module_state->CollectWritableOutputLocationinFS(*(stage.entrypoint));
             break;
         }
     }

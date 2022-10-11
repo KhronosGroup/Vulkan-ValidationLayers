@@ -148,7 +148,7 @@ bool CoreChecks::ValidateViConsistency(safe_VkPipelineVertexInputStateCreateInfo
 }
 
 bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreateInfo const *vi,
-                                           const SHADER_MODULE_STATE &module_state, const Instruction *entrypoint) const {
+                                           const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint) const {
     bool skip = false;
 
     const auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, false);
@@ -202,7 +202,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreate
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE &module_state,
-                                                                    const Instruction *entrypoint,
+                                                                    const Instruction &entrypoint,
                                                                     PIPELINE_STATE const *pipeline) const {
     bool skip = false;
 
@@ -257,7 +257,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     return skip;
 }
 
-bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const Instruction *entrypoint,
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
                                                     PIPELINE_STATE const *pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
@@ -439,11 +439,11 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     return skip;
 }
 
-bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const Instruction *entrypoint) const {
+bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint) const {
     bool skip = false;
 
     // Currently all builtin tested are only found in fragment shaders
-    if (entrypoint->Word(1) != spv::ExecutionModelFragment) {
+    if (entrypoint.Word(1) != spv::ExecutionModelFragment) {
         return skip;
     }
 
@@ -769,7 +769,7 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state,
                                                       safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                                      const PIPELINE_STATE *pipeline, const Instruction *entrypoint) const {
+                                                      const PIPELINE_STATE *pipeline, const Instruction &entrypoint) const {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
         pStage->stage == VK_SHADER_STAGE_ALL) {
         return false;
@@ -820,7 +820,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             }
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId:
-                if (insn.Word(1) == entrypoint->Word(2)) {
+                if (insn.Word(1) == entrypoint.Word(2)) {
                     switch (insn.Word(2)) {
                         default:
                             break;
@@ -1773,9 +1773,9 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
     return skip;
 }
 
-bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const Instruction *entrypoint,
+bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
                                         VkShaderStageFlagBits stage, const PIPELINE_STATE *pipeline) const {
-    auto entrypoint_id = entrypoint->Word(2);
+    auto entrypoint_id = entrypoint.Word(2);
 
     // The first denorm execution mode encountered, along with its bit width.
     // Used to check if SeparateDenormSettings is respected.
@@ -2089,7 +2089,7 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
         }
     }
 
-    if (entrypoint->Word(1) == spv::ExecutionModelGeometry) {
+    if (entrypoint.Word(1) == spv::ExecutionModelGeometry) {
         if (vertices_out == 0 || vertices_out > phys_dev_props.limits.maxGeometryOutputVertices) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-stage-00714",
                              "Geometry shader entry point must have an OpExecutionMode instruction that "
@@ -2130,7 +2130,7 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
 //        - If shaderTessellationAndGeometryPointSize feature is disabled:
 //            * gl_PointSize must NOT be written and a default of 1.0 is assumed
 bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
-                                              const Instruction *entrypoint, VkShaderStageFlagBits stage) const {
+                                              const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
     if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         return false;
     }
@@ -2165,7 +2165,7 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, co
 }
 
 bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
-                                                  const Instruction *entrypoint, VkShaderStageFlagBits stage) const {
+                                                  const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
     bool primitiverate_written = false;
     bool viewportindex_written = false;
     bool viewportmask_written = false;
@@ -2761,7 +2761,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     bool skip = false;
     const auto *pStage = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
-    const Instruction *entrypoint = stage_state.entrypoint;
+    auto entrypoint_optional = stage_state.entrypoint;
 
     skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline->GetPipelineCreateFlags());
 
@@ -2983,11 +2983,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     }
 
     // Check the entrypoint
-    if (!entrypoint) {
+    if (!entrypoint_optional) {
         skip |= LogError(device, "VUID-VkPipelineShaderStageCreateInfo-pName-00707", "No entrypoint found named `%s` for stage %s.",
                          pStage->pName, string_VkShaderStageFlagBits(stage_state.stage_flag));
     }
     if (skip) return true;  // no point continuing beyond here, any analysis is just going to be garbage.
+
+    const Instruction &entrypoint = *entrypoint_optional;
 
     // Mark accessible ids
     auto &accessible_ids = stage_state.accessible_ids;
@@ -3136,9 +3138,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     return skip;
 }
 
-bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer, const Instruction *producer_entrypoint,
+bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &producer, const Instruction &producer_entrypoint,
                                                 shader_stage_attributes const *producer_stage, const SHADER_MODULE_STATE &consumer,
-                                                const Instruction *consumer_entrypoint,
+                                                const Instruction &consumer_entrypoint,
                                                 shader_stage_attributes const *consumer_stage) const {
     bool skip = false;
 
@@ -3326,8 +3328,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         skip |= ValidateViConsistency(vi_state);
     }
 
-    if (vertex_stage && vertex_stage->module_state->has_valid_spirv && !IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateViAgainstVsInputs(vi_state, *vertex_stage->module_state.get(), vertex_stage->entrypoint);
+    if (vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
+        !IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        skip |= ValidateViAgainstVsInputs(vi_state, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
     }
 
     for (size_t i = 1; i < pipeline->stage_state.size(); i++) {
@@ -3338,23 +3341,24 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
             break;
         }
         if (consumer.module_state) {
-            if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv) {
+            if (consumer.module_state->has_valid_spirv && producer.module_state->has_valid_spirv && consumer.entrypoint &&
+                producer.entrypoint) {
                 auto producer_id = GetShaderStageId(producer.stage_flag);
                 auto consumer_id = GetShaderStageId(consumer.stage_flag);
-                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), producer.entrypoint,
+                skip |= ValidateInterfaceBetweenStages(*producer.module_state.get(), *(producer.entrypoint),
                                                        &shader_stage_attribs[producer_id], *consumer.module_state.get(),
-                                                       consumer.entrypoint, &shader_stage_attribs[consumer_id]);
+                                                       *(consumer.entrypoint), &shader_stage_attribs[consumer_id]);
             }
         }
     }
 
-    if (fragment_stage && fragment_stage->module_state->has_valid_spirv) {
+    if (fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->has_valid_spirv) {
         const auto &rp_state = pipeline->RenderPassState();
         if (rp_state && rp_state->UsesDynamicRendering()) {
             skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state.get(),
-                                                                       fragment_stage->entrypoint, pipeline);
+                                                                       *(fragment_stage->entrypoint), pipeline);
         } else {
-            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(), fragment_stage->entrypoint, pipeline,
+            skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(), *(fragment_stage->entrypoint), pipeline,
                                                        pipeline->Subpass());
         }
     }
@@ -3656,7 +3660,7 @@ bool CoreChecks::PreCallValidateGetShaderModuleCreateInfoIdentifierEXT(VkDevice 
     return skip;
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const Instruction *entrypoint,
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
                                                const PipelineStageState &stage_state, uint32_t local_size_x, uint32_t local_size_y,
                                                uint32_t local_size_z) const {
     bool skip = false;
