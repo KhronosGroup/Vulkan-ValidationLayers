@@ -275,10 +275,10 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(const
     return ids;
 }
 
-layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction* entrypoint) const {
+layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction& entrypoint) const {
     layer_data::optional<VkPrimitiveTopology> result;
 
-    auto entrypoint_id = entrypoint->Word(2);
+    auto entrypoint_id = entrypoint.Word(2);
     bool is_point_mode = false;
 
     auto it = static_data_.execution_mode_inst.find(entrypoint_id);
@@ -425,11 +425,11 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 auto entrypoint_name = insn.GetAsString(3);
                 auto execution_model = insn.Word(1);
                 auto entrypoint_stage = ExecutionModelToShaderStageFlagBits(execution_model);
-                entry_points.emplace(entrypoint_name, EntryPoint{&insn, static_cast<VkShaderStageFlagBits>(entrypoint_stage)});
+                entry_points.emplace(entrypoint_name, EntryPoint{insn, static_cast<VkShaderStageFlagBits>(entrypoint_stage)});
 
                 auto range = entry_points.equal_range(entrypoint_name);
                 for (auto it = range.first; it != range.second; ++it) {
-                    if (it->second.insn == &insn) {
+                    if (it->second.insn == insn) {
                         entry_point = &(it->second);
                         break;
                     }
@@ -594,7 +594,7 @@ const Instruction* SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShade
     auto range = static_data_.entry_points.equal_range(name);
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second.stage == stageBits) {
-            return it->second.insn;
+            return &it->second.insn;
         }
     }
     return nullptr;
