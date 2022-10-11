@@ -898,7 +898,8 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
     data.size = local_offset + data1.size * total_array_length;
 }
 
-static uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) {
+uint32_t SHADER_MODULE_STATE::UpdateOffset(uint32_t offset, const std::vector<uint32_t>& array_indices,
+                                           const shader_struct_member& data) const {
     int array_indices_size = static_cast<int>(array_indices.size());
     if (array_indices_size) {
         uint32_t array_index = 0;
@@ -912,7 +913,8 @@ static uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array
     return offset;
 }
 
-static void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) {
+void SHADER_MODULE_STATE::SetUsedBytes(uint32_t offset, const std::vector<uint32_t>& array_indices,
+                                       const shader_struct_member& data) const {
     int array_indices_size = static_cast<int>(array_indices.size());
     uint32_t block_memory_size = data.size;
     for (uint32_t i = static_cast<int>(array_indices_size); i < data.array_length_hierarchy.size(); ++i) {
