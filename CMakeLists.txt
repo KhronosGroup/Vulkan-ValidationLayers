@@ -23,9 +23,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include(vcpkg)
 
-# Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
-
 project(Vulkan-ValidationLayers)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
