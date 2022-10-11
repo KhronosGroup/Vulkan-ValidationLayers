@@ -21,12 +21,12 @@
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(0), type_id_(0) {
     words_.push_back(*it++);
-    for (uint32_t i = 1; i < length(); i++) {
+    for (uint32_t i = 1; i < Length(); i++) {
         words_.push_back(*it++);
     }
 
-    const bool has_result = OpcodeHasResult(opcode());
-    if (OpcodeHasType(opcode())) {
+    const bool has_result = OpcodeHasResult(Opcode());
+    if (OpcodeHasType(Opcode())) {
         type_id_ = 1;
         if (has_result) {
             result_id_ = 2;
@@ -36,34 +36,34 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(
     }
 }
 
-atomic_instruction_info Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const {
-    atomic_instruction_info info;
+AtomicInstructionInfo Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const {
+    AtomicInstructionInfo info;
 
     // All atomics have a pointer referenced
-    const uint32_t pointer_index = opcode() == spv::OpAtomicStore ? 1 : 3;
-    const Instruction* access = module_state.FindDef(word(pointer_index));
+    const uint32_t pointer_index = Opcode() == spv::OpAtomicStore ? 1 : 3;
+    const Instruction* access = module_state.FindDef(Word(pointer_index));
 
     // spirv-val will catch if not OpTypePointer
-    const Instruction* pointer = module_state.FindDef(access->word(1));
-    info.storage_class = pointer->word(2);
+    const Instruction* pointer = module_state.FindDef(access->Word(1));
+    info.storage_class = pointer->Word(2);
 
-    const Instruction* data_type = module_state.FindDef(pointer->word(3));
-    info.type = data_type->opcode();
+    const Instruction* data_type = module_state.FindDef(pointer->Word(3));
+    info.type = data_type->Opcode();
 
     // TODO - Should have a proper GetBitWidth like spirv-val does
-    assert(data_type->opcode() == spv::OpTypeFloat || data_type->opcode() == spv::OpTypeInt);
-    info.bit_width = data_type->word(2);
+    assert(data_type->Opcode() == spv::OpTypeFloat || data_type->Opcode() == spv::OpTypeInt);
+    info.bit_width = data_type->Word(2);
 
     return info;
 }
 
 spv::BuiltIn Instruction::GetBuiltIn() const {
-    if (opcode() == spv::OpDecorate) {
-        return static_cast<spv::BuiltIn>(word(3));
-    } else if (opcode() == spv::OpMemberDecorate) {
-        return static_cast<spv::BuiltIn>(word(4));
+    if (Opcode() == spv::OpDecorate) {
+        return static_cast<spv::BuiltIn>(Word(3));
+    } else if (Opcode() == spv::OpMemberDecorate) {
+        return static_cast<spv::BuiltIn>(Word(4));
     } else {
-        assert(false); // non valid opcode
+        assert(false);  // non valid Opcode
         return spv::BuiltInMax;
     }
 }

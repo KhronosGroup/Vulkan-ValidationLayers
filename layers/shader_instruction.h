@@ -22,11 +22,12 @@
 #include <stddef.h>  // size_t for gcc
 #include <stdint.h>
 #include <vector>
+#include <assert.h>
 #include <spirv/unified1/spirv.hpp>
 
 struct SHADER_MODULE_STATE;
 
-struct atomic_instruction_info {
+struct AtomicInstructionInfo {
     uint32_t storage_class;
     uint32_t bit_width;
     uint32_t type;  // ex. OpTypeInt
@@ -43,22 +44,29 @@ class Instruction {
     ~Instruction() {}
 
     // The word used to define the Instruction
-    uint32_t word(size_t index) const { return words_[index]; }
+    uint32_t Word(size_t index) const { return words_[index]; }
 
     // The words used to define the Instruction
-    const std::vector<uint32_t>& words() const { return words_; }
+    const std::vector<uint32_t>& Words() const { return words_; }
 
-    uint32_t length() const { return words_[0] >> 16; }
+    uint32_t Length() const { return words_[0] >> 16; }
 
-    uint32_t opcode() const { return words_[0] & 0x0ffffu; }
+    uint32_t Opcode() const { return words_[0] & 0x0ffffu; }
 
     // operand id index, return 0 if no result
     uint32_t ResultId() const { return result_id_; }
     // operand id index, return 0 if no type
     uint32_t TypeId() const { return type_id_; }
 
-    char const * GetAsString(uint32_t operand) const { return (char const *)&words_.at(operand); }
-    atomic_instruction_info GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
+    // Only used to get strings in SPIR-V instructions
+    // SPIR-V spec (and spirv-val) ensure:
+    // "A string is interpreted as a nul-terminated stream of characters"
+    char const* GetAsString(uint32_t operand) const {
+        assert(operand < Length());
+        return (char const*)&words_.at(operand);
+    }
+
+    AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
     private:
