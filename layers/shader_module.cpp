@@ -325,31 +325,42 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() con
     return {};
 }
 
-void SHADER_MODULE_STATE::ParseWords() {
-    std::vector<uint32_t>::const_iterator it = words_.cbegin();
-    it += 5;  // skip first 5 word of header
-    while (it != words_.cend()) {
-        Instruction insn(it);
-        const uint32_t opcode = insn.Opcode();
+SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_state) {
+    // Parse the words first so we have instruction class objects to use
+    {
+        std::vector<uint32_t>::const_iterator it = module_state.words_.cbegin();
+        it += 5;  // skip first 5 word of header
+        while (it != module_state.words_.cend()) {
+            Instruction insn(it);
+            const uint32_t opcode = insn.Opcode();
 
-        // Check for opcodes that would require reparsing of the words
-        if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
-            assert(has_group_decoration == false);  // if assert, spirv-opt didn't flatten it
-            has_group_decoration = true;
-            break;  // no need to continue parsing
+            // Check for opcodes that would require reparsing of the words
+            if (opcode == spv::OpGroupDecorate || opcode == spv::OpDecorationGroup || opcode == spv::OpGroupMemberDecorate) {
+                assert(has_group_decoration == false);  // if assert, spirv-opt didn't flatten it
+                has_group_decoration = true;
+                break;  // no need to continue parsing
+            }
+
+            instructions.push_back(insn);
+            it += insn.Length();
         }
-
-        instructions_.push_back(insn);
-        it += insn.Length();
+        instructions.shrink_to_fit();
     }
-    instructions_.shrink_to_fit();
-}
 
-void SHADER_MODULE_STATE::SetStaticData() {
-    for (const Instruction& insn : GetInstructions()) {
+    function_set func_set = {};
+    EntryPoint* entry_point = nullptr;
+    bool first_function_found = false;
+
+    // Loop through once and build up the static data
+    // Also process the entry points
+    for (const Instruction& insn : instructions) {
         // Build definition list
         if (insn.ResultId() != 0) {
-            definitions_[insn.Word(insn.ResultId())] = &insn;
+            definitions[insn.Word(insn.ResultId())] = &insn;
+        }
+
+        if (first_function_found) {
+            func_set.op_lists.push_back(&insn);
         }
 
         switch (insn.Opcode()) {
@@ -359,75 +370,49 @@ void SHADER_MODULE_STATE::SetStaticData() {
             case spv::OpSpecConstant:
             case spv::OpSpecConstantComposite:
             case spv::OpSpecConstantOp:
-                static_data_.has_specialization_constants = true;
+                has_specialization_constants = true;
                 break;
 
             // Decorations
             case spv::OpDecorate: {
                 auto target_id = insn.Word(1);
-                static_data_.decorations[target_id].add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
-                static_data_.decoration_inst.push_back(&insn);
+                decorations[target_id].add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
+                decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
-                    static_data_.builtin_decoration_inst.push_back(&insn);
+                    builtin_decoration_inst.push_back(&insn);
                 } else if (insn.Word(2) == spv::DecorationSpecId) {
-                    static_data_.spec_const_map[insn.Word(3)] = target_id;
+                    spec_const_map[insn.Word(3)] = target_id;
                 }
 
             } break;
             case spv::OpMemberDecorate: {
-                static_data_.member_decoration_inst.push_back(&insn);
+                member_decoration_inst.push_back(&insn);
                 if (insn.Word(3) == spv::DecorationBuiltIn) {
-                    static_data_.builtin_decoration_inst.push_back(&insn);
+                    builtin_decoration_inst.push_back(&insn);
                 }
             } break;
 
             case spv::OpCapability:
-                static_data_.capability_list.push_back(static_cast<spv::Capability>(insn.Word(1)));
+                capability_list.push_back(static_cast<spv::Capability>(insn.Word(1)));
                 break;
 
             case spv::OpVariable:
-                static_data_.variable_inst.push_back(&insn);
+                variable_inst.push_back(&insn);
                 break;
 
             // Execution Mode
             case spv::OpExecutionMode:
             case spv::OpExecutionModeId: {
-                static_data_.execution_mode_inst[insn.Word(1)].push_back(&insn);
+                execution_mode_inst[insn.Word(1)].push_back(&insn);
             } break;
             // Listed from vkspec.html#ray-tracing-repack
             case spv::OpTraceRayKHR:
             case spv::OpTraceRayMotionNV:
             case spv::OpReportIntersectionKHR:
             case spv::OpExecuteCallableKHR:
-                static_data_.has_invocation_repack_instruction = true;
+                has_invocation_repack_instruction = true;
                 break;
 
-            default:
-                if (AtomicOperation(insn.Opcode()) == true) {
-                    static_data_.atomic_inst.push_back(&insn);
-                }
-                // We don't care about any other defs for now.
-                break;
-        }
-    }
-
-    static_data_.entry_points = ProcessEntryPoints();
-    static_data_.multiple_entry_points = static_data_.entry_points.size() > 1;
-}
-
-std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> SHADER_MODULE_STATE::ProcessEntryPoints() const {
-    std::unordered_multimap<std::string, EntryPoint> entry_points;
-    function_set func_set = {};
-    EntryPoint *entry_point = nullptr;
-    bool first_function_found = false;
-
-    for (const Instruction& insn : GetInstructions()) {
-        // TODO - This logic of the pre-function instructions can be outside here
-        if (first_function_found) {
-            func_set.op_lists.push_back(&insn);
-        }
-
-        switch (insn.Opcode()) {
             // Functions
             case spv::OpFunction:
                 first_function_found = true;
@@ -452,20 +437,29 @@ std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> SHADER_MOD
                 assert(entry_point != nullptr);
                 break;
             }
+
             case spv::OpFunctionEnd: {
                 assert(entry_point != nullptr);
                 entry_point->function_set_list.emplace_back(func_set);
                 break;
             }
+
+            default:
+                if (AtomicOperation(insn.Opcode()) == true) {
+                    atomic_inst.push_back(&insn);
+                }
+                // We don't care about any other defs for now.
+                break;
         }
     }
 
-    SetPushConstantUsedInShader(entry_points);
-    return entry_points;
+    SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
+
+    multiple_entry_points = entry_points.size() > 1;
 }
 
 void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
-    if (has_group_decoration) {
+    if (static_data_.has_group_decoration) {
         spvtools::Optimizer optimizer(env);
         optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
         std::vector<uint32_t> optimized_binary;
@@ -480,7 +474,7 @@ void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
             // Will need to update static data now the words have changed or else the def_index will not align
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
-            ParseWords();
+            *const_cast<StaticData*>(&static_data_) = StaticData(*this);
         }
     }
 }
@@ -993,21 +987,22 @@ void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const 
     }
 }
 
-void SHADER_MODULE_STATE::SetPushConstantUsedInShader(std::unordered_multimap<std::string, EntryPoint>& entry_points) const {
+void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
+    const SHADER_MODULE_STATE& module_state, std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint>& entry_points) {
     for (auto &entrypoint : entry_points) {
-        for (const Instruction* var_insn : GetVariableInstructions()) {
+        for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
             if (var_insn->Word(3) == spv::StorageClassPushConstant) {
-                const Instruction* type = FindDef(var_insn->Word(1));
+                const Instruction* type = module_state.FindDef(var_insn->Word(1));
                 std::vector<const Instruction*> member_decorate_insn;
-                for (const Instruction* member_decorate : GetMemberDecorationInstructions()) {
+                for (const Instruction* member_decorate : module_state.GetMemberDecorationInstructions()) {
                     if (member_decorate->Length() == 5 && member_decorate->Word(3) == spv::DecorationOffset) {
                         member_decorate_insn.emplace_back(member_decorate);
                     }
                 }
                 entrypoint.second.push_constant_used_in_shader.root = &entrypoint.second.push_constant_used_in_shader;
-                DefineStructMember(type, member_decorate_insn, entrypoint.second.push_constant_used_in_shader);
-                SetUsedStructMember(var_insn->Word(2), entrypoint.second.function_set_list,
-                                    entrypoint.second.push_constant_used_in_shader);
+                module_state.DefineStructMember(type, member_decorate_insn, entrypoint.second.push_constant_used_in_shader);
+                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.second.function_set_list,
+                                                 entrypoint.second.push_constant_used_in_shader);
             }
         }
     }
