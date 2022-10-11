@@ -343,6 +343,7 @@ add_library(VkLayer_utils
             layers/vk_layer_utils.cpp
             layers/generated/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
+target_compile_definitions(VkLayer_utils PRIVATE VVL_BUILD_ONLY_DEFINITIONS)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)

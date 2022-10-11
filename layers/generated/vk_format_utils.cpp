@@ -1931,7 +1931,7 @@ bool FormatHasBlue(VkFormat format) {
 bool FormatHasAlpha(VkFormat format) {
     return FormatHasComponent(format, COMPONENT_TYPE::A);
 }
-
+#ifdef VVL_BUILD_ONLY_DEFINITIONS
 // Will return the Vulkan format for a given SPIR-V image format value
 // Note: will return VK_FORMAT_UNDEFINED if non valid input
 VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {
@@ -2022,4 +2022,5 @@ VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {
             return VK_FORMAT_UNDEFINED;
      }
 }
+#endif
 

@@ -88,6 +88,10 @@ class FormatUtilsOutputGenerator(OutputGenerator):
         self.headerFile = False # Header file generation flag
         self.sourceFile = False # Source file generation flag
 
+        # TODO Temporary workaround for symbols that are only used within VVL, but declared in headers that are consumed by
+        #      external projects. This should be removed once externa repos dependent on VVL code is cleaned up.
+        self.buildOnlyDefs = 'VVL_BUILD_ONLY_DEFINITIONS'
+
         self.allFormats = dict()
         self.classes = dict()
         self.maxPlaneCount = 1
@@ -818,21 +822,28 @@ bool FormatHasAlpha(VkFormat format) {
     def spirvFunctions(self):
         output = ''
         if self.headerFile:
-            output += '''// SPIR-V
-VK_LAYER_EXPORT VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);'''
+            output += f'''
+#ifdef {self.buildOnlyDefs}
+// SPIR-V
+VK_LAYER_EXPORT VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);
+#endif
+'''
         elif self.sourceFile:
-            output += '\n// Will return the Vulkan format for a given SPIR-V image format value\n'
-            output += '// Note: will return VK_FORMAT_UNDEFINED if non valid input\n'
-            output += 'VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {\n'
-            output += '    switch (spirv_image_format) {\n'
+            output += f'''#ifdef {self.buildOnlyDefs}
+// Will return the Vulkan format for a given SPIR-V image format value
+// Note: will return VK_FORMAT_UNDEFINED if non valid input
+VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {{
+    switch (spirv_image_format) {{
+'''
             for f, info in sorted(self.allFormats.items()):
                 if info['spirv'] is not None:
                     output += '        case spv::ImageFormat{}:\n'.format(info['spirv'])
                     output += '            return {};\n'.format(f)
-            output += '        default:\n'
-            output += '            return VK_FORMAT_UNDEFINED;\n'
-            output += '     }\n'
-            output += '}'
+            output += '''        default:
+            return VK_FORMAT_UNDEFINED;
+     }
+}
+#endif'''
 
         return output
 

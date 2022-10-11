@@ -90,6 +90,7 @@ macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     add_library(VkLayer_${target} SHARED ${ARGN})
     set_target_properties(VkLayer_${target} PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
     target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
+    target_compile_definitions(VkLayer_${target} PRIVATE VVL_BUILD_ONLY_DEFINITIONS)
     target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
 
     if (VVL_ENABLE_ASAN)

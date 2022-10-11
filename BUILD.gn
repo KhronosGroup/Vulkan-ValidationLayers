@@ -51,6 +51,7 @@ config("vulkan_internal_config") {
   defines = [
     "VULKAN_NON_CMAKE_BUILD",
     "VK_ENABLE_BETA_EXTENSIONS",
+    "VVL_BUILD_ONLY_DEFINITIONS",
   ]
 
   cflags = []
