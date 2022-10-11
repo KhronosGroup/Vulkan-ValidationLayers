@@ -2566,6 +2566,8 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->status.unset(cb_state->static_status);
         cb_state->static_status = MakeStaticStateMask(dynamic_state ? dynamic_state->ptr() : nullptr);
         cb_state->status.set(cb_state->static_status);
+        cb_state->dynamic_status.set_all();
+        cb_state->dynamic_status.unset(CBSTATUS_INDEX_BUFFER_BOUND);
         cb_state->dynamic_status.unset(cb_state->static_status);
 
         // Used to calculate CMD_BUFFER_STATE::usedViewportScissorCount upon draw command with this graphics pipeline.
