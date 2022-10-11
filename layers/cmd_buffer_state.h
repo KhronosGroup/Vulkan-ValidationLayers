@@ -36,8 +36,6 @@
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
 
-#include <iterator>
-
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
@@ -194,7 +192,8 @@ enum CBStatus {
 };
 
 struct CBStatusFlags {
-    uint32_t bits[(CBSTATUS_NUM + 31) / 32];
+    static size_t const BITS_ARRAY_SIZE = (CBSTATUS_NUM + 31) / 32;
+    uint32_t bits[BITS_ARRAY_SIZE];
 
     CBStatusFlags() { reset(); }
 
@@ -209,7 +208,7 @@ struct CBStatusFlags {
     }
 
     void reset() {
-        for (size_t i = 0; i < std::size(bits); ++i) {
+        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
             bits[i] = 0U;
         }
     }
@@ -227,7 +226,7 @@ struct CBStatusFlags {
     }
 
     void set(CBStatusFlags const &status) {
-        for (size_t i = 0; i < std::size(bits); ++i) {
+        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
             bits[i] |= status.bits[i];
         }
     }
@@ -239,7 +238,7 @@ struct CBStatusFlags {
     }
 
     void unset(CBStatusFlags const &status) {
-        for (size_t i = 0; i < std::size(bits); ++i) {
+        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
             bits[i] &= ~status.bits[i];
         }
     }
