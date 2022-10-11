@@ -232,7 +232,7 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageSt
         if (!stage.entrypoint) {
             continue;
         }
-        auto stage_topo = stage.module_state->GetTopology(stage.entrypoint);
+        auto stage_topo = stage.module_state->GetTopology(*(stage.entrypoint));
         if (stage_topo) {
             result = *stage_topo;
         }

@@ -205,7 +205,7 @@ struct shader_struct_member {
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     struct EntryPoint {
-        const Instruction *insn;  // OpEntryPoint instruction
+        const Instruction &insn;  // OpEntryPoint instruction
         VkShaderStageFlagBits stage;
         std::vector<function_set> function_set_list;
         shader_struct_member push_constant_used_in_shader;
@@ -329,7 +329,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::string DescribeInstruction(const Instruction *insn) const;
 
     layer_data::unordered_set<uint32_t> MarkAccessibleIds(const Instruction *entrypoint) const;
-    layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction *entrypoint) const;
+    layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
     // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
     // Since we currently don't support multiple entry points, this is a helper to return the topology
     // for the "first" (and for our purposes _only_) entrypoint.

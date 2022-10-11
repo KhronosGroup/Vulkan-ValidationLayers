@@ -69,10 +69,13 @@ class Instruction {
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
-    private:
-        std::vector<uint32_t> words_;
-        uint32_t result_id_;
-        uint32_t type_id_;
+    bool operator==(Instruction const& other) const { return words_ == other.words_; }
+    bool operator!=(Instruction const& other) const { return words_ != other.words_; }
+
+  private:
+    std::vector<uint32_t> words_;
+    uint32_t result_id_;
+    uint32_t type_id_;
 };
 
 #endif  // VULKAN_SHADER_INSTRUCTION_H
