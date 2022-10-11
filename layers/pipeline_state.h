@@ -102,7 +102,7 @@ struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
-    const Instruction *entrypoint;
+    layer_data::optional<Instruction> entrypoint;
     layer_data::unordered_set<uint32_t> accessible_ids;
     using DescriptorUse = std::pair<DescriptorSlot, interface_var>;
     std::vector<DescriptorUse> descriptor_uses;

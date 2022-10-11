@@ -123,7 +123,7 @@ struct interface_var {
           is_dref_operation(false) {}
 };
 
-std::vector<uint32_t> FindEntrypointInterfaces(const Instruction *entrypoint);
+std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
 
 enum FORMAT_TYPE {
     FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
@@ -328,7 +328,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::string DescribeType(uint32_t type) const;
     std::string DescribeInstruction(const Instruction *insn) const;
 
-    layer_data::unordered_set<uint32_t> MarkAccessibleIds(const Instruction *entrypoint) const;
+    layer_data::unordered_set<uint32_t> MarkAccessibleIds(layer_data::optional<Instruction> entrypoint) const;
     layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
     // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
     // Since we currently don't support multiple entry points, this is a helper to return the topology
@@ -336,8 +336,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     layer_data::optional<VkPrimitiveTopology> GetTopology() const;
 
     const EntryPoint *FindEntrypointStruct(char const *name, VkShaderStageFlagBits stageBits) const;
-    const Instruction *FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
-    bool FindLocalSize(const Instruction *entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
+    layer_data::optional<Instruction> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
+    bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValue(const Instruction *insn) const;
@@ -350,19 +350,19 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
-    bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction *entrypoint) const;
+    bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
 
     // State tracking helpers for collecting interface information
     void IsSpecificDescriptorType(const Instruction *insn, bool is_storage_buffer, bool is_check_writable,
                                   interface_var &out_interface_var) const;
     std::vector<std::pair<DescriptorSlot, interface_var>> CollectInterfaceByDescriptorSlot(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
-    layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction *entrypoint) const;
+    layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts, uint32_t id,
                                       uint32_t type_id, bool is_patch, uint32_t first_location) const;
-    std::map<location_t, interface_var> CollectInterfaceByLocation(const Instruction *entrypoint, spv::StorageClass sinterface,
+    std::map<location_t, interface_var> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
                                                                    bool is_array_of_verts) const;
-    std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction *entrypoint, uint32_t storageClass) const;
+    std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 

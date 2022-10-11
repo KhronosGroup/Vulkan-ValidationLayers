@@ -1296,9 +1296,10 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     bool skip = false;
     auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
-    const Instruction* entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
-    if (!entrypoint) return false;
+    auto entrypoint_optional = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint_optional) return false;
 
+    const Instruction& entrypoint = *entrypoint_optional;
     uint32_t x = 1, y = 1, z = 1;
     module_state->FindLocalSize(entrypoint, x, y, z);
 
@@ -1327,7 +1328,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint);
+    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint_optional);
     auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(accessible_ids);
 
     unsigned dimensions = 0;
