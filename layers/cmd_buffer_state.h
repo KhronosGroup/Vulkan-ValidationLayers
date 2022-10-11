@@ -36,6 +36,8 @@
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
 
+#include <iterator>
+
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
