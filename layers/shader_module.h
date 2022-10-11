@@ -211,8 +211,21 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         shader_struct_member push_constant_used_in_shader;
     };
 
-    // Static/const data extracted from a SPIRV module.
+    // Static/const data extracted from a SPIRV module at initialization time
+    // The goal of this struct is to move everything that is ready only into here
     struct StaticData {
+        StaticData() = default;
+        StaticData(const SHADER_MODULE_STATE &module_state);
+        StaticData &operator=(const StaticData &) = default;
+        StaticData(StaticData &&) = default;
+
+        // List of all instructions in the order they appear in the binary
+        std::vector<Instruction> instructions;
+        // Instructions that can be referenced by Ids
+        // A mapping of <id> to the first word of its def. this is useful because walking type
+        // trees, constant expressions, etc requires jumping all over the instruction stream.
+        layer_data::unordered_map<uint32_t, const Instruction *> definitions;
+
         layer_data::unordered_map<uint32_t, decoration_set> decorations;
         // <Specialization constant ID -> target ID> mapping
         layer_data::unordered_map<uint32_t, uint32_t> spec_const_map;
@@ -235,28 +248,23 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // entry point is not unqiue to single value so need multimap
         std::unordered_multimap<std::string, EntryPoint> entry_points;
         bool multiple_entry_points{false};
+
+        bool has_group_decoration{false};
     };
 
     // This is the SPIR-V module data content
     const std::vector<uint32_t> words_;
-    // List of all instructions in the order they appear in the binary
-    std::vector<Instruction> instructions_;
-    // Instructions that can be referenced by Ids
-    // A mapping of <id> to the first word of its def. this is useful because walking type
-    // trees, constant expressions, etc requires jumping all over the instruction stream.
-    layer_data::unordered_map<uint32_t, const Instruction *> definitions_;
+
+    const StaticData static_data_;
 
     const bool has_valid_spirv{false};
     const uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
-    bool has_group_decoration{false};
-
     SHADER_MODULE_STATE(const uint32_t *code, std::size_t count, spv_target_env env = SPV_ENV_VULKAN_1_0)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
-          words_(code, code + (count / sizeof(uint32_t))) {
-        ParseWords();
+          words_(code, code + (count / sizeof(uint32_t))),
+          static_data_(*this) {
         PreprocessShaderBinary(env);
-        SetStaticData();
     }
 
     template <typename SpirvContainer>
@@ -267,25 +275,21 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                         uint32_t unique_shader_id)
         : BASE_NODE(shaderModule, kVulkanObjectTypeShaderModule),
           words_(create_info.pCode, create_info.pCode + create_info.codeSize / sizeof(uint32_t)),
+          static_data_(*this),
           has_valid_spirv(true),
           gpu_validation_shader_id(unique_shader_id) {
-        ParseWords();
         PreprocessShaderBinary(env);
-        SetStaticData();
     }
 
     SHADER_MODULE_STATE() : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule) {}
 
-    void ParseWords();
-    void SetStaticData();
-
     const Instruction *FindDef(uint32_t id) const {
-        auto it = definitions_.find(id);
-        if (it == definitions_.end()) return nullptr;
+        auto it = static_data_.definitions.find(id);
+        if (it == static_data_.definitions.end()) return nullptr;
         return it->second;
     }
 
-    const std::vector<Instruction> &GetInstructions() const { return instructions_; }
+    const std::vector<Instruction> &GetInstructions() const { return static_data_.instructions; }
     const std::vector<const Instruction *> &GetDecorationInstructions() const { return static_data_.decoration_inst; }
     const std::vector<const Instruction *> &GetMemberDecorationInstructions() const { return static_data_.member_decoration_inst; }
     const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
@@ -354,8 +358,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                              const shader_struct_member &data) const;
 
     // Push consants
-    void SetPushConstantUsedInShader(std::unordered_multimap<std::string, EntryPoint> &entry_points) const;
-    std::unordered_multimap<std::string, EntryPoint> ProcessEntryPoints() const;
+    static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
+                                            std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points);
 
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
@@ -395,8 +399,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Functions used for initialization only
     // Used to populate the shader module object
     void PreprocessShaderBinary(spv_target_env env);
-
-    StaticData static_data_;
 };
 
 #endif  // VULKAN_SHADER_MODULE_H
