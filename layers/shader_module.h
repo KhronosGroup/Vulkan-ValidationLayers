@@ -348,19 +348,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t GetFundamentalType(uint32_t type) const;
     const Instruction *GetStructType(const Instruction *insn, bool is_array_of_verts) const;
 
-    void DefineStructMember(const Instruction *insn, std::vector<const Instruction *> &member_decorate_insn,
-                            shader_struct_member &data) const;
-    void RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
-                      const Instruction *access_chain, const shader_struct_member &data) const;
-    void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
-                       const shader_struct_member &data) const;
-    void SetUsedStructMember(const uint32_t variable_id, const std::vector<function_set> &function_set_list,
-                             const shader_struct_member &data) const;
-
-    // Push consants
-    static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
-                                            std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points);
-
     uint32_t DescriptorTypeToReqs(uint32_t type_id) const;
 
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction *entrypoint) const;
@@ -395,10 +382,27 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                            [](const spv::Capability &capability) { return capability == spv::CapabilityInputAttachment; });
     }
 
+    // Used to set push constants values at shader module initialization time
+    static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
+                                            std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points);
+
   private:
     // Functions used for initialization only
     // Used to populate the shader module object
     void PreprocessShaderBinary(spv_target_env env);
+
+    // The following are all helper functions to set the push constants values by tracking if the values are accessed in the entry
+    // point functions and which offset in the structs are used
+    uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) const;
+    void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) const;
+    void DefineStructMember(const Instruction *insn, std::vector<const Instruction *> &member_decorate_insn,
+                            shader_struct_member &data) const;
+    void RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
+                      const Instruction *access_chain, const shader_struct_member &data) const;
+    void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
+                       const shader_struct_member &data) const;
+    void SetUsedStructMember(const uint32_t variable_id, const std::vector<function_set> &function_set_list,
+                             const shader_struct_member &data) const;
 };
 
 #endif  // VULKAN_SHADER_MODULE_H
