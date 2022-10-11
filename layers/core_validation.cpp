@@ -368,9 +368,8 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags status_mask, const char *fail_msg,
-                                const char *msg_code) const {
-    if (!(pNode->status & status_mask)) {
+bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatus status, const char *fail_msg, const char *msg_code) const {
+    if (!(pNode->status.is_set(status))) {
         return LogError(pNode->commandBuffer(), msg_code, "%s: %s.", report_data->FormatHandle(pNode->commandBuffer()).c_str(),
                         fail_msg);
     }
@@ -785,18 +784,16 @@ static void ListBits(std::ostream &s, uint32_t bits) {
     }
 }
 
-std::string DynamicStateString(CBStatusFlags input_value) {
+std::string DynamicStateString(CBStatusFlags const &input_value) {
     std::string ret;
-    int index = 0;
-    while (input_value) {
-        if (input_value & 1) {
+    for (int index = 0; index < CBSTATUS_NUM; ++index) {
+        CBStatus status = static_cast<CBStatus>(index);
+        if (input_value.is_set(status)) {
             if (!ret.empty()) ret.append("|");
-            ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(1llu << index))));
+            ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
         }
-        ++index;
-        input_value >>= 1;
     }
-    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(static_cast<CBStatusFlagBits>(0))));
+    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(CBSTATUS_NUM)));
     return ret;
 }
 
@@ -1122,8 +1119,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // Verify if using dynamic state setting commands that it doesn't set up in pipeline
-    CBStatusFlags invalid_status = CBSTATUS_ALL_STATE_SET & ~(pCB->dynamic_status | pCB->static_status);
-    if (invalid_status) {
+    CBStatusFlags invalid_status;
+    invalid_status.set_all();
+    invalid_status.unset(CBSTATUS_INDEX_BUFFER_BOUND);
+    invalid_status.unset(pCB->dynamic_status);
+    invalid_status.unset(pCB->static_status);
+
+    if (!invalid_status.is_empty()) {
         std::string dynamic_states = DynamicStateString(invalid_status);
         LogObjectList objlist(pCB->commandBuffer());
         objlist.add(pPipeline->pipeline());
@@ -1420,7 +1422,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         ValidateStatus(pCB, CBSTATUS_VERTEX_INPUT_SET, "Dynamic vertex input not set for this command buffer", vuid.vertex_input);
     skip |= ValidateStatus(pCB, CBSTATUS_COLOR_WRITE_ENABLE_SET, "Dynamic color write enable not set for this command buffer",
                            vuid.color_write_enable);
-    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status & CBSTATUS_COLOR_WRITE_ENABLE_SET) {
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status.is_set(CBSTATUS_COLOR_WRITE_ENABLE_SET)) {
         const auto color_blend_state = pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
         if (color_blend_state) {
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
