@@ -119,53 +119,150 @@ enum CB_STATE {
 };
 
 // CB Status -- used to track status of various bindings on cmd buffer objects
-typedef uint64_t CBStatusFlags;
-enum CBStatusFlagBits : uint64_t {
-    // clang-format off
-    CBSTATUS_NONE                            = 0x00000000,   // No status is set
-    CBSTATUS_LINE_WIDTH_SET                  = 0x00000001,   // Line width has been set
-    CBSTATUS_DEPTH_BIAS_SET                  = 0x00000002,   // Depth bias has been set
-    CBSTATUS_BLEND_CONSTANTS_SET             = 0x00000004,   // Blend constants state has been set
-    CBSTATUS_DEPTH_BOUNDS_SET                = 0x00000008,   // Depth bounds state object has been set
-    CBSTATUS_STENCIL_READ_MASK_SET           = 0x00000010,   // Stencil read mask has been set
-    CBSTATUS_STENCIL_WRITE_MASK_SET          = 0x00000020,   // Stencil write mask has been set
-    CBSTATUS_STENCIL_REFERENCE_SET           = 0x00000040,   // Stencil reference has been set
-    CBSTATUS_VIEWPORT_SET                    = 0x00000080,
-    CBSTATUS_SCISSOR_SET                     = 0x00000100,
-    CBSTATUS_INDEX_BUFFER_BOUND              = 0x00000200,   // Index buffer has been set
-    CBSTATUS_EXCLUSIVE_SCISSOR_SET           = 0x00000400,
-    CBSTATUS_SHADING_RATE_PALETTE_SET        = 0x00000800,
-    CBSTATUS_LINE_STIPPLE_SET                = 0x00001000,
-    CBSTATUS_VIEWPORT_W_SCALING_SET          = 0x00002000,
-    CBSTATUS_CULL_MODE_SET                   = 0x00004000,
-    CBSTATUS_FRONT_FACE_SET                  = 0x00008000,
-    CBSTATUS_PRIMITIVE_TOPOLOGY_SET          = 0x00010000,
-    CBSTATUS_VIEWPORT_WITH_COUNT_SET         = 0x00020000,
-    CBSTATUS_SCISSOR_WITH_COUNT_SET          = 0x00040000,
-    CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET = 0x00080000,
-    CBSTATUS_DEPTH_TEST_ENABLE_SET           = 0x00100000,
-    CBSTATUS_DEPTH_WRITE_ENABLE_SET          = 0x00200000,
-    CBSTATUS_DEPTH_COMPARE_OP_SET            = 0x00400000,
-    CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET    = 0x00800000,
-    CBSTATUS_STENCIL_TEST_ENABLE_SET         = 0x01000000,
-    CBSTATUS_STENCIL_OP_SET                  = 0x02000000,
-    CBSTATUS_DISCARD_RECTANGLE_SET           = 0x04000000,
-    CBSTATUS_SAMPLE_LOCATIONS_SET            = 0x08000000,
-    CBSTATUS_COARSE_SAMPLE_ORDER_SET         = 0x10000000,
-    CBSTATUS_PATCH_CONTROL_POINTS_SET        = 0x20000000,
-    CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET   = 0x40000000,
-    CBSTATUS_DEPTH_BIAS_ENABLE_SET           = 0x80000000,
-    CBSTATUS_LOGIC_OP_SET                    = 0x100000000,
-    CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET    = 0x200000000,
-    CBSTATUS_VERTEX_INPUT_SET                = 0x400000000,
-    CBSTATUS_COLOR_WRITE_ENABLE_SET          = 0x800000000,
-    CBSTATUS_ALL_STATE_SET                   = 0xFFFFFFDFF,   // All state set (intentionally exclude index buffer)
-    // clang-format on
+
+enum CBStatus {
+    CBSTATUS_INDEX_BUFFER_BOUND,      // Index buffer has been set
+    CBSTATUS_LINE_WIDTH_SET,          // Line width has been set
+    CBSTATUS_DEPTH_BIAS_SET,          // Depth bias has been set
+    CBSTATUS_BLEND_CONSTANTS_SET,     // Blend constants state has been set
+    CBSTATUS_DEPTH_BOUNDS_SET,        // Depth bounds state object has been set
+    CBSTATUS_STENCIL_READ_MASK_SET,   // Stencil read mask has been set
+    CBSTATUS_STENCIL_WRITE_MASK_SET,  // Stencil write mask has been set
+    CBSTATUS_STENCIL_REFERENCE_SET,   // Stencil reference has been set
+    CBSTATUS_VIEWPORT_SET,
+    CBSTATUS_SCISSOR_SET,
+    CBSTATUS_EXCLUSIVE_SCISSOR_SET,
+    CBSTATUS_SHADING_RATE_PALETTE_SET,
+    CBSTATUS_LINE_STIPPLE_SET,
+    CBSTATUS_VIEWPORT_W_SCALING_SET,
+    CBSTATUS_CULL_MODE_SET,
+    CBSTATUS_FRONT_FACE_SET,
+    CBSTATUS_PRIMITIVE_TOPOLOGY_SET,
+    CBSTATUS_VIEWPORT_WITH_COUNT_SET,
+    CBSTATUS_SCISSOR_WITH_COUNT_SET,
+    CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET,
+    CBSTATUS_DEPTH_TEST_ENABLE_SET,
+    CBSTATUS_DEPTH_WRITE_ENABLE_SET,
+    CBSTATUS_DEPTH_COMPARE_OP_SET,
+    CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET,
+    CBSTATUS_STENCIL_TEST_ENABLE_SET,
+    CBSTATUS_STENCIL_OP_SET,
+    CBSTATUS_DISCARD_RECTANGLE_SET,
+    CBSTATUS_SAMPLE_LOCATIONS_SET,
+    CBSTATUS_COARSE_SAMPLE_ORDER_SET,
+    CBSTATUS_PATCH_CONTROL_POINTS_SET,
+    CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET,
+    CBSTATUS_DEPTH_BIAS_ENABLE_SET,
+    CBSTATUS_LOGIC_OP_SET,
+    CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET,
+    CBSTATUS_VERTEX_INPUT_SET,
+    CBSTATUS_COLOR_WRITE_ENABLE_SET,
+    CBSTATUS_TESSELLATION_DOMAIN_ORIGIN_SET,
+    CBSTATUS_DEPTH_CLAMP_ENABLE_SET,
+    CBSTATUS_POLYGON_MODE_SET,
+    CBSTATUS_RASTERIZATION_SAMPLES_SET,
+    CBSTATUS_SAMPLE_MASK_SET,
+    CBSTATUS_ALPHA_TO_COVERAGE_ENABLE_SET,
+    CBSTATUS_ALPHA_TO_ONE_ENABLE_SET,
+    CBSTATUS_LOGIC_OP_ENABLE_SET,
+    CBSTATUS_COLOR_BLEND_ENABLE_SET,
+    CBSTATUS_COLOR_BLEND_EQUATION_SET,
+    CBSTATUS_COLOR_WRITE_MASK_SET,
+    CBSTATUS_RASTERIZATION_STREAM_SET,
+    CBSTATUS_CONSERVATIVE_RASTERIZATION_MODE_SET,
+    CBSTATUS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_SET,
+    CBSTATUS_DEPTH_CLIP_ENABLE_SET,
+    CBSTATUS_SAMPLE_LOCATIONS_ENABLE_SET,
+    CBSTATUS_COLOR_BLEND_ADVANCED_SET,
+    CBSTATUS_PROVOKING_VERTEX_MODE_SET,
+    CBSTATUS_LINE_RASTERIZATION_MODE_SET,
+    CBSTATUS_LINE_STIPPLE_ENABLE_SET,
+    CBSTATUS_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_SET,
+    CBSTATUS_VIEWPORT_W_SCALING_ENABLE_SET,
+    CBSTATUS_VIEWPORT_SWIZZLE_SET,
+    CBSTATUS_COVERAGE_TO_COLOR_ENABLE_SET,
+    CBSTATUS_COVERAGE_TO_COLOR_LOCATION_SET,
+    CBSTATUS_COVERAGE_MODULATION_MODE_SET,
+    CBSTATUS_COVERAGE_MODULATION_TABLE_ENABLE_SET,
+    CBSTATUS_COVERAGE_MODULATION_TABLE_SET,
+    CBSTATUS_SHADING_RATE_IMAGE_ENABLE_SET,
+    CBSTATUS_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_SET,
+    CBSTATUS_COVERAGE_REDUCTION_MODE_SET,
+    CBSTATUS_NUM,
 };
 
-VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag);
-CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state);
-std::string DynamicStateString(CBStatusFlags input_value);
+struct CBStatusFlags {
+    uint32_t bits[(CBSTATUS_NUM + 31) / 32];
+
+    CBStatusFlags() { reset(); }
+
+    CBStatusFlags(CBStatus status) {
+        reset();
+        set(status);
+    }
+
+    CBStatusFlags(CBStatusFlags const &status_bits) {
+        reset();
+        set(status_bits);
+    }
+
+    void reset() {
+        for (size_t i = 0; i < std::size(bits); ++i) {
+            bits[i] = 0U;
+        }
+    }
+
+    void set_all() {
+        for (int i = 0; i < CBSTATUS_NUM; ++i) {
+            set(static_cast<CBStatus>(i));
+        }
+    }
+
+    void set(CBStatus status) {
+        if (status < CBSTATUS_NUM) {
+            bits[status / 32U] |= 1 << (status % 32U);
+        }
+    }
+
+    void set(CBStatusFlags const &status) {
+        for (size_t i = 0; i < std::size(bits); ++i) {
+            bits[i] |= status.bits[i];
+        }
+    }
+
+    void unset(CBStatus status) {
+        if (status < CBSTATUS_NUM) {
+            bits[status / 32U] &= ~(1 << (status % 32U));
+        }
+    }
+
+    void unset(CBStatusFlags const &status) {
+        for (size_t i = 0; i < std::size(bits); ++i) {
+            bits[i] &= ~status.bits[i];
+        }
+    }
+
+    bool is_set(CBStatus status) const {
+        if (status < CBSTATUS_NUM) {
+            return ((bits[status / 32] >> (status % 32)) & 1U) != 0U;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_empty() const {
+        for (int i = 0; i < CBSTATUS_NUM; ++i) {
+            if (is_set(static_cast<CBStatus>(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+VkDynamicState ConvertToDynamicState(CBStatus flag);
+CBStatus ConvertToCBStatus(VkDynamicState state);
+std::string DynamicStateString(CBStatusFlags const &input_value);
 
 struct BufferBinding {
     std::shared_ptr<BUFFER_STATE> buffer_state;
@@ -477,8 +574,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
-    void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits);
-    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits, uint32_t attachment_count);
+    void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits);
+    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
