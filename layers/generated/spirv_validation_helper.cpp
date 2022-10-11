@@ -659,18 +659,18 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
 bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn) const {
     bool skip = false;
 
-    if (insn.opcode() == spv::OpCapability) {
+    if (insn.Opcode() == spv::OpCapability) {
         // All capabilities are generated so if it is not in the list it is not supported by Vulkan
-        if (spirvCapabilities.count(insn.word(1)) == 0) {
+        if (spirvCapabilities.count(insn.Word(1)) == 0) {
             skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01090",
-                "vkCreateShaderModule(): A SPIR-V Capability (%s) was declared that is not supported by Vulkan.", string_SpvCapability(insn.word(1)));
+                "vkCreateShaderModule(): A SPIR-V Capability (%s) was declared that is not supported by Vulkan.", string_SpvCapability(insn.Word(1)));
             return skip; // no known capability to validate
         }
 
         // Each capability has one or more requirements to check
         // Only one item has to be satisfied and an error only occurs
         // when all are not satisfied
-        auto caps = spirvCapabilities.equal_range(insn.word(1));
+        auto caps = spirvCapabilities.equal_range(insn.Word(1));
         bool has_support = false;
         for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
             if (it->second.version) {
@@ -689,7 +689,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
                 }
             } else if (it->second.property) {
                 // support is or'ed as only one has to be supported (if applicable)
-                switch (insn.word(1)) {
+                switch (insn.Word(1)) {
                     case spv::CapabilityDenormFlushToZero:
                         has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat16 & VK_TRUE) != 0);
                         has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat32 & VK_TRUE) != 0);
@@ -750,19 +750,19 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
 
         if (has_support == false) {
             skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but none of the requirements were met to use it.", string_SpvCapability(insn.word(1)));
+                "vkCreateShaderModule(): The SPIR-V Capability (%s) was declared, but none of the requirements were met to use it.", string_SpvCapability(insn.Word(1)));
         }
 
         // Portability checks
         if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
             if ((VK_FALSE == enabled_features.portability_subset_features.shaderSampleRateInterpolationFunctions) &&
-                (spv::CapabilityInterpolationFunction == insn.word(1))) {
+                (spv::CapabilityInterpolationFunction == insn.Word(1))) {
                 skip |= LogError(device, "VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325",
                                     "Invalid shader capability (portability error): interpolation functions are not supported "
                                     "by this platform");
             }
         }
-    } else if (insn.opcode() == spv::OpExtension) {
+    } else if (insn.Opcode() == spv::OpExtension) {
         static const std::string spv_prefix = "SPV_";
         std::string extension_name = insn.GetAsString(1);
 
@@ -800,7 +800,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
                 }
             } else if (it->second.property) {
                 // support is or'ed as only one has to be supported (if applicable)
-                switch (insn.word(1)) {
+                switch (insn.Word(1)) {
                     default:
                         break;
                 }
