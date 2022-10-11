@@ -1120,8 +1120,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
     // Verify if using dynamic state setting commands that it doesn't set up in pipeline
     CBStatusFlags invalid_status;
-    invalid_status.set_all();
-    invalid_status.unset(CBSTATUS_INDEX_BUFFER_BOUND);
+    invalid_status.set_all_dynamic_states();
     invalid_status.unset(pCB->dynamic_status);
     invalid_status.unset(pCB->static_status);
 

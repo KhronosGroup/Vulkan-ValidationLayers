@@ -121,14 +121,15 @@ enum CB_STATE {
 // CB Status -- used to track status of various bindings on cmd buffer objects
 
 enum CBStatus {
-    CBSTATUS_INDEX_BUFFER_BOUND,      // Index buffer has been set
-    CBSTATUS_LINE_WIDTH_SET,          // Line width has been set
-    CBSTATUS_DEPTH_BIAS_SET,          // Depth bias has been set
-    CBSTATUS_BLEND_CONSTANTS_SET,     // Blend constants state has been set
-    CBSTATUS_DEPTH_BOUNDS_SET,        // Depth bounds state object has been set
-    CBSTATUS_STENCIL_READ_MASK_SET,   // Stencil read mask has been set
-    CBSTATUS_STENCIL_WRITE_MASK_SET,  // Stencil write mask has been set
-    CBSTATUS_STENCIL_REFERENCE_SET,   // Stencil reference has been set
+    CBSTATUS_INDEX_BUFFER_BOUND,                      // Index buffer has been set
+    CBSTATUS_FIRST_DYNAMIC,                           // Start of the dynamic state section
+    CBSTATUS_LINE_WIDTH_SET = CBSTATUS_FIRST_DYNAMIC, // Line width has been set
+    CBSTATUS_DEPTH_BIAS_SET,                          // Depth bias has been set
+    CBSTATUS_BLEND_CONSTANTS_SET,                     // Blend constants state has been set
+    CBSTATUS_DEPTH_BOUNDS_SET,                        // Depth bounds state object has been set
+    CBSTATUS_STENCIL_READ_MASK_SET,                   // Stencil read mask has been set
+    CBSTATUS_STENCIL_WRITE_MASK_SET,                  // Stencil write mask has been set
+    CBSTATUS_STENCIL_REFERENCE_SET,                   // Stencil reference has been set
     CBSTATUS_VIEWPORT_SET,
     CBSTATUS_SCISSOR_SET,
     CBSTATUS_EXCLUSIVE_SCISSOR_SET,
@@ -221,6 +222,12 @@ struct CBStatusFlags {
 
     void set_all() {
         for (int i = 0; i < CBSTATUS_NUM; ++i) {
+            set(static_cast<CBStatus>(i));
+        }
+    }
+
+    void set_all_dynamic_states() {
+        for (int i = CBSTATUS_FIRST_DYNAMIC; i < CBSTATUS_NUM; ++i) {
             set(static_cast<CBStatus>(i));
         }
     }
