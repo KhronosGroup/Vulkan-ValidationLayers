@@ -202,6 +202,12 @@ struct CBStatusFlags {
         set(status);
     }
 
+    CBStatusFlags & operator=(CBStatusFlags const & status) {
+        reset();
+        set(status);
+        return *this;
+    }
+
     CBStatusFlags(CBStatusFlags const &status_bits) {
         reset();
         set(status_bits);
