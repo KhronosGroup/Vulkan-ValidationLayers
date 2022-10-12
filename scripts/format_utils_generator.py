@@ -153,7 +153,6 @@ class FormatUtilsOutputGenerator(OutputGenerator):
             write('#include "vk_layer_utils.h"', file=self.outFile)
             write('#include <map>', file=self.outFile)
             write('#include <vector>', file=self.outFile)
-            write('#include <spirv/unified1/spirv.hpp>', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)
             write('#include <vulkan/vk_layer.h>', file=self.outFile)
@@ -174,7 +173,6 @@ extern "C" {
         write(self.ycbcrFunctions(), file=self.outFile)
         write(self.multiplaneFunctions(), file=self.outFile)
         write(self.sizeFunctions(), file=self.outFile)
-        write(self.spirvFunctions(), file=self.outFile)
         write(self.utilFunctions(), file=self.outFile)
         if self.headerFile:
             export = '''
@@ -205,8 +203,7 @@ extern "C" {
             'blockSize' : int(elem.get('blockSize')),
             'texelsPerBlock' : int(elem.get('texelsPerBlock')),
             'blockExtent' : '1,1,1', # default
-            'components' : [],
-            'spirv' : None # default
+            'components' : []
         }
 
         if elem.get('blockExtent'):
@@ -224,10 +221,6 @@ extern "C" {
                 # create list if first time
                 self.compressedFormats[compressed] = []
             self.compressedFormats[compressed].append(formatName)
-
-        spirvImageFormat = elem.find('spirvimageformat')
-        if (spirvImageFormat is not None):
-            self.allFormats[formatName]['spirv'] = spirvImageFormat.get('name')
 
         self.maxComponentCount = max(self.maxComponentCount, sum(1 for _ in elem.iter('component')))
         # some formats (VK_FORMAT_D16_UNORM_S8_UINT) are not same numeric
@@ -813,28 +806,6 @@ bool FormatHasAlpha(VkFormat format) {
     return FormatHasComponent(format, COMPONENT_TYPE::A);
 }'''
         return output;
-    #
-    # Generate functions for size based functions
-    def spirvFunctions(self):
-        output = ''
-        if self.headerFile:
-            output += '''// SPIR-V
-VK_LAYER_EXPORT VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);'''
-        elif self.sourceFile:
-            output += '\n// Will return the Vulkan format for a given SPIR-V image format value\n'
-            output += '// Note: will return VK_FORMAT_UNDEFINED if non valid input\n'
-            output += 'VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {\n'
-            output += '    switch (spirv_image_format) {\n'
-            for f, info in sorted(self.allFormats.items()):
-                if info['spirv'] is not None:
-                    output += '        case spv::ImageFormat{}:\n'.format(info['spirv'])
-                    output += '            return {};\n'.format(f)
-            output += '        default:\n'
-            output += '            return VK_FORMAT_UNDEFINED;\n'
-            output += '     }\n'
-            output += '}'
-
-        return output
 
     #
     # Misc functions

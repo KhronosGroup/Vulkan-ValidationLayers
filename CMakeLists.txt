@@ -72,7 +72,7 @@ if (UPDATE_DEPS)
     if (NOT BUILD_TESTS)
         set(_update_deps_arg "--optional=tests")
     endif()
-        
+
     if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
         set(_update_deps_arg ${_update_deps_arg} "--skip-existing-install")
     endif()
@@ -207,7 +207,7 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
       (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
         add_compile_options(-Werror)
     endif()
-    
+
 
     set(CMAKE_C_STANDARD 99)
 
@@ -366,7 +366,6 @@ target_include_directories(VkLayer_utils
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR}
-                                  ${SPIRV_HEADERS_INCLUDE_DIR}
                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if (USE_ROBIN_HOOD_HASHING)

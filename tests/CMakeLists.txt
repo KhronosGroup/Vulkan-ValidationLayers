@@ -140,7 +140,6 @@ target_include_directories(vk_layer_validation_tests
                                   ${CMAKE_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}
                                   ${VulkanHeaders_INCLUDE_DIR}
-                                  ${SPIRV_HEADERS_INCLUDE_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 
 option(PORTABILITY_TESTS_USE_DEVSIM "Automatically add the devsim layer for portability tests" OFF)
