@@ -19,15 +19,14 @@
 # This section contains pre-project() initialization, and ends with the project() command.
 
 cmake_minimum_required(VERSION 3.10.2)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
-project(Vulkan-ValidationLayers)
+project(Vulkan-ValidationLayers LANGUAGES CXX C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-enable_testing()
 
 # User-interface declarations ----------------------------------------------------------------------------------------------------
 # This section contains variables that affect development GUIs (e.g. CMake GUI and IDEs), such as option(), folders, and variables
@@ -39,10 +38,7 @@ option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=addres
 
 option(BUILD_TESTS "Build the tests" OFF)
 
-# Enable beta Vulkan extensions
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+add_definitions(-DVK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
 
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
@@ -83,7 +79,7 @@ if (UPDATE_DEPS)
                        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
                        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
 
-    add_custom_target(vvl_update_deps DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
+    add_custom_target(vvl_update_deps ALL DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
 
     # Check if update_deps.py needs to be run on first cmake run
     if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
@@ -103,9 +99,12 @@ else()
     message("********************************************************************************")
     find_package(PythonInterp 3 QUIET)
 endif()
-#backwards compatability settings for other parts of the build system that don't use find_package() variables yet
+# Dependencies can be installed in arbitrary locations. This is done by update_deps.py / users.
 if (ROBIN_HOOD_HASHING_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
+endif()
+if (GLSLANG_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${GLSLANG_INSTALL_DIR})
 endif()
 if (SPIRV_HEADERS_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${SPIRV_HEADERS_INSTALL_DIR})
@@ -117,19 +116,10 @@ if (GOOGLETEST_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${GOOGLETEST_INSTALL_DIR})
 endif()
 
-
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
-    get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders REQUIRED)
-
-    # xxxnsubtil: this should eventually be replaced by exported targets
-    add_library(Vulkan-Headers INTERFACE)
-    target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
-    add_library(Vulkan::Headers ALIAS Vulkan-Headers)
-endif()
+find_package(VulkanHeaders REQUIRED)
+add_library(Vulkan-Headers INTERFACE)
+target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
+add_library(Vulkan::Headers ALIAS Vulkan-Headers)
 
 option(USE_CCACHE "Use ccache" OFF)
 if(USE_CCACHE)
@@ -237,9 +227,7 @@ option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
 if (USE_ROBIN_HOOD_HASHING)
-    if (NOT TARGET robin_hood::robin_hood)
-        find_package(robin_hood REQUIRED CONFIG)
-    endif()
+    find_package(robin_hood REQUIRED CONFIG)
 endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)
@@ -281,52 +269,6 @@ if(BUILD_LAYERS OR BUILD_TESTS)
     endif()
 endif()
 
-if(BUILD_TESTS)
-    set(GLSLANG_INSTALL_DIR "GLSLANG-NOTFOUND" CACHE PATH "Absolute path to a glslang install directory")
-    if(NOT GLSLANG_INSTALL_DIR AND NOT DEFINED ENV{GLSLANG_INSTALL_DIR} AND NOT TARGET glslang)
-        message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
-    endif()
-
-    # CMake command line option overrides environment variable
-    if(NOT GLSLANG_INSTALL_DIR)
-        set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
-    endif()
-
-    if (NOT TARGET glslang)
-        message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
-        set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(GLSLANG_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to glslang headers")
-
-        set(GLSLANG_LIBRARIES glslang OGLCompiler OSDependent MachineIndependent GenericCodeGen HLSL SPIRV SPVRemapper)
-
-        # Add glslang static libraries as imported targets
-        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
-            add_library(${GLSLANG_LIBRARY} STATIC IMPORTED)
-            find_library("${GLSLANG_LIBRARY}_PATH" NAMES "${GLSLANG_LIBRARY}" HINTS ${GLSLANG_SEARCH_PATH})
-            set_target_properties(${GLSLANG_LIBRARY}
-                                  PROPERTIES IMPORTED_LOCATION
-                                             "${${GLSLANG_LIBRARY}_PATH}")
-            if (WIN32)
-                find_library("${GLSLANG_LIBRARY}_DEBUG_PATH" NAMES "${GLSLANG_LIBRARY}d" HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
-                set_target_properties(${GLSLANG_LIBRARY}
-                                      PROPERTIES IMPORTED_LOCATION_DEBUG
-                                                 "${${GLSLANG_LIBRARY}_DEBUG_PATH}")
-            endif()
-        endforeach()
-
-        # Circular dependencies exist between glslang static libs, add them all as link dependencies for each other
-        foreach(GLSLANG_LIBRARY ${GLSLANG_LIBRARIES})
-            set_target_properties(${GLSLANG_LIBRARY}
-                                  PROPERTIES INTERFACE_LINK_LIBRARIES
-                                             "${GLSLANG_LIBRARIES}")
-        endforeach()
-    else()
-        set(GLSLANG_INCLUDE_DIR "${glslang_SOURCE_DIR}" CACHE PATH "Path to glslang headers")
-        set(GLSLANG_LIBRARIES glslang SPIRV SPVRemapper)
-    endif()
-endif()
-
 # Generate dependent helper files ------------------------------------------------------------------------------------------------
 
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
@@ -348,9 +290,6 @@ if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI
     target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
-endif()
-if (UPDATE_DEPS)
-    add_dependencies(VkLayer_utils vvl_update_deps)
 endif()
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
@@ -384,35 +323,14 @@ if(NOT TARGET uninstall)
     set_target_properties(uninstall PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 endif()
 
-# Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
-file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
-list(LENGTH lines len)
-if(${len} EQUAL 1)
-    string(REGEX MATCHALL
-                 "[0-9]+"
-                 vk_header_version
-                 ${lines})
-else()
-    message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
-endif()
-
-# Optional codegen target --------------------------------------------------------------------------------------------------------
-if(PYTHONINTERP_FOUND)
-    add_custom_target(VulkanVL_generated_source
-                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
-                              ${VulkanRegistry_DIR} ${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/ --incremental
-                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/layers/generated
-                      )
-else()
-    message("WARNING: VulkanVL_generated_source target requires python 3")
-endif()
+include(VVLGenerateSourceCode)
 
 # Add subprojects ----------------------------------------------------------------------------------------------------------------
-
-if(BUILD_TESTS)
-    add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
-endif()
-
 if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)
     add_subdirectory(layers)
+endif()
+
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
 endif()

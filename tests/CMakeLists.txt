@@ -19,6 +19,9 @@ include(GoogleTest) # gtest_discover_tests
 # GoogleTest is required for testing framework
 find_package(GTest REQUIRED CONFIG)
 
+# glslang is required for testing framework
+find_package(glslang CONFIG REQUIRED)
+
 # Needed to make structure definitions match with glslang libraries
 add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
 
@@ -107,13 +110,6 @@ set(COMMON_CPP
     vktestbinding.cpp
     vktestframework.cpp)
 
-if(NOT TARGET vulkan)
-    set(
-        CMAKE_PREFIX_PATH
-        ${CMAKE_PREFIX_PATH};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
-        )
-endif()
-
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
 add_executable(vk_layer_validation_tests
                layer_validation_tests.cpp
@@ -135,7 +131,6 @@ target_include_directories(vk_layer_validation_tests
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
                                   ${PROJECT_SOURCE_DIR}/layers/generated
-                                  ${GLSLANG_INCLUDE_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}
@@ -162,7 +157,14 @@ target_include_directories(vk_layer_validation_tests PRIVATE ${SPIRV_HEADERS_INC
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
-    ${GLSLANG_LIBRARIES}
+    glslang::glslang
+    glslang::OGLCompiler
+    glslang::OSDependent
+    glslang::MachineIndependent
+    glslang::GenericCodeGen
+    glslang::HLSL
+    glslang::SPIRV
+    glslang::SPVRemapper
     ${SPIRV_TOOLS_TARGET}
     SPIRV-Tools-opt
     GTest::gtest
