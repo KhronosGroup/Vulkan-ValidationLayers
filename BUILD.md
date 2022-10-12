@@ -304,15 +304,6 @@ on/off options currently supported by this repository:
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the components with Wayland support. |
 | USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
 
-The following is a table of all string options currently supported by this repository:
-
-| Option | Platform | Default | Description |
-| ------ | -------- | ------- | ----------- |
-| CMAKE_OSX_DEPLOYMENT_TARGET | MacOS | `10.12` | The minimum version of MacOS for loader deployment. |
-
-These variables should be set using the `-D` option when invoking CMake to
-generate the native platform files.
-
 ## Building On Windows
 
 ### Windows Development Environment Requirements
@@ -845,7 +836,9 @@ To view to logging while running in a separate terminal run
 
 ### MacOS Build Requirements
 
-Tested on OSX version 10.12.6
+Tested on OSX version 10.12
+
+NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building VVL and it's dependencies.
 
 [CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz) is recommended.
 
