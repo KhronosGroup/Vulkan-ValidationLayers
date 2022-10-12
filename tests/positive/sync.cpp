@@ -2218,59 +2218,150 @@ TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
     command_pool.reset();
 }
 
-struct BufferRec {
-    BufferRec(uint64_t value, std::shared_ptr<vk_testing::Buffer> &&buf) : wait_value(value), buffer(std::move(buf)) {}
-
-    uint64_t wait_value{0};
-    std::shared_ptr<vk_testing::Buffer> buffer;
-};
-
 struct SemBufferRaceData {
-    VkDevice device{VK_NULL_HANDLE};
-    VkSemaphore sem{VK_NULL_HANDLE};
-    std::atomic<bool> *bailout{nullptr};
-    uint64_t timeout{kWaitTimeout};
-    uint32_t iterations{10000};
+    SemBufferRaceData(VkDeviceObj &dev_)
+        : dev(dev_),
+          SignalSemaphore(reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkSignalSemaphoreKHR"))) {
+        auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+        timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timeline_ci.initialValue = 0;
 
-    std::deque<BufferRec> buffer_queue;
-    std::mutex lock;
-    std::condition_variable cv;
-
-    BufferRec Pop() {
-        std::unique_lock<std::mutex> guard(lock);
-        while (buffer_queue.empty()) {
-            cv.wait(guard);
-        }
-        auto result = buffer_queue.front();
-        buffer_queue.pop_front();
-        return result;
+        auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+        sem.init(dev, sem_ci);
     }
-    void Push(uint64_t value, std::shared_ptr<vk_testing::Buffer> &&buffer) {
-        std::unique_lock<std::mutex> guard(lock);
-        buffer_queue.emplace_back(value, std::move(buffer));
-        cv.notify_all();
+
+    VkDeviceObj &dev;
+    PFN_vkSignalSemaphoreKHR SignalSemaphore{nullptr};
+    vk_testing::Semaphore sem;
+    uint64_t start_wait_value{0};
+    uint64_t timeout_ns{kWaitTimeout};
+    uint32_t iterations{10000};
+    std::atomic<bool> bailout{false};
+
+    std::unique_ptr<VkBufferObj> thread_buffer;
+
+    virtual VkResult Wait(uint64_t sem_value) = 0;
+
+    virtual VkResult Signal(uint64_t sem_value) {
+        auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+        signal_info.semaphore = sem.handle();
+        signal_info.value = sem_value;
+        return SignalSemaphore(dev.handle(), &signal_info);
+    }
+
+    void ThreadFunc() {
+        auto wait_value = start_wait_value;
+
+        while (!bailout) {
+            auto err = Wait(wait_value);
+            if (err != VK_SUCCESS) {
+                break;
+            }
+            auto buffer = std::move(thread_buffer);
+            if (!buffer) {
+                break;
+            }
+            buffer.reset();
+
+            err = Signal(wait_value + 1);
+            ASSERT_VK_SUCCESS(err);
+            wait_value += 3;
+        }
+    }
+
+    void Run(VkCommandPoolObj &command_pool, ErrorMonitor &error_mon) {
+        uint64_t gpu_wait_value, gpu_signal_value;
+        auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+        timeline_info.waitSemaphoreValueCount = 1;
+        timeline_info.pWaitSemaphoreValues = &gpu_wait_value;
+        timeline_info.signalSemaphoreValueCount = 1;
+        timeline_info.pSignalSemaphoreValues = &gpu_signal_value;
+
+        VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &sem.handle();
+        submit_info.pWaitDstStageMask = &wait_stage;
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &sem.handle();
+        submit_info.commandBufferCount = 1;
+
+        VkResult err;
+
+        start_wait_value = 2;
+        error_mon.SetBailout(&bailout);
+        std::thread thread(&SemBufferRaceData::ThreadFunc, this);
+        for (uint32_t i = 0; i < iterations; i++) {
+            VkCommandBufferObj cb(&dev, &command_pool);
+
+            VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+            auto buffer = layer_data::make_unique<vk_testing::Buffer>();
+            buffer->init_as_dst(dev, (VkDeviceSize)20, reqs);
+
+            // main thread sets up buffer
+            // main thread signals 1
+            // gpu queue waits for 1
+            // gpu queue signals 2
+            // sub thread waits for 2
+            // sub thread frees buffer
+            // sub thread signals 3
+            // main thread waits for 3
+            uint64_t host_signal_value = (i * 3) + 1;
+            gpu_wait_value = host_signal_value;
+            gpu_signal_value = (i * 3) + 2;
+            uint64_t host_wait_value = (i * 3) + 3;
+
+            cb.begin();
+            cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
+            cb.end();
+            thread_buffer = std::move(buffer);
+
+            submit_info.pCommandBuffers = &cb.handle();
+            err = vk::QueueSubmit(dev.m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            ASSERT_VK_SUCCESS(err);
+
+            err = Signal(host_signal_value);
+            ASSERT_VK_SUCCESS(err);
+
+            err = Wait(host_wait_value);
+            ASSERT_VK_SUCCESS(err);
+        }
+        bailout = true;
+        // make sure worker thread wakes up.
+        err = Signal((iterations + 1) * 3);
+        ASSERT_VK_SUCCESS(err);
+        thread.join();
+        error_mon.SetBailout(nullptr);
+        vk::QueueWaitIdle(dev.m_queue);
     }
 };
 
-void GetSemFreeBuffer(SemBufferRaceData *data) {
-    auto fpGetSemaphoreCounterValue =
-        reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(vk::GetDeviceProcAddr(data->device, "vkGetSemaphoreCounterValueKHR"));
+struct SemBufferRaceGetCounterData : public SemBufferRaceData {
+    SemBufferRaceGetCounterData(VkDeviceObj &dev_)
+        : SemBufferRaceData(dev_),
+          GetSemaphoreCounterValue(reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
+              vk::GetDeviceProcAddr(dev.handle(), "vkGetSemaphoreCounterValueKHR"))) {}
 
-    while (!*data->bailout) {
-        auto rec = data->Pop();
-        if (rec.wait_value == 0 || !rec.buffer) {
-            break;
-        }
+    VkResult Wait(uint64_t sem_value) {
         uint64_t read_value = 0;
+        auto end_time = std::chrono::steady_clock::now() + std::chrono::nanoseconds(timeout_ns);
         do {
-            fpGetSemaphoreCounterValue(data->device, data->sem, &read_value);
-            if (*data->bailout) {
-                return;
+            auto err = GetSemaphoreCounterValue(dev.handle(), sem.handle(), &read_value);
+            if (err != VK_SUCCESS) {
+                return err;
             }
-        } while (read_value != rec.wait_value);
-        rec.buffer.reset();
+            if (bailout) {
+                return VK_SUCCESS;
+            }
+            if (read_value >= sem_value) {
+                return VK_SUCCESS;
+            }
+        } while (std::chrono::steady_clock::now() < end_time);
+        return VK_TIMEOUT;
     }
-}
+
+    PFN_vkGetSemaphoreCounterValueKHR GetSemaphoreCounterValue;
+};
 
 TEST_F(VkPositiveLayerTest, GetTimelineSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2283,88 +2374,27 @@ TEST_F(VkPositiveLayerTest, GetTimelineSemThreadRace) {
         GTEST_SKIP() << "Timeline semaphore feature not supported.";
     }
 
-    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
-    timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    timeline_ci.initialValue = 0;
+    SemBufferRaceGetCounterData data(*m_device);
 
-    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
-    vk_testing::Semaphore sem(*m_device, sem_ci);
-    auto sem_handle = sem.handle();
-
-    uint64_t signal_value = 1;
-    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
-    timeline_info.signalSemaphoreValueCount = 1;
-    timeline_info.pSignalSemaphoreValues = &signal_value;
-
-    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &sem_handle;
-    submit_info.commandBufferCount = 1;
-
-    std::atomic<bool> bailout{false};
-    SemBufferRaceData data;
-    data.device = m_device->device();
-    data.sem = sem.handle();
-    data.bailout = &bailout;
-
-    m_errorMonitor->SetBailout(&bailout);
-
-    auto fpGetSemaphoreCounterValue = reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
-        vk::GetDeviceProcAddr(m_device->device(), "vkGetSemaphoreCounterValueKHR"));
-
-    std::thread thread(GetSemFreeBuffer, &data);
-    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
-        VkCommandBufferObj cb(m_device, m_commandPool);
-
-        VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        auto buffer = std::make_shared<vk_testing::Buffer>();
-        buffer->init_as_dst(*m_device, (VkDeviceSize)20, reqs);
-
-        cb.begin();
-        cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
-        cb.end();
-        data.Push(signal_value, std::move(buffer));
-
-        submit_info.pCommandBuffers = &cb.handle();
-        vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-
-        uint64_t read_value = 0;
-        do {
-            fpGetSemaphoreCounterValue(data.device, data.sem, &read_value);
-        } while (read_value != signal_value);
-    }
-    data.Push(0, std::shared_ptr<vk_testing::Buffer>());
-    bailout = true;
-    thread.join();
-
-    m_errorMonitor->SetBailout(nullptr);
-
-    vk::QueueWaitIdle(m_device->m_queue);
-
-    data.buffer_queue.clear();
+    data.Run(*m_commandPool, *m_errorMonitor);
 }
 
-void WaitSemFreeBuffer(SemBufferRaceData *data) {
-    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data->device, "vkWaitSemaphoresKHR"));
+struct WaitTimelineSemThreadData : public SemBufferRaceData {
+    WaitTimelineSemThreadData(VkDeviceObj &dev_)
+        : SemBufferRaceData(dev_),
+          WaitSemaphores(reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkWaitSemaphoresKHR"))) {}
 
-    while (!*data->bailout) {
-        auto rec = data->Pop();
-        if (rec.wait_value == 0 || !rec.buffer) {
-            break;
-        }
-
-        auto wait_value = rec.wait_value;
+    VkResult Wait(uint64_t sem_value) {
         auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
         wait_info.semaphoreCount = 1;
-        wait_info.pSemaphores = &data->sem;
-        wait_info.pValues = &wait_value;
+        wait_info.pSemaphores = &sem.handle();
+        wait_info.pValues = &sem_value;
 
-        auto err = fpWaitSemaphores(data->device, &wait_info, data->timeout);
-        ASSERT_VK_SUCCESS(err);
-
-        rec.buffer.reset();
+        return WaitSemaphores(dev.handle(), &wait_info, timeout_ns);
     }
-}
+
+    PFN_vkWaitSemaphoresKHR WaitSemaphores;
+};
 
 TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -2376,67 +2406,8 @@ TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
     if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
         GTEST_SKIP() << "Timeline semaphore feature not supported.";
     }
+    WaitTimelineSemThreadData data(*m_device);
 
-    auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
-    timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-    timeline_ci.initialValue = 0;
-
-    auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
-    vk_testing::Semaphore sem(*m_device, sem_ci);
-    auto sem_handle = sem.handle();
-
-    uint64_t signal_value = 1234;
-    auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
-    timeline_info.signalSemaphoreValueCount = 1;
-    timeline_info.pSignalSemaphoreValues = &signal_value;
-
-    auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &sem_handle;
-    submit_info.commandBufferCount = 1;
-
-    std::atomic<bool> bailout{false};
-    SemBufferRaceData data;
-    data.device = m_device->device();
-    data.sem = sem.handle();
-    data.bailout = &bailout;
-
-    m_errorMonitor->SetBailout(&bailout);
-
-    auto fpWaitSemaphores = reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(data.device, "vkWaitSemaphoresKHR"));
-
-    std::thread thread(WaitSemFreeBuffer, &data);
-    for (uint32_t i = 0; i < data.iterations; i++, signal_value++) {
-        VkCommandBufferObj cb(m_device, m_commandPool);
-
-        VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        auto buffer = std::make_shared<vk_testing::Buffer>();
-        buffer->init_as_dst(*m_device, (VkDeviceSize)20, reqs);
-
-        cb.begin();
-        cb.FillBuffer(buffer->handle(), 0, 12, 0x11111111);
-        cb.end();
-        data.Push(signal_value, std::move(buffer));
-
-        submit_info.pCommandBuffers = &cb.handle();
-        auto err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-        ASSERT_VK_SUCCESS(err);
-
-        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
-        wait_info.semaphoreCount = 1;
-        wait_info.pSemaphores = &data.sem;
-        wait_info.pValues = &signal_value;
-        err = fpWaitSemaphores(data.device, &wait_info, data.timeout);
-        ASSERT_VK_SUCCESS(err);
-    }
-    data.Push(0, std::shared_ptr<vk_testing::Buffer>());
-    bailout = true;
-    thread.join();
-
-    m_errorMonitor->SetBailout(nullptr);
-
-    vk::QueueWaitIdle(m_device->m_queue);
-
-    data.buffer_queue.clear();
+    data.Run(*m_commandPool, *m_errorMonitor);
 }
 
