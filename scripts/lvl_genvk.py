@@ -518,6 +518,7 @@ def makeGenOpts(args):
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
+            emitFormats       = emitFormatsPat,
             emitSpirv         = emitSpirvPat)
         ]
 

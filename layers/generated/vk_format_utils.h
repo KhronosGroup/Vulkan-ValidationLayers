@@ -206,8 +206,6 @@ VK_LAYER_EXPORT bool FormatHasGreen(VkFormat format);
 VK_LAYER_EXPORT bool FormatHasBlue(VkFormat format);
 VK_LAYER_EXPORT bool FormatHasAlpha(VkFormat format);
 
-// SPIR-V
-VK_LAYER_EXPORT VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);
 
 // Utils/misc
 static inline bool FormatIsUndef(VkFormat format) { return (format == VK_FORMAT_UNDEFINED); }
