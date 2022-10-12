@@ -300,10 +300,6 @@ if(BUILD_LAYERS)
     # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
     if(MSVC)
         target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
-        if (USE_ROBIN_HOOD_HASHING)
-            # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
-            target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
-        endif()
         # Need to use this instead of target_link_options() for older versions of CMake.
         target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
     endif()
@@ -314,7 +310,9 @@ if(BUILD_LAYERS)
         target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
     endif()
     if (USE_ROBIN_HOOD_HASHING)
-        target_include_directories(VkLayer_khronos_validation PRIVATE ${ROBIN_HOOD_HASHING_INCLUDE_DIR})
+        target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
+        # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
+        target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
     endif()
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)
@@ -327,6 +325,15 @@ if(BUILD_LAYERS)
                    "\\\\"
                    RELATIVE_PATH_PREFIX
                    "${RELATIVE_PATH_PREFIX}")
+
+    # Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
+    file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
+    list(LENGTH lines len)
+    if(${len} EQUAL 1)
+        string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
+    else()
+        message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
+    endif()
 
     # Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
     # compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
