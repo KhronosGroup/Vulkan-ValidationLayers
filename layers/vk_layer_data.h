@@ -200,17 +200,7 @@ class small_vector {
         return true;
     }
 
-    bool operator!=(const small_vector &rhs) const {
-        if (size_ != rhs.size_) return true;
-        auto value = begin();
-        for (const auto &rh_value : rhs) {
-            if (!(*value == rh_value)) {
-                return true;
-            }
-            ++value;
-        }
-        return false;
-    }
+    bool operator!=(const small_vector &rhs) const { return !(*this == rhs); }
 
     small_vector &operator=(const small_vector &other) {
         if (this != &other) {
