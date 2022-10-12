@@ -20,9 +20,10 @@
 #include "spirv_grammar_helper.h"
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(0), type_id_(0) {
-    words_.push_back(*it++);
+    words_.emplace_back(*it++);
+    words_.reserve(Length());
     for (uint32_t i = 1; i < Length(); i++) {
-        words_.push_back(*it++);
+        words_.emplace_back(*it++);
     }
 
     const bool has_result = OpcodeHasResult(Opcode());

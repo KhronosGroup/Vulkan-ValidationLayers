@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <vector>
 #include <assert.h>
+#include "vk_layer_data.h"
 #include <spirv/unified1/spirv.hpp>
 
 struct SHADER_MODULE_STATE;
@@ -41,13 +42,10 @@ struct AtomicInstructionInfo {
 class Instruction {
     public:
     Instruction(std::vector<uint32_t>::const_iterator it);
-    ~Instruction() {}
+    ~Instruction() = default;
 
     // The word used to define the Instruction
     uint32_t Word(size_t index) const { return words_[index]; }
-
-    // The words used to define the Instruction
-    const std::vector<uint32_t>& Words() const { return words_; }
 
     uint32_t Length() const { return words_[0] >> 16; }
 
@@ -63,7 +61,7 @@ class Instruction {
     // "A string is interpreted as a nul-terminated stream of characters"
     char const* GetAsString(uint32_t operand) const {
         assert(operand < Length());
-        return (char const*)&words_.at(operand);
+        return (char const*)&words_[operand];
     }
 
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
@@ -73,7 +71,15 @@ class Instruction {
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }
 
   private:
-    std::vector<uint32_t> words_;
+    // When this class was created, for SPIR-V Instructions that could be used in Vulkan,
+    //   414 of 423 had 6 or less operands
+    //   361 of 423 had 5 or less operands
+    //   287 of 423 had 4 or less operands
+    // An extra word is still needed because each insturction has one word prior to the operands
+    static constexpr uint32_t word_vector_length = 7;
+
+    // Max capacity needs to be uint32_t because an instruction can have a string operand that is (2^16)-1 bytes long
+    small_vector<uint32_t, word_vector_length, uint32_t> words_;
     uint32_t result_id_;
     uint32_t type_id_;
 };
