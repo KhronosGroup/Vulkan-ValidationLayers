@@ -14,23 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-
-# CMake project initialization ---------------------------------------------------------------------------------------------------
-# This section contains pre-project() initialization, and ends with the project() command.
-
 cmake_minimum_required(VERSION 3.10.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# Apple: Must be set before enable_language() or project() as it may influence configuration of the toolchain and flags.
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "Minimum OS X deployment version")
 
 project(Vulkan-ValidationLayers LANGUAGES CXX C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# User-interface declarations ----------------------------------------------------------------------------------------------------
-# This section contains variables that affect development GUIs (e.g. CMake GUI and IDEs), such as option(), folders, and variables
-# with the CACHE property.
 
 set(VVL_CPP_STANDARD 11 CACHE STRING "Set the C++ standard to build against. The value will be passed to cmake's CXX_STANDARD property.")
 
