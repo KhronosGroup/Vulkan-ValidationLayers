@@ -200,6 +200,18 @@ class small_vector {
         return true;
     }
 
+    bool operator!=(const small_vector &rhs) const {
+        if (size_ != rhs.size_) return true;
+        auto value = begin();
+        for (const auto &rh_value : rhs) {
+            if (!(*value == rh_value)) {
+                return true;
+            }
+            ++value;
+        }
+        return false;
+    }
+
     small_vector &operator=(const small_vector &other) {
         if (this != &other) {
             reserve(other.size_);  // reserve doesn't shrink!
@@ -920,8 +932,8 @@ using base_type =
 // Define T unique to each entrypoint which will persist data
 // Use only in with singleton (leaf) validation objects
 // State machine transition state changes of payload relative to TlsGuard object lifecycle:
-//  State INIT: bool(payload_) 
-//  State RESET: NOT bool(payload_) 
+//  State INIT: bool(payload_)
+//  State RESET: NOT bool(payload_)
 //    * PreCallValidate* phase
 //        * Initialized with skip (in PreCallValidate*)
 //            * RESET -> INIT
