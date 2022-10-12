@@ -763,6 +763,9 @@ class VkShaderObj : public vk_testing::ShaderModule {
                 case SPV_ENV_UNIVERSAL_1_5:
                     language_version = glslang::EShTargetSpv_1_5;
                     break;
+                case SPV_ENV_UNIVERSAL_1_6:
+                    language_version = glslang::EShTargetSpv_1_6;
+                    break;
                 case SPV_ENV_VULKAN_1_0:
                     client_version = glslang::EShTargetVulkan_1_0;
                     break;
@@ -774,7 +777,12 @@ class VkShaderObj : public vk_testing::ShaderModule {
                     client_version = glslang::EShTargetVulkan_1_2;
                     language_version = glslang::EShTargetSpv_1_5;
                     break;
+                case SPV_ENV_VULKAN_1_3:
+                    client_version = glslang::EShTargetVulkan_1_3;
+                    language_version = glslang::EShTargetSpv_1_6;
+                    break;
                 default:
+                    assert(false && "Invalid SPIR-V environment");
                     break;
             }
         }
