@@ -11821,7 +11821,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
             (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
                                              "VUID-vkCmdSetDepthClampEnableEXT-extendedDynamicState3DepthClampEnable-07448");
-        vkCmdSetDepthClampEnableEXT(m_commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+        vkCmdSetDepthClampEnableEXT(m_commandBuffer.handle(), VK_FALSE);
         m_errorMonitor->VerifyFound();
     }
     {
@@ -12072,6 +12072,138 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     }
 
     m_commandBuffer.end();
+}
+
+TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
+    TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state3 VUs");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    } else {
+        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME " is not supported.";
+        return;
+    }
+
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDynamicState const dyn_states[] = {VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT,
+                                         VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_POLYGON_MODE_EXT,
+                                         VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT,
+                                         VK_DYNAMIC_STATE_SAMPLE_MASK_EXT,
+                                         VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT,
+                                         VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT,
+                                         VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT,
+                                         VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT,
+                                         VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT,
+                                         VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT,
+                                         VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                         VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                         VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT,
+                                         VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV,
+                                         VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV,
+                                         VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV,
+                                         VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV,
+                                         VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV};
+
+    // Verify dupes of every state.
+    for (size_t i = 0; i < size(dyn_states); ++i) {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 2;
+        VkDynamicState dyn_state_dupes[2] = {dyn_states[i], dyn_states[i]};
+        dyn_state_ci.pDynamicStates = dyn_state_dupes;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Test each dynamic state
+
+#if 0 // WIP
+    if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        VkPipelineTessellationDomainOriginStateCreateInfo tess_ci = LvlInitStruct<VkPipelineTessellationDomainOriginStateCreateInfo>();
+        tess_ci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
+        pipe.gp_ci_.pNext = &tess_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
+            m_device->device(), "vkCmdSetTessellationDomainOriginEXT");
+        //vkCmdSetTessellationDomainOriginEXT(m_commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable) {
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        auto vkCmdSetDepthClampEnableEXT =
+            (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
+        vkCmdSetDepthClampEnableEXT(commandBuffer.handle(), VK_FALSE);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+#endif
 }
 
 TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
