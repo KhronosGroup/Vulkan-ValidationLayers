@@ -1543,9 +1543,8 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     queue_map_.clear();
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
-                                                       VkFence fence, VkResult result) {
-    if (result != VK_SUCCESS) return;
+void ValidationStateTracker::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                      VkFence fence) {
     auto queue_state = Get<QUEUE_STATE>(queue);
 
     uint64_t early_retire_seq = 0;
@@ -1601,8 +1600,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
 }
 
 void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                VkFence fence, VkResult result) {
-    if (result != VK_SUCCESS) return;
+                                                VkFence fence) {
     auto queue_state = Get<QUEUE_STATE>(queue);
     uint64_t early_retire_seq = 0;
     if (submitCount == 0) {
@@ -1639,14 +1637,14 @@ void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCo
     }
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
-                                                           VkFence fence, VkResult result) {
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+void ValidationStateTracker::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
+                                                          VkFence fence) {
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence);
 }
 
-void ValidationStateTracker::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
-                                                        VkFence fence, VkResult result) {
-    RecordQueueSubmit2(queue, submitCount, pSubmits, fence, result);
+void ValidationStateTracker::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits,
+                                                       VkFence fence) {
+    RecordQueueSubmit2(queue, submitCount, pSubmits, fence);
 }
 
 void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
@@ -1692,9 +1690,8 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     Destroy<DEVICE_MEMORY_STATE>(mem);
 }
 
-void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                                           VkFence fence, VkResult result) {
-    if (result != VK_SUCCESS) return;
+void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                          VkFence fence) {
     auto queue_state = Get<QUEUE_STATE>(queue);
 
     uint64_t early_retire_seq = 0;
@@ -1792,21 +1789,29 @@ void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, V
     }
 }
 
+void ValidationStateTracker::PreCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) {
+    auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
+    if (semaphore_state) {
+        auto value = pSignalInfo->value;  // const workaround
+        semaphore_state->EnqueueSignal(nullptr, 0, value);
+    }
+}
+
+void ValidationStateTracker::PreCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo) {
+    PreCallRecordSignalSemaphore(device, pSignalInfo);
+}
+
 void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
     if (semaphore_state) {
-        semaphore_state->RetireTimeline(pSignalInfo->value);
+        semaphore_state->Retire(nullptr, pSignalInfo->value);
     }
 }
 
-
 void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
-    auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
-    if (semaphore_state) {
-        semaphore_state->RetireTimeline(pSignalInfo->value);
-    }
+    PostCallRecordSignalSemaphore(device, pSignalInfo, result);
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
@@ -1836,8 +1841,27 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
     //  vkGetFenceStatus() at which point we'll clean/remove their CBs if complete.
 }
 
-void ValidationStateTracker::RecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
-                                                  VkResult result) {
+void ValidationStateTracker::PreRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) {
+    for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
+        auto semaphore_state = Get<SEMAPHORE_STATE>(pWaitInfo->pSemaphores[i]);
+        if (semaphore_state) {
+            auto value = pWaitInfo->pValues[i];  // const workaround
+            semaphore_state->EnqueueWait(nullptr, 0, value);
+        }
+    }
+}
+
+void ValidationStateTracker::PreCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout) {
+    PreRecordWaitSemaphores(device, pWaitInfo, timeout);
+}
+
+void ValidationStateTracker::PreCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo,
+                                                             uint64_t timeout) {
+    PreRecordWaitSemaphores(device, pWaitInfo, timeout);
+}
+
+void ValidationStateTracker::PostRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                                      VkResult result) {
     if (VK_SUCCESS != result) return;
 
     // Same logic as vkWaitForFences(). If some semaphores are not signaled, we will get their status when
@@ -1854,12 +1878,12 @@ void ValidationStateTracker::RecordWaitSemaphores(VkDevice device, const VkSemap
 
 void ValidationStateTracker::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
                                                           VkResult result) {
-    RecordWaitSemaphores(device, pWaitInfo, timeout, result);
+    PostRecordWaitSemaphores(device, pWaitInfo, timeout, result);
 }
 
 void ValidationStateTracker::PostCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo,
                                                              uint64_t timeout, VkResult result) {
-    RecordWaitSemaphores(device, pWaitInfo, timeout, result);
+    PostRecordWaitSemaphores(device, pWaitInfo, timeout, result);
 }
 
 void ValidationStateTracker::RecordGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
@@ -1876,6 +1900,7 @@ void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValue(VkDevice dev
                                                                     VkResult result) {
     RecordGetSemaphoreCounterValue(device, semaphore, pValue, result);
 }
+
 void ValidationStateTracker::PostCallRecordGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
                                                                        VkResult result) {
     RecordGetSemaphoreCounterValue(device, semaphore, pValue, result);
@@ -3642,6 +3667,11 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     // VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, or VK_ERROR_SURFACE_LOST_KHR, the set of queue operations are still considered
     // to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will execute when the corresponding queue
     // operation is complete.
+    //
+    // NOTE: This is the only queue submit-like call that has its state updated in PostCallRecord(). In part that is because of these
+    // non-fatal error cases. Also we need a place to handle the swapchain image bookkeeping, which really should be happening once all
+    // the wait semaphores have completed. Since most of the PostCall queue submit race conditions are related to timeline semaphores,
+    // and acquire sempaphores are always binary, this seems ok-ish.
     if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_DEVICE_LOST) {
         return;
     }
