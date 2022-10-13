@@ -429,7 +429,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
 
                 auto range = entry_points.equal_range(entrypoint_name);
                 for (auto it = range.first; it != range.second; ++it) {
-                    if (it->second.insn == insn) {
+                    if (insn == it->second.insn.get()) {
                         entry_point = &(it->second);
                         break;
                     }
@@ -595,7 +595,7 @@ layer_data::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const
     auto range = static_data_.entry_points.equal_range(name);
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second.stage == stageBits) {
-            assert(it->second.insn.Opcode() == spv::OpEntryPoint);
+            assert(it->second.insn.get().Opcode() == spv::OpEntryPoint);
             result.emplace(it->second.insn);
             break;
         }

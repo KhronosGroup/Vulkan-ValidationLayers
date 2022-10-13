@@ -205,7 +205,7 @@ struct shader_struct_member {
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     struct EntryPoint {
-        const Instruction &insn;  // OpEntryPoint instruction
+        std::reference_wrapper<const Instruction> insn;  // OpEntryPoint instruction
         VkShaderStageFlagBits stage;
         std::vector<function_set> function_set_list;
         shader_struct_member push_constant_used_in_shader;

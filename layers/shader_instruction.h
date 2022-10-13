@@ -45,7 +45,7 @@ class Instruction {
     ~Instruction() = default;
 
     // The word used to define the Instruction
-    uint32_t Word(size_t index) const { return words_[index]; }
+    uint32_t Word(uint32_t index) const { return words_[index]; }
 
     uint32_t Length() const { return words_[0] >> 16; }
 
