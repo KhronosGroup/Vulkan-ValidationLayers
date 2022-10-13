@@ -252,7 +252,7 @@ static inline bool IsIdentitySwizzle(VkComponentMapping components) {
     // clang-format on
 }
 
-static inline VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
+static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
     switch (indexType) {
         case VK_INDEX_TYPE_UINT16:
             return 2;
@@ -260,6 +260,8 @@ static inline VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
             return 4;
         case VK_INDEX_TYPE_UINT8_EXT:
             return 1;
+        case VK_INDEX_TYPE_NONE_KHR:  // alias VK_INDEX_TYPE_NONE_NV
+            return 0;
         default:
             // Not a real index type. Express no alignment requirement here; we expect upper layer
             // to have already picked up on the enum being nonsense.
