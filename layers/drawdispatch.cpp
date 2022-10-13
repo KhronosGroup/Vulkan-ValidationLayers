@@ -1267,18 +1267,9 @@ bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_sta
                                                   const char *caller, const char *first_index_vuid) const {
     bool skip = false;
     if (cb_state.status[CBSTATUS_INDEX_BUFFER_BOUND]) {
-        unsigned int index_size = 0;
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
-        if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
-            index_size = 2;
-        }
-        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
-            index_size = 4;
-        }
-        else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
-            index_size = 1;
-        }
-        VkDeviceSize end_offset = (index_size * (static_cast<VkDeviceSize>(firstIndex) + indexCount)) + index_buffer_binding.offset;
+        const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
+        VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount)) + index_buffer_binding.offset;
         if (end_offset > index_buffer_binding.size) {
             skip |= LogError(index_buffer_binding.buffer_state->buffer(), first_index_vuid,
                              "%s: index size (%u) * (firstIndex (%u) + indexCount (%u)) "
