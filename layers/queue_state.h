@@ -321,7 +321,7 @@ class QUEUE_STATE : public BASE_NODE {
   private:
     using LockGuard = std::unique_lock<std::mutex>;
     void ThreadFunc();
-    layer_data::optional<CB_SUBMISSION> NextSubmission();
+    CB_SUBMISSION *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
     ValidationStateTracker &dev_data_;

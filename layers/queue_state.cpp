@@ -164,9 +164,9 @@ void QUEUE_STATE::Destroy() {
     BASE_NODE::Destroy();
 }
 
-layer_data::optional<CB_SUBMISSION> QUEUE_STATE::NextSubmission() {
-    layer_data::optional<CB_SUBMISSION> result;
-    // Pop the next submission off of the queue so that the thread function doesn't need to worry
+CB_SUBMISSION *QUEUE_STATE::NextSubmission() {
+    CB_SUBMISSION *result = nullptr;
+    // Find if the next submission is ready so that the thread function doesn't need to worry
     // about locking.
     auto guard = Lock();
     while (!exit_thread_ && (submissions_.empty() || request_seq_ < submissions_.front().seq)) {
@@ -174,18 +174,25 @@ layer_data::optional<CB_SUBMISSION> QUEUE_STATE::NextSubmission() {
         cond_.wait(guard);
     }
     if (!exit_thread_) {
-        result.emplace(std::move(submissions_.front()));
-        submissions_.pop_front();
+        result = &submissions_.front();
+        // NOTE: the submission must remain on the dequeue until we're done processing it so that
+        // anyone waiting for it can find the correct waiter
     }
     return result;
 }
 
 void QUEUE_STATE::ThreadFunc() {
-    layer_data::optional<CB_SUBMISSION> submission;
+    CB_SUBMISSION *submission = nullptr;
 
     auto is_query_updated_after = [this](const QueryObject &query_object) {
         auto guard = this->Lock();
+        bool first = true;
         for (const auto &submission : this->submissions_) {
+            // The current submission is still on the deque, so skip it
+            if (first) {
+                first = false;
+                continue;
+            }
             for (const auto &next_cb_node : submission.cbs) {
                 if (query_object.perf_pass != submission.perf_submit_pass) {
                     continue;
@@ -219,7 +226,11 @@ void QUEUE_STATE::ThreadFunc() {
             submission->fence->Retire();
         }
         // wake up anyone waiting for this submission to be retired
-        submission->completed.set_value();
+        {
+            auto guard = Lock();
+            submission->completed.set_value();
+            submissions_.pop_front();
+        }
     }
 }
 
