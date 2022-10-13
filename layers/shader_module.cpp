@@ -474,7 +474,8 @@ void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
             // Will need to update static data now the words have changed or else the def_index will not align
             // It is really rare this will get here as Group Decorations have been deprecated and before this was added no one ever
             // raised an issue for a bug that would crash the layers that was around for many releases
-            *const_cast<StaticData*>(&static_data_) = StaticData(*this);
+            StaticData new_static_data(*this);
+            *const_cast<StaticData*>(&static_data_) = std::move(new_static_data);
         }
     }
 }
