@@ -1515,10 +1515,12 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
 
     for (auto id : accessible_ids) {
         const Instruction* insn = FindDef(id);
+        if (insn->Opcode() != spv::OpVariable) {
+            continue;
+        }
         const uint32_t storage_class = insn->Word(3);
-        if (insn->Opcode() == spv::OpVariable &&
-            (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
-             storage_class == spv::StorageClassStorageBuffer)) {
+        if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
+            storage_class == spv::StorageClassStorageBuffer) {
             auto d = get_decorations(insn->Word(2));
             uint32_t set = d.descriptor_set;
             uint32_t binding = d.binding;
