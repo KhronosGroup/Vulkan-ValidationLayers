@@ -87,54 +87,34 @@ core_validation_sources = [
   "layers/buffer_state.h",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
+  "layers/cmd_buffer_state.cpp",
+  "layers/cmd_buffer_state.h",
   "layers/convert_to_renderpass2.cpp",
   "layers/convert_to_renderpass2.h",
+  "layers/core_error_location.cpp",
+  "layers/core_error_location.h",
   "layers/core_validation.cpp",
   "layers/core_validation.h",
   "layers/core_validation_error_enums.h",
-  "layers/cmd_buffer_state.h",
-  "layers/cmd_buffer_state.cpp",
-  "layers/device_memory_state.h",
-  "layers/device_memory_state.cpp",
-  "layers/device_state.h",
-  "layers/image_state.h",
-  "layers/image_state.cpp",
-  "layers/pipeline_state.h",
-  "layers/pipeline_state.cpp",
-  "layers/pipeline_layout_state.h",
-  "layers/pipeline_layout_state.cpp",
-  "layers/pipeline_sub_state.h",
-  "layers/pipeline_sub_state.cpp",
-  "layers/qfo_transfer.h",
-  "layers/query_state.h",
-  "layers/queue_state.cpp",
-  "layers/queue_state.h",
-  "layers/ray_tracing_state.h",
-  "layers/render_pass_state.h",
-  "layers/render_pass_state.cpp",
-  "layers/sampler_state.h",
-  "layers/core_error_location.cpp",
-  "layers/core_error_location.h",
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
   "layers/descriptor_validation.cpp",
+  "layers/device_memory_state.cpp",
+  "layers/device_memory_state.h",
+  "layers/device_state.h",
   "layers/drawdispatch.cpp",
-  "layers/generated/corechecks_optick_instrumentation.cpp",
-  "layers/generated/corechecks_optick_instrumentation.h",
-  "layers/generated/spirv_validation_helper.cpp",
-  "layers/generated/spirv_grammar_helper.cpp",
-  "layers/generated/spirv_grammar_helper.h",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
+  "layers/generated/corechecks_optick_instrumentation.cpp",
+  "layers/generated/corechecks_optick_instrumentation.h",
+  "layers/generated/gpu_as_inspection_comp.h",
   "layers/generated/gpu_pre_dispatch_comp.h",
   "layers/generated/gpu_pre_draw_vert.h",
-  "layers/generated/gpu_as_inspection_comp.h",
+  "layers/generated/spirv_grammar_helper.cpp",
+  "layers/generated/spirv_grammar_helper.h",
+  "layers/generated/spirv_validation_helper.cpp",
   "layers/generated/synchronization_validation_types.cpp",
   "layers/generated/synchronization_validation_types.h",
-  "layers/sync_utils.cpp",
-  "layers/sync_utils.h",
-  "layers/sync_vuid_maps.cpp",
-  "layers/sync_vuid_maps.h",
   "layers/gpu_shaders/gpu_shaders_constants.h",
   "layers/gpu_utils.cpp",
   "layers/gpu_utils.h",
@@ -143,7 +123,23 @@ core_validation_sources = [
   "layers/gpu_vuids.h",
   "layers/image_layout_map.cpp",
   "layers/image_layout_map.h",
+  "layers/image_state.cpp",
+  "layers/image_state.h",
+  "layers/pipeline_layout_state.cpp",
+  "layers/pipeline_layout_state.h",
+  "layers/pipeline_state.cpp",
+  "layers/pipeline_state.h",
+  "layers/pipeline_sub_state.cpp",
+  "layers/pipeline_sub_state.h",
+  "layers/qfo_transfer.h",
+  "layers/query_state.h",
+  "layers/queue_state.cpp",
+  "layers/queue_state.h",
   "layers/range_vector.h",
+  "layers/ray_tracing_state.h",
+  "layers/render_pass_state.cpp",
+  "layers/render_pass_state.h",
+  "layers/sampler_state.h",
   "layers/shader_module.cpp",
   "layers/shader_module.h",
   "layers/shader_instruction.cpp",
@@ -154,6 +150,10 @@ core_validation_sources = [
   "layers/state_tracker.h",
   "layers/subresource_adapter.cpp",
   "layers/subresource_adapter.h",
+  "layers/sync_utils.cpp",
+  "layers/sync_utils.h",
+  "layers/sync_vuid_maps.cpp",
+  "layers/sync_vuid_maps.h",
   "layers/synchronization_validation.cpp",
   "layers/synchronization_validation.h",
 ]
@@ -260,9 +260,7 @@ if (!is_android) {
 
 config("vulkan_memory_allocator_config") {
   if (is_clang) {
-    cflags_cc = [
-      "-Wno-nullability-completeness",
-    ]
+    cflags_cc = [ "-Wno-nullability-completeness" ]
   }
 }
 
@@ -278,13 +276,13 @@ source_set("vulkan_layer_utils") {
     "layers/android_ndk_types.h",
     "layers/cast_utils.h",
     "layers/generated/vk_enum_string_helper.h",
+    "layers/generated/vk_format_utils.cpp",
+    "layers/generated/vk_format_utils.h",
     "layers/generated/vk_layer_dispatch_table.h",
     "layers/generated/vk_object_types.h",
     "layers/generated/vk_safe_struct.h",
     "layers/generated/vk_typemap_helper.h",
     "layers/generated/vk_validation_error_messages.h",
-    "layers/generated/vk_format_utils.cpp",
-    "layers/generated/vk_format_utils.h",
     "layers/hash_util.h",
     "layers/hash_vk_types.h",
     "layers/sparse_containers.h",
@@ -301,7 +299,10 @@ source_set("vulkan_layer_utils") {
     "layers/xxhash.h",
   ]
   defines = [ "XXH_NO_LONG_LONG" ]
-  public_configs = [ ":vulkan_internal_config", ":vulkan_memory_allocator_config" ]
+  public_configs = [
+    ":vulkan_internal_config",
+    ":vulkan_memory_allocator_config",
+  ]
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
   public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
@@ -309,9 +310,7 @@ source_set("vulkan_layer_utils") {
 }
 
 config("vulkan_core_validation_config") {
-  include_dirs = [
-    "$vvl_glslang_dir",
-  ]
+  include_dirs = [ "$vvl_glslang_dir" ]
 }
 
 source_set("vulkan_core_validation_glslang") {
@@ -338,7 +337,7 @@ foreach(layer_info, layers) {
     defines = []
     configs -= [ "//build/config/compiler:chromium_code" ]
     configs += [ "//build/config/compiler:no_chromium_code" ]
-    configs += [ "//build/config/compiler:rtti"]
+    configs += [ "//build/config/compiler:rtti" ]
     configs -= vulkan_undefine_configs
     public_configs = [ ":vulkan_layer_config" ]
     deps = [
