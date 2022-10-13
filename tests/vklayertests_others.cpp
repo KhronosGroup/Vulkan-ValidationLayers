@@ -607,26 +607,15 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_commandBuffer->SetStencilReference(0, 0);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "value of pSubmits[0].pWaitDstStageMask[0] must not be 0");
-    // Specify 0 for a required VkFlags array entry
-    // Expected to trigger an error with
-    // parameter_validation::validate_flags_array
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-sType-sType");
+    // Set a bogus sType and see what happens
     VkSemaphore semaphore = VK_NULL_HANDLE;
-    VkPipelineStageFlags stageFlags = 0;
+    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     VkSubmitInfo submitInfo = LvlInitStruct<VkSubmitInfo>();
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = &semaphore;
     submitInfo.pWaitDstStageMask = &stageFlags;
-    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-sType-sType");
-    stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    // Set a bogus sType and see what happens
     submitInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = &semaphore;
-    submitInfo.pWaitDstStageMask = &stageFlags;
     vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
