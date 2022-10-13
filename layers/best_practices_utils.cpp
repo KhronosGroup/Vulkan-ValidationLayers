@@ -3133,15 +3133,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
     if (ib_mem && pipeline_binding_iter.IsUsing()) {
-        uint32_t scan_stride;
-        if (ib_type == VK_INDEX_TYPE_UINT8_EXT) {
-            scan_stride = sizeof(uint8_t);
-        } else if (ib_type == VK_INDEX_TYPE_UINT16) {
-            scan_stride = sizeof(uint16_t);
-        } else {
-            scan_stride = sizeof(uint32_t);
-        }
-
+        const uint32_t scan_stride = GetIndexAlignment(ib_type);
         const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + ib_mem_offset + firstIndex * scan_stride;
         const uint8_t* scan_end = scan_begin + indexCount * scan_stride;
 

@@ -10936,7 +10936,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
                                          "VK_BUFFER_USAGE_INDEX_BUFFER_BIT");
     skip |= ValidateCmd(cb_node.get(), CMD_BINDINDEXBUFFER);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkCmdBindIndexBuffer()", "VUID-vkCmdBindIndexBuffer-buffer-00434");
-    const auto offset_align = GetIndexAlignment(indexType);
+    const auto offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (offset % offset_align) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-offset-00432",
                          "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", offset,

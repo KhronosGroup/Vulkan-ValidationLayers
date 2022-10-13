@@ -6488,22 +6488,18 @@ bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesN
         triangles.indexType != VK_INDEX_TYPE_NONE_NV) {
         skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexType-02433", "%s", func_name);
     } else {
-        uint32_t index_element_size = 0;
-        if (triangles.indexType == VK_INDEX_TYPE_UINT32) {
-            index_element_size = 4;
-        } else if (triangles.indexType == VK_INDEX_TYPE_UINT16) {
-            index_element_size = 2;
-        }
+        const uint32_t index_element_size = GetIndexAlignment(triangles.indexType);
         if (index_element_size > 0 && SafeModulo(triangles.indexOffset, index_element_size) != 0) {
             skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexOffset-02432", "%s", func_name);
         }
-    }
-    if (triangles.indexType == VK_INDEX_TYPE_NONE_NV) {
-        if (triangles.indexCount != 0) {
-            skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexCount-02436", "%s", func_name);
-        }
-        if (triangles.indexData != VK_NULL_HANDLE) {
-            skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexData-02434", "%s", func_name);
+
+        if (triangles.indexType == VK_INDEX_TYPE_NONE_NV) {
+            if (triangles.indexCount != 0) {
+                skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexCount-02436", "%s", func_name);
+            }
+            if (triangles.indexData != VK_NULL_HANDLE) {
+                skip |= LogError(object_handle, "VUID-VkGeometryTrianglesNV-indexData-02434", "%s", func_name);
+            }
         }
     }
 

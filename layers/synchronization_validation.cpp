@@ -607,10 +607,9 @@ class FilteredGeneratorGenerator {
 
 using EventImageRangeGenerator = FilteredGeneratorGenerator<SyncEventState::ScopeMap, subresource_adapter::ImageRangeGenerator>;
 
-
 ResourceAccessRange GetBufferRange(VkDeviceSize offset, VkDeviceSize buf_whole_size, uint32_t first_index, uint32_t count,
-                                   VkDeviceSize stride) {
-    VkDeviceSize range_start = offset + first_index * stride;
+                                   uint32_t stride) {
+    VkDeviceSize range_start = offset + (first_index * stride);
     VkDeviceSize range_size = 0;
     if (count == UINT32_MAX) {
         range_size = buf_whole_size - range_start;
