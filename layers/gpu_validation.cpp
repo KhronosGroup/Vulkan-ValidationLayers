@@ -1272,6 +1272,91 @@ void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_nod
     }
 }
 
+void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
+                                                      const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                      const uint32_t *pDynamicOffsets) {
+    ValidationStateTracker::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet,
+                                                                descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
+                                                                pDynamicOffsets);
+    auto cb_node = GetWrite<gpuav_state::CommandBuffer>(commandBuffer);
+    if (!cb_node) {
+        ReportSetupProblem(device, "Unrecognized command buffer");
+        aborted = true;
+        return;
+    }
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
+    auto const &state = cb_node->lastBound[lv_bind_point];
+    GpuAssistedDeviceMemoryBlock di_input_block = {};
+
+    uint32_t number_of_sets = static_cast<uint32_t>(state.per_set.size());
+    // Figure out how much memory we need for the input block based on how many sets and bindings there are
+    // and how big each of the bindings is
+    if (number_of_sets > 0 && (descriptor_indexing || buffer_oob_enabled)) {
+        bool has_buffers = false;
+        uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
+        uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
+        for (const auto &s : state.per_set) {
+            auto desc = s.bound_descriptor_set;
+            if (desc && (desc->GetBindingCount() > 0)) {
+                binding_count += desc->GetLayout()->GetMaxBinding() + 1;
+                for (const auto &binding : *desc) {
+                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                    // blocks
+                    if (binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
+                        descriptor_count++;
+                        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+                                   "VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT descriptors will not be validated by GPU assisted "
+                                   "validation");
+                    } else {
+                        descriptor_count += binding->count;
+                    }
+                    if (!has_buffers && (binding->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
+                                         binding->type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC ||
+                                         binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                                         binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
+                                         binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                                         binding->type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
+                        has_buffers = true;
+                    }
+                }
+            }
+        }
+        if (descriptor_indexing || has_buffers) {
+            // Note that the size of the input buffer is dependent on the maximum binding number, which
+            // can be very large.  This is because for (set = s, binding = b, index = i), the validation
+            // code is going to dereference Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] to
+            // see if descriptors have been written. In gpu_validation.md, we note this and advise
+            // using densely packed bindings as a best practice when using gpu-av with descriptor indexing
+            uint32_t words_needed;
+            if (descriptor_indexing) {
+                words_needed = 1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count;
+            } else {
+                words_needed = 1 + number_of_sets + binding_count + descriptor_count;
+            }
+            VkBufferCreateInfo buffer_info = LvlInitStruct<VkBufferCreateInfo>();
+            buffer_info.size = words_needed * 4;
+            buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            VmaAllocationCreateInfo alloc_info = {};
+            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            alloc_info.pool = VK_NULL_HANDLE;
+            VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer, &di_input_block.allocation,
+                                     nullptr);
+            if (result != VK_SUCCESS) {
+                ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
+                aborted = true;
+                return;
+            }
+            uint32_t *data_ptr;
+            result = vmaMapMemory(vmaAllocator, di_input_block.allocation, reinterpret_cast<void **>(&data_ptr));
+            memset(data_ptr, 0, static_cast<size_t>(buffer_info.size));
+            vmaUnmapMemory(vmaAllocator, di_input_block.allocation);
+        }
+
+    }
+}
+
+
 void GpuAssisted::PreRecordCommandBuffer(VkCommandBuffer command_buffer) {
     auto cb_node = GetWrite<gpuav_state::CommandBuffer>(command_buffer);
     UpdateInstrumentationBuffer(cb_node.get());
