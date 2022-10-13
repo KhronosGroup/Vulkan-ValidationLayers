@@ -296,8 +296,8 @@ on/off options currently supported by this repository:
 | ------ | -------- | ------- | ----------- |
 | BUILD_LAYERS | All | `ON` | Controls whether or not the validation layers are built. |
 | BUILD_LAYER_SUPPORT_FILES | All | `OFF` | Controls whether or not layer support files are installed. |
-| BUILD_TESTS | All | `???` | Controls whether or not the validation layer tests are built. The default is `ON` when the Google Test repository is cloned into the `external` directory.  Otherwise, the default is `OFF`. |
-| INSTALL_TESTS | All | `OFF` | Controls whether or not the validation layer tests are installed. This option is only available when a copy of Google Test is available
+| BUILD_TESTS | All | `OFF` | Controls whether or not the validation layer tests are built. |
+| INSTALL_TESTS | All | `OFF` | Controls whether or not the validation layer tests are installed. This option is only available when `BUILD_TESTS` is `ON` |
 | BUILD_WERROR | All | `ON` | Controls whether or not to treat compiler warnings as errors. |
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the components with XCB support. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the components with Xlib support. |
@@ -305,31 +305,31 @@ on/off options currently supported by this repository:
 
 ### CCACHE
 
-There are 2 methods to enable CCACHE
+There are 2 methods to enable CCACHE:
 
 1.) Set environment variables
 
-```
+```bash
 # Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html)
-export CMAKE_CXX_COMPILER_LAUNCHER="/usr/bin/ccache"
-export CMAKE_C_COMPILER_LAUNCHER="/usr/bin/ccache"
+export CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache
+export CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
 ```
 
 2.) Pass in cache variables
 
 ```
-cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
+cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
 ```
 
 ### EXPORT_COMPILE_COMMANDS
 
-There are 2 methods to enable exporting compile commands
+There are 2 methods to enable exporting compile commands:
 
 1.) Set environment variables
 
-```
+```bash
 # Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_EXPORT_COMPILE_COMMANDS.html)
-export CMAKE_EXPORT_COMPILE_COMMANDS="ON"
+export CMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
 2.) Pass in cache variables
@@ -338,8 +338,8 @@ export CMAKE_EXPORT_COMPILE_COMMANDS="ON"
 cmake ... -D CMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
-NOTE: Modern tools will generally enable exporting compile commands for you (EX: VSCode).
-Also CMAKE_EXPORT_COMPILE_COMMANDS is implemented only by Makefile and Ninja generators. For other generators, this option is ignored.
+NOTE: Modern tools will generally enable exporting compile commands for you (e.g. VSCode).
+Also `CMAKE_EXPORT_COMPILE_COMMANDS` is implemented only by Makefile and Ninja generators. For other generators, this option is ignored.
 
 ## Building On Windows
 
@@ -349,11 +349,11 @@ Also CMAKE_EXPORT_COMPILE_COMMANDS is implemented only by Makefile and Ninja gen
   - Any Personal Computer version supported by Microsoft
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
   - Versions
-    - [2015](https://www.visualstudio.com/vs/older-downloads/)
-    - [2017](https://www.visualstudio.com/vs/downloads/)
+    - [2022](https://www.visualstudio.com/vs/downloads/)
+    - [2015-2019](https://www.visualstudio.com/vs/older-downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- [CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-win64-x64.zip) is recommended.
+- [CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-win64-x64.zip) is the minimum CMake version supported.  [CMake 3.19.3](https://cmake.org/files/v3.19/cmake-3.19.3-win64-x64.zip) is recommended.
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -411,13 +411,16 @@ create a build directory and generate the Visual Studio project files:
 The `-A` option is used to select either the "Win32" or "x64" architecture.
 
 If a generator for a specific version of Visual Studio is required, you can
-specify it for Visual Studio 2015, for example, with:
+specify it with the `-G` switch.  For example, to specify Visual Studio 2022, use:
 
-    64-bit: -G "Visual Studio 14 2015 Win64"
-    32-bit: -G "Visual Studio 14 2015"
+    64-bit: -G "Visual Studio 17 2022"
+    32-bit: -G "Visual Studio 17 2022" -A Win32
 
-See this [list](#cmake-visual-studio-generators) of other possible generators
-for Visual Studio.
+NOTE:
+- By default VS2019 and higher target "x64"
+- By default VS2017 and lower target "Win32"
+
+Check the [official CMake documentation](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html#visual-studio-generators) for further information on Visual Studio generators.
 
 When generating the project files, the absolute path to a Vulkan-Headers
 install directory must be provided. This can be done by setting the
@@ -498,17 +501,6 @@ In addition, running sample applications such as the
 with validation enabled is advised.
 
 ### Windows Notes
-
-#### CMake Visual Studio Generators
-
-The chosen generator should match one of the Visual Studio versions that you
-have installed. Generator strings that correspond to versions of Visual Studio
-include:
-
-| Build Platform               | 64-bit Generator              | 32-bit Generator        |
-|------------------------------|-------------------------------|-------------------------|
-| Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
-| Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
 
 #### Using The Vulkan Loader Library in this Repository on Windows
 
@@ -703,10 +695,12 @@ you are building for.
 
 Set up your environment for building 32-bit targets:
 
-    export ASFLAGS=--32
-    export CFLAGS=-m32
-    export CXXFLAGS=-m32
-    export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
+```bash
+export ASFLAGS=--32
+export CFLAGS=-m32
+export CXXFLAGS=-m32
+export PKG_CONFIG_LIBDIR=/usr/lib/i386-linux-gnu
+```
 
 Again, your PKG_CONFIG configuration may be different, depending on your distribution.
 
@@ -714,7 +708,9 @@ Finally, rebuild the repository using `cmake` and `make`, as explained above.
 
 #### Using the new layers
 
-    export VK_LAYER_PATH=<path to your repository root>/build/layers
+```bash
+export VK_LAYER_PATH=<path to your repository root>/build/layers
+```
 
 You can run the `vkcube` or `vulkaninfo` applications from the Vulkan-Tools
 repository to see which driver, loader and layers are being used.
@@ -757,11 +753,14 @@ version, as Android Studio will roll it forward fairly regularly.
 
 On Linux:
 
-    export ANDROID_SDK_HOME=$HOME/Android/sdk
-    export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
-    export PATH=$ANDROID_SDK_HOME:$PATH
-    export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
+```bash
+export ANDROID_SDK_HOME=$HOME/Android/sdk
+export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
+export PATH=$ANDROID_SDK_HOME:$PATH
+export PATH=$ANDROID_NDK_HOME:$PATH
+# Where X.Y.Z is the most recent version number inside the build-tools directory.
+export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
+```
 
 On Windows:
 
@@ -771,10 +770,13 @@ On Windows:
 
 On OSX:
 
-    export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
-    export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
-    export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
+```bash
+export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
+export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
+export PATH=$ANDROID_NDK_HOME:$PATH
+# Where X.Y.Z is the most recent version number inside the build-tools directory.
+export PATH=$ANDROID_SDK_HOME/build-tools/X.Y.Z:$PATH
+```
 
 Note: If `jarsigner` is missing from your platform, you can find it in the
 Android Studio install or in your Java installation. If you do not have Java,
@@ -794,7 +796,9 @@ Setup Homebrew and components
 
 - Ensure Homebrew is at the beginning of your PATH:
 
-      export PATH=/usr/local/bin:$PATH
+```
+export PATH=/usr/local/bin:$PATH
+```
 
 - Add packages with the following:
 
@@ -885,7 +889,9 @@ Setup Homebrew and components
 
 - Ensure Homebrew is at the beginning of your PATH:
 
-      export PATH=/usr/local/bin:$PATH
+```
+export PATH=/usr/local/bin:$PATH
+```
 
 - Add packages with the following (may need refinement)
 
@@ -946,7 +952,9 @@ Within Xcode, you can select Debug or Release builds in the Build Settings of th
 
 #### Using the new layers on MacOS
 
-    export VK_LAYER_PATH=<path to your repository root>/build/layers
+```
+export VK_LAYER_PATH=<path to your repository root>/build/layers
+```
 
 You can run the `vulkaninfo` applications from the Vulkan-Tools repository to
 see which driver, loader and layers are being used.
@@ -969,7 +977,9 @@ Clone and build the [MoltenVK](https://github.com/KhronosGroup/MoltenVK) reposit
 
 You will have to direct the loader from Vulkan-Loader to the MoltenVK ICD:
 
-    export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+```bash
+export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+```
 
 #### Using Mock ICD
 
@@ -977,7 +987,9 @@ Clone and build the [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools)
 
 You will have to direct the loader from Vulkan-Loader to the Mock ICD:
 
-    export VK_ICD_FILENAMES=<path to Vulkan-Tools repository>/build/icd/VkICD_mock_icd.json
+```bash
+export VK_ICD_FILENAMES=<path to Vulkan-Tools repository>/build/icd/VkICD_mock_icd.json
+```
 
 #### Running the Tests
 
