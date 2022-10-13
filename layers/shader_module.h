@@ -216,7 +216,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     struct StaticData {
         StaticData() = default;
         StaticData(const SHADER_MODULE_STATE &module_state);
-        StaticData &operator=(const StaticData &) = default;
+        // because there is a std::reference_wrapper value in here there is no copy constructor
+        StaticData &operator=(StaticData &&) = default;
         StaticData(StaticData &&) = default;
 
         // List of all instructions in the order they appear in the binary
