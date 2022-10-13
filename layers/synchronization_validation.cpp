@@ -7393,7 +7393,7 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     auto *cb_context = &cb_state->access_context;
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
         cb_context->NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
-        const auto recorded_cb = Get<syncval_state::CommandBuffer>(commandBuffer);
+        const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
         const auto *recorded_cb_context = &recorded_cb->access_context;
         cb_context->RecordExecutedCommandBuffer(*recorded_cb_context);
