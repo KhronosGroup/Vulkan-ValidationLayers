@@ -302,7 +302,44 @@ on/off options currently supported by this repository:
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the components with XCB support. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the components with Xlib support. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the components with Wayland support. |
-| USE_CCACHE | Linux | `OFF` | Enable caching with the CCache program. |
+
+### CCACHE
+
+There are 2 methods to enable CCACHE
+
+1.) Set environment variables
+
+```
+# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html)
+export CMAKE_CXX_COMPILER_LAUNCHER="/usr/bin/ccache"
+export CMAKE_C_COMPILER_LAUNCHER="/usr/bin/ccache"
+```
+
+2.) Pass in cache variables
+
+```
+cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
+```
+
+### EXPORT_COMPILE_COMMANDS
+
+There are 2 methods to enable exporting compile commands
+
+1.) Set environment variables
+
+```
+# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_EXPORT_COMPILE_COMMANDS.html)
+export CMAKE_EXPORT_COMPILE_COMMANDS="ON"
+```
+
+2.) Pass in cache variables
+
+```
+cmake ... -D CMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+NOTE: Modern tools will generally enable exporting compile commands for you (EX: VSCode).
+Also CMAKE_EXPORT_COMPILE_COMMANDS is implemented only by Makefile and Ninja generators. For other generators, this option is ignored.
 
 ## Building On Windows
 
@@ -586,8 +623,6 @@ to specify the number of cores to use for the build. For example:
 You can also use
 
     cmake --build .
-
-If your build system supports ccache, you can enable that via CMake option `-DUSE_CCACHE=On`
 
 ### Linux Notes
 
