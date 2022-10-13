@@ -1525,6 +1525,16 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateImportSemaphoreFdKHR(VkDevice device,
                                              const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) const override;
     bool PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd) const override;
+#ifdef VK_USE_PLATFORM_FUCHSIA
+    bool PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
+        VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo) const override;
+
+    void PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
+        VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA* pImportSemaphoreZirconHandleInfo, VkResult result) override;
+    void PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                       const VkSemaphoreGetZirconHandleInfoFUCHSIA* pGetZirconHandleInfo,
+                                                       zx_handle_t* pZirconHandle, VkResult result) override;
+#endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateImportSemaphoreWin32HandleKHR(
         VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo) const override;
