@@ -17496,6 +17496,27 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
     return skip;
 }
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo) const {
+    return ValidateImportSemaphore(pImportSemaphoreZirconHandleInfo->semaphore, "vkImportSemaphoreZirconHandleFUCHSIA");
+}
+
+void CoreChecks::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
+    VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordImportSemaphoreState(pImportSemaphoreZirconHandleInfo->semaphore, pImportSemaphoreZirconHandleInfo->handleType,
+                               pImportSemaphoreZirconHandleInfo->flags);
+}
+
+void CoreChecks::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                               const VkSemaphoreGetZirconHandleInfoFUCHSIA *pGetZirconHandleInfo,
+                                                               zx_handle_t *pZirconHandle, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordGetExternalSemaphoreState(pGetZirconHandleInfo->semaphore, pGetZirconHandleInfo->handleType);
+}
+#endif
+
 bool CoreChecks::ValidateImportFence(VkFence fence, const char *vuid, const char *caller_name) const {
     auto fence_node = Get<FENCE_STATE>(fence);
     bool skip = false;
