@@ -12533,6 +12533,37 @@ struct safe_VkAmigoProfilingSubmitInfoSEC {
     VkAmigoProfilingSubmitInfoSEC const *ptr() const { return reinterpret_cast<VkAmigoProfilingSubmitInfoSEC const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 shaderCoreBuiltins;
+    safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM();
+    ~safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM();
+    void initialize(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* copy_src);
+    VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(this); }
+    VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t shaderCoreCount;
+    uint32_t shaderWarpsPerCore;
+    safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src);
+    safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM();
+    ~safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM();
+    void initialize(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* copy_src);
+    VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *>(this); }
+    VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM const *>(this); }
+};
+
 struct safe_VkAccelerationStructureGeometryTrianglesDataKHR {
     VkStructureType sType;
     const void* pNext{};

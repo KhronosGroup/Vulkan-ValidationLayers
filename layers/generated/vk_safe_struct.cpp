@@ -57295,6 +57295,124 @@ void safe_VkAmigoProfilingSubmitInfoSEC::initialize(const safe_VkAmigoProfilingS
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct) :
+    sType(in_struct->sType),
+    shaderCoreBuiltins(in_struct->shaderCoreBuiltins)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM),
+    pNext(nullptr),
+    shaderCoreBuiltins()
+{}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src)
+{
+    sType = copy_src.sType;
+    shaderCoreBuiltins = copy_src.shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderCoreBuiltins = copy_src.shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::~safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::initialize(const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderCoreBuiltins = in_struct->shaderCoreBuiltins;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM* copy_src)
+{
+    sType = copy_src->sType;
+    shaderCoreBuiltins = copy_src->shaderCoreBuiltins;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct) :
+    sType(in_struct->sType),
+    shaderCoreCount(in_struct->shaderCoreCount),
+    shaderWarpsPerCore(in_struct->shaderWarpsPerCore)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM),
+    pNext(nullptr),
+    shaderCoreCount(),
+    shaderWarpsPerCore()
+{}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src)
+{
+    sType = copy_src.sType;
+    shaderCoreCount = copy_src.shaderCoreCount;
+    shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::operator=(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    shaderCoreCount = copy_src.shaderCoreCount;
+    shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::~safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    shaderCoreCount = in_struct->shaderCoreCount;
+    shaderWarpsPerCore = in_struct->shaderWarpsPerCore;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* copy_src)
+{
+    sType = copy_src->sType;
+    shaderCoreCount = copy_src->shaderCoreCount;
+    shaderWarpsPerCore = copy_src->shaderWarpsPerCore;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkAccelerationStructureGeometryTrianglesDataKHR::safe_VkAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR* in_struct) :
     sType(in_struct->sType),
     vertexFormat(in_struct->vertexFormat),
@@ -60723,6 +60841,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             safe_pNext = new safe_VkAmigoProfilingSubmitInfoSEC(reinterpret_cast<const VkAmigoProfilingSubmitInfoSEC *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM:
+            safe_pNext = new safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM:
+            safe_pNext = new safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
             break;
@@ -62086,6 +62210,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             delete reinterpret_cast<const safe_VkAmigoProfilingSubmitInfoSEC *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);
