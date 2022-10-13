@@ -7,9 +7,6 @@
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
             "commit": "28b53119bdfbc43eae532641337a7adbb315b273",
-            "cmake_options": [
-                "-DUSE_CCACHE=ON"
-            ],
             "optional": [
                 "tests"
             ]
