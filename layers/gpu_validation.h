@@ -21,6 +21,7 @@
 #pragma once
 
 #include "gpu_utils.h"
+#include "pipeline_state.h"
 
 class GpuAssisted;
 
@@ -28,6 +29,15 @@ struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
     layer_data::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
+};
+
+struct GpuAssistedDeviceInputMemoryBlock {
+    VkBuffer buffer;
+    VmaAllocation allocation;
+    const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set;
+    GpuAssistedDeviceInputMemoryBlock(VkBuffer buffer, VmaAllocation allocation,
+        const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set)
+        : buffer(buffer), allocation(allocation), per_set(per_set){};
 };
 
 struct GpuAssistedPreDrawResources {
@@ -150,13 +160,14 @@ struct GpuAssistedCmdIndirectState {
 namespace gpuav_state {
 class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
-    std::vector<GpuAssistedBufferInfo> gpuav_buffer_list;
+    std::vector<GpuAssistedBufferInfo> per_draw_buffer_list;
+    std::vector<GpuAssistedDeviceInputMemoryBlock> di_input_buffer_list;
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
 
     CommandBuffer(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const COMMAND_POOL_STATE* pool);
 
-    bool NeedsProcessing() const final { return !gpuav_buffer_list.empty() || has_build_as_cmd; }
+    bool NeedsProcessing() const final { return !per_draw_buffer_list.empty() || has_build_as_cmd; }
 
     void Process(VkQueue queue) final;
     void Reset() final;
