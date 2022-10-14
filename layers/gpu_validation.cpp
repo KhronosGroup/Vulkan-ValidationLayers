@@ -1154,7 +1154,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 void gpuav_state::CommandBuffer::Process(VkQueue queue) {
     auto *device_state = static_cast<GpuAssisted *>(dev_data);
     if (has_draw_cmd || has_trace_rays_cmd || has_dispatch_cmd) {
-        auto &gpu_buffer_list = gpuav_buffer_list;
+        auto &gpu_buffer_list = per_draw_buffer_list;
         uint32_t draw_index = 0;
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
@@ -1258,7 +1258,7 @@ void GpuAssisted::SetBindingState(uint32_t *data, uint32_t index, const cvdescri
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
 void GpuAssisted::UpdateInstrumentationBuffer(gpuav_state::CommandBuffer *cb_node) {
     uint32_t *data;
-    for (auto &buffer_info : cb_node->gpuav_buffer_list) {
+    for (auto &buffer_info : cb_node->per_draw_buffer_list) {
         if (buffer_info.di_input_mem_block.update_at_submit.size() > 0) {
             VkResult result =
                 vmaMapMemory(vmaAllocator, buffer_info.di_input_mem_block.allocation, reinterpret_cast<void **>(&data));
@@ -1287,7 +1287,6 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     auto const &state = cb_node->lastBound[lv_bind_point];
-    GpuAssistedDeviceMemoryBlock di_input_block = {};
 
     uint32_t number_of_sets = static_cast<uint32_t>(state.per_set.size());
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
@@ -1340,7 +1339,9 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
             VmaAllocationCreateInfo alloc_info = {};
             alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             alloc_info.pool = VK_NULL_HANDLE;
-            VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &di_input_block.buffer, &di_input_block.allocation,
+            VkBuffer buffer;
+            VmaAllocation allocation;
+            VkResult result = vmaCreateBuffer(vmaAllocator, &buffer_info, &alloc_info, &buffer, &allocation,
                                      nullptr);
             if (result != VK_SUCCESS) {
                 ReportSetupProblem(device, "Unable to allocate device memory.  Device could become unstable.", true);
@@ -1348,9 +1349,10 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 return;
             }
             uint32_t *data_ptr;
-            result = vmaMapMemory(vmaAllocator, di_input_block.allocation, reinterpret_cast<void **>(&data_ptr));
+            result = vmaMapMemory(vmaAllocator, allocation, reinterpret_cast<void **>(&data_ptr));
             memset(data_ptr, 0, static_cast<size_t>(buffer_info.size));
-            vmaUnmapMemory(vmaAllocator, di_input_block.allocation);
+            vmaUnmapMemory(vmaAllocator, allocation);
+            cb_node->di_input_buffer_list.emplace_back(buffer, allocation, state.per_set);
         }
 
     }
@@ -2258,7 +2260,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
             aborted = true;
         } else {
             // Record buffer and memory info in CB state tracking
-            cb_node->gpuav_buffer_list.emplace_back(output_block, di_input_block, bda_input_block, pre_draw_resources,
+            cb_node->per_draw_buffer_list.emplace_back(output_block, di_input_block, bda_input_block, pre_draw_resources,
                                                     pre_dispatch_resources, desc_sets[0], desc_pool, bind_point, cmd_type);
         }
     } else {
@@ -2290,10 +2292,15 @@ void gpuav_state::CommandBuffer::Reset() {
     if (gpuav->aborted) {
         return;
     }
-    for (auto &buffer_info : gpuav_buffer_list) {
+    for (auto &buffer_info : per_draw_buffer_list) {
         gpuav->DestroyBuffer(buffer_info);
     }
-    gpuav_buffer_list.clear();
+    per_draw_buffer_list.clear();
+
+    for (auto &buffer_info : di_input_buffer_list) {
+        vmaDestroyBuffer(gpuav->vmaAllocator, buffer_info.buffer, buffer_info.allocation);
+    }
+    di_input_buffer_list.clear();
 
     for (auto &as_validation_buffer_info : as_validation_buffers) {
         gpuav->DestroyBuffer(as_validation_buffer_info);
