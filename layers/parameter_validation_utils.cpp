@@ -4964,7 +4964,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
                          drawCount, device_limits.maxDrawIndirectCount);
     }
     if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirect-offset-02710",
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-offset-02710",
                          "vkCmdDrawIndexedIndirect(): offset (%" PRIxLEAST64 ") must be a multiple of 4.", offset);
     }
     return skip;
