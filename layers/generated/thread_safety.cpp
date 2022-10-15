@@ -734,6 +734,16 @@ void ThreadSafety::PostCallRecordGetRandROutputDisplayEXT(
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
+void ThreadSafety::PostCallRecordGetDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    uint32_t                                    connectorId,
+    VkDisplayKHR*                               display,
+    VkResult                                    result) {
+    if ((result != VK_SUCCESS) || (display == nullptr)) return;
+    CreateObjectParentInstance(*display);
+}
+
 void ThreadSafety::PreCallRecordRegisterDisplayEventEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
