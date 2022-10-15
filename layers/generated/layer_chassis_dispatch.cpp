@@ -9490,11 +9490,10 @@ VkResult DispatchGetDrmDisplayEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-    {
-        display = layer_data->Unwrap(display);
-    }
     VkResult result = layer_data->instance_dispatch_table.GetDrmDisplayEXT(physicalDevice, drmFd, connectorId, display);
-
+    if (VK_SUCCESS == result) {
+        *display = layer_data->WrapNew(*display);
+    }
     return result;
 }
 
