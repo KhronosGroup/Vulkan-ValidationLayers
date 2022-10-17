@@ -1481,6 +1481,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_properties);
     }
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_extended_dynamic_state3,
+                                   &phys_dev_props->extended_dynamic_state3_props);
 
     if (IsExtEnabled(dev_ext.vk_nv_cooperative_matrix)) {
         // Get the needed cooperative_matrix properties

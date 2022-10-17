@@ -1435,6 +1435,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
         VkPhysicalDeviceSubgroupProperties subgroup_properties;
+        VkPhysicalDeviceExtendedDynamicState3PropertiesEXT extended_dynamic_state3_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

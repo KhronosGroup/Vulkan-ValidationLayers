@@ -1441,7 +1441,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     // VUID {refpage}-primitiveTopology-03420
     skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
                            vuid.primitive_topology);
-    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT)) {
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) &&
+        !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
         bool compatible_topology = false;
         const auto input_assembly_state = pPipeline->InputAssemblyState();
         switch (input_assembly_state->topology) {
