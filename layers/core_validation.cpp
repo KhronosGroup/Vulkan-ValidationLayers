@@ -5296,12 +5296,27 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, VkQueu
                                              const Location &outer_loc) const {
     bool skip = false;
     for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; ++i) {
-        const auto &sem_info = submit->pWaitSemaphoreInfos[i];
+        const auto &wait_info = submit->pWaitSemaphoreInfos[i];
         Location loc = outer_loc.dot(Field::pWaitSemaphoreInfos, i);
-        skip |= ValidatePipelineStage(LogObjectList(sem_info.semaphore), loc.dot(Field::stageMask), state.queue_flags,
-                                      sem_info.stageMask);
-        skip |= ValidateStageMaskHost(loc.dot(Field::stageMask), sem_info.stageMask);
-        skip |= state.ValidateWaitSemaphore(loc, queue, sem_info.semaphore, sem_info.value, sem_info.deviceIndex);
+        skip |= ValidatePipelineStage(LogObjectList(wait_info.semaphore), loc.dot(Field::stageMask), state.queue_flags,
+                                      wait_info.stageMask);
+        skip |= ValidateStageMaskHost(loc.dot(Field::stageMask), wait_info.stageMask);
+        skip |= state.ValidateWaitSemaphore(loc, queue, wait_info.semaphore, wait_info.value, wait_info.deviceIndex);
+
+        auto semaphore_state = Get<SEMAPHORE_STATE>(wait_info.semaphore);
+        if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            for (uint32_t sig_index = 0; sig_index < submit->signalSemaphoreInfoCount; sig_index++) {
+                const auto &sig_info = submit->pSignalSemaphoreInfos[sig_index];
+                if (wait_info.semaphore == sig_info.semaphore && wait_info.value >= sig_info.value) {
+                    Location sig_loc = outer_loc.dot(Field::pSignalSemaphoreInfos, sig_index);
+                    LogObjectList objlist(wait_info.semaphore);
+                    objlist.add(queue);
+                    skip |= LogError(wait_info.semaphore, "VUID-VkSubmitInfo2-semaphore-03881",
+                                     "%s has value (%" PRIu64 ") but %s has value (%" PRIu64 ")", loc.Message().c_str(),
+                                     wait_info.value, sig_loc.Message().c_str(), sig_info.value);
+                }
+            }
+        }
     }
     for (uint32_t i = 0; i < submit->signalSemaphoreInfoCount; ++i) {
         const auto &sem_info = submit->pSignalSemaphoreInfos[i];

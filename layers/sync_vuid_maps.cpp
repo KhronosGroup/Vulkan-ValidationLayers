@@ -952,7 +952,6 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
          {Key(Struct::VkSemaphoreSignalInfo), "VUID-VkSemaphoreSignalInfo-value-03258"},
          {Key(Struct::VkBindSparseInfo), "VUID-VkBindSparseInfo-pSignalSemaphores-03249"},
          {Key(Struct::VkSubmitInfo), "VUID-VkSubmitInfo-pSignalSemaphores-03242"},
-         {Key(Struct::VkSubmitInfo2), "VUID-VkSubmitInfo2-semaphore-03881"},
          {Key(Struct::VkSubmitInfo2), "VUID-VkSubmitInfo2-semaphore-03882"},
      }},
     {SubmitError::kSemAlreadySignalled,
