@@ -216,6 +216,7 @@ struct SubresourceRangeErrorCodes {
 
 typedef vvl::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
+namespace core_state {
 // Much of the data stored in CMD_BUFFER_STATE is only used by core validation, and is
 // set up by Record calls in class CoreChecks. Because both the state tracker and
 // core methods must lock CMD_BUFFER_STATE, it is possible for a Validate call to
@@ -230,15 +231,17 @@ typedef vvl::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRa
 // this to all happen completely while the state tracker is holding the lock.
 // Eventually we'll probably want to move all of the core state into this derived
 // class.
-class CORE_CMD_BUFFER_STATE : public CMD_BUFFER_STATE {
+class CommandBuffer: public CMD_BUFFER_STATE {
   public:
-    CORE_CMD_BUFFER_STATE(ValidationStateTracker* dev_data, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
-                          const COMMAND_POOL_STATE* cmd_pool)
+    CommandBuffer(ValidationStateTracker* dev_data, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
+                  const COMMAND_POOL_STATE* cmd_pool)
         : CMD_BUFFER_STATE(dev_data, cb, pCreateInfo, cmd_pool) {}
 
     void RecordWaitEvents(CMD_TYPE cmd_type, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
+}
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, core_state::CommandBuffer, CMD_BUFFER_STATE);
 
 struct TimelineMaxDiffCheck {
     TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
@@ -2277,6 +2280,6 @@ class CoreChecks : public ValidationStateTracker {
 #endif  // VK_USE_PLATFORM_XLIB_KHR
     std::shared_ptr<CMD_BUFFER_STATE> CreateCmdBufferState(VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                                                            const COMMAND_POOL_STATE* pool) override {
-        return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<CORE_CMD_BUFFER_STATE>(this, cb, create_info, pool));
+        return std::static_pointer_cast<CMD_BUFFER_STATE>(std::make_shared<core_state::CommandBuffer>(this, cb, create_info, pool));
     }
 };  // Class CoreChecks
