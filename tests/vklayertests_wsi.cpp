@@ -2264,9 +2264,15 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
 
     auto vkAcquireFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkAcquireFullScreenExclusiveModeEXT>(
         vk::GetInstanceProcAddr(instance(), "vkAcquireFullScreenExclusiveModeEXT"));
+    auto vkReleaseFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkReleaseFullScreenExclusiveModeEXT>(
+        vk::GetInstanceProcAddr(instance(), "vkReleaseFullScreenExclusiveModeEXT"));
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02675");
     vkAcquireFullScreenExclusiveModeEXT(device(), m_swapchain);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02678");
+    vkReleaseFullScreenExclusiveModeEXT(device(), m_swapchain);
     m_errorMonitor->VerifyFound();
 
     const POINT pt_zero = {0, 0};
@@ -2303,6 +2309,17 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02674");
     vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_one);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkReleaseFullScreenExclusiveModeEXT-swapchain-02677");
+    vkReleaseFullScreenExclusiveModeEXT(device(), swapchain_one);
+    m_errorMonitor->VerifyFound();
+
+    VkResult res = vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
+    if (res == VK_SUCCESS) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireFullScreenExclusiveModeEXT-swapchain-02676");
+        vkAcquireFullScreenExclusiveModeEXT(device(), swapchain_two);
+        m_errorMonitor->VerifyFound();
+    }
 
     vk::DestroySwapchainKHR(device(), swapchain_one, nullptr);
     vk::DestroySwapchainKHR(device(), swapchain_two, nullptr);
