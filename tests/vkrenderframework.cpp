@@ -127,6 +127,10 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
         if (!found_expected) {
             result = VK_TRUE;
             printf("Unexpected: %s\n", msgString);
+            // TODO: Fix unexpected android failures
+#if !defined(ANDROID)
+            ADD_FAILURE() << "Received unexpected error.";
+#endif
             other_messages_.push_back(errorString);
         }
     }
@@ -178,15 +182,13 @@ void ErrorMonitor::VerifyFound() {
             for (const auto &desired_msg : desired_message_strings_) {
                 ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
             }
-        } else if (GetOtherFailureMsgs().size() > 0) {
+        } else if (!GetOtherFailureMsgs().empty()) {
             // Fail test case for any unexpected errors
 #if defined(ANDROID)
             // This will get unexpected errors into the adb log
             for (auto msg : other_messages_) {
                 __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
             }
-#else
-            ADD_FAILURE() << "Received unexpected error(s).";
 #endif
         }
         MonitorReset();
@@ -202,15 +204,13 @@ void ErrorMonitor::VerifyNotFound() {
         for (const auto &msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
-    } else if (GetOtherFailureMsgs().size() > 0) {
+    } else if (!GetOtherFailureMsgs().empty()) {
         // Fail test case for any unexpected errors
 #if defined(ANDROID)
         // This will get unexpected errors into the adb log
         for (auto msg : other_messages_) {
             __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
         }
-#else
-        ADD_FAILURE() << "Received unexpected error(s).";
 #endif
     }
     MonitorReset();
