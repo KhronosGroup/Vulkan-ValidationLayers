@@ -12146,9 +12146,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Test each dynamic state
+#if 0
+    // TODO: Test each dynamic state
+    // Disabled for now because the VUIDs don't exist yet:
+    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5486
 
-#if 0 // WIP
     if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
@@ -12166,10 +12168,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-
-        auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
-            m_device->device(), "vkCmdSetTessellationDomainOriginEXT");
-        //vkCmdSetTessellationDomainOriginEXT(m_commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
@@ -12192,10 +12190,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-
-        auto vkCmdSetDepthClampEnableEXT =
-            (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
-        vkCmdSetDepthClampEnableEXT(commandBuffer.handle(), VK_FALSE);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
