@@ -16541,3 +16541,74 @@ TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     vk::CreateRenderPass2(m_device->device(), &rpci2, NULL, &rp);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidImageViewWithVideoImageUsage) {
+    TEST_DESCRIPTION("Test creating invalid image view using image with video usage bits.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR;
+
+    VkImageObj decode_image(m_device);
+    decode_image.init(&image_create_info);
+
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR;
+    VkImageObj encode_image(m_device);
+    encode_image.init(&image_create_info);
+
+    VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();
+    ivci.image = decode_image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkImageView imageView;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04817");
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &imageView);
+    m_errorMonitor->VerifyFound();
+
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.components.r = VK_COMPONENT_SWIZZLE_B;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04817");
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &imageView);
+    m_errorMonitor->VerifyFound();
+
+    ivci.image = encode_image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04818");
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &imageView);
+    m_errorMonitor->VerifyFound();
+
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.components.r = VK_COMPONENT_SWIZZLE_B;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-04818");
+    vk::CreateImageView(m_device->device(), &ivci, nullptr, &imageView);
+    m_errorMonitor->VerifyFound();
+}
