@@ -278,6 +278,9 @@ void IMAGE_STATE::Destroy() {
     // If it is, bad local entries could be created by CMD_BUFFER_STATE::GetImageSubresourceLayoutMap()
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
     // entry could get put into CMD_BUFFER_STATE::aliased_image_layout_map.
+    //
+    // NOTE: the fragment_encoder should not be cleaned-up in case a semaphore to an acquired image is being processed
+    //       after the swapchain is waited, and the range generation needs an intact encoder.
     if (bind_swapchain) {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
@@ -639,6 +642,21 @@ void SWAPCHAIN_NODE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, 
     if (unlink) {
         surface = nullptr;
     }
+}
+
+SWAPCHAIN_IMAGE SWAPCHAIN_NODE::GetSwapChainImage(uint32_t index) const {
+    if (index < images.size()) {
+        return images[index];
+    }
+    return SWAPCHAIN_IMAGE();
+}
+
+std::shared_ptr<const IMAGE_STATE> SWAPCHAIN_NODE::GetSwapChainImageShared(uint32_t index) const {
+    const SWAPCHAIN_IMAGE swapchain_image(GetSwapChainImage(index));
+    if (swapchain_image.image_state) {
+        return swapchain_image.image_state->shared_from_this();
+    }
+    return std::shared_ptr<const IMAGE_STATE>();
 }
 
 void SURFACE_STATE::Destroy() {

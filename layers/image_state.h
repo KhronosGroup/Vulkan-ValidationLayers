@@ -136,6 +136,8 @@ class IMAGE_STATE : public BINDABLE {
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
                 uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
+    std::shared_ptr<const IMAGE_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<IMAGE_STATE> shared_from_this() { return SharedFromThisImpl(this); }
 
     VkImage image() const { return handle_.Cast<VkImage>(); }
 
@@ -309,6 +311,10 @@ class SWAPCHAIN_NODE : public BASE_NODE {
     void AcquireImage(uint32_t image_index);
 
     void Destroy() override;
+
+    SWAPCHAIN_IMAGE GetSwapChainImage(uint32_t index) const;
+
+    std::shared_ptr<const IMAGE_STATE> GetSwapChainImageShared(uint32_t index) const;
 
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
