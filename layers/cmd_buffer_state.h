@@ -220,12 +220,6 @@ struct CBStatusFlags {
         }
     }
 
-    void set_all() {
-        for (int i = 0; i < CBSTATUS_NUM; ++i) {
-            set(static_cast<CBStatus>(i));
-        }
-    }
-
     void set_all_dynamic_states() {
         for (int i = CBSTATUS_FIRST_DYNAMIC; i < CBSTATUS_NUM; ++i) {
             set(static_cast<CBStatus>(i));
@@ -265,8 +259,8 @@ struct CBStatusFlags {
     }
 
     bool is_empty() const {
-        for (int i = 0; i < CBSTATUS_NUM; ++i) {
-            if (is_set(static_cast<CBStatus>(i))) {
+        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
+            if (bits[i] != 0U) {
                 return false;
             }
         }
