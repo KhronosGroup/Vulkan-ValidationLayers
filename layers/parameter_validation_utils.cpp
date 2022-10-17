@@ -3476,21 +3476,21 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (line_state) {
                         if ((line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT ||
                              line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT)) {
-                            if (create_info.pMultisampleState->alphaToCoverageEnable) {
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToCoverageEnable) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
                                              "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
                                              "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToCoverageEnable == VK_TRUE.",
                                              i);
                             }
-                            if (create_info.pMultisampleState->alphaToOneEnable) {
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->alphaToOneEnable) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
                                              "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
                                              "pCreateInfos[%" PRIu32 "].pMultisampleState->alphaToOneEnable == VK_TRUE.",
                                              i);
                             }
-                            if (create_info.pMultisampleState->sampleShadingEnable) {
+                            if (create_info.pMultisampleState && create_info.pMultisampleState->sampleShadingEnable) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
                                              "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
