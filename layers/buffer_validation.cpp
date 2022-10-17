@@ -6534,11 +6534,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         if (FormatRequiresYcbcrConversionExplicitly(view_format)) {
             const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
-            if (!ycbcr_conversion || ycbcr_conversion->conversion == VK_NULL_HANDLE) {
-                skip |= LogError(
-                    device, "VUID-VkImageViewCreateInfo-format-06415",
-                    "vkCreateImageView(): Format %s requires a VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
-                    string_VkFormat(view_format));
+            if ((!ycbcr_conversion || ycbcr_conversion->conversion == VK_NULL_HANDLE) &&
+                (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-format-06415",
+                                 "vkCreateImageView(): When using VK_IMAGE_USAGE_SAMPLED_BIT, YCbCr Format %s requires a "
+                                 "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
+                                 string_VkFormat(view_format));
             }
         }
     }
