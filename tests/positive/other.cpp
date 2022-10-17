@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -836,7 +837,23 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
 }
 
 TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
-    TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
+    TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups"); 
+
+#ifdef __linux__
+    if (std::getenv("NODEVICE_SELECT") == nullptr)
+    {
+        // Currently due to a bug in MESA this test will fail.
+        // https://gitlab.freedesktop.org/mesa/mesa/-/commit/4588453815c58ec848b0ff6f18a08836e70f55df
+        //
+        // It's fixed as of v22.7.1:
+        // https://gitlab.freedesktop.org/mesa/mesa/-/tree/mesa-22.1.7/src/vulkan/device-select-layer
+        //
+        // To avoid impacting local users, skip this TEST unless NODEVICE_SELECT is specified.
+        // NODEVICE_SELECT enables/disables the implicit mesa layer which has illegal code:
+        // https://gitlab.freedesktop.org/mesa/mesa/-/blob/main/src/vulkan/device-select-layer/VkLayer_MESA_device_select.json
+        GTEST_SKIP();
+    }
+#endif
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
@@ -850,7 +867,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     uint32_t physical_device_group_count = 0;
     vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, nullptr);
     std::vector<VkPhysicalDeviceGroupProperties> device_groups(physical_device_group_count,
-                                                               {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+                                                               LvlInitStruct<VkPhysicalDeviceGroupProperties>());
     vk::EnumeratePhysicalDeviceGroups(test_instance, &physical_device_group_count, device_groups.data());
 
     if (physical_device_group_count > 0) {
