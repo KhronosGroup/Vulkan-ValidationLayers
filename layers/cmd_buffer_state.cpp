@@ -1384,14 +1384,22 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
 
 void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
 
-void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits) {
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatus state)
+{
+    CBStatusFlags state_bits;
+    state_bits.set(state);
+    RecordStateCmd(cmd_type, state_bits);
+}
+
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits)
+{
     RecordCmd(cmd_type);
     status |= state_bits;
     static_status &= ~state_bits;
 }
 
-void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits, uint32_t attachment_count) {
-    RecordStateCmd(cmd_type, state_bits);
+void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatus state, uint32_t attachment_count) {
+    RecordStateCmd(cmd_type, state);
     dynamicColorWriteEnableAttachmentCount = std::max(dynamicColorWriteEnableAttachmentCount, attachment_count);
 }
 

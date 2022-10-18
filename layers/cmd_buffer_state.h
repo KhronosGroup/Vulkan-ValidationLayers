@@ -510,8 +510,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
+    void RecordStateCmd(CMD_TYPE cmd_type, CBStatus state);
     void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits);
-    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits, uint32_t attachment_count);
+    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatus state, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
