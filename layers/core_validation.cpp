@@ -20794,7 +20794,7 @@ bool CoreChecks::PreCallValidateCmdSetPolygonModeEXT(VkCommandBuffer commandBuff
     skip |= ValidateExtendedDynamicState(
         *cb_state, CMD_SETPOLYGONMODEEXT, enabled_features.extended_dynamic_state3_features.extendedDynamicState3PolygonMode,
         "VUID-vkCmdSetPolygonModeEXT-extendedDynamicState3PolygonMode-07422", "extendedDynamicState3PolygonMode");
-    if ((polygonMode == VK_POLYGON_MODE_LINE || polygonMode == VK_POLYGON_MODE_POINT) && !enabled_features.core.alphaToOne) {
+    if ((polygonMode == VK_POLYGON_MODE_LINE || polygonMode == VK_POLYGON_MODE_POINT) && !enabled_features.core.fillModeNonSolid) {
         skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424",
                          "vkCmdSetPolygonModeEXT(): polygonMode is %s but the "
                          "fillModeNonSolid feature is not enabled.",
@@ -20827,26 +20827,25 @@ bool CoreChecks::PreCallValidateCmdSetSampleMaskEXT(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer,
                                                                VkBool32 alphaToCoverageEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    bool skip = false;
-    skip |=
-        ValidateExtendedDynamicState(*cb_state, CMD_SETALPHATOCOVERAGEENABLEEXT,
+    return ValidateExtendedDynamicState(*cb_state, CMD_SETALPHATOCOVERAGEENABLEEXT,
                                      enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToCoverageEnable,
                                      "VUID-vkCmdSetAlphaToCoverageEnableEXT-extendedDynamicState3AlphaToCoverageEnable-07343",
                                      "extendedDynamicState3AlphaToCoverageEnable");
-    if (alphaToCoverageEnable != VK_FALSE && !enabled_features.core.alphaToOne) {
-        skip |= LogError(
-            cb_state->Handle(), "VUID-vkCmdSetAlphaToCoverageEnableEXT-alphaToOne-07344",
-            "vkCmdSetAlphaToCoverageEnableEXT(): alphaToCoverageEnable is VK_TRUE but the alphaToOne feature is not enabled.");
-    }
-    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    return ValidateExtendedDynamicState(*cb_state, CMD_SETALPHATOONEENABLEEXT,
+    bool skip = false;
+    skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETALPHATOONEENABLEEXT,
                                         enabled_features.extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable,
                                         "VUID-vkCmdSetAlphaToOneEnableEXT-extendedDynamicState3AlphaToOneEnable-07345",
                                         "extendedDynamicState3AlphaToOneEnable");
+    if (alphaToOneEnable != VK_FALSE && !enabled_features.core.alphaToOne) {
+        skip |= LogError(
+            cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344",
+            "vkCmdSetAlphaToOneEnableEXT(): alphaToOneEnable is VK_TRUE but the alphaToOne feature is not enabled.");
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) const {
@@ -21076,8 +21075,8 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
         // VUID-VkColorBlendAdvancedEXT-blendOverlap-07507
         if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
-            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506",
-                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].blendOverlap must br "
+            skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-blendOverlap-07507",
+                             "vkCmdSetColorBlendAdvancedEXT(): pColorBlendAdvanced[%u].blendOverlap must be "
                              "VK_BLEND_OVERLAP_UNCORRELATED_EXT when advancedBlendCorrelatedOverlap is not supported.",
                              attachment);
         }
@@ -21118,12 +21117,12 @@ bool CoreChecks::PreCallValidateCmdSetLineRasterizationModeEXT(VkCommandBuffer c
                          "but the rectangularLines feature is not enabled.");
     } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
                !enabled_features.line_rasterization_features.bresenhamLines) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418",
+        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419",
                          "vkCmdSetLineRasterizationModeEXT(): lineRasterizationMode is VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT "
                          "but the bresenhamLines feature is not enabled.");
     } else if (lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
                !enabled_features.line_rasterization_features.smoothLines) {
-        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418",
+        skip |= LogError(cb_state->Handle(), "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420",
                          "vkCmdSetLineRasterizationModeEXT(): lineRasterizationMode is "
                          "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT but the smoothLines feature is not enabled.");
     }
