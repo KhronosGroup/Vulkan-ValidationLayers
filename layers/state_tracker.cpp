@@ -5170,6 +5170,24 @@ void ValidationStateTracker::PreCallRecordCmdSetCoverageReductionModeNV(VkComman
     cb_state->RecordStateCmd(CMD_SETCOVERAGEREDUCTIONMODENV, CBSTATUS_COVERAGE_REDUCTION_MODE_SET);
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+void ValidationStateTracker::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                             VkResult result) {
+    if (result != VK_SUCCESS) return;
+
+    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    swapchain_state->exclusive_full_screen_access = true;
+}
+
+void ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
+                                                                             VkResult result) {
+    if (result != VK_SUCCESS) return;
+
+    auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain);
+    swapchain_state->exclusive_full_screen_access = false;
+}
+#endif
+
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {
     auto buffer_state = Get<BUFFER_STATE>(pInfo->buffer);
     if (buffer_state && address != 0) {
