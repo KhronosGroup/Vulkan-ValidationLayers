@@ -40,6 +40,7 @@
 struct DrawDispatchVuid {
     const char* pipeline_bound = kVUIDUndefined;
     const char* dynamic_state = kVUIDUndefined;
+    const char* index_binding = kVUIDUndefined;
     const char* vertex_binding = kVUIDUndefined;
     const char* vertex_binding_null = kVUIDUndefined;
     const char* compatible_pipeline = kVUIDUndefined;
@@ -223,7 +224,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMaxTimelineSemaphoreValueDifference(const Location& loc, const SEMAPHORE_STATE& semaphore_state,
                                                      uint64_t value) const;
     bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatus status, const char* fail_msg, const char* msg_code) const;
-    bool ValidateDrawStateFlags(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code) const;
+    bool ValidateDrawStateFlags(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, const char* msg_code) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
