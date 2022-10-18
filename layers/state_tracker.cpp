@@ -4942,7 +4942,8 @@ void ValidationStateTracker::PreCallRecordCmdSetVertexInputEXT(
     const VkVertexInputBindingDescription2EXT *pVertexBindingDescriptions, uint32_t vertexAttributeDescriptionCount,
     const VkVertexInputAttributeDescription2EXT *pVertexAttributeDescriptions) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    CBStatusFlags status_flags(CBSTATUS_VERTEX_INPUT_SET);
+    CBStatusFlags status_flags;
+    status_flags.set(CBSTATUS_VERTEX_INPUT_SET);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
