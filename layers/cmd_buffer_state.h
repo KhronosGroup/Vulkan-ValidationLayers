@@ -210,6 +210,7 @@ struct BufferBinding {
     virtual ~BufferBinding() {}
 
     virtual void reset() { *this = BufferBinding(); }
+    bool bound() const { return buffer_state && !buffer_state->Destroyed(); }
 };
 
 struct IndexBufferBinding : BufferBinding {
@@ -371,7 +372,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         queryUpdates;
     layer_data::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
         descriptorset_cache;
-    // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;

@@ -2323,7 +2323,7 @@ void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t
 
 bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, CMD_TYPE cmd_type) const {
     bool skip = false;
-    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->Destroyed()) {
+    if (!cb_state_->index_buffer_binding.bound()) {
         return skip;
     }
 
@@ -2347,7 +2347,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, ui
 }
 
 void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag tag) {
-    if (cb_state_->index_buffer_binding.buffer_state == nullptr || cb_state_->index_buffer_binding.buffer_state->Destroyed()) return;
+    if (!cb_state_->index_buffer_binding.bound()) return;
 
     auto *index_buf_state = cb_state_->index_buffer_binding.buffer_state.get();
     const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);

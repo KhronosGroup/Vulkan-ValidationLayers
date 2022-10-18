@@ -3029,7 +3029,6 @@ void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer com
                                                              VkIndexType indexType) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->RecordStateCmd(CMD_BINDINDEXBUFFER, CBSTATUS_INDEX_BUFFER_BOUND);
     cb_state->index_buffer_binding.buffer_state = Get<BUFFER_STATE>(buffer);
     cb_state->index_buffer_binding.size = cb_state->index_buffer_binding.buffer_state->createInfo.size;
     cb_state->index_buffer_binding.offset = offset;
