@@ -1266,7 +1266,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_state, uint32_t indexCount, uint32_t firstIndex,
                                                   const char *caller, const char *first_index_vuid) const {
     bool skip = false;
-    if (cb_state.status.is_set(CBSTATUS_INDEX_BUFFER_BOUND)) {
+    if (cb_state.status[CBSTATUS_INDEX_BUFFER_BOUND]) {
         unsigned int index_size = 0;
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
         if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT16) {
