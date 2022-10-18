@@ -16015,9 +16015,9 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         uint32_t check_viewport_count = 0, check_scissor_count = 0;
 
         // Common code for reporting missing inherited state (for a myriad of reasons).
-        auto check_missing_inherit = [&](uint32_t was_ever_defined, uint32_t trashed_by, VkDynamicState state, uint32_t index = 0,
-                                         uint32_t static_use_count = 0, const VkViewport *inherited_viewport = nullptr,
-                                         const VkViewport *expected_viewport_depth = nullptr) {
+        auto check_missing_inherit = [&](uint32_t was_ever_defined, uint32_t trashed_by, VkDynamicState state, uint32_t index,
+                                         uint32_t static_use_count, const VkViewport *inherited_viewport,
+                                         const VkViewport *expected_viewport_depth) {
             if (was_ever_defined && trashed_by == kNotTrashed) {
                 if (state != VK_DYNAMIC_STATE_VIEWPORT) return false;
 
@@ -16092,7 +16092,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state->usedDynamicViewportCount) {
             if (viewport_count_to_inherit_ == 0 || viewport_count_trashed_by_ != kNotTrashed) {
                 skip |= check_missing_inherit(viewport_count_to_inherit_, viewport_count_trashed_by_,
-                                              VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+                                              VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT, 0, 0, nullptr, nullptr);
             } else {
                 check_viewport_count = viewport_count_to_inherit_;
             }
@@ -16100,7 +16100,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state->usedDynamicScissorCount) {
             if (scissor_count_to_inherit_ == 0 || scissor_count_trashed_by_ != kNotTrashed) {
                 skip |= check_missing_inherit(scissor_count_to_inherit_, scissor_count_trashed_by_,
-                                              VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+                                              VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT, 0, 0, nullptr, nullptr);
             } else {
                 check_scissor_count = scissor_count_to_inherit_;
             }
@@ -16131,7 +16131,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
 
         for (uint32_t n = 0; n < check_scissor_count; ++n) {
             skip |= check_missing_inherit(scissor_mask_ & uint32_t(1) << n, scissor_trashed_by_[n], VK_DYNAMIC_STATE_SCISSOR, n,
-                                          secondary_state->usedViewportScissorCount);
+                                          secondary_state->usedViewportScissorCount, nullptr, nullptr);
         }
         return skip;
     }
@@ -19866,13 +19866,13 @@ bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const s
                                          const VkQueryResultFlags flags) const {
     bool skip = false;
     if (flags & VK_QUERY_RESULT_64_BIT) {
-        static const int condition_multiples = 0b0111;
+        static const int condition_multiples = 0x7;
         if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
             skip |= LogError(device, vuid_64, "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name,
                              parameter_value);
         }
     } else {
-        static const int condition_multiples = 0b0011;
+        static const int condition_multiples = 0x3;
         if ((stride & condition_multiples) || (parameter_value & condition_multiples)) {
             skip |= LogError(device, vuid_not_64, "stride %" PRIx64 " or %s %" PRIx64 " is invalid.", stride, parameter_name,
                              parameter_value);
@@ -19884,7 +19884,7 @@ bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const s
 bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
                                                  const char *struct_name, const uint32_t struct_size) const {
     bool skip = false;
-    static const int condition_multiples = 0b0011;
+    static const int condition_multiples = 0x3;
     if ((stride & condition_multiples) || (stride < struct_size)) {
         skip |= LogError(commandBuffer, vuid, "stride %d is invalid or less than sizeof(%s) %d.", stride, struct_name, struct_size);
     }
