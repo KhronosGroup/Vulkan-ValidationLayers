@@ -104,10 +104,10 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
         ahb_ext_formats_map.insert(ahb_format_props2->externalFormat, ahb_format_props2->formatFeatures);
     } else {
         auto ahb_format_props = LvlFindInChain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
-         if (ahb_format_props) {
-             ahb_ext_formats_map.insert(ahb_format_props->externalFormat,
-                                        static_cast<VkFormatFeatureFlags2KHR>(ahb_format_props->formatFeatures));
-         }
+        if (ahb_format_props) {
+            ahb_ext_formats_map.insert(ahb_format_props->externalFormat,
+                                       static_cast<VkFormatFeatureFlags2KHR>(ahb_format_props->formatFeatures));
+        }
     }
 }
 
@@ -611,7 +611,8 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     device_state->CreateDevice(pCreateInfo);
 }
 
-std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags, const VkQueueFamilyProperties &queueFamilyProperties) {
+std::shared_ptr<QUEUE_STATE> ValidationStateTracker::CreateQueue(VkQueue q, uint32_t index, VkDeviceQueueCreateFlags flags,
+                                                                 const VkQueueFamilyProperties &queueFamilyProperties) {
     return std::make_shared<QUEUE_STATE>(*this, q, index, flags, queueFamilyProperties);
 }
 
@@ -1217,7 +1218,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         const auto ray_tracing_maintenance1_features =
             LvlFindInChain<VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR>(pCreateInfo->pNext);
         if (ray_tracing_maintenance1_features) {
-            enabled_features.ray_tracing_maintenance1_features= *ray_tracing_maintenance1_features;
+            enabled_features.ray_tracing_maintenance1_features = *ray_tracing_maintenance1_features;
         }
 
         const auto non_seamless_cube_map_features =
@@ -1462,7 +1463,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
                                    &phys_dev_props->conservative_rasterization_props);
     GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_ext_subgroup_size_control,
                                    &phys_dev_props->subgroup_size_control_props);
-    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing,&phys_dev_props->image_processing_props);
+    GetPhysicalDeviceExtProperties(physical_device, dev_ext.vk_qcom_image_processing, &phys_dev_props->image_processing_props);
     if (api_version >= VK_API_VERSION_1_1) {
         GetPhysicalDeviceExtProperties(physical_device, &phys_dev_props->subgroup_properties);
     }
@@ -1488,7 +1489,8 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         uint32_t num_queue_families = 0;
         instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
+                                                                       queue_family_properties_list.data());
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
@@ -1808,7 +1810,7 @@ void ValidationStateTracker::PreCallRecordSignalSemaphoreKHR(VkDevice device, co
 }
 
 void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
-                                                              VkResult result) {
+                                                           VkResult result) {
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
     if (semaphore_state) {
         semaphore_state->Retire(nullptr, pSignalInfo->value);
@@ -1862,7 +1864,7 @@ void ValidationStateTracker::PreCallRecordWaitSemaphores(VkDevice device, const 
 }
 
 void ValidationStateTracker::PreCallRecordWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo,
-                                                             uint64_t timeout) {
+                                                            uint64_t timeout) {
     PreRecordWaitSemaphores(device, pWaitInfo, timeout);
 }
 
@@ -1925,7 +1927,8 @@ void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_ind
         uint32_t num_queue_families = 0;
         instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, nullptr);
         std::vector<VkQueueFamilyProperties> queue_family_properties_list(num_queue_families);
-        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families, queue_family_properties_list.data());
+        instance_dispatch_table.GetPhysicalDeviceQueueFamilyProperties(physical_device, &num_queue_families,
+                                                                       queue_family_properties_list.data());
 
         Add(CreateQueue(queue, queue_family_index, flags, queue_family_properties_list[queue_family_index]));
     }
@@ -2171,7 +2174,6 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
     }
 
     Add(std::make_shared<QUERY_POOL_STATE>(*pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb));
-
 }
 
 void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -2825,37 +2827,36 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
         if (src_as_state) {
             cb_state->AddChild(src_as_state);
         }
-	auto instance_buffer = Get<BUFFER_STATE>(instanceData);
+        auto instance_buffer = Get<BUFFER_STATE>(instanceData);
         if (instance_buffer) {
             cb_state->AddChild(instance_buffer);
         }
-	auto scratch_buffer = Get<BUFFER_STATE>(scratch);
+        auto scratch_buffer = Get<BUFFER_STATE>(scratch);
         if (scratch_buffer) {
             cb_state->AddChild(scratch_buffer);
         }
 
-	for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
-	   const auto& geom = pInfo->pGeometries[i];
+        for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
+            const auto &geom = pInfo->pGeometries[i];
 
-	   auto vertex_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.vertexData);
-	   if (vertex_buffer) {
-              cb_state->AddChild(vertex_buffer);
-	   }
-	   auto index_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.indexData);
-	   if (index_buffer) {
-              cb_state->AddChild(index_buffer);
-	   }
-	   auto transform_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.transformData);
-	   if (transform_buffer) {
-              cb_state->AddChild(transform_buffer);
-	   }
+            auto vertex_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.vertexData);
+            if (vertex_buffer) {
+                cb_state->AddChild(vertex_buffer);
+            }
+            auto index_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.indexData);
+            if (index_buffer) {
+                cb_state->AddChild(index_buffer);
+            }
+            auto transform_buffer = Get<BUFFER_STATE>(geom.geometry.triangles.transformData);
+            if (transform_buffer) {
+                cb_state->AddChild(transform_buffer);
+            }
 
-	   auto aabb_buffer = Get<BUFFER_STATE>(geom.geometry.aabbs.aabbData);
-	   if (aabb_buffer) {
-              cb_state->AddChild(aabb_buffer);
-	   }
-	}
-
+            auto aabb_buffer = Get<BUFFER_STATE>(geom.geometry.aabbs.aabbData);
+            if (aabb_buffer) {
+                cb_state->AddChild(aabb_buffer);
+            }
+        }
     }
     cb_state->has_build_as_cmd = true;
 }
@@ -3070,7 +3071,7 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer comman
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
-    const VkDependencyInfo* pDependencyInfo) {
+                                                       const VkDependencyInfo *pDependencyInfo) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
@@ -3674,10 +3675,10 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
     // to be enqueued and thus any semaphore wait operation specified in VkPresentInfoKHR will execute when the corresponding queue
     // operation is complete.
     //
-    // NOTE: This is the only queue submit-like call that has its state updated in PostCallRecord(). In part that is because of these
-    // non-fatal error cases. Also we need a place to handle the swapchain image bookkeeping, which really should be happening once all
-    // the wait semaphores have completed. Since most of the PostCall queue submit race conditions are related to timeline semaphores,
-    // and acquire sempaphores are always binary, this seems ok-ish.
+    // NOTE: This is the only queue submit-like call that has its state updated in PostCallRecord(). In part that is because of
+    // these non-fatal error cases. Also we need a place to handle the swapchain image bookkeeping, which really should be happening
+    // once all the wait semaphores have completed. Since most of the PostCall queue submit race conditions are related to timeline
+    // semaphores, and acquire sempaphores are always binary, this seems ok-ish.
     if (result == VK_ERROR_OUT_OF_HOST_MEMORY || result == VK_ERROR_OUT_OF_DEVICE_MEMORY || result == VK_ERROR_DEVICE_LOST) {
         return;
     }
@@ -3796,7 +3797,6 @@ void ValidationStateTracker::PostCallRecordCreateInstance(const VkInstanceCreate
     }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 }
-
 
 // Common function to update state for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
 static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEVICE_STATE *pd_state, uint32_t count) {
@@ -4502,33 +4502,30 @@ void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkComm
     }
 }
 
-void ValidationStateTracker::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
-                                              VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
-                                              VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
-                                              VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
-                                              VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
-                                              VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
-                                              uint32_t width, uint32_t height, uint32_t depth) {
+void ValidationStateTracker::PostCallRecordCmdTraceRaysNV(
+    VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer, VkDeviceSize raygenShaderBindingOffset,
+    VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+    VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset, VkDeviceSize hitShaderBindingStride,
+    VkBuffer callableShaderBindingTableBuffer, VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+    uint32_t width, uint32_t height, uint32_t depth) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->UpdateTraceRayCmd(CMD_TRACERAYSNV);
 }
 
 void ValidationStateTracker::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
-                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
-                                               uint32_t height, uint32_t depth) {
+                                                           const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                           const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                           uint32_t width, uint32_t height, uint32_t depth) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->UpdateTraceRayCmd(CMD_TRACERAYSKHR);
 }
 
-void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
-                                                         const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
-                                                         const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
-                                                         const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
-                                                         const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
-                                                         VkDeviceAddress indirectDeviceAddress) {
+void ValidationStateTracker::PostCallRecordCmdTraceRaysIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+    const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, VkDeviceAddress indirectDeviceAddress) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->UpdateTraceRayCmd(CMD_TRACERAYSINDIRECTKHR);
 }
@@ -4739,7 +4736,7 @@ void ValidationStateTracker::PreCallRecordCmdSetScissorWithCountEXT(VkCommandBuf
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-    const VkRect2D *pScissors) {
+                                                                 const VkRect2D *pScissors) {
     RecordCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, CMD_SETSCISSORWITHCOUNT);
 }
 
@@ -4889,7 +4886,7 @@ void ValidationStateTracker::PreCallRecordCmdSetRasterizerDiscardEnableEXT(VkCom
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer,
-    VkBool32 rasterizerDiscardEnable) {
+                                                                        VkBool32 rasterizerDiscardEnable) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETRASTERIZERDISCARDENABLE, CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET);
     cb_state->rasterization_disabled = rasterizerDiscardEnable == VK_TRUE;
@@ -4912,7 +4909,7 @@ void ValidationStateTracker::PreCallRecordCmdSetPrimitiveRestartEnableEXT(VkComm
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer,
-    VkBool32 primitiveRestartEnable) {
+                                                                       VkBool32 primitiveRestartEnable) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETPRIMITIVERESTARTENABLE, CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET);
 }
