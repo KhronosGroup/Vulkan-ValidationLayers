@@ -12080,6 +12080,12 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
 
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -12094,8 +12100,22 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         return;
     }
 
-    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto line_rasterization_feature = LvlInitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
+    auto provoking_vertex_features = LvlInitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>(&line_rasterization_feature);
+    auto transform_feedback_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>(&provoking_vertex_features);
+    auto extended_dynamic_state3_features =
+        LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>(&transform_feedback_features);
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    features2.features.depthClamp = VK_FALSE;
+    features2.features.fillModeNonSolid = VK_FALSE;
+    features2.features.alphaToOne = VK_FALSE;
+    features2.features.logicOp = VK_FALSE;
+    features2.features.dualSrcBlend = VK_FALSE;
+    transform_feedback_features.transformFeedback = VK_FALSE;
+    provoking_vertex_features.provokingVertexLast = VK_FALSE;
+    line_rasterization_feature.rectangularLines = VK_FALSE;
+    line_rasterization_feature.bresenhamLines = VK_FALSE;
+    line_rasterization_feature.smoothLines = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -12146,12 +12166,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
     }
 
-#if 0
-    // TODO: Test each dynamic state
-    // Disabled for now because the VUIDs don't exist yet:
+    // Test the dynamic state commands
+    // TODO: Test that the dynamic state is set before draw, which is waiting for:
     // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5486
 
     if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
+        auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
+            m_device->device(), "vkCmdSetTessellationDomainOriginEXT");
+
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -12162,14 +12184,20 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         VkDynamicState dyn_state = VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
         dyn_state_ci.pDynamicStates = &dyn_state;
         pipe.dyn_state_ci_ = dyn_state_ci;
-        VkPipelineTessellationDomainOriginStateCreateInfo tess_ci = LvlInitStruct<VkPipelineTessellationDomainOriginStateCreateInfo>();
-        tess_ci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
-        pipe.gp_ci_.pNext = &tess_ci;
+        VkPipelineTessellationDomainOriginStateCreateInfo tess_domain_ci =
+            LvlInitStruct<VkPipelineTessellationDomainOriginStateCreateInfo>();
+        tess_domain_ci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
+        VkPipelineTessellationStateCreateInfo tess_ci = LvlInitStruct<VkPipelineTessellationStateCreateInfo>(&tess_domain_ci);
+        pipe.gp_ci_.pTessellationState = &tess_ci;
         pipe.InitState();
         pipe.CreateGraphicsPipeline();
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        vkCmdSetTessellationDomainOriginEXT(commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -12177,6 +12205,9 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     }
 
     if (extended_dynamic_state3_features.extendedDynamicState3DepthClampEnable) {
+        auto vkCmdSetDepthClampEnableEXT =
+            (PFN_vkCmdSetDepthClampEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDepthClampEnableEXT");
+
         VkCommandBufferObj commandBuffer(m_device, m_commandPool);
         commandBuffer.begin();
 
@@ -12192,12 +12223,326 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449");
+        vkCmdSetDepthClampEnableEXT(commandBuffer.handle(), VK_TRUE);
+        m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
         commandBuffer.end();
     }
-#endif
+
+    if (extended_dynamic_state3_features.extendedDynamicState3PolygonMode) {
+        auto vkCmdSetPolygonModeEXT =
+            (PFN_vkCmdSetPolygonModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetPolygonModeEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_POLYGON_MODE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424");
+        vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_POINT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-polygonMode-07425");
+        vkCmdSetPolygonModeEXT(commandBuffer.handle(), VK_POLYGON_MODE_FILL_RECTANGLE_NV);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (extended_dynamic_state3_features.extendedDynamicState3AlphaToOneEnable) {
+        auto vkCmdSetAlphaToOneEnableEXT =
+            (PFN_vkCmdSetAlphaToOneEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetAlphaToOneEnableEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344");
+        vkCmdSetAlphaToOneEnableEXT(commandBuffer.handle(), VK_TRUE);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (extended_dynamic_state3_features.extendedDynamicState3LogicOpEnable) {
+        auto vkCmdSetLogicOpEnableEXT =
+            (PFN_vkCmdSetLogicOpEnableEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLogicOpEnableEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366");
+        vkCmdSetLogicOpEnableEXT(commandBuffer.handle(), VK_TRUE);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+        auto vkCmdSetColorBlendEquationEXT =
+            (PFN_vkCmdSetColorBlendEquationEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendEquationEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-colorBlendOp-07361");
+        VkColorBlendEquationEXT const equation = {VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_OP_ZERO_EXT,
+                                                  VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_FACTOR_SRC1_COLOR, VK_BLEND_OP_ZERO_EXT};
+        vkCmdSetColorBlendEquationEXT(commandBuffer.handle(), 0U, 1U, &equation);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3RasterizationStream) {
+        auto transform_feedback_props = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        GetPhysicalDeviceProperties2(transform_feedback_props);
+
+        auto vkCmdSetRasterizationStreamEXT =
+            (PFN_vkCmdSetRasterizationStreamEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetRasterizationStreamEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
+        if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413");
+        }
+        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), 300U);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3ExtraPrimitiveOverestimationSize) {
+        auto vkCmdSetExtraPrimitiveOverestimationSizeEXT = (PFN_vkCmdSetExtraPrimitiveOverestimationSizeEXT)vk::GetDeviceProcAddr(
+            m_device->device(), "vkCmdSetExtraPrimitiveOverestimationSizeEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit, "VUID-vkCmdSetExtraPrimitiveOverestimationSizeEXT-extraPrimitiveOverestimationSize-07428");
+        vkCmdSetExtraPrimitiveOverestimationSizeEXT(commandBuffer.handle(), -1.0F);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3ColorBlendAdvanced) {
+        auto blend_operation_advanced = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
+        GetPhysicalDeviceProperties2(blend_operation_advanced);
+
+        auto vkCmdSetColorBlendAdvancedEXT =
+            (PFN_vkCmdSetColorBlendAdvancedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorBlendAdvancedEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505");
+        }
+        if (!blend_operation_advanced.advancedBlendNonPremultipliedDstColor) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506");
+        }
+        if (!blend_operation_advanced.advancedBlendCorrelatedOverlap) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendAdvancedEXT-blendOverlap-07507");
+        }
+        VkColorBlendAdvancedEXT advanced = {VK_BLEND_OP_ZERO_EXT, VK_TRUE, VK_TRUE, VK_BLEND_OVERLAP_DISJOINT_EXT, VK_FALSE};
+        vkCmdSetColorBlendAdvancedEXT(commandBuffer.handle(), 0U, 1U, &advanced);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_PROVOKING_VERTEX_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3ProvokingVertexMode) {
+        auto vkCmdSetProvokingVertexModeEXT =
+            (PFN_vkCmdSetProvokingVertexModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetProvokingVertexModeEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447");
+        vkCmdSetProvokingVertexModeEXT(commandBuffer.handle(), VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
+
+    if (IsExtensionsEnabled(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME) &&
+        extended_dynamic_state3_features.extendedDynamicState3LineRasterizationMode) {
+        auto vkCmdSetLineRasterizationModeEXT =
+            (PFN_vkCmdSetLineRasterizationModeEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineRasterizationModeEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dyn_state_ci.dynamicStateCount = 1;
+        VkDynamicState dyn_state = VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT;
+        dyn_state_ci.pDynamicStates = &dyn_state;
+        pipe.dyn_state_ci_ = dyn_state_ci;
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+        vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+        commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");
+        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07419");
+        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07420");
+        vkCmdSetLineRasterizationModeEXT(commandBuffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT);
+        m_errorMonitor->VerifyFound();
+        vk::CmdEndRenderPass(commandBuffer.handle());
+
+        commandBuffer.end();
+    }
 }
 
 TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
