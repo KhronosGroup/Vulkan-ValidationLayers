@@ -36,6 +36,8 @@
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
 
+#include <bitset>
+
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
@@ -121,7 +123,7 @@ enum CB_STATE {
 // CB Status -- used to track status of various bindings on cmd buffer objects
 
 enum CBStatus {
-    CBSTATUS_INDEX_BUFFER_BOUND,                      // Index buffer has been set
+    CBSTATUS_INDEX_BUFFER_BOUND = 0,                  // Index buffer has been set
     CBSTATUS_FIRST_DYNAMIC,                           // Start of the dynamic state section
     CBSTATUS_LINE_WIDTH_SET = CBSTATUS_FIRST_DYNAMIC, // Line width has been set
     CBSTATUS_DEPTH_BIAS_SET,                          // Depth bias has been set
@@ -192,81 +194,7 @@ enum CBStatus {
     CBSTATUS_NUM,
 };
 
-struct CBStatusFlags {
-    static size_t const BITS_ARRAY_SIZE = (CBSTATUS_NUM + 31) / 32;
-    uint32_t bits[BITS_ARRAY_SIZE];
-
-    CBStatusFlags() { reset(); }
-
-    CBStatusFlags(CBStatus status) {
-        reset();
-        set(status);
-    }
-
-    CBStatusFlags & operator=(CBStatusFlags const & status) {
-        reset();
-        set(status);
-        return *this;
-    }
-
-    CBStatusFlags(CBStatusFlags const &status_bits) {
-        reset();
-        set(status_bits);
-    }
-
-    void reset() {
-        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
-            bits[i] = 0U;
-        }
-    }
-
-    void set_all_dynamic_states() {
-        for (int i = CBSTATUS_FIRST_DYNAMIC; i < CBSTATUS_NUM; ++i) {
-            set(static_cast<CBStatus>(i));
-        }
-    }
-
-    void set(CBStatus status) {
-        if (status < CBSTATUS_NUM) {
-            bits[status / 32U] |= 1 << (status % 32U);
-        }
-    }
-
-    void set(CBStatusFlags const &status) {
-        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
-            bits[i] |= status.bits[i];
-        }
-    }
-
-    void unset(CBStatus status) {
-        if (status < CBSTATUS_NUM) {
-            bits[status / 32U] &= ~(1 << (status % 32U));
-        }
-    }
-
-    void unset(CBStatusFlags const &status) {
-        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
-            bits[i] &= ~status.bits[i];
-        }
-    }
-
-    bool is_set(CBStatus status) const {
-        if (status < CBSTATUS_NUM) {
-            return ((bits[status / 32] >> (status % 32)) & 1U) != 0U;
-        } else {
-            return false;
-        }
-    }
-
-    bool is_empty() const {
-        for (size_t i = 0; i < BITS_ARRAY_SIZE; ++i) {
-            if (bits[i] != 0U) {
-                return false;
-            }
-        }
-        return true;
-    }
-};
+typedef std::bitset<CBSTATUS_NUM> CBStatusFlags;
 
 VkDynamicState ConvertToDynamicState(CBStatus flag);
 CBStatus ConvertToCBStatus(VkDynamicState state);
