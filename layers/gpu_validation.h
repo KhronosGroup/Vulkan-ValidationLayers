@@ -34,10 +34,11 @@ struct GpuAssistedDeviceMemoryBlock {
 struct GpuAssistedDeviceInputMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    uint32_t binding_count;
     const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set;
-    GpuAssistedDeviceInputMemoryBlock(VkBuffer buffer, VmaAllocation allocation,
+    GpuAssistedDeviceInputMemoryBlock(VkBuffer buffer, VmaAllocation allocation, uint32_t binding_count,
         const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set)
-        : buffer(buffer), allocation(allocation), per_set(per_set){};
+        : buffer(buffer), allocation(allocation), binding_count(binding_count), per_set(per_set){};
 };
 
 struct GpuAssistedPreDrawResources {
@@ -163,6 +164,7 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
     std::vector<GpuAssistedBufferInfo> per_draw_buffer_list;
     std::vector<GpuAssistedDeviceInputMemoryBlock> di_input_buffer_list;
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
+    VkBuffer current_input_buffer = VK_NULL_HANDLE;
 
     CommandBuffer(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const COMMAND_POOL_STATE* pool);
