@@ -36,8 +36,6 @@
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
 
-#include <bitset>
-
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
@@ -120,86 +118,6 @@ enum CB_STATE {
     CB_INVALID_INCOMPLETE,  // fouled before recording was completed
 };
 
-// CB Status -- used to track status of various bindings on cmd buffer objects
-
-enum CBStatus {
-    CBSTATUS_INDEX_BUFFER_BOUND = 0,                  // Index buffer has been set
-    CBSTATUS_FIRST_DYNAMIC,                           // Start of the dynamic state section
-    CBSTATUS_LINE_WIDTH_SET = CBSTATUS_FIRST_DYNAMIC, // Line width has been set
-    CBSTATUS_DEPTH_BIAS_SET,                          // Depth bias has been set
-    CBSTATUS_BLEND_CONSTANTS_SET,                     // Blend constants state has been set
-    CBSTATUS_DEPTH_BOUNDS_SET,                        // Depth bounds state object has been set
-    CBSTATUS_STENCIL_READ_MASK_SET,                   // Stencil read mask has been set
-    CBSTATUS_STENCIL_WRITE_MASK_SET,                  // Stencil write mask has been set
-    CBSTATUS_STENCIL_REFERENCE_SET,                   // Stencil reference has been set
-    CBSTATUS_VIEWPORT_SET,
-    CBSTATUS_SCISSOR_SET,
-    CBSTATUS_EXCLUSIVE_SCISSOR_SET,
-    CBSTATUS_SHADING_RATE_PALETTE_SET,
-    CBSTATUS_LINE_STIPPLE_SET,
-    CBSTATUS_VIEWPORT_W_SCALING_SET,
-    CBSTATUS_CULL_MODE_SET,
-    CBSTATUS_FRONT_FACE_SET,
-    CBSTATUS_PRIMITIVE_TOPOLOGY_SET,
-    CBSTATUS_VIEWPORT_WITH_COUNT_SET,
-    CBSTATUS_SCISSOR_WITH_COUNT_SET,
-    CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET,
-    CBSTATUS_DEPTH_TEST_ENABLE_SET,
-    CBSTATUS_DEPTH_WRITE_ENABLE_SET,
-    CBSTATUS_DEPTH_COMPARE_OP_SET,
-    CBSTATUS_DEPTH_BOUNDS_TEST_ENABLE_SET,
-    CBSTATUS_STENCIL_TEST_ENABLE_SET,
-    CBSTATUS_STENCIL_OP_SET,
-    CBSTATUS_DISCARD_RECTANGLE_SET,
-    CBSTATUS_SAMPLE_LOCATIONS_SET,
-    CBSTATUS_COARSE_SAMPLE_ORDER_SET,
-    CBSTATUS_PATCH_CONTROL_POINTS_SET,
-    CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET,
-    CBSTATUS_DEPTH_BIAS_ENABLE_SET,
-    CBSTATUS_LOGIC_OP_SET,
-    CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET,
-    CBSTATUS_VERTEX_INPUT_SET,
-    CBSTATUS_COLOR_WRITE_ENABLE_SET,
-    CBSTATUS_TESSELLATION_DOMAIN_ORIGIN_SET,
-    CBSTATUS_DEPTH_CLAMP_ENABLE_SET,
-    CBSTATUS_POLYGON_MODE_SET,
-    CBSTATUS_RASTERIZATION_SAMPLES_SET,
-    CBSTATUS_SAMPLE_MASK_SET,
-    CBSTATUS_ALPHA_TO_COVERAGE_ENABLE_SET,
-    CBSTATUS_ALPHA_TO_ONE_ENABLE_SET,
-    CBSTATUS_LOGIC_OP_ENABLE_SET,
-    CBSTATUS_COLOR_BLEND_ENABLE_SET,
-    CBSTATUS_COLOR_BLEND_EQUATION_SET,
-    CBSTATUS_COLOR_WRITE_MASK_SET,
-    CBSTATUS_RASTERIZATION_STREAM_SET,
-    CBSTATUS_CONSERVATIVE_RASTERIZATION_MODE_SET,
-    CBSTATUS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_SET,
-    CBSTATUS_DEPTH_CLIP_ENABLE_SET,
-    CBSTATUS_SAMPLE_LOCATIONS_ENABLE_SET,
-    CBSTATUS_COLOR_BLEND_ADVANCED_SET,
-    CBSTATUS_PROVOKING_VERTEX_MODE_SET,
-    CBSTATUS_LINE_RASTERIZATION_MODE_SET,
-    CBSTATUS_LINE_STIPPLE_ENABLE_SET,
-    CBSTATUS_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_SET,
-    CBSTATUS_VIEWPORT_W_SCALING_ENABLE_SET,
-    CBSTATUS_VIEWPORT_SWIZZLE_SET,
-    CBSTATUS_COVERAGE_TO_COLOR_ENABLE_SET,
-    CBSTATUS_COVERAGE_TO_COLOR_LOCATION_SET,
-    CBSTATUS_COVERAGE_MODULATION_MODE_SET,
-    CBSTATUS_COVERAGE_MODULATION_TABLE_ENABLE_SET,
-    CBSTATUS_COVERAGE_MODULATION_TABLE_SET,
-    CBSTATUS_SHADING_RATE_IMAGE_ENABLE_SET,
-    CBSTATUS_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_SET,
-    CBSTATUS_COVERAGE_REDUCTION_MODE_SET,
-    CBSTATUS_NUM,
-};
-
-typedef std::bitset<CBSTATUS_NUM> CBStatusFlags;
-
-VkDynamicState ConvertToDynamicState(CBStatus flag);
-CBStatus ConvertToCBStatus(VkDynamicState state);
-std::string DynamicStateString(CBStatusFlags const &input_value);
-
 struct BufferBinding {
     std::shared_ptr<BUFFER_STATE> buffer_state;
     VkDeviceSize size;
@@ -258,10 +176,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool pipeline_bound = false;  // True if CmdBindPipeline has been called on this command buffer, false otherwise
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
-    CBStatusFlags status;                              // Track status of various bindings on cmd buffer
-    CBStatusFlags static_status;                       // All state bits provided by current graphics pipeline
+    CBDynamicFlags status;                             // Track status of various bindings on cmd buffer
+    CBDynamicFlags static_status;                      // All state bits provided by current graphics pipeline
                                                        // rather than dynamic state
-    CBStatusFlags dynamic_status;                      // dynamic state set up in pipeline
+    CBDynamicFlags dynamic_status;                     // dynamic state set up in pipeline
     std::string begin_rendering_func_name;
     // Currently storing "lastBound" objects on per-CB basis
     //  long-term may want to create caches of "lastBound" states and could have
@@ -510,9 +428,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point);
 
     virtual void RecordCmd(CMD_TYPE cmd_type);
-    void RecordStateCmd(CMD_TYPE cmd_type, CBStatus state);
-    void RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits);
-    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatus state, uint32_t attachment_count);
+    void RecordStateCmd(CMD_TYPE cmd_type, CB_DYNAMIC_STATUS state);
+    void RecordStateCmd(CMD_TYPE cmd_type, CBDynamicFlags const &state_bits);
+    void RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CB_DYNAMIC_STATUS state, uint32_t attachment_count);
     void RecordTransferCmd(CMD_TYPE cmd_type, std::shared_ptr<BINDABLE> &&buf1, std::shared_ptr<BINDABLE> &&buf2 = nullptr);
     void RecordSetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(CMD_TYPE cmd_type, VkEvent event, VkPipelineStageFlags2KHR stageMask);
