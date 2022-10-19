@@ -81,7 +81,6 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
 
     // Save the tedium of two part testing...
     static bool Invalid(const BASE_NODE *node) { return !node || node->Destroyed(); }
-    static bool Invalid(const std::shared_ptr<BASE_NODE> &node) { return !node || node->Destroyed(); }
     static bool Invalid(const std::shared_ptr<const BASE_NODE> &node) { return !node || node->Destroyed(); }
 
     const VulkanTypedHandle &Handle() const { return handle_; }
