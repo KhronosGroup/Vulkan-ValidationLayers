@@ -368,7 +368,8 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatus status, const char *fail_msg, const char *msg_code) const {
+bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CB_DYNAMIC_STATUS status, const char *fail_msg,
+                                const char *msg_code) const {
     if (!(pNode->status[status])) {
         return LogError(pNode->commandBuffer(), msg_code, "%s: %s.", report_data->FormatHandle(pNode->commandBuffer()).c_str(),
                         fail_msg);
@@ -390,37 +391,37 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
         result |=
-            ValidateStatus(pCB, CBSTATUS_LINE_WIDTH_SET, "Dynamic line width state not set for this command buffer", msg_code);
+            ValidateStatus(pCB, CB_DYNAMIC_LINE_WIDTH_SET, "Dynamic line width state not set for this command buffer", msg_code);
     }
     const auto rp_state = pPipe->RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
         result |=
-            ValidateStatus(pCB, CBSTATUS_DEPTH_BIAS_SET, "Dynamic depth bias state not set for this command buffer", msg_code);
+            ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_SET, "Dynamic depth bias state not set for this command buffer", msg_code);
     }
     if (pPipe->BlendConstantsEnabled()) {
-        result |= ValidateStatus(pCB, CBSTATUS_BLEND_CONSTANTS_SET, "Dynamic blend constants state not set for this command buffer",
-                                 msg_code);
+        result |= ValidateStatus(pCB, CB_DYNAMIC_BLEND_CONSTANTS_SET,
+                                 "Dynamic blend constants state not set for this command buffer", msg_code);
     }
 
     const auto ds_state = pPipe->DepthStencilState();
     if (ds_state && (ds_state->depthBoundsTestEnable == VK_TRUE)) {
-        result |=
-            ValidateStatus(pCB, CBSTATUS_DEPTH_BOUNDS_SET, "Dynamic depth bounds state not set for this command buffer", msg_code);
+        result |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BOUNDS_SET, "Dynamic depth bounds state not set for this command buffer",
+                                 msg_code);
     }
     if (ds_state && (ds_state->stencilTestEnable == VK_TRUE)) {
-        result |= ValidateStatus(pCB, CBSTATUS_STENCIL_READ_MASK_SET,
+        result |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET,
                                  "Dynamic stencil read mask state not set for this command buffer", msg_code);
-        result |= ValidateStatus(pCB, CBSTATUS_STENCIL_WRITE_MASK_SET,
+        result |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_WRITE_MASK_SET,
                                  "Dynamic stencil write mask state not set for this command buffer", msg_code);
-        result |= ValidateStatus(pCB, CBSTATUS_STENCIL_REFERENCE_SET,
+        result |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_REFERENCE_SET,
                                  "Dynamic stencil reference state not set for this command buffer", msg_code);
     }
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
         const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
         if (line_state && line_state->stippledLineEnable) {
-            result |= ValidateStatus(pCB, CBSTATUS_LINE_STIPPLE_SET, "Dynamic line stipple state not set for this command buffer",
-                                     msg_code);
+            result |= ValidateStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_EXT_SET,
+                                     "Dynamic line stipple state not set for this command buffer", msg_code);
         }
     }
 
@@ -779,19 +780,6 @@ static void ListBits(std::ostream &s, uint32_t bits) {
     }
 }
 
-std::string DynamicStateString(CBStatusFlags const &input_value) {
-    std::string ret;
-    for (int index = 0; index < CBSTATUS_NUM; ++index) {
-        CBStatus status = static_cast<CBStatus>(index);
-        if (input_value[status]) {
-            if (!ret.empty()) ret.append("|");
-            ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
-        }
-    }
-    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(CBSTATUS_NUM)));
-    return ret;
-}
-
 bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string) const {
     bool skip = false;
     const auto image_create_info = image_state.createInfo;
@@ -1114,7 +1102,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // Verify if using dynamic state setting commands that it doesn't set up in pipeline
-    CBStatusFlags invalid_status(~CBStatusFlags(1U << CBSTATUS_INDEX_BUFFER_BOUND));
+    CBDynamicFlags invalid_status(~CBDynamicFlags(0));
     invalid_status &= ~pCB->dynamic_status;
     invalid_status &= ~pCB->static_status;
 
@@ -1400,22 +1388,23 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    skip |= ValidateStatus(pCB, CBSTATUS_PATCH_CONTROL_POINTS_SET, "Dynamic patch control points not set for this command buffer",
-                           vuid.patch_control_points);
-    skip |= ValidateStatus(pCB, CBSTATUS_RASTERIZER_DISCARD_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET,
+                           "Dynamic patch control points not set for this command buffer", vuid.patch_control_points);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZER_DISCARD_ENABLE_SET,
                            "Dynamic rasterizer discard enable not set for this command buffer", vuid.rasterizer_discard_enable);
-    skip |= ValidateStatus(pCB, CBSTATUS_DEPTH_BIAS_ENABLE_SET, "Dynamic depth bias enable not set for this command buffer",
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_ENABLE_SET, "Dynamic depth bias enable not set for this command buffer",
                            vuid.depth_bias_enable);
-    skip |= ValidateStatus(pCB, CBSTATUS_LOGIC_OP_SET, "Dynamic state logicOp not set for this command buffer", vuid.logic_op);
-    skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_RESTART_ENABLE_SET,
-                           "Dynamic primitive restart enable not set for this command buffer", vuid.primitive_restart_enable);
-    skip |= ValidateStatus(pCB, CBSTATUS_VERTEX_INPUT_BINDING_STRIDE_SET,
-                           "Dynamic vertex input binding stride not set for this command buffer", vuid.vertex_input_binding_stride);
     skip |=
-        ValidateStatus(pCB, CBSTATUS_VERTEX_INPUT_SET, "Dynamic vertex input not set for this command buffer", vuid.vertex_input);
-    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_WRITE_ENABLE_SET, "Dynamic color write enable not set for this command buffer",
+        ValidateStatus(pCB, CB_DYNAMIC_LOGIC_OP_EXT_SET, "Dynamic state logicOp not set for this command buffer", vuid.logic_op);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET,
+                           "Dynamic primitive restart enable not set for this command buffer", vuid.primitive_restart_enable);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET,
+                           "Dynamic vertex input binding stride not set for this command buffer", vuid.vertex_input_binding_stride);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, "Dynamic vertex input not set for this command buffer",
+                           vuid.vertex_input);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, "Dynamic color write enable not set for this command buffer",
                            vuid.color_write_enable);
-    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status[CBSTATUS_COLOR_WRITE_ENABLE_SET]) {
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status[CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET]) {
         const auto color_blend_state = pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
         if (color_blend_state) {
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
@@ -1429,12 +1418,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             }
         }
     }
-    skip |= ValidateStatus(pCB, CBSTATUS_SAMPLE_LOCATIONS_SET, "Dynamic sample locations not set for this command buffer",
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, "Dynamic sample locations not set for this command buffer",
                            vuid.dynamic_sample_locations);
 
     // VUID {refpage}-primitiveTopology-03420
-    skip |= ValidateStatus(pCB, CBSTATUS_PRIMITIVE_TOPOLOGY_SET, "Dynamic primitive topology state not set for this command buffer",
-                           vuid.primitive_topology);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET,
+                           "Dynamic primitive topology state not set for this command buffer", vuid.primitive_topology);
     if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) &&
         !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
         bool compatible_topology = false;
@@ -1502,67 +1491,67 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    skip |= ValidateStatus(pCB, CBSTATUS_TESSELLATION_DOMAIN_ORIGIN_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET,
                            "Dynamic tessellation domain origin state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_DEPTH_CLAMP_ENABLE_SET, "Dynamic depth clamp enable state not set for this command buffer",
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET,
+                           "Dynamic depth clamp enable state not set for this command buffer", kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_POLYGON_MODE_EXT_SET, "Dynamic polygon mode state not set for this command buffer",
                            kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_POLYGON_MODE_SET, "Dynamic polygon mode state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_RASTERIZATION_SAMPLES_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET,
                            "Dynamic rasterization samples state not set for this command buffer", kVUIDUndefined);
-    skip |=
-        ValidateStatus(pCB, CBSTATUS_SAMPLE_MASK_SET, "Dynamic sample mask state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_ALPHA_TO_COVERAGE_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, "Dynamic sample mask state not set for this command buffer",
+                           kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET,
                            "Dynamic alpha to coverage enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_ALPHA_TO_ONE_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET,
                            "Dynamic alpha to one enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_LOGIC_OP_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET,
                            "Dynamic logic operation enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_BLEND_ENABLE_SET, "Dynamic color blend enable state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_BLEND_EQUATION_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET,
+                           "Dynamic color blend enable state not set for this command buffer", kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET,
                            "Dynamic color blend equation state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_WRITE_MASK_SET, "Dynamic color write mask state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_RASTERIZATION_STREAM_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET,
+                           "Dynamic color write mask state not set for this command buffer", kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET,
                            "Dynamic rasterization stream state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_CONSERVATIVE_RASTERIZATION_MODE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET,
                            "Dynamic conservative rasterization mode state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET,
                            "Dynamic extra primitive overestimation size state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_DEPTH_CLIP_ENABLE_SET, "Dynamic depth clip enable state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_SAMPLE_LOCATIONS_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET,
+                           "Dynamic depth clip enable state not set for this command buffer", kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET,
                            "Dynamic sample locations enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COLOR_BLEND_ADVANCED_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET,
                            "Dynamic color blend advanced state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_PROVOKING_VERTEX_MODE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET,
                            "Dynamic provoking vertex mode state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_LINE_RASTERIZATION_MODE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET,
                            "Dynamic line rasterization mode state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_LINE_STIPPLE_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET,
                            "Dynamic line stipple enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET,
                            "Dynamic depth clip negative one to one state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_VIEWPORT_W_SCALING_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET,
                            "Dynamic viewport W scaling enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_VIEWPORT_SWIZZLE_SET, "Dynamic viewport swizzle state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_TO_COLOR_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET,
+                           "Dynamic viewport swizzle state not set for this command buffer", kVUIDUndefined);
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET,
                            "Dynamic coverage to color enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_TO_COLOR_LOCATION_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET,
                            "Dynamic coverage to color location state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_MODULATION_MODE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET,
                            "Dynamic coverage modulation mode state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_MODULATION_TABLE_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET,
                            "Dynamic coverage modulation table enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_MODULATION_TABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET,
                            "Dynamic coverage modulation table state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_SHADING_RATE_IMAGE_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET,
                            "Dynamic shading rate image enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET,
                            "Dynamic representative fragment test enable state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CBSTATUS_COVERAGE_REDUCTION_MODE_SET,
+    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET,
                            "Dynamic coverage reduction mode state not set for this command buffer", kVUIDUndefined);
 
     if (pPipeline->fragment_output_state->dual_source_blending  &&

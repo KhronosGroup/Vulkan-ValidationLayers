@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021 The Khronos Group Inc.
+# Copyright (c) 2021-2022 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         self.alias_dict = dict()                          # Dict of cmd aliases
         self.header_file = False                          # Header file generation flag
         self.source_file = False                          # Source file generation flag
+        self.dynamic_states = []                          # VkDynamicState enum values
 
     #
     # Walk the JSON-derived dict and find all "vuid" key values
@@ -142,7 +143,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2021 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2021-2022 The Khronos Group Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -167,6 +168,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         elif self.header_file:
             write('#pragma once', file=self.outFile)
             write('#include <array>', file=self.outFile)
+            write('#include <bitset>', file=self.outFile)
 
     #
     # Write generated file content to output file
@@ -174,12 +176,14 @@ class CommandValidationOutputGenerator(OutputGenerator):
         if self.header_file:
             write(self.commandTypeEnum(), file=self.outFile)
             write(self.commandNameList(), file=self.outFile)
+            write(self.dynamicTypeEnum(), file=self.outFile)
         elif self.source_file:
             write(self.commandRecordingList(), file=self.outFile)
             write(self.commandQueueTypeList(), file=self.outFile)
             write(self.commandRenderPassList(), file=self.outFile)
             write(self.commandBufferLevelList(), file=self.outFile)
             write(self.validateFunction(), file=self.outFile)
+            write(self.dynamicFunction(), file=self.outFile)
         # Finish processing in superclass
         OutputGenerator.endFile(self)
 
@@ -206,7 +210,13 @@ class CommandValidationOutputGenerator(OutputGenerator):
             self.commands[name] = cmdinfo
             if alias is not None:
                 self.alias_dict[name] = alias
-
+    #
+    # List the enum for the commands
+    def genGroup(self, groupinfo, name, alias):
+        if (name == 'VkDynamicState'):
+            for elem in groupinfo.elem.findall('enum'):
+                if elem.get('alias') is None:
+                    self.dynamic_states.append(elem.get('name'))
     #
     # List the enum for the commands
     def commandTypeEnum(self):
@@ -235,6 +245,28 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList 
         for name, cmdinfo in sorted(self.commands.items()):
             output += '    \"' + name + '\",\n'
         output += '}};'
+        return output
+
+    #
+    # List the enum for the dynamic command buffer status flags
+    def dynamicTypeEnum(self):
+        output = '''
+typedef enum CB_DYNAMIC_STATUS {\n'''
+        counter = 1
+        for name in self.dynamic_states:
+            state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
+            output += '    CB_DYNAMIC_{}_SET = {},\n'.format(state_name, str(counter))
+            counter += 1
+
+        output += '    CB_DYNAMIC_STATUS_NUM = ' + str(counter)
+        output += '''
+} CB_DYNAMIC_STATUS;
+
+typedef std::bitset<CB_DYNAMIC_STATUS_NUM> CBDynamicFlags;
+std::string DynamicStateString(CBDynamicFlags const &dynamic_state);
+struct VkPipelineDynamicStateCreateInfo;
+CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);
+'''
         return output
 
     #
@@ -413,4 +445,60 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
 
     return skip;
 }'''
+        return output
+
+    #
+    # List the enum for the dynamic command buffer status flags
+    def dynamicFunction(self):
+        output = '''
+static VkDynamicState ConvertToDynamicState(CB_DYNAMIC_STATUS flag) {
+    switch (flag) {\n'''
+        for name in self.dynamic_states:
+            state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
+            output += '        case CB_DYNAMIC_{}_SET:\n'.format(state_name)
+            output += '            return {};\n'.format(name)
+        output += '''        default:
+            return VK_DYNAMIC_STATE_MAX_ENUM;
+    }
+}
+'''
+        output += '''
+static CB_DYNAMIC_STATUS ConvertToCBDynamicStatus(VkDynamicState state) {
+    switch (state) {\n'''
+        for name in self.dynamic_states:
+            state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
+            output += '        case {}:\n'.format(name)
+            output += '            return CB_DYNAMIC_{}_SET;\n'.format(state_name)
+        output += '''        default:
+            return CB_DYNAMIC_STATUS_NUM;
+    }
+}
+'''
+
+        output += '''
+std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
+    std::string ret;
+    for (int index = 0; index < CB_DYNAMIC_STATUS_NUM; ++index) {
+        CB_DYNAMIC_STATUS status = static_cast<CB_DYNAMIC_STATUS>(index);
+        if (dynamic_state[status]) {
+            if (!ret.empty()) ret.append("|");
+            ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
+        }
+    }
+    if (ret.empty()) ret.append(string_VkDynamicState(ConvertToDynamicState(CB_DYNAMIC_STATUS_NUM)));
+    return ret;
+}
+
+CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info) {
+    // initially assume everything is static state
+    CBDynamicFlags flags(~CBDynamicFlags(0));
+
+    if (info) {
+        for (uint32_t i = 0; i < info->dynamicStateCount; i++) {
+            flags.reset(ConvertToCBDynamicStatus(info->pDynamicStates[i]));
+        }
+    }
+    return flags;
+}
+'''
         return output
