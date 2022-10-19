@@ -61,7 +61,6 @@ struct GpuAssistedPreDispatchResources {
 
 struct GpuAssistedBufferInfo {
     GpuAssistedDeviceMemoryBlock output_mem_block;
-    GpuAssistedDeviceMemoryBlock di_input_mem_block;   // Descriptor Indexing input
     GpuAssistedDeviceMemoryBlock bda_input_mem_block;  // Buffer Device Address input
     GpuAssistedPreDrawResources pre_draw_resources;
     GpuAssistedPreDispatchResources pre_dispatch_resources;
@@ -69,12 +68,11 @@ struct GpuAssistedBufferInfo {
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
     CMD_TYPE cmd_type;
-    GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block, GpuAssistedDeviceMemoryBlock di_input_mem_block,
+    GpuAssistedBufferInfo(GpuAssistedDeviceMemoryBlock output_mem_block,
                           GpuAssistedDeviceMemoryBlock bda_input_mem_block, GpuAssistedPreDrawResources pre_draw_resources,
                           GpuAssistedPreDispatchResources pre_dispatch_resources, VkDescriptorSet desc_set,
                           VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point, CMD_TYPE cmd_type)
         : output_mem_block(output_mem_block),
-          di_input_mem_block(di_input_mem_block),
           bda_input_mem_block(bda_input_mem_block),
           pre_draw_resources(pre_draw_resources),
           pre_dispatch_resources(pre_dispatch_resources),
