@@ -70,6 +70,7 @@ class Instruction {
     uint32_t GetConstantValue() const;
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
+    spv::StorageClass StorageClass() const;
 
     bool operator==(Instruction const& other) const { return words_ == other.words_; }
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }

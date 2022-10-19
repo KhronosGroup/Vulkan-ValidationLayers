@@ -27,6 +27,7 @@
 
 #include "vk_layer_data.h"
 #include "spirv_grammar_helper.h"
+#include "shader_instruction.h"
 
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {
@@ -554,6 +555,25 @@ bool GroupOperation(uint32_t opcode) {
 }
 
 
+spv::StorageClass Instruction::StorageClass() const {
+    spv::StorageClass storage_class = spv::StorageClassMax;
+    switch (Opcode()) {
+        case spv::OpTypePointer:
+            storage_class = static_cast<spv::StorageClass>(Word(2));
+            break;
+        case spv::OpTypeForwardPointer:
+            storage_class = static_cast<spv::StorageClass>(Word(2));
+            break;
+        case spv::OpVariable:
+            storage_class = static_cast<spv::StorageClass>(Word(3));
+            break;
+        default:
+            break;
+    }
+    return storage_class;
+}
+
+
 bool ImageGatherOperation(uint32_t opcode) {
     bool found = false;
     switch (opcode) {
@@ -676,7 +696,6 @@ uint32_t ImageOperandsParamCount(uint32_t image_operand) {
             return 1;
         case spv::ImageOperandsGradMask:
             return 2;
-            break;
         default:
             break;
     }
