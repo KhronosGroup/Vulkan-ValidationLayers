@@ -1701,6 +1701,8 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) const;
 
+    bool ValidateDebugUtilsObjectNameInfoEXT(std::string api_name, VkDevice device,
+                                             const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const;
     bool manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const;
 
     bool manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const;
