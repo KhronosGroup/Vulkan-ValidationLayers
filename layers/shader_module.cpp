@@ -550,36 +550,6 @@ std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     return ss.str();
 }
 
-std::string SHADER_MODULE_STATE::DescribeInstruction(const Instruction* insn) const {
-    std::ostringstream ss;
-    const uint32_t opcode = insn->Opcode();
-    uint32_t operand_offset = 1;  // where to start printing operands
-    // common disassembled for SPIR-V is
-    // %result = Opcode %result_type %operands
-    if (OpcodeHasResult(opcode)) {
-        operand_offset++;
-        ss << "%" << (OpcodeHasType(opcode) ? insn->Word(2) : insn->Word(1)) << " = ";
-    }
-
-    ss << string_SpvOpcode(opcode);
-
-    if (OpcodeHasType(opcode)) {
-        operand_offset++;
-        ss << " %" << insn->Word(1);
-    }
-
-    // TODO - For now don't list the '%' for any operands since they are only for reference IDs. Without generating a table of each
-    // instructions operand types and covering the many edge cases (such as optional, paired, or variable operands) this is the
-    // simplest way to print the instruction and give the developer something to look into when an error occurs.
-    //
-    // For now this safely should be able to assume it will never come across a LiteralString such as in OpExtInstImport or
-    // OpEntryPoint
-    for (uint32_t i = operand_offset; i < insn->Length(); i++) {
-        ss << " " << insn->Word(i);
-    }
-    return ss.str();
-}
-
 const SHADER_MODULE_STATE::EntryPoint *SHADER_MODULE_STATE::FindEntrypointStruct(char const *name,
                                                                                  VkShaderStageFlagBits stageBits) const {
     auto range = static_data_.entry_points.equal_range(name);
@@ -663,15 +633,6 @@ const Instruction* SHADER_MODULE_STATE::GetConstantDef(uint32_t id) const {
     return nullptr;
 }
 
-// While simple, function name provides a more human readable description why Word(3) is used
-uint32_t SHADER_MODULE_STATE::GetConstantValue(const Instruction* insn) const {
-    // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
-    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
-    // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
-    assert(insn->Opcode() == spv::OpConstant);
-    return insn->Word(3);
-}
-
 // Either returns the constant value described by the instruction at id, or 1
 uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     const Instruction* value = GetConstantDef(id);
@@ -682,7 +643,7 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
         return 1;
     }
 
-    return GetConstantValue(value);
+    return value->GetConstantValue();
 }
 
 // Returns an int32_t corresponding to the spv::Dim of the given resource, when positive, and corresponding to an unknown type, when
@@ -1142,9 +1103,9 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
                                 // Get the target member of the struct
                                 // NOTE: this will only work for structs and arrays of structs. Deeper levels of nesting (e.g.,
                                 // arrays of structs of structs) is not currently supported.
-                                const Instruction* value_itr = GetConstantDef(insn->Word(4 + target_member_offset));
-                                if (value_itr) {
-                                    auto value = GetConstantValue(value_itr);
+                                const Instruction* value_def = GetConstantDef(insn->Word(4 + target_member_offset));
+                                if (value_def) {
+                                    auto value = value_def->GetConstantValue();
                                     if (value == builtin_insn->Word(2)) {
                                         target_id = insn->Word(2);
                                     }
@@ -1423,7 +1384,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
                                     // access chain index not a constant, skip.
                                     break;
                                 }
-                                image_index = GetConstantValue(const_def);
+                                image_index = const_def->GetConstantValue();
                             }
                         }
                     }
@@ -1443,7 +1404,7 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
                                 break;
                             }
                             sampler_id = const_def->Word(const_def->ResultId());
-                            sampler_index = GetConstantValue(const_def);
+                            sampler_index = const_def->GetConstantValue();
                         }
                         auto sampler_dec = get_decorations(sampler_id);
                         if (image_index >= out_interface_var.samplers_used_by_image.size()) {
@@ -1823,7 +1784,7 @@ uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
         const Instruction* element_type = FindDef(insn->Word(2));
         uint32_t element_width = GetTypeBitsSize(element_type);
         const Instruction* length_type = FindDef(insn->Word(3));
-        uint32_t length = GetConstantValue(length_type);
+        uint32_t length = length_type->GetConstantValue();
         return element_width * length;
     } else if (opcode == spv::OpTypeStruct) {
         uint32_t total_size = 0;

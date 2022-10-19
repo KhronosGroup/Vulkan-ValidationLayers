@@ -37,6 +37,45 @@ Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(
     }
 }
 
+std::string Instruction::Describe() const {
+    std::ostringstream ss;
+    const uint32_t opcode = Opcode();
+    uint32_t operand_offset = 1;  // where to start printing operands
+    // common disassembled for SPIR-V is
+    // %result = Opcode %result_type %operands
+    if (OpcodeHasResult(opcode)) {
+        operand_offset++;
+        ss << "%" << (OpcodeHasType(opcode) ? Word(2) : Word(1)) << " = ";
+    }
+
+    ss << string_SpvOpcode(opcode);
+
+    if (OpcodeHasType(opcode)) {
+        operand_offset++;
+        ss << " %" << Word(1);
+    }
+
+    // TODO - For now don't list the '%' for any operands since they are only for reference IDs. Without generating a table of each
+    // instructions operand types and covering the many edge cases (such as optional, paired, or variable operands) this is the
+    // simplest way to print the instruction and give the developer something to look into when an error occurs.
+    //
+    // For now this safely should be able to assume it will never come across a LiteralString such as in OpExtInstImport or
+    // OpEntryPoint
+    for (uint32_t i = operand_offset; i < Length(); i++) {
+        ss << " " << Word(i);
+    }
+    return ss.str();
+}
+
+// While simple, function name provides a more human readable description why Word(3) is used
+uint32_t Instruction::GetConstantValue() const {
+    // This should be a OpConstant (not a OpSpecConstant), if this asserts then 2 things are happening
+    // 1. This function is being used where we don't actually know it is a constant and is a bug in the validation layers
+    // 2. The CreateFoldSpecConstantOpAndCompositePass didn't fully fold everything and is a bug in spirv-opt
+    assert(Opcode() == spv::OpConstant);
+    return Word(3);
+}
+
 AtomicInstructionInfo Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const {
     AtomicInstructionInfo info;
 

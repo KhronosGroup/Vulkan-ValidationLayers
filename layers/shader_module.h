@@ -327,7 +327,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // Used to get human readable strings for error messages
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type) const;
     std::string DescribeType(uint32_t type) const;
-    std::string DescribeInstruction(const Instruction *insn) const;
 
     layer_data::unordered_set<uint32_t> MarkAccessibleIds(layer_data::optional<Instruction> entrypoint) const;
     layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
@@ -341,7 +340,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
-    uint32_t GetConstantValue(const Instruction *insn) const;
     uint32_t GetConstantValueById(uint32_t id) const;
     int32_t GetShaderResourceDimensionality(const interface_var &resource) const;
     uint32_t GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const;
