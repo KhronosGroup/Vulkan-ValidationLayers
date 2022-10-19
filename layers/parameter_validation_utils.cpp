@@ -6521,13 +6521,28 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
+bool StatelessValidation::ValidateDebugUtilsObjectNameInfoEXT(std::string api_name, VkDevice device,
+                                                              const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
+    bool skip = false;
+    if ((pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) && (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE))) {
+        skip |= LogError(device, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589",
+                         "%s() objectType is VK_OBJECT_TYPE_UNKNOWN but objectHandle is VK_NULL_HANDLE", api_name.c_str());
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
     bool skip = false;
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError(device, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589",
+        skip |= LogError(device, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587",
                          "vkSetDebugUtilsObjectNameEXT() pNameInfo->objectType cannot be VK_OBJECT_TYPE_UNKNOWN.");
     }
+    if (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE)) {
+        skip |= LogError(device, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588",
+                         "vkSetDebugUtilsObjectNameEXT() pNameInfo->objectHandle cannot be VK_NULL_HANDLE.");
+    }
+    skip |= ValidateDebugUtilsObjectNameInfoEXT("vkSetDebugUtilsObjectNameEXT", device, pNameInfo);
     return skip;
 }
 
