@@ -19,7 +19,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(Vulkan-ValidationLayers LANGUAGES CXX C)
 
-set(VVL_CPP_STANDARD 11 CACHE STRING "Set the C++ standard to build against. The value will be passed to cmake's CXX_STANDARD property.")
+set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against. The value will be passed to cmake's CXX_STANDARD property.")
 
 option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
 
