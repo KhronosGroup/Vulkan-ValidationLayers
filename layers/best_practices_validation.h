@@ -444,9 +444,10 @@ class BestPractices : public ValidationStateTracker {
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) override;
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) const override;
     bool ValidateMultisampledBlendingArm(uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos) const;
-    bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, spirv_inst_iter producer_entrypoint,
+    bool ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, const Instruction& producer_entrypoint,
                                         shader_stage_attributes const* producer_stage, const SHADER_MODULE_STATE& consumer,
-                                        spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
+                                        const Instruction& consumer_entrypoint,
+                                        shader_stage_attributes const* consumer_stage) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,

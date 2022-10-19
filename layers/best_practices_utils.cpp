@@ -1096,11 +1096,11 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
     pipeline_cache_ = pipelineCache;
 }
 
-// This function validates that the output of one shader is fully consumed by the consumer shader in the pipeline for performance
-// reasons
-bool BestPractices::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, spirv_inst_iter producer_entrypoint,
+// This function validates that the output of one shader is fully consumed by
+// the next shader in the pipeline for performance reasons
+bool BestPractices::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& producer, const Instruction& producer_entrypoint,
                                                    shader_stage_attributes const* producer_stage,
-                                                   const SHADER_MODULE_STATE& consumer, spirv_inst_iter consumer_entrypoint,
+                                                   const SHADER_MODULE_STATE& consumer, const Instruction& consumer_entrypoint,
                                                    shader_stage_attributes const* consumer_stage) const {
     bool skip = false;
 
@@ -1163,11 +1163,14 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         }
 
         const auto this_validate_interface_between_stages =
-            [this](const SHADER_MODULE_STATE& producer, spirv_inst_iter producer_entrypoint,
+            [this](const SHADER_MODULE_STATE& producer, const layer_data::optional<Instruction>& producer_entrypoint,
                    shader_stage_attributes const* producer_stage, const SHADER_MODULE_STATE& consumer,
-                   spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) {
-                return ValidateInterfaceBetweenStages(producer, producer_entrypoint, producer_stage, consumer, consumer_entrypoint,
-                                                      consumer_stage);
+                   const layer_data::optional<Instruction>& consumer_entrypoint, shader_stage_attributes const* consumer_stage) {
+                if (producer_entrypoint && consumer_entrypoint) {
+                    return ValidateInterfaceBetweenStages(producer, *producer_entrypoint, producer_stage, consumer,
+                                                          *consumer_entrypoint, consumer_stage);
+                }
+                return true;
             };
 
         skip |= ValidateInterfaceBetweenAllPipelineStages(pipeline->stage_state, fragment_stage,

@@ -372,14 +372,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
-    uint32_t GetNumComponentsInBaseType(const spirv_inst_iter &iter) const;
-    uint32_t GetTypeBitsSize(const spirv_inst_iter &iter) const;
-    uint32_t GetTypeBytesSize(const spirv_inst_iter &iter) const;
-    uint32_t GetArraySize(const spirv_inst_iter &iter) const;
-    uint32_t GetBaseType(const spirv_inst_iter &iter) const;
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
+    uint32_t GetArraySize(const Instruction *insn) const;
     uint32_t GetBaseType(const Instruction *insn) const;
     uint32_t GetTypeId(uint32_t id) const;
 

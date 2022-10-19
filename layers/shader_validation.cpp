@@ -3294,11 +3294,14 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     }
 
     const auto this_validate_interface_between_stages =
-        [this](const SHADER_MODULE_STATE &producer, spirv_inst_iter producer_entrypoint,
+        [this](const SHADER_MODULE_STATE &producer, const layer_data::optional<Instruction> &producer_entrypoint,
                shader_stage_attributes const *producer_stage, const SHADER_MODULE_STATE &consumer,
-               spirv_inst_iter consumer_entrypoint, shader_stage_attributes const *consumer_stage) {
-            return ValidateInterfaceBetweenStages(producer, producer_entrypoint, producer_stage, consumer, consumer_entrypoint,
-                                                  consumer_stage);
+               const layer_data::optional<Instruction> &consumer_entrypoint, shader_stage_attributes const *consumer_stage) {
+            if (producer_entrypoint && consumer_entrypoint) {
+                return ValidateInterfaceBetweenStages(producer, *producer_entrypoint, producer_stage, consumer,
+                                                      *consumer_entrypoint, consumer_stage);
+            }
+            return true;
         };
 
     skip |=
