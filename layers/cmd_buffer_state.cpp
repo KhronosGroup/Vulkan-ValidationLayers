@@ -76,7 +76,7 @@ const char *CommandTypeString(CMD_TYPE type) {
     return kGeneratedCommandNameList[type];
 }
 
-VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
+VkDynamicState ConvertToDynamicState(CBStatus flag) {
     switch (flag) {
         case CBSTATUS_LINE_WIDTH_SET:
             return VK_DYNAMIC_STATE_LINE_WIDTH;
@@ -148,6 +148,68 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
             return VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
         case CBSTATUS_COLOR_WRITE_ENABLE_SET:
             return VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
+        case CBSTATUS_TESSELLATION_DOMAIN_ORIGIN_SET:
+            return VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT;
+        case CBSTATUS_DEPTH_CLAMP_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
+        case CBSTATUS_POLYGON_MODE_SET:
+            return VK_DYNAMIC_STATE_POLYGON_MODE_EXT;
+        case CBSTATUS_RASTERIZATION_SAMPLES_SET:
+            return VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT;
+        case CBSTATUS_SAMPLE_MASK_SET:
+            return VK_DYNAMIC_STATE_SAMPLE_MASK_EXT;
+        case CBSTATUS_ALPHA_TO_COVERAGE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT;
+        case CBSTATUS_ALPHA_TO_ONE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT;
+        case CBSTATUS_LOGIC_OP_ENABLE_SET:
+            return VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT;
+        case CBSTATUS_COLOR_BLEND_ENABLE_SET:
+            return VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT;
+        case CBSTATUS_COLOR_BLEND_EQUATION_SET:
+            return VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT;
+        case CBSTATUS_COLOR_WRITE_MASK_SET:
+            return VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT;
+        case CBSTATUS_RASTERIZATION_STREAM_SET:
+            return VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT;
+        case CBSTATUS_CONSERVATIVE_RASTERIZATION_MODE_SET:
+            return VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT;
+        case CBSTATUS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_SET:
+            return VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT;
+        case CBSTATUS_DEPTH_CLIP_ENABLE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT;
+        case CBSTATUS_SAMPLE_LOCATIONS_ENABLE_SET:
+            return VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT;
+        case CBSTATUS_COLOR_BLEND_ADVANCED_SET:
+            return VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT;
+        case CBSTATUS_PROVOKING_VERTEX_MODE_SET:
+            return VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT;
+        case CBSTATUS_LINE_RASTERIZATION_MODE_SET:
+            return VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT;
+        case CBSTATUS_LINE_STIPPLE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT;
+        case CBSTATUS_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_SET:
+            return VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT;
+        case CBSTATUS_VIEWPORT_W_SCALING_ENABLE_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV;
+        case CBSTATUS_VIEWPORT_SWIZZLE_SET:
+            return VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV;
+        case CBSTATUS_COVERAGE_TO_COLOR_ENABLE_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV;
+        case CBSTATUS_COVERAGE_TO_COLOR_LOCATION_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV;
+        case CBSTATUS_COVERAGE_MODULATION_MODE_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV;
+        case CBSTATUS_COVERAGE_MODULATION_TABLE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV;
+        case CBSTATUS_COVERAGE_MODULATION_TABLE_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV;
+        case CBSTATUS_SHADING_RATE_IMAGE_ENABLE_SET:
+            return VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV;
+        case CBSTATUS_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_SET:
+            return VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV;
+        case CBSTATUS_COVERAGE_REDUCTION_MODE_SET:
+            return VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV;
         default:
             // CBSTATUS_INDEX_BUFFER_BOUND is not in VkDynamicState
             return VK_DYNAMIC_STATE_MAX_ENUM;
@@ -155,7 +217,7 @@ VkDynamicState ConvertToDynamicState(CBStatusFlagBits flag) {
     return VK_DYNAMIC_STATE_MAX_ENUM;
 }
 
-CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
+CBStatus ConvertToCBStatus(VkDynamicState state) {
     switch (state) {
         case VK_DYNAMIC_STATE_VIEWPORT:
             return CBSTATUS_VIEWPORT_SET;
@@ -227,10 +289,72 @@ CBStatusFlagBits ConvertToCBStatusFlagBits(VkDynamicState state) {
             return CBSTATUS_VERTEX_INPUT_SET;
         case VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
             return CBSTATUS_COLOR_WRITE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT:
+            return CBSTATUS_TESSELLATION_DOMAIN_ORIGIN_SET;
+        case VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT:
+            return CBSTATUS_DEPTH_CLAMP_ENABLE_SET;
+        case VK_DYNAMIC_STATE_POLYGON_MODE_EXT:
+            return CBSTATUS_POLYGON_MODE_SET;
+        case VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT:
+            return CBSTATUS_RASTERIZATION_SAMPLES_SET;
+        case VK_DYNAMIC_STATE_SAMPLE_MASK_EXT:
+            return CBSTATUS_SAMPLE_MASK_SET;
+        case VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT:
+            return CBSTATUS_ALPHA_TO_COVERAGE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT:
+            return CBSTATUS_ALPHA_TO_ONE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT:
+            return CBSTATUS_LOGIC_OP_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT:
+            return CBSTATUS_COLOR_BLEND_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT:
+            return CBSTATUS_COLOR_BLEND_EQUATION_SET;
+        case VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
+            return CBSTATUS_COLOR_WRITE_MASK_SET;
+        case VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT:
+            return CBSTATUS_RASTERIZATION_STREAM_SET;
+        case VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT:
+            return CBSTATUS_CONSERVATIVE_RASTERIZATION_MODE_SET;
+        case VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT:
+            return CBSTATUS_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT:
+            return CBSTATUS_DEPTH_CLIP_ENABLE_SET;
+        case VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT:
+            return CBSTATUS_SAMPLE_LOCATIONS_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT:
+            return CBSTATUS_COLOR_BLEND_ADVANCED_SET;
+        case VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT:
+            return CBSTATUS_PROVOKING_VERTEX_MODE_SET;
+        case VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
+            return CBSTATUS_LINE_RASTERIZATION_MODE_SET;
+        case VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
+            return CBSTATUS_LINE_STIPPLE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
+            return CBSTATUS_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV:
+            return CBSTATUS_VIEWPORT_W_SCALING_ENABLE_SET;
+        case VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV:
+            return CBSTATUS_VIEWPORT_SWIZZLE_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV:
+            return CBSTATUS_COVERAGE_TO_COLOR_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV:
+            return CBSTATUS_COVERAGE_TO_COLOR_LOCATION_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV:
+            return CBSTATUS_COVERAGE_MODULATION_MODE_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV:
+            return CBSTATUS_COVERAGE_MODULATION_TABLE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV:
+            return CBSTATUS_COVERAGE_MODULATION_TABLE_SET;
+        case VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV:
+            return CBSTATUS_SHADING_RATE_IMAGE_ENABLE_SET;
+        case VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV:
+            return CBSTATUS_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_SET;
+        case VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV:
+            return CBSTATUS_COVERAGE_REDUCTION_MODE_SET;
         default:
-            return CBSTATUS_NONE;
+            return CBSTATUS_NUM;
     }
-    return CBSTATUS_NONE;
+    return CBSTATUS_NUM;
 }
 
 CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
@@ -290,8 +414,8 @@ void CMD_BUFFER_STATE::Reset() {
     commandCount = 0;
     submitCount = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
-    status = 0;
-    static_status = 0;
+    status.reset();
+    static_status.reset();
     inheritedViewportDepths.clear();
     usedViewportScissorCount = 0;
     pipelineStaticViewportCount = 0;
@@ -1004,8 +1128,8 @@ void CMD_BUFFER_STATE::UpdateDrawCmd(CMD_TYPE cmd_type) {
     uint32_t &used = usedViewportScissorCount;
     used = std::max(used, pipelineStaticViewportCount);
     used = std::max(used, pipelineStaticScissorCount);
-    usedDynamicViewportCount |= !!(dynamic_status & CBSTATUS_VIEWPORT_WITH_COUNT_SET);  // !! silences MSVC warn
-    usedDynamicScissorCount |= !!(dynamic_status & CBSTATUS_SCISSOR_WITH_COUNT_SET);
+    usedDynamicViewportCount |= dynamic_status[CBSTATUS_VIEWPORT_WITH_COUNT_SET];
+    usedDynamicScissorCount |= dynamic_status[CBSTATUS_SCISSOR_WITH_COUNT_SET];
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
@@ -1260,14 +1384,22 @@ void CMD_BUFFER_STATE::SetImageViewLayout(const IMAGE_VIEW_STATE &view_state, Vk
 
 void CMD_BUFFER_STATE::RecordCmd(CMD_TYPE cmd_type) { commandCount++; }
 
-void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits) {
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatus state)
+{
+    CBStatusFlags state_bits;
+    state_bits.set(state);
+    RecordStateCmd(cmd_type, state_bits);
+}
+
+void CMD_BUFFER_STATE::RecordStateCmd(CMD_TYPE cmd_type, CBStatusFlags const & state_bits)
+{
     RecordCmd(cmd_type);
     status |= state_bits;
     static_status &= ~state_bits;
 }
 
-void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatusFlags state_bits, uint32_t attachment_count) {
-    RecordStateCmd(cmd_type, state_bits);
+void CMD_BUFFER_STATE::RecordColorWriteEnableStateCmd(CMD_TYPE cmd_type, CBStatus state, uint32_t attachment_count) {
+    RecordStateCmd(cmd_type, state);
     dynamicColorWriteEnableAttachmentCount = std::max(dynamicColorWriteEnableAttachmentCount, attachment_count);
 }
 
@@ -1444,7 +1576,7 @@ void CMD_BUFFER_STATE::UnbindResources() {
 
     // Reset status of cb to force rebinding of all resources
     // Index buffer included
-    status = CBSTATUS_NONE;
+    status.reset();
 
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();

@@ -40,7 +40,6 @@ bool ImageSampleOperation(uint32_t opcode);
 
 bool OpcodeHasType(uint32_t opcode);
 bool OpcodeHasResult(uint32_t opcode);
-uint32_t OpcodeResultWord(uint32_t opcode);
 
 uint32_t OpcodeMemoryScopePosition(uint32_t opcode);
 uint32_t OpcodeExecutionScopePosition(uint32_t opcode);

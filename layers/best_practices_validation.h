@@ -487,6 +487,11 @@ class BestPractices : public ValidationStateTracker {
                                           const VkDependencyInfoKHR* pDependencyInfos) const override;
     bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                        const VkDependencyInfo* pDependencyInfos) const override;
+    bool ValidateAccessLayoutCombination(const std::string& api_name, VkAccessFlags2 access, VkImageLayout layout,
+                                         VkImageAspectFlags aspect) const;
+    bool ValidateImageMemoryBarrier(const std::string& api_name, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                    VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+                                    VkImageAspectFlags aspectMask) const;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,

@@ -200,6 +200,8 @@ set(CORE_VALIDATION_LIBRARY_FILES
     buffer_validation.h
     shader_module.cpp
     shader_module.h
+    shader_instruction.cpp
+    shader_instruction.h
     shader_validation.cpp
     shader_validation.h
     sync_vuid_maps.cpp

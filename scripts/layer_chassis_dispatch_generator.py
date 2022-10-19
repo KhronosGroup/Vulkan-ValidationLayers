@@ -2186,7 +2186,7 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
                 if self.struct_contains_ndo(type) == True:
                     islocal = True
             isdestroy = True if True in [destroy_txt in cmdname for destroy_txt in ['Destroy', 'Free', 'ReleasePerformanceConfigurationINTEL']] else False
-            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']] else False
+            iscreate = True if True in [create_txt in cmdname for create_txt in ['Create', 'Allocate', 'GetRandROutputDisplayEXT', 'GetDrmDisplayEXT', 'RegisterDeviceEvent', 'RegisterDisplayEvent', 'AcquirePerformanceConfigurationINTEL']] else False
             extstructs = self.registry.validextensionstructs[type] if name == 'pNext' else None
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,

@@ -795,9 +795,8 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) override;
 
     std::shared_ptr<SHADER_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info,
-                                                                 uint32_t unique_shader_id) const;
-    std::shared_ptr<SHADER_MODULE_STATE> CreateShaderModuleState(const VkShaderModuleCreateInfo& create_info,
-                                                                 uint32_t unique_shader_id, VkShaderModule handle) const;
+                                                                 uint32_t unique_shader_id,
+                                                                 VkShaderModule handle = VK_NULL_HANDLE) const;
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state) override;
@@ -1098,6 +1097,59 @@ class ValidationStateTracker : public ValidationObject {
                                            const VkVertexInputAttributeDescription2EXT* pVertexAttributeDescriptions) override;
     void PreCallRecordCmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                 const VkBool32* pColorWriteEnables) override;
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, VkResult result) override;
+    void PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain, VkResult result) override;
+#endif
+    void PreCallRecordCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer,
+                                                        VkTessellationDomainOrigin domainOrigin) override;
+    void PreCallRecordCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) override;
+    void PreCallRecordCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) override;
+    void PreCallRecordCmdSetRasterizationSamplesEXT(VkCommandBuffer commandBuffer,
+                                                    VkSampleCountFlagBits rasterizationSamples) override;
+    void PreCallRecordCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,
+                                          const VkSampleMask* pSampleMask) override;
+    void PreCallRecordCmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable) override;
+    void PreCallRecordCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToOneEnable) override;
+    void PreCallRecordCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable) override;
+    void PreCallRecordCmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                                const VkBool32* pColorBlendEnables) override;
+    void PreCallRecordCmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                                  const VkColorBlendEquationEXT* pColorBlendEquations) override;
+    void PreCallRecordCmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                              const VkColorComponentFlags* pColorWriteMasks) override;
+    void PreCallRecordCmdSetRasterizationStreamEXT(VkCommandBuffer commandBuffer, uint32_t rasterizationStream) override;
+    void PreCallRecordCmdSetConservativeRasterizationModeEXT(
+        VkCommandBuffer commandBuffer, VkConservativeRasterizationModeEXT conservativeRasterizationMode) override;
+    void PreCallRecordCmdSetExtraPrimitiveOverestimationSizeEXT(VkCommandBuffer commandBuffer,
+                                                                float extraPrimitiveOverestimationSize) override;
+    void PreCallRecordCmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable) override;
+    void PreCallRecordCmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable) override;
+    void PreCallRecordCmdSetColorBlendAdvancedEXT(VkCommandBuffer commandBuffer, uint32_t firstAttachment, uint32_t attachmentCount,
+                                                  const VkColorBlendAdvancedEXT* pColorBlendAdvanced) override;
+    void PreCallRecordCmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer,
+                                                   VkProvokingVertexModeEXT provokingVertexMode) override;
+    void PreCallRecordCmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer,
+                                                     VkLineRasterizationModeEXT lineRasterizationMode) override;
+    void PreCallRecordCmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable) override;
+    void PreCallRecordCmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne) override;
+    void PreCallRecordCmdSetViewportWScalingEnableNV(VkCommandBuffer commandBuffer, VkBool32 viewportWScalingEnable) override;
+    void PreCallRecordCmdSetViewportSwizzleNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
+                                              const VkViewportSwizzleNV* pViewportSwizzles) override;
+    void PreCallRecordCmdSetCoverageToColorEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageToColorEnable) override;
+    void PreCallRecordCmdSetCoverageToColorLocationNV(VkCommandBuffer commandBuffer, uint32_t coverageToColorLocation) override;
+    void PreCallRecordCmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer,
+                                                     VkCoverageModulationModeNV coverageModulationMode) override;
+    void PreCallRecordCmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer,
+                                                            VkBool32 coverageModulationTableEnable) override;
+    void PreCallRecordCmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount,
+                                                      const float* pCoverageModulationTable) override;
+    void PreCallRecordCmdSetShadingRateImageEnableNV(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) override;
+    void PreCallRecordCmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuffer,
+                                                               VkBool32 representativeFragmentTestEnable) override;
+    void PreCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
+                                                    VkCoverageReductionModeNV coverageReductionMode) override;
+
     template <typename CreateInfo>
     VkFormatFeatureFlags2KHR GetExternalFormatFeaturesANDROID(const CreateInfo* create_info) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -1386,6 +1438,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
         VkPhysicalDeviceSubgroupProperties subgroup_properties;
+        VkPhysicalDeviceExtendedDynamicState3PropertiesEXT extended_dynamic_state3_props;
         VkPhysicalDeviceImageProcessingPropertiesQCOM image_processing_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};

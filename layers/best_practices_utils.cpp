@@ -238,12 +238,12 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     DispatchGetPhysicalDeviceProperties(physicalDevice, &physical_device_properties);
     auto device_api_version = physical_device_properties.apiVersion;
 
-    // check api versions and warn if instance api Version is higher than version on device.
+    // Check api versions and log an info message when instance api Version is higher than version on device.
     if (api_version > device_api_version) {
         std::string inst_api_name = StringAPIVersion(api_version);
         std::string dev_api_name = StringAPIVersion(device_api_version);
 
-        skip |= LogWarning(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
+        skip |= LogInfo(device, kVUID_BestPractices_CreateDevice_API_Mismatch,
                            "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
                            inst_api_name.c_str(), dev_api_name.c_str());
     }
@@ -1277,8 +1277,8 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
         if (IsExtEnabled(device_extensions.vk_khr_maintenance4)) {
             auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
-            for (const auto& builtin : module_state->static_data_.builtin_decoration_list) {
-                if (builtin.builtin == spv::BuiltInWorkgroupSize) {
+            for (const Instruction* inst : module_state->GetBuiltinDecorationList()) {
+                if (inst->GetBuiltIn() == spv::BuiltInWorkgroupSize) {
                     skip |= LogWarning(device, kVUID_BestPractices_SpirvDeprecated_WorkgroupSize,
                                        "vkCreateComputePipelines(): pCreateInfos[ %" PRIu32
                                        "] is using the Workgroup built-in which SPIR-V 1.6 deprecated. The VK_KHR_maintenance4 "
@@ -1296,9 +1296,10 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     bool skip = false;
     auto module_state = Get<SHADER_MODULE_STATE>(createInfo.stage.module);
     // Generate warnings about work group sizes based on active resources.
-    auto entrypoint = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
-    if (entrypoint == module_state->end()) return false;
+    auto entrypoint_optional = module_state->FindEntrypoint(createInfo.stage.pName, createInfo.stage.stage);
+    if (!entrypoint_optional) return false;
 
+    const Instruction& entrypoint = *entrypoint_optional;
     uint32_t x = 1, y = 1, z = 1;
     module_state->FindLocalSize(entrypoint, x, y, z);
 
@@ -1327,7 +1328,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint);
+    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint_optional);
     auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(accessible_ids);
 
     unsigned dimensions = 0;
@@ -1393,6 +1394,12 @@ bool BestPractices::CheckDependencyInfo(const std::string& api_name, const VkDep
 
     skip |= CheckPipelineStageFlags(api_name, stage_masks.src);
     skip |= CheckPipelineStageFlags(api_name, stage_masks.dst);
+    for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
+        skip |= ValidateImageMemoryBarrier(
+            api_name, dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
+            dep_info.pImageMemoryBarriers[i].srcAccessMask, dep_info.pImageMemoryBarriers[i].dstAccessMask,
+            dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+    }
 
     return skip;
 }
@@ -1604,6 +1611,123 @@ bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
     return skip;
 }
 
+bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name, VkAccessFlags2 access, VkImageLayout layout,
+                                                    VkImageAspectFlags aspect) const {
+    bool skip = false;
+
+    const VkAccessFlags all = VK_ACCESS_FLAG_BITS_MAX_ENUM;
+    bool none_allowed = false;
+    VkAccessFlags allowed = 0;
+
+    // Combinations taken from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2918
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            allowed = all;
+            none_allowed = true;
+            break;
+        case VK_IMAGE_LAYOUT_GENERAL:
+            allowed = all;
+            break;
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            allowed = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                      VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            allowed = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            allowed = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            allowed = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_PREINITIALIZED:
+            allowed = VK_ACCESS_HOST_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            if (aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+            if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                allowed |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            }
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            if (aspect & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                allowed |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            }
+            if (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                allowed |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL:
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL:
+            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL:
+            allowed = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL:
+            allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            allowed = VK_ACCESS_NONE;
+            break;
+        case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+            allowed = all;
+            none_allowed = true;
+            break;
+        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+            allowed = VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+            break;
+        case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+            allowed = VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+            break;
+        default:
+            // If a new layout is added, will need to manually add it
+            return false;
+    }
+
+    if (access == 0 && !none_allowed) {
+        skip |= LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
+                           "%s: accessMask is VK_ACCESS_NONE, but for layout %s expected accessMask are %s.", api_name.c_str(),
+                           string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
+    } else if ((allowed | access) != allowed) {
+        skip |=
+            LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
+                       "%s: accessMask is %s, but for layout %s expected accessMask are %s.", string_VkAccessFlags2(access).c_str(),
+                       api_name.c_str(), string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateImageMemoryBarrier(const std::string& api_name, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                               VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+                                               VkImageAspectFlags aspectMask) const {
+    bool skip = false;
+
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && IsImageLayoutReadOnly(newLayout)) {
+        skip |= LogWarning(device, kVUID_BestPractices_TransitionUndefinedToReadOnly,
+                           "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
+                           "may be discarded, but the newLayout is %s, which is read only.",
+                           string_VkImageLayout(newLayout));
+    }
+
+    skip |= ValidateAccessLayoutCombination(api_name, srcAccessMask, oldLayout, aspectMask);
+    skip |= ValidateAccessLayoutCombination(api_name, dstAccessMask, newLayout, aspectMask);
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                       VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -1617,13 +1741,10 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", dstStageMask);
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        if (pImageMemoryBarriers[i].oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-            IsImageLayoutReadOnly(pImageMemoryBarriers[i].newLayout)) {
-            skip |= LogWarning(device, kVUID_BestPractices_TransitionUndefinedToReadOnly,
-                               "VkImageMemoryBarrier is being submitted with oldLayout VK_IMAGE_LAYOUT_UNDEFINED and the contents "
-                               "may be discarded, but the newLayout is %s, which is read only.",
-                               string_VkImageLayout(pImageMemoryBarriers[i].newLayout));
-        }
+        skip |=
+            ValidateImageMemoryBarrier("vkCmdPipelineBarrier", pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout,
+                                       pImageMemoryBarriers[i].srcAccessMask, pImageMemoryBarriers[i].dstAccessMask,
+                                       pImageMemoryBarriers[i].subresourceRange.aspectMask);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {

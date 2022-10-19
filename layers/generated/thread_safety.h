@@ -642,6 +642,13 @@ void PostCallRecordGetRandROutputDisplayEXT(
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
+void PostCallRecordGetDrmDisplayEXT(
+    VkPhysicalDevice                            physicalDevice,
+    int32_t                                     drmFd,
+    uint32_t                                    connectorId,
+    VkDisplayKHR*                               display,
+    VkResult                                    result) override;
+
 void PreCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
