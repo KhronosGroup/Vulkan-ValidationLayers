@@ -2181,10 +2181,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              pipe_index);
         }
         for (size_t i = 0; i < pipe_attachments.size(); i++) {
-            if ((pipe_attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                (pipe_attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                (pipe_attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                (pipe_attachments[i].srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcColorBlendFactor)) {
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
@@ -2194,10 +2191,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      pipe_index, i, pipe_attachments[i].srcColorBlendFactor);
                 }
             }
-            if ((pipe_attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                (pipe_attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                (pipe_attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                (pipe_attachments[i].dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstColorBlendFactor)) {
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
@@ -2207,10 +2201,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      pipe_index, i, pipe_attachments[i].dstColorBlendFactor);
                 }
             }
-            if ((pipe_attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                (pipe_attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                (pipe_attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                (pipe_attachments[i].srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcAlphaBlendFactor)) {
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
@@ -2220,10 +2211,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      pipe_index, i, pipe_attachments[i].srcAlphaBlendFactor);
                 }
             }
-            if ((pipe_attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR) ||
-                (pipe_attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR) ||
-                (pipe_attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA) ||
-                (pipe_attachments[i].dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA)) {
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstAlphaBlendFactor)) {
                 if (!enabled_features.core.dualSrcBlend) {
                     skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
                                      "vkCreateGraphicsPipelines(): pipelines[%" PRIu32
@@ -20882,48 +20870,31 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         VkColorBlendEquationEXT const &equation = pColorBlendEquations[attachment];
         if (!enabled_features.core.dualSrcBlend) {
-            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07357
-            if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
-                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
-                equation.srcColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
-                equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+            if (IsSecondaryColorInputBlendFactor(equation.srcColorBlendFactor)) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357",
                                  "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcColorBlendFactor is %s but the "
                                  "dualSrcBlend feature is not enabled.",
                                  attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
             }
-            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07358
-            if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
-                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
-                equation.dstColorBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
-                equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+            if (IsSecondaryColorInputBlendFactor(equation.dstColorBlendFactor)) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07358",
                                  "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstColorBlendFactor is %s but the "
                                  "dualSrcBlend feature is not enabled.",
                                  attachment, string_VkBlendFactor(equation.dstColorBlendFactor));
             }
-            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07359
-            if (equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
-                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
-                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
-                equation.srcAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+            if (IsSecondaryColorInputBlendFactor(equation.srcAlphaBlendFactor)) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07359",
                                  "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].srcAlphaBlendFactor is %s but the "
                                  "dualSrcBlend feature is not enabled.",
                                  attachment, string_VkBlendFactor(equation.srcAlphaBlendFactor));
             }
-            // VUID-VkColorBlendEquationEXT-dualSrcBlend-07360
-            if (equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_COLOR ||
-                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
-                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_SRC1_ALPHA ||
-                equation.dstAlphaBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA) {
+            if (IsSecondaryColorInputBlendFactor(equation.dstAlphaBlendFactor)) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-dualSrcBlend-07360",
                                  "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].dstAlphaBlendFactor is %s but the "
                                  "dualSrcBlend feature is not enabled.",
                                  attachment, string_VkBlendFactor(equation.dstAlphaBlendFactor));
             }
         }
-        // VUID-VkColorBlendEquationEXT-colorBlendOp-07361
         if (IsAdvanceBlendOperation(equation.colorBlendOp) || IsAdvanceBlendOperation(equation.alphaBlendOp)) {
             skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-colorBlendOp-07361",
                              "vkCmdSetColorBlendEquationEXT(): pColorBlendEquations[%u].colorBlendOp and "
@@ -20932,7 +20903,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
         }
         if (IsExtEnabled(device_extensions.vk_khr_portability_subset) &&
             !enabled_features.portability_subset_features.constantAlphaColorBlendFactors) {
-            // VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362
             if (equation.srcColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.srcColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362",
@@ -20940,7 +20910,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendEquationEXT(VkCommandBuffer comm
                                  "when constantAlphaColorBlendFactors is not supported.",
                                  attachment, string_VkBlendFactor(equation.srcColorBlendFactor));
             }
-            // VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363
             if (equation.dstColorBlendFactor == VK_BLEND_FACTOR_CONSTANT_ALPHA ||
                 equation.dstColorBlendFactor == VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA) {
                 skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363",

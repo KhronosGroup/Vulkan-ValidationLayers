@@ -293,6 +293,12 @@ static inline bool IsAdvanceBlendOperation(const VkBlendOp blend_op) {
     return (static_cast<int>(blend_op) >= VK_BLEND_OP_ZERO_EXT) && (static_cast<int>(blend_op) <= VK_BLEND_OP_BLUE_EXT);
 }
 
+// Helper for Dual-Source Blending
+static inline bool IsSecondaryColorInputBlendFactor(VkBlendFactor blend_factor) {
+    return (blend_factor == VK_BLEND_FACTOR_SRC1_COLOR || blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
+            blend_factor == VK_BLEND_FACTOR_SRC1_ALPHA || blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA);
+}
+
 // Perform a zero-tolerant modulo operation
 static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
     VkDeviceSize result = 0;
