@@ -20497,8 +20497,8 @@ bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnableEXT(VkCommandBuffer
                                                                  VkBool32 rasterizerDiscardEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, CMD_SETRASTERIZERDISCARDENABLEEXT,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetRasterizerDiscardEnable-None-04871", "extendedDynamicState");
+                                        enabled_features.extended_dynamic_state2_features.extendedDynamicState2,
+                                        "VUID-vkCmdSetRasterizerDiscardEnable-None-04871", "extendedDynamicState2");
 }
 
 bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer,
@@ -20510,8 +20510,8 @@ bool CoreChecks::PreCallValidateCmdSetRasterizerDiscardEnable(VkCommandBuffer co
 bool CoreChecks::PreCallValidateCmdSetDepthBiasEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, CMD_SETDEPTHBIASENABLEEXT,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetDepthBiasEnable-None-04872", "extendedDynamicState");
+                                        enabled_features.extended_dynamic_state2_features.extendedDynamicState2,
+                                        "VUID-vkCmdSetDepthBiasEnable-None-04872", "extendedDynamicState2");
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const {
@@ -20523,8 +20523,8 @@ bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnableEXT(VkCommandBuffer 
                                                                 VkBool32 primitiveRestartEnable) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     return ValidateExtendedDynamicState(*cb_state, CMD_SETPRIMITIVERESTARTENABLEEXT,
-                                        enabled_features.extended_dynamic_state_features.extendedDynamicState,
-                                        "VUID-vkCmdSetPrimitiveRestartEnable-None-04866", "extendedDynamicState");
+                                        enabled_features.extended_dynamic_state2_features.extendedDynamicState2,
+                                        "VUID-vkCmdSetPrimitiveRestartEnable-None-04866", "extendedDynamicState2");
 }
 
 bool CoreChecks::PreCallValidateCmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) const {
