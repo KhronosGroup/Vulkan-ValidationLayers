@@ -1680,6 +1680,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
             break;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             allowed = VK_ACCESS_NONE;
+            none_allowed = true;
             break;
         case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
             allowed = all;
