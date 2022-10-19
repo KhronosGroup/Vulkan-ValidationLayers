@@ -56,6 +56,9 @@ class Instruction {
     // operand id index, return 0 if no type
     uint32_t TypeId() const { return type_id_; }
 
+    // Used when need to print information for an error message
+    std::string Describe() const;
+
     // Only used to get strings in SPIR-V instructions
     // SPIR-V spec (and spirv-val) ensure:
     // "A string is interpreted as a nul-terminated stream of characters"
@@ -64,6 +67,7 @@ class Instruction {
         return (char const*)&words_[operand];
     }
 
+    uint32_t GetConstantValue() const;
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
