@@ -36,15 +36,9 @@
 #include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_validation.h"
+#include "shader_attribute_validation.h"
 #include "spirv_grammar_helper.h"
 #include "xxhash.h"
-
-const std::array<shader_stage_attributes, 5> shader_stage_attribs = {
-    {{"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
-     {"tessellation control shader", true, true, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
-     {"tessellation evaluation shader", true, false, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
-     {"geometry shader", true, false, VK_SHADER_STAGE_GEOMETRY_BIT},
-     {"fragment shader", false, false, VK_SHADER_STAGE_FRAGMENT_BIT}}};
 
 static const Instruction *GetBaseTypeInstruction(const SHADER_MODULE_STATE &module_state, uint32_t type) {
     const Instruction *insn = module_state.FindDef(type);
@@ -3136,15 +3130,16 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     bool skip = false;
 
     auto validate_attrib = [this](const SHADER_MODULE_STATE &producer, shader_stage_attributes const *producer_stage,
-                                  const ShaderAttribute &out, const SHADER_MODULE_STATE &consumer,
-                                  shader_stage_attributes const *consumer_stage, const ShaderAttribute &in) -> bool {
+                                  const ShaderAttributeValidation &out, const SHADER_MODULE_STATE &consumer,
+                                  shader_stage_attributes const *consumer_stage, const ShaderAttributeValidation &in) -> bool {
         bool skip = false;
 
+        // Check if an out shader attribute is only partially consumed by the next shader stage
         if (out.IsScanCompleted() && out.IsOnlyPartiallyConsumed()) {
             if (!enabled_features.core13.maintenance4) {
                 const auto &out_components = out.GetComponents();
                 for (uint32_t component_i = 0; component_i < out.GetComponentsCount(); component_i++) {
-                    if (out_components[component_i] == ShaderAttribute::ComponentStatus::Unseen) {
+                    if (out_components[component_i] == ShaderAttributeValidation::ComponentStatus::Unseen) {
                         const uint32_t out_location = out.LocationFromComponentsIndex(component_i);
                         const uint32_t out_component = out.ComponentFromComponentsIndex(component_i);
 
@@ -3162,37 +3157,40 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
             }
         }
 
+        // For an out shader attribute matching an in attribute in the next shader stage,
+        // check their type and decorations
         if (out.IsScanCompleted() && in.IsScanCompleted() && out.HasSameLocationAndComponentAs(in)) {
             // subtleties of arrayed interfaces:
             // - if is_patch, then the member is not arrayed, even though the interface may be.
             // - if is_block_member, then the extra array level of an arrayed interface is not
             //   expressed in the member type -- it's expressed in the block type.
-            assert(out.interface);
-            assert(in.interface);
+            assert(out.GetInterface());
+            assert(in.GetInterface());
 
             const uint32_t out_location = out.LocationFromComponentsIndex(0);
             const uint32_t out_component = out.ComponentFromComponentsIndex(0);
 
-            if (!TypesMatch(producer, consumer, out.interface->type_id, in.interface->type_id)) {
+            if (!TypesMatch(producer, consumer, out.GetInterface()->type_id, in.GetInterface()->type_id)) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Type mismatch on location %" PRIu32 ".%" PRIu32 ", between %s and %s: '%s' vs '%s'", out_location,
                                  out_component, producer_stage->name, consumer_stage->name,
-                                 producer.DescribeType(out.interface->type_id).c_str(),
-                                 consumer.DescribeType(in.interface->type_id).c_str());
+                                 producer.DescribeType(out.GetInterface()->type_id).c_str(),
+                                 consumer.DescribeType(in.GetInterface()->type_id).c_str());
             }
-            if (out.interface->is_patch != in.interface->is_patch) {
+            if (out.GetInterface()->is_patch != in.GetInterface()->is_patch) {
                 skip |= LogError(producer.vk_shader_module(), kVUID_Core_Shader_InterfaceTypeMismatch,
                                  "Decoration mismatch on location %" PRIu32 ".%" PRIu32
                                  ": is per-%s in %s stage but per-%s in %s stage",
-                                 out_location, out_component, out.interface->is_patch ? "patch" : "vertex", producer_stage->name,
-                                 in.interface->is_patch ? "patch" : "vertex", consumer_stage->name);
+                                 out_location, out_component, out.GetInterface()->is_patch ? "patch" : "vertex",
+                                 producer_stage->name, in.GetInterface()->is_patch ? "patch" : "vertex", consumer_stage->name);
             }
         }
 
+        // Check if an in shader attribute consumes a non existent out shader attribute
         if (in.IsScanCompleted() && in.DoesConsumeNonExistentOutput()) {
             const auto &in_components = in.GetComponents();
             for (uint32_t component_i = 0; component_i < in.GetComponentsCount(); component_i++) {
-                if (in_components[component_i] == ShaderAttribute::ComponentStatus::Unseen) {
+                if (in_components[component_i] == ShaderAttributeValidation::ComponentStatus::Unseen) {
                     const uint32_t in_location = in.LocationFromComponentsIndex(component_i);
                     const uint32_t in_component = in.ComponentFromComponentsIndex(component_i);
 
@@ -3303,8 +3301,8 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
                                                   consumer_stage);
         };
 
-    skip |= ValidateInterfaceBetweenAllPipelineStages(pipeline->stage_state, fragment_stage, shader_stage_attribs,
-                                                      this_validate_interface_between_stages);
+    skip |=
+        ValidateInterfaceBetweenAllPipelineStages(pipeline->stage_state, fragment_stage, this_validate_interface_between_stages);
 
     if (fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->has_valid_spirv) {
         const auto &rp_state = pipeline->RenderPassState();
