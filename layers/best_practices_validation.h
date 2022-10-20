@@ -23,6 +23,7 @@
 
 #include "chassis.h"
 #include "state_tracker.h"
+#include "shader_attribute_validation.h"
 #include "shader_validation.h"
 #include "image_state.h"
 #include "cmd_buffer_state.h"

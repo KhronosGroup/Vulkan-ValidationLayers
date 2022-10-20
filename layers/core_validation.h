@@ -30,6 +30,7 @@
 #include "state_tracker.h"
 #include "image_layout_map.h"
 #include "gpu_validation.h"
+#include "shader_attribute_validation.h"
 #include "shader_validation.h"
 #include "core_error_location.h"
 #include "qfo_transfer.h"

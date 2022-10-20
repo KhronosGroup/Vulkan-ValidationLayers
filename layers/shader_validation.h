@@ -29,17 +29,9 @@
 #include <generated/spirv_tools_commit_id.h>
 #include "shader_module.h"
 #include "vk_layer_utils.h"
-#include "range_vector.h"
 
 struct DeviceFeatures;
 struct DeviceExtensions;
-
-struct shader_stage_attributes {
-    char const *const name;
-    bool arrayed_input;
-    bool arrayed_output;
-    VkShaderStageFlags stage;
-};
 
 class ValidationCache {
   public:
