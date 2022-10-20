@@ -251,7 +251,7 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList 
     # List the enum for the dynamic command buffer status flags
     def dynamicTypeEnum(self):
         output = '''
-typedef enum CB_DYNAMIC_STATUS {\n'''
+typedef enum CBDynamicStatus {\n'''
         counter = 1
         for name in self.dynamic_states:
             state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
@@ -260,9 +260,9 @@ typedef enum CB_DYNAMIC_STATUS {\n'''
 
         output += '    CB_DYNAMIC_STATUS_NUM = ' + str(counter)
         output += '''
-} CB_DYNAMIC_STATUS;
+} CBDynamicStatus;
 
-typedef std::bitset<CB_DYNAMIC_STATUS_NUM> CBDynamicFlags;
+using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATUS_NUM>;
 std::string DynamicStateString(CBDynamicFlags const &dynamic_state);
 struct VkPipelineDynamicStateCreateInfo;
 CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);
@@ -451,7 +451,7 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
     # List the enum for the dynamic command buffer status flags
     def dynamicFunction(self):
         output = '''
-static VkDynamicState ConvertToDynamicState(CB_DYNAMIC_STATUS flag) {
+static VkDynamicState ConvertToDynamicState(CBDynamicStatus flag) {
     switch (flag) {\n'''
         for name in self.dynamic_states:
             state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
@@ -463,7 +463,7 @@ static VkDynamicState ConvertToDynamicState(CB_DYNAMIC_STATUS flag) {
 }
 '''
         output += '''
-static CB_DYNAMIC_STATUS ConvertToCBDynamicStatus(VkDynamicState state) {
+static CBDynamicStatus ConvertToCBDynamicStatus(VkDynamicState state) {
     switch (state) {\n'''
         for name in self.dynamic_states:
             state_name = name[17:] # VK_DYNAMIC_STATE_LINE_WIDTH -> LINE_WIDTH
@@ -479,7 +479,7 @@ static CB_DYNAMIC_STATUS ConvertToCBDynamicStatus(VkDynamicState state) {
 std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
     std::string ret;
     for (int index = 0; index < CB_DYNAMIC_STATUS_NUM; ++index) {
-        CB_DYNAMIC_STATUS status = static_cast<CB_DYNAMIC_STATUS>(index);
+        CBDynamicStatus status = static_cast<CBDynamicStatus>(index);
         if (dynamic_state[status]) {
             if (!ret.empty()) ret.append("|");
             ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
