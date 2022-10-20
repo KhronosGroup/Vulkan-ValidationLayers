@@ -22,7 +22,7 @@
 #include "best_practices_validation.h"
 #include "layer_chassis_dispatch.h"
 #include "best_practices_error_enums.h"
-#include "shader_attribute_validation.h"
+#include "shader_interface_validation.h"
 #include "shader_validation.h"
 #include "sync_utils.h"
 #include "cmd_buffer_state.h"
@@ -1105,9 +1105,9 @@ bool BestPractices::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& pr
     bool skip = false;
 
     auto check_unconsumed_attrib = [this](const SHADER_MODULE_STATE& producer, shader_stage_attributes const* producer_stage,
-                                          const ShaderAttributeValidation& out, const SHADER_MODULE_STATE& consumer,
+                                          const InterfaceLocationValidation& out, const SHADER_MODULE_STATE& consumer,
                                           shader_stage_attributes const* consumer_stage,
-                                          const ShaderAttributeValidation& in) -> bool {
+                                          const InterfaceLocationValidation& in) -> bool {
         bool skip = false;
         // Check if an out shader attribute is partially or fully consumed by the next shader stage.
         // Even if the context makes it legal, it could lead to worse performance
@@ -1115,7 +1115,7 @@ bool BestPractices::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE& pr
             ((enabled_features.core13.maintenance4 && out.IsOnlyPartiallyConsumed()) || out.IsFullyUnconsumed())) {
             const auto& out_components = out.GetComponents();
             for (uint32_t component_i = 0; component_i < out.GetComponentsCount(); component_i++) {
-                if (out_components[component_i] == ShaderAttributeValidation::ComponentStatus::Unseen) {
+                if (out_components[component_i] == InterfaceLocationValidation::ComponentStatus::Unseen) {
                     const uint32_t out_location = out.LocationFromComponentsIndex(component_i);
                     const uint32_t out_component = out.ComponentFromComponentsIndex(component_i);
 

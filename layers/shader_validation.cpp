@@ -36,7 +36,7 @@
 #include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_validation.h"
-#include "shader_attribute_validation.h"
+#include "shader_interface_validation.h"
 #include "spirv_grammar_helper.h"
 #include "xxhash.h"
 
@@ -3130,8 +3130,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     bool skip = false;
 
     auto validate_attrib = [this](const SHADER_MODULE_STATE &producer, shader_stage_attributes const *producer_stage,
-                                  const ShaderAttributeValidation &out, const SHADER_MODULE_STATE &consumer,
-                                  shader_stage_attributes const *consumer_stage, const ShaderAttributeValidation &in) -> bool {
+                                  const InterfaceLocationValidation &out, const SHADER_MODULE_STATE &consumer,
+                                  shader_stage_attributes const *consumer_stage, const InterfaceLocationValidation &in) -> bool {
         bool skip = false;
 
         // Check if an out shader attribute is only partially consumed by the next shader stage
@@ -3139,7 +3139,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
             if (!enabled_features.core13.maintenance4) {
                 const auto &out_components = out.GetComponents();
                 for (uint32_t component_i = 0; component_i < out.GetComponentsCount(); component_i++) {
-                    if (out_components[component_i] == ShaderAttributeValidation::ComponentStatus::Unseen) {
+                    if (out_components[component_i] == InterfaceLocationValidation::ComponentStatus::Unseen) {
                         const uint32_t out_location = out.LocationFromComponentsIndex(component_i);
                         const uint32_t out_component = out.ComponentFromComponentsIndex(component_i);
 
@@ -3190,7 +3190,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
         if (in.IsScanCompleted() && in.DoesConsumeNonExistentOutput()) {
             const auto &in_components = in.GetComponents();
             for (uint32_t component_i = 0; component_i < in.GetComponentsCount(); component_i++) {
-                if (in_components[component_i] == ShaderAttributeValidation::ComponentStatus::Unseen) {
+                if (in_components[component_i] == InterfaceLocationValidation::ComponentStatus::Unseen) {
                     const uint32_t in_location = in.LocationFromComponentsIndex(component_i);
                     const uint32_t in_component = in.ComponentFromComponentsIndex(component_i);
 

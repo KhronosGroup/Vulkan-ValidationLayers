@@ -1,8 +1,8 @@
-#include "shader_attribute_validation.h"
+#include "shader_interface_validation.h"
 
 #include "range_vector.h"
 
-ShaderAttributeValidation::ShaderAttributeValidation(
+InterfaceLocationValidation::InterfaceLocationValidation(
     const SHADER_MODULE_STATE &shader_module, const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator,
     const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator_end)
     : is_valid_(shader_attributes_iterator != shader_attributes_iterator_end) {
@@ -31,7 +31,7 @@ ShaderAttributeValidation::ShaderAttributeValidation(
     interface_ = &shader_attributes_iterator->second;
 }
 
-void ShaderAttributeValidation::TagMatchingComponentsAsSeen(ShaderAttributeValidation &lhs, ShaderAttributeValidation &rhs) {
+void InterfaceLocationValidation::TagMatchingComponentsAsSeen(InterfaceLocationValidation &lhs, InterfaceLocationValidation &rhs) {
     const sparse_container::range<uint32_t> lhs_range(lhs.current_global_component_,
                                                       lhs.current_global_component_ + lhs.current_components_left_);
     const sparse_container::range<uint32_t> rhs_range(rhs.current_global_component_,

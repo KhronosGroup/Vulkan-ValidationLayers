@@ -1850,8 +1850,7 @@ uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const Instruction* insn) const { 
 
 uint32_t SHADER_MODULE_STATE::GetArraySize(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
-    if ( opcode == spv::OpTypePointer )
-    {
+    if (opcode == spv::OpTypePointer) {
         const auto type = FindDef(insn->Word(3));
         return GetArraySize(type);
     } else if (opcode == spv::OpVariable) {

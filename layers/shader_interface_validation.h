@@ -34,7 +34,10 @@ struct shader_stage_attributes {
     VkShaderStageFlags stage;
 };
 
-class ShaderAttributeValidation {
+// Helper class to compare the interface between two shader,
+// and compare out variables locations and components from a producer stage
+// to in variables locations and components from a consumer stage
+class InterfaceLocationValidation {
   public:
     enum class ComponentStatus {
         Uninitialized,
@@ -42,12 +45,12 @@ class ShaderAttributeValidation {
         Unseen,
     };
 
-    ShaderAttributeValidation(const SHADER_MODULE_STATE &shader_module,
-                              const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator,
-                              const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator_end);
+    InterfaceLocationValidation(const SHADER_MODULE_STATE &shader_module,
+                                const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator,
+                                const std::map<location_t, interface_var>::const_iterator &shader_attributes_iterator_end);
 
-    static void TagMatchingComponentsAsSeen(ShaderAttributeValidation &lhs, ShaderAttributeValidation &rhs);
-    static ShaderAttributeValidation *Min(ShaderAttributeValidation *lhs, ShaderAttributeValidation *rhs) {
+    static void TagMatchingComponentsAsSeen(InterfaceLocationValidation &lhs, InterfaceLocationValidation &rhs);
+    static InterfaceLocationValidation *Min(InterfaceLocationValidation *lhs, InterfaceLocationValidation *rhs) {
         assert(lhs);
         assert(rhs);
         if (*lhs < *rhs) {
@@ -75,14 +78,14 @@ class ShaderAttributeValidation {
     }
     // True for vector types with more than 2 components and 64 bits scalar type (dvec3, dvec4, ...)
     bool DoesOverflowOnNextLocation() const { return components_count_ > 4; }
-    bool operator==(const ShaderAttributeValidation &rhs) const {
+    bool operator==(const InterfaceLocationValidation &rhs) const {
         if (this == &rhs) {
             return true;
         }
         return is_valid_ == rhs.is_valid_ && current_global_component_ == rhs.current_global_component_ &&
                current_components_left_ == rhs.current_components_left_;
     }
-    bool operator<(const ShaderAttributeValidation &rhs) const {
+    bool operator<(const InterfaceLocationValidation &rhs) const {
         if (!is_valid_ && !rhs.is_valid_) {
             return false;
         }
@@ -130,7 +133,7 @@ class ShaderAttributeValidation {
         }
         return false;
     }
-    bool HasSameLocationAndComponentAs(const ShaderAttributeValidation &rhs) const {
+    bool HasSameLocationAndComponentAs(const InterfaceLocationValidation &rhs) const {
         assert(is_valid_);
         assert(rhs.is_valid_);
         return start_location_ == rhs.start_location_ && start_component_ == rhs.start_component_;
@@ -209,12 +212,12 @@ bool IterateInterfaceBetweenStages(const ShaderAttributePairValidator &validator
      * with an incremented location. Since it is still the same out/in attribute, skip it
      */
 
-    ShaderAttributeValidation out(producer, out_iterator, shader_outputs.end());
+    InterfaceLocationValidation out(producer, out_iterator, shader_outputs.end());
     if (out.DoesOverflowOnNextLocation()) {
         assert(out_iterator != shader_outputs.end());
         ++out_iterator;
     }
-    ShaderAttributeValidation in(consumer, in_iterator, shader_inputs.end());
+    InterfaceLocationValidation in(consumer, in_iterator, shader_inputs.end());
     if (in.DoesOverflowOnNextLocation()) {
         assert(in_iterator != shader_inputs.end());
         ++in_iterator;
@@ -223,8 +226,8 @@ bool IterateInterfaceBetweenStages(const ShaderAttributePairValidator &validator
     const auto increment_out_iterator = [&]() {
         if (out_iterator == shader_outputs.end()) return;
         ++out_iterator;
-        out = ShaderAttributeValidation(producer, out_iterator, shader_outputs.end());
-        
+        out = InterfaceLocationValidation(producer, out_iterator, shader_outputs.end());
+
         if (out.DoesOverflowOnNextLocation()) {
             assert(out_iterator != shader_outputs.end());
             ++out_iterator;
@@ -234,7 +237,7 @@ bool IterateInterfaceBetweenStages(const ShaderAttributePairValidator &validator
     const auto increment_in_iterator = [&]() {
         if (in_iterator == shader_inputs.end()) return;
         ++in_iterator;
-        in = ShaderAttributeValidation(consumer, in_iterator, shader_inputs.end());
+        in = InterfaceLocationValidation(consumer, in_iterator, shader_inputs.end());
         if (in.DoesOverflowOnNextLocation()) {
             assert(in_iterator != shader_inputs.end());
             ++in_iterator;
@@ -243,7 +246,7 @@ bool IterateInterfaceBetweenStages(const ShaderAttributePairValidator &validator
 
     // Walk (out, in) attributes pairs
     while (out_iterator != shader_outputs.end() || in_iterator != shader_inputs.end()) {
-        ShaderAttributeValidation::TagMatchingComponentsAsSeen(out, in);
+        InterfaceLocationValidation::TagMatchingComponentsAsSeen(out, in);
 
         if (out == in) {
             out.SetIsScanCompleted(true);
@@ -252,7 +255,7 @@ bool IterateInterfaceBetweenStages(const ShaderAttributePairValidator &validator
             increment_out_iterator();
             increment_in_iterator();
         } else {
-            ShaderAttributeValidation *min_attribute = ShaderAttributeValidation::Min(&out, &in);
+            InterfaceLocationValidation *min_attribute = InterfaceLocationValidation::Min(&out, &in);
             if (min_attribute == &out) {
                 out.SetIsScanCompleted(true);
             } else {
