@@ -3134,6 +3134,34 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                                   shader_stage_attributes const *consumer_stage, const InterfaceLocationValidation &in) -> bool {
         bool skip = false;
 
+// Maintenance4 "relaxes the interface matching rules to allow a larger output vector to match
+// with a smaller input vector, with additional values being discarded"
+// This statement is not totally clear as to what to do in some cases, missing VUIDs do not help clarify that.
+// It seems that IHW agree on the following two cases falling under the umbrella of maintenance4:
+// // VS
+// layout (location=0) out vec4 x;
+// // FS
+// layout (location=0) in vec3 x;
+// And:
+// // VS
+// layout (location=0) out vec4 x;
+// // FS
+// layout (location=0, component=1) in vec3 x;
+//
+// The issue is about what to do with shaders like those:
+// // VS
+// layout(location = 0) out vec4 y;
+// // FS
+// layout(location = 0, component = 0) in float y1;
+// layout(location = 0, component = 3) in float y3;
+// Or:
+// // VS
+// layout(location = 0) out dvec4 x;
+// // FS
+// layout(location = 0, component = 1) flat in float hello_there;
+//
+// Until the issue is resolved, the following code should be inactive
+#if 0
         // Check if an out shader attribute is only partially consumed by the next shader stage
         if (out.IsScanCompleted() && out.IsOnlyPartiallyConsumed()) {
             if (!enabled_features.core13.maintenance4) {
@@ -3156,7 +3184,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
                 }
             }
         }
-
+#endif
         // For an out shader attribute matching an in attribute in the next shader stage,
         // check their type and decorations
         if (out.IsScanCompleted() && in.IsScanCompleted() && out.HasSameLocationAndComponentAs(in)) {
