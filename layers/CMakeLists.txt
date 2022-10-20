@@ -202,6 +202,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_module.h
     shader_instruction.cpp
     shader_instruction.h
+    shader_attribute_validation.cpp
     shader_attribute_validation.h
     shader_validation.cpp
     shader_validation.h
