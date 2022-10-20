@@ -368,7 +368,7 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CB_DYNAMIC_STATUS status, const char *fail_msg,
+bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBDynamicStatus status, const char *fail_msg,
                                 const char *msg_code) const {
     if (!(pNode->status[status])) {
         return LogError(pNode->commandBuffer(), msg_code, "%s: %s.", report_data->FormatHandle(pNode->commandBuffer()).c_str(),

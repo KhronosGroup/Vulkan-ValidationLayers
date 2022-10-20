@@ -481,7 +481,7 @@ static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedCommandNameList 
     "vkCmdWriteTimestamp2KHR",
 }};
 
-typedef enum CB_DYNAMIC_STATUS {
+typedef enum CBDynamicStatus {
     CB_DYNAMIC_VIEWPORT_SET = 1,
     CB_DYNAMIC_SCISSOR_SET = 2,
     CB_DYNAMIC_LINE_WIDTH_SET = 3,
@@ -551,9 +551,9 @@ typedef enum CB_DYNAMIC_STATUS {
     CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET = 67,
     CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET = 68,
     CB_DYNAMIC_STATUS_NUM = 69
-} CB_DYNAMIC_STATUS;
+} CBDynamicStatus;
 
-typedef std::bitset<CB_DYNAMIC_STATUS_NUM> CBDynamicFlags;
+using CBDynamicFlags = std::bitset<CB_DYNAMIC_STATUS_NUM>;
 std::string DynamicStateString(CBDynamicFlags const &dynamic_state);
 struct VkPipelineDynamicStateCreateInfo;
 CBDynamicFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *info);

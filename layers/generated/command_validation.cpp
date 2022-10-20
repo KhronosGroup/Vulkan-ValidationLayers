@@ -987,7 +987,7 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
     return skip;
 }
 
-static VkDynamicState ConvertToDynamicState(CB_DYNAMIC_STATUS flag) {
+static VkDynamicState ConvertToDynamicState(CBDynamicStatus flag) {
     switch (flag) {
         case CB_DYNAMIC_VIEWPORT_SET:
             return VK_DYNAMIC_STATE_VIEWPORT;
@@ -1130,7 +1130,7 @@ static VkDynamicState ConvertToDynamicState(CB_DYNAMIC_STATUS flag) {
     }
 }
 
-static CB_DYNAMIC_STATUS ConvertToCBDynamicStatus(VkDynamicState state) {
+static CBDynamicStatus ConvertToCBDynamicStatus(VkDynamicState state) {
     switch (state) {
         case VK_DYNAMIC_STATE_VIEWPORT:
             return CB_DYNAMIC_VIEWPORT_SET;
@@ -1276,7 +1276,7 @@ static CB_DYNAMIC_STATUS ConvertToCBDynamicStatus(VkDynamicState state) {
 std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
     std::string ret;
     for (int index = 0; index < CB_DYNAMIC_STATUS_NUM; ++index) {
-        CB_DYNAMIC_STATUS status = static_cast<CB_DYNAMIC_STATUS>(index);
+        CBDynamicStatus status = static_cast<CBDynamicStatus>(index);
         if (dynamic_state[status]) {
             if (!ret.empty()) ret.append("|");
             ret.append(string_VkDynamicState(ConvertToDynamicState(status)));
