@@ -28,6 +28,7 @@
 #include <cstring>
 #include <utility>
 #include <vector>
+#include <chrono>
 
 #include "vk_format_utils.h"
 #include "vk_extension_helper.h"
@@ -534,7 +535,12 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
         ici.pNext = instance_pnext;
     }
 
+    auto start_time = std::chrono::high_resolution_clock::now();
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::cout << __func__ << "vkCreateInstance() took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
+
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
     // Choose a physical device
@@ -795,7 +801,11 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
 
+    auto start_time = std::chrono::high_resolution_clock::now();
     m_device = new VkDeviceObj(0, gpu_, m_device_extension_names, features, create_device_pnext);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::cout << __func__ << "vkCreateDevice() took "
+		  << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
