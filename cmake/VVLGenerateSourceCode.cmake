@@ -20,7 +20,10 @@ if(PYTHONINTERP_FOUND)
         message(FATAL_ERROR "Unable to find vk.xml")
     endif()
 
-    set(spirv_unified_include_dir "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/")
+    # Get the include directory of the SPIRV-Headers
+    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
+
+    set(spirv_unified_include_dir "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/")
     if (NOT IS_DIRECTORY ${spirv_unified_include_dir})
         message(FATAL_ERROR "Unable to find spirv/unified1")
     endif()

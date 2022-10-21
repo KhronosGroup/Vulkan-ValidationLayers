@@ -204,51 +204,26 @@ if (USE_ROBIN_HOOD_HASHING)
 endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)
-    find_package(SPIRV-Headers CONFIG QUIET)
-    if(SPIRV-Headers_FOUND)
-        # Prefer the package if found. Note that if SPIRV_HEADERS_INSTALL_DIR points at an 'installed'
-        # version of SPIRV-Headers, the package will be found.
-        get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
-    elseif(SPIRV_HEADERS_INCLUDE_DIR)
-        # This is set by SPIRV-Tools (in parent scope!) and also some packages that include VVL with add_subdirectory
-	    if (NOT EXISTS "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/spirv.h")
-	        message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INCLUDE_DIR: ${SPIRV_HEADERS_INCLUDE_DIR}")
-        endif()
-    elseif(SPIRV_HEADERS_INSTALL_DIR)
-        # This is our official variable for setting SPIRV-Headers location, but pointing at the raw source of SPIRV-Headers
-        if (NOT EXISTS "${SPIRV_HEADERS_INSTALL_DIR}/include/spirv/unified1/spirv.h")
-            message(FATAL_ERROR "Cannot find SPIRV-Headers from SPIRV_HEADERS_INSTALL_DIR: ${SPIRV_HEADERS_INSTALL_DIR}")
-        endif()
-	    set(SPIRV_HEADERS_INCLUDE_DIR "${SPIRV_HEADERS_INSTALL_DIR}/include")
-    endif()
+    find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
 
-    # VVLGenerateSourceCode depends on spirv/unified1
     include(VVLGenerateSourceCode)
 
-    if (NOT TARGET SPIRV-Tools-opt)
-        find_package(SPIRV-Tools-opt REQUIRED CONFIG)
-    endif()
+    find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
 
-    if (NOT TARGET SPIRV-Tools)
-        find_package(SPIRV-Tools REQUIRED CONFIG)
-        # See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
-        # The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
-        # Try to handle all possible combinations so that we work with externally built packages.
-        if (TARGET SPIRV-Tools)
-            set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
-        elseif(TARGET SPIRV-Tools-static)
-            set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
-        elseif(TARGET SPIRV-Tools-shared)
-            set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
-        else()
-            message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
-        endif()
+    find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
+    # See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
+    # The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
+    # Try to handle all possible combinations so that we work with externally built packages.
+    if (TARGET SPIRV-Tools)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
+    elseif(TARGET SPIRV-Tools-static)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
+    elseif(TARGET SPIRV-Tools-shared)
+        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
+    else()
+        message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
     endif()
 endif()
-
-# Generate dependent helper files ------------------------------------------------------------------------------------------------
-
-set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
 
 # VkLayer_utils library ----------------------------------------------------------------------------------------------------------
 # For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
