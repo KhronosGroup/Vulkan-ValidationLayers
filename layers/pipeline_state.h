@@ -186,8 +186,8 @@ class PIPELINE_STATE : public BASE_NODE {
     const VkPipelineRenderingCreateInfo *rendering_create_info = nullptr;
 
     // Additional metadata needed by pipeline_state initialization and validation
-    using StageStateVec = std::vector<PipelineStageState>;
-    const StageStateVec stage_state;
+    using StageStateList = std::vector<PipelineStageState>;
+    const StageStateList stage_state;
 
     const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
@@ -473,8 +473,8 @@ class PIPELINE_STATE : public BASE_NODE {
 
     const void *PNext() const { return create_info.graphics.pNext; }
 
-    static ActiveSlotMap GetActiveSlots(const StageStateVec &stage_states);
-    static StageStateVec GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state);
+    static ActiveSlotMap GetActiveSlots(const StageStateList &stage_states);
+    static StageStateList GetStageStates(const ValidationStateTracker &state_data, const PIPELINE_STATE &pipe_state);
 
     // Return true if for a given PSO, the given state enum is dynamic, else return false
     bool IsDynamic(const VkDynamicState state) const {

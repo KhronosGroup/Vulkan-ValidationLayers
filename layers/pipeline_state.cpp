@@ -73,13 +73,14 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {}
 
 // static
-PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
-                                                             const PIPELINE_STATE &pipe_state) {
-    PIPELINE_STATE::StageStateVec stage_states;
+PIPELINE_STATE::StageStateList PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
+                                                              const PIPELINE_STATE &pipe_state) {
+    PIPELINE_STATE::StageStateList stage_states;
     // shader stages need to be recorded in pipeline order
     const auto stages = pipe_state.GetShaderStages();
 
-    for (uint32_t stage_idx = 0; stage_idx < 32; ++stage_idx) {
+    // (1 << 31) is greater than VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM
+    for (uint32_t stage_idx = 0; stage_idx < 31; ++stage_idx) {
         bool stage_found = false;
         const auto stage = static_cast<VkShaderStageFlagBits>(1 << stage_idx);
         for (const auto &shader_stage : stages) {
@@ -147,7 +148,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
 }
 
 // static
-PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec &stage_states) {
+PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateList &stage_states) {
     PIPELINE_STATE::ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
         if (!stage.entrypoint) {
@@ -194,7 +195,7 @@ static uint32_t GetMaxActiveSlot(const PIPELINE_STATE::ActiveSlotMap &active_slo
     return max_active_slot;
 }
 
-static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stages) {
+static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateList &stages) {
     uint32_t result = 0;
     for (const auto &stage : stages) {
         result |= stage.stage_flag;
@@ -202,7 +203,7 @@ static uint32_t GetActiveShaders(const PIPELINE_STATE::StageStateVec &stages) {
     return result;
 }
 
-static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stages) {
+static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateList &stages) {
     bool result = false;
     for (const auto &stage : stages) {
         const auto module_id_info = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage.create_info->pNext);
@@ -211,7 +212,7 @@ static bool UsesShaderModuleId(const PIPELINE_STATE::StageStateVec &stages) {
     return result;
 }
 
-static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateVec &stage_states) {
+static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_STATE::StageStateList &stage_states) {
     layer_data::unordered_set<uint32_t> result;
     for (const auto &stage : stage_states) {
         if (!stage.entrypoint) {
@@ -225,7 +226,7 @@ static layer_data::unordered_set<uint32_t> GetFSOutputLocations(const PIPELINE_S
     return result;
 }
 
-static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageStateVec &stage_states,
+static VkPrimitiveTopology GetTopologyAtRasterizer(const PIPELINE_STATE::StageStateList &stage_states,
                                                    const safe_VkPipelineInputAssemblyStateCreateInfo *assembly_state) {
     VkPrimitiveTopology result = assembly_state ? assembly_state->topology : static_cast<VkPrimitiveTopology>(0);
     for (const auto &stage : stage_states) {
