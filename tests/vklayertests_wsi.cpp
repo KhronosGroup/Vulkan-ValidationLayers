@@ -2475,3 +2475,39 @@ TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
     vkGetPhysicalDeviceSurfaceFormats2KHR(gpu(), &surface_info, &count, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+TEST_F(VkLayerTest, PhysicalDeviceSurfaceCapabilities) {
+    TEST_DESCRIPTION("Test pNext in GetPhysicalDeviceSurfaceCapabilities2KHR");
+
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+
+    PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
+        (PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR)vk::GetInstanceProcAddr(instance(),
+                                                                                "vkGetPhysicalDeviceSurfaceCapabilities2KHR");
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = m_surface;
+
+    VkSurfaceCapabilitiesFullScreenExclusiveEXT capabilities_full_screen_exclusive =
+        LvlInitStruct<VkSurfaceCapabilitiesFullScreenExclusiveEXT>();
+
+    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>(&capabilities_full_screen_exclusive);
+    surface_capabilities.surfaceCapabilities = m_surface_capabilities;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671");
+    vkGetPhysicalDeviceSurfaceCapabilities2KHR(gpu(), &surface_info, &surface_capabilities);
+    m_errorMonitor->VerifyFound();
+}
+#endif  // VK_USE_PLATFORM_WIN32_KHR
