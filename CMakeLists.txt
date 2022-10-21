@@ -127,7 +127,6 @@ set(LAYERS_HELPER_FOLDER "Helper Targets")
 
 # Options for Linux only
 if(UNIX AND NOT APPLE) # i.e. Linux
-    include(FindPkgConfig)
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
