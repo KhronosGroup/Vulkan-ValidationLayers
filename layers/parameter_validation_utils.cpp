@@ -1819,72 +1819,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
     if (pCreateInfos != nullptr) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
-            bool has_dynamic_viewport = false;
-            bool has_dynamic_scissor = false;
-            bool has_dynamic_line_width = false;
-            bool has_dynamic_depth_bias = false;
-            bool has_dynamic_blend_constant = false;
-            bool has_dynamic_depth_bounds = false;
-            bool has_dynamic_stencil_compare = false;
-            bool has_dynamic_stencil_write = false;
-            bool has_dynamic_stencil_reference = false;
-            bool has_dynamic_viewport_w_scaling_nv = false;
-            bool has_dynamic_discard_rectangle_ext = false;
-            bool has_dynamic_sample_locations_ext = false;
-            bool has_dynamic_exclusive_scissor_nv = false;
-            bool has_dynamic_shading_rate_palette_nv = false;
-            bool has_dynamic_viewport_course_sample_order_nv = false;
-            bool has_dynamic_line_stipple = false;
-            bool has_dynamic_cull_mode = false;
-            bool has_dynamic_front_face = false;
-            bool has_dynamic_primitive_topology = false;
-            bool has_dynamic_viewport_with_count = false;
-            bool has_dynamic_scissor_with_count = false;
-            bool has_dynamic_vertex_input_binding_stride = false;
-            bool has_dynamic_depth_test_enable = false;
-            bool has_dynamic_depth_write_enable = false;
-            bool has_dynamic_depth_compare_op = false;
-            bool has_dynamic_depth_bounds_test_enable = false;
-            bool has_dynamic_stencil_test_enable = false;
-            bool has_dynamic_stencil_op = false;
-            bool has_patch_control_points = false;
-            bool has_rasterizer_discard_enable = false;
-            bool has_depth_bias_enable = false;
-            bool has_logic_op = false;
-            bool has_primitive_restart_enable = false;
-            bool has_dynamic_vertex_input = false;
-            bool has_tessellation_domain_origin = false;
-            bool has_depth_clamp_enable = false;
-            bool has_polygon_mode = false;
-            bool has_rasterization_samples = false;
-            bool has_sample_mask = false;
-            bool has_alpha_to_coverage_enable = false;
-            bool has_alpha_to_one_enable = false;
-            bool has_logic_op_enable = false;
-            bool has_color_blend_enable = false;
-            bool has_color_blend_equation = false;
-            bool has_color_write_mask = false;
-            bool has_rasterization_stream = false;
-            bool has_conservative_rasterization_mode = false;
-            bool has_extra_primitive_overestimation_size = false;
-            bool has_depth_clip_enable = false;
-            bool has_sample_locations_enable = false;
-            bool has_color_blend_advanced = false;
-            bool has_provoking_vertex_mode = false;
-            bool has_line_rasterization_mode = false;
-            bool has_line_stipple_enable = false;
-            bool has_depth_clip_negative_one_to_one = false;
-            bool has_viewport_w_scaling_enable = false;
-            bool has_viewport_swizzle = false;
-            bool has_coverage_to_color_enable = false;
-            bool has_coverage_to_color_location = false;
-            bool has_coverage_modulation_mode = false;
-            bool has_coverage_modulation_table_enable = false;
-            bool has_coverage_modulation_table = false;
-            bool has_shading_rate_image_enable = false;
-            bool has_representative_fragment_test_enable = false;
-            bool has_coverage_reduction_mode = false;
-
             // Create a copy of create_info and set non-included sub-state to null
             auto create_info = pCreateInfos[i];
             const auto *graphics_lib_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(create_info.pNext);
@@ -2024,694 +1958,54 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
             }
 
+            // <VkDynamicState, index in pDynamicStates, hash for enum key>
+            layer_data::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
             // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"
             if (create_info.pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *create_info.pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
-                    const auto &dynamic_state = dynamic_state_info.pDynamicStates[state_index];
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT) {
-                        if (has_dynamic_viewport == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_viewport = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR) {
-                        if (has_dynamic_scissor == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_scissor = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_WIDTH) {
-                        if (has_dynamic_line_width == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_WIDTH was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_line_width = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BIAS) {
-                        if (has_dynamic_depth_bias == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BIAS was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_depth_bias = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_BLEND_CONSTANTS) {
-                        if (has_dynamic_blend_constant == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_BLEND_CONSTANTS was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_blend_constant = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BOUNDS) {
-                        if (has_dynamic_depth_bounds == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BOUNDS was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_depth_bounds = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK) {
-                        if (has_dynamic_stencil_compare == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK was listed twice in "
-                                             "the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_stencil_compare = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_WRITE_MASK) {
-                        if (has_dynamic_stencil_write == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_WRITE_MASK was listed twice in "
-                                             "the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_stencil_write = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_REFERENCE) {
-                        if (has_dynamic_stencil_reference == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_REFERENCE was listed twice in "
-                                             "the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_stencil_reference = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) {
-                        if (has_dynamic_viewport_w_scaling_nv == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV was listed twice "
-                                             "in the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_viewport_w_scaling_nv = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) {
-                        if (has_dynamic_discard_rectangle_ext == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT was listed twice "
-                                             "in the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_discard_rectangle_ext = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) {
-                        if (has_dynamic_sample_locations_ext == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT was listed twice in "
-                                             "the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_sample_locations_ext = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) {
-                        if (has_dynamic_exclusive_scissor_nv == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV was listed twice in "
-                                             "the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_exclusive_scissor_nv = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) {
-                        if (has_dynamic_shading_rate_palette_nv == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV was "
-                                             "listed twice in the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_shading_rate_palette_nv = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV) {
-                        if (has_dynamic_viewport_course_sample_order_nv == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV was "
-                                             "listed twice in the pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_viewport_course_sample_order_nv = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) {
-                        if (has_dynamic_line_stipple == true) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_STIPPLE_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_line_stipple = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_CULL_MODE_EXT) {
-                        if (has_dynamic_cull_mode) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_CULL_MODE_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_cull_mode = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_FRONT_FACE_EXT) {
-                        if (has_dynamic_front_face) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_FRONT_FACE_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_front_face = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) {
-                        if (has_dynamic_primitive_topology) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_primitive_topology = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) {
-                        if (has_dynamic_viewport_with_count) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_viewport_with_count = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) {
-                        if (has_dynamic_scissor_with_count) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_scissor_with_count = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT) {
-                        if (has_dynamic_vertex_input_binding_stride) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT was "
-                                             "listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_vertex_input_binding_stride = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT) {
-                        if (has_dynamic_depth_test_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_depth_test_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT) {
-                        if (has_dynamic_depth_write_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_depth_write_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT) {
-                        if (has_dynamic_depth_compare_op) {
-                            skip |=
-                                LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                         "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT was listed twice in the "
-                                         "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                         i);
-                        }
-                        has_dynamic_depth_compare_op = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT) {
-                        if (has_dynamic_depth_bounds_test_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_depth_bounds_test_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT) {
-                        if (has_dynamic_stencil_test_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_dynamic_stencil_test_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_OP_EXT) {
-                        if (has_dynamic_stencil_op) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_OP_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_stencil_op = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) {
-                        // Not allowed for graphics pipelines
-                        skip |= LogError(
-                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578",
-                            "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
-                            "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates[%" PRIu32
-                            "] but not allowed in graphic pipelines.",
-                            i, state_index);
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT) {
-                        if (has_patch_control_points) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_patch_control_points = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT) {
-                        if (has_rasterizer_discard_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_rasterizer_discard_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT) {
-                        if (has_depth_bias_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_depth_bias_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_LOGIC_OP_EXT) {
-                        if (has_logic_op) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LOGIC_OP_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_logic_op = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT) {
-                        if (has_primitive_restart_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_primitive_restart_enable = true;
-                    }
-                    if (dynamic_state == VK_DYNAMIC_STATE_VERTEX_INPUT_EXT) {
-                        if (has_dynamic_vertex_input) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VERTEX_INPUT_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_dynamic_vertex_input = true;
+                    const VkDynamicState dynamic_state = dynamic_state_info.pDynamicStates[state_index];
+
+                    if (dynamic_state_map.find(dynamic_state) != dynamic_state_map.end()) {
+                        skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                         "vkCreateGraphicsPipelines: %s was listed twice in the "
+                                         "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32
+                                         "] and pDynamicStates[%" PRIu32 "]",
+                                         string_VkDynamicState(dynamic_state), i, dynamic_state_map[dynamic_state], state_index);
                     }
 
-                    if (dynamic_state == VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT) {
-                        if (has_tessellation_domain_origin) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT was "
-                                             "listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_tessellation_domain_origin = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT) {
-                        if (has_depth_clamp_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_depth_clamp_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_POLYGON_MODE_EXT) {
-                        if (has_polygon_mode) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_POLYGON_MODE_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_polygon_mode = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) {
-                        if (has_rasterization_samples) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_rasterization_samples = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_MASK_EXT) {
-                        if (has_sample_mask) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SAMPLE_MASK_EXT was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_sample_mask = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) {
-                        if (has_alpha_to_coverage_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_alpha_to_coverage_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT) {
-                        if (has_alpha_to_one_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_alpha_to_one_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT) {
-                        if (has_logic_op_enable) {
-                            skip |=
-                                LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                         "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT was listed twice in the "
-                                         "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                         i);
-                        }
-                        has_logic_op_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) {
-                        if (has_color_blend_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_color_blend_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) {
-                        if (has_color_blend_equation) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_color_blend_equation = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT) {
-                        if (has_color_write_mask) {
-                            skip |=
-                                LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                         "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT was listed twice in the "
-                                         "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                         i);
-                        }
-                        has_color_write_mask = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) {
-                        if (has_rasterization_stream) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_rasterization_stream = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) {
-                        if (has_conservative_rasterization_mode) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT was "
-                                             "listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_conservative_rasterization_mode = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT) {
-                        if (has_extra_primitive_overestimation_size) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT "
-                                             "was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_extra_primitive_overestimation_size = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT) {
-                        if (has_depth_clip_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_depth_clip_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) {
-                        if (has_sample_locations_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_sample_locations_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) {
-                        if (has_color_blend_advanced) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_color_blend_advanced = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT) {
-                        if (has_provoking_vertex_mode) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_provoking_vertex_mode = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT) {
-                        if (has_line_rasterization_mode) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_line_rasterization_mode = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT) {
-                        if (has_line_stipple_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_line_stipple_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT) {
-                        if (has_depth_clip_negative_one_to_one) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT was "
-                                             "listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_depth_clip_negative_one_to_one = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV) {
-                        if (has_viewport_w_scaling_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_viewport_w_scaling_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV) {
-                        if (has_viewport_swizzle) {
-                            skip |=
-                                LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                         "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV was listed twice in the "
-                                         "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                         i);
-                        }
-                        has_viewport_swizzle = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV) {
-                        if (has_coverage_to_color_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_coverage_to_color_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV) {
-                        if (has_coverage_to_color_location) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_coverage_to_color_location = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV) {
-                        if (has_coverage_modulation_mode) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_coverage_modulation_mode = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV) {
-                        if (has_coverage_modulation_table_enable) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV was "
-                                             "listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_coverage_modulation_table_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV) {
-                        if (has_coverage_modulation_table) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_coverage_modulation_table = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV) {
-                        if (has_shading_rate_image_enable) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_shading_rate_image_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV) {
-                        if (has_representative_fragment_test_enable) {
-                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV "
-                                             "was listed twice in the "
-                                             "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                             i);
-                        }
-                        has_representative_fragment_test_enable = true;
-                    }
-
-                    if (dynamic_state == VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV) {
-                        if (has_coverage_reduction_mode) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
-                                "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_COVERAGE_REDUCTION_MODE_NV was listed twice in the "
-                                "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                i);
-                        }
-                        has_coverage_reduction_mode = true;
-                    }
+                    dynamic_state_map[dynamic_state] = state_index;
                 }
             }
 
-            if (has_dynamic_viewport_with_count && has_dynamic_viewport) {
+            if (dynamic_state_map.find(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) != dynamic_state_map.end()) {
+                // Not allowed for graphics pipelines
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578",
+                                 "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
+                                 "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates[%" PRIu32
+                                 "] but not allowed in graphic pipelines.",
+                                 i, dynamic_state_map[VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR]);
+            }
+
+            if ((dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) != dynamic_state_map.end()) &&
+                (dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT) != dynamic_state_map.end())) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT and "
                                  "VK_DYNAMIC_STATE_VIEWPORT both listed in pCreateInfos[%" PRIu32
-                                 "].pDynamicState->pDynamicStates array",
-                                 i);
+                                 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32 "] and pDynamicStates[%" PRIu32
+                                 "] respectfully.",
+                                 i, dynamic_state_map[VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT],
+                                 dynamic_state_map[VK_DYNAMIC_STATE_VIEWPORT]);
             }
 
-            if (has_dynamic_scissor_with_count && has_dynamic_scissor) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
-                                 "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_SCISSOR "
-                                 "both listed in pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array",
-                                 i);
+            if ((dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) != dynamic_state_map.end()) &&
+                (dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR) != dynamic_state_map.end())) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
+                    "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_SCISSOR "
+                    "both listed in pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32
+                    "] and pDynamicStates[%" PRIu32 "] respectfully.",
+                    i, dynamic_state_map[VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT], dynamic_state_map[VK_DYNAMIC_STATE_SCISSOR]);
             }
 
             auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(create_info.pNext);
@@ -2722,6 +2016,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "(=%" PRIu32 ") must equal VkGraphicsPipelineCreateInfo::stageCount(=%" PRIu32 ").",
                                  i, feedback_struct->pipelineStageCreationFeedbackCount, create_info.stageCount);
             }
+
+            // helpers for bool used multiple times below
+            const bool has_dynamic_viewport = dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT) != dynamic_state_map.end();
+            const bool has_dynamic_scissor = dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR) != dynamic_state_map.end();
+            const bool has_dynamic_viewport_w_scaling_nv =
+                dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) != dynamic_state_map.end();
+            const bool has_dynamic_exclusive_scissor_nv =
+                dynamic_state_map.find(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) != dynamic_state_map.end();
+            const bool has_dynamic_viewport_with_count =
+                dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) != dynamic_state_map.end();
+            const bool has_dynamic_scissor_with_count =
+                dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) != dynamic_state_map.end();
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -3289,8 +2595,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, i);
                     }
 
-                    if (!has_dynamic_shading_rate_palette_nv && shading_rate_image_struct &&
-                        shading_rate_image_struct->viewportCount > 0 &&
+                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) == dynamic_state_map.end() &&
+                        shading_rate_image_struct && shading_rate_image_struct->viewportCount > 0 &&
                         shading_rate_image_struct->pShadingRatePalettes == nullptr) {
                         skip |= LogError(
                             device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04057",
@@ -3330,7 +2636,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (has_dynamic_discard_rectangle_ext && !IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
+                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) != dynamic_state_map.end() &&
+                        !IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                          "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT, but "
@@ -3338,7 +2645,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (has_dynamic_sample_locations_ext && !IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
+                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) != dynamic_state_map.end() &&
+                        !IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
                                          "].pDynamicState->pDynamicStates contains VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT, but "
@@ -3523,7 +2831,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                              i);
                             }
                         }
-                        if (line_state->stippledLineEnable && !has_dynamic_line_stipple) {
+                        if (line_state->stippledLineEnable &&
+                            dynamic_state_map.find(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) == dynamic_state_map.end()) {
                             if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
@@ -4104,8 +3413,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                if (!has_dynamic_line_width && !physical_device_features.wideLines &&
-                    (create_info.pRasterizationState->lineWidth != 1.0f)) {
+                if (dynamic_state_map.find(VK_DYNAMIC_STATE_LINE_WIDTH) == dynamic_state_map.end() &&
+                    !physical_device_features.wideLines && (create_info.pRasterizationState->lineWidth != 1.0f)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749",
                                      "The line width state is static (pCreateInfos[%" PRIu32
                                      "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_LINE_WIDTH) and "
