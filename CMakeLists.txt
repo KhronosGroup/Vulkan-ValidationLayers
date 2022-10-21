@@ -120,11 +120,6 @@ if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
-if(APPLE)
-    # CMake versions 3 or later need CMAKE_MACOSX_RPATH defined. This avoids the CMP0042 policy message.
-    set(CMAKE_MACOSX_RPATH 1)
-endif()
-
 # Enable IDE GUI folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
