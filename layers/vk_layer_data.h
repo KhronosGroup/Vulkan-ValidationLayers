@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <iterator>
 #include <type_traits>
+#include <optional>
+#include <utility>
 
 #ifdef USE_ROBIN_HOOD_HASHING
 #include "robin_hood.h"
@@ -760,109 +762,10 @@ void FreeLayerDataPtr(void *data_key, std::unordered_map<void *, DATA_T *> &laye
 
 namespace layer_data {
 
-struct in_place_t {};
-static constexpr in_place_t in_place{};
+inline constexpr std::in_place_t in_place{};
 
-// A C++11 approximation of std::optional
 template <typename T>
-class optional {
-  protected:
-    union Store {
-        Store(){};   // Do nothing.  That's the point.
-        ~Store(){};  // Not safe to destroy this object outside of its stateful container to clean up T if any.
-        typename std::aligned_storage<sizeof(T), alignof(T)>::type backing;
-        T obj;
-    };
-
-  public:
-    optional() : init_(false) {}
-
-    template <typename... Args>
-    explicit optional(in_place_t, const Args &...args) { emplace(args...); }
-    optional(const optional &other) : init_(false) { *this = other; }
-    optional(optional &&other) : init_(false) { *this = std::move(other); }
-
-    ~optional() { DeInit(); }
-    void reset() { DeInit(); }
-
-    template <typename... Args>
-    T &emplace(Args &&...args) {
-        init_ = true;
-        new (&store_.backing) T(std::forward<Args>(args)...);
-        return store_.obj;
-    }
-
-    T *operator&() {
-        if (init_) return &store_.obj;
-        return nullptr;
-    }
-    const T *operator&() const {
-        if (init_) return &store_.obj;
-        return nullptr;
-    }
-    T *operator->() {
-        if (init_) return &store_.obj;
-        return nullptr;
-    }
-    const T *operator->() const {
-        if (init_) return &store_.obj;
-        return nullptr;
-    }
-    operator bool() const { return init_; }
-    bool has_value() const { return init_; }
-
-    optional &operator=(const optional &other) {
-        if (other.has_value()) {
-            if (has_value()) {
-                store_.obj = other.store_.obj;
-            } else {
-                emplace(other.store_.obj);
-            }
-        } else {
-            DeInit();
-        }
-        return *this;
-    }
-
-    optional &operator=(optional &&other) {
-        if (other.has_value()) {
-            if (has_value()) {
-                store_.obj = std::move(other.store_.obj);
-            } else {
-                emplace(std::move(other.store_.obj));
-            }
-        } else {
-            DeInit();
-        }
-        return *this;
-    }
-
-    T& operator*() & {
-        assert(init_);
-        return store_.obj;
-    }
-    const T& operator*() const& {
-        assert(init_);
-        return store_.obj;
-    }
-    T&& operator*() && {
-        assert(init_);
-        return std::move(store_.obj);
-    }
-    const T&& operator*() const&& {
-        assert(init_);
-        return std::move(store_.obj);
-    }
-  protected:
-    inline void DeInit() {
-        if (init_) {
-            store_.obj.~T();
-            init_ = false;
-        }
-    }
-    Store store_;
-    bool init_;
-};
+using optional = std::optional<T>;
 
 // Partial implementation of std::span for C++11
 template <typename T>
