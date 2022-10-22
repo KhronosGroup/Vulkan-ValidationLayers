@@ -73,6 +73,7 @@
 #include "sync_utils.h"
 #include "sync_vuid_maps.h"
 #include "stateless_validation.h"
+#include "enum_flag_bits.h"
 
 // these templates are defined in buffer_validation.cpp so we need to pull in the explicit instantiations from there
 extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,

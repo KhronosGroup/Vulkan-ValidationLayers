@@ -25,6 +25,7 @@
 #include "stateless_validation.h"
 #include "layer_chassis_dispatch.h"
 #include "core_validation_error_enums.h"
+#include "enum_flag_bits.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 

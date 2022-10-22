@@ -143,12 +143,27 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
           ]
 
-    # Options for stateless validation source file
+    # Options for stateless validation header file
     genOpts['parameter_validation.h'] = [
           ParameterValidationOutputGenerator,
           ParameterValidationGeneratorOptions(
             conventions       = conventions,
             filename          = 'parameter_validation.h',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            valid_usage_path  = args.scripts)
+          ]
+
+    # Options for stateless validation enum helper file
+    genOpts['enum_flag_bits.h'] = [
+          ParameterValidationOutputGenerator,
+          ParameterValidationGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'enum_flag_bits.h',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,

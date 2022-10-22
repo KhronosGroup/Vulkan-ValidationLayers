@@ -168,6 +168,7 @@ object_lifetimes_sources = [
 stateless_validation_sources = [
   "layers/generated/parameter_validation.cpp",
   "layers/generated/parameter_validation.h",
+  "layers/generated/enum_flag_bits.h",
   "layers/parameter_name.h",
   "layers/parameter_validation_utils.cpp",
   "layers/stateless_validation.h",
