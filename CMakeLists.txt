@@ -132,13 +132,20 @@ if(UNIX AND NOT APPLE) # i.e. Linux
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
     set(DEMOS_WSI_SELECTION "XCB" CACHE STRING "Select WSI target for demos (XCB, XLIB, WAYLAND, DISPLAY)")
 
+    find_package(PkgConfig REQUIRED QUIET) # Use PkgConfig to find Linux system libraries
+
     if(BUILD_WSI_XCB_SUPPORT)
-        find_package(XCB REQUIRED)
-        include_directories(${XCB_INCLUDE_DIR})
+        pkg_check_modules(XCB REQUIRED QUIET IMPORTED_TARGET xcb)
+        add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
     endif()
 
     if(BUILD_WSI_XLIB_SUPPORT)
-        find_package(X11 REQUIRED)
+        pkg_check_modules(X11 REQUIRED QUIET IMPORTED_TARGET x11)
+        add_definitions(-DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_XLIB_XRANDR_EXT)
+    endif()
+
+    if(BUILD_WSI_WAYLAND_SUPPORT)
+        add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     endif()
 endif()
 
