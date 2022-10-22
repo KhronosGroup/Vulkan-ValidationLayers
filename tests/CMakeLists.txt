@@ -42,17 +42,6 @@ elseif(ANDROID)
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_METAL_EXT)
 elseif(UNIX AND NOT APPLE) # i.e. Linux
-    if(BUILD_WSI_XCB_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
-    endif()
-
-    if(BUILD_WSI_XLIB_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_XLIB_KHR)
-    endif()
-
-    if(BUILD_WSI_WAYLAND_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
-    endif()
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -170,13 +159,15 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     GTest::gtest_main
 )
 
-if(NOT WIN32)
+if (NOT WIN32)
     target_link_libraries(vk_layer_validation_tests PRIVATE ${CMAKE_DL_LIBS})
 
-    if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests
-                              PRIVATE ${XCB_LIBRARIES}
-                                      ${X11_LIBRARIES})
+    if(BUILD_WSI_XCB_SUPPORT)
+        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::XCB)
+    endif()
+
+    if (BUILD_WSI_XLIB_SUPPORT)
+        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::X11)
     endif()
 endif()
 
