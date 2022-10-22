@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2016-2019 Valve Corporation
-# Copyright (c) 2016-2019 LunarG, Inc.
+# Copyright (c) 2016-2022 Valve Corporation
+# Copyright (c) 2016-2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ set(CMAKE_INSTALL_RPATH ${VK_LAYER_RPATH})
 if(WIN32)
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${TEST_LAYER_NAME}.json src_json)
-        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        if (MSVC_IDE)
             file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${TEST_LAYER_NAME}.json dst_json)
         else()
             file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${TEST_LAYER_NAME}.json dst_json)
@@ -35,7 +35,7 @@ if(WIN32)
 elseif(APPLE)
     # extra setup for out-of-tree builds
     if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        if(CMAKE_GENERATOR MATCHES "^Xcode.*")
+        if (XCODE)
             add_custom_target(mk_test_layer_config_dir ALL
                               COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
             add_custom_target(${TEST_LAYER_NAME}-json ALL
@@ -82,7 +82,7 @@ elseif(APPLE)
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_options(VkLayer_${target} PRIVATE "-Wpointer-arith" "-Wno-unused-function")
     endmacro()
-else(UNIX AND NOT APPLE) # i.e.: Linux
+else(LINUX)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
         add_dependencies(VkLayer_${target} VkLayer_utils)
@@ -123,7 +123,7 @@ if(WIN32)
                            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_LAYER} ${DST_LAYER})
     endforeach()
 elseif(APPLE)
-    if(CMAKE_GENERATOR MATCHES "^Xcode.*")
+    if (XCODE)
         add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
                            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${TEST_LAYER_NAME}.json ${CMAKE_BINARY_DIR}/layers/$<CONFIG>
                            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/lib${TEST_LAYER_NAME}.dylib
@@ -135,7 +135,7 @@ elseif(APPLE)
                            COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/lib${TEST_LAYER_NAME}.dylib ${CMAKE_BINARY_DIR}/layers
                            VERBATIM)
     endif()
-else(UNIX AND NOT APPLE) # i.e.: Linux
+else(LINUX)
     add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
                        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${TEST_LAYER_NAME}.json ${PROJECT_BINARY_DIR}/layers
                        COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/lib${TEST_LAYER_NAME}.so ${PROJECT_BINARY_DIR}/layers
