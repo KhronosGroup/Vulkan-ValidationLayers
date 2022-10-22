@@ -93,6 +93,7 @@ else(LINUX)
 endif()
 
 AddVkLayer(device_profile_api device_profile_api.cpp ${PROJECT_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp)
+set_target_properties(VkLayer_device_profile_api PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 
 # --------------------------------------------------------------------------------------------------------------------------------
 

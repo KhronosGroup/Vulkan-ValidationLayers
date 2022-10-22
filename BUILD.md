@@ -530,8 +530,8 @@ layer validation tests use the "googletest" testing framework.)
 ### Linux Build Requirements
 
 This repository has been built and tested on the two most recent Ubuntu LTS
-versions. Currently, the oldest supported version is Ubuntu 16.04, meaning
-that the minimum officially supported C++17 compiler version is GCC 5.4.0,
+versions. Currently, the oldest supported version is Ubuntu 18.04, meaning
+that the minimum officially supported C++17 compiler version is GCC 7.3.0,
 although earlier versions may work. It should be straightforward to adapt this
 repository to other Linux distributions.
 

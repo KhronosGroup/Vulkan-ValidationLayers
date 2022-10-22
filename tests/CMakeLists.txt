@@ -58,8 +58,6 @@ if(WIN32)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")
     endif()
 
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
@@ -109,6 +107,7 @@ add_executable(vk_layer_validation_tests
                ../layers/generated/vk_safe_struct.cpp
                ../layers/generated/lvt_function_pointers.cpp
                ${COMMON_CPP})
+set_target_properties(vk_layer_validation_tests PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
 if (CMAKE_CROSSCOMPILING)

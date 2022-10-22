@@ -731,7 +731,7 @@ class AttachmentViewGen {
     AccessAddressType GetAddressType() const;
     const IMAGE_VIEW_STATE *GetViewState() const { return view_; }
     const ImageRangeGen *GetRangeGen(Gen type) const;
-    bool IsValid() const { return gen_store_[Gen::kViewSubresource]; }
+    bool IsValid() const { return gen_store_[Gen::kViewSubresource].has_value(); }
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:

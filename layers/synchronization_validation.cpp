@@ -7931,18 +7931,18 @@ const ImageRangeGen *AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen gen_t
     const ImageRangeGen *got = nullptr;
     switch (gen_type) {
         case kViewSubresource:
-            got = &gen_store_[kViewSubresource];
+            got = &(*gen_store_[kViewSubresource]);
             break;
         case kRenderArea:
-            got = &gen_store_[kRenderArea];
+            got = &(*gen_store_[kRenderArea]);
             break;
         case kDepthOnlyRenderArea:
-            got =
-                (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT) ? &gen_store_[Gen::kRenderArea] : &gen_store_[Gen::kDepthOnlyRenderArea];
+            got = (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT) ? &(*gen_store_[Gen::kRenderArea])
+                                                            : &(*gen_store_[Gen::kDepthOnlyRenderArea]);
             break;
         case kStencilOnlyRenderArea:
-            got = (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT) ? &gen_store_[Gen::kRenderArea]
-                                                              : &gen_store_[Gen::kStencilOnlyRenderArea];
+            got = (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT) ? &(*gen_store_[Gen::kRenderArea])
+                                                              : &(*gen_store_[Gen::kStencilOnlyRenderArea]);
             break;
         default:
             assert(got);

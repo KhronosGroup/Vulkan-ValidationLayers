@@ -4698,13 +4698,13 @@ GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IM
     if (!layout_map) {
         layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
     }
-    return &layout_map;
+    return &(*layout_map);
 }
 
 const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     auto it = map.find(&image_state);
     if (it != map.end()) {
-        return &it->second;
+        return &(*it->second);
     }
     return nullptr;
 }
