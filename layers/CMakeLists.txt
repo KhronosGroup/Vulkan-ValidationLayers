@@ -217,6 +217,7 @@ set(THREAD_SAFETY_LIBRARY_FILES
 set(STATELESS_VALIDATION_LIBRARY_FILES
     generated/parameter_validation.cpp
     generated/parameter_validation.h
+    generated/enum_flag_bits.h
     parameter_validation_utils.cpp
     stateless_validation.h)
 

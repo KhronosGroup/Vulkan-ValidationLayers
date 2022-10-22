@@ -54,6 +54,7 @@ def main(argv):
                                               "object_tracker.h",
                                               "parameter_validation.cpp",
                                               "parameter_validation.h",
+                                              "enum_flag_bits.h",
                                               "synchronization_validation_types.cpp",
                                               "synchronization_validation_types.h",
                                               "thread_safety.cpp",
