@@ -24,11 +24,11 @@ elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
-    if(CMAKE_GENERATOR MATCHES "^Xcode.*")
+    if (XCODE)
         add_custom_target(mk_layer_config_dir ALL
                           COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
     endif()
-elseif(UNIX AND NOT APPLE) # i.e. Linux
+elseif(LINUX)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
@@ -96,7 +96,7 @@ macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
                                          "-Wl"
                                          INSTALL_RPATH
                                          "@loader_path/")
-    else(UNIX AND NOT APPLE) # i.e.: Linux
+    else(LINUX)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_${target}.map,-Bsymbolic,--exclude-libs,ALL")
     endif()
 
@@ -344,7 +344,7 @@ if(BUILD_LAYERS)
         endif()
         add_custom_target(${TARGET_NAME}-json ALL
                           COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
-        if(CMAKE_GENERATOR MATCHES "^Visual Studio.*")
+        if (MSVC_IDE)
             set_target_properties(${TARGET_NAME}-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
         endif()
     endforeach()

@@ -120,13 +120,15 @@ if(WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
 endif()
 
-# Enable IDE GUI folders
+# Enable GUI folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
-# Options for Linux only
-if(UNIX AND NOT APPLE) # i.e. Linux
+set(LINUX OFF) # NOTE: Variable as of 3.25
+if (UNIX AND NOT APPLE) # Options for Linux only
+    set(LINUX ON)
+
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)

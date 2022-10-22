@@ -41,7 +41,7 @@ elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_METAL_EXT)
-elseif(UNIX AND NOT APPLE) # i.e. Linux
+elseif(LINUX)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
