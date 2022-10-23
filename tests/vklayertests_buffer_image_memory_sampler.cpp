@@ -9565,7 +9565,6 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         }
 
         if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
-            image_ci.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;  // try different one too
             image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
             if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-extent-02253");
