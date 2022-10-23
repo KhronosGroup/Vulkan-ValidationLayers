@@ -333,6 +333,9 @@ static bool SetBool(std::string &config_string, std::string &env_string, bool de
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
+    // If not cleared, garbage has been seen in some Android run effecting the error message
+    custom_stype_info.clear();
+
     const auto layer_settings_ext = FindSettingsInChain(settings_data->pnext_chain);
     if (layer_settings_ext) {
         for (uint32_t i = 0; i < layer_settings_ext->settingCount; i++) {
