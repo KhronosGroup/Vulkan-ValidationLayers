@@ -7434,8 +7434,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kShieldTV) || IsPlatform(kShieldTVb)) {
-        printf("%s CreateImageView calls crash ShieldTV, skipped for this platform.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "CreateImageView calls crash ShieldTV";
     }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -7449,8 +7448,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
-        printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
     VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties =
@@ -7542,10 +7540,9 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
         }
     }
     if ((memory_type_protected >= phys_mem_props.memoryTypeCount) || (memory_type_unprotected >= phys_mem_props.memoryTypeCount)) {
-        printf("%s No valid memory type index could be found; skipped.\n", kSkipPrefix);
         vk::DestroyBuffer(device(), buffer_protected, nullptr);
         vk::DestroyBuffer(device(), buffer_unprotected, nullptr);
-        return;
+        GTEST_SKIP() << "No valid memory type index could be found";
     }
 
     alloc_info.memoryTypeIndex = memory_type_protected;
@@ -7665,7 +7662,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     // Use protected resources in unprotected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_protected, 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[0], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                                     VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_commandBuffer->begin();
@@ -7762,7 +7759,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     // Use unprotected resources in protected command buffer
     g_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer_unprotected, 0, 1024);
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_views_descriptor[1], sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+                                                     VK_IMAGE_LAYOUT_GENERAL);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     protectedCommandBuffer.begin();
@@ -7851,6 +7848,7 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     vk::FreeMemory(device(), memory_unprotected, nullptr);
     vk::DestroyFramebuffer(device(), framebuffer, nullptr);
     vk::DestroyRenderPass(device(), render_pass, nullptr);
+    vk::DestroySampler(device(), sampler, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {

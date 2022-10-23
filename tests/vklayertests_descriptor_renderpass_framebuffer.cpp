@@ -8283,40 +8283,28 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
 TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     TEST_DESCRIPTION("Test VK_EXT_inline_uniform_block.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    std::array<const char *, 2> required_device_extensions = {
-        {VK_KHR_MAINTENANCE_1_EXTENSION_NAME, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (IsPlatform(kGalaxyS10)) {
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     // Enable descriptor indexing if supported, but don't require it.
-    bool supportsDescriptorIndexing = true;
-    required_device_extensions = {{VK_KHR_MAINTENANCE_3_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            supportsDescriptorIndexing = false;
-            return;
-        }
-    }
+    bool has_descriptor_indexing =
+        IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     auto descriptor_indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
-    void *pNext = supportsDescriptorIndexing ? &descriptor_indexing_features : nullptr;
+    void *pNext = has_descriptor_indexing ? &descriptor_indexing_features : nullptr;
     // Create a device that enables inline_uniform_block
     auto inline_uniform_block_features = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(pNext);
     auto features2 = GetPhysicalDeviceFeatures2(inline_uniform_block_features);
@@ -8329,7 +8317,6 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     auto inline_uniform_props = LvlInitStruct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
-
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkDescriptorSetLayoutBinding dslb = {};
@@ -8345,15 +8332,13 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     if (inline_uniform_props.maxInlineUniformBlockSize < dslb.descriptorCount) {
-        printf("%sDescriptorCount exceeds InlineUniformBlockSize limit, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "DescriptorCount exceeds InlineUniformBlockSize limit";
     }
 
     uint32_t maxBlocks = std::max(inline_uniform_props.maxPerStageDescriptorInlineUniformBlocks,
                                   inline_uniform_props.maxDescriptorSetInlineUniformBlocks);
     if (maxBlocks > 4096) {
-        printf("Too large of a maximum number of inline uniform blocks, skipping tests\n");
-        return;
+        GTEST_SKIP() << "Too large of a maximum number of inline uniform blocks";
     }
 
     for (uint32_t i = 0; i < 1 + maxBlocks; ++i) {
@@ -8366,10 +8351,10 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    const char *max_inline_vuid = (supportsDescriptorIndexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
-                                                               : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
-    const char *max_all_inline_vuid = (supportsDescriptorIndexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
-                                                                   : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
+    const char *max_inline_vuid = (has_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
+                                                            : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
+    const char *max_all_inline_vuid = (has_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
+                                                                : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_inline_vuid);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_inline_vuid);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");

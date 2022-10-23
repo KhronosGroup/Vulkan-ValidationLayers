@@ -931,7 +931,8 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE));
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[0]->targetView(FMT), renderpasses[0]));
 
-    images.push_back(CreateImage(FMT, WIDTH, HEIGHT));
+    images.push_back(
+        CreateImage(FMT, WIDTH, HEIGHT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     renderpasses.push_back(CreateRenderPass(FMT, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE));
     framebuffers.push_back(CreateFramebuffer(WIDTH, HEIGHT, images[1]->targetView(FMT), renderpasses[1]));
 

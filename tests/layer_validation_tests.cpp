@@ -1290,7 +1290,9 @@ VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAt
     rpinf.dependencyCount = 0;
     rpinf.pDependencies = nullptr;
 
-    vk::CreateRenderPass(m_device->handle(), &rpinf, nullptr, &renderpass);
+    VkResult result = vk::CreateRenderPass(m_device->handle(), &rpinf, nullptr, &renderpass);
+    assert(result == VK_SUCCESS);
+    (void)result;
 
     return renderpass;
 }
@@ -1307,7 +1309,9 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
     framebuffer_create_info.height = height;
     framebuffer_create_info.layers = 1;
 
-    vk::CreateFramebuffer(m_device->handle(), &framebuffer_create_info, nullptr, &framebuffer);
+    VkResult result = vk::CreateFramebuffer(m_device->handle(), &framebuffer_create_info, nullptr, &framebuffer);
+    assert(result == VK_SUCCESS);
+    (void)result;
 
     return framebuffer;
 }
@@ -1325,7 +1329,9 @@ VkSampler VkArmBestPracticesLayerTest::CreateDefaultSampler() {
     sampler_create_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
     sampler_create_info.maxLod = VK_LOD_CLAMP_NONE;
 
-    vk::CreateSampler(m_device->handle(), &sampler_create_info, nullptr, &sampler);
+    VkResult result = vk::CreateSampler(m_device->handle(), &sampler_create_info, nullptr, &sampler);
+    assert(result == VK_SUCCESS);
+    (void)result;
 
     return sampler;
 }
