@@ -1966,7 +1966,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
                     const VkDynamicState dynamic_state = dynamic_state_info.pDynamicStates[state_index];
 
-                    if (dynamic_state_map.find(dynamic_state) != dynamic_state_map.end()) {
+                    if (layer_data::Contains(dynamic_state_map, dynamic_state)) {
                         skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
                                          "vkCreateGraphicsPipelines: %s was listed twice in the "
                                          "pCreateInfos[%" PRIu32 "].pDynamicState->pDynamicStates array at pDynamicStates[%" PRIu32
@@ -1978,7 +1978,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if (dynamic_state_map.find(VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR) != dynamic_state_map.end()) {
+            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
                 // Not allowed for graphics pipelines
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-03578",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR was listed the "
@@ -1987,8 +1987,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, dynamic_state_map[VK_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR]);
             }
 
-            if ((dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) != dynamic_state_map.end()) &&
-                (dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT) != dynamic_state_map.end())) {
+            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) &&
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04132",
                                  "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT and "
                                  "VK_DYNAMIC_STATE_VIEWPORT both listed in pCreateInfos[%" PRIu32
@@ -1998,8 +1998,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  dynamic_state_map[VK_DYNAMIC_STATE_VIEWPORT]);
             }
 
-            if ((dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) != dynamic_state_map.end()) &&
-                (dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR) != dynamic_state_map.end())) {
+            if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) &&
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR)) {
                 skip |= LogError(
                     device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04133",
                     "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT and VK_DYNAMIC_STATE_SCISSOR "
@@ -2018,16 +2018,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             // helpers for bool used multiple times below
-            const bool has_dynamic_viewport = dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT) != dynamic_state_map.end();
-            const bool has_dynamic_scissor = dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR) != dynamic_state_map.end();
+            const bool has_dynamic_viewport = layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT);
+            const bool has_dynamic_scissor = layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR);
             const bool has_dynamic_viewport_w_scaling_nv =
-                dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) != dynamic_state_map.end();
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
             const bool has_dynamic_exclusive_scissor_nv =
-                dynamic_state_map.find(VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) != dynamic_state_map.end();
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV);
             const bool has_dynamic_viewport_with_count =
-                dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) != dynamic_state_map.end();
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
             const bool has_dynamic_scissor_with_count =
-                dynamic_state_map.find(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT) != dynamic_state_map.end();
+                layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
@@ -2595,7 +2595,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      i, i);
                     }
 
-                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) == dynamic_state_map.end() &&
+                    if (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
                         shading_rate_image_struct && shading_rate_image_struct->viewportCount > 0 &&
                         shading_rate_image_struct->pShadingRatePalettes == nullptr) {
                         skip |= LogError(
@@ -2636,7 +2636,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) != dynamic_state_map.end() &&
+                    if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) &&
                         !IsExtEnabled(device_extensions.vk_ext_discard_rectangles)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2645,7 +2645,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          i);
                     }
 
-                    if (dynamic_state_map.find(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) != dynamic_state_map.end() &&
+                    if (layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
                         !IsExtEnabled(device_extensions.vk_ext_sample_locations)) {
                         skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
                                          "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
@@ -2832,7 +2832,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             }
                         }
                         if (line_state->stippledLineEnable &&
-                            dynamic_state_map.find(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) == dynamic_state_map.end()) {
+                            !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_STIPPLE_EXT)) {
                             if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
                                 skip |=
                                     LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
@@ -3413,8 +3413,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
                 }
 
-                if (dynamic_state_map.find(VK_DYNAMIC_STATE_LINE_WIDTH) == dynamic_state_map.end() &&
-                    !physical_device_features.wideLines && (create_info.pRasterizationState->lineWidth != 1.0f)) {
+                if (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_LINE_WIDTH) && !physical_device_features.wideLines &&
+                    (create_info.pRasterizationState->lineWidth != 1.0f)) {
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00749",
                                      "The line width state is static (pCreateInfos[%" PRIu32
                                      "].pDynamicState->pDynamicStates does not contain VK_DYNAMIC_STATE_LINE_WIDTH) and "
