@@ -31,16 +31,6 @@ struct GpuAssistedDeviceMemoryBlock {
     layer_data::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
 };
 
-struct GpuAssistedDeviceInputMemoryBlock {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-    uint32_t binding_count;
-    const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set;
-    GpuAssistedDeviceInputMemoryBlock(VkBuffer buffer, VmaAllocation allocation, uint32_t binding_count,
-        const std::vector<LAST_BOUND_STATE::PER_SET, std::allocator<LAST_BOUND_STATE::PER_SET>> per_set)
-        : buffer(buffer), allocation(allocation), binding_count(binding_count), per_set(per_set){};
-};
-
 struct GpuAssistedPreDrawResources {
     VkDescriptorPool desc_pool = VK_NULL_HANDLE;
     VkDescriptorSet desc_set = VK_NULL_HANDLE;
@@ -160,7 +150,7 @@ namespace gpuav_state {
 class CommandBuffer : public gpu_utils_state::CommandBuffer {
   public:
     std::vector<GpuAssistedBufferInfo> per_draw_buffer_list;
-    std::vector<GpuAssistedDeviceInputMemoryBlock> di_input_buffer_list;
+    std::vector<GpuAssistedDeviceMemoryBlock> di_input_buffer_list;
     std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo> as_validation_buffers;
     VkBuffer current_input_buffer = VK_NULL_HANDLE;
 
