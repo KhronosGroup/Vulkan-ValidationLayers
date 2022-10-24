@@ -223,8 +223,7 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
