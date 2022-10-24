@@ -19,25 +19,20 @@ a Vulkan driver. Applications have full control and responsibility for correct o
 how Vulkan is used can result in a crash. This project provides Vulkan validation layers that can be enabled
 to assist development by enabling developers to verify their applications correct use of the Vulkan API.
 
-The following components are available in this repository:
-- [*Validation Layers*](layers/)
-- [*Tests*](tests/)
+This repository contains both the [*Validation Layers*](layers/) source as well as [*Tests*](tests/) for them.
 
 ## Contact Information
 * [Mark Lobodzinski](mailto:mark@lunarg.com)
 * [Nate Cesario](mailto:nathaniel@lunarg.com)
+* Can also be found on the [Khronos Slack](https://khr.io/slack)
 
-## Information for Developing or Contributing:
-
-Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository for more details.
-Please see the [GOVERNANCE.md](GOVERNANCE.md) file in this repository for repository management details.
-
-## How to Build and Run
-
-[BUILD.md](BUILD.md)
-Includes directions for building all components as well as running validation tests.
-
-Information on how to enable the various Validation layers is in [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md).
+## Info
+* [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
+* [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md) - Instructions for configuring the Validation Layers at runtime.
+* [CONTRIBUTING.md](CONTRIBUTING.md) - Information needed to make a contribution.
+    * [./docs](./docs/) - Details of the Validation Layer source code. **For those wanting to make contributions**
+    * [./tests](./tests) - Information about testing the Validation Layers.
+    * [GOVERNANCE.md](GOVERNANCE.md) - Repository management details.
 
 ## Version Tagging Scheme
 

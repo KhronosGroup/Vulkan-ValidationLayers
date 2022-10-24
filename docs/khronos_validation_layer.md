@@ -14,18 +14,6 @@ Any errors in Vulkan usage can result in unexpected behavior or even a crash.  T
 can be used to to assist developers in isolating incorrect usage, and in verifying that applications
 correctly use the API.
 
-
-The `VK_LAYER_KHRONOS_validation` layer supports the following validation coverage areas:
-
-- [Core validation](core_checks.md)
-- [GPU-Assisted validation](gpu_validation.md)
-- [Thread safety validation](thread_safety.md)
-- [Synchronization validation](synchronization_usage.md)
-- [Best practices validation](best_practices.md)
-- [Debug Printf functionality](debug_printf.md)
-- [Handle wrapping functionality](handle_wrapping.md)
-- [Fine grained locking functionality](fine_grained_locking_usage.md)
-
 **Note:**
 
 * Most *Khronos Validation layer* features can be used simultaneously. However, this could result in noticeable performance degradation. The best practice is to run *Core validation*, *GPU-Assisted validation*, *Synchronization Validation* and *Best practices validation* features individually.

@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2021 LunarG, Inc. -->
+<!-- Copyright 2015-2022 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -42,21 +42,6 @@ for work. Specifically the layer validates that:
 
 Errors will be printed if validation checks are not correctly met and warnings if improper (but not illegal) use of
 memory is detected.  Validation also dumps all memory references and bindings for each operation.
-
-## Shader validation functionality
-
-Additional checks apply to the VS->FS and FS->CB interfaces with the pipeline.  These checks include:
-
-- validating that all variables which are part of a shader interface are  decorated with either `spv::DecLocation` or `spv::DecBuiltin` (that is, only the SSO rendezvous-by-location model is supported)
-- emitting a warning if a location is declared only in the producing stage (useless work is being done)
-- emitting an error if a location is declared only in the consuming stage (garbage will be read).
-
-A special error checking case invoked when the FS stage writes a built-in corresponding to the legacy `gl_FragColor`.  In this case, an error is emitted if
-
-- the FS also writes any user-defined output
-- the CB has any attachment with a `UINT` or `SINT` type.
-
-These extra checks are to ensure that the legacy broadcast of `gl_FragColor` to all bound color attachments is well-defined.
 
 ## Swapchain validation functionality
 

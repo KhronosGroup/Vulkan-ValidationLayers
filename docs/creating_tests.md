@@ -2,6 +2,8 @@
 
 This is an "up-to-speed" document for writing tests to validate the Validation Layers
 
+[Information how to run the tests](../tests/README.md)
+
 ## Rule #1
 
 The first rule is to make sure you are actually running the tests on the built version of the Validation Layers you want. If you have the Vulkan SDK installed, then you will have a pre-built version of the Validation Layers set in your path and those are probably not the version you want to test.
@@ -255,9 +257,10 @@ if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOri
 
 This is an example of injecting the `VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT` feature for the `VK_FORMAT_R32G32B32A32_UINT` format. This will force the Validations Layers to act as if the implementation had support for this feature later in the test's code.
 ```cpp
-fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, &formatProps);
-formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
-fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, formatProps);
+VkFormatProperties fmt_props;
+fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, &fmt_props);
+fmt_props.optimalTilingFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R32G32B32A32_UINT, fmt_props);
 ```
 
 If you are in need of `VkFormatProperties3` the following is an example how to use the layer
@@ -304,39 +307,4 @@ props.limits.maxPushConstantsSize = 16; // example
 fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
 
 ASSERT_NO_FATAL_FAILURE(InitState());
-```
-
-## Running Tests on DevSim and MockICD
-
-To allow a much higher coverage of testing the Validation Layers a test writer can use the Device Simulation layer. [More details here](https://www.lunarg.com/new-vulkan-dev-sim-layer/), but the main idea is the layer intercepts the Physical Device queries allowing testing of much more device properties. The Mock ICD is a "null driver" that is used to handle the Vulkan calls as the Validation Layers mostly only care about input "input" of the driver. If your tests relies on the "output" of the driver (such that a driver/implementation is correctly doing what it should do with valid input), then it might be worth looking into the [Vulkan CTS instead](https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/vulkan_cts.md).
-
-Both the Device Simulation Layer and MockICD can be found in the Vulkan SDK, otherwise, they will need to be cloned from [VulkanTools](https://github.com/LunarG/VulkanTools/blob/master/layersvt/VkLayer_device_simulation.json.in) and [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools/tree/master/icd) respectfully. Currently, you will need to build the MockICD from source (found in Vulkan SDK or in a local copy somewhere)
-
-Here is an example of setting up and running the Device Simulation layer with MockICD on a Linux environment
-```bash
-export VULKAN_SDK=/path/to/vulkansdk
-export VVL=/path/to/Vulkan-ValidationLayers
-
-# Add built Vulkan Validation Layers... remember it was Rule #1
-export VK_LAYER_PATH=$VVL/build/layers/
-
-# This step can be skipped if the Vulkan SDK is properly installed
-# Add path for device simulation layer
-export VK_LAYER_PATH=$VK_LAYER_PATH:$VULKAN_SDK/etc/vulkan/explicit_layer.d/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VULKAN_SDK/lib/
-
-# Set MockICD to be driver
-export VK_ICD_FILENAMES=/path/to/Vulkan-Tools/build/icd/VkICD_mock_icd.json
-
-# Set device simulation profile to a valid json file
-# There are a set of profiles used in CI in the device_profiles folder
-export VK_DEVSIM_FILENAME=$VVL/tests/device_profiles/mobile_chip.json
-
-# Needed or else the code `IsPlatform(kMockICD)` will not work
-# Also allows profiles to use extensions exposed in .json profile file
-# More details - https://github.com/LunarG/VulkanTools/issues/985
-export VK_DEVSIM_MODIFY_EXTENSION_LIST=1
-
-# Running tests just need the extra --devsim added
-$VVL/build/tests/vk_layer_validation_tests --devsim --gtest_filter=TestName
 ```

@@ -5,8 +5,7 @@
 The source code for The Vulkan-ValidationLayer components is sponsored by Khronos and LunarG.
 * [Khronos Vulkan-ValidationLayers](https://github.com/KhronosGroup/Vulkan-ValidationLayers)
 
-
-### **The Vulkan Ecosystem Needs Your Help**
+## **The Vulkan Ecosystem Needs Your Help**
 
 The Vulkan validation layers make up a significant part of the Vulkan ecosystem.
 While there are often active and organized development efforts underway to improve their coverage,
@@ -17,39 +16,34 @@ There are a couple of methods to identify areas of need:
 * Examine the [issues list](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues)
 in this repository and look for issues that are of interest
 * Examine the Validation Layer 'Coverage - html' page at [the Vulkan SDK
-documentation page](https://vulkan.lunarg.com/doc/sdk/) -- it lists all published Vulkan VUIDs and their status.
-* Run the `vk_validation_stats.py` script (in the scripts directory) with the `-todo`
-command line argument to see a list of as-yet unimplemented validation checks.
-
-Having selected a validation check to work on, it is often efficient to implement a block of related checks
-at once. Refer to the validation database output from `vk_validation_stats.py` (available in text, html,
-or csv format) to identify related checks that may be implemented simultaneously.
+documentation page](https://vulkan.lunarg.com/doc/sdk/latest/windows/validation_error_database.html) -- it lists all published Vulkan VUIDs and their status.
+* Run `scripts/vk_validation_stats.py` with `-todo` to see a list of as-yet unimplemented validation checks.
+  * ```bash
+    # Get summary report
+    python3 scripts/vk_validation_stats.py external/Vulkan-Headers/registry/validusage.json -summary
+    # Some VUIDs are handled in `spirv-val` and need to pass in the repo to check against
+    python3 scripts/vk_validation_stats.py external/Vulkan-Headers/registry/validusage.json -spirvtools ~/path/to/SPIRV-Tools/ -summary
+    # Print out all the information to an HTML page (also has text and csv support)
+    python3 scripts/vk_validation_stats.py external/Vulkan-Headers/registry/validusage.json -spirvtools ~/path/to/SPIRV-Tools/ -html vuid.html
+    # -todo filters out only VUID that are unimplemented
+    python3 scripts/vk_validation_stats.py external/Vulkan-Headers/registry/validusage.json -spirvtools ~/path/to/SPIRV-Tools/ -todo -html todo.html
+    ```
 
 Of course, if you have your own work in mind, please open an issue to describe it and assign it to yourself.
 Finally, please feel free to contact any of the developers that are actively contributing should you
 wish to coordinate further.
-Please see the [section about Validation Layers](#special-considerations-for-validation-layers)
-later on this page.
-
-Repository Issue labels:
-
-* _Bug_:          These issues refer to invalid or broken functionality and are the highest priority.
-* _Incomplete_:   These issues refer to missing validation checks that users have encountered during application
-development that would have been directly useful, and are high priority.
-* _Enhancement_:  These issues refer to ideas for extending or improving the validation layers.
-* _Triaged_:      These issues have been assessed and/or reviewed
 
 It is the maintainers goal for all issues to be assigned or triaged within one business day of their submission. If you choose
 to work on an issue that is assigned, simply coordinate with the current assignee.
 
-### **How to Submit Fixes**
+## **How to Submit Fixes**
 
 * **Ensure that the bug was not already reported or fixed** by searching on GitHub under Issues
   and Pull Requests.
 * Use the existing GitHub forking and pull request process.
   This will involve [forking the repository](https://help.github.com/articles/fork-a-repo/),
   creating a branch with your commits, and then [submitting a pull request](https://help.github.com/articles/using-pull-requests/).
-* Please read and adhere to the style and process [guidelines ](#coding-conventions-and-formatting) enumerated below. Some highlights:
+* Please read and adhere to the style and process guidelines enumerated below. Some highlights:
   - Source code must follow the repo coding style guidelines, including a pass through a clang-format utility
   - Implemented VUID checks must be accompanied by relevant tests
   - Validation source code should be in a separate commit from the tests, unless there are interdependencies. The repo should compile and
@@ -59,7 +53,7 @@ to work on an issue that is assigned, simply coordinate with the current assigne
   passes the Google/LunarG internal CI processes. Once the Pull Request has been approved and is passing internal CI, a repository maintainer
   will merge the PR.
 
-#### **Coding Conventions and Formatting**
+### **Coding Conventions and Formatting**
 * Use the **[Google style guide](https://google.github.io/styleguide/cppguide.html)** for source code with the following exceptions:
     * The column limit is 132 (as opposed to the default value 80). The clang-format tool will handle this. See below.
     * The indent is 4 spaces instead of the default 2 spaces. Access modifier (e.g. `public:`) is indented 2 spaces instead of the
@@ -68,6 +62,8 @@ to work on an issue that is assigned, simply coordinate with the current assigne
     * If you can justify a reason for violating a rule in the guidelines, then you are free to do so. Be prepared to defend your
 decision during code review. This should be used responsibly. An example of a bad reason is "I don't like that rule." An example of
 a good reason is "This violates the style guide, but it improves type safety."
+
+> New code should target the above Google style guide, avoid copying/pasting incorrectly formatted code.
 
 * Run **clang-format** on your changes to maintain consistent formatting
     * There are `.clang-format` files present in the repository to define clang-format settings
@@ -100,13 +96,13 @@ that to be accepted into the repository, the pull request must [pass all tests](
 -- the continuous integration features will assist in enforcing this requirement.
 
 #### **Testing Your Changes**
-* Run the included layer validation tests (vk_layer_validation_tests) in the repository before and after each of your commits to check for any regressions.
+* Run the included layer validation tests (`vk_layer_validation_tests`) in the repository before and after each of your commits to check for any regressions.
 
 * Write additional layer validation tests that explicitly exercise your changes.
 
 * Feel free to subject your code changes to other tests as well!
 
-* Take a look at the [overview for creating tests](docs/creating_tests.md).
+* [How to setup tests to run](./tests) and [overview for creating tests](docs/creating_tests.md).
 
 #### **GitHub Cloud CI Testing**
 Pull Requests to GitHub are tested in the cloud on Linux and Windows VMs. The Linux VMs use [Github Actions](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) with the sequence of commands driven by the [ci_build.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.github/workflows/ci_build.yml) file. The Windows VMs use [AppVeyor](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) with the sequence of commands driven by the [.appveyor.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.appveyor.yml) file.
@@ -114,14 +110,6 @@ Pull Requests to GitHub are tested in the cloud on Linux and Windows VMs. The Li
 The Linux testing includes iterating on all of the validation layer tests over multiple [different device](https://github.com/KhronosGroup/Vulkan-ValidationLayers/tree/master/tests/device_profiles) profiles using the [devsim layer](https://github.com/LunarG/VulkanTools/tree/master/layersvt) in combination with the [mock icd](https://github.com/KhronosGroup/Vulkan-Tools/tree/master/icd). This is a fast way to simulate testing across different devices. Any new tests must pass across all device profiles.
 
 #### **Special Considerations for Validation Layers**
-* **Validation Tests:**  If you are submitting a change that adds a new validation check, you should also construct a "negative" test function.
-The negative test function purposely violates the validation rule that the new validation check is looking for.
-The test should cause your new validation check to identify the violation and issue a validation error report.
-And finally, the test should check that the validation error report is generated and consider the test as "passing"
-if the report is received.  Otherwise, the test should indicate "failure".
-This new test should be added to the validation layer test program in the `tests` directory and contributed
-at the same time as the new validation check itself. There are many existing validation tests in this directory that can be
-used as a starting point.
 * **Validation Checks:**  Validation checks are carried out by the Khronos Validation layer. The CoreChecks validation object
 contains checks that require significant amounts of application state to carry out. In contrast, the stateless validation object contains
 checks that require (mostly) no state at all. Please inquire if you are unsure of the location for your contribution. The other
@@ -131,15 +119,9 @@ output all of the applicable Vulkan Objects and related values. Also, ensure tha
 fix the problem, they should do so to better assist the user. Note that Vulkan object handles must be output via the `FormatHandle()`
 function, and that all object handles visible in a message should also be included in the callback data.  If more than a single object is
 output, the LogObjectList structure should be used.
-* **Validation Statistics:** The `vk_validation_stats.py` script (in the scripts directory) inspects the layer and test source files
-and reports a variety of statistics on validation completeness and correctness. Before submitting a change you should run this
-script with the consistency check (`-c`) argument to ensure that your changes have not introduced any inconsistencies in the code.
 * **Generated Source Code:** The `layers/generated` directory contains source code that is created by several
 generator scripts in the `scripts` directory. All changes to these scripts _must_ be submitted with the
-corresponding generated output to keep the repository self-consistent. This requirement is enforced by
-the continuous integration testing. Regenerate source files after modifying any of the generator
-scripts and before building and testing your changes. More details can be found in
-[BUILD.md](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md#generated-source-code).
+corresponding generated output to keep the repository self-consistent. [Here for more information](docs/generated_code.md).
 
 #### Coding Conventions for [CMake](http://cmake.org) files
 
