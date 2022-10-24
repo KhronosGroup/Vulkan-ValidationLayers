@@ -5857,8 +5857,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         }
 
         // Retrieve buffer and format properties of the provided AHardwareBuffer
-        auto ahb_format_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
-        auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
+        auto ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>();
         DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &ahb_props);
 
         // allocationSize must be the size returned by vkGetAndroidHardwareBufferPropertiesANDROID for the Android hardware buffer
@@ -5896,8 +5895,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                     ahb_desc.format, ahb_desc.usage);
             }
         } else {  // Checks specific to import with a dedicated allocation requirement
-            auto image_state = Get<IMAGE_STATE>(mem_ded_alloc_info->image);
-            const auto *ici = &image_state->createInfo;
 
             // Dedicated allocation have limit usage flags supported
             if (0 == (ahb_desc.usage & (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER | AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE |
@@ -5911,14 +5908,24 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                     ahb_desc.usage);
             }
 
+            auto image_state = Get<IMAGE_STATE>(mem_ded_alloc_info->image);
+            const auto *ici = &image_state->createInfo;
+
             //  the format of image must be VK_FORMAT_UNDEFINED or the format returned by
             //  vkGetAndroidHardwareBufferPropertiesANDROID
-            if ((ici->format != ahb_format_props.format) && (VK_FORMAT_UNDEFINED != ici->format)) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-02387",
-                                 "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
-                                 "VkImportAndroidHardwareBufferInfoANDROID, the dedicated allocation image's "
-                                 "format (%s) is not VK_FORMAT_UNDEFINED and does not match the AHardwareBuffer's format (%s).",
-                                 string_VkFormat(ici->format), string_VkFormat(ahb_format_props.format));
+            if (VK_FORMAT_UNDEFINED != ici->format) {
+                // Mali drivers will not return a valid VkAndroidHardwareBufferPropertiesANDROID::allocationSize if the
+                // FormatPropertiesANDROID is passed in as well so need to query again for the format
+                auto ahb_format_props = LvlInitStruct<VkAndroidHardwareBufferFormatPropertiesANDROID>();
+                auto dummy_ahb_props = LvlInitStruct<VkAndroidHardwareBufferPropertiesANDROID>(&ahb_format_props);
+                DispatchGetAndroidHardwareBufferPropertiesANDROID(device, import_ahb_info->buffer, &dummy_ahb_props);
+                if (ici->format != ahb_format_props.format) {
+                    skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-02387",
+                                     "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
+                                     "VkImportAndroidHardwareBufferInfoANDROID, the dedicated allocation image's "
+                                     "format (%s) is not VK_FORMAT_UNDEFINED and does not match the AHardwareBuffer's format (%s).",
+                                     string_VkFormat(ici->format), string_VkFormat(ahb_format_props.format));
+                }
             }
 
             // The width, height, and array layer dimensions of image and the Android hardwarebuffer must be identical

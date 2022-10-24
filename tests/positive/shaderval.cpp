@@ -2140,8 +2140,7 @@ TEST_F(VkPositiveLayerTest, TestShaderInputAndOutputStructComponents) {
 
     // There is a crash inside the driver on S10
     if (IsPlatform(kGalaxyS10)) {
-        printf("%s This test does not currently run on Galaxy S10\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Galaxy S10";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
