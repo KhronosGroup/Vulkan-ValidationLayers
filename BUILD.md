@@ -285,6 +285,8 @@ the invocation of `scripts/generate_source.py` from the build directory:
 
     cmake --build . --target VulkanVL_generated_source
 
+If Python is found on your system, the Vulkan Registry and SPIRV-Headers *must* be present!
+
 ### Build Options
 
 When generating native platform build files through CMake, several options can
