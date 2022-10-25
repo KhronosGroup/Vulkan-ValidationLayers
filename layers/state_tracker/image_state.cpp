@@ -21,6 +21,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include <limits>
+#include <string_view>
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
     const auto format = create_info.format;
@@ -686,62 +687,122 @@ void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const V
 }
 
 // Helper for data obtained from vkGetPhysicalDeviceSurfacePresentModesKHR
-std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev) const {
+std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev,
+                                                             const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
     std::vector<VkPresentModeKHR> result;
-    if (present_modes_data_.find(phys_dev) != present_modes_data_.end()) {
-        for (auto mode = present_modes_data_[phys_dev].begin(); mode != present_modes_data_[phys_dev].end(); mode++) {
+    if (auto search = present_modes_data_.find(phys_dev); search != present_modes_data_.end()) {
+        for (auto mode = search->second.begin(); mode != search->second.end(); mode++) {
             result.push_back(mode->first);
         }
         return result;
     }
     uint32_t count = 0;
-    DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, nullptr);
+    VkResult err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, nullptr);
+    if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+        return result;
+    }
     result.resize(count);
-    DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, result.data());
+    err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, result.data());
+    assert(err == VK_SUCCESS);
+    if (err != VK_SUCCESS) {
+        result.resize(0);
+        return result;
+    }
     return result;
 }
 
-void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts) {
+void SURFACE_STATE::SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts) {
     auto guard = Lock();
     assert(phys_dev);
     formats_[phys_dev] = std::move(fmts);
 }
 
-std::vector<VkSurfaceFormatKHR> SURFACE_STATE::GetFormats(VkPhysicalDevice phys_dev) const {
+vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                                    const void *surface_info2_pnext,
+                                                                    const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
-    auto iter = formats_.find(phys_dev);
-    if (iter != formats_.end()) {
-        return iter->second;
+
+    if (const auto search = formats_.find(phys_dev); search != formats_.end()) {
+        vvl::span<const safe_VkSurfaceFormat2KHR>(search->second);
     }
-    std::vector<VkSurfaceFormatKHR> result;
-    uint32_t count = 0;
-    DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, nullptr);
-    result.resize(count);
-    DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, result.data());
-    formats_[phys_dev] = result;
-    return result;
+
+    std::vector<safe_VkSurfaceFormat2KHR> result;
+    if (get_surface_capabilities2) {
+        uint32_t count = 0;
+        const auto surface_info2 = GetSurfaceInfo2(surface_info2_pnext);
+        VkResult err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, nullptr);
+        if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+            return result;
+        }
+        std::vector<VkSurfaceFormat2KHR> formats2(count);
+        err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, formats2.data());
+        assert(err == VK_SUCCESS);
+        if (err != VK_SUCCESS) {
+            result.resize(0);
+        } else {
+            result.resize(count);
+            for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
+                result.emplace_back(safe_VkSurfaceFormat2KHR(&formats2[surface_format_index]));
+            }
+        }
+
+    } else {
+        std::vector<VkSurfaceFormatKHR> formats;
+        uint32_t count = 0;
+        VkResult err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, nullptr);
+        if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+            return result;
+        }
+        formats.resize(count);
+        err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, formats.data());
+        assert(err == VK_SUCCESS);
+        if (err == VK_SUCCESS) {
+            result.reserve(count);
+            auto format2 = LvlInitStruct<VkSurfaceFormat2KHR>();
+            for (const auto &format : formats) {
+                format2.surfaceFormat = format;
+                result.emplace_back(safe_VkSurfaceFormat2KHR(&format2));
+            }
+        }
+    }
+    formats_[phys_dev] = std::move(result);
+    return vvl::span<const safe_VkSurfaceFormat2KHR>(formats_[phys_dev]);
 }
 
-void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps) {
+void SURFACE_STATE::SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps) {
     auto guard = Lock();
     assert(phys_dev);
     capabilities_[phys_dev] = caps;
 }
 
-VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_dev) const {
+safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                              const void *surface_info2_pnext,
+                                                              const ValidationObject *validation_obj) const {
     auto guard = Lock();
     assert(phys_dev);
-    auto iter = capabilities_.find(phys_dev);
-    if (iter != capabilities_.end()) {
-        return iter->second;
+
+    if (auto search = capabilities_.find(phys_dev); search != capabilities_.end()) {
+        return search->second;
     }
-    VkSurfaceCapabilitiesKHR result{};
-    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface(), &result);
-    capabilities_[phys_dev] = result;
-    return result;
+    auto surface_caps2 = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    if (get_surface_capabilities2) {
+        const auto surface_info2 = GetSurfaceInfo2(surface_info2_pnext);
+        const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info2, &surface_caps2);
+        assert(err == VK_SUCCESS);
+        UNUSED(err);
+    } else {
+        VkSurfaceCapabilitiesKHR caps{};
+        const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface(), &caps);
+        assert(err == VK_SUCCESS);
+        UNUSED(err);
+        surface_caps2.surfaceCapabilities = caps;
+    }
+    safe_VkSurfaceCapabilities2KHR safe_surface_caps2(&surface_caps2);
+    capabilities_[phys_dev] = safe_surface_caps2;
+    return safe_surface_caps2;
 }
 
 void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
