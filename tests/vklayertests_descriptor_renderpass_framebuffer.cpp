@@ -10473,15 +10473,14 @@ TEST_F(VkLayerTest, SwapchainAcquireImageRetired) {
 
     VkAcquireNextImageInfoKHR acquire_info = LvlInitStruct<VkAcquireNextImageInfoKHR>();
     acquire_info.swapchain = m_swapchain;
-    acquire_info.timeout = std::numeric_limits<uint64_t>::max();
+    acquire_info.timeout = kWaitTimeout;
     acquire_info.semaphore = semaphore.handle();
     acquire_info.fence = VK_NULL_HANDLE;
     acquire_info.deviceMask = 0x1;
 
     uint32_t dummy;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkAcquireNextImageKHR-swapchain-01285");
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), semaphore.handle(), VK_NULL_HANDLE,
-                            &dummy);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), VK_NULL_HANDLE, &dummy);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAcquireNextImageInfoKHR-swapchain-01675");
     vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);

@@ -37,7 +37,6 @@
 
 #include "cast_utils.h"
 
-static constexpr uint64_t kWaitTimeout{10000000000}; // 10 seconds in ns
 //
 // POSITIVE VALIDATION TESTS
 //
@@ -384,7 +383,7 @@ TEST_F(VkPositiveLayerTest, FenceCreateSignaledWaitHandling) {
 
     // Wait on both fences, with signaled first.
     VkFence fences[] = {f1, f2};
-    vk::WaitForFences(m_device->device(), 2, fences, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 2, fences, VK_TRUE, kWaitTimeout);
 
     // Should have both retired!
     vk::DestroyFence(m_device->device(), f1, nullptr);
@@ -444,7 +443,7 @@ TEST_F(VkPositiveLayerTest, TwoFencesThreeFrames) {
             // Submit cmd buffer and wait for fence
             err = vk::QueueSubmit(queue, 1, &submit_info, fences[obj]);
             ASSERT_VK_SUCCESS(err);
-            err = vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, UINT64_MAX);
+            err = vk::WaitForFences(m_device->device(), 1, &fences[obj], VK_TRUE, kWaitTimeout);
             ASSERT_VK_SUCCESS(err);
             err = vk::ResetFences(m_device->device(), 1, &fences[obj]);
             ASSERT_VK_SUCCESS(err);
@@ -723,8 +722,8 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -881,7 +880,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithSemaphoreAndOneFenc
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -998,7 +997,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsSeparateQueuesWithTimelineSemaphoreAn
         ASSERT_VK_SUCCESS(vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence));
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -1084,7 +1083,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueWithSemaphoreAndOneFence) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
@@ -1168,7 +1167,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueNullQueueSubmitWithFence) {
 
     vk::QueueSubmit(m_device->m_queue, 0, NULL, fence);
 
-    VkResult err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    VkResult err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
     ASSERT_VK_SUCCESS(err);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
@@ -1250,7 +1249,7 @@ TEST_F(VkPositiveLayerTest, TwoQueueSubmitsOneQueueOneFence) {
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
@@ -1339,7 +1338,7 @@ TEST_F(VkPositiveLayerTest, TwoSubmitInfosWithSemaphoreOneQueueSubmitsOneFence) 
         vk::QueueSubmit(m_device->m_queue, 2, &submit_info[0], fence);
     }
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     vk::DestroyFence(m_device->device(), fence, nullptr);
     vk::FreeCommandBuffers(m_device->device(), command_pool, 2, &command_buffer[0]);
@@ -1385,7 +1384,7 @@ TEST_F(VkPositiveLayerTest, LongSemaphoreChain) {
     err = vk::QueueSubmit(m_device->m_queue, 1, &si, fence);
     ASSERT_VK_SUCCESS(err);
 
-    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
 
     for (auto semaphore : semaphores) vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 
@@ -2059,7 +2058,7 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCBWithFenceAfter) {
     // Finally, write a second timestamp, but before that, wait for the fence.
     {
         submit_info.pCommandBuffers = &command_buffer[1];
-        vk::WaitForFences(m_device->device(), 1, &fence_handle, true, std::numeric_limits<uint64_t>::max());
+        vk::WaitForFences(m_device->device(), 1, &fence_handle, true, kWaitTimeout);
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     }
 
@@ -2187,7 +2186,7 @@ TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
     auto err = vk::AllocateCommandBuffers(m_device->handle(), &alloc_info, &command_buffer);
     ASSERT_VK_SUCCESS(err);
 
-    err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, sem.handle(), VK_NULL_HANDLE, &image_index);
+    err = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, sem.handle(), VK_NULL_HANDLE, &image_index);
     ASSERT_VK_SUCCESS(err);
 
     auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();

@@ -676,8 +676,7 @@ TEST_F(VkAmdBestPracticesLayerTest, NumberOfSubmissions) {
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk_testing::Semaphore image_acquired(*m_device, semaphore_create_info);
     ASSERT_TRUE(image_acquired.initialized());
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired.handle(), VK_NULL_HANDLE,
-                            &current_buffer);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired.handle(), VK_NULL_HANDLE, &current_buffer);
 
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
