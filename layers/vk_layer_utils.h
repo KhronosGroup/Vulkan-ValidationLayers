@@ -42,6 +42,9 @@
 #define STRINGIFY_HELPER(s) #s
 
 #ifdef __cplusplus
+template <typename... Types>
+void UNUSED(Types...) {}
+
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};
     return d3;

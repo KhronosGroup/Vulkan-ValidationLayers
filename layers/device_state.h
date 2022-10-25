@@ -115,9 +115,9 @@ class QUEUE_FAMILY_PERF_COUNTERS {
 
 class SURFACELESS_QUERY_STATE {
   public:
-    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<safe_VkSurfaceFormat2KHR> formats;
     std::vector<VkPresentModeKHR> present_modes;
-    VkSurfaceCapabilitiesKHR capabilities;
+    safe_VkSurfaceCapabilities2KHR capabilities;
 };
 
 class PHYSICAL_DEVICE_STATE : public BASE_NODE {
