@@ -6972,6 +6972,42 @@ TEST_F(VkLayerTest, TransformFeedbackFeatureEnabled) {
     }
 }
 
+TEST_F(VkLayerTest, TransformFeedbackNoBoundPipeline) {
+    TEST_DESCRIPTION("Call vkCmdBeginTransformFeedbackEXT without a bound pipeline");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+    if (tf_features.transformFeedback == VK_FALSE) {
+        GTEST_SKIP() << "transformFeedback not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdBeginTransformFeedbackEXT = reinterpret_cast<PFN_vkCmdBeginTransformFeedbackEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT"));
+    ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-06233");
+    vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
     TEST_DESCRIPTION("Submit invalid arguments to vkCmdBindTransformFeedbackBuffersEXT");
 
