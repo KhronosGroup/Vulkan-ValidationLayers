@@ -1843,21 +1843,18 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
 TEST_F(VkLayerTest, PresentIdWait) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddSurfaceExtension();
     auto present_id_features = LvlInitStruct<VkPhysicalDevicePresentIdFeaturesKHR>();
     auto present_wait_features = LvlInitStruct<VkPhysicalDevicePresentWaitFeaturesKHR>(&present_id_features);
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&present_wait_features);
-    m_device_extension_names.push_back(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_PRESENT_ID_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    bool retval = InitFrameworkAndRetrieveFeatures(features2);
+    AddRequiredExtensions(VK_KHR_PRESENT_WAIT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
+    AddSurfaceExtension();
+    const bool retval = InitFrameworkAndRetrieveFeatures(features2);
     if (!retval) {
-        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Error initializing extensions or retrieving features, skipping test.";
     }
     if (!present_id_features.presentId || !present_wait_features.presentWait) {
-        printf("%s presentWait feature is not available, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "presentWait feature is not available, skipping test.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -1868,7 +1865,7 @@ TEST_F(VkLayerTest, PresentIdWait) {
     ASSERT_TRUE(InitSwapchain());
     VkSurfaceKHR surface2;
     VkSwapchainKHR swapchain2;
-    InitSurface(m_width, m_height, surface2);
+    InitSurface(surface2);
     InitSwapchain(surface2, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain2);
 
     auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");

@@ -275,6 +275,9 @@ VkRenderFramework::VkRenderFramework()
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_surface(VK_NULL_HANDLE),
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+      m_win32Window(nullptr),
+#endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
       m_surface_dpy(nullptr),
       m_surface_window(None),
@@ -848,9 +851,7 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-bool VkRenderFramework::InitSurface() { return InitSurface(m_width, m_height, m_surface); }
-
-bool VkRenderFramework::InitSurface(float width, float height) { return InitSurface(width, height, m_surface); }
+bool VkRenderFramework::InitSurface() { return InitSurface(m_surface); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -858,21 +859,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &surface) {
+bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HINSTANCE window_instance = GetModuleHandle(nullptr);
-    const char class_name[] = "test";
-    WNDCLASS wc = {};
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = window_instance;
-    wc.lpszClassName = class_name;
-    RegisterClass(&wc);
-    HWND window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
-    ShowWindow(window, SW_HIDE);
+    if (m_win32Window == nullptr) {
+        const char class_name[] = "test";
+        WNDCLASS wc = {};
+        wc.lpfnWndProc = WindowProc;
+        wc.hInstance = window_instance;
+        wc.lpszClassName = class_name;
+        RegisterClass(&wc);
+        m_win32Window = CreateWindowEx(0, class_name, 0, 0, 0, 0, (int)m_width, (int)m_height, NULL, NULL, window_instance, NULL);
+        ShowWindow(m_win32Window, SW_HIDE);
+    }
 
     VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = window_instance;
-    surface_create_info.hwnd = window;
+    surface_create_info.hwnd = m_win32Window;
     VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     if (err != VK_SUCCESS) return false;
 #endif
@@ -880,45 +883,54 @@ bool VkRenderFramework::InitSurface(float width, float height, VkSurfaceKHR &sur
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     VkAndroidSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkAndroidSurfaceCreateInfoKHR>();
     surface_create_info.window = VkTestFramework::window;
-    VkResult err = vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    VkResult err = vk::CreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
     if (err != VK_SUCCESS) return false;
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    assert(m_surface_dpy == nullptr);
-    m_surface_dpy = XOpenDisplay(NULL);
+    if (m_surface_dpy == nullptr) {
+        m_surface_dpy = XOpenDisplay(NULL);
+        if (m_surface_dpy != nullptr) {
+            int s = DefaultScreen(m_surface_dpy);
+            m_surface_window =
+                XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, static_cast<int>(m_width),
+                                    static_cast<int>(m_height), 1, BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
+        }
+    }
+
     if (m_surface_dpy) {
-        int s = DefaultScreen(m_surface_dpy);
-        m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
-                                               BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
         VkXlibSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
         surface_create_info.dpy = m_surface_dpy;
         surface_create_info.window = m_surface_window;
-        VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+        VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
         if (err != VK_SUCCESS) return false;
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (m_surface == VK_NULL_HANDLE) {
-        assert(m_surface_xcb_conn == nullptr);
-        m_surface_xcb_conn = xcb_connect(NULL, NULL);
+    if (surface == VK_NULL_HANDLE) {
+        if (m_surface_xcb_conn == nullptr) {
+            m_surface_xcb_conn = xcb_connect(NULL, NULL);
+        }
+
         if (m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
             VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
             surface_create_info.connection = m_surface_xcb_conn;
             surface_create_info.window = window;
-            VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+            VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
             if (err != VK_SUCCESS) return false;
         }
     }
 #endif
-    return (m_surface == VK_NULL_HANDLE) ? false : true;
+    return (surface != VK_NULL_HANDLE);
 }
 
 // Makes query to get information about swapchain needed to create a valid swapchain object each test creating a swapchain will need
 void VkRenderFramework::InitSwapchainInfo() {
     const VkPhysicalDevice physicalDevice = gpu();
+
+    assert(m_surface != VK_NULL_HANDLE);
 
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_surface, &m_surface_capabilities);
 
@@ -1017,6 +1029,12 @@ void VkRenderFramework::DestroySwapchain() {
             m_swapchain = VK_NULL_HANDLE;
         }
     }
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (m_win32Window != nullptr) {
+        DestroyWindow(m_win32Window);
+    }
+#endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     if (m_surface_dpy != nullptr) {

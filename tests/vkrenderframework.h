@@ -259,8 +259,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitViewport(float width, float height);
     void InitViewport();
     bool InitSurface();
-    bool InitSurface(float width, float height);
-    bool InitSurface(float width, float height, VkSurfaceKHR &surface);
+    bool InitSurface(VkSurfaceKHR &surface);
     void InitSwapchainInfo();
     bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
@@ -353,6 +352,9 @@ class VkRenderFramework : public VkTestFramework {
 
     // WSI items
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    HWND m_win32Window;
+#endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
     Display *m_surface_dpy;
     Window m_surface_window;
