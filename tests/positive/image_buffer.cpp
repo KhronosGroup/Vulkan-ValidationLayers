@@ -1986,8 +1986,8 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     VkFence fence_handle = fence.handle();
 
     uint32_t image_index;
-    vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence_handle, &image_index);
-    vk::WaitForFences(m_device->device(), 1, &fence_handle, VK_TRUE, std::numeric_limits<uint64_t>::max());
+    vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handle, &image_index);
+    vk::WaitForFences(m_device->device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
 
     m_commandBuffer->begin();
 
@@ -2044,7 +2044,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     auto fenceci = LvlInitStruct<VkFenceCreateInfo>();
     vk_testing::Fence fence(*m_device, fenceci);
     ASSERT_VK_SUCCESS(
-        vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index));
+        vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
     VkAttachmentDescription attach[] = {
         {0, m_surface_formats[0].format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
@@ -2120,10 +2120,10 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
-    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
     vk::ResetFences(m_device->device(), 1, &fence.handle());
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence.handle());
-    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, UINT64_MAX);
+    vk::WaitForFences(m_device->device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(VkPositiveLayerTest, SubresourceLayout) {
@@ -2293,8 +2293,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     VkSemaphore image_acquired;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), image_acquired, VK_NULL_HANDLE,
-                            &current_buffer);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, image_acquired, VK_NULL_HANDLE, &current_buffer);
 
     VkImageView imageView = image.targetView(attachmentFormat);
     VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,

@@ -2796,7 +2796,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
     fence.init(*DeviceObj(), VkFenceObj::create_info());
 
     uint32_t image_index;
-    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index));
+    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence.handle(), &image_index));
     fence.wait(UINT32_MAX);
 
     VkImageViewCreateInfo ivci = LvlInitStruct<VkImageViewCreateInfo>();

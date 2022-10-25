@@ -668,8 +668,7 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
     uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), acquire_semaphore, VK_NULL_HANDLE,
-                            &image_index);
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, acquire_semaphore, VK_NULL_HANDLE, &image_index);
 
     m_commandBuffer->begin();
 
@@ -930,9 +929,8 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
 
     uint32_t image_index = 0;
-    vk::AcquireNextImageKHR(device(), m_swapchain, std::numeric_limits<uint64_t>::max(), VK_NULL_HANDLE, fence_handle,
-                            &image_index);
-    vk::WaitForFences(device(), 1, &fence_handle, VK_TRUE, std::numeric_limits<uint64_t>::max());
+    vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, VK_NULL_HANDLE, fence_handle, &image_index);
+    vk::WaitForFences(device(), 1, &fence_handle, VK_TRUE, kWaitTimeout);
 
     m_commandBuffer->begin();
 

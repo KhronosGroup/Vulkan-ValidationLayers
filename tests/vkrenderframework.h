@@ -47,6 +47,8 @@ class VkImageObj;
 
 using vk_testing::MakeVkHandles;
 
+static constexpr uint64_t kWaitTimeout{10000000000};  // 10 seconds in ns
+
 template <class Dst, class Src>
 std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
     std::vector<Dst *> handles;

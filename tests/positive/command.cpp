@@ -676,7 +676,7 @@ TEST_F(VkPositiveLayerTest, CommandBufferSimultaneousUseSync) {
     ASSERT_VK_SUCCESS(err);
 
     // Wait for fence.
-    err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    err = vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, kWaitTimeout);
     ASSERT_VK_SUCCESS(err);
 
     // CB is still in flight from second submission, but semaphore s1 is no
