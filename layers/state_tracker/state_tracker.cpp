@@ -4282,7 +4282,9 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
                                                                                    VkResult result) {
     if (VK_SUCCESS != result) return;
     auto surface_state = Get<SURFACE_STATE>(surface);
-    surface_state->SetCapabilities(physicalDevice, *pSurfaceCapabilities);
+    auto caps2 = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    caps2.surfaceCapabilities = *pSurfaceCapabilities;
+    surface_state->SetCapabilities(physicalDevice, safe_VkSurfaceCapabilities2KHR(&caps2));
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
@@ -4295,7 +4297,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
 
         const VkSurfacePresentModeEXT *surface_present_mode = LvlFindInChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
         if ((!IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) || (!surface_present_mode)) {
-            surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+            surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities);
         } else {
             const VkSurfacePresentScalingCapabilitiesEXT *present_scaling_caps =
                 LvlFindInChain<VkSurfacePresentScalingCapabilitiesEXT>(pSurfaceCapabilities->pNext);
@@ -4316,7 +4318,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                LvlFindInChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
         auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
         assert(pd_state);
-        pd_state->surfaceless_query_state.capabilities = pSurfaceCapabilities->surfaceCapabilities;
+        pd_state->surfaceless_query_state.capabilities = safe_VkSurfaceCapabilities2KHR(pSurfaceCapabilities);
     }
 }
 
@@ -4325,14 +4327,16 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                                                                                     VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
                                                                                     VkResult result) {
     auto surface_state = Get<SURFACE_STATE>(surface);
-    VkSurfaceCapabilitiesKHR caps{
+    const VkSurfaceCapabilitiesKHR caps{
         pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,
         pSurfaceCapabilities->currentExtent,           pSurfaceCapabilities->minImageExtent,
         pSurfaceCapabilities->maxImageExtent,          pSurfaceCapabilities->maxImageArrayLayers,
         pSurfaceCapabilities->supportedTransforms,     pSurfaceCapabilities->currentTransform,
         pSurfaceCapabilities->supportedCompositeAlpha, pSurfaceCapabilities->supportedUsageFlags,
     };
-    surface_state->SetCapabilities(physicalDevice, caps);
+    auto caps2 = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    caps2.surfaceCapabilities = caps;
+    surface_state->SetCapabilities(physicalDevice, safe_VkSurfaceCapabilities2KHR(&caps2));
 }
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
@@ -4371,15 +4375,17 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(Vk
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     if (pSurfaceFormats) {
+        std::vector<safe_VkSurfaceFormat2KHR> formats2(*pSurfaceFormatCount);
+        for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; surface_format_index++) {
+            formats2[surface_format_index].surfaceFormat = pSurfaceFormats[surface_format_index];
+        }
         if (surface) {
             auto surface_state = Get<SURFACE_STATE>(surface);
-            surface_state->SetFormats(physicalDevice,
-                                      std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount));
+            surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
             assert(pd_state);
-            pd_state->surfaceless_query_state.formats =
-                std::vector<VkSurfaceFormatKHR>(pSurfaceFormats, pSurfaceFormats + *pSurfaceFormatCount);
+            pd_state->surfaceless_query_state.formats = std::move(formats2);
         }
     }
 }
@@ -4392,17 +4398,22 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(V
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     if (pSurfaceFormats) {
-        std::vector<VkSurfaceFormatKHR> fmts(*pSurfaceFormatCount);
-        for (uint32_t i = 0; i < *pSurfaceFormatCount; i++) {
-            fmts[i] = pSurfaceFormats[i].surfaceFormat;
-        }
         if (pSurfaceInfo->surface) {
             auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
-            surface_state->SetFormats(physicalDevice, std::move(fmts));
+            std::vector<safe_VkSurfaceFormat2KHR> formats2(*pSurfaceFormatCount);
+            for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; surface_format_index++) {
+                formats2[surface_format_index].initialize(&pSurfaceFormats[surface_format_index]);
+            }
+            surface_state->SetFormats(physicalDevice, std::move(formats2));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
             assert(pd_state);
-            pd_state->surfaceless_query_state.formats = std::move(fmts);
+            pd_state->surfaceless_query_state.formats.clear();
+            pd_state->surfaceless_query_state.formats.reserve(*pSurfaceFormatCount);
+            for (uint32_t surface_format_index = 0; surface_format_index < *pSurfaceFormatCount; ++surface_format_index) {
+                pd_state->surfaceless_query_state.formats.emplace_back(
+                    safe_VkSurfaceFormat2KHR(&pSurfaceFormats[surface_format_index]));
+            }
         }
     }
 }

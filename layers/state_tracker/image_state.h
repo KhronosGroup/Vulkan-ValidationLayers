@@ -345,6 +345,8 @@ struct hash<GpuQueue> {
 };
 }  // namespace std
 
+class ValidationObject;
+
 // State for VkSurfaceKHR objects.
 struct PresentModeState {
     VkSurfaceCapabilitiesKHR surface_capabilities_;
@@ -365,6 +367,12 @@ class SURFACE_STATE : public BASE_NODE {
     }
 
     VkSurfaceKHR surface() const { return handle_.Cast<VkSurfaceKHR>(); }
+    VkPhysicalDeviceSurfaceInfo2KHR GetSurfaceInfo2(const void *surface_info2_pnext = nullptr) const {
+        auto surface_info2 = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+        surface_info2.pNext = surface_info2_pnext;
+        surface_info2.surface = surface();
+        return surface_info2;
+    }
 
     void Destroy() override;
 
@@ -374,13 +382,16 @@ class SURFACE_STATE : public BASE_NODE {
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
     void SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes);
-    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const ValidationObject *validation_obj) const;
 
-    void SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts);
-    std::vector<VkSurfaceFormatKHR> GetFormats(VkPhysicalDevice phys_dev) const;
+    void SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts);
+    vvl::span<const safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                         const void *surface_info2_pnext,
+                                                         const ValidationObject *validation_obj) const;
 
-    void SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps);
-    VkSurfaceCapabilitiesKHR GetCapabilities(VkPhysicalDevice phys_dev) const;
+    void SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps);
+    safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
+                                                   const void *surface_info2_pnext, const ValidationObject *validation_obj) const;
 
     void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
                             vvl::span<const VkPresentModeKHR> compatible_modes);
@@ -398,8 +409,8 @@ class SURFACE_STATE : public BASE_NODE {
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
     mutable std::mutex lock_;
     mutable vvl::unordered_map<GpuQueue, bool> gpu_queue_support_;
-    mutable vvl::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
-    mutable vvl::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
+    mutable vvl::unordered_map<VkPhysicalDevice, std::vector<safe_VkSurfaceFormat2KHR>> formats_;
+    mutable vvl::unordered_map<VkPhysicalDevice, safe_VkSurfaceCapabilities2KHR> capabilities_;
     mutable vvl::unordered_map<VkPhysicalDevice,
                                       vvl::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
         present_modes_data_;
