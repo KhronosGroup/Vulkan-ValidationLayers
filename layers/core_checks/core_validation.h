@@ -495,7 +495,7 @@ class CoreChecks : public ValidationStateTracker {
                                                  VkSwapchainCreateInfoKHR const* create_info,
                                                  const SURFACE_STATE* surface_state) const;
     bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const char* func_name,
-                                                   VkSurfaceCapabilitiesKHR* capabilities,
+                                                   const VkSurfaceCapabilitiesKHR* capabilities,
                                                    VkSwapchainCreateInfoKHR const* create_info,
                                                    const SURFACE_STATE* surface_state) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
