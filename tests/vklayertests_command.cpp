@@ -6914,17 +6914,24 @@ TEST_F(VkLayerTest, TransformFeedbackFeatureEnabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    {
-        auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
-        GetPhysicalDeviceFeatures2(tf_features);
-        if (!tf_features.transformFeedback) {
-            printf("%s transformFeedback not supported; skipped.\n", kSkipPrefix);
-            return;
-        }
+    auto tf_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+    GetPhysicalDeviceProperties2(tf_properties);
+    if (tf_properties.maxTransformFeedbackBuffers == 0) {
+        GTEST_SKIP() << "maxTransformFeedbackBuffers is zero";
     }
 
+    // transformFeedback not enabled
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
         auto vkCmdBindTransformFeedbackBuffersEXT = (PFN_vkCmdBindTransformFeedbackBuffersEXT)vk::GetDeviceProcAddr(
@@ -6978,22 +6985,27 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
         GTEST_SKIP() << "Test temporarily disabled on S10 device";
     }
 
-    {
-        auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
-        auto pd_features = GetPhysicalDeviceFeatures2(tf_features);
-
-        if (!tf_features.transformFeedback) {
-            GTEST_SKIP() << "transformFeedback not supported; skipped.";
-        }
-
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features));
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+    if (!tf_features.transformFeedback) {
+        GTEST_SKIP() << "transformFeedback not supported";
     }
 
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdBindTransformFeedbackBuffersEXT =
         (PFN_vkCmdBindTransformFeedbackBuffersEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindTransformFeedbackBuffersEXT");
     ASSERT_TRUE(vkCmdBindTransformFeedbackBuffersEXT != nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
         auto tf_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
@@ -7150,22 +7162,27 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBeginTransformFeedbackEXT) {
         GTEST_SKIP() << "Test temporarily disabled on S10 device";
     }
 
-    {
-        auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
-        auto pd_features = GetPhysicalDeviceFeatures2(tf_features);
-
-        if (!tf_features.transformFeedback) {
-            GTEST_SKIP() << "transformFeedback not supported; skipped.";
-        }
-
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features));
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+    if (!tf_features.transformFeedback) {
+        GTEST_SKIP() << "transformFeedback not supported";
     }
 
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdBeginTransformFeedbackEXT =
         (PFN_vkCmdBeginTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT");
     ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     {
         auto tf_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
@@ -7256,22 +7273,27 @@ TEST_F(VkLayerTest, TransformFeedbackCmdEndTransformFeedbackEXT) {
         GTEST_SKIP() << "Test temporarily disabled on S10 device";
     }
 
-    {
-        auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
-        auto pd_features = GetPhysicalDeviceFeatures2(tf_features);
-
-        if (!tf_features.transformFeedback) {
-            GTEST_SKIP() << "transformFeedback not supported; skipped.";
-        }
-
-        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features));
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+    if (!tf_features.transformFeedback) {
+        GTEST_SKIP() << "transformFeedback not supported";
     }
 
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdEndTransformFeedbackEXT =
         (PFN_vkCmdEndTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndTransformFeedbackEXT");
     ASSERT_TRUE(vkCmdEndTransformFeedbackEXT != nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo(), VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     if (!IsDriver(VK_DRIVER_ID_MESA_RADV)) {
         {
@@ -9414,8 +9436,14 @@ TEST_F(VkLayerTest, InvalidBeginTransformFeedbackInMultiviewRenderPass) {
         (PFN_vkCmdBeginTransformFeedbackEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginTransformFeedbackEXT");
     ASSERT_TRUE(vkCmdBeginTransformFeedbackEXT != nullptr);
 
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginTransformFeedbackEXT-None-02373");
     vkCmdBeginTransformFeedbackEXT(m_commandBuffer->handle(), 0, 1, nullptr, nullptr);

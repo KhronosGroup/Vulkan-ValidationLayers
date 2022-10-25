@@ -20357,23 +20357,28 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                          "%s: transformFeedback feature is not enabled.", cmd_name);
     }
 
-    {
-        auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-        if (cb_state) {
-            if (cb_state->transform_feedback_active) {
-                skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367",
-                                 "%s: transform feedback is active.", cmd_name);
-            }
-            if (cb_state->activeRenderPass) {
-                const auto &rp_ci = cb_state->activeRenderPass->createInfo;
-                for (uint32_t i = 0; i < rp_ci.subpassCount; ++i) {
-                    // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
-                    if (rp_ci.pSubpasses[i].viewMask > 0) {
-                        skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02373",
-                                         "%s: active render pass (%s) has multiview enabled.", cmd_name,
-                                         report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
-                        break;
-                    }
+    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
+
+    const auto *pipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
+    if (!pipe) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-06233",
+                         "%s: No graphics pipeline has been bound yet.", cmd_name);
+    }
+
+    if (cb_state) {
+        if (cb_state->transform_feedback_active) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367", "%s: transform feedback is active.",
+                             cmd_name);
+        }
+        if (cb_state->activeRenderPass) {
+            const auto &rp_ci = cb_state->activeRenderPass->createInfo;
+            for (uint32_t i = 0; i < rp_ci.subpassCount; ++i) {
+                // When a subpass uses a non-zero view mask, multiview functionality is considered to be enabled
+                if (rp_ci.pSubpasses[i].viewMask > 0) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02373",
+                                     "%s: active render pass (%s) has multiview enabled.", cmd_name,
+                                     report_data->FormatHandle(cb_state->activeRenderPass->renderPass()).c_str());
+                    break;
                 }
             }
         }
