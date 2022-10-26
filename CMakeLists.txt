@@ -174,9 +174,9 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -fno-builtin-memcmp)
 
     # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if(BUILD_WERROR OR
+    if(BUILD_WERROR AND (
       (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.3.0) OR
-      (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
+      (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0)))
         add_compile_options(-Werror)
     endif()
 
