@@ -820,10 +820,6 @@ TEST_F(VkPositiveLayerTest, BarrierLayoutToImageUsage) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageMemoryBarrier img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
@@ -950,11 +946,6 @@ TEST_F(VkPositiveLayerTest, ClearDepthStencilWithValidRange) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
-
     VkImageObj image(m_device);
     image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
     ASSERT_TRUE(image.create_info().arrayLayers == 1);

@@ -970,7 +970,6 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachments) {
     pipe2.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info2);
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(depthStencilFormat != 0);
 
     bool testStencil = false;
     VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
@@ -1148,7 +1147,6 @@ TEST_F(VkLayerTest, DynamicRenderingWithMistmatchingAttachmentSamples) {
     pipe1.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info1);
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(depthStencilFormat != 0);
 
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
@@ -1344,7 +1342,6 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     pipe1.CreateVKPipeline(pl.handle(), VK_NULL_HANDLE, &create_info1);
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(depthStencilFormat != 0);
     auto ds_state = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
 
     VkPipelineObj pipe2(m_device);
@@ -1700,7 +1697,6 @@ TEST_F(VkLayerTest, TestDynamicRenderingPipelineMissingFlags) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(depthStencilFormat != 0);
 
     VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -1896,10 +1892,6 @@ TEST_F(VkLayerTest, TestRenderingInfoMismatchedSamples) {
     color_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
 
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
-    if (depth_format == VK_FORMAT_UNDEFINED) {
-        printf("%s requires a depth only format, skipping.\n", kSkipPrefix);
-        return;
-    }
 
     VkImageObj depth_image(m_device);
     depth_image.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
@@ -2214,8 +2206,7 @@ TEST_F(VkLayerTest, BeginRenderingInvalidDepthAttachmentFormat) {
 
     VkFormat stencil_format = FindSupportedStencilOnlyFormat(gpu());
     if (stencil_format == VK_FORMAT_UNDEFINED) {
-        printf("%s requires a stencil only format format.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
     VkImageObj image(m_device);
@@ -2493,10 +2484,6 @@ TEST_F(VkLayerTest, BeginRenderingInvalidStencilAttachmentFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
-    if (depth_format == VK_FORMAT_UNDEFINED) {
-        printf("%s requires a stencil only format format.\n", kSkipPrefix);
-        return;
-    }
 
     VkImageObj image(m_device);
     image.Init(32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -2540,10 +2527,6 @@ TEST_F(VkLayerTest, TestInheritanceRenderingInfoStencilAttachmentFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
-    if (depth_format == VK_FORMAT_UNDEFINED) {
-        printf("%s requires a stencil only format format.\n", kSkipPrefix);
-        return;
-    }
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -2730,24 +2713,22 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format != VK_FORMAT_UNDEFINED) {
-        VkImageObj depthImage(m_device);
-        depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    VkImageObj depthImage(m_device);
+    depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depth_attachment.imageView = depthImageView;
+    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depthImageView;
 
-        begin_rendering_info.colorAttachmentCount = 0;
-        begin_rendering_info.pDepthAttachment = &depth_attachment;
-        begin_rendering_info.renderArea.offset.y = 0;
-        begin_rendering_info.renderArea.extent.height = 64;
+    begin_rendering_info.colorAttachmentCount = 0;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.renderArea.offset.y = 0;
+    begin_rendering_info.renderArea.extent.height = 64;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
-        m_commandBuffer->BeginRendering(begin_rendering_info);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
 }
@@ -2828,24 +2809,22 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     m_errorMonitor->VerifyFound();
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format != VK_FORMAT_UNDEFINED) {
-        VkImageObj depthImage(m_device);
-        depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+    VkImageObj depthImage(m_device);
+    depthImage.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VkImageView depthImageView = depthImage.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-        depth_attachment.imageView = depthImageView;
+    VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageView = depthImageView;
 
-        begin_rendering_info.colorAttachmentCount = 0;
-        begin_rendering_info.pDepthAttachment = &depth_attachment;
-        begin_rendering_info.renderArea.offset.y = 0;
-        begin_rendering_info.renderArea.extent.height = 64;
+    begin_rendering_info.colorAttachmentCount = 0;
+    begin_rendering_info.pDepthAttachment = &depth_attachment;
+    begin_rendering_info.renderArea.offset.y = 0;
+    begin_rendering_info.renderArea.extent.height = 64;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
-        m_commandBuffer->BeginRendering(begin_rendering_info);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
 
     m_commandBuffer->end();
 }
@@ -4216,11 +4195,6 @@ TEST_F(VkLayerTest, InvalidRenderingColorAttachmentFormat) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat format = FindSupportedDepthStencilFormat(gpu());
-    if (format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
-
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &format;
@@ -5212,10 +5186,6 @@ TEST_F(VkLayerTest, TestRenderingInfoDepthAttachment) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found, skipping test..\n", kSkipPrefix);
-        return;
-    }
 
     auto depth_stencil_resolve_properties = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_properties);
@@ -5868,10 +5838,6 @@ TEST_F(VkLayerTest, DynamicNullDepthStencilExecuteCommands) {
     VkCommandBufferObj secondary(m_device, &pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
     VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
-
-    if (depth_stencil_format == VK_FORMAT_UNDEFINED) {
-        GTEST_SKIP() << "No found depth stencil format";
-    }
 
     auto cbiri = LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
     // format is defined, although no image view provided in dynamic rendering

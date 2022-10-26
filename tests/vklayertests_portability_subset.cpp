@@ -261,7 +261,6 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
@@ -305,7 +304,6 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
     auto vertex_stride = portability_properties.minVertexInputBindingStrideAlignment - 1;
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
@@ -347,7 +345,6 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
@@ -445,7 +442,6 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 
@@ -491,7 +487,6 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 

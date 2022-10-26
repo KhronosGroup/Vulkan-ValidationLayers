@@ -39,6 +39,7 @@ VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
             return ds_formats[i];
         }
     }
+    assert(false);  // Vulkan drivers are guaranteed to have at least one supported format
     return VK_FORMAT_UNDEFINED;
 }
 
@@ -65,6 +66,7 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
             return ds_formats[i];
         }
     }
+    assert(false);  // Vulkan drivers are guaranteed to have at least one supported format
     return VK_FORMAT_UNDEFINED;
 }
 
@@ -814,7 +816,6 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     VkImageView *depth_attachment = nullptr;
     if (failcase_needs_depth) {
         m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-        ASSERT_TRUE(m_depth_stencil_fmt != VK_FORMAT_UNDEFINED);
 
         m_depthStencil->Init(m_device, static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height), m_depth_stencil_fmt,
                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);

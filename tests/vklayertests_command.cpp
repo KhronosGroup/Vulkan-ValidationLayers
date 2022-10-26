@@ -3876,10 +3876,6 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
 TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
-        return;
-    }
 
     VkFormatProperties properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D32_SFLOAT, &properties);
@@ -4042,10 +4038,6 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     }
 
     auto ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (!ds_format) {
-        printf("%s Couldn't find depth stencil format.\n", kSkipPrefix);
-        return;
-    }
 
     // Add Transfer support for all used formats
     VkFormatProperties formatProps;
@@ -4998,10 +4990,6 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
     } else {
         // Create Depth image
         const VkFormat ds_format = FindSupportedDepthOnlyFormat(gpu());
-        if (ds_format == VK_FORMAT_UNDEFINED) {
-            printf("%s No only Depth format found. Skipped.\n", kSkipPrefix);
-            return;
-        }
 
         VkImageObj ds_image(m_device);
         ds_image.Init(64, 64, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -10219,10 +10207,6 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
 
     VkImageObj image(m_device);
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_stencil_format) {
-        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
-        return;
-    }
     image.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT);
 
@@ -10422,10 +10406,6 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRa
 
     VkImageObj depthStencilImage(m_device);
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_stencil_format) {
-        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
-        return;
-    }
     depthStencilImage.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
                            0);
     VkImageView depthStencilImageView =
@@ -10570,10 +10550,6 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAt
 
     VkImageObj depthStencilImage(m_device);
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_stencil_format) {
-        printf("%s Couldn't depth stencil image format.\n", kSkipPrefix);
-        return;
-    }
     depthStencilImage.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL,
                            0);
     VkImageView depthStencilImageView =
@@ -11281,9 +11257,8 @@ TEST_F(VkLayerTest, TestCommandBufferInheritanceWithInvalidDepthFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto stencil_format = FindSupportedStencilOnlyFormat(gpu());
-    if (!stencil_format) {
-        printf("%s Couldn't stencil image format.\n", kSkipPrefix);
-        return;
+    if (stencil_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
     auto inheritance_rendering_info = LvlInitStruct<VkCommandBufferInheritanceRenderingInfoKHR>();
