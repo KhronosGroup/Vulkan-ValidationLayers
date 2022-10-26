@@ -788,8 +788,6 @@ TEST_F(VkPositiveLayerTest, CreateGraphicsPipelineWithIgnoredPointers) {
     }
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
-
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
@@ -1559,10 +1557,6 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
 
     // A renderpass with one color attachment.
     VkAttachmentDescription attachment = {0,
@@ -7031,7 +7025,6 @@ TEST_F(VkPositiveLayerTest, DynamicColorWriteNoColorAttachments) {
     ASSERT_NE(vkCmdSetColorWriteEnableEXT, nullptr);
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
 

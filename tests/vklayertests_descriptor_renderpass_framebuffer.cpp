@@ -350,10 +350,6 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     }
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkAttachmentDescription description = {0,
                                            ds_format,
@@ -493,8 +489,11 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     auto depth_format = FindSupportedDepthOnlyFormat(gpu());
-    auto stencil_format = FindSupportedStencilOnlyFormat(gpu());
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    auto stencil_format = FindSupportedStencilOnlyFormat(gpu());
+    if (stencil_format == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
+    }
 
     if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
         attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
@@ -700,10 +699,6 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     std::vector<VkAttachmentDescription> attachments = {
         // input attachments
@@ -955,10 +950,6 @@ TEST_F(VkLayerTest, InvalidRenderPassCreateRenderPassShaderResolveQCOM) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     std::vector<VkAttachmentDescription> attachments = {
         // input attachments
@@ -2595,10 +2586,6 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
     }
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (depth_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     image_create_info.flags = 0;  // image will not have needed flag
     image_create_info.format = depth_format;
@@ -2908,10 +2895,6 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     }
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     std::vector<VkAttachmentDescription2> attachments = {
         // FDM attachments
@@ -6248,10 +6231,8 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
         ASSERT_NO_FATAL_FAILURE(InitState());
     }
 
-    auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-    } else {
+    {
+        auto depth_format = FindSupportedDepthStencilFormat(gpu());
         OneOffDescriptorSet descriptor_set(m_device,
                                            {
                                                {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
@@ -9139,10 +9120,6 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkFormat depth_format = FindSupportedDepthOnlyFormat(gpu());
-    if (depth_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth only format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
     VkDepthStencilObj depth_image(m_device);
     depth_image.Init(m_device, 64, 64, depth_format,
                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -9672,10 +9649,6 @@ TEST_F(VkLayerTest, FramebufferDepthStencilResolveAttachmentTests) {
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
     VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
-    if (attachmentFormat == VK_FORMAT_UNDEFINED) {
-        printf("%s Did not find a supported depth stencil format; skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
     // Depth/stencil attachment
@@ -9796,12 +9769,10 @@ TEST_F(VkLayerTest, DepthStencilResolveMode) {
     assert(vkCreateRenderPass2KHR != nullptr);
 
     VkFormat depthFormat = FindSupportedDepthOnlyFormat(gpu());
-    VkFormat stencilFormat = FindSupportedStencilOnlyFormat(gpu());
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
-    if ((depthFormat == VK_FORMAT_UNDEFINED) || (stencilFormat == VK_FORMAT_UNDEFINED) ||
-        (depthStencilFormat == VK_FORMAT_UNDEFINED)) {
-        printf("%s Did not find a supported depth stencil formats; skipped.\n", kSkipPrefix);
-        return;
+    VkFormat stencilFormat = FindSupportedStencilOnlyFormat(gpu());
+    if (stencilFormat == VK_FORMAT_UNDEFINED) {
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
     VkPhysicalDeviceDepthStencilResolveProperties ds_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
@@ -10579,10 +10550,6 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
     // Depth/stencil attachment
@@ -12102,10 +12069,6 @@ TEST_F(VkLayerTest, SamplingFromReadOnlyDepthStencilAttachment) {
     const uint32_t width = 32;
     const uint32_t height = 32;
     const VkFormat format = FindSupportedDepthStencilFormat(gpu());
-    if (format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkAttachmentReference attach_ref = {};
     attach_ref.attachment = 0;
@@ -12315,8 +12278,7 @@ TEST_F(VkLayerTest, CreateRenderPassWithInvalidStencilLoadOp) {
 
     const VkFormat stencil_format = FindSupportedStencilOnlyFormat(gpu());
     if (stencil_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Couldn't find a stencil only image format";
     }
 
     auto vkCreateRenderPass2KHR =
@@ -12708,10 +12670,6 @@ TEST_F(VkLayerTest, InvalidRenderPassAttachmentUndefinedLayout) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;

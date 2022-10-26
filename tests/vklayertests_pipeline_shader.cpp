@@ -2907,7 +2907,6 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
 
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
 
@@ -2997,10 +2996,6 @@ TEST_F(VkLayerTest, SetDepthRangeUnrestricted) {
 
     // Need to set format framework uses for InitRenderTarget
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    if (m_depth_stencil_fmt == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
 
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -6676,10 +6671,6 @@ TEST_F(VkLayerTest, FramebufferMixedSamples) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (ds_format == VK_FORMAT_UNDEFINED) {
-        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
-        return;
-    }
 
     struct TestCase {
         VkSampleCountFlagBits color_samples;

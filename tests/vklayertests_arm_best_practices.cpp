@@ -641,7 +641,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
         return;
     }
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    ASSERT_TRUE(m_depth_stencil_fmt != 0);
 
     m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
     InitRenderTarget(m_depthStencil->BindInfo());

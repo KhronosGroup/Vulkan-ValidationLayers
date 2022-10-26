@@ -138,10 +138,6 @@ TEST_F(VkPositiveLayerTest, RenderPassCreateAttachmentLayoutWithLoadOpThenReadOn
         "layout, and a second subpass then uses a valid *READ_ONLY* layout.");
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
 
     VkAttachmentReference attach[2] = {};
     attach[0].attachment = 0;
@@ -286,10 +282,6 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     VkResult result = VK_SUCCESS;
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
     VkImageFormatProperties formatProps;
     vk::GetPhysicalDeviceImageFormatProperties(gpu(), depth_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0,
@@ -446,10 +438,6 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
 
     ASSERT_NO_FATAL_FAILURE(Init());
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
-    if (!depth_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
     VkImageFormatProperties format_props;
     vk::GetPhysicalDeviceImageFormatProperties(gpu(), depth_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0, &format_props);

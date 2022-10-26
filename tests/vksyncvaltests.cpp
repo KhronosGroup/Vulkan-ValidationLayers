@@ -1780,10 +1780,6 @@ TEST_F(VkSyncValTest, SyncCmdClear) {
 
     // CmdClearDepthStencilImage
     format = FindSupportedDepthStencilFormat(gpu());
-    if (!format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
     VkImageObj image_ds_a(m_device), image_ds_b(m_device);
     image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
     image_ds_a.Init(image_ci);
@@ -1881,9 +1877,6 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     auto format_ds = FindSupportedDepthStencilFormat(gpu());
-    if (!format_ds) {
-        GTEST_SKIP() << "No Depth + Stencil format found. Skipped.";
-    }
 
     // Vulkan doesn't support copying between different depth stencil formats, so the formats have to change.
     auto format_dp = format_ds;
@@ -2126,10 +2119,6 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongDepthStencilInitialLayout) {
 
     VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
-    if (!ds_format) {
-        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
-    }
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageUsageFlags usage_ds = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     VkImageObj image_color(m_device), image_color2(m_device);
