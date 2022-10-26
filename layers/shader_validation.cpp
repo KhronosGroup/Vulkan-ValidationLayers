@@ -166,7 +166,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreate
 
     struct AttribInputPair {
         const VkVertexInputAttributeDescription *attrib = nullptr;
-        const interface_var *input = nullptr;
+        const InterfaceVariable *input = nullptr;
     };
     std::map<uint32_t, AttribInputPair> location_map;
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
@@ -207,7 +207,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     bool skip = false;
 
     struct Attachment {
-        const interface_var* output = nullptr;
+        const InterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -264,7 +264,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
-        const interface_var *output = nullptr;
+        const InterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -349,7 +349,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
 }
 
 PushConstantByteState CoreChecks::ValidatePushConstantSetUpdate(const std::vector<uint8_t> &push_constant_data_update,
-                                                                const shader_struct_member &push_constant_used_in_shader,
+                                                                const SHADER_MODULE_STATE::StructInfo &push_constant_used_in_shader,
                                                                 uint32_t &out_issue_index) const {
     const auto *used_bytes = push_constant_used_in_shader.GetUsedbytes();
     const auto used_bytes_size = used_bytes->size();
@@ -451,10 +451,10 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
     for (uint32_t id : FindEntrypointInterfaces(entrypoint)) {
         const Instruction *insn = module_state.FindDef(id);
         assert(insn->Opcode() == spv::OpVariable);
-        const decoration_set decorations = module_state.get_decorations(insn->Word(2));
+        const DecorationSet decorations = module_state.GetDecorationSet(insn->Word(2));
 
         // Currently don't need to search in structs
-        if (((decorations.flags & decoration_set::builtin_bit) != 0) && (decorations.builtin == spv::BuiltInSampleMask)) {
+        if (((decorations.flags & DecorationSet::builtin_bit) != 0) && (decorations.builtin == spv::BuiltInSampleMask)) {
             const Instruction *type_pointer = module_state.FindDef(insn->Word(1));
             assert(type_pointer->Opcode() == spv::OpTypePointer);
 
@@ -857,18 +857,18 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     for (auto &var : inputs) {
         int location = var.first.first;
         int component = var.first.second;
-        interface_var &iv = var.second;
+        InterfaceVariable &interface_var = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (iv.offset != 0) {
+        if (interface_var.offset != 0) {
             continue;
         }
 
-        if (iv.is_patch) {
+        if (interface_var.is_patch) {
             continue;
         }
 
-        int num_components = module_state.GetComponentsConsumedByType(iv.type_id, strip_input_array_level);
+        int num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_input_array_level);
         max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
@@ -876,18 +876,18 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     for (auto &var : outputs) {
         int location = var.first.first;
         int component = var.first.second;
-        interface_var &iv = var.second;
+        InterfaceVariable &interface_var = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (iv.offset != 0) {
+        if (interface_var.offset != 0) {
             continue;
         }
 
-        if (iv.is_patch) {
+        if (interface_var.is_patch) {
             continue;
         }
 
-        int num_components = module_state.GetComponentsConsumedByType(iv.type_id, strip_output_array_level);
+        int num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_output_array_level);
         max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
@@ -1101,10 +1101,10 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
         }
 
         const uint32_t var_id = insn->Word(2);
-        decoration_set img_decorations = module_state.get_decorations(var_id);
+        DecorationSet img_decorations = module_state.GetDecorationSet(var_id);
 
         if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
-            !(img_decorations.flags & decoration_set::nonreadable_bit)) {
+            !(img_decorations.flags & DecorationSet::nonreadable_bit)) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06270",
                              "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
                              "format and is not decorated with NonReadable",
@@ -1112,7 +1112,7 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
         }
 
         if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
-            !(img_decorations.flags & decoration_set::nonwritable_bit)) {
+            !(img_decorations.flags & DecorationSet::nonwritable_bit)) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06269",
                              "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
                              "Unknown format and is not decorated with NonWritable",
@@ -2334,7 +2334,7 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
         for (const Instruction *insn : module_state.GetVariableInstructions()) {
             // StorageClass Workgroup is shared memory
             if (insn->StorageClass() == spv::StorageClassWorkgroup) {
-                if (module_state.get_decorations(insn->Word(2)).flags & decoration_set::aliased_bit) {
+                if (module_state.GetDecorationSet(insn->Word(2)).flags & DecorationSet::aliased_bit) {
                     find_max_block = true;
                 }
 
@@ -2803,7 +2803,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                 // behavior of the pipeline."
                 if (itr != module_state.GetSpecConstMap().cend()) {
                     // Make sure map_entry.size matches the spec constant's size
-                    uint32_t spec_const_size = decoration_set::kInvalidValue;
+                    uint32_t spec_const_size = DecorationSet::kInvalidValue;
                     const Instruction *def_insn = module_state.FindDef(itr->second);
                     const Instruction *type_insn = module_state.FindDef(def_insn->Word(1));
                     // Specialization constants can only be of type bool, scalar integer, or scalar floating point

@@ -83,44 +83,33 @@ struct spirv_inst_iter {
     spirv_inst_iter const &operator*() const { return *this; }
 };
 
-struct interface_var {
+// Information about a OpVariable used as an interface in the shader
+struct InterfaceVariable {
     uint32_t id;
     uint32_t type_id;
+
     uint32_t offset;
 
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
-    bool is_patch;
-    bool is_block_member;
-    bool is_relaxed_precision;
-    bool is_readable;
-    bool is_writable;
-    bool is_atomic_operation;
-    bool is_sampler_sampled;
-    bool is_sampler_implicitLod_dref_proj;
-    bool is_sampler_bias_offset;
-    bool is_read_without_format;   // For storage images
-    bool is_write_without_format;  // For storage images
-    bool is_dref_operation;
+    bool is_patch{false};
+    bool is_block_member{false};
+    bool is_relaxed_precision{false};
+    bool is_readable{false};
+    bool is_writable{false};
+    bool is_atomic_operation{false};
+    bool is_sampler_sampled{false};
+    bool is_sampler_implicitLod_dref_proj{false};
+    bool is_sampler_bias_offset{false};
+    bool is_read_without_format{false};   // For storage images
+    bool is_write_without_format{false};  // For storage images
+    bool is_dref_operation{false};
     // TODO: collect the name, too? Isn't required to be present.
 
-    interface_var()
-        : id(0),
-          type_id(0),
-          offset(0),
-          is_patch(false),
-          is_block_member(false),
-          is_relaxed_precision(false),
-          is_readable(false),
-          is_writable(false),
-          is_atomic_operation(false),
-          is_sampler_sampled(false),
-          is_sampler_implicitLod_dref_proj(false),
-          is_sampler_bias_offset(false),
-          is_read_without_format(false),
-          is_write_without_format(false),
-          is_dref_operation(false) {}
+    InterfaceVariable() : id(0), type_id(0), offset(0) {}
+
+    InterfaceVariable(const Instruction *insn) : id(insn->Word(2)), type_id(insn->Word(1)), offset(0) {}
 };
 
 std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
@@ -131,9 +120,10 @@ enum FORMAT_TYPE {
     FORMAT_TYPE_UINT = 4,
 };
 
+// <Location, Component>
 typedef std::pair<uint32_t, uint32_t> location_t;
 
-struct decoration_set {
+struct DecorationSet {
     enum {
         location_bit = 1 << 0,
         patch_bit = 1 << 1,
@@ -162,53 +152,77 @@ struct decoration_set {
     uint32_t builtin = kInvalidValue;
     uint32_t spec_const_id = kInvalidValue;
 
-    void merge(decoration_set const &other);
-
-    void add(uint32_t decoration, uint32_t value);
-};
-
-struct function_set {
-    std::vector<const Instruction *> op_lists;
-};
-
-// Contains all the details for a OpTypeStruct
-struct shader_struct_member {
-    uint32_t offset;
-    uint32_t size;                                 // A scalar size or a struct size. Not consider array
-    std::vector<uint32_t> array_length_hierarchy;  // multi-dimensional array, mat, vec. mat is combined with 2 array.
-                                                   // e.g :array[2] -> {2}, array[2][3][4] -> {2,3,4}, mat4[2] ->{2,4,4},
-    std::vector<uint32_t> array_block_size;        // When index increases, how many data increases.
-                                             // e.g : array[2][3][4] -> {12,4,1}, it means if the first index increases one, the
-                                             // array gets 12 data. If the second index increases one, the array gets 4 data.
-
-    // OpTypeStruct can have OpTypeStruct inside it so need to track the struct-in-struct chain
-    std::vector<shader_struct_member> struct_members;  // If the data is not a struct, it's empty.
-    shader_struct_member *root;
-
-    shader_struct_member() : offset(0), size(0), root(nullptr) {}
-
-    bool IsUsed() const {
-        if (!root) return false;
-        return root->used_bytes.size() ? true : false;
-    }
-
-    std::vector<uint8_t> *GetUsedbytes() const {
-        if (!root) return nullptr;
-        return &root->used_bytes;
-    }
-
-    std::string GetLocationDesc(uint32_t index_used_bytes) const;
-
-  private:
-    std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
+    void Add(uint32_t decoration, uint32_t value);
 };
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
+    struct FunctionInfo {
+        std::vector<const Instruction *> op_lists;
+    };
+
+    // Contains all the details for a OpTypeStruct
+    struct StructInfo {
+        uint32_t offset;
+        uint32_t size;                                 // A scalar size or a struct size. Not consider array
+        std::vector<uint32_t> array_length_hierarchy;  // multi-dimensional array, mat, vec. mat is combined with 2 array.
+                                                       // e.g :array[2] -> {2}, array[2][3][4] -> {2,3,4}, mat4[2] ->{2,4,4},
+        std::vector<uint32_t> array_block_size;        // When index increases, how many data increases.
+                                                 // e.g : array[2][3][4] -> {12,4,1}, it means if the first index increases one, the
+                                                 // array gets 12 data. If the second index increases one, the array gets 4 data.
+
+        // OpTypeStruct can have OpTypeStruct inside it so need to track the struct-in-struct chain
+        std::vector<StructInfo> struct_members;  // If the data is not a struct, it's empty.
+        StructInfo *root;
+
+        StructInfo() : offset(0), size(0), root(nullptr) {}
+
+        bool IsUsed() const {
+            if (!root) return false;
+            return root->used_bytes.size() ? true : false;
+        }
+
+        std::vector<uint8_t> *GetUsedbytes() const {
+            if (!root) return nullptr;
+            return &root->used_bytes;
+        }
+
+        std::string GetLocationDesc(uint32_t index_used_bytes) const {
+            std::string desc = "";
+            if (array_length_hierarchy.size() > 0) {
+                desc += " index:";
+                for (const auto block_size : array_block_size) {
+                    desc += "[";
+                    desc += std::to_string(index_used_bytes / (block_size * size));
+                    desc += "]";
+                    index_used_bytes = index_used_bytes % (block_size * size);
+                }
+            }
+            const int struct_members_size = static_cast<int>(struct_members.size());
+            if (struct_members_size > 0) {
+                desc += " member:";
+                for (int i = struct_members_size - 1; i >= 0; --i) {
+                    if (index_used_bytes > struct_members[i].offset) {
+                        desc += std::to_string(i);
+                        desc += struct_members[i].GetLocationDesc(index_used_bytes - struct_members[i].offset);
+                        break;
+                    }
+                }
+            } else {
+                desc += " offset:";
+                desc += std::to_string(index_used_bytes);
+            }
+            return desc;
+        }
+
+      private:
+        std::vector<uint8_t> used_bytes;  // This only works for root. 0: not used. 1: used. The totally array * size.
+    };
+
     struct EntryPoint {
         std::reference_wrapper<const Instruction> insn;  // OpEntryPoint instruction
         VkShaderStageFlagBits stage;
-        std::vector<function_set> function_set_list;
-        shader_struct_member push_constant_used_in_shader;
+        std::vector<FunctionInfo> function_infos;
+        StructInfo push_constant_used_in_shader;
     };
 
     // Static/const data extracted from a SPIRV module at initialization time
@@ -227,7 +241,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // trees, constant expressions, etc requires jumping all over the instruction stream.
         layer_data::unordered_map<uint32_t, const Instruction *> definitions;
 
-        layer_data::unordered_map<uint32_t, decoration_set> decorations;
+        layer_data::unordered_map<uint32_t, DecorationSet> decorations;
         // <Specialization constant ID -> target ID> mapping
         layer_data::unordered_map<uint32_t, uint32_t> spec_const_map;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
@@ -251,6 +265,22 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         bool multiple_entry_points{false};
 
         bool has_group_decoration{false};
+
+        // Tracks accesses (load, store, atomic) to the instruction calling them
+        // Example: the OpLoad does the "access" but need to know if a OpImageRead uses that OpLoad later
+        std::vector<uint32_t> image_read_load_ids;
+        std::vector<uint32_t> image_write_load_ids;
+        std::vector<uint32_t> atomic_pointer_ids;
+        std::vector<uint32_t> store_pointer_ids;
+        std::vector<uint32_t> atomic_store_pointer_ids;
+        std::vector<uint32_t> sampler_load_ids;  // tracks all sampling operations
+        std::vector<uint32_t> sampler_implicitLod_dref_proj_load_ids;
+        std::vector<uint32_t> sampler_bias_offset_load_ids;
+        std::vector<uint32_t> image_dref_load_ids;
+        std::vector<std::pair<uint32_t, uint32_t>> sampled_image_load_ids;                       // <image, sampler>
+        layer_data::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
+        layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
+        layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
     };
 
     // This is the SPIR-V module data content
@@ -313,11 +343,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     VkShaderModule vk_shader_module() const { return handle_.Cast<VkShaderModule>(); }
 
-    decoration_set get_decorations(uint32_t id) const {
+    DecorationSet GetDecorationSet(uint32_t id) const {
         // return the actual decorations for this id, or a default set.
         auto it = static_data_.decorations.find(id);
         if (it != static_data_.decorations.end()) return it->second;
-        return decoration_set();
+        return DecorationSet();
     }
 
     // Expose begin() / end() to enable range-based for
@@ -341,7 +371,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
-    int32_t GetShaderResourceDimensionality(const interface_var &resource) const;
+    int32_t GetShaderResourceDimensionality(const InterfaceVariable &resource) const;
     uint32_t GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const;
     uint32_t GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const;
     uint32_t GetFundamentalType(uint32_t type) const;
@@ -352,17 +382,16 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
 
     // State tracking helpers for collecting interface information
-    void IsSpecificDescriptorType(const Instruction *insn, bool is_storage_buffer, bool is_check_writable,
-                                  interface_var &out_interface_var) const;
-    std::vector<std::pair<DescriptorSlot, interface_var>> CollectInterfaceByDescriptorSlot(
+    void FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable &interface_var) const;
+    std::vector<std::pair<DescriptorSlot, InterfaceVariable>> CollectInterfaceByDescriptorSlot(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
-    bool CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts, uint32_t id,
-                                      uint32_t type_id, bool is_patch, uint32_t first_location) const;
-    std::map<location_t, interface_var> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
-                                                                   bool is_array_of_verts) const;
+    bool CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable> *out, bool is_array_of_verts, bool is_patch,
+                                      const Instruction *variable_insn) const;
+    std::map<location_t, InterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
+                                                                       bool is_array_of_verts) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
-    std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAttachmentIndex(
+    std::vector<std::pair<uint32_t, InterfaceVariable>> CollectInterfaceByInputAttachmentIndex(
         layer_data::unordered_set<uint32_t> const &accessible_ids) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
@@ -392,16 +421,16 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // The following are all helper functions to set the push constants values by tracking if the values are accessed in the entry
     // point functions and which offset in the structs are used
-    uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) const;
-    void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const shader_struct_member &data) const;
+    uint32_t UpdateOffset(uint32_t offset, const std::vector<uint32_t> &array_indices, const StructInfo &data) const;
+    void SetUsedBytes(uint32_t offset, const std::vector<uint32_t> &array_indices, const StructInfo &data) const;
     void DefineStructMember(const Instruction *insn, std::vector<const Instruction *> &member_decorate_insn,
-                            shader_struct_member &data) const;
+                            StructInfo &data) const;
     void RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
-                      const Instruction *access_chain, const shader_struct_member &data) const;
+                      const Instruction *access_chain, const StructInfo &data) const;
     void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
-                       const shader_struct_member &data) const;
-    void SetUsedStructMember(const uint32_t variable_id, const std::vector<function_set> &function_set_list,
-                             const shader_struct_member &data) const;
+                       const StructInfo &data) const;
+    void SetUsedStructMember(const uint32_t variable_id, const std::vector<FunctionInfo> &function_infos,
+                             const StructInfo &data) const;
 };
 
 #endif  // VULKAN_SHADER_MODULE_H
