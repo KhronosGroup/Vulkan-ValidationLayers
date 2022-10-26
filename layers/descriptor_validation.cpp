@@ -871,20 +871,23 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 auto set = context.descriptor_set->GetSet();
                 return LogError(set, context.vuids.descriptor_valid,
                                 "Descriptor set %s encountered the following validation error at %s time: Descriptor "
-                                "in binding #%" PRIu32 " index %" PRIu32 " requires an image view of type %s but got %s.",
+                                "in binding #%" PRIu32 " index %" PRIu32
+                                " requires an image view of type %s but got %s which is of type %s.",
                                 report_data->FormatHandle(set).c_str(), context.caller, binding, index,
-                                StringDescriptorReqViewType(reqs).c_str(), string_VkImageViewType(image_view_ci.viewType));
+                                StringDescriptorReqViewType(reqs).c_str(), report_data->FormatHandle(image_view).c_str(),
+                                string_VkImageViewType(image_view_ci.viewType));
             }
 
             if (!(reqs & image_view_state->descriptor_format_bits)) {
                 // bad component type
                 auto set = context.descriptor_set->GetSet();
-                return LogError(set, context.vuids.descriptor_valid,
-                                "Descriptor set %s encountered the following validation error at %s time: "
-                                "Descriptor in binding "
-                                "#%" PRIu32 " index %" PRIu32 " requires %s component type, but bound descriptor format is %s.",
-                                report_data->FormatHandle(set).c_str(), context.caller, binding, index,
-                                StringDescriptorReqComponentType(reqs), string_VkFormat(image_view_ci.format));
+                return LogError(
+                    set, context.vuids.descriptor_valid,
+                    "Descriptor set %s encountered the following validation error at %s time: "
+                    "Descriptor in binding "
+                    "#%" PRIu32 " index %" PRIu32 " requires %s component type, but bound descriptor format is %s (%s).",
+                    report_data->FormatHandle(set).c_str(), context.caller, binding, index, StringDescriptorReqComponentType(reqs),
+                    string_VkFormat(image_view_ci.format), report_data->FormatHandle(image_view).c_str());
             }
         }
 
