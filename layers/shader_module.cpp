@@ -26,17 +26,7 @@
 #include "descriptor_sets.h"
 #include "spirv_grammar_helper.h"
 
-void decoration_set::merge(decoration_set const &other) {
-    if (other.flags & location_bit) location = other.location;
-    if (other.flags & component_bit) component = other.component;
-    if (other.flags & input_attachment_index_bit) input_attachment_index = other.input_attachment_index;
-    if (other.flags & descriptor_set_bit) descriptor_set = other.descriptor_set;
-    if (other.flags & binding_bit) binding = other.binding;
-    if (other.flags & builtin_bit) builtin = other.builtin;
-    flags |= other.flags;
-}
-
-void decoration_set::add(uint32_t decoration, uint32_t value) {
+void DecorationSet::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
         case spv::DecorationLocation:
             flags |= location_bit;
@@ -90,34 +80,6 @@ void decoration_set::add(uint32_t decoration, uint32_t value) {
             flags |= aliased_bit;
             break;
     }
-}
-
-std::string shader_struct_member::GetLocationDesc(uint32_t index_used_bytes) const {
-    std::string desc = "";
-    if (array_length_hierarchy.size() > 0) {
-        desc += " index:";
-        for (const auto block_size : array_block_size) {
-            desc += "[";
-            desc += std::to_string(index_used_bytes / (block_size * size));
-            desc += "]";
-            index_used_bytes = index_used_bytes % (block_size * size);
-        }
-    }
-    const int struct_members_size = static_cast<int>(struct_members.size());
-    if (struct_members_size > 0) {
-        desc += " member:";
-        for (int i = struct_members_size - 1; i >= 0; --i) {
-            if (index_used_bytes > struct_members[i].offset) {
-                desc += std::to_string(i);
-                desc += struct_members[i].GetLocationDesc(index_used_bytes - struct_members[i].offset);
-                break;
-            }
-        }
-    } else {
-        desc += " offset:";
-        desc += std::to_string(index_used_bytes);
-    }
-    return desc;
 }
 
 static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
@@ -325,6 +287,11 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() con
     return {};
 }
 
+static inline bool IsImageOperandsBiasOffset(uint32_t type) {
+    return (type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
+                    spv::ImageOperandsConstOffsetsMask)) != 0;
+}
+
 SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_state) {
     // Parse the words first so we have instruction class objects to use
     {
@@ -347,7 +314,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         instructions.shrink_to_fit();
     }
 
-    function_set func_set = {};
+    FunctionInfo function_info = {};
     EntryPoint* entry_point = nullptr;
     bool first_function_found = false;
 
@@ -360,7 +327,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         }
 
         if (first_function_found) {
-            func_set.op_lists.push_back(&insn);
+            function_info.op_lists.push_back(&insn);
         }
 
         switch (insn.Opcode()) {
@@ -376,7 +343,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             // Decorations
             case spv::OpDecorate: {
                 auto target_id = insn.Word(1);
-                decorations[target_id].add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
+                decorations[target_id].Add(insn.Word(2), insn.Length() > 3u ? insn.Word(3) : 0u);
                 decoration_inst.push_back(&insn);
                 if (insn.Word(2) == spv::DecorationBuiltIn) {
                     builtin_decoration_inst.push_back(&insn);
@@ -416,7 +383,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             // Functions
             case spv::OpFunction:
                 first_function_found = true;
-                func_set.op_lists.clear();
+                function_info.op_lists.clear();
                 break;
 
             // Entry points ... add to the entrypoint table
@@ -440,13 +407,120 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
 
             case spv::OpFunctionEnd: {
                 assert(entry_point != nullptr);
-                entry_point->function_set_list.emplace_back(func_set);
+                entry_point->function_infos.emplace_back(function_info);
+                break;
+            }
+
+            // Access operations
+            case spv::OpImageSampleImplicitLod:
+            case spv::OpImageSampleProjImplicitLod:
+            case spv::OpImageSampleProjExplicitLod:
+            case spv::OpImageSparseSampleImplicitLod:
+            case spv::OpImageSparseSampleProjImplicitLod:
+            case spv::OpImageSparseSampleProjExplicitLod: {
+                // combined image samples are just OpLoad, but also can be separate image and sampler
+                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
+                auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
+                sampler_load_ids.emplace_back(load_id);
+                sampler_implicitLod_dref_proj_load_ids.emplace_back(load_id);
+                // ImageOperands in index: 5
+                if (insn.Length() > 5 && IsImageOperandsBiasOffset(insn.Word(5))) {
+                    sampler_bias_offset_load_ids.emplace_back(load_id);
+                }
+                break;
+            }
+            case spv::OpImageDrefGather:
+            case spv::OpImageSparseDrefGather: {
+                // combined image samples are just OpLoad, but also can be separate image and sampler
+                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
+                auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
+                image_dref_load_ids.emplace_back(load_id);
+                break;
+            }
+            case spv::OpImageSampleDrefImplicitLod:
+            case spv::OpImageSampleDrefExplicitLod:
+            case spv::OpImageSampleProjDrefImplicitLod:
+            case spv::OpImageSampleProjDrefExplicitLod:
+            case spv::OpImageSparseSampleDrefImplicitLod:
+            case spv::OpImageSparseSampleDrefExplicitLod:
+            case spv::OpImageSparseSampleProjDrefImplicitLod:
+            case spv::OpImageSparseSampleProjDrefExplicitLod: {
+                // combined image samples are just OpLoad, but also can be separate image and sampler
+                const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
+                auto sampler_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
+                auto image_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
+
+                image_dref_load_ids.emplace_back(image_load_id);
+                sampler_load_ids.emplace_back(sampler_load_id);
+                sampler_implicitLod_dref_proj_load_ids.emplace_back(sampler_load_id);
+                // ImageOperands in index: 6
+                if (insn.Length() > 6 && IsImageOperandsBiasOffset(insn.Word(6))) {
+                    sampler_bias_offset_load_ids.emplace_back(sampler_load_id);
+                }
+                break;
+            }
+            case spv::OpImageSampleExplicitLod:
+            case spv::OpImageSparseSampleExplicitLod: {
+                // ImageOperands in index: 5
+                if (insn.Length() > 5 && IsImageOperandsBiasOffset(insn.Word(5))) {
+                    // combined image samples are just OpLoad, but also can be separate image and sampler
+                    const Instruction* id = module_state.FindDef(insn.Word(3));  // <id> Sampled Image
+                    auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
+                    sampler_load_ids.emplace_back(load_id);
+                    sampler_bias_offset_load_ids.emplace_back(load_id);
+                }
+                break;
+            }
+            case spv::OpStore: {
+                store_pointer_ids.emplace_back(insn.Word(1));  // object id or AccessChain id
+                break;
+            }
+            case spv::OpImageRead:
+            case spv::OpImageSparseRead: {
+                image_read_load_ids.emplace_back(insn.Word(3));
+                break;
+            }
+            case spv::OpImageWrite: {
+                image_write_load_ids.emplace_back(insn.Word(1));
+                break;
+            }
+            case spv::OpSampledImage: {
+                // 3: image load id, 4: sampler load id
+                sampled_image_load_ids.emplace_back(std::pair<uint32_t, uint32_t>(insn.Word(3), insn.Word(4)));
+                break;
+            }
+            case spv::OpLoad: {
+                // 2: Load id, 3: object id or AccessChain id
+                load_members.emplace(insn.Word(2), insn.Word(3));
+                break;
+            }
+            case spv::OpAccessChain:
+            case spv::OpInBoundsAccessChain: {
+                if (insn.Length() == 4) {
+                    // If it is for struct, the length is only 4.
+                    // 2: AccessChain id, 3: object id
+                    accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(insn.Word(3), 0));
+                } else {
+                    // 2: AccessChain id, 3: object id, 4: object id of array index
+                    accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(insn.Word(3), insn.Word(4)));
+                }
+                break;
+            }
+            case spv::OpImageTexelPointer: {
+                // 2: ImageTexelPointer id, 3: object id
+                image_texel_pointer_members.emplace(insn.Word(2), insn.Word(3));
                 break;
             }
 
             default:
                 if (AtomicOperation(insn.Opcode()) == true) {
                     atomic_inst.push_back(&insn);
+                    if (insn.Opcode() == spv::OpAtomicStore) {
+                        atomic_store_pointer_ids.emplace_back(insn.Word(1));
+                        atomic_pointer_ids.emplace_back(insn.Word(1));
+                    } else {
+                        atomic_pointer_ids.emplace_back(insn.Word(3));
+                    }
                 }
                 // We don't care about any other defs for now.
                 break;
@@ -648,7 +722,7 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
 
 // Returns an int32_t corresponding to the spv::Dim of the given resource, when positive, and corresponding to an unknown type, when
 // negative.
-int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const interface_var &resource) const {
+int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const InterfaceVariable& resource) const {
     const Instruction* type = FindDef(resource.type_id);
     while (true) {
         switch (type->Opcode()) {
@@ -775,7 +849,6 @@ const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn, b
             insn = FindDef(insn->Word(3));
         } else if (insn->Opcode() == spv::OpTypeArray && is_array_of_verts) {
             insn = FindDef(insn->Word(2));
-            is_array_of_verts = false;
         } else if (insn->Opcode() == spv::OpTypeStruct) {
             return insn;
         } else {
@@ -785,11 +858,11 @@ const Instruction* SHADER_MODULE_STATE::GetStructType(const Instruction* insn, b
 }
 
 void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vector<const Instruction*>& member_decorate_insn,
-                                             shader_struct_member& data) const {
+                                             StructInfo& data) const {
     const Instruction* struct_type = GetStructType(insn, false);
     data.size = 0;
 
-    shader_struct_member data1;
+    StructInfo data1;
     uint32_t element_index = 2;  // offset where first element in OpTypeStruct is
     uint32_t local_offset = 0;
     // offsets into struct
@@ -864,7 +937,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
 }
 
 uint32_t SHADER_MODULE_STATE::UpdateOffset(uint32_t offset, const std::vector<uint32_t>& array_indices,
-                                           const shader_struct_member& data) const {
+                                           const StructInfo& data) const {
     int array_indices_size = static_cast<int>(array_indices.size());
     if (array_indices_size) {
         uint32_t array_index = 0;
@@ -878,8 +951,7 @@ uint32_t SHADER_MODULE_STATE::UpdateOffset(uint32_t offset, const std::vector<ui
     return offset;
 }
 
-void SHADER_MODULE_STATE::SetUsedBytes(uint32_t offset, const std::vector<uint32_t>& array_indices,
-                                       const shader_struct_member& data) const {
+void SHADER_MODULE_STATE::SetUsedBytes(uint32_t offset, const std::vector<uint32_t>& array_indices, const StructInfo& data) const {
     int array_indices_size = static_cast<int>(array_indices.size());
     uint32_t block_memory_size = data.size;
     for (uint32_t i = static_cast<int>(array_indices_size); i < data.array_length_hierarchy.size(); ++i) {
@@ -897,7 +969,7 @@ void SHADER_MODULE_STATE::SetUsedBytes(uint32_t offset, const std::vector<uint32
 }
 
 void SHADER_MODULE_STATE::RunUsedArray(uint32_t offset, std::vector<uint32_t> array_indices, uint32_t access_chain_word_index,
-                                       const Instruction* access_chain, const shader_struct_member& data) const {
+                                       const Instruction* access_chain, const StructInfo& data) const {
     if (access_chain_word_index < access_chain->Length()) {
         if (data.array_length_hierarchy.size() > array_indices.size()) {
             const Instruction* def = FindDef(access_chain->Word(access_chain_word_index));
@@ -929,7 +1001,7 @@ void SHADER_MODULE_STATE::RunUsedArray(uint32_t offset, std::vector<uint32_t> ar
 }
 
 void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction* access_chain,
-                                        const shader_struct_member& data) const {
+                                        const StructInfo& data) const {
     std::vector<uint32_t> array_indices_emptry;
 
     if (access_chain_word_index < access_chain->Length()) {
@@ -941,10 +1013,10 @@ void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_w
     }
 }
 
-void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const std::vector<function_set> &function_set_list,
-                                              const shader_struct_member &data) const {
-    for (const auto &func_set : function_set_list) {
-        for (const Instruction* insn : func_set.op_lists) {
+void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const std::vector<FunctionInfo>& function_infos,
+                                              const StructInfo& data) const {
+    for (const auto& function_info : function_infos) {
+        for (const Instruction* insn : function_info.op_lists) {
             if (insn->Opcode() == spv::OpAccessChain) {
                 if (insn->Word(3) == variable_id) {
                     RunUsedStruct(0, 4, insn, data);
@@ -968,7 +1040,7 @@ void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
                 }
                 entrypoint.second.push_constant_used_in_shader.root = &entrypoint.second.push_constant_used_in_shader;
                 module_state.DefineStructMember(type, member_decorate_insn, entrypoint.second.push_constant_used_in_shader);
-                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.second.function_set_list,
+                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.second.function_infos,
                                                  entrypoint.second.push_constant_used_in_shader);
             }
         }
@@ -1130,153 +1202,6 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
     return found_write;
 }
 
-// Used by the collection functions to help aid in state tracking
-struct shader_module_used_operators {
-    bool updated;
-    std::vector<uint32_t> image_read_load_ids;
-    std::vector<uint32_t> image_write_load_ids;
-    std::vector<uint32_t> atomic_pointer_ids;
-    std::vector<uint32_t> store_pointer_ids;
-    std::vector<uint32_t> atomic_store_pointer_ids;
-    std::vector<uint32_t> sampler_load_ids;  // tracks all sampling operations
-    std::vector<uint32_t> sampler_implicitLod_dref_proj_load_ids;
-    std::vector<uint32_t> sampler_bias_offset_load_ids;
-    std::vector<uint32_t> image_dref_load_ids;
-    std::vector<std::pair<uint32_t, uint32_t>> sampled_image_load_ids;                       // <image, sampler>
-    layer_data::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
-    layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
-    layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
-
-    shader_module_used_operators() : updated(false) {}
-
-    bool CheckImageOperandsBiasOffset(uint32_t type) {
-        return type & (spv::ImageOperandsBiasMask | spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask |
-                       spv::ImageOperandsConstOffsetsMask)
-                   ? true
-                   : false;
-    }
-
-    void update(SHADER_MODULE_STATE const *module_state) {
-        if (updated) return;
-        updated = true;
-
-        for (const Instruction& insn : module_state->GetInstructions()) {
-            switch (insn.Opcode()) {
-                case spv::OpImageSampleImplicitLod:
-                case spv::OpImageSampleProjImplicitLod:
-                case spv::OpImageSampleProjExplicitLod:
-                case spv::OpImageSparseSampleImplicitLod:
-                case spv::OpImageSparseSampleProjImplicitLod:
-                case spv::OpImageSparseSampleProjExplicitLod: {
-                    // combined image samples are just OpLoad, but also can be separate image and sampler
-                    const Instruction* id = module_state->FindDef(insn.Word(3));  // <id> Sampled Image
-                    auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                    sampler_load_ids.emplace_back(load_id);
-                    sampler_implicitLod_dref_proj_load_ids.emplace_back(load_id);
-                    // ImageOperands in index: 5
-                    if (insn.Length() > 5 && CheckImageOperandsBiasOffset(insn.Word(5))) {
-                        sampler_bias_offset_load_ids.emplace_back(load_id);
-                    }
-                    break;
-                }
-                case spv::OpImageDrefGather:
-                case spv::OpImageSparseDrefGather: {
-                    // combined image samples are just OpLoad, but also can be separate image and sampler
-                    const Instruction* id = module_state->FindDef(insn.Word(3));  // <id> Sampled Image
-                    auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
-                    image_dref_load_ids.emplace_back(load_id);
-                    break;
-                }
-                case spv::OpImageSampleDrefImplicitLod:
-                case spv::OpImageSampleDrefExplicitLod:
-                case spv::OpImageSampleProjDrefImplicitLod:
-                case spv::OpImageSampleProjDrefExplicitLod:
-                case spv::OpImageSparseSampleDrefImplicitLod:
-                case spv::OpImageSparseSampleDrefExplicitLod:
-                case spv::OpImageSparseSampleProjDrefImplicitLod:
-                case spv::OpImageSparseSampleProjDrefExplicitLod: {
-                    // combined image samples are just OpLoad, but also can be separate image and sampler
-                    const Instruction* id = module_state->FindDef(insn.Word(3));  // <id> Sampled Image
-                    auto sampler_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                    auto image_load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(3) : insn.Word(3);
-
-                    image_dref_load_ids.emplace_back(image_load_id);
-                    sampler_load_ids.emplace_back(sampler_load_id);
-                    sampler_implicitLod_dref_proj_load_ids.emplace_back(sampler_load_id);
-                    // ImageOperands in index: 6
-                    if (insn.Length() > 6 && CheckImageOperandsBiasOffset(insn.Word(6))) {
-                        sampler_bias_offset_load_ids.emplace_back(sampler_load_id);
-                    }
-                    break;
-                }
-                case spv::OpImageSampleExplicitLod:
-                case spv::OpImageSparseSampleExplicitLod: {
-                    // ImageOperands in index: 5
-                    if (insn.Length() > 5 && CheckImageOperandsBiasOffset(insn.Word(5))) {
-                        // combined image samples are just OpLoad, but also can be separate image and sampler
-                        const Instruction* id = module_state->FindDef(insn.Word(3));  // <id> Sampled Image
-                        auto load_id = (id->Opcode() == spv::OpSampledImage) ? id->Word(4) : insn.Word(3);
-                        sampler_load_ids.emplace_back(load_id);
-                        sampler_bias_offset_load_ids.emplace_back(load_id);
-                    }
-                    break;
-                }
-                case spv::OpStore: {
-                    store_pointer_ids.emplace_back(insn.Word(1));  // object id or AccessChain id
-                    break;
-                }
-                case spv::OpImageRead:
-                case spv::OpImageSparseRead: {
-                    image_read_load_ids.emplace_back(insn.Word(3));
-                    break;
-                }
-                case spv::OpImageWrite: {
-                    image_write_load_ids.emplace_back(insn.Word(1));
-                    break;
-                }
-                case spv::OpSampledImage: {
-                    // 3: image load id, 4: sampler load id
-                    sampled_image_load_ids.emplace_back(std::pair<uint32_t, uint32_t>(insn.Word(3), insn.Word(4)));
-                    break;
-                }
-                case spv::OpLoad: {
-                    // 2: Load id, 3: object id or AccessChain id
-                    load_members.emplace(insn.Word(2), insn.Word(3));
-                    break;
-                }
-                case spv::OpAccessChain:
-                case spv::OpInBoundsAccessChain: {
-                    if (insn.Length() == 4) {
-                        // If it is for struct, the length is only 4.
-                        // 2: AccessChain id, 3: object id
-                        accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(insn.Word(3), 0));
-                    } else {
-                        // 2: AccessChain id, 3: object id, 4: object id of array index
-                        accesschain_members.emplace(insn.Word(2), std::pair<uint32_t, uint32_t>(insn.Word(3), insn.Word(4)));
-                    }
-                    break;
-                }
-                case spv::OpImageTexelPointer: {
-                    // 2: ImageTexelPointer id, 3: object id
-                    image_texel_pointer_members.emplace(insn.Word(2), insn.Word(3));
-                    break;
-                }
-                default: {
-                    if (AtomicOperation(insn.Opcode())) {
-                        if (insn.Opcode() == spv::OpAtomicStore) {
-                            atomic_store_pointer_ids.emplace_back(insn.Word(1));
-                            atomic_pointer_ids.emplace_back(insn.Word(1));
-                        } else {
-                            atomic_pointer_ids.emplace_back(insn.Word(3));
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
-};
-
 static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32_t> &operator_members,
                                     const layer_data::unordered_map<uint32_t, uint32_t> &load_members,
                                     const layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> &accesschain_members) {
@@ -1303,13 +1228,8 @@ static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32
 
 // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
 // atomic operation, matching images to samplers, etc
-void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool is_storage_buffer, bool is_check_writable,
-                                                   interface_var& out_interface_var) const {
-    shader_module_used_operators used_operators;
-    uint32_t type_id = insn->Word(1);
-    uint32_t id = insn->Word(2);
-
-    const Instruction* type = FindDef(type_id);
+void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable& interface_var) const {
+    const Instruction* type = FindDef(interface_var.type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
     while (type->Opcode() == spv::OpTypeArray || type->Opcode() == spv::OpTypePointer ||
@@ -1326,56 +1246,54 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
         case spv::OpTypeImage: {
             auto dim = type->Word(3);
             if (dim != spv::DimSubpassData) {
-                used_operators.update(this);
-
                 // Sampled == 2 indicates used without a sampler (a storage image)
                 bool is_image_without_format = false;
                 if (type->Word(7) == 2) is_image_without_format = type->Word(8) == spv::ImageFormatUnknown;
 
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_write_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_writable = true;
-                    if (is_image_without_format) out_interface_var.is_write_without_format = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_write_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members)) {
+                    interface_var.is_writable = true;
+                    if (is_image_without_format) interface_var.is_write_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_read_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_readable = true;
-                    if (is_image_without_format) out_interface_var.is_read_without_format = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_read_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members)) {
+                    interface_var.is_readable = true;
+                    if (is_image_without_format) interface_var.is_read_without_format = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_sampler_sampled = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members)) {
+                    interface_var.is_sampler_sampled = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_implicitLod_dref_proj_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_sampler_implicitLod_dref_proj = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_implicitLod_dref_proj_load_ids,
+                                            static_data_.load_members, static_data_.accesschain_members)) {
+                    interface_var.is_sampler_implicitLod_dref_proj = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.sampler_bias_offset_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_sampler_bias_offset = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members)) {
+                    interface_var.is_sampler_bias_offset = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_pointer_ids, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_atomic_operation = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.atomic_pointer_ids,
+                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members)) {
+                    interface_var.is_atomic_operation = true;
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.image_dref_load_ids, used_operators.load_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_dref_operation = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_dref_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members)) {
+                    interface_var.is_dref_operation = true;
                 }
 
-                for (auto &itp_id : used_operators.sampled_image_load_ids) {
+                for (auto& itp_id : static_data_.sampled_image_load_ids) {
                     // Find if image id match.
                     uint32_t image_index = 0;
-                    auto load_it = used_operators.load_members.find(itp_id.first);
-                    if (load_it == used_operators.load_members.end()) {
+                    auto load_it = static_data_.load_members.find(itp_id.first);
+                    if (load_it == static_data_.load_members.end()) {
                         continue;
                     } else {
-                        if (load_it->second != id) {
-                            auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
-                            if (accesschain_it == used_operators.accesschain_members.end()) {
+                        if (load_it->second != interface_var.id) {
+                            auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
+                            if (accesschain_it == static_data_.accesschain_members.end()) {
                                 continue;
                             } else {
-                                if (accesschain_it->second.first != id) {
+                                if (accesschain_it->second.first != interface_var.id) {
                                     continue;
                                 }
 
@@ -1389,15 +1307,15 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
                         }
                     }
                     // Find sampler's set binding.
-                    load_it = used_operators.load_members.find(itp_id.second);
-                    if (load_it == used_operators.load_members.end()) {
+                    load_it = static_data_.load_members.find(itp_id.second);
+                    if (load_it == static_data_.load_members.end()) {
                         continue;
                     } else {
                         uint32_t sampler_id = load_it->second;
                         uint32_t sampler_index = 0;
-                        auto accesschain_it = used_operators.accesschain_members.find(load_it->second);
+                        auto accesschain_it = static_data_.accesschain_members.find(load_it->second);
 
-                        if (accesschain_it != used_operators.accesschain_members.end()) {
+                        if (accesschain_it != static_data_.accesschain_members.end()) {
                             const Instruction* const_def = GetConstantDef(accesschain_it->second.second);
                             if (!const_def) {
                                 // access chain index representing sampler index is not a constant, skip.
@@ -1406,26 +1324,26 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
                             sampler_id = const_def->Word(const_def->ResultId());
                             sampler_index = const_def->GetConstantValue();
                         }
-                        auto sampler_dec = get_decorations(sampler_id);
-                        if (image_index >= out_interface_var.samplers_used_by_image.size()) {
-                            out_interface_var.samplers_used_by_image.resize(image_index + 1);
+                        auto sampler_dec = GetDecorationSet(sampler_id);
+                        if (image_index >= interface_var.samplers_used_by_image.size()) {
+                            interface_var.samplers_used_by_image.resize(image_index + 1);
                         }
 
                         // Need to check again for these properties in case not using a combined image sampler
-                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_load_ids, used_operators.load_members,
-                                                    used_operators.accesschain_members)) {
-                            out_interface_var.is_sampler_sampled = true;
+                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_load_ids, static_data_.load_members,
+                                                    static_data_.accesschain_members)) {
+                            interface_var.is_sampler_sampled = true;
                         }
-                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_implicitLod_dref_proj_load_ids,
-                                                    used_operators.load_members, used_operators.accesschain_members)) {
-                            out_interface_var.is_sampler_implicitLod_dref_proj = true;
+                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids,
+                                                    static_data_.load_members, static_data_.accesschain_members)) {
+                            interface_var.is_sampler_implicitLod_dref_proj = true;
                         }
-                        if (CheckObjectIDFromOpLoad(sampler_id, used_operators.sampler_bias_offset_load_ids,
-                                                    used_operators.load_members, used_operators.accesschain_members)) {
-                            out_interface_var.is_sampler_bias_offset = true;
+                        if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_bias_offset_load_ids,
+                                                    static_data_.load_members, static_data_.accesschain_members)) {
+                            interface_var.is_sampler_bias_offset = true;
                         }
 
-                        out_interface_var.samplers_used_by_image[image_index].emplace(
+                        interface_var.samplers_used_by_image[image_index].emplace(
                             SamplerUsedByImage{DescriptorSlot{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
                     }
                 }
@@ -1435,7 +1353,9 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
 
         case spv::OpTypeStruct: {
             layer_data::unordered_set<uint32_t> nonwritable_members;
-            if (get_decorations(type->Word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
+            if (GetDecorationSet(type->Word(1)).flags & DecorationSet::buffer_block_bit) {
+                is_storage_buffer = true;
+            }
             for (const Instruction* insn : static_data_.member_decoration_inst) {
                 if (insn->Word(1) == type->Word(1) && insn->Word(3) == spv::DecorationNonWritable) {
                     nonwritable_members.insert(insn->Word(2));
@@ -1445,25 +1365,23 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
             // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
             // as nonwritable.
             if (is_storage_buffer && nonwritable_members.size() != type->Length() - 2) {
-                used_operators.update(this);
-
-                for (auto oid : used_operators.store_pointer_ids) {
-                    if (id == oid) {
-                        out_interface_var.is_writable = true;
+                for (auto oid : static_data_.store_pointer_ids) {
+                    if (interface_var.id == oid) {
+                        interface_var.is_writable = true;
                         return;
                     }
-                    auto accesschain_it = used_operators.accesschain_members.find(oid);
-                    if (accesschain_it == used_operators.accesschain_members.end()) {
+                    auto accesschain_it = static_data_.accesschain_members.find(oid);
+                    if (accesschain_it == static_data_.accesschain_members.end()) {
                         continue;
                     }
-                    if (accesschain_it->second.first == id) {
-                        out_interface_var.is_writable = true;
+                    if (accesschain_it->second.first == interface_var.id) {
+                        interface_var.is_writable = true;
                         return;
                     }
                 }
-                if (CheckObjectIDFromOpLoad(id, used_operators.atomic_store_pointer_ids, used_operators.image_texel_pointer_members,
-                                            used_operators.accesschain_members)) {
-                    out_interface_var.is_writable = true;
+                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.atomic_store_pointer_ids,
+                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members)) {
+                    interface_var.is_writable = true;
                     return;
                 }
             }
@@ -1471,9 +1389,9 @@ void SHADER_MODULE_STATE::IsSpecificDescriptorType(const Instruction* insn, bool
     }
 }
 
-std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    layer_data::unordered_set<uint32_t> const &accessible_ids) const {
-    std::vector<std::pair<DescriptorSlot, interface_var>> out;
+std::vector<std::pair<DescriptorSlot, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
+    layer_data::unordered_set<uint32_t> const& accessible_ids) const {
+    std::vector<std::pair<DescriptorSlot, InterfaceVariable>> out;
 
     for (auto id : accessible_ids) {
         const Instruction* insn = FindDef(id);
@@ -1481,19 +1399,15 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
             continue;
         }
         const uint32_t storage_class = insn->StorageClass();
+        // These are the only storage classes that interface with a descriptor
+        // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
-            auto d = get_decorations(insn->Word(2));
-            uint32_t set = d.descriptor_set;
-            uint32_t binding = d.binding;
+            InterfaceVariable interface_var(insn);
+            FindVariableDescriptorType(storage_class == spv::StorageClassStorageBuffer, interface_var);
 
-            interface_var v = {};
-            v.id = insn->Word(2);
-            v.type_id = insn->Word(1);
-
-            IsSpecificDescriptorType(insn, storage_class == spv::StorageClassStorageBuffer,
-                                     !(d.flags & decoration_set::nonwritable_bit), v);
-            out.emplace_back(DescriptorSlot{set, binding}, v);
+            auto decoration_set = GetDecorationSet(insn->Word(2));
+            out.emplace_back(DescriptorSlot{decoration_set.descriptor_set, decoration_set.binding}, interface_var);
         }
     }
 
@@ -1552,12 +1466,11 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
     return location_list;
 }
 
-bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, interface_var> *out, bool is_array_of_verts,
-                                                       uint32_t id, uint32_t type_id, bool is_patch,
-                                                       uint32_t /*first_location*/) const {
+bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable>* out, bool is_array_of_verts,
+                                                       bool is_patch, const Instruction* variable_insn) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
-    const Instruction* type = GetStructType(FindDef(type_id), is_array_of_verts && !is_patch);
-    if (!type || !(get_decorations(type->Word(1)).flags & decoration_set::block_bit)) {
+    const Instruction* type = GetStructType(FindDef(variable_insn->Word(1)), is_array_of_verts && !is_patch);
+    if (!type || !(GetDecorationSet(type->Word(1)).flags & DecorationSet::block_bit)) {
         // This isn't an interface block.
         return false;
     }
@@ -1604,15 +1517,15 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, inte
                 bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
 
                 for (uint32_t offset = 0; offset < num_locations; offset++) {
-                    interface_var v = {};
-                    v.id = id;
-                    // TODO: member index in interface_var too?
-                    v.type_id = member_type_id;
-                    v.offset = offset;
-                    v.is_patch = member_is_patch;
-                    v.is_block_member = true;
-                    v.is_relaxed_precision = is_relaxed_precision;
-                    (*out)[std::make_pair(location + offset, component)] = v;
+                    InterfaceVariable interface_var = {};
+                    interface_var.id = variable_insn->Word(2);
+                    // TODO: member index in InterfaceVariable too?
+                    interface_var.type_id = member_type_id;
+                    interface_var.offset = offset;
+                    interface_var.is_patch = member_is_patch;
+                    interface_var.is_block_member = true;
+                    interface_var.is_relaxed_precision = is_relaxed_precision;
+                    (*out)[std::make_pair(location + offset, component)] = interface_var;
                 }
             }
         }
@@ -1621,46 +1534,41 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, inte
     return true;
 }
 
-std::map<location_t, interface_var> SHADER_MODULE_STATE::CollectInterfaceByLocation(const Instruction& entrypoint,
-                                                                                    spv::StorageClass sinterface,
-                                                                                    bool is_array_of_verts) const {
+std::map<location_t, InterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByLocation(const Instruction& entrypoint,
+                                                                                        spv::StorageClass sinterface,
+                                                                                        bool is_array_of_verts) const {
     // TODO: handle index=1 dual source outputs from FS -- two vars will have the same location, and we DON'T want to clobber.
 
-    std::map<location_t, interface_var> out;
+    std::map<location_t, InterfaceVariable> out;
 
     for (uint32_t iid : FindEntrypointInterfaces(entrypoint)) {
         const Instruction* insn = FindDef(iid);
         assert(insn->Opcode() == spv::OpVariable);
 
-        const auto d = get_decorations(iid);
+        const auto decoration_set = GetDecorationSet(iid);
+        uint32_t flags = decoration_set.flags;
         bool passthrough = sinterface == spv::StorageClassOutput && insn->Word(3) == spv::StorageClassInput &&
-                           (d.flags & decoration_set::passthrough_bit) != 0;
+                           (flags & DecorationSet::passthrough_bit) != 0;
         if (insn->Word(3) == static_cast<uint32_t>(sinterface) || passthrough) {
-            uint32_t id = insn->Word(2);
-            uint32_t type = insn->Word(1);
-
-            auto location = d.location;
-            int builtin = d.builtin;
-            uint32_t component = d.component;
-            bool is_patch = (d.flags & decoration_set::patch_bit) != 0;
-            bool is_relaxed_precision = (d.flags & decoration_set::relaxed_precision_bit) != 0;
-            bool is_per_vertex = (d.flags & decoration_set::per_vertex_bit) != 0;
-
-            if (builtin != -1) {
+            uint32_t builtin = decoration_set.builtin;
+            uint32_t component = decoration_set.component;
+            uint32_t location = decoration_set.location;
+            bool is_patch = (flags & DecorationSet::patch_bit) != 0;
+            bool is_relaxed_precision = (flags & DecorationSet::relaxed_precision_bit) != 0;
+            bool is_per_vertex = (flags & DecorationSet::per_vertex_bit) != 0;
+            if (builtin != DecorationSet::kInvalidValue) {
                 continue;
-            } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, id, type, is_patch, location) ||
-                       location != decoration_set::kInvalidValue) {
+            } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, is_patch, insn) ||
+                       decoration_set.location != DecorationSet::kInvalidValue) {
                 // A user-defined interface variable, with a location. Where a variable occupied multiple locations, emit
                 // one result for each.
-                uint32_t num_locations = GetLocationsConsumedByType(type, (is_array_of_verts && !is_patch) || is_per_vertex);
+                uint32_t num_locations = GetLocationsConsumedByType(insn->Word(1), is_array_of_verts || is_per_vertex);
                 for (uint32_t offset = 0; offset < num_locations; offset++) {
-                    interface_var v = {};
-                    v.id = id;
-                    v.type_id = type;
-                    v.offset = offset;
-                    v.is_patch = is_patch;
-                    v.is_relaxed_precision = is_relaxed_precision;
-                    out[std::make_pair(location + offset, component)] = v;
+                    InterfaceVariable interface_var(insn);
+                    interface_var.offset = offset;
+                    interface_var.is_patch = is_patch;
+                    interface_var.is_relaxed_precision = is_relaxed_precision;
+                    out[std::make_pair(location + offset, component)] = interface_var;
                 }
             }
         }
@@ -1709,9 +1617,9 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
     return builtin_block_members;
 }
 
-std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInterfaceByInputAttachmentIndex(
-    layer_data::unordered_set<uint32_t> const &accessible_ids) const {
-    std::vector<std::pair<uint32_t, interface_var>> out;
+std::vector<std::pair<uint32_t, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByInputAttachmentIndex(
+    layer_data::unordered_set<uint32_t> const& accessible_ids) const {
+    std::vector<std::pair<uint32_t, InterfaceVariable>> out;
 
     for (const Instruction* insn : GetDecorationInstructions()) {
         if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
@@ -1723,11 +1631,11 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
                 if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
                     auto num_locations = GetLocationsConsumedByType(def->Word(1), false);
                     for (uint32_t offset = 0; offset < num_locations; offset++) {
-                        interface_var v = {};
-                        v.id = id;
-                        v.type_id = def->Word(1);
-                        v.offset = offset;
-                        out.emplace_back(attachment_index + offset, v);
+                        InterfaceVariable interface_var = {};
+                        interface_var.id = id;
+                        interface_var.type_id = def->Word(1);
+                        interface_var.offset = offset;
+                        out.emplace_back(attachment_index + offset, interface_var);
                     }
                 }
             }
