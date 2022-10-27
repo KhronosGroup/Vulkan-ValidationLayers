@@ -12304,7 +12304,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607");
         vkCmdSetAlphaToOneEnableEXT(commandBuffer.handle(), VK_TRUE);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());

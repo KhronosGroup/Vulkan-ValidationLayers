@@ -12551,6 +12551,7 @@ struct safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM {
 struct safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM {
     VkStructureType sType;
     void* pNext{};
+    uint64_t shaderCoreMask;
     uint32_t shaderCoreCount;
     uint32_t shaderWarpsPerCore;
     safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct);

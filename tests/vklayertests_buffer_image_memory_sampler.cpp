@@ -12018,7 +12018,7 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
     // Format mismatch
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605");
     vk::CreateSampler(m_device->device(), &sampler_info, NULL, &sampler);
     m_errorMonitor->VerifyFound();
 

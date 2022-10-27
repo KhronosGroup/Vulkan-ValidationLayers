@@ -9958,54 +9958,6 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                  msrtss_info->rasterizationSamples, pipeline_rasterization_samples);
             }
         }
-        if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering() &&
-            cb_state->has_draw_cmd_in_current_render_pass) {
-            const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
-            const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            const auto *last_rendering_struct =
-                last_pipeline ? LvlFindInChain<VkPipelineRenderingCreateInfo>(last_pipeline->PNext()) : nullptr;
-            if (rendering_struct && last_rendering_struct) {
-                if (rendering_struct->depthAttachmentFormat != last_rendering_struct->depthAttachmentFormat) {
-                    skip |=
-                        LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06197",
-                                 "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::depthAttachmentFormat "
-                                 "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::depthAttachmentFormat was %s.",
-                                 string_VkFormat(rendering_struct->depthAttachmentFormat),
-                                 string_VkFormat(last_rendering_struct->depthAttachmentFormat));
-                }
-                if (rendering_struct->stencilAttachmentFormat != last_rendering_struct->stencilAttachmentFormat) {
-                    skip |= LogError(
-                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06194",
-                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::stencilAttachmentFormat "
-                        "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::stencilAttachmentFormat was %s.",
-                        string_VkFormat(rendering_struct->stencilAttachmentFormat),
-                        string_VkFormat(last_rendering_struct->stencilAttachmentFormat));
-                }
-                if (rendering_struct->colorAttachmentCount != last_rendering_struct->colorAttachmentCount) {
-                    skip |= LogError(
-                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06195",
-                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::colorAttachmentCount "
-                        "%" PRIu32
-                        ", but previously bound pipeline VkPipelineRenderingCreateInfo::colorAttachmentCount was %" PRIu32 ".",
-                        rendering_struct->colorAttachmentCount, last_rendering_struct->colorAttachmentCount);
-                } else {
-                    for (uint32_t i = 0; i < rendering_struct->colorAttachmentCount; ++i) {
-                        if (rendering_struct->pColorAttachmentFormats[i] != last_rendering_struct->pColorAttachmentFormats[i]) {
-                            skip |= LogError(
-                                pipeline, "VUID-vkCmdBindPipeline-pipeline-06196",
-                                "vkCmdBindPipeline(): Binding pipeline with "
-                                "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
-                                "] "
-                                "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
-                                "] was %s.",
-                                i, string_VkFormat(rendering_struct->pColorAttachmentFormats[i]), i,
-                                string_VkFormat(last_rendering_struct->pColorAttachmentFormats[i]));
-                            break;
-                        }
-                    }
-                }
-            }
-        }
         if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
             if (cb_state->unprotected) {
                 if (pipeline_state->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT) {
@@ -20838,7 +20790,7 @@ bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer comman
                                         "extendedDynamicState3AlphaToOneEnable");
     if (alphaToOneEnable != VK_FALSE && !enabled_features.core.alphaToOne) {
         skip |= LogError(
-            cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344",
+            cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607",
             "vkCmdSetAlphaToOneEnableEXT(): alphaToOneEnable is VK_TRUE but the alphaToOne feature is not enabled.");
     }
     return skip;
