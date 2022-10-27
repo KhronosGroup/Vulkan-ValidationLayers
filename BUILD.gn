@@ -15,10 +15,6 @@
 
 import("//build_overrides/vulkan_validation_layers.gni")
 
-# Fuchsia has non-upstream changes to the vulkan layers, so we don't want
-# to build it from upstream sources.
-assert(!is_fuchsia)
-
 vulkan_undefine_configs = []
 if (is_win) {
   vulkan_undefine_configs += [ "//build/config/win:unicode" ]
@@ -47,6 +43,19 @@ action("vulkan_clean_old_validation_layer_objects") {
   ]
 }
 
+config("generated_layers_config") {
+  cflags = [
+    "-Wno-conversion",
+    "-Wno-deprecated-copy",
+    "-Wno-extra-semi",
+    "-Wno-implicit-fallthrough",
+    "-Wno-missing-field-initializers",
+    "-Wno-newline-eof",
+    "-Wno-sign-compare",
+    "-Wno-unused-const-variable",
+  ]
+}
+
 config("vulkan_internal_config") {
   defines = [
     "VULKAN_NON_CMAKE_BUILD",
@@ -67,6 +76,12 @@ config("vulkan_internal_config") {
       "FALLBACK_DATA_DIRS=\"/usr/local/share:/usr/share\"",
     ]
   }
+
+  # Suppress warnings the vulkan code doesn't comply with.
+  if (is_fuchsia) {
+    configs = [ "//build/config:Wno-unused-but-set-variable" ]
+  }
+  cflags += [ "-Wno-extra-semi" ]
 }
 
 # The validation layers
@@ -77,6 +92,7 @@ config("vulkan_layer_config") {
     "layers",
     "layers/generated",
   ]
+  cflags = [ "-Wno-extra-semi" ]
 }
 
 core_validation_sources = [
@@ -223,11 +239,12 @@ if (!is_android) {
   action("vulkan_gen_json_files") {
     script = "build-gn/generate_vulkan_layers_json.py"
 
-    # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
-    deps = [
-      ":vulkan_clean_old_validation_layer_objects",
-      "$vulkan_headers_dir:vulkan_headers",
-    ]
+    deps = [ "$vulkan_headers_dir:vulkan_headers" ]
+    if (!is_fuchsia) {
+      # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
+      deps += [ ":vulkan_clean_old_validation_layer_objects" ]
+    }
+
     json_names = [ "VkLayer_khronos_validation.json" ]
     sources = [ "$vulkan_headers_dir/include/vulkan/vulkan_core.h" ]
     outputs = []
@@ -242,6 +259,8 @@ if (!is_android) {
       _platform = "Windows"
     } else if (is_mac) {
       _platform = "Darwin"
+    } else if (is_fuchsia) {
+      _platform = "Fuchsia"
     } else {
       _platform = "Other"
     }
@@ -252,6 +271,9 @@ if (!is_android) {
              rebase_path("layers/json", root_build_dir),
              rebase_path(vulkan_data_dir, root_build_dir),
            ] + rebase_path(sources, root_build_dir)
+    if (is_fuchsia) {
+      args += [ "--no-path-prefix" ]
+    }
 
     # The layer JSON files are part of the necessary data deps.
     data = outputs
@@ -303,10 +325,13 @@ source_set("vulkan_layer_utils") {
     ":vulkan_internal_config",
     ":vulkan_memory_allocator_config",
   ]
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
   public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
+
   configs -= vulkan_undefine_configs
+  if (!is_fuchsia) {
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
+  }
 }
 
 config("vulkan_core_validation_config") {
@@ -331,20 +356,36 @@ config("vulkan_stateless_validation_config") {
   }
 }
 
+if (is_fuchsia) {
+  library_type = "loadable_module"
+} else {
+  library_type = "shared_library"
+}
+
 foreach(layer_info, layers) {
   name = layer_info[0]
-  shared_library("VkLayer_$name") {
+  target(library_type, "VkLayer_$name") {
     defines = []
-    configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [ "//build/config/compiler:no_chromium_code" ]
-    configs += [ "//build/config/compiler:rtti" ]
+    ldflags = []
+    if (is_fuchsia) {
+      configs -= [ "//build/config:thread_safety_annotations" ]
+      ldflags += [ "-static-libstdc++" ]
+      configs += [ "//build/config:rtti" ]
+    } else {
+      configs -= [ "//build/config/compiler:chromium_code" ]
+      configs += [ "//build/config/compiler:no_chromium_code" ]
+      configs += [ "//build/config/compiler:rtti" ]
+    }
     configs -= vulkan_undefine_configs
+    configs += [ ":generated_layers_config" ]
     public_configs = [ ":vulkan_layer_config" ]
-    deps = [
-      # Make sure the cleanup of old layers happen before the new ones are compiled.
-      ":vulkan_clean_old_validation_layer_objects",
-      ":vulkan_layer_utils",
-    ]
+    deps = [ ":vulkan_layer_utils" ]
+    if (!is_fuchsia) {
+      deps += [
+        # Make sure the cleanup of old layers happen before the new ones are compiled.
+        ":vulkan_clean_old_validation_layer_objects",
+      ]
+    }
     if (layer_info[2] != "") {
       deps += layer_info[2]
     }
@@ -353,10 +394,10 @@ foreach(layer_info, layers) {
       defines += [ "NOMINMAX" ]
       sources += [ "layers/VkLayer_$name.def" ]
     }
-    if (is_linux || is_android) {
-      ldflags = [ "-Wl,-Bsymbolic,--exclude-libs,ALL" ]
+    if (is_linux || is_android || is_fuchsia) {
+      ldflags += [ "-Wl,-Bsymbolic,--exclude-libs,ALL" ]
     }
-    if (ozone_platform_x11) {
+    if (defined(ozone_platform_x11) && ozone_platform_x11) {
       defines += [ "VK_USE_PLATFORM_XLIB_KHR" ]
     }
     if (is_android) {
@@ -371,9 +412,18 @@ foreach(layer_info, layers) {
 }
 
 group("vulkan_validation_layers") {
+  public_deps = []
   data_deps = []
   foreach(layer_info, layers) {
     name = layer_info[0]
-    data_deps += [ ":VkLayer_$name" ]
+    if (is_fuchsia) {
+      public_deps += [ ":VkLayer_$name" ]
+    } else {
+      data_deps += [ ":VkLayer_$name" ]
+    }
   }
+}
+
+group("tests") {
+  # TODO(fxbug.dev/13288)
 }
