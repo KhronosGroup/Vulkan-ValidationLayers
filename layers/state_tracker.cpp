@@ -1270,6 +1270,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (pipeline_protected_access_features) {
             enabled_features.pipeline_protected_access_features = *pipeline_protected_access_features;
         }
+
+        const auto linear_color_attachment_features =
+            LvlFindInChain<VkPhysicalDeviceLinearColorAttachmentFeaturesNV>(pCreateInfo->pNext);
+        if (linear_color_attachment_features) {
+            enabled_features.linear_color_attachment_features = *linear_color_attachment_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

@@ -3648,7 +3648,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      pipe_index);
                 }
 
-                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
+                if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
                     if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
                                          "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
@@ -3662,7 +3662,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
                                          "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
                                          "]: color_format (%s) must be a format with potential format features that include "
-                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
                                          pipe_index, string_VkFormat(color_format));
                     }
                 }
@@ -9600,11 +9600,29 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     if (p_inherited_rendering_info->pColorAttachmentFormats != nullptr) {
                         const VkFormat attachment_format = p_inherited_rendering_info->pColorAttachmentFormats[i];
                         if (attachment_format != VK_FORMAT_UNDEFINED) {
-                            const VkFormatFeatureFlags2KHR potential_format_features = GetPotentialFormatFeatures(attachment_format);
-                            if ((potential_format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
-                                skip |= LogError(commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
-                                    "vkBeginCommandBuffer(): VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
-                                    i, string_VkFormat(attachment_format));
+                            const VkFormatFeatureFlags2KHR potential_format_features =
+                                GetPotentialFormatFeatures(attachment_format);
+                            if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
+                                if ((potential_format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
+                                    skip |= LogError(
+                                        commandBuffer, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006",
+                                        "vkBeginCommandBuffer(): "
+                                        "VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a "
+                                        "format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                        i, string_VkFormat(attachment_format));
+                                }
+                            } else {
+                                if ((potential_format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR |
+                                                                  VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                                    skip |= LogError(
+                                        commandBuffer,
+                                        "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492",
+                                        "vkBeginCommandBuffer(): "
+                                        "VkCommandBufferInheritanceRenderingInfo->pColorAttachmentFormats[%u] (%s) must be a "
+                                        "format with potential format features that include VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
+                                        "or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
+                                        i, string_VkFormat(attachment_format));
+                                }
                             }
                         }
                     }
@@ -13942,14 +13960,27 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     const VkFormatFeatureFlags2KHR valid_flags =
                         VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT_KHR;
                     const VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_format);
-                    if ((format_features & valid_flags) == 0) {
-                        vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
-                                       : "VUID-VkSubpassDescription-pInputAttachments-02647";
-                        skip |=
-                            LogError(device, vuid,
-                                     "%s: Input attachment %s format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
-                                     "| VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
-                                     function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                    if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
+                        if ((format_features & valid_flags) == 0) {
+                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pInputAttachments-02897"
+                                           : "VUID-VkSubpassDescription-pInputAttachments-02647";
+                            skip |= LogError(
+                                device, vuid,
+                                "%s: Input attachment %s format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
+                                "| VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        }
+                    } else {
+                        if ((format_features & (valid_flags | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06499"
+                                           : "VUID-VkSubpassDescription-linearColorAttachment-06496";
+                            skip |= LogError(
+                                device, vuid,
+                                "%s: Input attachment %s format (%s) does not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT "
+                                "| VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT | "
+                                "VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        }
                     }
                 }
 
@@ -14028,13 +14059,26 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                         }
 
                         const VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_format);
-                        if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
-                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-02899"
-                                           : "VUID-VkSubpassDescription-pResolveAttachments-02649";
-                            skip |= LogError(device, vuid,
-                                             "%s: Resolve attachment %s format (%s) does not contain "
-                                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
-                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
+                            if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
+                                vuid = use_rp2 ? "VUID-VkSubpassDescription2-pResolveAttachments-02899"
+                                               : "VUID-VkSubpassDescription-pResolveAttachments-02649";
+                                skip |= LogError(device, vuid,
+                                                 "%s: Resolve attachment %s format (%s) does not contain "
+                                                 "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                                 function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            }
+                        } else {
+                            if ((format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR |
+                                                    VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                                vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06501"
+                                               : "VUID-VkSubpassDescription-linearColorAttachment-06498";
+                                skip |= LogError(
+                                    device, vuid,
+                                    "%s: Resolve attachment %s format (%s) does not contain "
+                                    "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                                    function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            }
                         }
 
                         //  VK_QCOM_render_pass_shader_resolve check of resolve attachmnents
@@ -14313,13 +14357,25 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     }
 
                     const VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_format);
-                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
-                        vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
-                                       : "VUID-VkSubpassDescription-pColorAttachments-02648";
-                        skip |= LogError(device, vuid,
-                                         "%s: Color attachment %s format (%s) does not contain "
-                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
-                                         function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                    if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
+                        if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR) == 0) {
+                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-pColorAttachments-02898"
+                                           : "VUID-VkSubpassDescription-pColorAttachments-02648";
+                            skip |= LogError(device, vuid,
+                                             "%s: Color attachment %s format (%s) does not contain "
+                                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        }
+                    } else {
+                        if ((format_features & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT_KHR |
+                                                VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                            vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06500"
+                                           : "VUID-VkSubpassDescription-linearColorAttachment-06497";
+                            skip |= LogError(device, vuid,
+                                             "%s: Color attachment %s format (%s) does not contain "
+                                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
+                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                        }
                     }
 
                     if (attach_first_use[attachment_index]) {
