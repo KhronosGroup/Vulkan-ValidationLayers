@@ -3854,6 +3854,16 @@ void ValidationStateTracker::PostCallRecordCreateAndroidSurfaceKHR(VkInstance in
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+void ValidationStateTracker::PostCallRecordCreateImagePipeSurfaceFUCHSIA(VkInstance instance,
+                                                                         const VkImagePipeSurfaceCreateInfoFUCHSIA *pCreateInfo,
+                                                                         const VkAllocationCallbacks *pAllocator,
+                                                                         VkSurfaceKHR *pSurface, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordVulkanSurface(pSurface);
+}
+#endif  // VK_USE_PLATFORM_FUCHSIA
+
 #ifdef VK_USE_PLATFORM_IOS_MVK
 void ValidationStateTracker::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
