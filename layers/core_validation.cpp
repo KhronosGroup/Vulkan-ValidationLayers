@@ -14371,10 +14371,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                                                 VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
                             vuid = use_rp2 ? "VUID-VkSubpassDescription2-linearColorAttachment-06500"
                                            : "VUID-VkSubpassDescription-linearColorAttachment-06497";
-                            skip |= LogError(device, vuid,
-                                             "%s: Color attachment %s format (%s) does not contain "
-                                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT.",
-                                             function_name, error_type.c_str(), string_VkFormat(attachment_format));
+                            skip |= LogError(
+                                device, vuid,
+                                "%s: Color attachment %s format (%s) does not contain "
+                                "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV.",
+                                function_name, error_type.c_str(), string_VkFormat(attachment_format));
                         }
                     }
 
