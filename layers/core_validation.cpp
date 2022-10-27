@@ -17862,9 +17862,21 @@ bool CoreChecks::PreCallValidateGetSemaphoreFdKHR(VkDevice device, const VkSemap
 }
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
-bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
-    VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo) const {
-    return ValidateImportSemaphore(pImportSemaphoreZirconHandleInfo->semaphore, "vkImportSemaphoreZirconHandleFUCHSIA");
+bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(VkDevice device,
+                                                                   const VkImportSemaphoreZirconHandleInfoFUCHSIA *info) const {
+    bool skip = false;
+    const char *func_name = "vkImportSemaphoreZirconHandleFUCHSIA";
+    auto sem_state = Get<SEMAPHORE_STATE>(info->semaphore);
+    if (sem_state) {
+        skip |= ValidateObjectNotInUse(sem_state.get(), func_name, kVUIDUndefined);
+
+        if (sem_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            skip |=
+                LogError(sem_state->Handle(), "VUID-VkImportSemaphoreZirconHandleInfoFUCHSIA-semaphoreType-04768",
+                         "%s(): VkSemaphoreTypeCreateInfo::semaphoreType field must not be VK_SEMAPHORE_TYPE_TIMELINE", func_name);
+        }
+    }
+    return skip;
 }
 
 void CoreChecks::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
