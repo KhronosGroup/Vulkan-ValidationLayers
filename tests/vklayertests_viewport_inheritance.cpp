@@ -66,7 +66,7 @@ class ViewportInheritanceTestData {
     // Set to a failure message if initialization failed.
     const char* m_failureReason = nullptr;
 
-    void PickColorFormat(VkPhysicalDevice physical_device) {
+    void PickColorFormat(VkPhysicalDevice physical_device) noexcept {
         std::array<VkFormat, 7> formats = {VK_FORMAT_R8G8B8A8_SRGB,      VK_FORMAT_B8G8R8A8_SRGB,  VK_FORMAT_R8G8B8A8_UNORM,
                                            VK_FORMAT_B8G8R8A8_UNORM,     VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_B8G8R8A8_SNORM,
                                            VK_FORMAT_R32G32B32A32_SFLOAT};
@@ -83,7 +83,7 @@ class ViewportInheritanceTestData {
         m_failureReason = "No color attachment format found";
     }
 
-    void CreateRenderPass() {
+    void CreateRenderPass() noexcept {
         assert(m_colorFormat != VK_FORMAT_UNDEFINED);
         VkAttachmentDescription color_attachment = {0,
                                                     m_colorFormat,
@@ -103,7 +103,7 @@ class ViewportInheritanceTestData {
         if (result != VK_SUCCESS) m_failureReason = "Could not create render pass.";
     }
 
-    void CreateColorImageObj() {
+    void CreateColorImageObj() noexcept {
         assert(m_colorFormat != VK_FORMAT_UNDEFINED);
         m_colorImageObj.Init(128, 128, 1, m_colorFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
         if (!m_colorImageObj.initialized()) {
@@ -111,7 +111,7 @@ class ViewportInheritanceTestData {
         }
     }
 
-    void CreateColorView() {
+    void CreateColorView() noexcept {
         assert(!m_colorImageView);
         VkImageViewCreateInfo info = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                                       nullptr,
@@ -125,7 +125,7 @@ class ViewportInheritanceTestData {
         if (result != VK_SUCCESS) m_failureReason = "Could not create image view";
     }
 
-    void CreateFramebuffer() {
+    void CreateFramebuffer() noexcept {
         assert(!m_framebuffer);
         VkFramebufferCreateInfo info = {
             VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &m_colorImageView, 128, 128, 1};
@@ -133,14 +133,14 @@ class ViewportInheritanceTestData {
         if (result != VK_SUCCESS) m_failureReason = "Could not create framebuffer";
     }
 
-    void CreatePipelineLayout() {
+    void CreatePipelineLayout() noexcept {
         assert(!m_pipelineLayout);
         VkPipelineLayoutCreateInfo info = LvlInitStruct<VkPipelineLayoutCreateInfo>();
         VkResult result = vk::CreatePipelineLayout(m_device, &info, nullptr, &m_pipelineLayout);
         if (result != VK_SUCCESS) m_failureReason = "Could not create pipeline layout";
     }
 
-    void CreateShaderStages() {
+    void CreateShaderStages() noexcept {
         VkShaderModuleCreateInfo vertex_info = {VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, nullptr, 0, sizeof kVertexSpirV,
                                                 kVertexSpirV};
         m_shaderStages[0] = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
@@ -247,28 +247,24 @@ class ViewportInheritanceTestData {
         return true;
     }
 
-    ViewportInheritanceTestData(VkDeviceObj* p_device_obj, VkPhysicalDevice physical_device) : m_colorImageObj(p_device_obj) {
+    ViewportInheritanceTestData(VkDeviceObj* p_device_obj, VkPhysicalDevice physical_device) noexcept
+        : m_colorImageObj(p_device_obj) {
         m_device = p_device_obj->handle();
-        try {
-            PickColorFormat(physical_device);
-            if (m_failureReason) return;
-            CreateRenderPass();
-            if (m_failureReason) return;
-            CreateColorImageObj();
-            if (m_failureReason) return;
-            CreateColorView();
-            if (m_failureReason) return;
-            CreateFramebuffer();
-            if (m_failureReason) return;
-            CreatePipelineLayout();
-            if (m_failureReason) return;
-            CreateShaderStages();
-            if (m_failureReason) return;
-        }
-        catch (...) {
-            Cleanup();
-            throw;
-        }
+
+        PickColorFormat(physical_device);
+        if (m_failureReason) return;
+        CreateRenderPass();
+        if (m_failureReason) return;
+        CreateColorImageObj();
+        if (m_failureReason) return;
+        CreateColorView();
+        if (m_failureReason) return;
+        CreateFramebuffer();
+        if (m_failureReason) return;
+        CreatePipelineLayout();
+        if (m_failureReason) return;
+        CreateShaderStages();
+        if (m_failureReason) return;
     }
 
     ~ViewportInheritanceTestData() { Cleanup(); }
