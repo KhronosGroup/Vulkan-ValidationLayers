@@ -3856,12 +3856,13 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                     string_VkBorderColor(pCreateInfo->borderColor));
             } else {
                 if ((custom_create_info->format != VK_FORMAT_UNDEFINED) &&
+                    !FormatIsDepthAndStencil(custom_create_info->format) &&
                     ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT &&
                       !FormatIsSampledInt(custom_create_info->format)) ||
                      (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
                       !FormatIsSampledFloat(custom_create_info->format)))) {
                     skip |=
-                        LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013",
+                        LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605",
                                  "VkSamplerCreateInfo->borderColor is %s but VkSamplerCustomBorderColorCreateInfoEXT.format = %s "
                                  "whose type does not match\n",
                                  string_VkBorderColor(pCreateInfo->borderColor), string_VkFormat(custom_create_info->format));
