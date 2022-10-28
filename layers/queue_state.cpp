@@ -88,9 +88,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
     }
 
     for (auto &signal : submission.signal_semaphores) {
-        if (signal.semaphore->EnqueueSignal(this, submission.seq, signal.payload)) {
-            retire_early = true;
-        }
+        signal.semaphore->EnqueueSignal(this, submission.seq, signal.payload);
     }
 
     if (submission.fence) {
@@ -132,8 +130,9 @@ void QUEUE_STATE::NotifyAndWait(uint64_t until_seq) {
     auto result = waiter.wait_until(GetCondWaitTimeout());
     if (result != std::future_status::ready) {
         dev_data_.LogError(Handle(), "UNASSIGNED-VkQueue-state-timeout",
-                           "Timeout waiting for queue state to update. This is most likely a validation bug. seq=%" PRIu64,
-                           until_seq);
+                           "Timeout waiting for queue state to update. This is most likely a validation bug."
+                           " seq=%" PRIu64 " until=%" PRIu64,
+                           seq_.load(), until_seq);
     }
 }
 
@@ -254,13 +253,15 @@ void FENCE_STATE::NotifyAndWait() {
         // while waiting
         auto guard = WriteLock();
         if (state_ == FENCE_INFLIGHT) {
-            if (scope_ == kSyncScopeInternal && queue_) {
+            if (queue_) {
                 queue_->Notify(seq_);
+                waiter = waiter_;
             } else {
                 state_ = FENCE_RETIRED;
                 completed_.set_value();
+                queue_ = nullptr;
+                seq_ = 0;
             }
-            waiter = waiter_;
         }
     }
     if (waiter.valid()) {
@@ -278,6 +279,8 @@ void FENCE_STATE::Retire() {
     if (state_ == FENCE_INFLIGHT) {
         state_ = FENCE_RETIRED;
         completed_.set_value();
+        queue_ = nullptr;
+        seq_ = 0;
     }
 }
 
@@ -321,46 +324,62 @@ void FENCE_STATE::Export(VkExternalFenceHandleTypeFlagBits handle_type) {
     }
 }
 
-bool SEMAPHORE_STATE::EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
+void SEMAPHORE_STATE::EnqueueSignal(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
     auto guard = WriteLock();
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
         payload = next_payload_++;
     }
-    operations_.emplace(payload, SemOpEntry(kSignal, queue, queue_seq, payload));
-    return false;
+    SemOp sig_op(kSignal, queue, queue_seq, payload);
+    auto result = timeline_.emplace(payload, sig_op);
+    if (!result.second) {
+        // timeline semaphore wait before signal
+        result.first->second.signal_op.emplace(sig_op);
+    }
 }
 
 void SEMAPHORE_STATE::EnqueueWait(QUEUE_STATE *queue, uint64_t queue_seq, uint64_t &payload) {
     auto guard = WriteLock();
-    switch (scope_) {
-        case kSyncScopeExternalTemporary:
-            scope_ = kSyncScopeInternal;
-            break;
-        default:
-            break;
-    }
+    SemOp wait_op(kWait, queue, queue_seq, payload);
     if (type == VK_SEMAPHORE_TYPE_BINARY) {
-        payload = next_payload_++;
-    } else if (payload <= completed_.payload) {
-        return;
+        if (timeline_.empty()) {
+            completed_ = wait_op;
+            return;
+        }
+        payload = timeline_.rbegin()->first;
+        wait_op.payload = payload;
+    } else {
+        if (payload <= completed_.payload) {
+            return;
+        }
     }
-    operations_.emplace(payload, SemOpEntry(kWait, queue, queue_seq, payload));
+    auto result = timeline_.emplace(payload, TimePoint(wait_op));
+    if (!result.second) {
+        result.first->second.wait_ops.emplace(wait_op);
+    }
 }
 
 void SEMAPHORE_STATE::EnqueueAcquire() {
     auto guard = WriteLock();
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto payload = next_payload_++;
-    operations_.emplace(payload, SemOpEntry(kBinaryAcquire, nullptr, 0, payload));
+    SemOp acquire(kBinaryAcquire, nullptr, 0, payload);
+    timeline_.emplace(payload, acquire);
 }
 
 layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &, bool)> &filter) const {
     auto guard = ReadLock();
     layer_data::optional<SemOp> result;
 
-    for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
-        if (!filter || filter(pos->second, true)) {
-            result.emplace(pos->second);
+    for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
+        auto &timepoint = pos->second;
+        for (auto &op : timepoint.wait_ops) {
+            if (!filter || filter(op, true)) {
+                result.emplace(op);
+                break;
+            }
+        }
+        if (!result && timepoint.signal_op && (!filter || filter(*timepoint.signal_op, true))) {
+            result.emplace(*timepoint.signal_op);
             break;
         }
     }
@@ -375,10 +394,10 @@ bool SEMAPHORE_STATE::CanBeSignaled() const {
         return true;
     }
     auto guard = ReadLock();
-    if (operations_.empty()) {
+    if (timeline_.empty()) {
         return completed_.CanBeSignaled();
     }
-    return operations_.rbegin()->second.CanBeSignaled();
+    return timeline_.rbegin()->second.HasWaiters();
 }
 
 bool SEMAPHORE_STATE::CanBeWaited() const {
@@ -386,71 +405,87 @@ bool SEMAPHORE_STATE::CanBeWaited() const {
         return true;
     }
     auto guard = ReadLock();
-    if (operations_.empty()) {
+    if (timeline_.empty()) {
         return completed_.CanBeWaited();
     }
-    return operations_.rbegin()->second.CanBeWaited();
+    return !timeline_.rbegin()->second.HasWaiters();
 }
 
-VkQueue SEMAPHORE_STATE::AnotherQueueWaitsBinary(VkQueue queue) const {
-    if (type == VK_SEMAPHORE_TYPE_TIMELINE) {
-        return VK_NULL_HANDLE;
+void SEMAPHORE_STATE::SemOp::Notify() const {
+    if (queue) {
+        queue->Notify(seq);
     }
-    auto guard = ReadLock();
+}
 
-    for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
-        if (pos->second.op_type == kWait && pos->second.queue->Queue() != queue) {
-            return pos->second.queue->Queue();
-        }
+void SEMAPHORE_STATE::TimePoint::Notify() const {
+    if (signal_op) {
+        signal_op->Notify();
     }
-    return VK_NULL_HANDLE;
+    for (auto &wait : wait_ops) {
+        wait.Notify();
+    }
 }
 
 void SEMAPHORE_STATE::Notify(uint64_t payload) {
-    auto guard = WriteLock();
-    for (const auto &entry : operations_) {
-        if (entry.first > payload) {
-            break;
-        }
-        const auto &op = entry.second;
-        if (op.queue) {
-            op.queue->Notify(op.seq);
-        }
+    auto guard = ReadLock();
+    auto pos = timeline_.find(payload);
+    if (pos != timeline_.end()) {
+        pos->second.Notify();
     }
 }
 
 void SEMAPHORE_STATE::Retire(QUEUE_STATE *current_queue, uint64_t payload) {
     auto guard = WriteLock();
-    // This loop tells all queues that use the semaphore that something has happened.
-    // Operations that are on the current queue (or no queue), we clean them up
-    // immediately. For other queues, we must notify them and then wait for them to
-    // update state. This rather scary process ensures that all queues update their
-    // state in the order that operations completed on the GPU.
-    while (!operations_.empty() && operations_.begin()->second.payload <= payload) {
-        auto &op = operations_.begin()->second;
-        if (op.queue) {
-            op.queue->Notify(op.seq);
+    if (payload <= completed_.payload) {
+        return;
+    }
+    auto pos = timeline_.find(payload);
+    assert(pos != timeline_.end());
+    auto &timepoint = pos->second;
+    timepoint.Notify();
+
+    bool retire_here = false;
+
+    // Retire the operation if it occured on the current queue. Usually this means it is a signal.
+    // Note that host operations occur on the null queue. Acquire operations are a special case because
+    // the happen asynchronously but there isn't a queue associated with signalling them.
+    if (timepoint.signal_op) {
+        if ((timepoint.signal_op->queue == current_queue || timepoint.signal_op->IsAcquire())) {
+            retire_here = true;
         }
-        if (op.queue == nullptr || op.queue == current_queue) {
-            // make sure completed doesn't go backwards for timeline semaphores
-            if (completed_.payload <= op.payload) {
-                completed_ = op;
-            }
-            op.completed.set_value();
-            operations_.erase(operations_.begin());
-        } else if (op.waiter.valid()) {
-            // the current op should get destroyed while we're waiting, so copy out the waiter.
-            auto waiter = op.waiter;
-            guard.unlock();
-            auto result = waiter.wait_until(GetCondWaitTimeout());
-            if (result != std::future_status::ready) {
-                dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
-                                   "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
-                                   " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
-                                   completed_.payload, payload);
-            }
-            guard.lock();
+    } else {
+        // For external semaphores we might not have visibility to the signal op
+        if (scope_ != kSyncScopeInternal) {
+            retire_here = true;
         }
+    }
+
+    if (retire_here) {
+        if (timepoint.signal_op) {
+            completed_ = *timepoint.signal_op;
+        }
+        for (auto &wait : timepoint.wait_ops) {
+            completed_ = wait;
+        }
+        timepoint.completed.set_value();
+        timeline_.erase(timeline_.begin());
+        if (scope_ == kSyncScopeExternalTemporary) {
+            scope_ = kSyncScopeInternal;
+        }
+    } else {
+        // Wait for some other queue or a host operation to retire
+        assert(timepoint.waiter.valid());
+        // the current timepoint should get destroyed while we're waiting, so copy out the waiter.
+        auto waiter = timepoint.waiter;
+        guard.unlock();
+        auto result = waiter.wait_until(GetCondWaitTimeout());
+        if (result != std::future_status::ready) {
+            dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
+                               "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
+                               " completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
+                               completed_.payload, payload);
+        }
+        guard.lock();
     }
 }
 
@@ -462,30 +497,20 @@ std::shared_future<void> SEMAPHORE_STATE::Wait(uint64_t payload) {
         already_done.set_value();
         return result;
     }
-    auto entry = operations_.find(payload);
-    if (entry == operations_.end()) {
-        // Handle timeline semaphore wait before signal
-        assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-        entry = operations_.emplace(payload, SemOpEntry(kWait, nullptr, 0, payload));
+    SemOp wait_op(kWait, nullptr, 0, payload);
+    auto result = timeline_.emplace(payload, TimePoint(wait_op));
+    auto &timepoint = result.first->second;
+    if (!result.second) {
+        timepoint.wait_ops.emplace(wait_op);
     }
-    return entry->second.waiter;
+    return timepoint.waiter;
 }
 
 void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
     if (scope_ == kSyncScopeInternal) {
-        auto timeout = GetCondWaitTimeout();
-        auto result = std::future_status::timeout;
+        Notify(payload);
         auto waiter = Wait(payload);
-
-        // Handle a race condition where a vkWaitSemaphores() or vkSemaphoreSemaphoreCounterValue()
-        // call completes before we've processed signal operations have been added to the semaphore
-        // by vkQueueSubmit(). If that happens we need to keep poking the operations_ list to tell
-        // new operations that they're done as soon as they show up.
-        do {
-            Notify(payload);
-            result = waiter.wait_for(std::chrono::milliseconds(10));
-        } while (result != std::future_status::ready && std::chrono::steady_clock::now() < timeout);
-
+        auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
             dev_data_.LogError(Handle(), "UNASSIGNED-VkSemaphore-state-timeout",
                                "Timeout waiting for timeline semaphore state to update. This is most likely a validation bug."
@@ -495,8 +520,8 @@ void SEMAPHORE_STATE::NotifyAndWait(uint64_t payload) {
     } else {
         // For external timeline semaphores we should bump the completed payload to whatever the driver
         // tells us.
-        Retire(nullptr, payload);
         EnqueueSignal(nullptr, 0, payload);
+        Retire(nullptr, payload);
     }
 }
 
