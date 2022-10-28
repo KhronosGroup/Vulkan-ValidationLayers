@@ -180,7 +180,8 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
 #endif  // VK_USE_PLATFORM_METAL_EXT
           type(type_create_info ? type_create_info->semaphoreType : VK_SEMAPHORE_TYPE_BINARY),
           exportHandleTypes(GetExportHandleTypes(pCreateInfo)),
-          completed_{kNone, nullptr, 0, type_create_info ? type_create_info->initialValue : 0},
+          completed_{type == VK_SEMAPHORE_TYPE_TIMELINE ? kSignal : kNone, nullptr, 0,
+                     type_create_info ? type_create_info->initialValue : 0},
           next_payload_(completed_.payload + 1),
           dev_data_(dev) {
     }
@@ -220,7 +221,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void RetireTimeline(uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    layer_data::optional<SemOp> LastOp(const std::function<bool(const SemOp &)> &filter = nullptr) const;
+    layer_data::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
 
     bool CanBeSignaled() const;
     bool CanBeWaited() const;
