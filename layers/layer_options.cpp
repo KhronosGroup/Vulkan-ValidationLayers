@@ -186,7 +186,7 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
 }
 
 // Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED &enables) {
+void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, CHECK_ENABLED &enables) {
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
@@ -211,7 +211,7 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
 }
 
 // Given a string representation of a list of disable enum values, call the appropriate setter function
-void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter, CHECK_DISABLED &disables) {
+void SetLocalDisableSetting(std::string list_of_disables, const std::string &delimiter, CHECK_DISABLED &disables) {
     size_t pos = 0;
     std::string token;
     while (list_of_disables.length() != 0) {
@@ -240,7 +240,7 @@ uint32_t TokenToUint(std::string &token) {
     return int_id;
 }
 
-void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, std::vector<uint32_t> &filter_list) {
+void CreateFilterMessageIdList(std::string raw_id_list, const std::string &delimiter, std::vector<uint32_t> &filter_list) {
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
@@ -258,7 +258,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, s
     }
 }
 
-void SetCustomStypeInfo(std::string raw_id_list, std::string delimiter) {
+void SetCustomStypeInfo(std::string raw_id_list, const std::string &delimiter) {
     size_t pos = 0;
     std::string token;
     // List format is a list of integer pairs

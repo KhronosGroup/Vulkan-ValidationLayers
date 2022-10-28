@@ -73,8 +73,8 @@ bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) c
     return true;
 }
 
-static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId pcr_id,
-                                             const PipelineLayoutSetLayoutsId set_layouts_id) {
+static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId &pcr_id,
+                                             const PipelineLayoutSetLayoutsId &set_layouts_id) {
     return pipeline_layout_compat_dict.look_up(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
 }
 

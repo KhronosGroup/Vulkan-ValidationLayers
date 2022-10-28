@@ -525,7 +525,7 @@ class StatelessValidation : public ValidationObject {
     // Forward declarations
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const char *api_name, const uint32_t promoted_version) const;
-    bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const;
+    bool SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const;
 
     bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header,
                                      const char *pnext_vuid, bool is_physdev_api = false, bool is_const_param = true) const;
@@ -1019,7 +1019,7 @@ class StatelessValidation : public ValidationObject {
 
         VkBool32 attachment_feedback_loop_layout = false;
         const auto *attachment_feedback_loop_layout_features =
-                LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
+            LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
         if (attachment_feedback_loop_layout_features)
             attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
 
@@ -1319,7 +1319,8 @@ class StatelessValidation : public ValidationObject {
             // Need to check first so layer doesn't segfault from out of bound array access
             // src subpass bound check
             if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
-                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-pDependencies-06866";
+                vuid =
+                    use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-pDependencies-06866";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pDependencies[%u].srcSubpass index (%u) has to be less than subpassCount (%u)",
                                  func_name, i, dependency.srcSubpass, pCreateInfo->subpassCount);
@@ -1327,7 +1328,8 @@ class StatelessValidation : public ValidationObject {
 
             // dst subpass bound check
             if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
-                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-pDependencies-06867";
+                vuid =
+                    use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-pDependencies-06867";
                 skip |= LogError(device, vuid,
                                  "%s: pCreateInfo->pDependencies[%u].dstSubpass index (%u) has to be less than subpassCount (%u)",
                                  func_name, i, dependency.dstSubpass, pCreateInfo->subpassCount);
@@ -1468,7 +1470,7 @@ class StatelessValidation : public ValidationObject {
                                                     VkPipelineLayout *pPipelineLayout) const;
 
     bool ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
-                                                const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
+                                               const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
@@ -1496,7 +1498,7 @@ class StatelessValidation : public ValidationObject {
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     bool ExportMetalObjectsPNextUtil(VkExportMetalObjectTypeFlagBitsEXT bit, const char *vuid, const char *api_call,
-                                         const char *sType, const void *pNext) const;
+                                     const char *sType, const void *pNext) const;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
     bool validate_WriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
@@ -1701,7 +1703,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) const;
 
-    bool ValidateDebugUtilsObjectNameInfoEXT(std::string api_name, VkDevice device,
+    bool ValidateDebugUtilsObjectNameInfoEXT(const std::string &api_name, VkDevice device,
                                              const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const;
     bool manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const;
 

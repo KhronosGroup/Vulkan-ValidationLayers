@@ -492,17 +492,17 @@ class PIPELINE_STATE : public BASE_NODE {
                                                                     const safe_VkGraphicsPipelineCreateInfo &create_info);
     static std::shared_ptr<PreRasterState> CreatePreRasterState(const PIPELINE_STATE &p, const ValidationStateTracker &state,
                                                                 const safe_VkGraphicsPipelineCreateInfo &create_info,
-                                                                std::shared_ptr<const RENDER_PASS_STATE> rp);
+                                                                const std::shared_ptr<const RENDER_PASS_STATE> &rp);
     static std::shared_ptr<FragmentShaderState> CreateFragmentShaderState(const PIPELINE_STATE &p,
                                                                           const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
-                                                                          std::shared_ptr<const RENDER_PASS_STATE> rp);
+                                                                          const std::shared_ptr<const RENDER_PASS_STATE> &rp);
     static std::shared_ptr<FragmentOutputState> CreateFragmentOutputState(const PIPELINE_STATE &p,
                                                                           const ValidationStateTracker &state,
                                                                           const VkGraphicsPipelineCreateInfo &create_info,
                                                                           const safe_VkGraphicsPipelineCreateInfo &safe_create_info,
-                                                                          std::shared_ptr<const RENDER_PASS_STATE> rp);
+                                                                          const std::shared_ptr<const RENDER_PASS_STATE> &rp);
 
     // Merged layouts
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> merged_graphics_layout;

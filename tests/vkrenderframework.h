@@ -103,7 +103,7 @@ class ErrorMonitor {
     void Reset();
 
     // ErrorMonitor will look for an error message containing the specified string(s)
-    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string msg);
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg);
     void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString);
 
     // ErrorMonitor will look for an error message containing the specified string(s)
@@ -852,8 +852,8 @@ class VkPipelineObj : public vk_testing::Pipeline {
     void SetInputAssembly(const VkPipelineInputAssemblyStateCreateInfo *ia_state);
     void SetRasterization(const VkPipelineRasterizationStateCreateInfo *rs_state);
     void SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state);
-    void SetViewport(const std::vector<VkViewport> viewports);
-    void SetScissor(const std::vector<VkRect2D> scissors);
+    void SetViewport(const std::vector<VkViewport> &viewports);
+    void SetScissor(const std::vector<VkRect2D> &scissors);
     void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
 
     void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);

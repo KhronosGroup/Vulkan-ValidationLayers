@@ -48,7 +48,7 @@ using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
 using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;
 
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
-static const char *GetBufferImageCopyCommandVUID(std::string id, bool image_to_buffer, bool copy2) {
+static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool image_to_buffer, bool copy2) {
     // clang-format off
     static const std::map<std::string, std::array<const char *, 4>> copy_imagebuffer_vuid = {
         {"00193", {
