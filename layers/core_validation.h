@@ -616,8 +616,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, const SHADER_MODULE_STATE& module_state,
                                           const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
+
+    // Auto-generated helper functions
     bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
+
     bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                                        bool has_writable_descriptor, bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
