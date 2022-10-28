@@ -354,7 +354,7 @@ void SEMAPHORE_STATE::EnqueueAcquire() {
     operations_.emplace(payload, SemOpEntry(kBinaryAcquire, nullptr, 0, payload));
 }
 
-layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(std::function<bool(const SemOp &)> filter) const {
+layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &)> &filter) const {
     auto guard = ReadLock();
     layer_data::optional<SemOp> result;
 

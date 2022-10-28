@@ -275,10 +275,10 @@ class GpuAssisted : public GpuAssistedBase {
     void PreCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress) override;
     void AllocateValidationResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point, CMD_TYPE cmd,
                                      const GpuAssistedCmdIndirectState* indirect_state = nullptr);
-    void AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block, GpuAssistedPreDrawResources& resources,
-                                            const VkRenderPass render_pass, VkPipeline* pPipeline,
-                                            const GpuAssistedCmdIndirectState* indirect_state);
-    void AllocatePreDispatchValidationResources(GpuAssistedDeviceMemoryBlock output_block,
+    void AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
+                                            GpuAssistedPreDrawResources& resources, const VkRenderPass render_pass,
+                                            VkPipeline* pPipeline, const GpuAssistedCmdIndirectState* indirect_state);
+    void AllocatePreDispatchValidationResources(const GpuAssistedDeviceMemoryBlock& output_block,
                                                 GpuAssistedPreDispatchResources& resources,
                                                 const GpuAssistedCmdIndirectState* indirect_state);
     void PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,

@@ -65,7 +65,7 @@ void ErrorMonitor::Reset() {
     MonitorReset();
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string &msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
     if (NeedCheckSuccess()) {
@@ -2277,7 +2277,7 @@ void VkPipelineObj::AddColorAttachment(uint32_t binding, const VkPipelineColorBl
 
 void VkPipelineObj::SetDepthStencil(const VkPipelineDepthStencilStateCreateInfo *ds_state) { m_ds_state = ds_state; }
 
-void VkPipelineObj::SetViewport(const vector<VkViewport> viewports) {
+void VkPipelineObj::SetViewport(const vector<VkViewport> &viewports) {
     m_viewports = viewports;
     // If we explicitly set a null viewport, pass it through to create info
     // but preserve viewportCount because it musn't change
@@ -2286,7 +2286,7 @@ void VkPipelineObj::SetViewport(const vector<VkViewport> viewports) {
     }
 }
 
-void VkPipelineObj::SetScissor(const vector<VkRect2D> scissors) {
+void VkPipelineObj::SetScissor(const vector<VkRect2D> &scissors) {
     m_scissors = scissors;
     // If we explicitly set a null scissor, pass it through to create info
     // but preserve scissorCount because it musn't change

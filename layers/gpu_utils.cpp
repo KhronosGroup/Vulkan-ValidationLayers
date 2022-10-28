@@ -1065,7 +1065,7 @@ void ReadOpSource(const SHADER_MODULE_STATE &module_state, const uint32_t report
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 
 #if defined(__GNUC__) && GCC_VERSION < 40900
-bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::string &filename) {
+bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
     // # line <linenumber> "<filename>" or
     // #line <linenumber> "<filename>"
     std::vector<std::string> tokens;
@@ -1090,7 +1090,7 @@ bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::str
     return true;
 }
 #else
-bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::string &filename) {
+bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::string &filename) {
     static const std::regex line_regex(  // matches #line directives
         "^"                              // beginning of line
         "\\s*"                           // optional whitespace

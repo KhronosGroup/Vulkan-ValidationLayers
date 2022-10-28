@@ -100,7 +100,7 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
     return skip;
 }
 
-bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const {
+bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const {
     if (instance_extensions.vk_khr_get_physical_device_properties2) {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
@@ -6521,7 +6521,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
-bool StatelessValidation::ValidateDebugUtilsObjectNameInfoEXT(std::string api_name, VkDevice device,
+bool StatelessValidation::ValidateDebugUtilsObjectNameInfoEXT(const std::string &api_name, VkDevice device,
                                                               const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
     bool skip = false;
     if ((pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) && (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE))) {

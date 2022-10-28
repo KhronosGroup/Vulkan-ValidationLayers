@@ -1020,9 +1020,9 @@ struct ApplyTrackbackStackAction {
 // Returns the position past the last resolved range -- the entry covering the remainder of entry->first not included in the
 // range [first, last)
 template <typename BarrierAction>
-static void ResolveMapToEntry(ResourceAccessRangeMap *dest, ResourceAccessRangeMap::iterator entry,
-                              ResourceAccessRangeMap::const_iterator first, ResourceAccessRangeMap::const_iterator last,
-                              BarrierAction &barrier_action) {
+static void ResolveMapToEntry(ResourceAccessRangeMap *dest, const ResourceAccessRangeMap::iterator &entry,
+                              const ResourceAccessRangeMap::const_iterator &first,
+                              const ResourceAccessRangeMap::const_iterator &last, BarrierAction &barrier_action) {
     auto at = entry;
     for (auto pos = first; pos != last; ++pos) {
         // Every member of the input iterator range must fit within the remaining portion of entry
@@ -1741,14 +1741,14 @@ void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const Action &act
 }
 struct UpdateMemoryAccessStateFunctor {
     using Iterator = ResourceAccessRangeMap::iterator;
-    Iterator Infill(ResourceAccessRangeMap *accesses, Iterator pos, ResourceAccessRange range) const {
+    Iterator Infill(ResourceAccessRangeMap *accesses, const Iterator &pos, const ResourceAccessRange &range) const {
         // this is only called on gaps, and never returns a gap.
         ResourceAccessState default_state;
         context.ResolvePreviousAccess(type, range, accesses, &default_state);
         return accesses->lower_bound(range);
     }
 
-    Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
+    Iterator operator()(ResourceAccessRangeMap *accesses, const Iterator &pos) const {
         auto &access_state = pos->second;
         access_state.Update(usage, ordering_rule, tag);
         return pos;
@@ -3964,7 +3964,7 @@ QueueBatchContext::BatchSet SyncValidator::GetQueueLastBatchSnapshot(Predicate &
 
 QueueBatchContext::BatchSet SyncValidator::GetQueueBatchSnapshot() {
     QueueBatchContext::BatchSet snapshot = GetQueueLastBatchSnapshot();
-    auto append = [&snapshot](const std::shared_ptr<QueueBatchContext> batch) {
+    auto append = [&snapshot](const std::shared_ptr<QueueBatchContext> &batch) {
         if (batch && !layer_data::Contains(snapshot, batch)) {
             snapshot.emplace(batch);
         }

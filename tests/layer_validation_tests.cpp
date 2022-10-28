@@ -554,7 +554,7 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
     }
 }
 
-void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, std::string code) {
+void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
     }
@@ -566,7 +566,7 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info
     }
 }
 
-void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, std::string code) {
+void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
@@ -576,7 +576,7 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, 
     }
 }
 
-void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, std::string code) {
+void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
@@ -596,7 +596,7 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *creat
     }
 }
 
-void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_info, std::string code) {
+void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_info, const std::string &code) {
     if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     }
@@ -683,8 +683,7 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
 
 bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
     PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
-        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(),
-                                                                     "vkGetPhysicalDeviceFeatures2");
+        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2");
 
     {
         auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
@@ -1235,7 +1234,7 @@ void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage imag
     VkCommandBufferObj cmd_buf(device, &pool);
 
     cmd_buf.begin();
-    VkImageMemoryBarrier layout_barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+    VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
                                         nullptr,
                                         0,
                                         VK_ACCESS_MEMORY_READ_BIT,
@@ -1244,22 +1243,20 @@ void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage imag
                                         VK_QUEUE_FAMILY_IGNORED,
                                         VK_QUEUE_FAMILY_IGNORED,
                                         image,
-                                        {aspect, 0, 1, 0, 1} };
+                                        {aspect, 0, 1, 0, 1}};
 
     cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1,
-        &layout_barrier);
+                            &layout_barrier);
     cmd_buf.end();
 
     cmd_buf.QueueCommandBuffer();
 }
 
-std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width,
-                                                                     const uint32_t height,
+std::unique_ptr<VkImageObj> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
                                                                      VkImageUsageFlags attachment_usage) {
     auto img = std::unique_ptr<VkImageObj>(new VkImageObj(m_device));
     img->Init(width, height, 1, format,
-              VK_IMAGE_USAGE_SAMPLED_BIT | attachment_usage |
-              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+              VK_IMAGE_USAGE_SAMPLED_BIT | attachment_usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
               VK_IMAGE_TILING_OPTIMAL);
     return img;
 }
@@ -2325,7 +2322,7 @@ BarrierQueueFamilyBase::QueueFamilyObjs *BarrierQueueFamilyBase::GetQueueFamilyI
     return qf;
 }
 
-void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst,
+void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, uint32_t src, uint32_t dst,
                                               uint32_t queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
     const bool has_img_err = img_err.size() > 0;
@@ -2367,7 +2364,7 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
     context_->Reset();
 };
 
-void Barrier2QueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst,
+void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const std::string &buf_err, uint32_t src, uint32_t dst,
                                                uint32_t queue_family_index, Modifier mod) {
     auto &monitor = context_->layer_test->Monitor();
     bool positive = true;

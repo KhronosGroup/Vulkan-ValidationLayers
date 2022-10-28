@@ -965,7 +965,8 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
 }
 
 // Generate the part of the message describing the violation.
-bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg, GpuAssistedBufferInfo buf_info, GpuAssisted *gpu_assisted) {
+bool GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg,
+                               const GpuAssistedBufferInfo &buf_info, GpuAssisted *gpu_assisted) {
     using namespace spvtools;
     std::ostringstream strm;
     bool return_code = true;
@@ -1735,7 +1736,7 @@ VkPipeline GpuAssisted::GetValidationPipeline(VkRenderPass render_pass) {
     return pipeline;
 }
 
-void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBlock output_block,
+void GpuAssisted::AllocatePreDrawValidationResources(const GpuAssistedDeviceMemoryBlock &output_block,
                                                      GpuAssistedPreDrawResources &resources, const VkRenderPass render_pass,
                                                      VkPipeline *pPipeline, const GpuAssistedCmdIndirectState *indirect_state) {
     VkResult result;
@@ -1825,7 +1826,7 @@ void GpuAssisted::AllocatePreDrawValidationResources(GpuAssistedDeviceMemoryBloc
     }
     DispatchUpdateDescriptorSets(device, buffer_count, desc_writes, 0, NULL);
 }
-void GpuAssisted::AllocatePreDispatchValidationResources(GpuAssistedDeviceMemoryBlock output_block,
+void GpuAssisted::AllocatePreDispatchValidationResources(const GpuAssistedDeviceMemoryBlock &output_block,
                                                          GpuAssistedPreDispatchResources &resources,
                                                          const GpuAssistedCmdIndirectState *indirect_state) {
     VkResult result;

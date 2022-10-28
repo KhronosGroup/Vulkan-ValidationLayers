@@ -8336,10 +8336,8 @@ static bool UniqueImageViews(const VkRenderingInfo* pRenderingInfo, VkImageView 
     return unique_views;
 }
 
-bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view,
-                                                 const char *attachment,
-                                                 const VkRenderingInfo *pRenderingInfo,
-                                                 const char *func_name) const {
+bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view, const char *attachment,
+                                                 const VkRenderingInfo *pRenderingInfo, const char *func_name) const {
     bool skip = false;
 
     // Upcasting to handle overflow
@@ -11925,7 +11923,7 @@ static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQue
     return QUERYSTATE_UNKNOWN;
 }
 
-bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, const CMD_TYPE cmd_type,
                                     VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
     bool skip = false;
     auto state_data = cb_state.dev_data;
@@ -11960,7 +11958,7 @@ bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, QueryObject quer
     return skip;
 }
 
-bool CoreChecks::ValidatePerformanceQuery(CMD_BUFFER_STATE &cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+bool CoreChecks::ValidatePerformanceQuery(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, const CMD_TYPE cmd_type,
                                           VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
     auto state_data = cb_state.dev_data;
     auto query_pool_state = state_data->Get<QUERY_POOL_STATE>(query_obj.pool);

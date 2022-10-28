@@ -362,9 +362,9 @@ class CoreChecks : public ValidationStateTracker {
     static bool ValidateCopyQueryPoolResults(CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                              uint32_t queryCount, uint32_t perfPass, VkQueryResultFlags flags,
                                              QueryMap* localQueryToStateMap);
-    static bool VerifyQueryIsReset(CMD_BUFFER_STATE& cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+    static bool VerifyQueryIsReset(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                    VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    static bool ValidatePerformanceQuery(CMD_BUFFER_STATE& cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+    static bool ValidatePerformanceQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, uint32_t index,
                             CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
@@ -1219,8 +1219,8 @@ class CoreChecks : public ValidationStateTracker {
                                              const VkCopyDescriptorSet* pDescriptorCopies) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
-    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view, const char* attachment, const VkRenderingInfo* pRenderingInfo,
-                                         const char* func_name) const;
+    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view, const char* attachment,
+                                         const VkRenderingInfo* pRenderingInfo, const char* func_name) const;
     bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                              const VkRenderingInfoKHR* pRenderingInfo) const override;
