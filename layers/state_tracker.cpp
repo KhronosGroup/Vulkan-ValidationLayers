@@ -1832,6 +1832,8 @@ void ValidationStateTracker::PreCallRecordSignalSemaphoreKHR(VkDevice device, co
 
 void ValidationStateTracker::PostCallRecordSignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo,
                                                               VkResult result) {
+    if (result != VK_SUCCESS) return;
+
     auto semaphore_state = Get<SEMAPHORE_STATE>(pSignalInfo->semaphore);
     if (semaphore_state) {
         semaphore_state->Retire(nullptr, pSignalInfo->value);

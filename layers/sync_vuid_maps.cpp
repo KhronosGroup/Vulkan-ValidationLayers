@@ -964,6 +964,7 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
      {
          {Key(Func::vkQueueSubmit), "VUID-vkQueueSubmit-pWaitSemaphores-00069"},
          {Key(Func::vkQueueSubmit2), "VUID-vkQueueSubmit2-semaphore-03872"},
+         {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pWaitSemaphores-03245"},
      }},
     {SubmitError::kTimelineCannotBeSignalled,
      {

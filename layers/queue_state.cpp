@@ -354,15 +354,18 @@ void SEMAPHORE_STATE::EnqueueAcquire() {
     operations_.emplace(payload, SemOpEntry(kBinaryAcquire, nullptr, 0, payload));
 }
 
-layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &)> &filter) const {
+layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &, bool)> &filter) const {
     auto guard = ReadLock();
     layer_data::optional<SemOp> result;
 
     for (auto pos = operations_.rbegin(); pos != operations_.rend(); ++pos) {
-        if (!filter || filter(pos->second)) {
+        if (!filter || filter(pos->second, true)) {
             result.emplace(pos->second);
             break;
         }
+    }
+    if (!result && (!filter || filter(completed_, false))) {
+        result.emplace(completed_);
     }
     return result;
 }
