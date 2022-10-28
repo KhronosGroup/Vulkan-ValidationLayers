@@ -394,6 +394,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.type_categories = GetTypeCategories(self.registry.tree)
         self.is_aliased_type = GetHandleAliased(self.registry.tree)
 
+        # Fix the parent of VkSwapchainKHR
+        self.handle_parents['VkSwapchainKHR'] = 'VkDevice'
+
         header_file = (genOpts.filename == 'object_tracker.h')
         source_file = (genOpts.filename == 'object_tracker.cpp')
 

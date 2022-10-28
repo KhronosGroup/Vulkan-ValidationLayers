@@ -306,7 +306,10 @@ VkRenderFramework::VkRenderFramework()
     m_clear_color.float32[3] = 0.0f;
 }
 
-VkRenderFramework::~VkRenderFramework() { ShutdownFramework(); }
+VkRenderFramework::~VkRenderFramework() {
+    ShutdownFramework();
+    debug_reporter_.error_monitor_.Finish();
+}
 
 VkPhysicalDevice VkRenderFramework::gpu() {
     EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
@@ -754,8 +757,6 @@ void VkRenderFramework::ShutdownFramework() {
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
-
-    debug_reporter_.error_monitor_.Finish();
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
@@ -890,7 +891,6 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    assert(m_surface_dpy == nullptr);
     m_surface_dpy = XOpenDisplay(NULL);
     if (m_surface_dpy) {
         int s = DefaultScreen(m_surface_dpy);
@@ -906,7 +906,6 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (surface == VK_NULL_HANDLE) {
-        assert(m_surface_xcb_conn == nullptr);
         m_surface_xcb_conn = xcb_connect(NULL, NULL);
         if (m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);

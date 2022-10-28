@@ -1840,6 +1840,34 @@ TEST_F(VkLayerTest, DisplayPresentInfoSrcRect) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, LeakASwapchain) {
+    TEST_DESCRIPTION("Leak a VkSwapchainKHR.");
+
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!IsPlatform(kMockICD)) {
+        // This test leaks a swapchain (on purpose) and should not be run on a real driver
+        GTEST_SKIP() << "This test only runs on the mock ICD";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    ASSERT_TRUE(InitSwapchain());
+
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    ASSERT_TRUE(InitSurface(surface));
+    ASSERT_TRUE(InitSwapchain(surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR, swapchain));
+
+    // Warn about the surface/swapchain not being destroyed
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyInstance-instance-00629");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkDestroyDevice-device-00378");
+    ShutdownFramework();  // Destroy Instance/Device
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, PresentIdWait) {
     TEST_DESCRIPTION("Test present wait extension");
     SetTargetApiVersion(VK_API_VERSION_1_1);

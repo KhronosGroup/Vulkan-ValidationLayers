@@ -39,7 +39,6 @@ WriteLockGuard ObjectLifetimes::WriteLock() { return WriteLockGuard(validation_o
 bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) const {
     bool skip = false;
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
-    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSwapchainKHR, error_code);
     // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
     // No destroy API -- do not report: skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
@@ -72,6 +71,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePrivateDataSlot, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSwapchainKHR, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeVideoSessionKHR, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeVideoSessionParametersKHR, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDeferredOperationKHR, error_code);
@@ -90,7 +90,6 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
 
 void ObjectLifetimes::DestroyLeakedInstanceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeSurfaceKHR);
-    DestroyUndestroyedObjects(kVulkanObjectTypeSwapchainKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeDisplayKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeDisplayModeKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeDebugReportCallbackEXT);
@@ -121,6 +120,7 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeSamplerYcbcrConversion);
     DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorUpdateTemplate);
     DestroyUndestroyedObjects(kVulkanObjectTypePrivateDataSlot);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSwapchainKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeVideoSessionKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeVideoSessionParametersKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeDeferredOperationKHR);
