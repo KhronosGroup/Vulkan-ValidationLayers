@@ -5128,8 +5128,20 @@ struct SemaphoreSubmitState {
         auto semaphore = semaphore_state.semaphore();
         return unsignaled_semaphores.count(semaphore) || (!signaled_semaphores.count(semaphore) && !semaphore_state.CanBeWaited());
     }
-    VkQueue AnotherQueueWaits(const SEMAPHORE_STATE &semaphore_state, VkQueue queue) const {
-        return semaphore_state.AnotherQueueWaitsBinary(queue);
+    VkQueue AnotherQueueWaits(const SEMAPHORE_STATE &semaphore_state) const {
+        // spec (for 003871 but all submit functions have a similar VUID):
+        // "When a semaphore wait operation for a binary semaphore is **executed**,
+        // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
+        // member of any element of pSubmits, there must be no other queues waiting on the same semaphore"
+        //
+        // For binary semaphores there can be only 1 wait per signal so we just need to check that the
+        // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
+        // this wait executes.
+        auto last_op = semaphore_state.LastOp();
+        if (last_op && !last_op->CanBeWaited() && last_op->queue && last_op->queue->Queue() != queue) {
+            return last_op->queue->Queue();
+        }
+        return VK_NULL_HANDLE;
     }
 
     bool ValidateBinaryWait(const core_error::Location &loc, VkQueue queue, const SEMAPHORE_STATE &semaphore_state) {
@@ -5139,7 +5151,7 @@ struct SemaphoreSubmitState {
         bool skip = false;
         auto semaphore = semaphore_state.semaphore();
         if ((semaphore_state.Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
-            VkQueue other_queue = AnotherQueueWaits(semaphore_state, queue);
+            VkQueue other_queue = AnotherQueueWaits(semaphore_state);
             if (other_queue) {
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kOtherQueueWaiting);
                 LogObjectList objlist(semaphore);
