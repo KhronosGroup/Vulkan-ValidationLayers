@@ -1606,7 +1606,7 @@ void CreatePipelineHelper::InitRasterizationInfo() {
     rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
     rs_state_ci_.polygonMode = VK_POLYGON_MODE_FILL;
     rs_state_ci_.cullMode = VK_CULL_MODE_BACK_BIT;
-    rs_state_ci_.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rs_state_ci_.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rs_state_ci_.depthBiasEnable = VK_FALSE;
     rs_state_ci_.lineWidth = 1.0F;
 }
