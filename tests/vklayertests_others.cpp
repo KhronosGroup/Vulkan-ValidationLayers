@@ -12181,9 +12181,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Test the dynamic state commands
-    // TODO: Test that the dynamic state is set before draw, which is waiting for:
-    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5486
 
     if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
         auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
@@ -12209,7 +12206,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07619");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         vkCmdSetTessellationDomainOriginEXT(commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
@@ -12238,7 +12235,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07620");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449");
@@ -12268,7 +12265,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07621");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424");
@@ -12301,7 +12298,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07625");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607");
@@ -12331,7 +12328,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07626");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366");
@@ -12361,7 +12358,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07628");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -12401,7 +12398,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07630");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
@@ -12436,7 +12433,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07632");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(
@@ -12471,7 +12468,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07635");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -12511,7 +12508,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07636");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447");
@@ -12542,7 +12539,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07637");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");
