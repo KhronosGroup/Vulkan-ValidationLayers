@@ -3648,7 +3648,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                                      pipe_index);
                 }
 
-                if (!enabled_features.linear_color_attachment_features.linearColorAttachment) {
+                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
                     if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
                                          "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
