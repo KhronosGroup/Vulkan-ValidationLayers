@@ -88,6 +88,11 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
             if (shader_stage.stage == stage) {
                 auto module = state_data.Get<SHADER_MODULE_STATE>(shader_stage.module);
                 if (!module) {
+                    // See if the module is referenced in a library sub state
+                    module = pipe_state.GetSubStateShader(shader_stage.stage);
+                }
+
+                if (!module) {
                     // If module is null and there is a VkShaderModuleCreateInfo in the pNext chain of the stage info, then this
                     // module is part of a library and the state must be created
                     const auto shader_ci = LvlFindInChain<VkShaderModuleCreateInfo>(shader_stage.pNext);
@@ -101,6 +106,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
                         module = state_data.CreateShaderModuleState(dummy_module_ci, unique_shader_id);
                     }
                 }
+
                 stage_states.emplace_back(&shader_stage, module);
                 stage_found = true;
             }
@@ -436,6 +442,24 @@ template <>
 VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCreateInfoNV>(uint32_t i) {
     assert(create_info.raytracing.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV);
     return create_info.raytracing.pStages[i].module;
+}
+
+std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
+    switch (state) {
+        case VK_SHADER_STAGE_VERTEX_BIT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->vertex_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_FRAGMENT_BIT: {
+            const auto sub_state = PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->fragment_shader : nullptr;
+            break;
+        };
+        default:
+            return {};
+    }
 }
 
 PIPELINE_STATE::PIPELINE_STATE(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,

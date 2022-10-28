@@ -271,6 +271,8 @@ class PIPELINE_STATE : public BASE_NODE {
         return {};
     }
 
+    std::shared_ptr<const SHADER_MODULE_STATE> GetSubStateShader(VkShaderStageFlagBits state) const;
+
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>
     static inline typename SubStateTraits<type_flag>::type GetLibSubState(const ValidationStateTracker &state,
                                                                           const VkPipelineLibraryCreateInfoKHR &link_info) {
