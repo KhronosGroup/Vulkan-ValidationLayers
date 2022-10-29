@@ -333,7 +333,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             std::vector<std::string> format_strings = { "%ul", "%lu", "%lx" };
             size_t ul_pos = 0;
             bool print_hex = true;
-            for (auto ul_string : format_strings) {
+            for (const auto &ul_string : format_strings) {
                 ul_pos = substring.string.find(ul_string);
                 if (ul_pos != std::string::npos) {
                     if (ul_string == "%lu") print_hex = false;

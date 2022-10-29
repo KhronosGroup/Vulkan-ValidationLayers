@@ -1142,7 +1142,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &modu
     // input from CreatePipeline and CreatePipelineLayout level
     const auto &layout_state = pipeline->PipelineLayoutState();
     if (layout_state) {
-        for (auto set_layout : layout_state->set_layouts) {
+        for (const auto &set_layout : layout_state->set_layouts) {
             if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0) {
                 continue;
             }
@@ -3044,7 +3044,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidatePushConstantUsage(*pipeline, module_state, pStage, vuid_layout_mismatch);
 
     // Validate descriptor use
-    for (auto use : stage_state.descriptor_uses) {
+    for (const auto &use : stage_state.descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
         // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
@@ -3091,7 +3091,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         if (rp_state && !rp_state->UsesDynamicRendering()) {
             auto rpci = rp_state->createInfo.ptr();
             auto subpass = pipeline->Subpass();
-            for (auto use : input_attachment_uses) {
+            for (const auto &use : input_attachment_uses) {
                 auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
                 auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
                     ? input_attachments[use.first].attachment

@@ -1526,7 +1526,7 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
     if (store_pointer_ids.empty()) {
         return location_list;
     }
-    for (auto output : outputs) {
+    for (const auto& output : outputs) {
         auto store_it = store_pointer_ids.find(output.second.id);
         if (store_it != store_pointer_ids.end()) {
             location_list.insert(output.first.first);
