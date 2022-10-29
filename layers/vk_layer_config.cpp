@@ -146,7 +146,7 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const string &option, layer_data::un
 
     while (option_list.length() != 0) {
         // Find length of option string
-        std::size_t option_length = option_list.find(",");
+        std::size_t option_length = option_list.find(',');
         if (option_length == option_list.npos) {
             option_length = option_list.size();
         }
@@ -162,12 +162,12 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const string &option, layer_data::un
         // Remove first option from option_list
         option_list.erase(0, option_length);
         // Remove possible comma separator
-        std::size_t char_position = option_list.find(",");
+        std::size_t char_position = option_list.find(',');
         if (char_position == 0) {
             option_list.erase(char_position, 1);
         }
         // Remove possible space
-        char_position = option_list.find(" ");
+        char_position = option_list.find(' ');
         if (char_position == 0) {
             option_list.erase(char_position, 1);
         }
