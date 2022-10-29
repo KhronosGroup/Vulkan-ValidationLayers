@@ -3889,7 +3889,7 @@ void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_stat
     auto lvl_bind_point = ConvertToLvlBindPoint(bind_point);
     auto& state = cb_state.lastBound[lvl_bind_point];
 
-    for (auto descriptor_set : state.per_set) {
+    for (const auto& descriptor_set : state.per_set) {
         if (!descriptor_set.bound_descriptor_set) continue;
         for (const auto& binding : *descriptor_set.bound_descriptor_set) {
             // For bindless scenarios, we should not attempt to track descriptor set state.

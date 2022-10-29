@@ -3908,7 +3908,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                           "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405"},
                          {VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
                           "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407"}}};
-                    for (auto check_info : check_infos) {
+                    for (const auto &check_info : check_infos) {
                         if ((pipeline->GetPipelineCreateFlags() & check_info.bit)) {
                             if (!(lib->GetPipelineCreateFlags() & check_info.bit)) {
                                 LogObjectList objs(device);

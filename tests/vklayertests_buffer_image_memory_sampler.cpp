@@ -9701,7 +9701,7 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (auto test_struct : tests) {
+    for (const auto &test_struct : tests) {
         if (test_struct.format == VK_FORMAT_UNDEFINED) {
             printf("%s Could not find a testable format for filter %d.  Skipping test for said filter.\n", kSkipPrefix,
                    test_struct.filter);
