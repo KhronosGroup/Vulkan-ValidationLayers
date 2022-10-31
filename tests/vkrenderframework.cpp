@@ -275,16 +275,6 @@ VkRenderFramework::VkRenderFramework()
       m_renderPass(VK_NULL_HANDLE),
       m_framebuffer(VK_NULL_HANDLE),
       m_surface(VK_NULL_HANDLE),
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-      m_win32Window(nullptr),
-#endif
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-      m_surface_dpy(nullptr),
-      m_surface_window(None),
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-      m_surface_xcb_conn(nullptr),
-#endif
       m_swapchain(VK_NULL_HANDLE),
       m_addRenderPassSelfDependency(false),
       m_width(256.0),   // default window width
@@ -861,6 +851,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
+    WsiHandle wsi_handle = {};
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
     HINSTANCE window_instance = GetModuleHandle(nullptr);
     const char class_name[] = "test";
@@ -875,11 +866,11 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
     VkWin32SurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkWin32SurfaceCreateInfoKHR>();
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
+
+    wsi_handle.m_win32_window = window;
+
     VkResult err = vk::CreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
 
-    // NOTE: Currently InitSurface can leak a WIN32 handle if called multiple times.
-    // This is intentional. Each swapchain/surface combo needs a unique HWND.
-    m_win32Window = window;
     if (err != VK_SUCCESS) return false;
 #endif
 
@@ -891,32 +882,41 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    m_surface_dpy = XOpenDisplay(NULL);
-    if (m_surface_dpy) {
-        int s = DefaultScreen(m_surface_dpy);
-        m_surface_window = XCreateSimpleWindow(m_surface_dpy, RootWindow(m_surface_dpy, s), 0, 0, (int)m_width, (int)m_height, 1,
-                                               BlackPixel(m_surface_dpy, s), WhitePixel(m_surface_dpy, s));
+    Display *display = XOpenDisplay(NULL);
+    if (display) {
+        int s = DefaultScreen(display);
+        Window window = XCreateSimpleWindow(display, RootWindow(display, s), 0, 0, (int)m_width, (int)m_height, 1,
+                                            BlackPixel(display, s), WhitePixel(display, s));
         VkXlibSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXlibSurfaceCreateInfoKHR>();
-        surface_create_info.dpy = m_surface_dpy;
-        surface_create_info.window = m_surface_window;
+        surface_create_info.dpy = display;
+        surface_create_info.window = window;
         VkResult err = vk::CreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+
+        wsi_handle.m_xlib_display = display;
+        wsi_handle.m_xlib_window = window;
+
         if (err != VK_SUCCESS) return false;
     }
 #endif
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (surface == VK_NULL_HANDLE) {
-        m_surface_xcb_conn = xcb_connect(NULL, NULL);
-        if (m_surface_xcb_conn) {
-            xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
+        xcb_connection_t *connection = xcb_connect(NULL, NULL);
+        if (connection) {
+            xcb_window_t window = xcb_generate_id(connection);
             VkXcbSurfaceCreateInfoKHR surface_create_info = LvlInitStruct<VkXcbSurfaceCreateInfoKHR>();
-            surface_create_info.connection = m_surface_xcb_conn;
+            surface_create_info.connection = connection;
             surface_create_info.window = window;
             VkResult err = vk::CreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+
+            wsi_handle.m_xcb_connection = connection;
+
             if (err != VK_SUCCESS) return false;
         }
     }
 #endif
+    // Since this function can be called with multiple surfaces, track all wsi handles and clean them up properly
+    m_wsi_handles.push_back(wsi_handle);
     return (surface != VK_NULL_HANDLE);
 }
 
@@ -1024,30 +1024,33 @@ void VkRenderFramework::DestroySwapchain() {
         }
     }
 
+    for (WsiHandle const &wsi_handle : m_wsi_handles) {
+        (void)wsi_handle;  // Unused on Mac/Android
+
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    if (m_win32Window != nullptr) {
-        DestroyWindow(m_win32Window);
-    }
+        if (wsi_handle.m_win32_window != nullptr) {
+            DestroyWindow(wsi_handle.m_win32_window);
+        }
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    if (m_surface_dpy != nullptr) {
-        // Ignore BadDrawable errors we seem to get during shutdown.
-        // The default error handler will exit() and end the test suite.
-        XSetErrorHandler(IgnoreXErrors);
-        XDestroyWindow(m_surface_dpy, m_surface_window);
-        m_surface_window = None;
-        XCloseDisplay(m_surface_dpy);
-        m_surface_dpy = nullptr;
-        XSetErrorHandler(nullptr);
-    }
+        if (wsi_handle.m_xlib_display != nullptr) {
+            // Ignore BadDrawable errors we seem to get during shutdown.
+            // The default error handler will exit() and end the test suite.
+            XSetErrorHandler(IgnoreXErrors);
+            XDestroyWindow(wsi_handle.m_xlib_display, wsi_handle.m_xlib_window);
+            XCloseDisplay(wsi_handle.m_xlib_display);
+            XSetErrorHandler(nullptr);
+        }
 #endif
+
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    if (m_surface_xcb_conn != nullptr) {
-        xcb_disconnect(m_surface_xcb_conn);
-        m_surface_xcb_conn = nullptr;
-    }
+        if (wsi_handle.m_xcb_connection != nullptr) {
+            xcb_disconnect(wsi_handle.m_xcb_connection);
+        }
 #endif
+    }
+    m_wsi_handles.clear();
 
     if (m_surface != VK_NULL_HANDLE) {
         vk::DestroySurfaceKHR(instance(), m_surface, nullptr);

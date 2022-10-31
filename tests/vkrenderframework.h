@@ -350,18 +350,20 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebufferCreateInfo m_framebuffer_info;
     std::vector<VkImageView> m_framebuffer_attachments;
 
-    // WSI items
     VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+    struct WsiHandle {
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
-    HWND m_win32Window;
+        HWND m_win32_window;
 #endif
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    Display *m_surface_dpy;
-    Window m_surface_window;
+        Display *m_xlib_display;
+        Window m_xlib_window;
 #endif
 #if defined(VK_USE_PLATFORM_XCB_KHR)
-    xcb_connection_t *m_surface_xcb_conn;
+        xcb_connection_t *m_xcb_connection;
 #endif
+    };
+    std::vector<WsiHandle> m_wsi_handles;
     VkSwapchainKHR m_swapchain;
     VkSurfaceCapabilitiesKHR m_surface_capabilities;
     std::vector<VkSurfaceFormatKHR> m_surface_formats;
