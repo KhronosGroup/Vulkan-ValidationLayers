@@ -99,7 +99,7 @@ def BuildLoader(args):
     # Clone Loader repo
     if not os.path.exists(LOADER_DIR):
         print("Clone Loader Source Code")
-        clone_loader_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Loader.git'
+        clone_loader_cmd = 'git clone --single-branch --branch correctly_load_icd_vkCreateSwapchainKHR_with_gdpa https://github.com/charles-lunarg/Vulkan-Loader.git'
         RunShellCmd(clone_loader_cmd, EXTERNAL_DIR)
 
     print("Run update_deps.py for Loader Repository")
