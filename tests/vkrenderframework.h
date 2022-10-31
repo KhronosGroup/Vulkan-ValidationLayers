@@ -433,6 +433,7 @@ class VkConstantBufferObj;
 class VkPipelineObj;
 typedef vk_testing::Event VkEventObj;
 typedef vk_testing::Fence VkFenceObj;
+typedef vk_testing::Semaphore VkSemaphoreObj;
 typedef vk_testing::Buffer VkBufferObj;
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
 typedef vk_testing::AccelerationStructureKHR VkAccelerationStructurekhrObj;

@@ -4965,3 +4965,170 @@ TEST_F(VkSyncValTest, SyncQSRenderPass) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit2, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
+    TEST_DESCRIPTION("Try destroying a swapchain presentable image with vkDestroyImage");
+
+    AddSurfaceExtension();
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+    uint32_t image_count;
+    std::vector<VkImage> images;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    images.resize(image_count, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data()));
+
+    std::vector<bool> image_used(images.size(), false);
+
+    const VkCommandBuffer cb = m_commandBuffer->handle();
+    const VkQueue q = m_device->m_queue;
+    const VkDevice dev = m_device->handle();
+
+    auto fence_ci = lvl_init_struct<VkFenceCreateInfo>();
+    VkFenceObj fence(*m_device, fence_ci);
+    VkFence h_fence = fence.handle();
+
+    auto require_success = [](VkResult result, const char* label) {
+        if (result != VK_SUCCESS) {
+            if (label) {
+                FAIL() << string_VkResult(result) << ": " << label;
+            } else {
+                FAIL() << string_VkResult(result);
+            }
+        }
+    };
+
+    // Loop through the indices until we find one we are reusing...
+    auto present_image = [this, q, &require_success](uint32_t index, VkSemaphoreObj* sem, VkFenceObj* fence) {
+        if (fence) {
+            require_success(fence->wait(kWaitTimeout), "WaitForFences");
+            fence->reset();
+        }
+
+        auto present_info = lvl_init_struct<VkPresentInfoKHR>();
+        present_info.swapchainCount = 1;
+        present_info.pSwapchains = &m_swapchain;
+        present_info.pImageIndices = &index;
+        VkSemaphore h_sem = VK_NULL_HANDLE;
+        if (sem) {
+            h_sem = sem->handle();
+            present_info.waitSemaphoreCount = 1;
+            present_info.pWaitSemaphores = &h_sem;
+        }
+        vk::QueuePresentKHR(q, &present_info);
+    };
+
+    auto acquire_used_image = [this, &image_used, dev, &present_image, &require_success](VkSemaphoreObj* sem, VkFenceObj* fence) {
+        uint32_t index;
+        VkSemaphore h_sem = sem ? sem->handle() : VK_NULL_HANDLE;
+        VkFence h_fence = fence ? fence->handle() : VK_NULL_HANDLE;
+
+        while (true) {
+            require_success(vk::AcquireNextImageKHR(dev, m_swapchain, kWaitTimeout, h_sem, h_fence, &index), "AcquireNextImageKHR");
+            if (image_used[index]) break;
+
+            present_image(index, sem, fence);
+            image_used[index] = true;
+        }
+        return index;
+    };
+
+    uint32_t acquired_index = acquire_used_image(nullptr, &fence);
+
+    auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
+        VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+        image_barrier.srcAccessMask = 0U;
+        image_barrier.dstAccessMask = 0U;
+        image_barrier.oldLayout = from;
+        image_barrier.newLayout = to;
+        image_barrier.image = h_image;
+
+        image_barrier.subresourceRange = full_image;
+        m_commandBuffer->begin();
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &image_barrier);
+        m_commandBuffer->end();
+    };
+    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    // Look for errors between the acquire and first use...
+    auto submit1 = lvl_init_struct<VkSubmitInfo>();
+    submit1.commandBufferCount = 1;
+    submit1.pCommandBuffers = &cb;
+    // No sync operations...
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-PRESENT");
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Sync operations that should ignore present operations
+    m_device->wait();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-PRESENT");
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Finally we wait for the fence associated with the acquire
+    require_success(vk::WaitForFences(m_device->handle(), 1, &h_fence, VK_TRUE, kWaitTimeout), "WaitForFences");
+    fence.reset();
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+    m_device->wait();
+
+    // Release the image back to the present engine, so we don't run out
+    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+
+    auto semaphore_ci = VkSemaphoreObj::create_info(0);
+    VkSemaphoreObj sem(*m_device, semaphore_ci);
+    const VkSemaphore h_sem = sem.handle();
+    acquired_index = acquire_used_image(&sem, VK_NULL_HANDLE);
+
+    m_commandBuffer->reset();
+    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    submit1.waitSemaphoreCount = 1;
+    submit1.pWaitDstStageMask = &wait_mask;
+    submit1.pWaitSemaphores = &h_sem;
+
+    // The wait mask doesn't match the operations in the command buffer
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Now then wait mask matches the operations in the command buffer
+    wait_mask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+
+    // Try presenting without waiting for the ILT to finish
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
+    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    // Let the ILT complete, and the release the image back
+    m_device->wait();
+    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+
+    acquired_index = acquire_used_image(VK_NULL_HANDLE, &fence);
+    require_success(fence.wait(kWaitTimeout), "WaitForFences");
+
+    m_commandBuffer->reset();
+    write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    fence.reset();
+    submit1.waitSemaphoreCount = 0;
+    submit1.pWaitDstStageMask = nullptr;
+    submit1.pWaitSemaphores = nullptr;
+    submit1.signalSemaphoreCount = 1;
+    submit1.pSignalSemaphores = &h_sem;
+    vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
+    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    present_image(acquired_index, &sem, nullptr);
+    m_device->wait();
+}
