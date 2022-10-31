@@ -151,8 +151,12 @@ if (UNIX AND NOT APPLE) # Options for Linux only
     endif()
 endif()
 
-# Platform-specific compiler switches
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
+if(BUILD_WERROR)
+    add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
+endif()
+
+# Platform-specific compiler switches
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     add_compile_options(-Wconversion
 
@@ -173,14 +177,6 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -fno-strict-aliasing
                         -fno-builtin-memcmp)
 
-    # Treat warnings as errors for versions of GCC and c++11-compliant Clang versions that are shipped on Ubuntu 18.04 or older.
-    if(BUILD_WERROR OR
-      (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL 7.3.0) OR
-      (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 6.0.0))
-        add_compile_options(-Werror)
-    endif()
-
-
     set(CMAKE_C_STANDARD 99)
 
     # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
@@ -189,10 +185,6 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
         add_compile_options(-Wimplicit-fallthrough=0)
     endif()
 elseif(MSVC)
-    if(BUILD_WERROR)
-        # Treat warnings as errors
-        add_compile_options("/WX")
-    endif()
     # Warn about nested declarations
     add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
