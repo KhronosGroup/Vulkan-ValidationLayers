@@ -8756,7 +8756,7 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
 }
 
 class RenderPassCreatePotentialFormatFeaturesTest : public VkLayerTest {
-public:
+  public:
     void Test(bool const useLinearColorAttachment);
 };
 
@@ -8844,7 +8844,7 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     subpass.pColorAttachments = &references[1];
     if (useLinearColorAttachment) {
         TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06497",
-            "VUID-VkSubpassDescription2-linearColorAttachment-06500");
+                             "VUID-VkSubpassDescription2-linearColorAttachment-06500");
     } else {
         TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
                              "VUID-VkSubpassDescription2-pColorAttachments-02898");
@@ -8856,7 +8856,7 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     subpass.pInputAttachments = &references[1];
     if (useLinearColorAttachment) {
         TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06496",
-            "VUID-VkSubpassDescription2-linearColorAttachment-06499");
+                             "VUID-VkSubpassDescription2-linearColorAttachment-06499");
     } else {
         TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
                              "VUID-VkSubpassDescription2-pInputAttachments-02897");
@@ -8866,7 +8866,7 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
     // Depth Stencil attachment
     subpass.pDepthStencilAttachment = &references[3];
     TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-02650",
-                            "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
+                         "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
     subpass = originalSubpass;
 
     // Resolve attachment

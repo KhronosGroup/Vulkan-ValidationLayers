@@ -18,12 +18,11 @@
 #include "layer_validation_tests.h"
 
 class DynamicRenderingCommandBufferInheritanceRenderingInfoTest : public VkLayerTest {
-public:
+  public:
     void Test(bool const useLinearColorAttachmen);
 };
 
 void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const useLinearColorAttachment) {
-
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -96,9 +95,11 @@ void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
     if (linear_color_attachment.linearColorAttachment) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492");
     } else {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
