@@ -88,7 +88,7 @@ class DebugPrintf : public GpuAssistedBase {
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data) override;
-    std::vector<DPFSubstring> ParseFormatString(std::string format_string);
+    std::vector<DPFSubstring> ParseFormatString(const std::string& format_string);
     std::string FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, DPFBufferInfo &buffer_info,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);

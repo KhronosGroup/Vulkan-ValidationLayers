@@ -823,7 +823,7 @@ void SHADER_MODULE_STATE::DefineStructMember(const Instruction* insn, std::vecto
         if (def_member->Opcode() == spv::OpTypeStruct) {
             DefineStructMember(def_member, member_decorate_insn, data1);
         } else if (def_member->Opcode() == spv::OpTypePointer) {
-            if (def_member->Word(2) == spv::StorageClassPhysicalStorageBuffer) {
+            if (def_member->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
                 // If it's a pointer with PhysicalStorageBuffer class, this member is essentially a uint64_t containing an address
                 // that "points to something."
                 data1.size = 8;
@@ -958,7 +958,7 @@ void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
     const SHADER_MODULE_STATE& module_state, std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint>& entry_points) {
     for (auto &entrypoint : entry_points) {
         for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
-            if (var_insn->Word(3) == spv::StorageClassPushConstant) {
+            if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
                 const Instruction* type = module_state.FindDef(var_insn->Word(1));
                 std::vector<const Instruction*> member_decorate_insn;
                 for (const Instruction* member_decorate : module_state.GetMemberDecorationInstructions()) {
@@ -1051,7 +1051,7 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
             }
             switch (insn.Opcode()) {
                 case spv::OpTypePointer:
-                    if (insn.Word(2) == spv::StorageClassOutput) {
+                    if (insn.StorageClass() == spv::StorageClassOutput) {
                         const auto type_id = insn.Word(3);
                         if (type_id == target_id) {
                             target_id = insn.Word(1);
@@ -1480,7 +1480,7 @@ std::vector<std::pair<DescriptorSlot, interface_var>> SHADER_MODULE_STATE::Colle
         if (insn->Opcode() != spv::OpVariable) {
             continue;
         }
-        const uint32_t storage_class = insn->Word(3);
+        const uint32_t storage_class = insn->StorageClass();
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
             auto d = get_decorations(insn->Word(2));
@@ -1526,7 +1526,7 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
     if (store_pointer_ids.empty()) {
         return location_list;
     }
-    for (auto output : outputs) {
+    for (const auto& output : outputs) {
         auto store_it = store_pointer_ids.find(output.second.id);
         if (store_it != store_pointer_ids.end()) {
             location_list.insert(output.first.first);
@@ -1720,7 +1720,7 @@ std::vector<std::pair<uint32_t, interface_var>> SHADER_MODULE_STATE::CollectInte
 
             if (accessible_ids.count(id)) {
                 const Instruction* def = FindDef(id);
-                if (def->Opcode() == spv::OpVariable && def->Word(3) == spv::StorageClassUniformConstant) {
+                if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
                     auto num_locations = GetLocationsConsumedByType(def->Word(1), false);
                     for (uint32_t offset = 0; offset < num_locations; offset++) {
                         interface_var v = {};
@@ -1826,7 +1826,7 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const Instruction* insn) const {
         const Instruction* element_type = FindDef(insn->Word(2));
         return GetBaseType(element_type);
     } else if (opcode == spv::OpTypePointer) {
-        const auto& storage_class = insn->Word(2);
+        const auto& storage_class = insn->StorageClass();
         const Instruction* type = FindDef(insn->Word(3));
         if (storage_class == spv::StorageClassPhysicalStorageBuffer && type->Opcode() == spv::OpTypeStruct) {
             // A physical storage buffer to a struct has a chance to point to itself and can't resolve a baseType

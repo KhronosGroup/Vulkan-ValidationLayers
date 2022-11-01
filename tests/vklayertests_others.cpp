@@ -918,33 +918,29 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
 TEST_F(VkLayerTest, DebugUtilsNameTest) {
     TEST_DESCRIPTION("Ensure debug utils object names are printed in debug messenger output");
 
-    // Skip test if extension not supported
-    if (InstanceExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    } else {
-        printf("%s Debug Utils Extension not supported, skipping test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
+    PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT =
         (PFN_vkSetDebugUtilsObjectNameEXT)vk::GetInstanceProcAddr(instance(), "vkSetDebugUtilsObjectNameEXT");
-    ASSERT_TRUE(fpvkSetDebugUtilsObjectNameEXT);  // Must be extant if extension is enabled
-    PFN_vkCreateDebugUtilsMessengerEXT fpvkCreateDebugUtilsMessengerEXT =
+    ASSERT_TRUE(vkSetDebugUtilsObjectNameEXT);  // Must be extant if extension is enabled
+    PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugUtilsMessengerEXT =
         (PFN_vkCreateDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(instance(), "vkCreateDebugUtilsMessengerEXT");
-    ASSERT_TRUE(fpvkCreateDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
-    PFN_vkDestroyDebugUtilsMessengerEXT fpvkDestroyDebugUtilsMessengerEXT =
+    ASSERT_TRUE(vkCreateDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
         (PFN_vkDestroyDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(instance(), "vkDestroyDebugUtilsMessengerEXT");
-    ASSERT_TRUE(fpvkDestroyDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
-    PFN_vkCmdInsertDebugUtilsLabelEXT fpvkCmdInsertDebugUtilsLabelEXT =
+    ASSERT_TRUE(vkDestroyDebugUtilsMessengerEXT);  // Must be extant if extension is enabled
+    PFN_vkCmdInsertDebugUtilsLabelEXT vkCmdInsertDebugUtilsLabelEXT =
         (PFN_vkCmdInsertDebugUtilsLabelEXT)vk::GetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT");
-    ASSERT_TRUE(fpvkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
+    ASSERT_TRUE(vkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
 
     if (DeviceSimulation()) {
-        printf("%sSkipping object naming test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Skipping object naming test with DeviceSimulation.";
     }
 
     DebugUtilsLabelCheckData callback_data;
@@ -961,7 +957,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     callback_create_info.pfnUserCallback = DebugUtilsCallback;
     callback_create_info.pUserData = &callback_data;
     VkDebugUtilsMessengerEXT my_messenger = VK_NULL_HANDLE;
-    fpvkCreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
+    vkCreateDebugUtilsMessengerEXT(instance(), &callback_create_info, nullptr, &my_messenger);
 
     VkBuffer buffer;
     VkDeviceMemory memory_1, memory_2;
@@ -990,18 +986,24 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     // Pass in bad handle make sure ObjectTracker catches it
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
     name_info.objectHandle = (uint64_t)0xcadecade;
-    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    vkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    // Pass in null handle
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588");
+    name_info.objectHandle = 0;
+    vkSetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     // Pass in 'unknown' object type and see if parameter validation catches it
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587");
     name_info.objectHandle = (uint64_t)memory_2;
     name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
-    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    vkSetDebugUtilsObjectNameEXT(device(), &name_info);
     m_errorMonitor->VerifyFound();
 
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
-    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    vkSetDebugUtilsObjectNameEXT(device(), &name_info);
 
     vk::BindBufferMemory(device(), buffer, memory_1, 0);
 
@@ -1036,7 +1038,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     name_info.objectHandle = (uint64_t)commandBuffer;
     name_info.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
     name_info.pObjectName = commandBuffer_name.c_str();
-    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    vkSetDebugUtilsObjectNameEXT(device(), &name_info);
 
     VkCommandBufferBeginInfo cb_begin_Info = LvlInitStruct<VkCommandBufferBeginInfo>();
     cb_begin_Info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -1062,7 +1064,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     };
     callback_data.callback = command_label_callback;
 
-    fpvkCmdInsertDebugUtilsLabelEXT(commandBuffer, &command_label);
+    vkCmdInsertDebugUtilsLabelEXT(commandBuffer, &command_label);
     // Test parameter_validation layer
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, commandBuffer_name);
     vk::CmdSetScissor(commandBuffer, 0, 1, scissors);
@@ -1080,7 +1082,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
 
     vk::DestroyCommandPool(device(), commandpool_1, NULL);
     vk::DestroyCommandPool(device(), commandpool_2, NULL);
-    fpvkDestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
+    vkDestroyDebugUtilsMessengerEXT(instance(), my_messenger, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidStructSType) {
@@ -12181,9 +12183,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
     }
 
-    // Test the dynamic state commands
-    // TODO: Test that the dynamic state is set before draw, which is waiting for:
-    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5486
 
     if (extended_dynamic_state3_features.extendedDynamicState3TessellationDomainOrigin) {
         auto vkCmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)vk::GetDeviceProcAddr(
@@ -12209,7 +12208,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07619");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         vkCmdSetTessellationDomainOriginEXT(commandBuffer.handle(), VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT);
@@ -12238,7 +12237,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07620");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetDepthClampEnableEXT-depthClamp-07449");
@@ -12268,7 +12267,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07621");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetPolygonModeEXT-fillModeNonSolid-07424");
@@ -12301,10 +12300,10 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07625");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607");
         vkCmdSetAlphaToOneEnableEXT(commandBuffer.handle(), VK_TRUE);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
@@ -12331,7 +12330,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07626");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLogicOpEnableEXT-logicOp-07366");
@@ -12361,7 +12360,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07628");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -12401,7 +12400,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07630");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
@@ -12436,7 +12435,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07632");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(
@@ -12471,7 +12470,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07635");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -12511,7 +12510,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07636");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetProvokingVertexModeEXT-provokingVertexMode-07447");
@@ -12542,7 +12541,7 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdBindPipeline(commandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
         commandBuffer.BeginRenderPass(m_renderPassBeginInfo);
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID_Undefined");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07637");
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");

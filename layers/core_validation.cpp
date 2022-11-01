@@ -1492,67 +1492,85 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     skip |= ValidateStatus(pCB, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET,
-                           "Dynamic tessellation domain origin state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic tessellation domain origin state not set for this command buffer",
+                           vuid.dynamic_tessellation_domain_origin);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET,
-                           "Dynamic depth clamp enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic depth clamp enable state not set for this command buffer", vuid.dynamic_depth_clamp_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_POLYGON_MODE_EXT_SET, "Dynamic polygon mode state not set for this command buffer",
-                           kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET,
-                           "Dynamic rasterization samples state not set for this command buffer", kVUIDUndefined);
+                           vuid.dynamic_polygon_mode);
+    skip |=
+        ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET,
+                       "Dynamic rasterization samples state not set for this command buffer", vuid.dynamic_rasterization_samples);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, "Dynamic sample mask state not set for this command buffer",
-                           kVUIDUndefined);
+                           vuid.dynamic_sample_mask);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET,
-                           "Dynamic alpha to coverage enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic alpha to coverage enable state not set for this command buffer",
+                           vuid.dynamic_alpha_to_coverage_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET,
-                           "Dynamic alpha to one enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic alpha to one enable state not set for this command buffer", vuid.dynamic_alpha_to_one_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET,
-                           "Dynamic logic operation enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic logic operation enable state not set for this command buffer", vuid.dynamic_logic_op_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET,
-                           "Dynamic color blend enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic color blend enable state not set for this command buffer", vuid.dynamic_color_blend_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET,
-                           "Dynamic color blend equation state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic color blend equation state not set for this command buffer", vuid.dynamic_color_blend_equation);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET,
-                           "Dynamic color write mask state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic color write mask state not set for this command buffer", vuid.dynamic_color_write_mask);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET,
-                           "Dynamic rasterization stream state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic rasterization stream state not set for this command buffer", vuid.dynamic_rasterization_stream);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET,
-                           "Dynamic conservative rasterization mode state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic conservative rasterization mode state not set for this command buffer",
+                           vuid.dynamic_conservative_rasterization_mode);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET,
-                           "Dynamic extra primitive overestimation size state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic extra primitive overestimation size state not set for this command buffer",
+                           vuid.dynamic_extra_primitive_overestimation_size);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET,
-                           "Dynamic depth clip enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic depth clip enable state not set for this command buffer", vuid.dynamic_depth_clip_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET,
-                           "Dynamic sample locations enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic sample locations enable state not set for this command buffer",
+                           vuid.dynamic_sample_locations_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET,
-                           "Dynamic color blend advanced state not set for this command buffer", kVUIDUndefined);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET,
-                           "Dynamic provoking vertex mode state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic color blend advanced state not set for this command buffer", vuid.dynamic_color_blend_advanced);
+    skip |=
+        ValidateStatus(pCB, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET,
+                       "Dynamic provoking vertex mode state not set for this command buffer", vuid.dynamic_provoking_vertex_mode);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET,
-                           "Dynamic line rasterization mode state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic line rasterization mode state not set for this command buffer",
+                           vuid.dynamic_line_rasterization_mode);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET,
-                           "Dynamic line stipple enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic line stipple enable state not set for this command buffer", vuid.dynamic_line_stipple_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET,
-                           "Dynamic depth clip negative one to one state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic depth clip negative one to one state not set for this command buffer",
+                           vuid.dynamic_depth_clip_negative_one_to_one);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET,
-                           "Dynamic viewport W scaling enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic viewport W scaling enable state not set for this command buffer",
+                           vuid.dynamic_viewport_w_scaling_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET,
-                           "Dynamic viewport swizzle state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic viewport swizzle state not set for this command buffer", vuid.dynamic_viewport_swizzle);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET,
-                           "Dynamic coverage to color enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage to color enable state not set for this command buffer",
+                           vuid.dynamic_coverage_to_color_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET,
-                           "Dynamic coverage to color location state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage to color location state not set for this command buffer",
+                           vuid.dynamic_coverage_to_color_location);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET,
-                           "Dynamic coverage modulation mode state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage modulation mode state not set for this command buffer",
+                           vuid.dynamic_coverage_modulation_mode);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET,
-                           "Dynamic coverage modulation table enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage modulation table enable state not set for this command buffer",
+                           vuid.dynamic_coverage_modulation_table_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET,
-                           "Dynamic coverage modulation table state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage modulation table state not set for this command buffer",
+                           vuid.dynamic_coverage_modulation_table);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET,
-                           "Dynamic shading rate image enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic shading rate image enable state not set for this command buffer",
+                           vuid.dynamic_shading_rate_image_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET,
-                           "Dynamic representative fragment test enable state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic representative fragment test enable state not set for this command buffer",
+                           vuid.dynamic_representative_fragment_test_enable);
     skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET,
-                           "Dynamic coverage reduction mode state not set for this command buffer", kVUIDUndefined);
+                           "Dynamic coverage reduction mode state not set for this command buffer",
+                           vuid.dynamic_coverage_reduction_mode);
 
     if (pPipeline->fragment_output_state->dual_source_blending  &&
         pCB->activeRenderPass) {
@@ -3890,7 +3908,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                           "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07405"},
                          {VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT_EXT, "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07406",
                           "VUID-VkPipelineLibraryCreateInfoKHR-pipeline-07407"}}};
-                    for (auto check_info : check_infos) {
+                    for (const auto &check_info : check_infos) {
                         if ((pipeline->GetPipelineCreateFlags() & check_info.bit)) {
                             if (!(lib->GetPipelineCreateFlags() & check_info.bit)) {
                                 LogObjectList objs(device);
@@ -8336,10 +8354,8 @@ static bool UniqueImageViews(const VkRenderingInfo* pRenderingInfo, VkImageView 
     return unique_views;
 }
 
-bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view,
-                                                 const char *attachment,
-                                                 const VkRenderingInfo *pRenderingInfo,
-                                                 const char *func_name) const {
+bool CoreChecks::ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> &image_view, const char *attachment,
+                                                 const VkRenderingInfo *pRenderingInfo, const char *func_name) const {
     bool skip = false;
 
     // Upcasting to handle overflow
@@ -9974,54 +9990,6 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                  ") which is not equal to pMultisampleState.rasterizationSamples used to create the pipeline, "
                                  "which is (%" PRIu32 ").",
                                  msrtss_info->rasterizationSamples, pipeline_rasterization_samples);
-            }
-        }
-        if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering() &&
-            cb_state->has_draw_cmd_in_current_render_pass) {
-            const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline_state->PNext());
-            const auto last_pipeline = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            const auto *last_rendering_struct =
-                last_pipeline ? LvlFindInChain<VkPipelineRenderingCreateInfo>(last_pipeline->PNext()) : nullptr;
-            if (rendering_struct && last_rendering_struct) {
-                if (rendering_struct->depthAttachmentFormat != last_rendering_struct->depthAttachmentFormat) {
-                    skip |=
-                        LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06197",
-                                 "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::depthAttachmentFormat "
-                                 "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::depthAttachmentFormat was %s.",
-                                 string_VkFormat(rendering_struct->depthAttachmentFormat),
-                                 string_VkFormat(last_rendering_struct->depthAttachmentFormat));
-                }
-                if (rendering_struct->stencilAttachmentFormat != last_rendering_struct->stencilAttachmentFormat) {
-                    skip |= LogError(
-                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06194",
-                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::stencilAttachmentFormat "
-                        "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::stencilAttachmentFormat was %s.",
-                        string_VkFormat(rendering_struct->stencilAttachmentFormat),
-                        string_VkFormat(last_rendering_struct->stencilAttachmentFormat));
-                }
-                if (rendering_struct->colorAttachmentCount != last_rendering_struct->colorAttachmentCount) {
-                    skip |= LogError(
-                        pipeline, "VUID-vkCmdBindPipeline-pipeline-06195",
-                        "vkCmdBindPipeline(): Binding pipeline with VkPipelineRenderingCreateInfo::colorAttachmentCount "
-                        "%" PRIu32
-                        ", but previously bound pipeline VkPipelineRenderingCreateInfo::colorAttachmentCount was %" PRIu32 ".",
-                        rendering_struct->colorAttachmentCount, last_rendering_struct->colorAttachmentCount);
-                } else {
-                    for (uint32_t i = 0; i < rendering_struct->colorAttachmentCount; ++i) {
-                        if (rendering_struct->pColorAttachmentFormats[i] != last_rendering_struct->pColorAttachmentFormats[i]) {
-                            skip |= LogError(
-                                pipeline, "VUID-vkCmdBindPipeline-pipeline-06196",
-                                "vkCmdBindPipeline(): Binding pipeline with "
-                                "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
-                                "] "
-                                "%s, but previously bound pipeline VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32
-                                "] was %s.",
-                                i, string_VkFormat(rendering_struct->pColorAttachmentFormats[i]), i,
-                                string_VkFormat(last_rendering_struct->pColorAttachmentFormats[i]));
-                            break;
-                        }
-                    }
-                }
             }
         }
         if (enabled_features.pipeline_protected_access_features.pipelineProtectedAccess) {
@@ -11991,7 +11959,7 @@ static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQue
     return QUERYSTATE_UNKNOWN;
 }
 
-bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, const CMD_TYPE cmd_type,
                                     VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
     bool skip = false;
     auto state_data = cb_state.dev_data;
@@ -12026,7 +11994,7 @@ bool CoreChecks::VerifyQueryIsReset(CMD_BUFFER_STATE &cb_state, QueryObject quer
     return skip;
 }
 
-bool CoreChecks::ValidatePerformanceQuery(CMD_BUFFER_STATE &cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+bool CoreChecks::ValidatePerformanceQuery(CMD_BUFFER_STATE &cb_state, const QueryObject &query_obj, const CMD_TYPE cmd_type,
                                           VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
     auto state_data = cb_state.dev_data;
     auto query_pool_state = state_data->Get<QUERY_POOL_STATE>(query_obj.pool);
@@ -20895,7 +20863,7 @@ bool CoreChecks::PreCallValidateCmdSetAlphaToOneEnableEXT(VkCommandBuffer comman
                                         "extendedDynamicState3AlphaToOneEnable");
     if (alphaToOneEnable != VK_FALSE && !enabled_features.core.alphaToOne) {
         skip |= LogError(
-            cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07344",
+            cb_state->Handle(), "VUID-vkCmdSetAlphaToOneEnableEXT-alphaToOne-07607",
             "vkCmdSetAlphaToOneEnableEXT(): alphaToOneEnable is VK_TRUE but the alphaToOne feature is not enabled.");
     }
     return skip;

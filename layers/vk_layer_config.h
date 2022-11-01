@@ -99,7 +99,8 @@ VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
 VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, layer_data::unordered_map<std::string, VkFlags> const &enum_data,
+VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(const std::string &option,
+                                            layer_data::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
 VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);

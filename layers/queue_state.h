@@ -220,7 +220,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void RetireTimeline(uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    layer_data::optional<SemOp> LastOp(std::function<bool(const SemOp &)> filter = nullptr) const;
+    layer_data::optional<SemOp> LastOp(const std::function<bool(const SemOp &)> &filter = nullptr) const;
 
     bool CanBeSignaled() const;
     bool CanBeWaited() const;

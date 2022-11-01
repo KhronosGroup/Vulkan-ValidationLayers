@@ -65,7 +65,7 @@ void ErrorMonitor::Reset() {
     MonitorReset();
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string &msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
     if (NeedCheckSuccess()) {
@@ -306,7 +306,10 @@ VkRenderFramework::VkRenderFramework()
     m_clear_color.float32[3] = 0.0f;
 }
 
-VkRenderFramework::~VkRenderFramework() { ShutdownFramework(); }
+VkRenderFramework::~VkRenderFramework() {
+    ShutdownFramework();
+    debug_reporter_.error_monitor_.Finish();
+}
 
 VkPhysicalDevice VkRenderFramework::gpu() {
     EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
@@ -754,8 +757,6 @@ void VkRenderFramework::ShutdownFramework() {
 
     vk::DestroyInstance(instance_, nullptr);
     instance_ = NULL;  // In case we want to re-initialize
-
-    debug_reporter_.error_monitor_.Finish();
 }
 
 ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
@@ -890,7 +891,6 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 #endif
 
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
-    assert(m_surface_dpy == nullptr);
     m_surface_dpy = XOpenDisplay(NULL);
     if (m_surface_dpy) {
         int s = DefaultScreen(m_surface_dpy);
@@ -906,7 +906,6 @@ bool VkRenderFramework::InitSurface(VkSurfaceKHR &surface) {
 
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     if (surface == VK_NULL_HANDLE) {
-        assert(m_surface_xcb_conn == nullptr);
         m_surface_xcb_conn = xcb_connect(NULL, NULL);
         if (m_surface_xcb_conn) {
             xcb_window_t window = xcb_generate_id(m_surface_xcb_conn);
@@ -2277,7 +2276,7 @@ void VkPipelineObj::AddColorAttachment(uint32_t binding, const VkPipelineColorBl
 
 void VkPipelineObj::SetDepthStencil(const VkPipelineDepthStencilStateCreateInfo *ds_state) { m_ds_state = ds_state; }
 
-void VkPipelineObj::SetViewport(const vector<VkViewport> viewports) {
+void VkPipelineObj::SetViewport(const vector<VkViewport> &viewports) {
     m_viewports = viewports;
     // If we explicitly set a null viewport, pass it through to create info
     // but preserve viewportCount because it musn't change
@@ -2286,7 +2285,7 @@ void VkPipelineObj::SetViewport(const vector<VkViewport> viewports) {
     }
 }
 
-void VkPipelineObj::SetScissor(const vector<VkRect2D> scissors) {
+void VkPipelineObj::SetScissor(const vector<VkRect2D> &scissors) {
     m_scissors = scissors;
     // If we explicitly set a null scissor, pass it through to create info
     // but preserve scissorCount because it musn't change

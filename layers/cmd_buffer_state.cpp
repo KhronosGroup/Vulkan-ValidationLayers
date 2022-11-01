@@ -369,7 +369,7 @@ ImageSubresourceLayoutMap *CMD_BUFFER_STATE::GetImageSubresourceLayoutMap(const 
     return layout_map.get();
 }
 
-static bool SetQueryState(QueryObject object, QueryState value, QueryMap *localQueryToStateMap) {
+static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap *localQueryToStateMap) {
     (*localQueryToStateMap)[object] = value;
     return false;
 }

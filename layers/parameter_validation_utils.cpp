@@ -100,7 +100,7 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
     return skip;
 }
 
-bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string ext_name) const {
+bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device, const std::string &ext_name) const {
     if (instance_extensions.vk_khr_get_physical_device_properties2) {
         // Struct is legal IF it's supported
         const auto &dev_exts_enumerated = device_extensions_enumerated.find(physical_device);
@@ -3856,12 +3856,13 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                     string_VkBorderColor(pCreateInfo->borderColor));
             } else {
                 if ((custom_create_info->format != VK_FORMAT_UNDEFINED) &&
+                    !FormatIsDepthAndStencil(custom_create_info->format) &&
                     ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT &&
                       !FormatIsSampledInt(custom_create_info->format)) ||
                      (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
                       !FormatIsSampledFloat(custom_create_info->format)))) {
                     skip |=
-                        LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013",
+                        LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605",
                                  "VkSamplerCreateInfo->borderColor is %s but VkSamplerCustomBorderColorCreateInfoEXT.format = %s "
                                  "whose type does not match\n",
                                  string_VkBorderColor(pCreateInfo->borderColor), string_VkFormat(custom_create_info->format));
@@ -6520,13 +6521,28 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
     return skip;
 }
 
+bool StatelessValidation::ValidateDebugUtilsObjectNameInfoEXT(const std::string &api_name, VkDevice device,
+                                                              const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
+    bool skip = false;
+    if ((pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) && (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE))) {
+        skip |= LogError(device, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589",
+                         "%s() objectType is VK_OBJECT_TYPE_UNKNOWN but objectHandle is VK_NULL_HANDLE", api_name.c_str());
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
     bool skip = false;
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
-        skip |= LogError(device, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589",
+        skip |= LogError(device, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02587",
                          "vkSetDebugUtilsObjectNameEXT() pNameInfo->objectType cannot be VK_OBJECT_TYPE_UNKNOWN.");
     }
+    if (pNameInfo->objectHandle == HandleToUint64(VK_NULL_HANDLE)) {
+        skip |= LogError(device, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-02588",
+                         "vkSetDebugUtilsObjectNameEXT() pNameInfo->objectHandle cannot be VK_NULL_HANDLE.");
+    }
+    skip |= ValidateDebugUtilsObjectNameInfoEXT("vkSetDebugUtilsObjectNameEXT", device, pNameInfo);
     return skip;
 }
 

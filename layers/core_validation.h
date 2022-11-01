@@ -116,6 +116,37 @@ struct DrawDispatchVuid {
     const char* storage_texel_buffer_write_without_format = kVUIDUndefined;
     const char* depth_compare_sample = kVUIDUndefined;
     const char* dynamic_sample_locations = kVUIDUndefined;
+    const char* dynamic_tessellation_domain_origin = kVUIDUndefined;
+    const char* dynamic_depth_clamp_enable = kVUIDUndefined;
+    const char* dynamic_polygon_mode = kVUIDUndefined;
+    const char* dynamic_rasterization_samples = kVUIDUndefined;
+    const char* dynamic_sample_mask = kVUIDUndefined;
+    const char* dynamic_alpha_to_coverage_enable = kVUIDUndefined;
+    const char* dynamic_alpha_to_one_enable = kVUIDUndefined;
+    const char* dynamic_logic_op_enable = kVUIDUndefined;
+    const char* dynamic_color_blend_enable = kVUIDUndefined;
+    const char* dynamic_color_blend_equation = kVUIDUndefined;
+    const char* dynamic_color_write_mask = kVUIDUndefined;
+    const char* dynamic_rasterization_stream = kVUIDUndefined;
+    const char* dynamic_conservative_rasterization_mode = kVUIDUndefined;
+    const char* dynamic_extra_primitive_overestimation_size = kVUIDUndefined;
+    const char* dynamic_depth_clip_enable = kVUIDUndefined;
+    const char* dynamic_sample_locations_enable = kVUIDUndefined;
+    const char* dynamic_color_blend_advanced = kVUIDUndefined;
+    const char* dynamic_provoking_vertex_mode = kVUIDUndefined;
+    const char* dynamic_line_rasterization_mode = kVUIDUndefined;
+    const char* dynamic_line_stipple_enable = kVUIDUndefined;
+    const char* dynamic_depth_clip_negative_one_to_one = kVUIDUndefined;
+    const char* dynamic_viewport_w_scaling_enable = kVUIDUndefined;
+    const char* dynamic_viewport_swizzle = kVUIDUndefined;
+    const char* dynamic_coverage_to_color_enable = kVUIDUndefined;
+    const char* dynamic_coverage_to_color_location = kVUIDUndefined;
+    const char* dynamic_coverage_modulation_mode = kVUIDUndefined;
+    const char* dynamic_coverage_modulation_table_enable = kVUIDUndefined;
+    const char* dynamic_coverage_modulation_table = kVUIDUndefined;
+    const char* dynamic_coverage_reduction_mode = kVUIDUndefined;
+    const char* dynamic_representative_fragment_test_enable = kVUIDUndefined;
+    const char* dynamic_shading_rate_image_enable = kVUIDUndefined;
     const char* primitives_generated = kVUIDUndefined;
     const char* primitives_generated_streams = kVUIDUndefined;
 };
@@ -362,9 +393,9 @@ class CoreChecks : public ValidationStateTracker {
     static bool ValidateCopyQueryPoolResults(CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                              uint32_t queryCount, uint32_t perfPass, VkQueryResultFlags flags,
                                              QueryMap* localQueryToStateMap);
-    static bool VerifyQueryIsReset(CMD_BUFFER_STATE& cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+    static bool VerifyQueryIsReset(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                    VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    static bool ValidatePerformanceQuery(CMD_BUFFER_STATE& cb_state, QueryObject query_obj, const CMD_TYPE cmd_type,
+    static bool ValidatePerformanceQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, uint32_t index,
                             CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
@@ -616,8 +647,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, const SHADER_MODULE_STATE& module_state,
                                           const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
+
+    // Auto-generated helper functions
     bool ValidateShaderCapabilitiesAndExtensions(const Instruction& insn) const;
     VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) const;
+
     bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                                        bool has_writable_descriptor, bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
@@ -1216,8 +1250,8 @@ class CoreChecks : public ValidationStateTracker {
                                              const VkCopyDescriptorSet* pDescriptorCopies) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                            const VkCommandBufferBeginInfo* pBeginInfo) const override;
-    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE> image_view, const char* attachment, const VkRenderingInfo* pRenderingInfo,
-                                         const char* func_name) const;
+    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view, const char* attachment,
+                                         const VkRenderingInfo* pRenderingInfo, const char* func_name) const;
     bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo, CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
                                              const VkRenderingInfoKHR* pRenderingInfo) const override;

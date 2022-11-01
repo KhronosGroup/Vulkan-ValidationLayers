@@ -57353,6 +57353,7 @@ void safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM::initialize(const safe_V
 
 safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* in_struct) :
     sType(in_struct->sType),
+    shaderCoreMask(in_struct->shaderCoreMask),
     shaderCoreCount(in_struct->shaderCoreCount),
     shaderWarpsPerCore(in_struct->shaderWarpsPerCore)
 {
@@ -57362,6 +57363,7 @@ safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShade
 safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM() :
     sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM),
     pNext(nullptr),
+    shaderCoreMask(),
     shaderCoreCount(),
     shaderWarpsPerCore()
 {}
@@ -57369,6 +57371,7 @@ safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShade
 safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& copy_src)
 {
     sType = copy_src.sType;
+    shaderCoreMask = copy_src.shaderCoreMask;
     shaderCoreCount = copy_src.shaderCoreCount;
     shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
     pNext = SafePnextCopy(copy_src.pNext);
@@ -57382,6 +57385,7 @@ safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM& safe_VkPhysicalDeviceShade
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
+    shaderCoreMask = copy_src.shaderCoreMask;
     shaderCoreCount = copy_src.shaderCoreCount;
     shaderWarpsPerCore = copy_src.shaderWarpsPerCore;
     pNext = SafePnextCopy(copy_src.pNext);
@@ -57400,6 +57404,7 @@ void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const VkPh
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
+    shaderCoreMask = in_struct->shaderCoreMask;
     shaderCoreCount = in_struct->shaderCoreCount;
     shaderWarpsPerCore = in_struct->shaderWarpsPerCore;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -57408,6 +57413,7 @@ void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const VkPh
 void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM* copy_src)
 {
     sType = copy_src->sType;
+    shaderCoreMask = copy_src->shaderCoreMask;
     shaderCoreCount = copy_src->shaderCoreCount;
     shaderWarpsPerCore = copy_src->shaderWarpsPerCore;
     pNext = SafePnextCopy(copy_src->pNext);

@@ -163,7 +163,7 @@ vartype vartype_lookup(char intype) {
     }
 }
 
-std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string format_string) {
+std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string &format_string) {
     const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', '\0'};
     std::vector<DPFSubstring> parsed_strings;
     size_t pos = 0;
@@ -263,7 +263,7 @@ std::string DebugPrintf::FindFormatString(std::vector<uint32_t> pgm, uint32_t st
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
-void snprintf_with_malloc(std::stringstream &shader_message, DPFSubstring substring, size_t needed, void *values) {
+void snprintf_with_malloc(std::stringstream &shader_message, const DPFSubstring &substring, size_t needed, void *values) {
     char *buffer = static_cast<char *>(malloc((needed + 1) * sizeof(char)));  // Add 1 for terminator
     if (substring.longval) {
         snprintf(buffer, needed, substring.string.c_str(), substring.longval);
@@ -333,7 +333,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             std::vector<std::string> format_strings = { "%ul", "%lu", "%lx" };
             size_t ul_pos = 0;
             bool print_hex = true;
-            for (auto ul_string : format_strings) {
+            for (const auto &ul_string : format_strings) {
                 ul_pos = substring.string.find(ul_string);
                 if (ul_pos != std::string::npos) {
                     if (ul_string == "%lu") print_hex = false;

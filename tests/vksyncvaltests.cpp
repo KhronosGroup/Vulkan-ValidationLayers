@@ -2397,7 +2397,7 @@ struct CreateRenderPassHelper {
         }
     }
 
-    void AddSubpassDescription(const std::vector<VkAttachmentReference>& input, const std::vector<VkAttachmentReference> color) {
+    void AddSubpassDescription(const std::vector<VkAttachmentReference>& input, const std::vector<VkAttachmentReference>& color) {
         subpass_description_store.emplace_back(input, color);
     }
 

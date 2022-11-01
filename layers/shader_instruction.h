@@ -71,6 +71,9 @@ class Instruction {
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
+    // Auto-generated helper functions
+    spv::StorageClass StorageClass() const;
+
     bool operator==(Instruction const& other) const { return words_ == other.words_; }
     bool operator!=(Instruction const& other) const { return words_ != other.words_; }
 

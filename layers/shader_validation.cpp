@@ -534,7 +534,7 @@ static std::set<uint32_t> TypeToDescriptorTypeSet(const SHADER_MODULE_STATE &mod
             descriptor_count *= module_state.GetConstantValueById(type->Word(3));
             type = module_state.FindDef(type->Word(2));
         } else {
-            if (type->Word(2) == spv::StorageClassStorageBuffer) {
+            if (type->StorageClass() == spv::StorageClassStorageBuffer) {
                 is_storage_buffer = true;
             }
             type = module_state.FindDef(type->Word(3));
@@ -808,7 +808,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             // Find all input and output variables
             case spv::OpVariable: {
                 Variable var = {};
-                var.storageClass = insn.Word(3);
+                var.storageClass = insn.StorageClass();
                 if ((var.storageClass == spv::StorageClassInput || var.storageClass == spv::StorageClassOutput) &&
                     // Only include variables in the entrypoint's interface
                     find(entrypoint_variables.begin(), entrypoint_variables.end(), insn.Word(2)) != entrypoint_variables.end()) {
@@ -1142,7 +1142,7 @@ bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &modu
     // input from CreatePipeline and CreatePipelineLayout level
     const auto &layout_state = pipeline->PipelineLayoutState();
     if (layout_state) {
-        for (auto set_layout : layout_state->set_layouts) {
+        for (const auto &set_layout : layout_state->set_layouts) {
             if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0) {
                 continue;
             }
@@ -2333,7 +2333,7 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
 
         for (const Instruction *insn : module_state.GetVariableInstructions()) {
             // StorageClass Workgroup is shared memory
-            if (insn->Word(3) == spv::StorageClassWorkgroup) {
+            if (insn->StorageClass() == spv::StorageClassWorkgroup) {
                 if (module_state.get_decorations(insn->Word(2)).flags & decoration_set::aliased_bit) {
                     find_max_block = true;
                 }
@@ -2466,7 +2466,7 @@ bool CoreChecks::ValidateVariables(const SHADER_MODULE_STATE &module_state) cons
     bool skip = false;
 
     for (const Instruction *insn : module_state.GetVariableInstructions()) {
-        const uint32_t storage_class = insn->Word(3);
+        const uint32_t storage_class = insn->StorageClass();
 
         if (storage_class == spv::StorageClassWorkgroup) {
             // If Workgroup variable is initalized, make sure the feature is enabled
@@ -2930,7 +2930,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
                     local_size_z = spec_mod.FindDef(insn.Word(5))->Word(3);
                 }
 
-                if (opcode == spv::OpVariable && insn.Word(3) == spv::StorageClassWorkgroup) {
+                if (opcode == spv::OpVariable && insn.StorageClass() == spv::StorageClassWorkgroup) {
                     if (aliased_id.find(insn.Word(2)) != aliased_id.end()) {
                         find_max_block = true;
                     }
@@ -3044,7 +3044,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidatePushConstantUsage(*pipeline, module_state, pStage, vuid_layout_mismatch);
 
     // Validate descriptor use
-    for (auto use : stage_state.descriptor_uses) {
+    for (const auto &use : stage_state.descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
         // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
@@ -3091,7 +3091,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
         if (rp_state && !rp_state->UsesDynamicRendering()) {
             auto rpci = rp_state->createInfo.ptr();
             auto subpass = pipeline->Subpass();
-            for (auto use : input_attachment_uses) {
+            for (const auto &use : input_attachment_uses) {
                 auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
                 auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
                     ? input_attachments[use.first].attachment
