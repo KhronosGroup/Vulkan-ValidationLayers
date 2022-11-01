@@ -762,8 +762,9 @@ template <typename T>
 class span {
   public:
     using pointer = T *;
+    using const_pointer = T const *;
     using iterator = pointer;
-    using const_iterator = T const *;
+    using const_iterator = const_pointer;
 
     span() = default;
     span(pointer start, size_t n) : data_(start), count_(n) {}
@@ -788,8 +789,10 @@ class span {
     const T &back() const { return *(data_ + (count_ - 1)); }
 
     size_t size() const { return count_; }
+    bool empty() const { return count_ == 0; }
 
     pointer data() { return data_; }
+    const_pointer data() const { return data_; }
 
   private:
     pointer data_ = {};
