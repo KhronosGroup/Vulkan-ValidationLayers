@@ -8688,9 +8688,9 @@ bool StatelessValidation::ValidateDeviceImageMemoryRequirements(VkDevice device,
 
         if ((pInfo->pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {
             if (FormatIsMultiplane(pInfo->pCreateInfo->format) && (pInfo->planeAspect == VK_IMAGE_ASPECT_NONE_KHR)) {
-                skip |=
-                    LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417",
-                             "%s(): Can not use VK_IMAGE_ASPECT_NONE_KHR with a multiplanar format with disjoint flag.", func_name);
+                skip |= LogError(device, "VUID-VkDeviceImageMemoryRequirementsKHR-pCreateInfo-06417",
+                                 "%s(): Must not specify VK_IMAGE_ASPECT_NONE_KHR with a multi-planar format and disjoint flag.",
+                                 func_name);
             }
         }
     }
