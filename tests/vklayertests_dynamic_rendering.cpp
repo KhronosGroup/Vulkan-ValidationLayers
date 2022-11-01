@@ -17,12 +17,19 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
-TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
-    TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfoKHR Dynamic Rendering Tests.");
+class DynamicRenderingCommandBufferInheritanceRenderingInfoTest : public VkLayerTest {
+public:
+    void Test(bool const useLinearColorAttachmen);
+};
+
+void DynamicRenderingCommandBufferInheritanceRenderingInfoTest::Test(bool const useLinearColorAttachment) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    if (useLinearColorAttachment) {
+        AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -34,9 +41,16 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
+    auto linear_color_attachment = LvlInitStruct<VkPhysicalDeviceLinearColorAttachmentFeaturesNV>();
+    if (IsExtensionsEnabled(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME)) {
+        dynamic_rendering_features.pNext = &linear_color_attachment;
+    }
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+    if (useLinearColorAttachment && !linear_color_attachment.linearColorAttachment) {
+        GTEST_SKIP() << "Test requires linearColorAttachment";
     }
 
     features2.features.variableMultisampleRate = VK_FALSE;
@@ -46,11 +60,6 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     VkPhysicalDeviceMultiviewProperties multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multiview_props);
     GetPhysicalDeviceProperties2(pd_props2);
-
-    if (multiview_props.maxMultiviewViewCount == 32) {
-        printf("%s VUID is not testable as maxMultiviewViewCount is 32, skipping test\n", kSkipPrefix);
-        return;
-    }
 
     VkFormat color_format = VK_FORMAT_D32_SFLOAT;
 
@@ -81,10 +90,16 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-variableMultisampleRate-06005");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06007");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009");
+    if (multiview_props.maxMultiviewViewCount != 32) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-viewMask-06009");
+    }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06199");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06200");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
+    if (linear_color_attachment.linearColorAttachment) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfoKHR-pColorAttachmentFormats-06492");
+    } else {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-pColorAttachmentFormats-06006");
+    }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-depthAttachmentFormat-06540");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkCommandBufferInheritanceRenderingInfo-stencilAttachmentFormat-06541");
 
@@ -93,6 +108,18 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceRenderingInfo) {
     cmd_buffer_begin_info.pInheritanceInfo = &cmd_buffer_inheritance_info;
     vk::BeginCommandBuffer(secondary_cmd_buffer, &cmd_buffer_begin_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(DynamicRenderingCommandBufferInheritanceRenderingInfoTest, Core) {
+    TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfoKHR Dynamic Rendering Tests.");
+
+    Test(false);
+}
+
+TEST_F(DynamicRenderingCommandBufferInheritanceRenderingInfoTest, LinearColorAttachment) {
+    TEST_DESCRIPTION("VkCommandBufferInheritanceRenderingInfoKHR Dynamic Rendering Tests with linearColorAttachment.");
+
+    Test(true);
 }
 
 TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {

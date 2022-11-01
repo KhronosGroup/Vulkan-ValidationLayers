@@ -8755,9 +8755,12 @@ TEST_F(VkLayerTest, NullDescriptorsEnabled) {
     vk::DestroySampler(m_device->handle(), sampler, nullptr);
 }
 
-TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
-    TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create");
+class RenderPassCreatePotentialFormatFeaturesTest : public VkLayerTest {
+public:
+    void Test(bool const useLinearColorAttachment);
+};
 
+void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColorAttachment) {
     // Check for VK_KHR_get_physical_device_properties2
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -8767,9 +8770,23 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
         GTEST_SKIP() << "Failed to override devsim for device profile layer.";
     }
 
+    if (useLinearColorAttachment) {
+        AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto linear_color_attachment = LvlInitStruct<VkPhysicalDeviceLinearColorAttachmentFeaturesNV>();
+    if (useLinearColorAttachment) {
+        VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(linear_color_attachment);
+        if (useLinearColorAttachment && !linear_color_attachment.linearColorAttachment) {
+            GTEST_SKIP() << "Test requires linearColorAttachment";
+        }
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(InitState());
+    }
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -8825,21 +8842,31 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
 
     // Color attachment
     subpass.pColorAttachments = &references[1];
-    TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
-                         "VUID-VkSubpassDescription2-pColorAttachments-02898");
+    if (useLinearColorAttachment) {
+        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06497",
+            "VUID-VkSubpassDescription2-linearColorAttachment-06500");
+    } else {
+        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pColorAttachments-02648",
+                             "VUID-VkSubpassDescription2-pColorAttachments-02898");
+    }
     subpass = originalSubpass;
 
     // Input attachment
     subpass.inputAttachmentCount = 1;
     subpass.pInputAttachments = &references[1];
-    TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
-                         "VUID-VkSubpassDescription2-pInputAttachments-02897");
+    if (useLinearColorAttachment) {
+        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-linearColorAttachment-06496",
+            "VUID-VkSubpassDescription2-linearColorAttachment-06499");
+    } else {
+        TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pInputAttachments-02647",
+                             "VUID-VkSubpassDescription2-pInputAttachments-02897");
+    }
     subpass = originalSubpass;
 
     // Depth Stencil attachment
     subpass.pDepthStencilAttachment = &references[3];
     TestRenderPassCreate(m_errorMonitor, device(), &rpci, rp2Supported, "VUID-VkSubpassDescription-pDepthStencilAttachment-02650",
-                         "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
+                            "VUID-VkSubpassDescription2-pDepthStencilAttachment-02900");
     subpass = originalSubpass;
 
     // Resolve attachment
@@ -8849,7 +8876,11 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
     {
         VkRenderPass render_pass = VK_NULL_HANDLE;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pResolveAttachments-02649");
+        if (useLinearColorAttachment) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-linearColorAttachment-06498");
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription-pResolveAttachments-02649");
+        }
         m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription-pResolveAttachments-00850");
         vk::CreateRenderPass(device(), &rpci, nullptr, &render_pass);
         m_errorMonitor->VerifyFound();
@@ -8860,7 +8891,11 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
             safe_VkRenderPassCreateInfo2 create_info2;
             ConvertVkRenderPassCreateInfoToV2KHR(rpci, &create_info2);
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pResolveAttachments-02899");
+            if (useLinearColorAttachment) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-linearColorAttachment-06501");
+            } else {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubpassDescription2-pResolveAttachments-02899");
+            }
             m_errorMonitor->SetUnexpectedError("VUID-VkSubpassDescription2-pResolveAttachments-03068");
             vkCreateRenderPass2KHR(device(), create_info2.ptr(), nullptr, &render_pass);
             m_errorMonitor->VerifyFound();
@@ -8876,6 +8911,18 @@ TEST_F(VkLayerTest, RenderPassCreatePotentialFormatFeatures) {
             }
         }
     }
+}
+
+TEST_F(RenderPassCreatePotentialFormatFeaturesTest, Core) {
+    TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create");
+
+    Test(false);
+}
+
+TEST_F(RenderPassCreatePotentialFormatFeaturesTest, LinearColorAttachment) {
+    TEST_DESCRIPTION("Validate PotentialFormatFeatures in renderpass create with linearColorAttachment");
+
+    Test(true);
 }
 
 TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
