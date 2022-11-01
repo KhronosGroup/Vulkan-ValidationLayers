@@ -210,9 +210,6 @@ void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocation
     acceleration_structure_validation_state.Destroy(device, vmaAllocator);
     pre_draw_validation_state.Destroy(device);
     pre_dispatch_validation_state.Destroy(device);
-    if (output_buffer_pool) {
-        vmaDestroyPool(vmaAllocator, output_buffer_pool);
-    }
     GpuAssistedBase::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
