@@ -300,7 +300,6 @@ class GpuAssisted : public GpuAssistedBase {
     bool buffer_oob_enabled;
     bool validate_draw_indirect;
     bool validate_dispatch_indirect;
-    VmaPool output_buffer_pool = VK_NULL_HANDLE;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;

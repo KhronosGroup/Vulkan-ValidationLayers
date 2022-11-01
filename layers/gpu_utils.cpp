@@ -365,6 +365,9 @@ void GpuAssistedBase::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
     }
     ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
     // State Tracker can end up making vma calls through callbacks - don't destroy allocator until ST is done
+    if (output_buffer_pool) {
+        vmaDestroyPool(vmaAllocator, output_buffer_pool);
+    }
     if (vmaAllocator) {
         vmaDestroyAllocator(vmaAllocator);
     }

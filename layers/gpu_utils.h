@@ -222,6 +222,7 @@ class GpuAssistedBase : public ValidationStateTracker {
     VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     uint32_t desc_set_bind_index = 0;
     VmaAllocator vmaAllocator = {};
+    VmaPool output_buffer_pool = VK_NULL_HANDLE;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
     vl_concurrent_unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::vector<VkDescriptorSetLayoutBinding> bindings_;
