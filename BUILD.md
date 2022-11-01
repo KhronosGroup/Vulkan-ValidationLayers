@@ -49,6 +49,15 @@ calling the `update_deps.py` script manually. See below for more details.
 These are general instructions that should "just work" on Windows and Linux. For platform-specific
 build instructions, see the appropriate `<Platform> Build` section below.
 
+### update_deps.py --cmake_var
+
+When using update_deps.py you may want to pass arguments to the CMake build.
+Here is an example highlighting how to pass a CMAKE_TOOLCHAIN_FILE.
+
+```bash
+update_deps.py ... --cmake_var CMAKE_TOOLCHAIN_FILE=/home/.../arm64.cmake
+```
+
 ## Contributing to the Repository
 
 If you intend to contribute, the preferred work flow is for you to develop
