@@ -35,6 +35,7 @@
 #include "device_state.h"
 #include "descriptor_sets.h"
 #include "qfo_transfer.h"
+#include "vk_layer_data.h"
 
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
@@ -356,6 +357,12 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void AddChild(std::shared_ptr<StateObject> &child_node) {
         auto base = std::static_pointer_cast<BASE_NODE>(child_node);
         AddChild(base);
+    }
+    template <typename StateObject>
+    void AddChildren(layer_data::span<std::shared_ptr<StateObject>> &child_nodes) {
+        for (auto &child_node : child_nodes) {
+            AddChild(child_node);
+        }
     }
 
     void RemoveChild(std::shared_ptr<BASE_NODE> &base_node);

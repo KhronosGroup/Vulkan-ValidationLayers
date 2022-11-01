@@ -445,23 +445,27 @@ class ValidationStateTracker : public ValidationObject {
         return found_it->second;
     }
 
-    std::shared_ptr<BUFFER_STATE> GetBufferByAddress(VkDeviceAddress address) {
+    // From the spec:
+    // If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return
+    // address ranges which overlap. In this case, it is ambiguous which VkBuffer is associated with any given
+    // device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
+    // a device address, a VkBuffer is selected such that valid usage passes, if it exists.
+    using BUFFER_STATE_PTR = std::shared_ptr<BUFFER_STATE>;
+    layer_data::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return nullptr;
+            return layer_data::make_span<BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
         }
-        // NOTE: for the address map found_it is the actual map entry rather than a copy so we cannot std::move
         return found_it->second;
     }
 
-    std::shared_ptr<const BUFFER_STATE> GetBufferByAddress(VkDeviceAddress address) const {
+    layer_data::span<const BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) const {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return nullptr;
+            return layer_data::make_span<const BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
         }
-        // NOTE: for the address map found_it is the actual map entry rather than a copy so we cannot std::move
         return found_it->second;
     }
 
@@ -1494,7 +1498,7 @@ class ValidationStateTracker : public ValidationObject {
     };
     std::vector<DeviceQueueInfo> device_queue_info_list;
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
-    sparse_container::range_map<VkDeviceAddress, std::shared_ptr<BUFFER_STATE>> buffer_address_map_;
+    sparse_container::range_map<VkDeviceAddress, std::vector<std::shared_ptr<BUFFER_STATE>>> buffer_address_map_;
     mutable std::shared_mutex buffer_address_lock_;
 
     vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;

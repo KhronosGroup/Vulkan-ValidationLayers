@@ -10648,17 +10648,24 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
 
     auto buffer_check = [this, info_index, func_name](uint32_t gi, const VkDeviceOrHostAddressConstKHR address,
                                                       const char *field) -> bool {
-        // being inside the lambda confuses the compiler about our constness
-        const auto buffer_state = const_cast<const CoreChecks *>(this)->GetBufferByAddress(address.deviceAddress);
-        if (buffer_state &&
-            !(buffer_state->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR)) {
+        const auto buffer_states = GetBuffersByAddress(address.deviceAddress);
+        const bool no_valid_buffer_found =
+            !buffer_states.empty() &&
+            std::none_of(
+                buffer_states.begin(), buffer_states.end(), [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
+                    return buffer_state->createInfo.usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                });
+        if (no_valid_buffer_found) {
             LogObjectList objlist(device);
-            objlist.add(buffer_state->Handle());
+            for (const auto &buffer_state : buffer_states) {
+                objlist.add(buffer_state->Handle());
+            }
             return LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673",
-                            "%s(): The buffer associated with pInfos[%" PRIu32 "].pGeometries[%" PRIu32
-                            "].%s was not created with VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.",
+                            "%s(): No buffer associated with pInfos[%" PRIu32 "].pGeometries[%" PRIu32
+                            "].%s was created with VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.",
                             func_name, info_index, gi, field);
         }
+
         return false;
     };
 
@@ -10697,18 +10704,26 @@ bool CoreChecks::ValidateAccelerationBuffers(uint32_t info_index, const VkAccele
         }
     }
 
-    const auto buffer_state = GetBufferByAddress(info.scratchData.deviceAddress);
-    if (!buffer_state) {
+    const auto buffer_states = GetBuffersByAddress(info.scratchData.deviceAddress);
+    if (buffer_states.empty()) {
         skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03802",
                 "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
                 "].scratchData.deviceAddress %" PRIx64 " is not a valid device address.",
                 info_index, info.scratchData.deviceAddress);
     } else {
-        if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
-            skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
-                    "vkBuildAccelerationStructuresKHR(): The buffer associated with pInfos[%" PRIu32
-                    "].scratchData.deviceAddress was not created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
-                    info_index);
+        const bool no_valid_buffer_found = std::none_of(
+            buffer_states.begin(), buffer_states.end(), [](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
+                return buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            });
+        if (no_valid_buffer_found) {
+            LogObjectList objlist(device);
+            for (const auto &buffer_state : buffer_states) {
+                objlist.add(buffer_state->Handle());
+            }
+            skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
+                             "vkBuildAccelerationStructuresKHR(): No buffer associated with pInfos[%" PRIu32
+                             "].scratchData.deviceAddress was created with VK_BUFFER_USAGE_STORAGE_BUFFER_BIT bit.",
+                             info_index);
         }
     }
 
