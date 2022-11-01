@@ -1596,11 +1596,11 @@ class QueueSyncState {
 // parameter.
 struct SubmitInfoConverter {
     struct BatchStore {
-        BatchStore(const VkSubmitInfo &info);
+        BatchStore(const VkSubmitInfo &info, VkQueueFlags queue_flags);
 
         static VkSemaphoreSubmitInfo WaitSemaphore(const VkSubmitInfo &info, uint32_t index);
         static VkCommandBufferSubmitInfo CommandBuffer(const VkSubmitInfo &info, uint32_t index);
-        static VkSemaphoreSubmitInfo SignalSemaphore(const VkSubmitInfo &info, uint32_t index);
+        static VkSemaphoreSubmitInfo SignalSemaphore(const VkSubmitInfo &info, uint32_t index, VkQueueFlags queue_flags);
 
         std::vector<VkSemaphoreSubmitInfo> waits;
         std::vector<VkCommandBufferSubmitInfo> cbs;
@@ -1608,7 +1608,7 @@ struct SubmitInfoConverter {
         VkSubmitInfo2 info2;
     };
 
-    SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos);
+    SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos, VkQueueFlags queue_flags);
 
     std::vector<BatchStore> info_store;
     std::vector<VkSubmitInfo2> info2s;

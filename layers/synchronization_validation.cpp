@@ -145,7 +145,7 @@ static bool IsHazardVsRead(SyncHazard hazard) {
 static const char *string_SyncHazard(SyncHazard hazard) {
     switch (hazard) {
         case SyncHazard::NONE:
-            return "NONR";
+            return "NONE";
             break;
         case SyncHazard::READ_AFTER_WRITE:
             return "READ_AFTER_WRITE";
@@ -2972,7 +2972,7 @@ SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst)
     : src_exec_scope(src), src_access_scope(0), dst_exec_scope(dst), dst_access_scope(0) {}
 
 SyncBarrier::SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const SyncBarrier::AllAccess &)
-    : src_exec_scope(src), src_access_scope(src.valid_accesses), dst_exec_scope(dst), dst_access_scope(src.valid_accesses) {}
+    : src_exec_scope(src), src_access_scope(src.valid_accesses), dst_exec_scope(dst), dst_access_scope(dst.valid_accesses) {}
 
 template <typename Barrier>
 SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst)
@@ -7429,7 +7429,9 @@ thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<Queu
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {
-    SubmitInfoConverter submit_info(submitCount, pSubmits);
+    auto queue_state = GetQueueSyncStateShared(queue);
+    if (!bool(queue_state)) return false;
+    SubmitInfoConverter submit_info(submitCount, pSubmits, queue_state->GetQueueFlags());
     return ValidateQueueSubmit(queue, submitCount, submit_info.info2s.data(), fence, "vkQueueSubmit");
 }
 
@@ -8007,14 +8009,17 @@ VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const V
     return cb_info;
 }
 
-VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo &info, uint32_t index) {
+VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo &info, uint32_t index,
+                                                                       VkQueueFlags queue_flags) {
     auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
     semaphore_info.semaphore = info.pSignalSemaphores[index];
-    semaphore_info.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+    // Can't just use BOTTOM, because of how access expansion is done
+    semaphore_info.stageMask =
+        sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queue_flags, VK_PIPELINE_STAGE_2_HOST_BIT);
     return semaphore_info;
 }
 
-SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info) {
+SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info, VkQueueFlags queue_flags) {
     info2 = lvl_init_struct<VkSubmitInfo2>();
 
     info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
@@ -8034,16 +8039,16 @@ SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info) {
     info2.signalSemaphoreInfoCount = info.signalSemaphoreCount;
     signals.reserve(info2.signalSemaphoreInfoCount);
     for (uint32_t i = 0; i < info2.signalSemaphoreInfoCount; ++i) {
-        signals.emplace_back(SignalSemaphore(info, i));
+        signals.emplace_back(SignalSemaphore(info, i, queue_flags));
     }
     info2.pSignalSemaphoreInfos = signals.data();
 }
 
-SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos) {
+SubmitInfoConverter::SubmitInfoConverter(uint32_t count, const VkSubmitInfo *infos, VkQueueFlags queue_flags) {
     info_store.reserve(count);
     info2s.reserve(count);
     for (uint32_t batch = 0; batch < count; ++batch) {
-        info_store.emplace_back(infos[batch]);
+        info_store.emplace_back(infos[batch], queue_flags);
         info2s.emplace_back(info_store.back().info2);
     }
 }
