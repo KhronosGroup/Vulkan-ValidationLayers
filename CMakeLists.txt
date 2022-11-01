@@ -51,27 +51,36 @@ if (UPDATE_DEPS)
     message("*       dependencies.                                                          *")
     message("********************************************************************************")
 
-    set(_update_deps_arg "")
+    set(optional_args)
     if (NOT BUILD_TESTS)
-        set(_update_deps_arg "--optional=tests")
+        set(optional_args "--optional=tests")
     endif()
 
     if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
-        set(_update_deps_arg ${_update_deps_arg} "--skip-existing-install")
+        set(optional_args ${optional_args} "--skip-existing-install")
+    endif()
+
+    if (DEFINED CMAKE_TOOLCHAIN_FILE)
+        set(optional_args ${optional_args} "--cmake_var")
+        set(optional_args ${optional_args} "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
     endif()
 
     # Add a target so that update_deps.py will run when necessary
     # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-                       COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
-                       DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py 
+            --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
+        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json
+    )
 
     add_custom_target(vvl_update_deps ALL DEPENDS ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
 
     # Check if update_deps.py needs to be run on first cmake run
     if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${_update_deps_arg}
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py
+                --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             RESULT_VARIABLE _update_deps_result
         )

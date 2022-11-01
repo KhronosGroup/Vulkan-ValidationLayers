@@ -443,6 +443,11 @@ class GoodRepo(object):
             '-DCMAKE_INSTALL_PREFIX=' + self.install_dir
         ]
 
+        # Allow users to pass in arbitrary cache variables
+        for cmake_var in self._args.cmake_var:
+            pieces = cmake_var.split('=', 1)
+            cmake_cmd.append('-D{}={}'.format(pieces[0], pieces[1]))
+
         # For each repo this repo depends on, generate a CMake variable
         # definitions for "...INSTALL_DIR" that points to that dependent
         # repo's install dir.
@@ -682,6 +687,13 @@ def main():
         type=lambda a: set(a.lower().split(',')),
         help="Comma-separated list of 'optional' resources that may be skipped. Only 'tests' is currently supported as 'optional'",
         default=set())
+    parser.add_argument(
+        '--cmake_var',
+        dest='cmake_var',
+        action='append',
+        metavar='VAR[=VALUE]',
+        help="Add CMake command line option -D'VAR'='VALUE' to the CMake generation command line; may be used multiple times",
+        default=[])
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
