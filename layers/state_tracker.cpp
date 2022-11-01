@@ -368,7 +368,16 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
             WriteLockGuard guard(buffer_address_lock_);
             // address is used for GPU-AV and ray tracing buffer validation
             buffer_state->deviceAddress = opaque_capture_address->opaqueCaptureAddress;
-            buffer_address_map_.insert({buffer_state->DeviceAddressRange(), buffer_state});
+            const auto address_range = buffer_state->DeviceAddressRange();
+
+            buffer_address_map_.split_and_merge_insert(
+                {address_range, {buffer_state}}, [](auto &current_buffer_list, const auto &new_buffer) {
+                    assert(!current_buffer_list.empty());
+                    const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), new_buffer[0]);
+                    if (buffer_found_it == current_buffer_list.end()) {
+                        current_buffer_list.emplace_back(new_buffer[0]);
+                    }
+                });
         }
 
         const VkBufferUsageFlags descriptor_buffer_usages =
@@ -480,10 +489,9 @@ void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkIm
 void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (buffer_state) {
-        WriteLockGuard guard(buffer_address_lock_);
-        buffer_address_map_.erase_range(buffer_state->DeviceAddressRange());
-
-        const VkBufferUsageFlags descriptor_buffer_usages =
+    	WriteLockGuard guard(buffer_address_lock_);
+    	
+    	const VkBufferUsageFlags descriptor_buffer_usages =
             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
         if ((buffer_state->createInfo.usage & descriptor_buffer_usages) != 0) {
@@ -494,6 +502,32 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
 
             if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
                 samplerDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
+        }
+    	
+    	if (buffer_state->deviceAddress != 0) {
+        	const auto address_range = buffer_state->DeviceAddressRange();
+
+                buffer_address_map_.erase_range_or_touch(address_range, [&buffer_state](auto &buffers) {
+                    assert(!buffers.empty());
+                    const auto buffer_found_it = std::find(buffers.begin(), buffers.end(), buffer_state);
+                    assert(buffer_found_it != buffers.end());
+
+                    // If buffer list only has one element, remove range map entry.
+                    // Else, remove target buffer from buffer list.
+                    if (buffer_found_it != buffers.end()) {
+                        if (buffers.size() == 1) {
+                            return true;
+                        } else {
+                            assert(!buffers.empty());
+                            size_t i = std::distance(buffers.begin(), buffer_found_it);
+                            std::swap(buffers[i], buffers[buffers.size() - 1]);
+                            buffers.resize(buffers.size() - 1);
+                            return false;
+                        }
+                    }
+
+                    return false;
+                });
         }
     }
     Destroy<BUFFER_STATE>(buffer);
@@ -2753,9 +2787,9 @@ void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFF
     if (src_as_state) {
         cb_state.AddChild(src_as_state);
     }
-    auto scratch_buffer = GetBufferByAddress(info.scratchData.deviceAddress);
-    if (scratch_buffer) {
-        cb_state.AddChild(scratch_buffer);
+    auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress);
+    if (!scratch_buffers.empty()) {
+        cb_state.AddChildren(scratch_buffers);
     }
 
     for (uint32_t i = 0; i < info.geometryCount; i++) {
@@ -2763,39 +2797,39 @@ void ValidationStateTracker::RecordDeviceAccelerationStructureBuildInfo(CMD_BUFF
         const auto &geom = info.pGeometries ? info.pGeometries[i] : *info.ppGeometries[i];
         switch (geom.geometryType) {
             case VK_GEOMETRY_TYPE_TRIANGLES_KHR: {
-                auto vertex_buffer = GetBufferByAddress(geom.geometry.triangles.vertexData.deviceAddress);
-                if (vertex_buffer) {
-                    cb_state.AddChild(vertex_buffer);
+                auto vertex_buffers = GetBuffersByAddress(geom.geometry.triangles.vertexData.deviceAddress);
+                if (!vertex_buffers.empty()) {
+                    cb_state.AddChildren(vertex_buffers);
                 }
-                auto index_buffer = GetBufferByAddress(geom.geometry.triangles.indexData.deviceAddress);
-                if (index_buffer) {
-                    cb_state.AddChild(index_buffer);
+                auto index_buffers = GetBuffersByAddress(geom.geometry.triangles.indexData.deviceAddress);
+                if (!index_buffers.empty()) {
+                    cb_state.AddChildren(index_buffers);
                 }
-                auto transform_buffer = GetBufferByAddress(geom.geometry.triangles.transformData.deviceAddress);
-                if (transform_buffer) {
-                    cb_state.AddChild(transform_buffer);
+                auto transform_buffers = GetBuffersByAddress(geom.geometry.triangles.transformData.deviceAddress);
+                if (!transform_buffers.empty()) {
+                    cb_state.AddChildren(transform_buffers);
                 }
                 const auto *motion_data = LvlFindInChain<VkAccelerationStructureGeometryMotionTrianglesDataNV>(info.pNext);
                 if (motion_data) {
-                    auto motion_buffer = GetBufferByAddress(motion_data->vertexData.deviceAddress);
-                    if (motion_buffer) {
-                        cb_state.AddChild(motion_buffer);
+                    auto motion_buffers = GetBuffersByAddress(motion_data->vertexData.deviceAddress);
+                    if (!motion_buffers.empty()) {
+                        cb_state.AddChildren(motion_buffers);
                     }
                 }
             } break;
             case VK_GEOMETRY_TYPE_AABBS_KHR: {
-                auto data_buffer = GetBufferByAddress(geom.geometry.aabbs.data.deviceAddress);
-                if (data_buffer) {
-                    cb_state.AddChild(data_buffer);
+                auto data_buffers = GetBuffersByAddress(geom.geometry.aabbs.data.deviceAddress);
+                if (!data_buffers.empty()) {
+                    cb_state.AddChildren(data_buffers);
                 }
             } break;
             case VK_GEOMETRY_TYPE_INSTANCES_KHR: {
                 // NOTE: if arrayOfPointers is true, we don't track the pointers in the array. That would
                 // require that data buffer be mapped to the CPU so that we could walk through it. We can't
                 // easily ensure that's true.
-                auto data_buffer = GetBufferByAddress(geom.geometry.instances.data.deviceAddress);
-                if (data_buffer) {
-                    cb_state.AddChild(data_buffer);
+                auto data_buffers = GetBuffersByAddress(geom.geometry.instances.data.deviceAddress);
+                if (!data_buffers.empty()) {
+                    cb_state.AddChildren(data_buffers);
                 }
             } break;
             default:
@@ -2830,9 +2864,9 @@ void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructuresIndirec
     for (uint32_t i = 0; i < infoCount; i++) {
         RecordDeviceAccelerationStructureBuildInfo(*cb_state, pInfos[i]);
         if (!disabled[command_buffer_state]) {
-            auto indirect_buffer = GetBufferByAddress(pIndirectDeviceAddresses[i]);
-            if (indirect_buffer) {
-                cb_state->AddChild(indirect_buffer);
+            auto indirect_buffer = GetBuffersByAddress(pIndirectDeviceAddresses[i]);
+            if (!indirect_buffer.empty()) {
+                cb_state->AddChildren(indirect_buffer);
             }
         }
     }
@@ -4743,9 +4777,9 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureToMemoryK
         if (!disabled[command_buffer_state]) {
             cb_state->AddChild(src_as_state);
         }
-        auto dst_buffer = GetBufferByAddress(pInfo->dst.deviceAddress);
-        if (dst_buffer) {
-            cb_state->AddChild(dst_buffer);
+        auto dst_buffers = GetBuffersByAddress(pInfo->dst.deviceAddress);
+        if (!dst_buffers.empty()) {
+            cb_state->AddChildren(dst_buffers);
         }
     }
 }
@@ -4756,9 +4790,9 @@ void ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureK
     if (cb_state) {
         cb_state->RecordCmd(CMD_COPYMEMORYTOACCELERATIONSTRUCTUREKHR);
         if (!disabled[command_buffer_state]) {
-            auto buffer_state = GetBufferByAddress(pInfo->src.deviceAddress);
-            if (buffer_state) {
-                cb_state->AddChild(buffer_state);
+            auto src_buffers = GetBuffersByAddress(pInfo->src.deviceAddress);
+            if (!src_buffers.empty()) {
+                cb_state->AddChildren(src_buffers);
             }
             auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfo->dst);
             cb_state->AddChild(dst_as_state);
@@ -5320,7 +5354,16 @@ void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAd
         WriteLockGuard guard(buffer_address_lock_);
         // address is used for GPU-AV and ray tracing buffer validation
         buffer_state->deviceAddress = address;
-        buffer_address_map_.insert({buffer_state->DeviceAddressRange(), buffer_state});
+        const auto address_range = buffer_state->DeviceAddressRange();
+
+        buffer_address_map_.split_and_merge_insert(
+            {address_range, {buffer_state}}, [](auto &current_buffer_list, const auto &new_buffer) {
+                assert(!current_buffer_list.empty());
+                const auto buffer_found_it = std::find(current_buffer_list.begin(), current_buffer_list.end(), new_buffer[0]);
+                if (buffer_found_it == current_buffer_list.end()) {
+                    current_buffer_list.emplace_back(new_buffer[0]);
+                }
+            });
     }
 }
 
