@@ -93,8 +93,8 @@ const SubresourceRangeErrorCodes &GetSubResourceVUIDs(const Location &loc);
 enum class SubmitError {
     kTimelineSemSmallValue,
     kSemAlreadySignalled,
-    kBinaryCannotBeSignalled,
-    kTimelineCannotBeSignalled,
+    kOldBinaryCannotBeSignalled, // timeline semaphores not supported
+    kBinaryCannotBeSignalled, // timeline semaphores supported
     kTimelineSemMaxDiff,
     kProtectedFeatureDisabled,
     kBadUnprotectedSubmit,

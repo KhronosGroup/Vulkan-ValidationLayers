@@ -5129,8 +5129,8 @@ struct SemaphoreSubmitState {
                                         core->report_data->FormatHandle(semaphore).c_str());
             } else if (CannotWait(semaphore_state)) {
                 auto error = IsExtEnabled(core->device_extensions.vk_khr_timeline_semaphore)
-                                    ? SubmitError::kTimelineCannotBeSignalled
-                                    : SubmitError::kBinaryCannotBeSignalled;
+                                    ? SubmitError::kBinaryCannotBeSignalled
+                                    : SubmitError::kOldBinaryCannotBeSignalled;
                 const auto &vuid = GetQueueSubmitVUID(loc, error);
                 LogObjectList objlist(semaphore);
                 objlist.add(queue);

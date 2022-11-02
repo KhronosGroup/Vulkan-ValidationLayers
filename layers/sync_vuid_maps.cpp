@@ -960,16 +960,17 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
          {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pSignalSemaphores-01115"},
          {Key(Func::vkQueueSubmit2), "VUID-vkQueueSubmit2-semaphore-03868"},
      }},
-    {SubmitError::kBinaryCannotBeSignalled,
+    {SubmitError::kOldBinaryCannotBeSignalled,
      {
          {Key(Func::vkQueueSubmit), "VUID-vkQueueSubmit-pWaitSemaphores-00069"},
          {Key(Func::vkQueueSubmit2), "VUID-vkQueueSubmit2-semaphore-03872"},
-         {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pWaitSemaphores-03245"},
+         {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pWaitSemaphores-01117"},
      }},
-    {SubmitError::kTimelineCannotBeSignalled,
+    {SubmitError::kBinaryCannotBeSignalled,
      {
          {Key(Func::vkQueueSubmit), "VUID-vkQueueSubmit-pWaitSemaphores-03238"},
          {Key(Func::vkQueueSubmit2), "VUID-vkQueueSubmit2-semaphore-03873"},
+         {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pWaitSemaphores-03245"},
      }},
     {SubmitError::kTimelineSemMaxDiff,
      {
