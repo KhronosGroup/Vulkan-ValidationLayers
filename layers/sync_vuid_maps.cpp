@@ -1028,6 +1028,12 @@ static const std::map<SubmitError, std::vector<Entry>> kSubmitErrors{
          {Key(Func::vkCmdResetEvent), "VUID-vkCmdResetEvent-stageMask-01153"},
          {Key(Func::vkCmdResetEvent2), "VUID-vkCmdResetEvent2-stageMask-03830"},
      }},
+    {SubmitError::kOtherQueueWaiting,
+     {
+         {Key(Func::vkQueueSubmit), "VUID-vkQueueSubmit-pWaitSemaphores-00068"},
+         {Key(Func::vkQueueBindSparse), "VUID-vkQueueBindSparse-pWaitSemaphores-01116"},
+         {Key(Func::vkQueueSubmit2), "VUID-vkQueueSubmit2-semaphore-03871"},
+     }},
 };
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
