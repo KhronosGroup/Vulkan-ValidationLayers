@@ -100,7 +100,14 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
                         geometry_shader = std::move(module_state);
                         geometry_shader_ci = stage_ci;
                         break;
-                    // TODO mesh shaders?
+                    case VK_SHADER_STAGE_TASK_BIT_EXT:
+                        task_shader = std::move(module_state);
+                        task_shader_ci = stage_ci;
+                        break;
+                    case VK_SHADER_STAGE_MESH_BIT_EXT:
+                        mesh_shader = std::move(module_state);
+                        mesh_shader_ci = stage_ci;
+                        break;
                     default:
                         // TODO is this an error?
                         break;
