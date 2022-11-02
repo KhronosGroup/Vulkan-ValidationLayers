@@ -1615,15 +1615,13 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
                                                     VkImageAspectFlags aspect) const {
     bool skip = false;
 
-    const VkAccessFlags all = VK_ACCESS_FLAG_BITS_MAX_ENUM;
-    bool none_allowed = false;
-    VkAccessFlags allowed = 0;
+    const VkAccessFlags2 all = UINT64_MAX;  // core validation is responsible for detecting undefined flags.
+    VkAccessFlags2 allowed = 0;
 
     // Combinations taken from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2918
     switch (layout) {
         case VK_IMAGE_LAYOUT_UNDEFINED:
             allowed = all;
-            none_allowed = true;
             break;
         case VK_IMAGE_LAYOUT_GENERAL:
             allowed = all;
@@ -1679,12 +1677,10 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
             allowed = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
             break;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-            allowed = VK_ACCESS_NONE;
-            none_allowed = true;
+            allowed = VK_ACCESS_NONE;  // PR table says "Must be 0"
             break;
         case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
             allowed = all;
-            none_allowed = true;
             break;
         case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
             allowed = VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
@@ -1697,11 +1693,7 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
             return false;
     }
 
-    if (access == 0 && !none_allowed) {
-        skip |= LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
-                           "%s: accessMask is VK_ACCESS_NONE, but for layout %s expected accessMask are %s.", api_name.c_str(),
-                           string_VkImageLayout(layout), string_VkAccessFlags2(allowed).c_str());
-    } else if ((allowed | access) != allowed) {
+    if ((allowed | access) != allowed) {
         skip |=
             LogWarning(device, kVUID_BestPractices_ImageBarrierAccessLayout,
                        "%s: accessMask is %s, but for layout %s expected accessMask are %s.", string_VkAccessFlags2(access).c_str(),
