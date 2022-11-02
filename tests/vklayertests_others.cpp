@@ -13493,39 +13493,93 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
 TEST_F(VkLayerTest, QueueSubmitWaitingSameSemaphore) {
     TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(sync2_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     if (m_device->graphics_queues().size() < 2) {
         printf("%s 2 graphics queues are needed.\n", kSkipPrefix);
         return;
     }
 
-    VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
+    auto sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
 
     vk_testing::Semaphore semaphore;
     semaphore.init(*m_device, sem_info);
 
-    VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-    VkSubmitInfo signalSubmitInfo = LvlInitStruct<VkSubmitInfo>();
-    signalSubmitInfo.signalSemaphoreCount = 1;
-    signalSubmitInfo.pSignalSemaphores = &semaphore.handle();
-
-    VkSubmitInfo waitSubmitInfo = LvlInitStruct<VkSubmitInfo>();
-    waitSubmitInfo.waitSemaphoreCount = 1;
-    waitSubmitInfo.pWaitSemaphores = &semaphore.handle();
-    waitSubmitInfo.pWaitDstStageMask = &stageFlags;
-
     VkQueue other = m_device->graphics_queues()[1]->handle();
 
-    vk::QueueSubmit(m_device->m_queue, 1, &signalSubmitInfo, VK_NULL_HANDLE);
-    vk::QueueSubmit(m_device->m_queue, 1, &waitSubmitInfo, VK_NULL_HANDLE);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
-    vk::QueueSubmit(other, 1, &waitSubmitInfo, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
+    {
+        auto signal_submit = LvlInitStruct<VkSubmitInfo>();
+        signal_submit.signalSemaphoreCount = 1;
+        signal_submit.pSignalSemaphores = &semaphore.handle();
 
-    // Need to ensure semaphores are not in use before destroying them
-    vk::QueueWaitIdle(m_device->m_queue);
+        VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        auto wait_submit = LvlInitStruct<VkSubmitInfo>();
+        wait_submit.waitSemaphoreCount = 1;
+        wait_submit.pWaitSemaphores = &semaphore.handle();
+        wait_submit.pWaitDstStageMask = &stage_flags;
+
+        vk::QueueSubmit(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
+        vk::QueueSubmit(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit-pWaitSemaphores-00068");
+        vk::QueueSubmit(other, 1, &wait_submit, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(other);
+    }
+    if (m_device->queue_props[m_device->m_queue_obj->get_family_index()].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+        auto signal_bind = LvlInitStruct<VkBindSparseInfo>();
+        signal_bind.signalSemaphoreCount = 1;
+        signal_bind.pSignalSemaphores = &semaphore.handle();
+
+        auto wait_bind = LvlInitStruct<VkBindSparseInfo>();
+        wait_bind.waitSemaphoreCount = 1;
+        wait_bind.pWaitSemaphores = &semaphore.handle();
+
+        vk::QueueBindSparse(m_device->m_queue, 1, &signal_bind, VK_NULL_HANDLE);
+        vk::QueueBindSparse(m_device->m_queue, 1, &wait_bind, VK_NULL_HANDLE);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueBindSparse-pWaitSemaphores-03245");
+        vk::QueueBindSparse(other, 1, &wait_bind, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(other);
+    }
+    if (sync2_features.synchronization2) {
+        auto vkQueueSubmit2KHR =
+            reinterpret_cast<PFN_vkQueueSubmit2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkQueueSubmit2KHR"));
+
+        auto signal_sem_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+        signal_sem_info.semaphore = semaphore.handle();
+        signal_sem_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        auto signal_submit = LvlInitStruct<VkSubmitInfo2>();
+        signal_submit.signalSemaphoreInfoCount = 1;
+        signal_submit.pSignalSemaphoreInfos = &signal_sem_info;
+
+        auto wait_sem_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+        wait_sem_info.semaphore = semaphore.handle();
+        wait_sem_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        auto wait_submit = LvlInitStruct<VkSubmitInfo2>();
+        wait_submit.waitSemaphoreInfoCount = 1;
+        wait_submit.pWaitSemaphoreInfos = &wait_sem_info;
+
+        vkQueueSubmit2KHR(m_device->m_queue, 1, &signal_submit, VK_NULL_HANDLE);
+        vkQueueSubmit2KHR(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueueSubmit2-semaphore-03871");
+        vkQueueSubmit2KHR(other, 1, &wait_submit, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+
+        vk::QueueWaitIdle(m_device->m_queue);
+        vk::QueueWaitIdle(other);
+    }
 }
 
 TEST_F(VkLayerTest, QueueSubmit2KHRUsedButSynchronizaion2Disabled) {
