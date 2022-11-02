@@ -1890,7 +1890,10 @@ TEST_F(VkLayerTest, PresentIdWait) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
 
-    ASSERT_TRUE(InitSwapchain());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create swapchain, skipping test";
+    }
+
     VkSurfaceKHR surface2;
     VkSwapchainKHR swapchain2;
     InitSurface(surface2);
@@ -1993,7 +1996,9 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
 
-    ASSERT_TRUE(InitSwapchain());
+    if (!InitSwapchain()) {
+        GTEST_SKIP() << "Cannot create swapchain, skipping test";
+    }
 
     auto vkWaitForPresentKHR = (PFN_vkWaitForPresentKHR)vk::GetDeviceProcAddr(m_device->device(), "vkWaitForPresentKHR");
     assert(vkWaitForPresentKHR != nullptr);
