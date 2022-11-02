@@ -105,6 +105,7 @@ enum class SubmitError {
     kCmdWrongQueueFamily,
     kSecondaryCmdInSubmit,
     kHostStageMask,
+    kOtherQueueWaiting,
 };
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);

@@ -5120,9 +5120,7 @@ struct SemaphoreSubmitState {
         if ((semaphore_state.Scope() == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             VkQueue other_queue = AnotherQueueWaits(semaphore_state, queue);
             if (other_queue) {
-                const char *vuid = loc.function == core_error::Func::vkQueueSubmit
-                                        ? "VUID-vkQueueSubmit-pWaitSemaphores-00068"
-                                        : "VUID-vkQueueSubmit2-semaphore-03871";
+                const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kOtherQueueWaiting);
                 LogObjectList objlist(semaphore);
                 objlist.add(queue);
                 objlist.add(other_queue);
