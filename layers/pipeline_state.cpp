@@ -444,12 +444,43 @@ VkShaderModule PIPELINE_STATE::GetShaderModuleByCIIndex<VkRayTracingPipelineCrea
     return create_info.raytracing.pStages[i].module;
 }
 
+// TODO (ncesario) this needs to be automated. As a first step, need to leverage SubState::ValidShaderStages()
 std::shared_ptr<const SHADER_MODULE_STATE> PIPELINE_STATE::GetSubStateShader(VkShaderStageFlagBits state) const {
     switch (state) {
         case VK_SHADER_STAGE_VERTEX_BIT: {
             const auto sub_state =
                 PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
             return (sub_state) ? sub_state->vertex_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->tessc_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->tesse_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_GEOMETRY_BIT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->geometry_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_TASK_BIT_EXT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->task_shader : nullptr;
+            break;
+        }
+        case VK_SHADER_STAGE_MESH_BIT_EXT: {
+            const auto sub_state =
+                PIPELINE_STATE::GetSubState<VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT>(*this);
+            return (sub_state) ? sub_state->mesh_shader : nullptr;
             break;
         }
         case VK_SHADER_STAGE_FRAGMENT_BIT: {

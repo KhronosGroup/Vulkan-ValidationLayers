@@ -83,8 +83,9 @@ struct PreRasterState {
     const safe_VkPipelineShaderStageCreateInfo *tessc_shader_ci = nullptr, *tesse_shader_ci = nullptr;
     const safe_VkPipelineTessellationStateCreateInfo *tess_create_info = nullptr;
 
-    std::shared_ptr<const SHADER_MODULE_STATE> vertex_shader, geometry_shader;
-    const safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr;
+    std::shared_ptr<const SHADER_MODULE_STATE> vertex_shader, geometry_shader, task_shader, mesh_shader;
+    const safe_VkPipelineShaderStageCreateInfo *vertex_shader_ci = nullptr, *geometry_shader_ci = nullptr,
+                                               *task_shader_ci = nullptr, *mesh_shader_ci = nullptr;
 };
 
 std::unique_ptr<const safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
