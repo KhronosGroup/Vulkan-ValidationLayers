@@ -8289,7 +8289,7 @@ void QueueBatchContext::LogPresentOperations(const PresentedImages &presented_im
         access_log->reserve(tag_range_.size());
         assert(tag_range_.size() == presented_images.size());
         for (const auto &presented : presented_images) {
-            access_log->emplace_back(PresentResourceRecord(presented));
+            access_log->emplace_back(PresentResourceRecord(static_cast<const PresentedImageRecord>(presented)));
         }
     }
 }
@@ -8645,13 +8645,8 @@ BatchAccessLog::AccessRecord BatchAccessLog::CBSubmitLog::operator[](ResourceUsa
 
 PresentedImage::PresentedImage(const SyncValidator &sync_state, const std::shared_ptr<QueueBatchContext> batch_,
                                VkSwapchainKHR swapchain, uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)
-    : batch(std::move(batch_)),
-      swapchain_state(sync_state.Get<syncval_state::Swapchain>(swapchain)),
-      image_index(image_index_),
-      image(),
-      address_type(AccessAddressType::kLinear),
-      present_index(present_index_),
-      tag(tag_) {
+    : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<syncval_state::Swapchain>(swapchain)},
+      batch(std::move(batch_)) {
     SetImage(image_index_);
 }
 
@@ -8689,7 +8684,7 @@ void PresentedImage::UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsag
 }
 
 QueueBatchContext::PresentResourceRecord::Base_::Record QueueBatchContext::PresentResourceRecord::MakeRecord() const {
-    return layer_data::make_unique<PresentResourceRecord>(this->presented_);
+    return layer_data::make_unique<PresentResourceRecord>(presented_);
 }
 
 std::ostream &QueueBatchContext::PresentResourceRecord::Format(std::ostream &out, const SyncValidator &sync_state) const {

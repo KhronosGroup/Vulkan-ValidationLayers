@@ -1596,16 +1596,18 @@ class BatchAccessLog {
     CBSubmitLogRangeMap log_map_;
 };
 
-struct PresentedImage {
-    std::shared_ptr<QueueBatchContext> batch;
-    std::shared_ptr<const syncval_state::Swapchain> swapchain_state;
-    uint32_t image_index = 0;
-    std::shared_ptr<const IMAGE_STATE> image;
-    AccessAddressType address_type;
-    subresource_adapter::ImageRangeGenerator range_gen;
-
-    uint32_t present_index = 0;
+struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
+    uint32_t image_index;
+    uint32_t present_index;
+    std::shared_ptr<const syncval_state::Swapchain> swapchain_state;
+    std::shared_ptr<const IMAGE_STATE> image;
+};
+
+struct PresentedImage : public PresentedImageRecord {
+    std::shared_ptr<QueueBatchContext> batch;
+    subresource_adapter::ImageRangeGenerator range_gen;
+    AccessAddressType address_type = AccessAddressType::kLinear;
 
     PresentedImage() = default;
     void UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
@@ -1665,11 +1667,11 @@ class QueueBatchContext : public CommandExecutionContext {
         using Base_ = AlternateResourceUsage::RecordBase;
         Base_::Record MakeRecord() const override;
         ~PresentResourceRecord() override {}
-        PresentResourceRecord(const PresentedImage &presented) : presented_(presented) {}
+        PresentResourceRecord(const PresentedImageRecord &presented) : presented_(presented) {}
         std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
 
       private:
-        PresentedImage presented_;
+        PresentedImageRecord presented_;
     };
 
     class AcquireResourceRecord : public AlternateResourceUsage::RecordBase {
