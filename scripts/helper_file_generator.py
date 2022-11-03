@@ -687,6 +687,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
         safe_struct_helper_header += '#pragma once\n'
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
         safe_struct_helper_header += '#include <stdlib.h>\n'
+        safe_struct_helper_header += '#include <algorithm>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
         safe_struct_helper_header += 'void FreePnextChain(const void *pNext);\n'
@@ -729,6 +730,19 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 safe_struct_header += '    void initialize(const safe_%s* copy_src);\n' % (item.name)
                 safe_struct_header += '    %s *ptr() { return reinterpret_cast<%s *>(this); }\n' % (item.name, item.name)
                 safe_struct_header += '    %s const *ptr() const { return reinterpret_cast<%s const *>(this); }\n' % (item.name, item.name)
+                if item.name == 'VkShaderModuleCreateInfo':
+                    safe_struct_header += '''
+    // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
+    template<typename Container>
+    void SetCode(const Container &code) {
+        if (pCode) {
+            delete[] pCode;
+        }
+        codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
+        pCode = new uint32_t[code.size()];
+        std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));
+    }
+'''
                 safe_struct_header += '};\n'
                 if item.ifdef_protect is not None:
                     safe_struct_header += '#endif // %s\n' % item.ifdef_protect
