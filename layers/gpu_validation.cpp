@@ -2184,11 +2184,16 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     DispatchUpdateDescriptorSets(device, desc_count, desc_writes, 0, NULL);
 
     if (pipeline_state) {
-        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. Use the layout that was
-        // last bound.
         const auto pipeline_layout = pipeline_state->PipelineLayoutState();
+        // If GPL is used, it's possible the pipeline layout used at pipeline creation time is null. If CmdBindDescriptorSets has
+        // not been called yet (i.e., state.pipeline_null), then fall back to the layout associated with pre-raster state.
+        // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
+        // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
+        // null handle.
+        const auto pipeline_layout_handle =
+            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->layout();
         if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && !pipeline_layout->Destroyed()) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, state.pipeline_layout, desc_set_bind_index, 1, desc_sets.data(),
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
                                           0, nullptr);
         }
         if (pipeline_layout->Destroyed()) {
