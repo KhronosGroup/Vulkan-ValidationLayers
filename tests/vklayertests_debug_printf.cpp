@@ -806,7 +806,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
 
     {
         layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
-                                             buffer_create_info.size / sizeof(uint32_t));
+                                             static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
@@ -814,7 +814,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
     }
     {
         layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
-                                             buffer_create_info.size / sizeof(uint32_t));
+                                             static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
@@ -962,7 +962,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
 
     {
         layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
-                                             buffer_create_info.size / sizeof(uint32_t));
+                                             static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
@@ -970,7 +970,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
     }
     {
         layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
-                                             buffer_create_info.size / sizeof(uint32_t));
+                                             static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
