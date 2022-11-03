@@ -103,6 +103,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT attachment_feedback_loop_layout_features;
     VkPhysicalDevicePipelineProtectedAccessFeaturesEXT pipeline_protected_access_features;
     VkPhysicalDeviceLinearColorAttachmentFeaturesNV linear_color_attachment_features;
+    VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM shader_core_builtins_features;
     // If a new feature is added here that involves a SPIR-V capability add also in spirv_validation_generator.py
     // This is known by checking the table in the spec or if the struct is in a <spirvcapability> in vk.xml
 };

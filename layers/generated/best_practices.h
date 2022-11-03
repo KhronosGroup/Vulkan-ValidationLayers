@@ -2011,6 +2011,7 @@ const layer_data::unordered_map<std::string, DeprecationData>  deprecated_extens
     {"VK_EXT_tooling_info", {kExtPromoted, "VK_VERSION_1_3"}},
     {"VK_EXT_validation_flags", {kExtDeprecated, "VK_EXT_validation_features"}},
     {"VK_EXT_ycbcr_2plane_444_formats", {kExtPromoted, "VK_VERSION_1_3"}},
+    {"VK_IMG_format_pvrtc", {kExtDeprecated, ""}},
     {"VK_KHR_16bit_storage", {kExtPromoted, "VK_VERSION_1_1"}},
     {"VK_KHR_8bit_storage", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_KHR_bind_memory2", {kExtPromoted, "VK_VERSION_1_1"}},

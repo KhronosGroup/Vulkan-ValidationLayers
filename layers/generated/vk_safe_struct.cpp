@@ -55231,6 +55231,236 @@ void safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM::initialize(const safe_Vk
     }
 }
 
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    indirectCopy(in_struct->indirectCopy)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV),
+    pNext(nullptr),
+    indirectCopy()
+{}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    indirectCopy = copy_src.indirectCopy;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::operator=(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    indirectCopy = copy_src.indirectCopy;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::~safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::initialize(const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    indirectCopy = in_struct->indirectCopy;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV::initialize(const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    indirectCopy = copy_src->indirectCopy;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    supportedQueues(in_struct->supportedQueues)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV),
+    pNext(nullptr),
+    supportedQueues()
+{}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    supportedQueues = copy_src.supportedQueues;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::operator=(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    supportedQueues = copy_src.supportedQueues;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::~safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::initialize(const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    supportedQueues = in_struct->supportedQueues;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV::initialize(const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    supportedQueues = copy_src->supportedQueues;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const VkPhysicalDeviceMemoryDecompressionFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    memoryDecompression(in_struct->memoryDecompression)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV),
+    pNext(nullptr),
+    memoryDecompression()
+{}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    memoryDecompression = copy_src.memoryDecompression;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::operator=(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    memoryDecompression = copy_src.memoryDecompression;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::~safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::initialize(const VkPhysicalDeviceMemoryDecompressionFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    memoryDecompression = in_struct->memoryDecompression;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV::initialize(const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    memoryDecompression = copy_src->memoryDecompression;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const VkPhysicalDeviceMemoryDecompressionPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    decompressionMethods(in_struct->decompressionMethods),
+    maxDecompressionIndirectCount(in_struct->maxDecompressionIndirectCount)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV),
+    pNext(nullptr),
+    decompressionMethods(),
+    maxDecompressionIndirectCount()
+{}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    decompressionMethods = copy_src.decompressionMethods;
+    maxDecompressionIndirectCount = copy_src.maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::operator=(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    decompressionMethods = copy_src.decompressionMethods;
+    maxDecompressionIndirectCount = copy_src.maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::~safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::initialize(const VkPhysicalDeviceMemoryDecompressionPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    decompressionMethods = in_struct->decompressionMethods;
+    maxDecompressionIndirectCount = in_struct->maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV::initialize(const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    decompressionMethods = copy_src->decompressionMethods;
+    maxDecompressionIndirectCount = copy_src->maxDecompressionIndirectCount;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV::safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(const VkPhysicalDeviceLinearColorAttachmentFeaturesNV* in_struct) :
     sType(in_struct->sType),
     linearColorAttachment(in_struct->linearColorAttachment)
@@ -57292,6 +57522,118 @@ void safe_VkAmigoProfilingSubmitInfoSEC::initialize(const safe_VkAmigoProfilingS
     sType = copy_src->sType;
     firstDrawTimestamp = copy_src->firstDrawTimestamp;
     swapBufferTimestamp = copy_src->swapBufferTimestamp;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct) :
+    sType(in_struct->sType),
+    rayTracingInvocationReorderReorderingHint(in_struct->rayTracingInvocationReorderReorderingHint)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV),
+    pNext(nullptr),
+    rayTracingInvocationReorderReorderingHint()
+{}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& copy_src)
+{
+    sType = copy_src.sType;
+    rayTracingInvocationReorderReorderingHint = copy_src.rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::operator=(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingInvocationReorderReorderingHint = copy_src.rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::~safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::initialize(const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingInvocationReorderReorderingHint = in_struct->rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV::initialize(const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV* copy_src)
+{
+    sType = copy_src->sType;
+    rayTracingInvocationReorderReorderingHint = copy_src->rayTracingInvocationReorderReorderingHint;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct) :
+    sType(in_struct->sType),
+    rayTracingInvocationReorder(in_struct->rayTracingInvocationReorder)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV),
+    pNext(nullptr),
+    rayTracingInvocationReorder()
+{}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& copy_src)
+{
+    sType = copy_src.sType;
+    rayTracingInvocationReorder = copy_src.rayTracingInvocationReorder;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::operator=(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    rayTracingInvocationReorder = copy_src.rayTracingInvocationReorder;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::~safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::initialize(const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    rayTracingInvocationReorder = in_struct->rayTracingInvocationReorder;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV::initialize(const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV* copy_src)
+{
+    sType = copy_src->sType;
+    rayTracingInvocationReorder = copy_src->rayTracingInvocationReorder;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
@@ -60778,6 +61120,18 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM:
             safe_pNext = new safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM(reinterpret_cast<const VkSubpassFragmentDensityMapOffsetEndInfoQCOM *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV(reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV(reinterpret_cast<const VkPhysicalDeviceCopyMemoryIndirectPropertiesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV(reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV(reinterpret_cast<const VkPhysicalDeviceMemoryDecompressionPropertiesNV *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV:
             safe_pNext = new safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV(reinterpret_cast<const VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(pNext));
             break;
@@ -60846,6 +61200,12 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             safe_pNext = new safe_VkAmigoProfilingSubmitInfoSEC(reinterpret_cast<const VkAmigoProfilingSubmitInfoSEC *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
+            safe_pNext = new safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM:
             safe_pNext = new safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM(reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(pNext));
@@ -62148,6 +62508,18 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM:
             delete reinterpret_cast<const safe_VkSubpassFragmentDensityMapOffsetEndInfoQCOM *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceCopyMemoryIndirectFeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceCopyMemoryIndirectPropertiesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMemoryDecompressionFeaturesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMemoryDecompressionPropertiesNV *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceLinearColorAttachmentFeaturesNV *>(header);
             break;
@@ -62216,6 +62588,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             delete reinterpret_cast<const safe_VkAmigoProfilingSubmitInfoSEC *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM *>(header);

@@ -555,6 +555,10 @@ static VKAPI_ATTR void VKAPI_CALL StubGetMicromapBuildSizesEXT(VkDevice         
 static VKAPI_ATTR void VKAPI_CALL StubSetDeviceMemoryPriorityEXT(VkDevice       device, VkDeviceMemory memory, float          priority) {  };
 static VKAPI_ATTR void VKAPI_CALL StubGetDescriptorSetLayoutHostMappingInfoVALVE(VkDevice device, const VkDescriptorSetBindingReferenceVALVE* pBindingReference, VkDescriptorSetLayoutHostMappingInfoVALVE* pHostMapping) {  };
 static VKAPI_ATTR void VKAPI_CALL StubGetDescriptorSetHostMappingVALVE(VkDevice device, VkDescriptorSet descriptorSet, void** ppData) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyMemoryToImageIndirectNV(VkCommandBuffer commandBuffer, VkDeviceAddress copyBufferAddress, uint32_t copyCount, uint32_t stride, VkImage dstImage, VkImageLayout dstImageLayout, const VkImageSubresourceLayers* pImageSubresources) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdDecompressMemoryNV(VkCommandBuffer commandBuffer, uint32_t decompressRegionCount, const VkDecompressMemoryRegionNV* pDecompressMemoryRegions) {  };
+static VKAPI_ATTR void VKAPI_CALL StubCmdDecompressMemoryIndirectCountNV(VkCommandBuffer commandBuffer, VkDeviceAddress indirectCommandsAddress, VkDeviceAddress indirectCommandsCountAddress, uint32_t stride) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) {  };
@@ -671,7 +675,9 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkCmdCopyImage2KHR", "VK_KHR_copy_commands2"},
     {"vkCmdCopyImageToBuffer2", "VK_VERSION_1_3"},
     {"vkCmdCopyImageToBuffer2KHR", "VK_KHR_copy_commands2"},
+    {"vkCmdCopyMemoryIndirectNV", "VK_NV_copy_memory_indirect"},
     {"vkCmdCopyMemoryToAccelerationStructureKHR", "VK_KHR_acceleration_structure"},
+    {"vkCmdCopyMemoryToImageIndirectNV", "VK_NV_copy_memory_indirect"},
     {"vkCmdCopyMemoryToMicromapEXT", "VK_EXT_opacity_micromap"},
     {"vkCmdCopyMicromapEXT", "VK_EXT_opacity_micromap"},
     {"vkCmdCopyMicromapToMemoryEXT", "VK_EXT_opacity_micromap"},
@@ -680,6 +686,8 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkCmdDebugMarkerEndEXT", "VK_EXT_debug_marker"},
     {"vkCmdDebugMarkerInsertEXT", "VK_EXT_debug_marker"},
     {"vkCmdDecodeVideoKHR", "VK_KHR_video_decode_queue"},
+    {"vkCmdDecompressMemoryIndirectCountNV", "VK_NV_memory_decompression"},
+    {"vkCmdDecompressMemoryNV", "VK_NV_memory_decompression"},
     {"vkCmdDispatchBase", "VK_VERSION_1_1"},
     {"vkCmdDispatchBaseKHR", "VK_KHR_device_group"},
     {"vkCmdDrawIndexedIndirectCount", "VK_VERSION_1_2"},
@@ -1849,6 +1857,14 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->GetDescriptorSetLayoutHostMappingInfoVALVE == nullptr) { table->GetDescriptorSetLayoutHostMappingInfoVALVE = (PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE)StubGetDescriptorSetLayoutHostMappingInfoVALVE; }
     table->GetDescriptorSetHostMappingVALVE = (PFN_vkGetDescriptorSetHostMappingVALVE) gpa(device, "vkGetDescriptorSetHostMappingVALVE");
     if (table->GetDescriptorSetHostMappingVALVE == nullptr) { table->GetDescriptorSetHostMappingVALVE = (PFN_vkGetDescriptorSetHostMappingVALVE)StubGetDescriptorSetHostMappingVALVE; }
+    table->CmdCopyMemoryIndirectNV = (PFN_vkCmdCopyMemoryIndirectNV) gpa(device, "vkCmdCopyMemoryIndirectNV");
+    if (table->CmdCopyMemoryIndirectNV == nullptr) { table->CmdCopyMemoryIndirectNV = (PFN_vkCmdCopyMemoryIndirectNV)StubCmdCopyMemoryIndirectNV; }
+    table->CmdCopyMemoryToImageIndirectNV = (PFN_vkCmdCopyMemoryToImageIndirectNV) gpa(device, "vkCmdCopyMemoryToImageIndirectNV");
+    if (table->CmdCopyMemoryToImageIndirectNV == nullptr) { table->CmdCopyMemoryToImageIndirectNV = (PFN_vkCmdCopyMemoryToImageIndirectNV)StubCmdCopyMemoryToImageIndirectNV; }
+    table->CmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV) gpa(device, "vkCmdDecompressMemoryNV");
+    if (table->CmdDecompressMemoryNV == nullptr) { table->CmdDecompressMemoryNV = (PFN_vkCmdDecompressMemoryNV)StubCmdDecompressMemoryNV; }
+    table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV) gpa(device, "vkCmdDecompressMemoryIndirectCountNV");
+    if (table->CmdDecompressMemoryIndirectCountNV == nullptr) { table->CmdDecompressMemoryIndirectCountNV = (PFN_vkCmdDecompressMemoryIndirectCountNV)StubCmdDecompressMemoryIndirectCountNV; }
     table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT) gpa(device, "vkCmdSetTessellationDomainOriginEXT");
     if (table->CmdSetTessellationDomainOriginEXT == nullptr) { table->CmdSetTessellationDomainOriginEXT = (PFN_vkCmdSetTessellationDomainOriginEXT)StubCmdSetTessellationDomainOriginEXT; }
     table->CmdSetDepthClampEnableEXT = (PFN_vkCmdSetDepthClampEnableEXT) gpa(device, "vkCmdSetDepthClampEnableEXT");

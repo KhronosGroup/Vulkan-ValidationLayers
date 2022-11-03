@@ -970,6 +970,14 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetDescriptorSetLayoutHostMappingInfoVALVE GetDescriptorSetLayoutHostMappingInfoVALVE;
     PFN_vkGetDescriptorSetHostMappingVALVE GetDescriptorSetHostMappingVALVE;
 
+    // ---- VK_NV_copy_memory_indirect extension commands
+    PFN_vkCmdCopyMemoryIndirectNV CmdCopyMemoryIndirectNV;
+    PFN_vkCmdCopyMemoryToImageIndirectNV CmdCopyMemoryToImageIndirectNV;
+
+    // ---- VK_NV_memory_decompression extension commands
+    PFN_vkCmdDecompressMemoryNV CmdDecompressMemoryNV;
+    PFN_vkCmdDecompressMemoryIndirectCountNV CmdDecompressMemoryIndirectCountNV;
+
     // ---- VK_EXT_extended_dynamic_state3 extension commands
     PFN_vkCmdSetTessellationDomainOriginEXT CmdSetTessellationDomainOriginEXT;
     PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;

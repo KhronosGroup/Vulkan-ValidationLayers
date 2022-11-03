@@ -594,6 +594,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_clip_space_w_scaling{kNotEnabled};
     ExtEnabled vk_nv_compute_shader_derivatives{kNotEnabled};
     ExtEnabled vk_nv_cooperative_matrix{kNotEnabled};
+    ExtEnabled vk_nv_copy_memory_indirect{kNotEnabled};
     ExtEnabled vk_nv_corner_sampled_image{kNotEnabled};
     ExtEnabled vk_nv_coverage_reduction_mode{kNotEnabled};
     ExtEnabled vk_nv_dedicated_allocation{kNotEnabled};
@@ -613,10 +614,12 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_glsl_shader{kNotEnabled};
     ExtEnabled vk_nv_inherited_viewport_scissor{kNotEnabled};
     ExtEnabled vk_nv_linear_color_attachment{kNotEnabled};
+    ExtEnabled vk_nv_memory_decompression{kNotEnabled};
     ExtEnabled vk_nv_mesh_shader{kNotEnabled};
     ExtEnabled vk_nv_optical_flow{kNotEnabled};
     ExtEnabled vk_nv_present_barrier{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing{kNotEnabled};
+    ExtEnabled vk_nv_ray_tracing_invocation_reorder{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_motion_blur{kNotEnabled};
     ExtEnabled vk_nv_representative_fragment_test{kNotEnabled};
     ExtEnabled vk_nv_sample_mask_override_coverage{kNotEnabled};
@@ -1134,6 +1137,9 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_cooperative_matrix, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+            {VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_copy_memory_indirect, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
             {VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_corner_sampled_image, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_coverage_reduction_mode, {{
@@ -1167,6 +1173,9 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_GLSL_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_glsl_shader, {})},
             {VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_inherited_viewport_scissor, {})},
             {VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_linear_color_attachment, {})},
+            {VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_memory_decompression, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_buffer_device_address, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}}})},
             {VK_NV_MESH_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_mesh_shader, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_NV_OPTICAL_FLOW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_optical_flow, {{
@@ -1181,6 +1190,8 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_NV_RAY_TRACING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
+            {VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_invocation_reorder, {{
+                           {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
             {VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_ray_tracing_motion_blur, {{
                            {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME}}})},
             {VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_representative_fragment_test, {})},
@@ -1624,6 +1635,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME,
     VK_NV_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME,
     VK_NV_COOPERATIVE_MATRIX_EXTENSION_NAME,
+    VK_NV_COPY_MEMORY_INDIRECT_EXTENSION_NAME,
     VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME,
     VK_NV_COVERAGE_REDUCTION_MODE_EXTENSION_NAME,
     VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME,
@@ -1645,10 +1657,12 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_NV_GLSL_SHADER_EXTENSION_NAME,
     VK_NV_INHERITED_VIEWPORT_SCISSOR_EXTENSION_NAME,
     VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME,
+    VK_NV_MEMORY_DECOMPRESSION_EXTENSION_NAME,
     VK_NV_MESH_SHADER_EXTENSION_NAME,
     VK_NV_OPTICAL_FLOW_EXTENSION_NAME,
     VK_NV_PRESENT_BARRIER_EXTENSION_NAME,
     VK_NV_RAY_TRACING_EXTENSION_NAME,
+    VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME,
     VK_NV_RAY_TRACING_MOTION_BLUR_EXTENSION_NAME,
     VK_NV_REPRESENTATIVE_FRAGMENT_TEST_EXTENSION_NAME,
     VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME,

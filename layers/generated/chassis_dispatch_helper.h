@@ -1304,6 +1304,18 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetDescriptorSetHostMappingVALVE,
     InterceptIdPreCallRecordGetDescriptorSetHostMappingVALVE,
     InterceptIdPostCallRecordGetDescriptorSetHostMappingVALVE,
+    InterceptIdPreCallValidateCmdCopyMemoryIndirectNV,
+    InterceptIdPreCallRecordCmdCopyMemoryIndirectNV,
+    InterceptIdPostCallRecordCmdCopyMemoryIndirectNV,
+    InterceptIdPreCallValidateCmdCopyMemoryToImageIndirectNV,
+    InterceptIdPreCallRecordCmdCopyMemoryToImageIndirectNV,
+    InterceptIdPostCallRecordCmdCopyMemoryToImageIndirectNV,
+    InterceptIdPreCallValidateCmdDecompressMemoryNV,
+    InterceptIdPreCallRecordCmdDecompressMemoryNV,
+    InterceptIdPostCallRecordCmdDecompressMemoryNV,
+    InterceptIdPreCallValidateCmdDecompressMemoryIndirectCountNV,
+    InterceptIdPreCallRecordCmdDecompressMemoryIndirectCountNV,
+    InterceptIdPostCallRecordCmdDecompressMemoryIndirectCountNV,
     InterceptIdPreCallValidateCmdSetTessellationDomainOriginEXT,
     InterceptIdPreCallRecordCmdSetTessellationDomainOriginEXT,
     InterceptIdPostCallRecordCmdSetTessellationDomainOriginEXT,
@@ -2951,6 +2963,18 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDescriptorSetHostMappingVALVE);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDescriptorSetHostMappingVALVE);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDescriptorSetHostMappingVALVE);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdCopyMemoryIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdCopyMemoryIndirectNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdCopyMemoryIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdCopyMemoryToImageIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdCopyMemoryToImageIndirectNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdCopyMemoryToImageIndirectNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDecompressMemoryNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDecompressMemoryNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDecompressMemoryNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDecompressMemoryIndirectCountNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDecompressMemoryIndirectCountNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDecompressMemoryIndirectCountNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetTessellationDomainOriginEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetTessellationDomainOriginEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetTessellationDomainOriginEXT);
