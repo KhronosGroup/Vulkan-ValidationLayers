@@ -775,6 +775,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COOPERATIVE_MATRIX_PROPERTIES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV:
@@ -931,6 +935,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2:
@@ -1025,6 +1033,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MOTION_BLUR_FEATURES_NV:
@@ -10416,6 +10428,33 @@ static inline const char* string_VkAccelerationStructureBuildTypeKHR(VkAccelerat
     }
 }
 
+static inline const char* string_VkMemoryDecompressionMethodFlagBitsNV(uint64_t input_value)
+{
+    switch (input_value)
+    {
+        case VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_NV:
+            return "VK_MEMORY_DECOMPRESSION_METHOD_GDEFLATE_1_0_BIT_NV";
+        default:
+            return "Unhandled VkMemoryDecompressionMethodFlagBitsNV";
+    }
+}
+
+static inline std::string string_VkMemoryDecompressionMethodFlagsNV(VkMemoryDecompressionMethodFlagsNV input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkMemoryDecompressionMethodFlagBitsNV(static_cast<uint64_t>(1ULL << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkMemoryDecompressionMethodFlagBitsNV(static_cast<uint64_t>(0)));
+    return ret;
+}
+
 static inline const char* string_VkSubpassMergeStatusEXT(VkSubpassMergeStatusEXT input_value)
 {
     switch (input_value)
@@ -10629,6 +10668,19 @@ static inline std::string string_VkOpticalFlowExecuteFlagsNV(VkOpticalFlowExecut
     }
     if( ret.empty()) ret.append(string_VkOpticalFlowExecuteFlagBitsNV(static_cast<VkOpticalFlowExecuteFlagBitsNV>(0)));
     return ret;
+}
+
+static inline const char* string_VkRayTracingInvocationReorderModeNV(VkRayTracingInvocationReorderModeNV input_value)
+{
+    switch (input_value)
+    {
+        case VK_RAY_TRACING_INVOCATION_REORDER_MODE_NONE_NV:
+            return "VK_RAY_TRACING_INVOCATION_REORDER_MODE_NONE_NV";
+        case VK_RAY_TRACING_INVOCATION_REORDER_MODE_REORDER_NV:
+            return "VK_RAY_TRACING_INVOCATION_REORDER_MODE_REORDER_NV";
+        default:
+            return "Unhandled VkRayTracingInvocationReorderModeNV";
+    }
 }
 
 static inline const char* string_VkBuildAccelerationStructureModeKHR(VkBuildAccelerationStructureModeKHR input_value)

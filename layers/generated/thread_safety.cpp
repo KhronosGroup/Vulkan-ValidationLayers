@@ -9221,6 +9221,84 @@ void ThreadSafety::PostCallRecordGetDescriptorSetHostMappingVALVE(
     FinishReadObject(descriptorSet, "vkGetDescriptorSetHostMappingVALVE");
 }
 
+void ThreadSafety::PreCallRecordCmdCopyMemoryIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer, "vkCmdCopyMemoryIndirectNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdCopyMemoryIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer, "vkCmdCopyMemoryIndirectNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdCopyMemoryToImageIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride,
+    VkImage                                     dstImage,
+    VkImageLayout                               dstImageLayout,
+    const VkImageSubresourceLayers*             pImageSubresources) {
+    StartWriteObject(commandBuffer, "vkCmdCopyMemoryToImageIndirectNV");
+    StartReadObject(dstImage, "vkCmdCopyMemoryToImageIndirectNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdCopyMemoryToImageIndirectNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             copyBufferAddress,
+    uint32_t                                    copyCount,
+    uint32_t                                    stride,
+    VkImage                                     dstImage,
+    VkImageLayout                               dstImageLayout,
+    const VkImageSubresourceLayers*             pImageSubresources) {
+    FinishWriteObject(commandBuffer, "vkCmdCopyMemoryToImageIndirectNV");
+    FinishReadObject(dstImage, "vkCmdCopyMemoryToImageIndirectNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDecompressMemoryNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    decompressRegionCount,
+    const VkDecompressMemoryRegionNV*           pDecompressMemoryRegions) {
+    StartWriteObject(commandBuffer, "vkCmdDecompressMemoryNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDecompressMemoryNV(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    decompressRegionCount,
+    const VkDecompressMemoryRegionNV*           pDecompressMemoryRegions) {
+    FinishWriteObject(commandBuffer, "vkCmdDecompressMemoryNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDecompressMemoryIndirectCountNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectCommandsAddress,
+    VkDeviceAddress                             indirectCommandsCountAddress,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer, "vkCmdDecompressMemoryIndirectCountNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDecompressMemoryIndirectCountNV(
+    VkCommandBuffer                             commandBuffer,
+    VkDeviceAddress                             indirectCommandsAddress,
+    VkDeviceAddress                             indirectCommandsCountAddress,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer, "vkCmdDecompressMemoryIndirectCountNV");
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void ThreadSafety::PreCallRecordCmdSetTessellationDomainOriginEXT(
     VkCommandBuffer                             commandBuffer,
     VkTessellationDomainOrigin                  domainOrigin) {

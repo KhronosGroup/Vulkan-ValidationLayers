@@ -18171,10 +18171,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     // Shared Present Mode uses different set of capabilities to check imageUsage support
     if ((image_usage != (image_usage & capabilities.supportedUsageFlags)) && !shared_present_mode) {
-        const char *vuid = IsExtEnabled(device_extensions.vk_khr_shared_presentable_image)
-                               ? "VUID-VkSwapchainCreateInfoKHR-presentMode-01427"
-                               : "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
-        if (LogError(device, vuid,
+        if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01427",
                      "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
                      func_name, image_usage, capabilities.supportedUsageFlags)) {
             return true;

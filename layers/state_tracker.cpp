@@ -1276,6 +1276,11 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (linear_color_attachment_features) {
             enabled_features.linear_color_attachment_features = *linear_color_attachment_features;
         }
+
+        const auto shader_core_builtins_features = LvlFindInChain<VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM>(pCreateInfo->pNext);
+        if (shader_core_builtins_features) {
+            enabled_features.shader_core_builtins_features= *shader_core_builtins_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs

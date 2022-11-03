@@ -102,7 +102,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             'TextureBlockMatchQCOM',
             'TextureBoxFilterQCOM',
             'TextureSampleWeightedQCOM',
-            'CoreBuiltinsARM',
+            'ShaderInvocationReorderNV'
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
@@ -148,6 +148,7 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             {'vulkan' : 'VkPhysicalDeviceShaderIntegerDotProductFeaturesKHR', 'layer' : 'shader_integer_dot_product_features'},
             {'vulkan' : 'VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR', 'layer' : 'shader_subgroup_uniform_control_flow_features'},
             {'vulkan' : 'VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR', 'layer' : 'ray_tracing_maintenance1_features'},
+            {'vulkan' : 'VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM', 'layer' : 'shader_core_builtins_features'},
         ]
 
         # Promoted features structure in state_tracker.cpp are put in the VkPhysicalDeviceVulkan*Features structs
