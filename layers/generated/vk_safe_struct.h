@@ -34,6 +34,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <stdlib.h>
+#include <algorithm>
 
 void *SafePnextCopy(const void *pNext);
 void FreePnextChain(const void *pNext);
@@ -483,6 +484,17 @@ struct safe_VkShaderModuleCreateInfo {
     void initialize(const safe_VkShaderModuleCreateInfo* copy_src);
     VkShaderModuleCreateInfo *ptr() { return reinterpret_cast<VkShaderModuleCreateInfo *>(this); }
     VkShaderModuleCreateInfo const *ptr() const { return reinterpret_cast<VkShaderModuleCreateInfo const *>(this); }
+
+    // Primarily intended for use by GPUAV when replacing shader module code with instrumented code
+    template<typename Container>
+    void SetCode(const Container &code) {
+        if (pCode) {
+            delete[] pCode;
+        }
+        codeSize = static_cast<uint32_t>(code.size() * sizeof(uint32_t));
+        pCode = new uint32_t[code.size()];
+        std::copy(&code.front(), &code.back() + 1, const_cast<uint32_t*>(pCode));
+    }
 };
 
 struct safe_VkPipelineCacheCreateInfo {

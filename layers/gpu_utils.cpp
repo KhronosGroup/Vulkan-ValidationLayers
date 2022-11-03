@@ -875,20 +875,11 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                                 new_pipeline_ci, stage.stage_flag);
                             // We're modifying the copied, safe create info, which is ok to be non-const
                             auto sm_ci =
-                                const_cast<VkShaderModuleCreateInfo *>(LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext));
+                                const_cast<safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const safe_VkShaderModuleCreateInfo *>(
+                                    LvlFindInChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
                             // module_state->Handle() == VK_NULL_HANDLE should imply sm_ci != nullptr, but checking here anyway
                             if (sm_ci) {
-                                // "safe" structs manage "raw" pointers, so we need to also manage that here when copying the
-                                // instrumented code
-                                // TODO do we pass safe_* structs down to the driver? If not, it would be nice to have this managed
-                                // within the safe_* struct as something like a std::vector
-                                if (sm_ci->pCode) {
-                                    delete[] sm_ci->pCode;
-                                }
-                                sm_ci->codeSize = static_cast<uint32_t>(csm_state.instrumented_pgm.size() * sizeof(uint32_t));
-                                sm_ci->pCode = new uint32_t[csm_state.instrumented_pgm.size()];
-                                std::copy(&csm_state.instrumented_pgm.front(), &csm_state.instrumented_pgm.back() + 1,
-                                          const_cast<uint32_t *>(sm_ci->pCode));
+                                sm_ci->SetCode(csm_state.instrumented_pgm);
                             }
                         }
                     }
