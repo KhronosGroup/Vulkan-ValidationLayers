@@ -6551,6 +6551,21 @@ TEST_F(VkLayerTest, ImageViewDescriptorUpdateError) {
     vk::DestroySampler(m_device->device(), sampler, NULL);
 }
 
+TEST_F(VkLayerTest, InputAttachmentDescriptorUpdateError) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    VkImageView view = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);  // invalid imageView object
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-07683");
+    descriptor_set.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
     // Create DS w/ layout of 2 types, write update 1 and attempt to copy-update
     // into the other
