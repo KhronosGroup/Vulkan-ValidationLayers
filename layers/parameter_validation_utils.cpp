@@ -26,6 +26,7 @@
 #include "layer_chassis_dispatch.h"
 #include "core_validation_error_enums.h"
 #include "enum_flag_bits.h"
+#include "vk_import_operation_util.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 
@@ -5723,6 +5724,8 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
             flags = flags_info->flags;
         }
 
+        const ImportOperationsInfo import_info = GetNumberOfImportInfo(pAllocateInfo);
+
         auto opaque_alloc_info = LvlFindInChain<VkMemoryOpaqueCaptureAddressAllocateInfo>(pAllocateInfo->pNext);
         if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
             if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
@@ -5731,32 +5734,23 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
                                  "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
             }
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-            auto import_memory_win32_handle = LvlFindInChain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
-#endif
-            auto import_memory_fd = LvlFindInChain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
-            auto import_memory_host_pointer = LvlFindInChain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-            auto import_memory_ahb = LvlFindInChain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
-#endif
-
-            if (import_memory_host_pointer) {
+            if (import_info.host_pointer_info_ext) {
                 skip |= LogError(
                     device, "VUID-VkMemoryAllocateInfo-pNext-03332",
                     "If the pNext chain includes a VkImportMemoryHostPointerInfoEXT structure, opaqueCaptureAddress must be zero.");
             }
-            if (
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-                (import_memory_win32_handle && import_memory_win32_handle->handleType) ||
-#endif
-                (import_memory_fd && import_memory_fd->handleType) ||
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-                (import_memory_ahb && import_memory_ahb->buffer) ||
-#endif
-                (import_memory_host_pointer && import_memory_host_pointer->handleType)) {
+
+            if (import_info.total_import_ops > 0) {
                 skip |= LogError(device, "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333",
                                  "If the parameters define an import operation, opaqueCaptureAddress must be zero.");
             }
+        }
+
+        if (import_info.total_import_ops > 1) {
+            skip |=
+                LogError(device, "VUID-VkMemoryAllocateInfo-None-06657",
+                         "The parameters must not define more than 1 import operation. User defined %" PRIu32 " import operations",
+                         import_info.total_import_ops);
         }
 
         auto export_memory = LvlFindInChain<VkExportMemoryAllocateInfo>(pAllocateInfo->pNext);

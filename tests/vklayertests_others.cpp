@@ -10035,7 +10035,6 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
         (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
 
-    VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize buffer_size = 1024;
 
     // Create export and import buffers
@@ -10045,12 +10044,33 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     buffer_info.pNext = &external_buffer_info;
     VkBufferObj buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
+
     external_buffer_info.handleTypes = wrong_handle_type;
     VkBufferObj buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
 
+    const VkMemoryRequirements buffer_export_reqs = buffer_export.memory_requirements();
+    const VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
+    if (buffer_import_reqs.memoryTypeBits == 0) {
+        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Depending on the underlying device, we may need a specific type of memory for this test to work. So, select the
+    // appropriate memory based on shared import/export memory type properties.
+    VkMemoryPropertyFlags mem_flags = buffer_export_reqs.memoryTypeBits & buffer_import_reqs.memoryTypeBits;
+    if (mem_flags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    } else if (mem_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    } else if (mem_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
+        mem_flags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    } else {
+        mem_flags = 0;
+    }
+
     // Allocation info
-    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
+    auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export_reqs, mem_flags);
 
     // Add export allocation info to pNext chain
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
@@ -10129,16 +10149,11 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     VkImportMemoryFdInfoKHR import_info_image = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd_image};
 #endif
 
-    // Import memory
-    VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
-    if (buffer_import_reqs.memoryTypeBits == 0) {
-        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
-        return;
-    }
     alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
     vk_testing::DeviceMemory memory_buffer_import;
     memory_buffer_import.init(*m_device, alloc_info);
+    ASSERT_TRUE(memory_buffer_import.initialized());
 
     VkMemoryRequirements image_import_reqs = image_import.memory_requirements();
     if (image_import_reqs.memoryTypeBits == 0) {
