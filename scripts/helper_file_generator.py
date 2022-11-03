@@ -134,7 +134,12 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Note that adding an API here requires that all three pre/post routines be added to inline_corechecks_instrumentation_source.
         self.inst_manually_written_functions = [
             'vkQueuePresentKHR',
-            ]
+        ]
+
+        # Some bits are helper that include multiple bits, but it is more useful to use the flag name instead
+        self.custom_bit_flag_print = {
+            'VkShaderStageFlags' : ['VK_SHADER_STAGE_ALL', 'VK_SHADER_STAGE_ALL_GRAPHICS']
+        }
 
     inline_corechecks_instrumentation_source = """
 
@@ -595,6 +600,9 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             intsuffix = 'ULL' if bitwidth == 64 else 'U'
             outstring += 'static inline std::string string_%s(%s input_value)\n' % (flagsName, flagsName)
             outstring += '{\n'
+            if flagsName in self.custom_bit_flag_print:
+                for custom in self.custom_bit_flag_print[flagsName]:
+                    outstring += '    if (input_value == %s) { return "%s"; }\n' % (custom, custom)
             outstring += '    std::string ret;\n'
             outstring += '    int index = 0;\n'
             outstring += '    while(input_value) {\n'
@@ -833,7 +841,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             'VK_EXT_pipeline_creation_cache_control',
             'VK_EXT_pipeline_creation_feedback',
             'VK_EXT_private_data',
-            'VK_EXT_shader_demote_to_helper_invocation',      
+            'VK_EXT_shader_demote_to_helper_invocation',
             'VK_EXT_subgroup_size_control',
             'VK_EXT_texel_buffer_alignment',
             'VK_EXT_texture_compression_astc_hdr',

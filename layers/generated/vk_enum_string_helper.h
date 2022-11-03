@@ -4029,6 +4029,8 @@ static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits inp
 
 static inline std::string string_VkShaderStageFlags(VkShaderStageFlags input_value)
 {
+    if (input_value == VK_SHADER_STAGE_ALL) { return "VK_SHADER_STAGE_ALL"; }
+    if (input_value == VK_SHADER_STAGE_ALL_GRAPHICS) { return "VK_SHADER_STAGE_ALL_GRAPHICS"; }
     std::string ret;
     int index = 0;
     while(input_value) {
