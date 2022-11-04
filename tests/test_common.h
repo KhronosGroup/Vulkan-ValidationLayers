@@ -40,9 +40,6 @@
 #include <winsock2.h>
 #endif
 
-// sdk_platform header redefines NOMINMAX
-#undef NOMINMAX
-#include <vulkan/vk_sdk_platform.h>
 #include <vulkan/vulkan.h>
 
 #ifdef _MSC_VER

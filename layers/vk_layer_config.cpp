@@ -34,7 +34,6 @@
 #include <vulkan/vk_layer.h>
 // sdk_platform header redefines NOMINMAX
 #undef NOMINMAX
-#include <vulkan/vk_sdk_platform.h>
 #include "vk_layer_utils.h"
 
 #if defined(_WIN32)
