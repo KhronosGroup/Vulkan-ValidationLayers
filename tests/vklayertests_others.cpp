@@ -10352,13 +10352,17 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
         return;
     }
 
-    // Always use dedicated allocation
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    } else {
-        printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
-        return;
+    // Check if dedicated allocation is required
+    const bool dedicated_allocation =
+        ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT;
+
+    if (dedicated_allocation) {
+        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+            m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+            m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        } else {
+            GTEST_SKIP() << "Dedicated allocation extension not supported, skipping test";
+        }
     }
 
     // Check for external memory device extensions
@@ -10402,10 +10406,15 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
 
     // Add export allocation info to pNext chain
+    VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, nullptr, handle_type};
+    alloc_info.pNext = &export_info;
+
+    // Add dedicated allocation info to pNext chain if required
     VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
                                                        VK_NULL_HANDLE, buffer_export.handle()};
-    VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, &dedicated_info, handle_type};
-    alloc_info.pNext = &export_info;
+    if (dedicated_allocation) {
+        export_info.pNext = &dedicated_info;
+    }
 
     // Allocate memory to be exported
     vk_testing::DeviceMemory memory_buffer_export;
