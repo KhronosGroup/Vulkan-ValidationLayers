@@ -5328,7 +5328,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "%s (%s) is a timeline semaphore, but VkSubmitInfo does "
                                  "not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str());
-                continue;
+                break;
             } else if (submit.waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03240",
                                  "%s (%s) is a timeline semaphore, it contains an "
@@ -5336,7 +5336,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "waitSemaphoreCount (%u)",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->waitSemaphoreValueCount, submit.waitSemaphoreCount);
-                continue;
+                break;
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
@@ -5357,7 +5357,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "%s (%s) is a timeline semaphore, but VkSubmitInfo"
                                  "does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str());
-                continue;
+                break;
             } else if (submit.signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkSubmitInfo-pNext-03241",
                                  "%s (%s) is a timeline semaphore, it contains an "
@@ -5365,7 +5365,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "signalSemaphoreCount (%u)",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->signalSemaphoreValueCount, submit.signalSemaphoreCount);
-                continue;
+                break;
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
@@ -5434,7 +5434,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "%s (%s) is a timeline semaphore, but VkSubmitInfo does "
                                  "not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str());
-                continue;
+                break;
             } else if (submit.waitSemaphoreCount != timeline_semaphore_submit_info->waitSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03247",
                                  "%s (%s) is a timeline semaphore, it contains an "
@@ -5442,7 +5442,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "waitSemaphoreCount (%u)",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->waitSemaphoreValueCount, submit.waitSemaphoreCount);
-                continue;
+                break;
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
@@ -5463,7 +5463,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "%s (%s) is a timeline semaphore, but VkSubmitInfo"
                                  "does not include an instance of VkTimelineSemaphoreSubmitInfo",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str());
-                continue;
+                break;
             } else if (submit.signalSemaphoreCount != timeline_semaphore_submit_info->signalSemaphoreValueCount) {
                 skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pNext-03248",
                                  "%s (%s) is a timeline semaphore, it contains an "
@@ -5471,7 +5471,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                                  "signalSemaphoreCount (%u)",
                                  loc.Message().c_str(), report_data->FormatHandle(semaphore).c_str(),
                                  timeline_semaphore_submit_info->signalSemaphoreValueCount, submit.signalSemaphoreCount);
-                continue;
+                break;
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
