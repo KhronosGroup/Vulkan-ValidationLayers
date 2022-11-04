@@ -1221,13 +1221,8 @@ struct GraphicsPipelineFromLibraries {
         link_info.pLibraries = libs.data();
 
         if (ci) {
-            // This is an ugly cast, but only used in testing for convenience of extending pNext chain
-            VkBaseOutStructure **prev =
-                const_cast<VkBaseOutStructure **>(reinterpret_cast<const VkBaseOutStructure **>(&ci->pNext));
-            while (*prev) {
-                prev = &(*prev)->pNext;
-            }
-            *prev = reinterpret_cast<VkBaseOutStructure *>(&link_info);
+            link_info.pNext = ci->pNext;
+            ci->pNext = &link_info;
             pipe.init(dev, *ci);
         } else {
             auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
