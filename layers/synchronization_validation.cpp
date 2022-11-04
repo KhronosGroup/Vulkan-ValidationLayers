@@ -255,6 +255,24 @@ std::ostream &operator<<(std::ostream &out, const SyncNodeFormatter &formatter) 
     return out;
 }
 
+std::ostream &operator<<(std::ostream &out, const NamedHandle::FormatterState &formatter) {
+    const NamedHandle &handle = formatter.that;
+    bool labeled = false;
+    if (!handle.name.empty()) {
+        out << handle.name;
+        labeled = true;
+    }
+    if (handle.IsIndexed()) {
+        out << "[" << handle.index << "]";
+        labeled = true;
+    }
+    if (labeled) {
+        out << ": ";
+    }
+    out << formatter.state.report_data->FormatHandle(handle.handle);
+    return out;
+}
+
 std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::FormatterState &formatter) {
     const ResourceUsageRecord &record = formatter.record;
     if (record.alt_usage) {
@@ -268,6 +286,9 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
         // Note: ex_cb_state set to null forces output of record.cb_state
         if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
             out << ", " << SyncNodeFormatter(formatter.sync_state, record.cb_state);
+        }
+        for (const auto &named_handle : record.handles) {
+            out << "," << named_handle.Formatter(formatter.sync_state);
         }
         out << ", reset_no: " << std::to_string(record.reset_count);
     }
@@ -2428,7 +2449,8 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd_
                                                                    const VkRect2D &render_area,
                                                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views) {
     // Create an access context the current renderpass.
-    const auto barrier_tag = NextCommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
+    const auto barrier_tag = NextCommandTag(cmd_type, NamedHandle("renderpass", rp_state.Handle()),
+                                            ResourceUsageRecord::SubcommandType::kSubpassTransition);
     const auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
     render_pass_contexts_.emplace_back(layer_data::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(),
                                                                                         attachment_views, &cb_access_context_));
@@ -2442,7 +2464,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordNextSubpass(const CMD_TYPE cm
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(cmd_type);
 
-    auto store_tag = NextCommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto store_tag =
+        NextCommandTag(cmd_type, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
+                       ResourceUsageRecord::SubcommandType::kStoreOp);
     auto barrier_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
     auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
 
@@ -2455,7 +2479,9 @@ ResourceUsageTag CommandBufferAccessContext::RecordEndRenderPass(const CMD_TYPE 
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return NextCommandTag(cmd_type);
 
-    auto store_tag = NextCommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kStoreOp);
+    auto store_tag =
+        NextCommandTag(cmd_type, NamedHandle("renderpass", current_renderpass_context_->GetRenderPassState()->Handle()),
+                       ResourceUsageRecord::SubcommandType::kStoreOp);
     auto barrier_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kSubpassTransition);
 
     current_renderpass_context_->RecordEndRenderPass(&cb_access_context_, store_tag, barrier_tag);
@@ -2558,16 +2584,37 @@ void CommandBufferAccessContext::InsertRecordedAccessLogEntries(const CommandBuf
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+    return NextSubcommandTag(command, NamedHandle(), subcommand);
+}
+ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(CMD_TYPE command, NamedHandle &&handle,
+                                                               ResourceUsageRecord::SubcommandType subcommand) {
     ResourceUsageTag next = access_log_->size();
     access_log_->emplace_back(command, command_number_, subcommand, ++subcommand_number_, cb_state_, reset_count_);
+    if (command_handles_.size()) {
+        // This is a duplication, but it keeps tags->log information flat (i.e not depending on some "command tag" entry
+        access_log_->back().handles = command_handles_;
+    }
+    if (handle) {
+        access_log_->back().AddHandle(std::move(handle));
+    }
     return next;
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand) {
+    return NextCommandTag(command, NamedHandle(), subcommand);
+}
+
+ResourceUsageTag CommandBufferAccessContext::NextCommandTag(CMD_TYPE command, NamedHandle &&handle,
+                                                            ResourceUsageRecord::SubcommandType subcommand) {
     command_number_++;
+    command_handles_.clear();
     subcommand_number_ = 0;
     ResourceUsageTag next = access_log_->size();
     access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
+    if (handle) {
+        access_log_->back().AddHandle(handle);
+        command_handles_.emplace_back(std::move(handle));
+    }
     return next;
 }
 
@@ -7534,9 +7581,10 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
     if (!cb_state) return;
     auto *cb_context = &cb_state->access_context;
     for (uint32_t cb_index = 0; cb_index < commandBufferCount; ++cb_index) {
-        cb_context->NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
+        const ResourceUsageTag cb_tag = cb_context->NextIndexedCommandTag(CMD_EXECUTECOMMANDS, cb_index);
         const auto recorded_cb = Get<syncval_state::CommandBuffer>(pCommandBuffers[cb_index]);
         if (!recorded_cb) continue;
+        cb_context->AddHandle(cb_tag, "pCommandBuffers", recorded_cb->Handle(), cb_index);
         const auto *recorded_cb_context = &recorded_cb->access_context;
         cb_context->RecordExecutedCommandBuffer(*recorded_cb_context);
     }

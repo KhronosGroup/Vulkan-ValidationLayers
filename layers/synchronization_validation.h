@@ -152,6 +152,43 @@ inline std::ostream &operator<<(std::ostream &out, const AlternateResourceUsage:
     return out;
 }
 
+template <typename State, typename T>
+struct FormatterImpl {
+    using That = T;
+    friend T;
+    const State &state;
+    const That &that;
+
+  private:
+    // Only intended to be invoke with from That method
+    FormatterImpl(const State &state_, const That &that_) : state(state_), that(that_) {}
+};
+
+struct NamedHandle {
+    const static size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+    std::string name;
+    VulkanTypedHandle handle;
+    size_t index = kInvalidIndex;
+
+    using FormatterState = FormatterImpl<SyncValidator, NamedHandle>;
+    // NOTE: CRTP could DRY this
+    FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); }
+
+    NamedHandle() = default;
+    NamedHandle(const NamedHandle &other) = default;
+    NamedHandle(NamedHandle &&other) = default;
+    NamedHandle(const std::string &name_, const VulkanTypedHandle &handle_, size_t index_ = kInvalidIndex)
+        : name(name_), handle(handle_), index(index_) {}
+    NamedHandle(const char *name_, const VulkanTypedHandle &handle_, size_t index_ = kInvalidIndex)
+        : name(name_), handle(handle_), index(index_) {}
+    NamedHandle(const VulkanTypedHandle &handle_) : name(), handle(handle_) {}
+    NamedHandle &operator=(const NamedHandle &other) = default;
+    NamedHandle &operator=(NamedHandle &&other) = default;
+
+    operator bool() const { return (handle.handle != 0U) && (handle.type != VulkanObjectType::kVulkanObjectTypeUnknown); }
+    bool IsIndexed() const { return index != kInvalidIndex; }
+};
+
 struct ResourceCmdUsageRecord {
     using TagIndex = size_t;
     using Count = uint32_t;
@@ -170,6 +207,12 @@ struct ResourceCmdUsageRecord {
           cb_state(cb_state_),
           reset_count(reset_count_) {}
 
+    // NamedHandle must be constructable from args
+    template <class... Args>
+    void AddHandle(Args &&...args) {
+        handles.emplace_back(std::forward<Args>(args)...);
+    }
+
     CMD_TYPE command = CMD_NONE;
     Count seq_num = 0U;
     SubcommandType sub_command_type = SubcommandType::kNone;
@@ -180,6 +223,7 @@ struct ResourceCmdUsageRecord {
     // plain pointer as a shared pointer is held by the context storing this record
     const CMD_BUFFER_STATE *cb_state = nullptr;
     Count reset_count;
+    small_vector<NamedHandle, 1> handles;
 };
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
@@ -1417,6 +1461,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         command_number_ = 0;
         subcommand_number_ = 0;
         reset_count_++;
+        command_handles_.clear();
         cb_access_context_.Reset();
         render_pass_contexts_.clear();
         current_context_ = &cb_access_context_;
@@ -1459,6 +1504,8 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     VkQueueFlags GetQueueFlags() const { return cb_state_ ? cb_state_->GetQueueFlags() : 0; }
 
     ResourceUsageTag NextSubcommandTag(CMD_TYPE command, ResourceUsageRecord::SubcommandType subcommand);
+    ResourceUsageTag NextSubcommandTag(CMD_TYPE command, NamedHandle &&handle, ResourceUsageRecord::SubcommandType subcommand);
+
     ResourceUsageTag GetTagLimit() const override { return access_log_->size(); }
     VulkanTypedHandle Handle() const override {
         if (cb_state_) {
@@ -1467,9 +1514,21 @@ class CommandBufferAccessContext : public CommandExecutionContext {
         return VulkanTypedHandle(static_cast<VkCommandBuffer>(VK_NULL_HANDLE), kVulkanObjectTypeCommandBuffer);
     }
 
+    ResourceUsageTag NextCommandTag(CMD_TYPE command, NamedHandle &&handle,
+                                    ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
+
     ResourceUsageTag NextCommandTag(CMD_TYPE command,
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextIndexedCommandTag(CMD_TYPE command, uint32_t index);
+
+    // NamedHandle must be constructable from args
+    template <class... Args>
+    void AddHandle(ResourceUsageTag tag, Args &&...args) {
+        assert(tag < access_log_->size());
+        if (tag < access_log_->size()) {
+            (*access_log_)[tag].AddHandle(std::forward<Args>(args)...);
+        }
+    }
 
     std::shared_ptr<const CMD_BUFFER_STATE> GetCBStateShared() const { return cb_state_->shared_from_this(); }
 
@@ -1506,6 +1565,7 @@ class CommandBufferAccessContext : public CommandExecutionContext {
     uint32_t command_number_;
     uint32_t subcommand_number_;
     uint32_t reset_count_;
+    small_vector<NamedHandle, 1> command_handles_;
 
     AccessContext cb_access_context_;
     AccessContext *current_context_;
