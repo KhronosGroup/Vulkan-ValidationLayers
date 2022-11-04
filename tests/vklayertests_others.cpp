@@ -10488,6 +10488,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     alloc_info.pNext = &import_info_buffer;
     vk_testing::DeviceMemory memory_buffer_import;
     memory_buffer_import.init(*m_device, alloc_info);
+    ASSERT_TRUE(memory_buffer_import.initialized());
 
     VkMemoryRequirements image_import_reqs = image_import.memory_requirements();
     if (image_import_reqs.memoryTypeBits == 0) {
