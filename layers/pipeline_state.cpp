@@ -30,6 +30,7 @@
 #include "cmd_buffer_state.h"
 #include "state_tracker.h"
 #include "shader_module.h"
+#include "enum_flag_bits.h"
 
 static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
     return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
@@ -79,9 +80,8 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
     // shader stages need to be recorded in pipeline order
     const auto stages = pipe_state.GetShaderStages();
 
-    for (uint32_t stage_idx = 0; stage_idx < 32; ++stage_idx) {
+    for (const auto &stage : AllVkShaderStageFlags) {
         bool stage_found = false;
-        const auto stage = static_cast<VkShaderStageFlagBits>(1 << stage_idx);
         for (const auto &shader_stage : stages) {
             if (shader_stage.stage == stage) {
                 auto module = state_data.Get<SHADER_MODULE_STATE>(shader_stage.module);

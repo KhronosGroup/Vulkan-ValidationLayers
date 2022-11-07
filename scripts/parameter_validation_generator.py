@@ -308,6 +308,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.structMemberBlacklist = { 'VkWriteDescriptorSet' : ['dstSet'], 'VkAccelerationStructureGeometryKHR' :['geometry'] }
         # Validation conditions for some special case struct members that are conditionally validated
         self.structMemberValidationConditions = { 'VkPipelineColorBlendStateCreateInfo' : { 'logicOp' : '{}logicOpEnable == VK_TRUE' } }
+        # FlagBits that should also be array
+        self.flagBitsAsArray = ['VkShaderStageFlags']
         # Header version
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
@@ -321,6 +323,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.enumRanges = set()                           # Set of enum names
         self.enum_values_definitions = dict()             # [enum, string] containing enumerated type map definitions
         self.flag_values_definitions = dict()             # [flag, string] containing flag type map definitions
+        self.flag_array_values_definitions = dict()       # [flag, string] containing flag type map definitions to be used as an array
         self.stype_version_dict = dict()                  # String containing structtype to version map data
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
@@ -485,6 +488,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 flagBits = flag.replace('Flags', 'FlagBits')
                 if flag in self.called_types or flagBits in self.called_types:
                     write(string, file=self.outFile)
+
+            for flag, string in self.flag_array_values_definitions.items():
+                # These are custom selected flags, so will always write
+                write(string, file=self.outFile)
 
             for enum, string in self.enum_values_definitions.items():
                 if enum in self.called_types:
@@ -705,11 +712,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 flagBits = flag.replace('Flags', 'FlagBits')
                 if flagBits in self.flagBits:
                     bits = self.flagBits[flagBits]
-                    decl = 'const {} All{} = {}'.format(flag, flagBits, bits[0])
-                    for bit in bits[1:]:
-                        decl += '|' + bit
-                    decl += ';'
+                    decl = 'const {} All{} = {};'.format(flag, flagBits, '|'.join(bits))
                     self.flag_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
+                    if flag in self.flagBitsAsArray:
+                        decl = 'const std::array<%s, %d> All%s = {%s};' % (flag, len(bits), flag, ','.join(bits))
+                        self.flag_array_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
+
             endif = '\n'
             if (self.featureExtraProtect is not None):
                 endif = '#endif // %s\n' % self.featureExtraProtect
