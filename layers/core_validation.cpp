@@ -832,7 +832,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         if (rp_state) {
             const auto rendering_view_mask = pCB->activeRenderPass->GetDynamicRenderingViewMask();
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_06198,
+                LogObjectList objlist(pCB->commandBuffer());
+                objlist.add(pPipeline->pipeline());
+                objlist.add(rp_state->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_06198,
                                  "%s: Currently bound pipeline %s must have been created with a "
                                  "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -841,9 +844,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto pipline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
 
             if (pipline_rendering_ci.viewMask != rendering_view_mask) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
+                LogObjectList objlist(pCB->commandBuffer());
+                objlist.add(pPipeline->pipeline());
+                objlist.add(pCB->activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_view_mask,
                                  "%s: Currently bound pipeline %s viewMask ([%" PRIu32
-                                 ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
+                                 ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  pipline_rendering_ci.viewMask, rendering_view_mask);
             }
@@ -851,9 +857,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto color_attachment_count = pipline_rendering_ci.colorAttachmentCount;
             const auto rendering_color_attachment_count = pCB->activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
-                skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
-                                 "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
-                                 ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
+                LogObjectList objlist(pCB->commandBuffer());
+                objlist.add(pPipeline->pipeline());
+                objlist.add(pCB->activeRenderPass->renderPass());
+                skip |= LogError(objlist, vuid.dynamic_rendering_color_count,
+                                 "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
+                                 ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
                                  pipline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
             }
@@ -864,10 +873,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                         auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
                         if ((pipline_rendering_ci.colorAttachmentCount > i) &&
                             view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
-                            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
-                                             "%s: Color attachment ([%" PRIu32
-                                             ") imageView format (%s) must match corresponding format in pipeline (%s)",
-                                             caller, i, string_VkFormat(view_state->create_info.format),
+                            LogObjectList objlist(pCB->commandBuffer());
+                            objlist.add(pPipeline->pipeline());
+                            objlist.add(pCB->activeRenderPass->renderPass());
+                            skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
+                                             "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                                             "].imageView format (%s) must match corresponding format in "
+                                             "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                                             caller, i, string_VkFormat(view_state->create_info.format), i,
                                              string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
                         }
                     }
@@ -877,8 +890,12 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                 if (view_state->create_info.format != pipline_rendering_ci.depthAttachmentFormat) {
-                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_format,
-                                     "%s: Depth attachment imageView format (%s) must match corresponding format in pipeline (%s)",
+                    LogObjectList objlist(pCB->commandBuffer());
+                    objlist.add(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, vuid.dynamic_rendering_depth_format,
+                                     "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
+                                     "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
                                      caller, string_VkFormat(view_state->create_info.format),
                                      string_VkFormat(pipline_rendering_ci.depthAttachmentFormat));
                 }
@@ -887,11 +904,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                 if (view_state->create_info.format != pipline_rendering_ci.stencilAttachmentFormat) {
-                    skip |=
-                        LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_format,
-                                 "%s: Stencil attachment imageView format (%s) must match corresponding format in pipeline (%s)",
-                                 caller, string_VkFormat(view_state->create_info.format),
-                                 string_VkFormat(pipline_rendering_ci.stencilAttachmentFormat));
+                    LogObjectList objlist(pCB->commandBuffer());
+                    objlist.add(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format,
+                                     "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
+                                     "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
+                                     caller, string_VkFormat(view_state->create_info.format),
+                                     string_VkFormat(pipline_rendering_ci.stencilAttachmentFormat));
                 }
             }
 
@@ -900,7 +920,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_fragment_shading_rate_attachment_info &&
                 (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fsr,
+                    LogObjectList objlist(pCB->commandBuffer());
+                    objlist.add(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, vuid.dynamic_rendering_fsr,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
                                      caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
@@ -912,7 +935,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_fragment_shading_rate_density_map &&
                 (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_fdm,
+                    LogObjectList objlist(pCB->commandBuffer());
+                    objlist.add(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, vuid.dynamic_rendering_fdm,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
                                      caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
