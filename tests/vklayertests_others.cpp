@@ -10320,36 +10320,37 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 #endif
     const auto wrong_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
 
-    // Check for external memory instance extensions
-    std::vector<const char *> reqd_instance_extensions = {
-        {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME}};
-    for (auto extension_name : reqd_instance_extensions) {
-        if (InstanceExtensionSupported(extension_name)) {
-            m_instance_extension_names.push_back(extension_name);
-        } else {
-            printf("%s Required instance extension %s not supported, skipping test\n", kSkipPrefix, extension_name);
-            return;
-        }
-    }
+    AddRequiredExtensions(ext_mem_extension_name);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+
+    AddOptionalExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR =
-        (PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR");
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto vkGetPhysicalDeviceExternalBufferPropertiesKHR = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalBufferPropertiesKHR>(
+        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceExternalBufferPropertiesKHR"));
+    ASSERT_TRUE(vkGetPhysicalDeviceExternalBufferPropertiesKHR != nullptr);
 
     // Check for import/export capability
     // export used to feed memory to test import
-    VkPhysicalDeviceExternalBufferInfoKHR ebi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
-                                                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, handle_type};
-    VkExternalBufferPropertiesKHR ebp = {VK_STRUCTURE_TYPE_EXTERNAL_BUFFER_PROPERTIES_KHR, nullptr, {0, 0, 0}};
-    ASSERT_TRUE(vkGetPhysicalDeviceExternalBufferPropertiesKHR != nullptr);
+    auto ebi = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    ebi.handleType = handle_type;
+    ebi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+    auto ebp = LvlInitStruct<VkExternalBufferPropertiesKHR>();
     vkGetPhysicalDeviceExternalBufferPropertiesKHR(gpu(), &ebi, &ebp);
     if (!(ebp.externalMemoryProperties.compatibleHandleTypes & handle_type) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_KHR) ||
         !(ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT_KHR)) {
-        printf("%s External buffer does not support importing and exporting, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "External buffer does not support importing and exporting, skipping test";
     }
 
     // Check if dedicated allocation is required
@@ -10357,43 +10358,25 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
         ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT;
 
     if (dedicated_allocation) {
-        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-            m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-            m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        } else {
+        if (!IsExtensionsEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
             GTEST_SKIP() << "Dedicated allocation extension not supported, skipping test";
         }
     }
 
-    // Check for external memory device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
-        m_device_extension_names.push_back(ext_mem_extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    } else {
-        printf("%s External memory extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
-    // Check for bind memory 2
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    } else {
-        printf("%s bind memory 2 extension not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkBindBufferMemory2KHR vkBindBufferMemory2Function =
-        (PFN_vkBindBufferMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR");
+        reinterpret_cast<PFN_vkBindBufferMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindBufferMemory2KHR"));
     PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-        (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        reinterpret_cast<PFN_vkBindImageMemory2KHR>(vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR"));
 
-    VkMemoryPropertyFlags mem_flags = 0;
-    const VkDeviceSize buffer_size = 1024;
+    constexpr VkMemoryPropertyFlags mem_flags = 0;
+    constexpr VkDeviceSize buffer_size = 1024;
 
     // Create export and import buffers
-    VkExternalMemoryBufferCreateInfoKHR external_buffer_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR, nullptr,
-                                                                handle_type};
+    auto external_buffer_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    external_buffer_info.handleTypes = handle_type;
+
     auto buffer_info = VkBufferObj::create_info(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     buffer_info.pNext = &external_buffer_info;
     VkBufferObj buffer_export;
@@ -10406,12 +10389,15 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     auto alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_export.memory_requirements(), mem_flags);
 
     // Add export allocation info to pNext chain
-    VkExportMemoryAllocateInfoKHR export_info = {VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR, nullptr, handle_type};
+    auto export_info = LvlInitStruct<VkExportMemoryAllocateInfoKHR>();
+    export_info.handleTypes = handle_type;
+
     alloc_info.pNext = &export_info;
 
     // Add dedicated allocation info to pNext chain if required
-    VkMemoryDedicatedAllocateInfoKHR dedicated_info = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_KHR, nullptr,
-                                                       VK_NULL_HANDLE, buffer_export.handle()};
+    auto dedicated_info = LvlInitStruct<VkMemoryDedicatedAllocateInfo>();
+    dedicated_info.buffer = buffer_export.handle();
+
     if (dedicated_allocation) {
         export_info.pNext = &dedicated_info;
     }
@@ -10423,8 +10409,9 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     // Bind exported memory
     buffer_export.bind_memory(memory_buffer_export, 0);
 
-    VkExternalMemoryImageCreateInfoKHR external_image_info = {VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO, nullptr,
-                                                              handle_type};
+    auto external_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfoKHR>();
+    external_image_info.handleTypes = handle_type;
+
     VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
     image_info.extent = {64, 64, 1};
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -10472,26 +10459,35 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
                                                           handle_type, handle_image};
 #else
     // Export memory to fd
-    auto vkGetMemoryFdKHR = (PFN_vkGetMemoryFdKHR)vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR");
+    auto vkGetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(vk::GetInstanceProcAddr(instance(), "vkGetMemoryFdKHR"));
     ASSERT_TRUE(vkGetMemoryFdKHR != nullptr);
-    VkMemoryGetFdInfoKHR mgfi_buffer = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_buffer_export.handle(),
-                                        handle_type};
-    VkMemoryGetFdInfoKHR mgfi_image = {VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR, nullptr, memory_image_export.handle(),
-                                       handle_type};
+
+    auto mgfi_buffer = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+    mgfi_buffer.handleType = handle_type;
+    mgfi_buffer.memory = memory_buffer_export.handle();
+
+    auto mgfi_image = LvlInitStruct<VkMemoryGetFdInfoKHR>();
+    mgfi_image.handleType = handle_type;
+    mgfi_image.memory = memory_image_export.handle();
+
     int fd_buffer;
     int fd_image;
     ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(m_device->device(), &mgfi_buffer, &fd_buffer));
     ASSERT_VK_SUCCESS(vkGetMemoryFdKHR(m_device->device(), &mgfi_image, &fd_image));
 
-    VkImportMemoryFdInfoKHR import_info_buffer = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd_buffer};
-    VkImportMemoryFdInfoKHR import_info_image = {VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR, nullptr, handle_type, fd_image};
+    auto import_info_buffer = LvlInitStruct<VkImportMemoryFdInfoKHR>();
+    import_info_buffer.handleType = handle_type;
+    import_info_buffer.fd = fd_buffer;
+
+    auto import_info_image = LvlInitStruct<VkImportMemoryFdInfoKHR>();
+    import_info_image.handleType = handle_type;
+    import_info_image.fd = fd_image;
 #endif
 
     // Import memory
     VkMemoryRequirements buffer_import_reqs = buffer_import.memory_requirements();
     if (buffer_import_reqs.memoryTypeBits == 0) {
-        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "no suitable memory found, skipping test";
     }
     alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, buffer_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_buffer;
@@ -10501,8 +10497,7 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
 
     VkMemoryRequirements image_import_reqs = image_import.memory_requirements();
     if (image_import_reqs.memoryTypeBits == 0) {
-        printf("%s no suitable memory found, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "no suitable memory found, skipping test";
     }
     alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image_import_reqs, mem_flags);
     alloc_info.pNext = &import_info_image;
