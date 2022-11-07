@@ -80,6 +80,7 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
     // shader stages need to be recorded in pipeline order
     const auto stages = pipe_state.GetShaderStages();
 
+    // stages such as VK_SHADER_STAGE_ALL are find as this code is only looking for exact matches, not bool logic
     for (const auto &stage : AllVkShaderStageFlags) {
         bool stage_found = false;
         for (const auto &shader_stage : stages) {
