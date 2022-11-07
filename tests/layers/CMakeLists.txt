@@ -102,8 +102,7 @@ target_include_directories(${TEST_LAYER_NAME}
                                    ${CMAKE_CURRENT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}/layers
-                                   ${CMAKE_BINARY_DIR}
-                                   ${VulkanHeaders_INCLUDE_DIR})
+                                   ${CMAKE_BINARY_DIR})
 
 if(WIN32)
     set_target_properties(${TEST_LAYER_NAME} PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})

@@ -111,11 +111,11 @@ endif()
 if (GOOGLETEST_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${GOOGLETEST_INSTALL_DIR})
 endif()
+if (VULKAN_HEADERS_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
+endif()
 
-find_package(VulkanHeaders REQUIRED)
-add_library(Vulkan-Headers INTERFACE)
-target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
-add_library(Vulkan::Headers ALIAS Vulkan-Headers)
+find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
@@ -266,8 +266,7 @@ target_include_directories(VkLayer_utils
                                   ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
-                                  ${PROJECT_BINARY_DIR}
-                                  ${VulkanHeaders_INCLUDE_DIR})
+                                  ${PROJECT_BINARY_DIR})
 
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
