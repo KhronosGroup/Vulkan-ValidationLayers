@@ -1683,8 +1683,10 @@ bool BestPractices::ValidateAccessLayoutCombination(const std::string& api_name,
         case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
             allowed = all;
             break;
-        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-            allowed = VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+        // alias VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV
+        case VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR:
+            // alias VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV
+            allowed = VK_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR;
             break;
         case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
             allowed = VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
