@@ -165,7 +165,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Track if certain commands have been called at least once in lifetime of the command buffer
     // primary command buffers values are set true if a secondary command buffer has a command
     bool has_draw_cmd;
-    bool has_draw_cmd_in_current_render_pass;
     bool has_dispatch_cmd;
     bool has_trace_rays_cmd;
     bool has_build_as_cmd;
