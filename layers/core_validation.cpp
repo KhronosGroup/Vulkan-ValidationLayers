@@ -9596,11 +9596,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                 const char *vuid = IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)
                                        ? "VUID-VkRenderingAttachmentInfo-imageView-06144"
                                        : "VUID-VkRenderingAttachmentInfo-imageView-06139";
-                skip |= LogError(commandBuffer, vuid,
-                                 "%s(): resolveImageLayout must not be "
-                                 "VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR (or the alias "
-                                 "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV)",
-                                 func_name);
+                skip |=
+                    LogError(commandBuffer, vuid,
+                             "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR "
+                             "(or the alias VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV)",
+                             func_name);
             }
 
             if (pAttachment->resolveImageLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {

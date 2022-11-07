@@ -1028,21 +1028,22 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
-        if (pCreateInfo->usage & VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV) {
+        // alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV
+        if (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) {
             if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-imageType-02082",
-                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, "
-                                 "imageType must be VK_IMAGE_TYPE_2D.");
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR (or the "
+                                 "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), imageType must be VK_IMAGE_TYPE_2D.");
             }
             if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02083",
-                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, "
-                                 "samples must be VK_SAMPLE_COUNT_1_BIT.");
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR (or the "
+                                 "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), samples must be VK_SAMPLE_COUNT_1_BIT.");
             }
             if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-02084",
-                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, "
-                                 "tiling must be VK_IMAGE_TILING_OPTIMAL.");
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR (or the "
+                                 "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), tiling must be VK_IMAGE_TILING_OPTIMAL.");
             }
         }
 
