@@ -827,6 +827,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     const auto pipeline_flags = pPipeline->GetPipelineCreateFlags();
 
     if (pCB->activeRenderPass && pCB->activeRenderPass->UsesDynamicRendering()) {
+        const auto rendering_info = pCB->activeRenderPass->dynamic_rendering_begin_rendering_info;
         const auto &rp_state = pPipeline->RenderPassState();
         if (rp_state) {
             const auto rendering_view_mask = pCB->activeRenderPass->GetDynamicRenderingViewMask();
@@ -837,72 +838,65 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str());
             }
 
-            if (rp_state->dynamic_rendering_pipeline_create_info.viewMask != rendering_view_mask) {
+            const auto pipline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
+
+            if (pipline_rendering_ci.viewMask != rendering_view_mask) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_view_mask,
                                  "%s: Currently bound pipeline %s viewMask ([%" PRIu32
                                  ") must be equal to pBeginRendering->viewMask ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 rp_state->dynamic_rendering_pipeline_create_info.viewMask, rendering_view_mask);
+                                 pipline_rendering_ci.viewMask, rendering_view_mask);
             }
 
-            const auto color_attachment_count = rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
+            const auto color_attachment_count = pipline_rendering_ci.colorAttachmentCount;
             const auto rendering_color_attachment_count = pCB->activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
                 skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_count,
                                  "%s: Currently bound pipeline %s colorAttachmentCount ([%" PRIu32
                                  ") must be equal to pBeginRendering->colorAttachmentCount ([%" PRIu32 ")",
                                  caller, report_data->FormatHandle(state.pipeline_state->pipeline()).c_str(),
-                                 rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount,
-                                 rendering_color_attachment_count);
+                                 pipline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
             }
 
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
-                    if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView !=
-                        VK_NULL_HANDLE) {
-                        auto view_state = Get<IMAGE_VIEW_STATE>(
-                            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
-                        if ((rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount > i) &&
-                            view_state->create_info.format !=
-                                rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]) {
-                            skip |= LogError(
-                                pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
-                                "%s: Color attachment ([%" PRIu32
-                                ") imageView format (%s) must match corresponding format in pipeline (%s)",
-                                caller, i, string_VkFormat(view_state->create_info.format),
-                                string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.pColorAttachmentFormats[i]));
+            if (rendering_info.colorAttachmentCount > 0) {
+                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                        auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                        if ((pipline_rendering_ci.colorAttachmentCount > i) &&
+                            view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
+                            skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_formats,
+                                             "%s: Color attachment ([%" PRIu32
+                                             ") imageView format (%s) must match corresponding format in pipeline (%s)",
+                                             caller, i, string_VkFormat(view_state->create_info.format),
+                                             string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
                         }
                     }
                 }
             }
 
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment &&
-                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
-                auto view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
-                if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat) {
+            if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
+                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
+                if (view_state->create_info.format != pipline_rendering_ci.depthAttachmentFormat) {
                     skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_depth_format,
                                      "%s: Depth attachment imageView format (%s) must match corresponding format in pipeline (%s)",
                                      caller, string_VkFormat(view_state->create_info.format),
-                                     string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.depthAttachmentFormat));
+                                     string_VkFormat(pipline_rendering_ci.depthAttachmentFormat));
                 }
             }
 
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment &&
-                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
-                auto view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
-                if (view_state->create_info.format != rp_state->dynamic_rendering_pipeline_create_info.stencilAttachmentFormat) {
+            if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
+                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
+                if (view_state->create_info.format != pipline_rendering_ci.stencilAttachmentFormat) {
                     skip |=
                         LogError(pCB->commandBuffer(), vuid.dynamic_rendering_stencil_format,
                                  "%s: Stencil attachment imageView format (%s) must match corresponding format in pipeline (%s)",
                                  caller, string_VkFormat(view_state->create_info.format),
-                                 string_VkFormat(rp_state->dynamic_rendering_pipeline_create_info.stencilAttachmentFormat));
+                                 string_VkFormat(pipline_rendering_ci.stencilAttachmentFormat));
                 }
             }
 
-            auto rendering_fragment_shading_rate_attachment_info = LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(
-                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+            auto rendering_fragment_shading_rate_attachment_info =
+                LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(rendering_info.pNext);
             if (rendering_fragment_shading_rate_attachment_info &&
                 (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
@@ -913,8 +907,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
 
-            auto rendering_fragment_shading_rate_density_map = LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(
-                pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pNext);
+            auto rendering_fragment_shading_rate_density_map =
+                LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext);
             if (rendering_fragment_shading_rate_density_map &&
                 (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
@@ -930,12 +924,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pPipeline->PNext());
 
         if (p_attachment_sample_count_info) {
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
-                    if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView !=
-                        VK_NULL_HANDLE) {
-                        auto color_view_state = Get<IMAGE_VIEW_STATE>(
-                            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
+            if (rendering_info.colorAttachmentCount > 0) {
+                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                        auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
                         auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
 
                         if (p_attachment_sample_count_info) {
@@ -953,9 +945,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
 
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr) {
-                auto depth_view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+            if (rendering_info.pDepthAttachment != nullptr) {
+                auto depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                 auto depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
 
                 if (p_attachment_sample_count_info) {
@@ -970,9 +961,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
 
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr) {
-                auto stencil_view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
+            if (rendering_info.pStencilAttachment != nullptr) {
+                auto stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                 auto stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
 
                 if (p_attachment_sample_count_info) {
@@ -987,12 +977,10 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
         } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
-            if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount; ++i) {
-                    if (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView !=
-                        VK_NULL_HANDLE) {
-                        auto view_state = Get<IMAGE_VIEW_STATE>(
-                            pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pColorAttachments[i].imageView);
+            if (rendering_info.colorAttachmentCount > 0) {
+                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+                        auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
                         auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
                         if (samples != GetNumSamples(pPipeline)) {
@@ -1010,10 +998,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
 
-            if ((pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr) &&
-                (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
-                const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pDepthAttachment->imageView);
+            if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
+                const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                 const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
                 if (depth_image_samples != GetNumSamples(pPipeline)) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
@@ -1027,10 +1013,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
 
-            if ((pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr) &&
-                (pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
-                const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(
-                    pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.pStencilAttachment->imageView);
+            if ((rendering_info.pStencilAttachment != nullptr) &&
+                (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
+                const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                 const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
                 if (stencil_image_samples != GetNumSamples(pPipeline)) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
