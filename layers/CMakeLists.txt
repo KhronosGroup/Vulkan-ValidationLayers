@@ -103,8 +103,6 @@ macro(AddVkLayer target LAYER_COMPILE_DEFINITIONS)
     install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endmacro()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${VulkanHeaders_INCLUDE_DIR})
-
 if(MSVC)
     # Applies to all configurations
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
@@ -318,21 +316,12 @@ if(BUILD_LAYERS)
                    RELATIVE_PATH_PREFIX
                    "${RELATIVE_PATH_PREFIX}")
 
-    # Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
-    file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
-    list(LENGTH lines len)
-    if(${len} EQUAL 1)
-        string(REGEX MATCHALL "[0-9]+" vk_header_version ${lines})
-    else()
-        message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
-    endif()
-
     # Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
     # compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
     # TARGET_FILE_DIR, specifically)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\" @ONLY)")
     foreach(TARGET_NAME ${TARGET_NAMES})
-        set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=1.3.${vk_header_version})
+        set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in" -DVK_VERSION=${VulkanHeaders_VERSION})
         # If this json file is not a metalayer, get the needed properties from that target
         if(TARGET ${TARGET_NAME})
             set(CONFIG_DEFINES
@@ -357,7 +346,7 @@ if(BUILD_LAYERS)
             set(INSTALL_DEFINES
                 -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/${TARGET_NAME}.json.in"
                 -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/${TARGET_NAME}.json"
-                -DVK_VERSION=1.3.${vk_header_version})
+                -DVK_VERSION=${VulkanHeaders_VERSION})
             # If this json file is not a metalayer, get the needed properties from that target
             if(TARGET ${TARGET_NAME})
                 set(INSTALL_DEFINES ${INSTALL_DEFINES} -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:${TARGET_NAME}>")
