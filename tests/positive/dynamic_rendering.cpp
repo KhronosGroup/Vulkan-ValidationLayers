@@ -81,7 +81,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDraw) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
@@ -167,7 +167,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingDrawMultiBind) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
@@ -502,7 +502,7 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
     const VkPipelineLayoutObj pl(m_device, {&dsl});
 
-    VkFormat color_formats = {VK_FORMAT_R8G8B8A8_UNORM};
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
     auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
     pipeline_rendering_info.colorAttachmentCount = 1;
     pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
@@ -564,4 +564,224 @@ TEST_F(VkPositiveLayerTest, DynamicRenderingSuspendResumeDraw) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit, VK_NULL_HANDLE);
 
     vk::QueueWaitIdle(m_device->m_queue);
+}
+
+TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipeline) {
+    TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    char const* fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+    auto rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachmentFormats = &color_format;
+
+    auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    pipe.InitGraphicsPipelineCreateInfo(&create_info);
+    create_info.pNext = &rendering_info;
+
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.attachment = 0;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &attachment;
+    VkRenderPassCreateInfo render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, render_pass_ci);
+
+    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
+}
+
+TEST_F(VkPositiveLayerTest, DynamicRenderingCreateGraphicsPipelineNoInfo) {
+    TEST_DESCRIPTION("Test for a creating a pipeline with VK_KHR_dynamic_rendering enabled but no rendering info struct.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (!dynamic_rendering_features.dynamicRendering) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    char const* fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        layout(location=0) out vec4 color;
+        void main() {
+           color = subpassLoad(x);
+        }
+    )glsl";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+    attachment.attachment = 0;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &attachment;
+    VkRenderPassCreateInfo render_pass_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    render_pass_ci.subpassCount = 1;
+    render_pass_ci.pSubpasses = &subpass;
+    render_pass_ci.attachmentCount = 1;
+    render_pass_ci.pAttachments = &attach_desc;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, render_pass_ci);
+
+    auto create_info = LvlInitStruct<VkGraphicsPipelineCreateInfo>();
+    pipe.InitGraphicsPipelineCreateInfo(&create_info);
+    // if there isn't a VkPipelineRenderingCreateInfoKHR, the driver is supposed to use safe default values
+    pipe.CreateVKPipeline(pl.handle(), render_pass.handle(), &create_info);
+}
+
+TEST_F(VkPositiveLayerTest, DynamicRenderingWithDualSourceBlending) {
+    TEST_DESCRIPTION("Test drawing with dynamic rendering and dual source blending.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
+    if (features2.features.dualSrcBlend == VK_FALSE) {
+        GTEST_SKIP() << "Test requires (unsupported) dualSrcBlend";
+    }
+    if (dynamic_rendering_features.dynamicRendering == VK_FALSE) {
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    char const* fsSource = R"glsl(
+        #version 450
+        layout(location = 0) out vec4 c0;
+        void main(){
+           c0 = vec4(1.0f);
+        }
+    )glsl";
+
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPipelineColorBlendAttachmentState cb_attachments = {};
+    cb_attachments.blendEnable = VK_TRUE;
+    cb_attachments.srcColorBlendFactor = VK_BLEND_FACTOR_SRC1_COLOR;  // bad!
+    cb_attachments.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    cb_attachments.colorBlendOp = VK_BLEND_OP_ADD;
+    cb_attachments.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    cb_attachments.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    cb_attachments.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkFormat color_formats = VK_FORMAT_UNDEFINED;
+    auto pipeline_rendering_info = LvlInitStruct<VkPipelineRenderingCreateInfoKHR>();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pNext = &pipeline_rendering_info;
+    pipe.cb_attachments_[0] = cb_attachments;
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkRenderingAttachmentInfoKHR color_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+    begin_rendering_info.layerCount = 1;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRendering();
+    m_commandBuffer->end();
 }

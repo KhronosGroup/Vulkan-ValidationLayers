@@ -13186,49 +13186,6 @@ TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {
     vk::DestroySampler(device(), sampler, nullptr);
 }
 
-TEST_F(VkLayerTest, ValidateBeginRenderingDisabled) {
-    TEST_DESCRIPTION("Validate VK_KHR_dynamic_rendering VUs when disabled");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
-    begin_rendering_info.layerCount = 1;
-
-    m_commandBuffer->begin();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-dynamicRendering-06446");
-    m_commandBuffer->BeginRendering(begin_rendering_info);
-    m_errorMonitor->VerifyFound();
-
-    if (vulkan_13) {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginRendering-dynamicRendering-06446");
-        vk::CmdBeginRendering(m_commandBuffer->handle(), &begin_rendering_info);
-        m_errorMonitor->VerifyFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdEndRendering-None-06161");
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdEndRendering(m_commandBuffer->handle());
-        m_errorMonitor->VerifyFound();
-        m_commandBuffer->EndRenderPass();
-    }
-
-    m_commandBuffer->end();
-}
-
 TEST_F(VkLayerTest, CmdCopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffers not bound to memory");
 
