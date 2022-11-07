@@ -112,6 +112,9 @@ endif()
 if (VULKAN_HEADERS_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
 endif()
+if (MIMALLOC_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH ${MIMALLOC_INSTALL_DIR})
+endif()
 
 find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 
@@ -235,6 +238,12 @@ find_package(robin_hood CONFIG)
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
 if (USE_ROBIN_HOOD_HASHING)
     add_definitions(-DUSE_ROBIN_HOOD_HASHING)
+endif()
+
+find_package(mimalloc CONFIG)
+option(USE_MIMALLOC "Use mimalloc" ${mimalloc_FOUND})
+if (USE_MIMALLOC)
+    add_definitions(-DUSE_MIMALLOC)
 endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)

@@ -28,6 +28,11 @@
 #include "base_node.h"
 #include "vk_layer_utils.h"
 
+// TODO: this needs to be included in just 1 cpp file, but probably not this one
+#if defined(USE_MIMALLOC) && defined(VK_USE_PLATFORM_WIN32_KHR)
+#include "mimalloc-new-delete.h"
+#endif
+
 BASE_NODE::~BASE_NODE() { Destroy(); }
 
 void BASE_NODE::Destroy() {

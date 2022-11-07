@@ -272,6 +272,10 @@ target_link_libraries(VkLayer_khronos_validation PRIVATE
     SPIRV-Headers::SPIRV-Headers
 )
 
+if (USE_MIMALLOC)
+    target_link_libraries(VkLayer_khronos_validation PRIVATE mimalloc-static)
+endif()
+
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)
 # - The respective json file, VkLayer_khronos_validation.json

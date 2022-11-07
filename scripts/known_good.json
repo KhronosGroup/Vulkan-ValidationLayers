@@ -64,6 +64,20 @@
             "optional": [
                 "tests"
             ]
+        },
+        {
+            "name": "mimalloc",
+            "url": "https://github.com/microsoft/mimalloc.git",
+            "sub_dir": "mimalloc",
+            "build_dir": "mimalloc/build",
+            "install_dir": "mimalloc/build/install",
+            "cmake_options": [
+                "-DMI_BUILD_STATIC=ON",
+                "-DMI_BUILD_OBJECT=OFF",
+                "-DMI_BUILD_SHARED=OFF",
+                "-DMI_BUILD_TESTS=OFF"
+	    ],
+            "commit": "v2.0.9"
         }
     ],
     "install_names": {
@@ -72,6 +86,7 @@
         "SPIRV-Headers": "SPIRV_HEADERS_INSTALL_DIR",
         "SPIRV-Tools": "SPIRV_TOOLS_INSTALL_DIR",
         "robin-hood-hashing": "ROBIN_HOOD_HASHING_INSTALL_DIR",
-        "googletest": "GOOGLETEST_INSTALL_DIR"
+        "googletest": "GOOGLETEST_INSTALL_DIR",
+        "mimalloc": "MIMALLOC_INSTALL_DIR"
     }
 }
