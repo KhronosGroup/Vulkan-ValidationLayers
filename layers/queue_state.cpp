@@ -513,9 +513,17 @@ void SEMAPHORE_STATE::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, 
 }
 
 void SEMAPHORE_STATE::Export(VkExternalSemaphoreHandleTypeFlagBits handle_type) {
-    auto guard = WriteLock();
     if (handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
+        auto guard = WriteLock();
         scope_ = kSyncScopeExternalPermanent;
+    } else {
+        // Exporting a semaphore payload to a handle with copy transference has the same side effects on the source semaphore's
+        // payload as executing a semaphore wait operation
+        auto filter = [](const SEMAPHORE_STATE::SemOp &op, bool is_pending) { return is_pending && op.CanBeWaited(); };
+        auto last_op = LastOp(filter);
+        if (last_op) {
+            EnqueueWait(last_op->queue, last_op->seq, last_op->payload);
+        }
     }
 }
