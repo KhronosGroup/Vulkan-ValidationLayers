@@ -4631,46 +4631,47 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
     return skip;
 }
 
+bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkImage src_image, VkImage dst_image,
+                                            CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const char* func_name = CommandTypeString(cmd_type);
+    auto src_image_type = Get<IMAGE_STATE>(src_image)->createInfo.imageType;
+    auto dst_image_type = Get<IMAGE_STATE>(dst_image)->createInfo.imageType;
+
+    if (src_image_type != dst_image_type) {
+        skip |= LogPerformanceWarning(command_buffer, kVUID_BestPractices_DrawState_MismatchedImageType,
+                                      "%s: srcImage type (%s) and dstImage type (%s) are not the same.", func_name,
+                                      string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
+    }
+
+    skip |= VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(command_buffer, kVUID_BestPractices_CmdResolveImage_ResolvingImage,
+                                  "%s Attempting to use %s to resolve a multisampled image. "
+                                  "This is a very slow and extremely bandwidth intensive path. "
+                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
+                                  VendorSpecificTag(kBPVendorArm), func_name);
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                    const VkImageResolve* pRegions) const {
     bool skip = false;
-
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage_ResolvingImage,
-                                  "%s Attempting to use vkCmdResolveImage to resolve a multisampled image. "
-                                  "This is a very slow and extremely bandwidth intensive path. "
-                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
-                                  VendorSpecificTag(kBPVendorArm));
-
+    skip |= ValidateCmdResolveImage(commandBuffer, srcImage, dstImage, CMD_RESOLVEIMAGE);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2KHR(VkCommandBuffer commandBuffer,
                                                        const VkResolveImageInfo2KHR* pResolveImageInfo) const {
     bool skip = false;
-
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage2KHR_ResolvingImage,
-                                  "%s Attempting to use vkCmdResolveImage2KHR to resolve a multisampled image. "
-                                  "This is a very slow and extremely bandwidth intensive path. "
-                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
-                                  VendorSpecificTag(kBPVendorArm));
-
+    skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage, CMD_RESOLVEIMAGE2KHR);
     return skip;
 }
 
 bool BestPractices::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer,
                                                     const VkResolveImageInfo2* pResolveImageInfo) const {
     bool skip = false;
-
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
-            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage2_ResolvingImage,
-                                  "%s Attempting to use vkCmdResolveImage2 to resolve a multisampled image. "
-                                  "This is a very slow and extremely bandwidth intensive path. "
-                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
-                                  VendorSpecificTag(kBPVendorArm));
-
+    skip |= ValidateCmdResolveImage(commandBuffer, pResolveImageInfo->srcImage, pResolveImageInfo->dstImage, CMD_RESOLVEIMAGE2);
     return skip;
 }
 

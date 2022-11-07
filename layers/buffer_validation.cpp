@@ -4245,12 +4245,6 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                              func_name, string_VkFormat(src_image_state->createInfo.format),
                              string_VkFormat(dst_image_state->createInfo.format));
         }
-        if (src_image_state->createInfo.imageType != dst_image_state->createInfo.imageType) {
-            skip |= LogWarning(cb_node->commandBuffer(), kVUID_Core_DrawState_MismatchedImageType,
-                               "%s: srcImage type (%s) and dstImage type (%s) are not the same.", func_name,
-                               string_VkImageType(src_image_state->createInfo.imageType),
-                               string_VkImageType(dst_image_state->createInfo.imageType));
-        }
         if (src_image_state->createInfo.samples == VK_SAMPLE_COUNT_1_BIT) {
             vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00257" : "VUID-vkCmdResolveImage-srcImage-00257";
             skip |= LogError(cb_node->commandBuffer(), vuid, "%s: srcImage sample count is VK_SAMPLE_COUNT_1_BIT.", func_name);

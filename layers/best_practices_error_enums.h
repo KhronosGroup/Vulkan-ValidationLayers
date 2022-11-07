@@ -134,6 +134,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_StoreOpDontCareThenLoadOp
 static const char DECORATE_UNUSED *kVUID_BestPractices_ConcurrentUsageOfExclusiveImage = "UNASSIGNED-BestPractices-ConcurrentUsageOfExclusiveImage";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ImageBarrierAccessLayout =
     "UNASSIGNED-BestPractices-ImageBarrierAccessLayout";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_MismatchedImageType = "UNASSIGNED-BestPractices-DrawState-MismatchedImageType";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
@@ -163,10 +164,6 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_Anisotropy 
     "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage_ResolvingImage =
     "UNASSIGNED-BestPractices-vkCmdResolveImage-resolving-image";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage2KHR_ResolvingImage =
-    "UNASSIGNED-BestPractices-vkCmdResolveImage2KHR-resolving-image";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage2_ResolvingImage =
-    "UNASSIGNED-BestPractices-vkCmdResolveImage2-resolving-image";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls =
     "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDrawIndexed_SparseIndexBuffer =

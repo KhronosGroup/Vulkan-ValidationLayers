@@ -318,6 +318,67 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     m_commandBuffer->EndRenderPass();
 }
 
+TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
+    InitBestPracticesFramework();
+    InitState();
+
+    // Create two images of different types and try to copy between them
+    VkImageObj srcImage(m_device);
+    VkImageObj dstImage(m_device);
+
+    VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 1;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;  // guarantee support from sampledImageColorSampleCounts
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    // Note: Some implementations expect color attachment usage for any
+    // multisample surface
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.flags = 0;
+    srcImage.init(&image_create_info);
+
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    // Note: Some implementations expect color attachment usage for any
+    // multisample surface
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    dstImage.init(&image_create_info);
+
+    m_commandBuffer->begin();
+    // Need memory barrier to VK_IMAGE_LAYOUT_GENERAL for source and dest?
+    // VK_IMAGE_LAYOUT_UNDEFINED = 0,
+    // VK_IMAGE_LAYOUT_GENERAL = 1,
+    VkImageResolve resolveRegion;
+    resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.srcSubresource.mipLevel = 0;
+    resolveRegion.srcSubresource.baseArrayLayer = 0;
+    resolveRegion.srcSubresource.layerCount = 1;
+    resolveRegion.srcOffset.x = 0;
+    resolveRegion.srcOffset.y = 0;
+    resolveRegion.srcOffset.z = 0;
+    resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.dstSubresource.mipLevel = 0;
+    resolveRegion.dstSubresource.baseArrayLayer = 0;
+    resolveRegion.dstSubresource.layerCount = 1;
+    resolveRegion.dstOffset.x = 0;
+    resolveRegion.dstOffset.y = 0;
+    resolveRegion.dstOffset.z = 0;
+    resolveRegion.extent.width = 1;
+    resolveRegion.extent.height = 1;
+    resolveRegion.extent.depth = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-MismatchedImageType");
+    m_commandBuffer->ResolveImage(srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, dstImage.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
     TEST_DESCRIPTION("Test for getting warned when render area is 0 in VkRenderPassBeginInfo during vkCmdBeginRenderPass");
 
