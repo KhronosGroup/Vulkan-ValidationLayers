@@ -4992,52 +4992,55 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     VkFenceObj fence(*m_device, fence_ci);
     VkFence h_fence = fence.handle();
 
-    auto require_success = [](VkResult result, const char* label) {
-        if (result != VK_SUCCESS) {
-            if (label) {
-                FAIL() << string_VkResult(result) << ": " << label;
-            } else {
-                FAIL() << string_VkResult(result);
-            }
-        }
-    };
+    // Test stability requires that we wait on pending operations before returning starts the Vk*Obj destructors
+    auto cleanup = [this]() { m_device->wait(); };
 
     // Loop through the indices until we find one we are reusing...
-    auto present_image = [this, q, &require_success](uint32_t index, VkSemaphoreObj* sem, VkFenceObj* fence) {
+    // When fence is non-null this can timeout so we need to track results
+    auto present_image = [this, q](uint32_t index, VkSemaphoreObj* sem, VkFenceObj* fence) {
+        VkResult result = VK_SUCCESS;
         if (fence) {
-            require_success(fence->wait(kWaitTimeout), "WaitForFences");
-            fence->reset();
+            result = fence->wait(kWaitTimeout);
+            if (VK_SUCCESS == result) {
+                fence->reset();
+            }
         }
 
-        auto present_info = lvl_init_struct<VkPresentInfoKHR>();
-        present_info.swapchainCount = 1;
-        present_info.pSwapchains = &m_swapchain;
-        present_info.pImageIndices = &index;
-        VkSemaphore h_sem = VK_NULL_HANDLE;
-        if (sem) {
-            h_sem = sem->handle();
-            present_info.waitSemaphoreCount = 1;
-            present_info.pWaitSemaphores = &h_sem;
+        if (VK_SUCCESS == result) {
+            auto present_info = lvl_init_struct<VkPresentInfoKHR>();
+            present_info.swapchainCount = 1;
+            present_info.pSwapchains = &m_swapchain;
+            present_info.pImageIndices = &index;
+            VkSemaphore h_sem = VK_NULL_HANDLE;
+            if (sem) {
+                h_sem = sem->handle();
+                present_info.waitSemaphoreCount = 1;
+                present_info.pWaitSemaphores = &h_sem;
+            }
+            vk::QueuePresentKHR(q, &present_info);
         }
-        vk::QueuePresentKHR(q, &present_info);
+        return result;
     };
 
-    auto acquire_used_image = [this, &image_used, dev, &present_image, &require_success](VkSemaphoreObj* sem, VkFenceObj* fence) {
-        uint32_t index;
+    // Acquire can always timeout, so we need to track results
+    auto acquire_used_image = [this, &image_used, dev, &present_image](VkSemaphoreObj* sem, VkFenceObj* fence, uint32_t& index) {
         VkSemaphore h_sem = sem ? sem->handle() : VK_NULL_HANDLE;
         VkFence h_fence = fence ? fence->handle() : VK_NULL_HANDLE;
+        VkResult result = VK_SUCCESS;
 
         while (true) {
-            require_success(vk::AcquireNextImageKHR(dev, m_swapchain, kWaitTimeout, h_sem, h_fence, &index), "AcquireNextImageKHR");
-            if (image_used[index]) break;
+            result = vk::AcquireNextImageKHR(dev, m_swapchain, kWaitTimeout, h_sem, h_fence, &index);
+            if ((result != VK_SUCCESS) || image_used[index]) break;
 
-            present_image(index, sem, fence);
+            result = present_image(index, sem, fence);
+            if (result != VK_SUCCESS) break;
             image_used[index] = true;
         }
-        return index;
+        return result;
     };
 
-    uint32_t acquired_index = acquire_used_image(nullptr, &fence);
+    uint32_t acquired_index = 0;
+    REQUIRE_SUCCESS(acquire_used_image(nullptr, &fence, acquired_index), "acquire_used_image", cleanup());
 
     auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
         VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
@@ -5072,18 +5075,18 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     m_errorMonitor->VerifyFound();
 
     // Finally we wait for the fence associated with the acquire
-    require_success(vk::WaitForFences(m_device->handle(), 1, &h_fence, VK_TRUE, kWaitTimeout), "WaitForFences");
+    REQUIRE_SUCCESS(vk::WaitForFences(m_device->handle(), 1, &h_fence, VK_TRUE, kWaitTimeout), "WaitForFences", cleanup());
     fence.reset();
     vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
     m_device->wait();
 
     // Release the image back to the present engine, so we don't run out
-    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
 
     auto semaphore_ci = VkSemaphoreObj::create_info(0);
     VkSemaphoreObj sem(*m_device, semaphore_ci);
     const VkSemaphore h_sem = sem.handle();
-    acquired_index = acquire_used_image(&sem, VK_NULL_HANDLE);
+    REQUIRE_SUCCESS(acquire_used_image(&sem, nullptr, acquired_index), "acquire_used_image", cleanup());
 
     m_commandBuffer->reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -5104,15 +5107,15 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
 
     // Try presenting without waiting for the ILT to finish
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
     m_errorMonitor->VerifyFound();
 
     // Let the ILT complete, and the release the image back
     m_device->wait();
-    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
 
-    acquired_index = acquire_used_image(VK_NULL_HANDLE, &fence);
-    require_success(fence.wait(kWaitTimeout), "WaitForFences");
+    REQUIRE_SUCCESS(acquire_used_image(VK_NULL_HANDLE, &fence, acquired_index), "acquire_used_index", cleanup());
+    REQUIRE_SUCCESS(fence.wait(kWaitTimeout), "WaitForFences", cleanup());
 
     m_commandBuffer->reset();
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -5126,9 +5129,9 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     vk::QueueSubmit(q, 1, &submit1, VK_NULL_HANDLE);
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-PRESENT-AFTER-WRITE");
-    present_image(acquired_index, VK_NULL_HANDLE, VK_NULL_HANDLE);
+    present_image(acquired_index, nullptr, nullptr);  // present without fence can't timeout
     m_errorMonitor->VerifyFound();
 
-    present_image(acquired_index, &sem, nullptr);
+    present_image(acquired_index, &sem, nullptr);  // present without fence can't timeout
     m_device->wait();
 }
