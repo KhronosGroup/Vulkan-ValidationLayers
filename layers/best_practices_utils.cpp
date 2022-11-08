@@ -4809,6 +4809,42 @@ void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     }
 }
 
+template <typename RegionType>
+bool BestPractices::ValidateCmdBlitImage(VkCommandBuffer command_buffer, uint32_t region_count, const RegionType* regions,
+                                         CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const char* func_name = CommandTypeString(cmd_type);
+    for (uint32_t i = 0; i < region_count; i++) {
+        const RegionType region = regions[i];
+        if ((region.srcOffsets[0].x == region.srcOffsets[1].x) || (region.srcOffsets[0].y == region.srcOffsets[1].y) ||
+            (region.srcOffsets[0].z == region.srcOffsets[1].z)) {
+            skip |= LogWarning(command_buffer, kVUID_BestPractices_DrawState_InvalidExtents,
+                               "%s: pRegions[%" PRIu32 "].srcOffsets specify a zero-volume area", func_name, i);
+        }
+        if ((region.dstOffsets[0].x == region.dstOffsets[1].x) || (region.dstOffsets[0].y == region.dstOffsets[1].y) ||
+            (region.dstOffsets[0].z == region.dstOffsets[1].z)) {
+            skip |= LogWarning(command_buffer, kVUID_BestPractices_DrawState_InvalidExtents,
+                               "%s: pRegions[%" PRIu32 "].dstOffsets specify a zero-volume area", func_name, i);
+        }
+    }
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkImageBlit* pRegions, VkFilter filter) const {
+    return ValidateCmdBlitImage(commandBuffer, regionCount, pRegions, CMD_BLITIMAGE);
+}
+
+bool BestPractices::PreCallValidateCmdBlitImage2KHR(VkCommandBuffer commandBuffer,
+                                                    const VkBlitImageInfo2KHR* pBlitImageInfo) const {
+    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions, CMD_BLITIMAGE2KHR);
+}
+
+bool BestPractices::PreCallValidateCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) const {
+    return ValidateCmdBlitImage(commandBuffer, pBlitImageInfo->regionCount, pBlitImageInfo->pRegions, CMD_BLITIMAGE2);
+}
+
 bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
     bool skip = false;
