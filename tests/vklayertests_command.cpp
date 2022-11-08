@@ -2441,34 +2441,6 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
     m_errorMonitor->VerifyFound();
-
-    region.bufferImageHeight = 128;
-    VkImageObj intImage1(m_device);
-    intImage1.Init(128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    intImage1.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    VkImageObj intImage2(m_device);
-    intImage2.Init(128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
-    intImage2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    VkImageBlit blitRegion = {};
-    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.srcSubresource.baseArrayLayer = 0;
-    blitRegion.srcSubresource.layerCount = 1;
-    blitRegion.srcSubresource.mipLevel = 0;
-    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    blitRegion.dstSubresource.baseArrayLayer = 0;
-    blitRegion.dstSubresource.layerCount = 1;
-    blitRegion.dstSubresource.mipLevel = 0;
-    blitRegion.srcOffsets[0] = {128, 0, 0};
-    blitRegion.srcOffsets[1] = {128, 128, 1};
-    blitRegion.dstOffsets[0] = {0, 128, 0};
-    blitRegion.dstOffsets[1] = {128, 128, 1};
-
-    // Look for NULL-blit warning
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage: pRegions[0].srcOffsets specify a zero-volume area.");
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdBlitImage: pRegions[0].dstOffsets specify a zero-volume area.");
-    vk::CmdBlitImage(m_commandBuffer->handle(), intImage1.handle(), intImage1.Layout(), intImage2.handle(), intImage2.Layout(), 1,
-                     &blitRegion, VK_FILTER_LINEAR);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {

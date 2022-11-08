@@ -4444,8 +4444,8 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             bool hit_error = false;
 
             // When performing blit from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
-            const auto &src_sub = pRegions[i].srcSubresource;
-            const auto &dst_sub = pRegions[i].dstSubresource;
+            const auto &src_sub = region.srcSubresource;
+            const auto &dst_sub = region.dstSubresource;
             bool same_subresource =
                 (same_image && (src_sub.mipLevel == dst_sub.mipLevel) && (src_sub.baseArrayLayer == dst_sub.baseArrayLayer));
             VkImageLayout source_optimal = (same_subresource ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -4471,20 +4471,6 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
             vuid = is_2 ? "VUID-VkBlitImageInfo2-dstSubresource-01708" : "VUID-vkCmdBlitImage-dstSubresource-01708";
             skip |= ValidateImageArrayLayerRange(cb_node.get(), dst_image_state.get(), region.dstSubresource.baseArrayLayer,
                                                  region.dstSubresource.layerCount, i, func_name, "dstSubresource", vuid);
-            // Warn for zero-sized regions
-            if ((region.srcOffsets[0].x == region.srcOffsets[1].x) || (region.srcOffsets[0].y == region.srcOffsets[1].y) ||
-                (region.srcOffsets[0].z == region.srcOffsets[1].z)) {
-                std::stringstream ss;
-                ss << func_name << ": pRegions[" << i << "].srcOffsets specify a zero-volume area.";
-                skip |= LogWarning(cb_node->commandBuffer(), kVUID_Core_DrawState_InvalidExtents, "%s", ss.str().c_str());
-            }
-            if ((region.dstOffsets[0].x == region.dstOffsets[1].x) || (region.dstOffsets[0].y == region.dstOffsets[1].y) ||
-                (region.dstOffsets[0].z == region.dstOffsets[1].z)) {
-                std::stringstream ss;
-                ss << func_name << ": pRegions[" << i << "].dstOffsets specify a zero-volume area.";
-                skip |= LogWarning(cb_node->commandBuffer(), kVUID_Core_DrawState_InvalidExtents, "%s", ss.str().c_str());
-            }
-
             // Check that src/dst layercounts match
             if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
                 vuid = is_2 ? "VUID-VkImageBlit2-layerCount-00239" : "VUID-VkImageBlit-layerCount-00239";

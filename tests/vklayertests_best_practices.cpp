@@ -379,6 +379,36 @@ TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
+    TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    VkImageObj image_src(m_device);
+    image_src.Init(128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image_src.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    VkImageObj image_dst(m_device);
+    image_dst.Init(128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    image_dst.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0};
+    blit_region.srcOffsets[0] = {128, 0, 0};
+    blit_region.srcOffsets[1] = {128, 128, 1};
+    blit_region.dstOffsets[0] = {0, 128, 0};
+    blit_region.dstOffsets[1] = {128, 128, 1};
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DrawState-InvalidExtents");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DrawState-InvalidExtents");
+    vk::CmdBlitImage(m_commandBuffer->handle(), image_src.handle(), image_src.Layout(), image_dst.handle(), image_dst.Layout(), 1,
+                     &blit_region, VK_FILTER_LINEAR);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkBestPracticesLayerTest, CmdBeginRenderPassZeroSizeRenderArea) {
     TEST_DESCRIPTION("Test for getting warned when render area is 0 in VkRenderPassBeginInfo during vkCmdBeginRenderPass");
 

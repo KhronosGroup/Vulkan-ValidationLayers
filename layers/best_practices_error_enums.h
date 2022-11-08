@@ -140,6 +140,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_ImageBarrierAccessLayout 
     "UNASSIGNED-BestPractices-ImageBarrierAccessLayout";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_SwapchainImagesNotFound = "UNASSIGNED-BestPractices-DrawState-SwapchainImagesNotFound";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_MismatchedImageType = "UNASSIGNED-BestPractices-DrawState-MismatchedImageType";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_InvalidExtents = "UNASSIGNED-BestPractices-DrawState-InvalidExtents";
 
 // Arm-specific best practice
 static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
