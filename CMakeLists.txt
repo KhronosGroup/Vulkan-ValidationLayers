@@ -141,7 +141,6 @@ if (UNIX AND NOT APPLE) # Options for Linux only
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
-    set(DEMOS_WSI_SELECTION "XCB" CACHE STRING "Select WSI target for demos (XCB, XLIB, WAYLAND, DISPLAY)")
 
     find_package(PkgConfig REQUIRED QUIET) # Use PkgConfig to find Linux system libraries
 
