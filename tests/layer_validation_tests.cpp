@@ -2525,8 +2525,8 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 
     VkPhysicalDeviceFeatures2KHR features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
+    auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
-        auto indexing_features = LvlInitStruct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
         features2 = GetPhysicalDeviceFeatures2(indexing_features);
         if (!indexing_features.runtimeDescriptorArray || !indexing_features.descriptorBindingPartiallyBound ||
             !indexing_features.descriptorBindingSampledImageUpdateAfterBind ||
