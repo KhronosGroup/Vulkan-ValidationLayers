@@ -779,7 +779,7 @@ bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const Instruction &insn
                 return skip; // no known extension to validate
             }
         } else {
-            skip |= LogError(device, kVUID_Core_Shader_InvalidExtension,
+            skip |= LogError(device, "VUID-VkShaderModuleCreateInfo-pCode-04146",
                 "vkCreateShaderModule(): The SPIR-V code uses the '%s' extension which is not a SPIR-V extension. Please use a SPIR-V"
                 " extension (https://github.com/KhronosGroup/SPIRV-Registry) for OpExtension instructions. Non-SPIR-V extensions can be"
                 " recorded in SPIR-V using the OpSourceExtension instruction.", extension_name.c_str());

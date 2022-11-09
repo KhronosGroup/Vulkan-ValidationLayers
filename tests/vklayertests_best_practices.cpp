@@ -1148,7 +1148,7 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     std::vector<VkQueueFamilyProperties> queue_family_props(1);
     uint32_t queue_count = static_cast<uint32_t>(queue_family_props.size());
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-CoreValidation-DevLimit-MissingQueryCount");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-DevLimit-MissingQueryCount");
     vk::GetPhysicalDeviceQueueFamilyProperties(phys_device_obj.handle(), &queue_count, queue_family_props.data());
     m_errorMonitor->VerifyFound();
 

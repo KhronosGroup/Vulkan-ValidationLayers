@@ -4202,14 +4202,14 @@ bool BestPractices::ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const P
     // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
     if (UNCALLED == call_state) {
         skip |= LogWarning(
-            bp_pd_state->Handle(), kVUID_Core_DevLimit_MissingQueryCount,
+            bp_pd_state->Handle(), kVUID_BestPractices_DevLimit_MissingQueryCount,
             "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
             "recommended "
             "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
             caller_name, caller_name);
         // Then verify that pCount that is passed in on second call matches what was returned
     } else if (bp_pd_state->queue_family_known_count != requested_queue_family_property_count) {
-        skip |= LogWarning(bp_pd_state->Handle(), kVUID_Core_DevLimit_CountMismatch,
+        skip |= LogWarning(bp_pd_state->Handle(), kVUID_BestPractices_DevLimit_CountMismatch,
                            "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
                            ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
                            ". It is recommended to instead receive all the properties by calling %s with "
@@ -4288,12 +4288,12 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
     if (call_state == UNCALLED) {
         // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
         // previously call this function with a NULL value of pSurfaceFormats:
-        skip |= LogWarning(physicalDevice, kVUID_Core_DevLimit_MustQueryCount,
+        skip |= LogWarning(physicalDevice, kVUID_BestPractices_DevLimit_MustQueryCount,
                            "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
                            "positive value has been seen for pSurfaceFormats.");
     } else {
         if (*pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
-            skip |= LogWarning(physicalDevice, kVUID_Core_DevLimit_CountMismatch,
+            skip |= LogWarning(physicalDevice, kVUID_BestPractices_DevLimit_CountMismatch,
                                "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
                                "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
                                "when pSurfaceFormatCount was NULL.",
@@ -4325,7 +4325,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
+                    skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                        "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                        report_data->FormatHandle(image_state->image()).c_str());
@@ -4333,7 +4333,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
+                skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
                                    report_data->FormatHandle(image_state->image()).c_str());
@@ -4349,7 +4349,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
                 if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
                     // For now just warning if sparse image binding occurs without calling to get reqs first
-                    skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
+                    skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                        "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
                                        "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
                                        report_data->FormatHandle(image_state->image()).c_str());
@@ -4357,7 +4357,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             }
             if (!image_state->memory_requirements_checked[0]) {
                 // For now just warning if sparse image binding occurs without calling to get reqs first
-                skip |= LogWarning(image_state->image(), kVUID_Core_MemTrack_InvalidState,
+                skip |= LogWarning(image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
                                    "vkGetImageMemoryRequirements() to retrieve requirements.",
                                    report_data->FormatHandle(image_state->image()).c_str());
@@ -4372,7 +4372,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound &&
                 sparse_images_with_metadata.find(sparse_image_state) == sparse_images_with_metadata.end()) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
-                skip |= LogWarning(sparse_image_state->image(), kVUID_Core_MemTrack_InvalidState,
+                skip |= LogWarning(sparse_image_state->image(), kVUID_BestPractices_MemTrack_InvalidState,
                                    "vkQueueBindSparse(): Binding sparse memory to %s which requires a metadata aspect but no "
                                    "binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
                                    report_data->FormatHandle(sparse_image_state->image()).c_str());
@@ -5262,7 +5262,7 @@ bool BestPractices::PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapch
     auto swapchain_data = Get<SWAPCHAIN_NODE>(swapchain);
     bool skip = false;
     if (swapchain_data && swapchain_data->images.size() == 0) {
-        skip |= LogWarning(swapchain, kVUID_Core_DrawState_SwapchainImagesNotFound,
+        skip |= LogWarning(swapchain, kVUID_BestPractices_DrawState_SwapchainImagesNotFound,
                            "vkAcquireNextImageKHR: No images found to acquire from. Application probably did not call "
                            "vkGetSwapchainImagesKHR after swapchain creation.");
     }
