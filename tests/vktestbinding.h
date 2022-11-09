@@ -311,6 +311,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
     DeviceMemory(const Device &dev, const VkMemoryAllocateInfo &info) { init(dev, info); }
     ~DeviceMemory() noexcept;
     void destroy() noexcept;
+    DeviceMemory &operator=(DeviceMemory &&) = default;
 
     // vkAllocateMemory()
     void init(const Device &dev, const VkMemoryAllocateInfo &info);
@@ -445,7 +446,12 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
-
+    Buffer &operator=(Buffer &&rhs) {
+        NonDispHandle::operator=(std::move(rhs));
+        create_info_ = std::move(rhs.create_info_);
+        internal_mem_ = std::move(rhs.internal_mem_);
+        return *this;
+    }
     ~Buffer() noexcept;
     void destroy() noexcept;
 
@@ -712,6 +718,7 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
 
 class AccelerationStructureKHR : public internal::NonDispHandle<VkAccelerationStructureKHR> {
   public:
+    explicit AccelerationStructureKHR(){};
     explicit AccelerationStructureKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info,
                                       bool init_memory = true) {
         init(dev, info, init_memory);
