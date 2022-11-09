@@ -7155,6 +7155,14 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
                          func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
     }
 
+    if (image_state->disjoint && (image_state->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) && !image_plane_info) {
+        skip |= LogError(
+            pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02279",
+            "%s: %s image was created with VK_IMAGE_CREATE_DISJOINT_BIT and has tiling of VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT, "
+            "but the current pNext does not include a VkImagePlaneMemoryRequirementsInfo struct",
+            func_name, report_data->FormatHandle(pInfo->image).c_str());
+    }
+
     if (image_plane_info != nullptr) {
         if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
             // Make sure planeAspect is only a single, valid plane

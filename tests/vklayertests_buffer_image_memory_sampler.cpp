@@ -11681,6 +11681,30 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         m_errorMonitor->VerifyFound();
 
         vk::DestroyImage(m_device->device(), image, nullptr);
+
+        if (drm_format_modifier) {
+            constexpr std::array<uint64_t, 1> dummy_modifiers = {0};
+            auto drm_format_info = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
+            drm_format_info.drmFormatModifierCount = dummy_modifiers.size();
+            drm_format_info.pDrmFormatModifiers = dummy_modifiers.data();
+
+            // Recreate image with single plane format and with Disjoint bit
+            image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT | VK_IMAGE_CREATE_ALIAS_BIT;
+            image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+            image_create_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            image_create_info.pNext = &drm_format_info;
+            err = vk::CreateImage(m_device->device(), &image_create_info, nullptr, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            mem_req_info2.pNext = nullptr;
+            mem_req_info2.image = image;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryRequirementsInfo2-image-02279");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
+            vk::DestroyImage(m_device->device(), image, nullptr);
+        }
     }
 }
 
