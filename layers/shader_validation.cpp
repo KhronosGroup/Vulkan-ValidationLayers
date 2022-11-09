@@ -126,27 +126,6 @@ static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
     return bit_pos - 1;
 }
 
-bool CoreChecks::ValidateViConsistency(safe_VkPipelineVertexInputStateCreateInfo const *vi) const {
-    // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
-    // be specified only once.
-    layer_data::unordered_map<uint32_t, VkVertexInputBindingDescription const *> bindings;
-    bool skip = false;
-
-    for (uint32_t i = 0; i < vi->vertexBindingDescriptionCount; i++) {
-        auto desc = &vi->pVertexBindingDescriptions[i];
-        auto &binding = bindings[desc->binding];
-        if (binding) {
-            // TODO: "VUID-VkGraphicsPipelineCreateInfo-pStages-00742" perhaps?
-            skip |= LogError(device, kVUID_Core_Shader_InconsistentVi, "Duplicate vertex input binding descriptions for binding %d",
-                             desc->binding);
-        } else {
-            binding = desc;
-        }
-    }
-
-    return skip;
-}
-
 bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreateInfo const *vi,
                                            const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint) const {
     bool skip = false;
@@ -3307,10 +3286,6 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     if (skip) return true;
 
     auto vi_state = pipeline->InputState();
-
-    if (vi_state) {
-        skip |= ValidateViConsistency(vi_state);
-    }
 
     if (vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
         !IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {

@@ -2266,8 +2266,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          "vkCreateGraphicsPipelines: parameter "
                                          "pCreateInfo[%" PRIu32 "].pVertexInputState->pVertexBindingDescription[%" PRIu32
                                          "].binding "
-                                         "(%" PRIu32 ") is not distinct.",
-                                         i, d, vertex_bind_desc.binding);
+                                         "(%" PRIu32 ") is already in pVertexBindingDescription[%" PRIu32 "]",
+                                         i, d, vertex_bind_desc.binding, *binding_it);
                     }
                     vertex_bindings.insert(vertex_bind_desc.binding);
 
@@ -2299,9 +2299,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (location_it != attribute_locations.cend()) {
                         skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617",
                                          "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfo[%" PRIu32 "].pVertexInputState->vertexAttributeDescriptions[%" PRIu32
-                                         "].location (%" PRIu32 ") is not distinct.",
-                                         i, d, vertex_attrib_desc.location);
+                                         "pCreateInfo[%" PRIu32 "].pVertexInputState->pVertexAttributeDescriptions[%" PRIu32
+                                         "].location (%" PRIu32 ") is already in pVertexAttributeDescriptions[%" PRIu32 "].",
+                                         i, d, vertex_attrib_desc.location, *location_it);
                     }
                     attribute_locations.insert(vertex_attrib_desc.location);
 
@@ -2309,7 +2309,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (binding_it == vertex_bindings.cend()) {
                         skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
                                          "vkCreateGraphicsPipelines: parameter "
-                                         " pCreateInfo[%" PRIu32 "].pVertexInputState->vertexAttributeDescriptions[%" PRIu32
+                                         " pCreateInfo[%" PRIu32 "].pVertexInputState->pVertexAttributeDescriptions[%" PRIu32
                                          "].binding (%" PRIu32
                                          ") does not exist "
                                          "in any pCreateInfo[%" PRIu32 "].pVertexInputState->pVertexBindingDescription.",
@@ -8354,31 +8354,34 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         }
     }
 
-    // VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794
-    if (vertexBindingDescriptionCount > 1) {
-        for (uint32_t binding = 0; binding < vertexBindingDescriptionCount - 1; ++binding) {
-            uint32_t binding_value = pVertexBindingDescriptions[binding].binding;
-            for (uint32_t next_binding = binding + 1; next_binding < vertexBindingDescriptionCount; ++next_binding) {
-                if (binding_value == pVertexBindingDescriptions[next_binding].binding) {
-                    skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794",
-                                     "vkCmdSetVertexInputEXT(): binding description for binding %" PRIu32 " already specified",
-                                     binding_value);
-                }
+    // check for distinct values
+    {
+        layer_data::unordered_set<uint32_t> vertex_bindings(vertexBindingDescriptionCount);
+        for (uint32_t i = 0; i < vertexBindingDescriptionCount; ++i) {
+            const uint32_t binding = pVertexBindingDescriptions[i].binding;
+            auto const &binding_it = vertex_bindings.find(binding);
+            if (binding_it != vertex_bindings.cend()) {
+                skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexBindingDescriptions-04794",
+                                 "vkCmdSetVertexInputEXT(): binding description for pVertexBindingDescriptions[%" PRIu32
+                                 "] is already in pVertexBindingDescriptions[%" PRIu32 "]",
+                                 binding, *binding_it);
+                break;
             }
+            vertex_bindings.insert(binding);
         }
-    }
 
-    // VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795
-    if (vertexAttributeDescriptionCount > 1) {
-        for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount - 1; ++attribute) {
-            uint32_t location = pVertexAttributeDescriptions[attribute].location;
-            for (uint32_t next_attribute = attribute + 1; next_attribute < vertexAttributeDescriptionCount; ++next_attribute) {
-                if (location == pVertexAttributeDescriptions[next_attribute].location) {
-                    skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795",
-                                     "vkCmdSetVertexInputEXT(): attribute description for location %" PRIu32 " already specified",
-                                     location);
-                }
+        layer_data::unordered_set<uint32_t> vertex_locations(vertexAttributeDescriptionCount);
+        for (uint32_t i = 0; i < vertexAttributeDescriptionCount; ++i) {
+            const uint32_t location = pVertexAttributeDescriptions[i].location;
+            auto const &location_it = vertex_locations.find(location);
+            if (location_it != vertex_locations.cend()) {
+                skip |= LogError(device, "VUID-vkCmdSetVertexInputEXT-pVertexAttributeDescriptions-04795",
+                                 "vkCmdSetVertexInputEXT(): attribute location for pVertexAttributeDescriptions[%" PRIu32
+                                 "] is already in pVertexAttributeDescriptions[%" PRIu32 "]",
+                                 location, *location_it);
+                break;
             }
+            vertex_locations.insert(location);
         }
     }
 
