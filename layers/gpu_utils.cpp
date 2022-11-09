@@ -856,7 +856,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
             // library created with pre-raster or fragment shader state, it contains shaders that have not yet been instrumented
             if (!pipe->HasFullState() && (pipe->pre_raster_state || pipe->fragment_shader_state)) {
                 for (const auto &stage : pipe->stage_state) {
-                    auto module_state = stage.module_state;
+                    auto module_state = std::const_pointer_cast<SHADER_MODULE_STATE>(stage.module_state);
                     if (!module_state->Handle()) {
                         // If the shader module's handle is non-null, then it was defined with CreateShaderModule and covered by the
                         // case above. Otherwise, it is being defined during CGPL time
@@ -867,8 +867,7 @@ void GpuAssistedBase::PreCallRecordPipelineCreations(uint32_t count, const Creat
                         const auto pass =
                             InstrumentShader(module_state->words_, csm_state.instrumented_pgm, &csm_state.unique_shader_id);
                         if (pass) {
-                            const_cast<SHADER_MODULE_STATE *>(module_state.get())->gpu_validation_shader_id =
-                                csm_state.unique_shader_id;
+                            module_state->gpu_validation_shader_id = csm_state.unique_shader_id;
 
                             // Now we need to find the corresponding VkShaderModuleCreateInfo and update its shader code
                             auto &stage_ci = GetShaderStageCI<SafeCreateInfo, safe_VkPipelineShaderStageCreateInfo>(
