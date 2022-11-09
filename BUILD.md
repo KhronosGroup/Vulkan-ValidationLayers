@@ -310,9 +310,6 @@ on/off options currently supported by this repository:
 | BUILD_TESTS | All | `OFF` | Controls whether or not the validation layer tests are built. |
 | INSTALL_TESTS | All | `OFF` | Controls whether or not the validation layer tests are installed. This option is only available when `BUILD_TESTS` is `ON` |
 | BUILD_WERROR | All | `ON` | Controls whether or not to treat compiler warnings as errors. |
-| BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the components with XCB support. |
-| BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the components with Xlib support. |
-| BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the components with Wayland support. |
 
 ### CCACHE
 
@@ -541,7 +538,7 @@ repository to other Linux distributions.
 
     sudo apt-get install git build-essential libx11-xcb-dev \
         libxkbcommon-dev libwayland-dev libxrandr-dev \
-        libegl1-mesa-dev
+        libegl1-mesa-dev pkg-config
 
 ##### Required package for Ubuntu 18.04 users
 
@@ -628,16 +625,6 @@ You can also use
     cmake --build .
 
 ### Linux Notes
-
-#### WSI Support Build Options
-
-By default, the repository components are built with support for the
-Vulkan-defined WSI display servers: Xcb, Xlib, and Wayland. It is recommended
-to build the repository components with support for these display servers to
-maximize their usability across Linux platforms. If it is necessary to build
-these modules without support for one of the display servers, the appropriate
-CMake option of the form `BUILD_WSI_xxx_SUPPORT` can be set to `OFF`.
-
 #### Linux Install to System Directories
 
 Installing the files resulting from your build to the systems directories is

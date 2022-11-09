@@ -156,18 +156,14 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     SPIRV-Tools-opt
     GTest::gtest
     GTest::gtest_main
+    ${CMAKE_DL_LIBS}
 )
 
-if (NOT WIN32)
-    target_link_libraries(vk_layer_validation_tests PRIVATE ${CMAKE_DL_LIBS})
-
-    if(BUILD_WSI_XCB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::XCB)
-    endif()
-
-    if (BUILD_WSI_XLIB_SUPPORT)
-        target_link_libraries(vk_layer_validation_tests PRIVATE PkgConfig::X11)
-    endif()
+if (LINUX)
+    target_link_libraries(vk_layer_validation_tests PRIVATE
+        PkgConfig::XCB
+        PkgConfig::X11
+    )
 endif()
 
 if(INSTALL_TESTS)

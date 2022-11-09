@@ -135,28 +135,19 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
 set(LINUX OFF) # NOTE: Variable as of 3.25
-if (UNIX AND NOT APPLE) # Options for Linux only
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(LINUX ON)
-
-    option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
-    option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
-    option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
 
     find_package(PkgConfig REQUIRED QUIET) # Use PkgConfig to find Linux system libraries
 
-    if(BUILD_WSI_XCB_SUPPORT)
-        pkg_check_modules(XCB REQUIRED QUIET IMPORTED_TARGET xcb)
-        add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
-    endif()
-
-    if(BUILD_WSI_XLIB_SUPPORT)
-        pkg_check_modules(X11 REQUIRED QUIET IMPORTED_TARGET x11)
-        add_definitions(-DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_XLIB_XRANDR_EXT)
-    endif()
-
-    if(BUILD_WSI_WAYLAND_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
-    endif()
+    pkg_check_modules(XCB REQUIRED QUIET IMPORTED_TARGET xcb)
+    pkg_check_modules(X11 REQUIRED QUIET IMPORTED_TARGET x11)
+    
+    add_definitions(
+        -DVK_USE_PLATFORM_XCB_KHR # XCB
+        -DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_XLIB_XRANDR_EXT # X11
+        -DVK_USE_PLATFORM_WAYLAND_KHR # Wayland
+    )
 endif()
 
 option(BUILD_WERROR "Treat compiler warnings as errors" ON)
