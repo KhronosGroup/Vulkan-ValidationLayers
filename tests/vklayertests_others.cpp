@@ -8926,7 +8926,7 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const uint64_t dummy_modifiers[2] = {0, 1};
+    constexpr std::array<uint64_t, 2> dummy_modifiers = {0, 1};
 
     VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>();
     image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -8964,8 +8964,8 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     VkSubresourceLayout dummyPlaneLayout = {0, 0, 0, 0, 0};
 
     VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = LvlInitStruct<VkImageDrmFormatModifierListCreateInfoEXT>();
-    drm_format_mod_list.drmFormatModifierCount = 2;
-    drm_format_mod_list.pDrmFormatModifiers = dummy_modifiers;
+    drm_format_mod_list.drmFormatModifierCount = dummy_modifiers.size();
+    drm_format_mod_list.pDrmFormatModifiers = dummy_modifiers.data();
 
     VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit =
         LvlInitStruct<VkImageDrmFormatModifierExplicitCreateInfoEXT>();
