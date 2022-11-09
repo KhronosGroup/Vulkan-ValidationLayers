@@ -126,10 +126,11 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
 
         if (!found_expected) {
             result = VK_TRUE;
-            printf("Unexpected: %s\n", msgString);
             // TODO: Fix unexpected android failures
 #if !defined(ANDROID)
-            ADD_FAILURE() << "Received unexpected error.";
+            ADD_FAILURE() << "Unexpected error: " << msgString << "\n";
+#else
+            printf("Unexpected: %s\n", msgString);
 #endif
             other_messages_.push_back(errorString);
         }
