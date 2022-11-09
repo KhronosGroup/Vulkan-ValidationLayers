@@ -2105,7 +2105,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         skip |= validate_string(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
-                            kVUID_Stateless_InvalidShaderStagesArray, create_info.pStages[stage_index].pName);
+                            "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", create_info.pStages[stage_index].pName);
                     }
 
                     std::stringstream msg;
