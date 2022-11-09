@@ -59,7 +59,6 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_QueueForwardProgress = "
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InconsistentSpirv = "UNASSIGNED-CoreValidation-Shader-InconsistentSpirv";
-static const char DECORATE_UNUSED *kVUID_Core_Shader_InconsistentVi = "UNASSIGNED-CoreValidation-Shader-InconsistentVi";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputAttachmentTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InputAttachmentTypeMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InputNotProduced = "UNASSIGNED-CoreValidation-Shader-InputNotProduced";
 static const char DECORATE_UNUSED *kVUID_Core_Shader_InterfaceTypeMismatch = "UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch";
