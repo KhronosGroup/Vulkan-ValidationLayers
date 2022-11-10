@@ -1122,6 +1122,10 @@ bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &modu
     const auto &layout_state = pipeline->PipelineLayoutState();
     if (layout_state) {
         for (const auto &set_layout : layout_state->set_layouts) {
+            if (!set_layout) {
+                continue;
+            }
+
             if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0) {
                 continue;
             }
