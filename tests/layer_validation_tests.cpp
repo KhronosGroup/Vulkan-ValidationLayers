@@ -3286,7 +3286,6 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                                       test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
         } else {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-None-02697");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound");
         }
 
         if (gpu_assisted) {
