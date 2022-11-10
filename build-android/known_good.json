@@ -19,12 +19,6 @@
             "commit": "v1.3.234"
         },
         {
-            "name": "Vulkan-Tools",
-            "url": "https://github.com/KhronosGroup/Vulkan-Tools.git",
-            "sub_dir": "Vulkan-Tools",
-            "commit": "v1.3.234"
-        },
-        {
             "name": "SPIRV-Tools",
             "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
             "sub_dir": "shaderc/third_party/spirv-tools",

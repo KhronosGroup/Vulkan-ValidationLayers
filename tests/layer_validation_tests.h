@@ -27,11 +27,7 @@
 #ifndef VKLAYERTEST_H
 #define VKLAYERTEST_H
 
-#ifdef ANDROID
-#include "vulkan_wrapper.h"
-#else
 #include <vulkan/vulkan.h>
-#endif
 
 #include "layers/vk_lunarg_device_profile_api_layer.h"
 #include "vk_layer_settings_ext.h"

@@ -2,9 +2,9 @@
 REM Update source for glslang, spirv-tools, and shaderc
 
 REM
-REM Copyright 2016 The Android Open Source Project
-REM Copyright (C) 2015 Valve Corporation
-REM Copyright 2018 LunarG, Inc.
+REM Copyright (c) 2016 The Android Open Source Project
+REM Copyright (c) 2015-2022 Valve Corporation
+REM Copyright (c) 2018-2022 LunarG, Inc.
 REM
 REM Licensed under the Apache License, Version 2.0 (the "License");
 REM you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ if %ERRORLEVEL% equ 1 (
 
 if %errorCode% neq 0 (goto:error)
 
-echo Creating and/or updating glslang, spirv-tools, spirv-headers, shaderc, vulkan-headers, vulkan-tools in %BASE_DIR%
+echo Creating and/or updating glslang, spirv-tools, spirv-headers, shaderc, vulkan-headers in %BASE_DIR%
 
 set build-shaderc=1
 

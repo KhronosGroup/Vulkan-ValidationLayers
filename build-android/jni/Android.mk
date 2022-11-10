@@ -131,7 +131,6 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
@@ -179,7 +178,6 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
-                    $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
