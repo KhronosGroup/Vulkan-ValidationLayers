@@ -1273,7 +1273,10 @@ void CMD_BUFFER_STATE::Retire(uint32_t perf_submit_pass, const std::function<boo
     for (const auto &query_state_pair : local_query_to_state_map) {
         if (query_state_pair.second == QUERYSTATE_ENDED && !is_query_updated_after(query_state_pair.first)) {
             auto query_pool_state = dev_data->Get<QUERY_POOL_STATE>(query_state_pair.first.pool);
-            query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass, QUERYSTATE_AVAILABLE);
+            if (query_pool_state) {
+                query_pool_state->SetQueryState(query_state_pair.first.query, query_state_pair.first.perf_pass,
+                                                QUERYSTATE_AVAILABLE);
+            }
         }
     }
 }
