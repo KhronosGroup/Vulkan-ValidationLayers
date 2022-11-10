@@ -5748,7 +5748,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
                               &descriptorSet[0], 0, NULL);
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_bad_set0.handle(), 1, 1,
                               &descriptorSet[1], 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " uses set #0 but that set is not bound.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02697");
 
     VkViewport viewport = {0, 0, 16, 16, 0, 1};
     VkRect2D scissor = {{0, 0}, {16, 16}};
@@ -5762,7 +5762,6 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
     // VkPipelineLayout (diff stageFlags in this case)
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 2,
                               &descriptorSet[0], 0, NULL);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " bound as set #0 is not compatible with ");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02697");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
