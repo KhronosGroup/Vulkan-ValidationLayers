@@ -872,11 +872,12 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     if (VK_NULL_HANDLE != last_bound.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
+            auto set_info = last_bound.per_set[set_index];
             if (set_index >= last_bound.per_set.size()) {
                 continue;
             }
             // Pull the set node
-            auto &descriptor_set = last_bound.per_set[set_index].bound_descriptor_set;
+            auto &descriptor_set = set_info.bound_descriptor_set;
             if (!descriptor_set) {
                 continue;
             }
@@ -895,18 +896,17 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
 
             // We can skip updating the state if "nothing" has changed since the last validation.
             // See CoreChecks::ValidateCmdBufDrawState for more details.
-            bool descriptor_set_changed =
-                !reduced_map.IsManyDescriptors() ||
-                // Update if descriptor set (or contents) has changed
-                last_bound.per_set[set_index].validated_set != descriptor_set.get() ||
-                last_bound.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
-                (!dev_data->disabled[image_layout_validation] &&
-                 last_bound.per_set[set_index].validated_set_image_layout_change_count != image_layout_change_count);
-            bool need_update = descriptor_set_changed ||
-                               // Update if previous bindingReqMap doesn't include new bindingReqMap
-                               !std::includes(last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
-                                              last_bound.per_set[set_index].validated_set_binding_req_map.end(),
-                                              binding_req_map.begin(), binding_req_map.end());
+            bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
+                                          // Update if descriptor set (or contents) has changed
+                                          set_info.validated_set != descriptor_set.get() ||
+                                          set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                                          (!dev_data->disabled[image_layout_validation] &&
+                                           set_info.validated_set_image_layout_change_count != image_layout_change_count);
+            bool need_update =
+                descriptor_set_changed ||
+                // Update if previous bindingReqMap doesn't include new bindingReqMap
+                !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
+                               binding_req_map.begin(), binding_req_map.end());
 
             if (need_update) {
                 if (!dev_data->disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
@@ -918,25 +918,25 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                     // Only record the bindings that haven't already been recorded
                     BindingReqMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
-                                        last_bound.per_set[set_index].validated_set_binding_req_map.end(),
+                                        set_info.validated_set_binding_req_map.begin(),
+                                        set_info.validated_set_binding_req_map.end(),
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs);
                 } else {
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);
                 }
 
-                last_bound.per_set[set_index].validated_set = descriptor_set.get();
-                last_bound.per_set[set_index].validated_set_change_count = descriptor_set->GetChangeCount();
-                last_bound.per_set[set_index].validated_set_image_layout_change_count = image_layout_change_count;
+                set_info.validated_set = descriptor_set.get();
+                set_info.validated_set_change_count = descriptor_set->GetChangeCount();
+                set_info.validated_set_image_layout_change_count = image_layout_change_count;
                 if (reduced_map.IsManyDescriptors()) {
                     // Check whether old == new before assigning, the equality check is much cheaper than
                     // freeing and reallocating the map.
-                    if (last_bound.per_set[set_index].validated_set_binding_req_map != set_binding_pair.second) {
-                        last_bound.per_set[set_index].validated_set_binding_req_map = set_binding_pair.second;
+                    if (set_info.validated_set_binding_req_map != set_binding_pair.second) {
+                        set_info.validated_set_binding_req_map = set_binding_pair.second;
                     }
                 } else {
-                    last_bound.per_set[set_index].validated_set_binding_req_map = BindingReqMap();
+                    set_info.validated_set_binding_req_map = BindingReqMap();
                 }
             }
         }
@@ -1005,11 +1005,12 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
-        if (last_bound.per_set[set_idx].compat_id_for_set != pipe_compat_ids[set_idx]) {
-            push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set);
-            last_bound.per_set[set_idx].bound_descriptor_set = nullptr;
-            last_bound.per_set[set_idx].dynamicOffsets.clear();
-            last_bound.per_set[set_idx].compat_id_for_set = pipe_compat_ids[set_idx];
+        auto set_info = last_bound.per_set[set_idx];
+        if (set_info.compat_id_for_set != pipe_compat_ids[set_idx]) {
+            push_descriptor_cleanup(set_info.bound_descriptor_set);
+            set_info.bound_descriptor_set = nullptr;
+            set_info.dynamicOffsets.clear();
+            set_info.compat_id_for_set = pipe_compat_ids[set_idx];
         }
     }
 
@@ -1017,27 +1018,28 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
+        auto set_info = last_bound.per_set[set_idx];
         auto descriptor_set =
             push_descriptor_set ? push_descriptor_set : dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
 
         // Record binding (or push)
         if (descriptor_set != last_bound.push_descriptor_set) {
             // Only cleanup the push descriptors if they aren't the currently used set.
-            push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set);
+            push_descriptor_cleanup(set_info.bound_descriptor_set);
         }
-        last_bound.per_set[set_idx].bound_descriptor_set = descriptor_set;
-        last_bound.per_set[set_idx].compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
+        set_info.bound_descriptor_set = descriptor_set;
+        set_info.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
 
         if (descriptor_set) {
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
             // TODO: Add logic for tracking push_descriptor offsets (here or in caller)
             if (set_dynamic_descriptor_count && input_dynamic_offsets) {
                 const uint32_t *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
-                last_bound.per_set[set_idx].dynamicOffsets = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
+                set_info.dynamicOffsets = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
                 input_dynamic_offsets = end_offset;
                 assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
             } else {
-                last_bound.per_set[set_idx].dynamicOffsets.clear();
+                set_info.dynamicOffsets.clear();
             }
         }
     }

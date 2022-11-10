@@ -1749,15 +1749,15 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     for (const auto &set_binding_pair : pipe->active_slots) {
         uint32_t set_index = set_binding_pair.first;
+        const auto set_info = last_bound.per_set[set_index];
         // If valid set is not bound throw an error
-        if ((last_bound.per_set.size() <= set_index) || (!last_bound.per_set[set_index].bound_descriptor_set)) {
+        if ((last_bound.per_set.size() <= set_index) || (!set_info.bound_descriptor_set)) {
             result |= LogError(cb_node->commandBuffer(), kVUID_Core_DrawState_DescriptorSetNotBound,
                                "%s(): %s uses set #%u but that set is not bound.", CommandTypeString(cmd_type),
                                report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
-        } else if (!VerifySetLayoutCompatibility(*last_bound.per_set[set_index].bound_descriptor_set, *pipeline_layout, set_index,
-                                                 error_string)) {
+        } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-            VkDescriptorSet set_handle = last_bound.per_set[set_index].bound_descriptor_set->GetSet();
+            VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
             LogObjectList objlist(set_handle);
             objlist.add(pipeline_layout->layout());
             result |= LogError(objlist, kVUID_Core_DrawState_PipelineLayoutsIncompatible,
@@ -1766,7 +1766,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
-            const auto *descriptor_set = last_bound.per_set[set_index].bound_descriptor_set.get();
+            const auto *descriptor_set = set_info.bound_descriptor_set.get();
             // Validate the draw-time state for this descriptor set
             std::string err_str;
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
@@ -1781,35 +1781,33 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             // any dynamic descriptors, always revalidate rather than caching the values. We currently only
             // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
             // binding_req_map which could potentially be expensive.
-            bool descriptor_set_changed =
-                !reduced_map.IsManyDescriptors() ||
-                // Revalidate each time if the set has dynamic offsets
-                last_bound.per_set[set_index].dynamicOffsets.size() > 0 ||
-                // Revalidate if descriptor set (or contents) has changed
-                last_bound.per_set[set_index].validated_set != descriptor_set ||
-                last_bound.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
-                (!disabled[image_layout_validation] &&
-                 last_bound.per_set[set_index].validated_set_image_layout_change_count != cb_node->image_layout_change_count);
-            bool need_validate = descriptor_set_changed ||
-                                 // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
-                                 !std::includes(last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
-                                                last_bound.per_set[set_index].validated_set_binding_req_map.end(),
-                                                binding_req_map.begin(), binding_req_map.end());
+            bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
+                                          // Revalidate each time if the set has dynamic offsets
+                                          set_info.dynamicOffsets.size() > 0 ||
+                                          // Revalidate if descriptor set (or contents) has changed
+                                          set_info.validated_set != descriptor_set ||
+                                          set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                                          (!disabled[image_layout_validation] &&
+                                           set_info.validated_set_image_layout_change_count != cb_node->image_layout_change_count);
+            bool need_validate =
+                descriptor_set_changed ||
+                // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
+                !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),
+                               binding_req_map.begin(), binding_req_map.end());
 
             if (need_validate) {
                 if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
                     // Only validate the bindings that haven't already been validated
                     BindingReqMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
-                                        last_bound.per_set[set_index].validated_set_binding_req_map.end(),
+                                        set_info.validated_set_binding_req_map.begin(),
+                                        set_info.validated_set_binding_req_map.end(),
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
-                    result |= ValidateDrawState(descriptor_set, delta_reqs, last_bound.per_set[set_index].dynamicOffsets, cb_node,
+                    result |= ValidateDrawState(descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_node,
                                                 cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 } else {
-                    result |=
-                        ValidateDrawState(descriptor_set, binding_req_map, last_bound.per_set[set_index].dynamicOffsets, cb_node,
-                                          cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
+                    result |= ValidateDrawState(descriptor_set, binding_req_map, set_info.dynamicOffsets, cb_node,
+                                                cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 }
             }
         }
