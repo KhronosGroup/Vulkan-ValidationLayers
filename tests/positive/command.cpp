@@ -260,6 +260,80 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
+TEST_F(VkPositiveLayerTest, DestroyQueryPoolBasedOnQueryPoolResults) {
+    TEST_DESCRIPTION("Destroy a QueryPool based on vkGetQueryPoolResults");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::array<uint64_t, 4> samples_passed = {};
+    constexpr uint64_t sizeof_samples_passed = samples_passed.size() * sizeof(uint64_t);
+    constexpr VkDeviceSize sample_stride = sizeof(uint64_t);
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bci.size = sizeof_samples_passed;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer.init(*m_device, bci, mem_props);
+
+    constexpr uint32_t query_count = 2;
+
+    VkQueryPoolCreateInfo query_pool_info = LvlInitStruct<VkQueryPoolCreateInfo>();
+    query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_info.flags = 0;
+    query_pool_info.queryCount = query_count;
+    query_pool_info.pipelineStatistics = 0;
+
+    VkQueryPool query_pool;
+    VkResult res = vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
+    ASSERT_VK_SUCCESS(res);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // If VK_QUERY_RESULT_WAIT_BIT is not set, vkGetQueryPoolResults may return VK_NOT_READY
+    constexpr VkQueryResultFlags query_flags = VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT;
+
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, query_count);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, query_count, buffer.handle(), 0, sample_stride,
+                                query_flags);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed, samples_passed.data(),
+                                  sample_stride, query_flags);
+    ASSERT_VK_SUCCESS(res);
+
+    // "Applications can verify that queryPool can be destroyed by checking that vkGetQueryPoolResults() without the
+    // VK_QUERY_RESULT_PARTIAL_BIT flag returns VK_SUCCESS for all queries that are used in command buffers submitted for
+    // execution."
+    //
+    // i.e. You don't have to wait for an idle queue to destroy the query pool.
+    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+}
+
 TEST_F(VkPositiveLayerTest, ConfirmNoVLErrorWhenVkCmdClearAttachmentsCalledInSecondaryCB) {
     TEST_DESCRIPTION(
         "This test is to verify that when vkCmdClearAttachments is called by a secondary commandbuffer, the validation layers do "
