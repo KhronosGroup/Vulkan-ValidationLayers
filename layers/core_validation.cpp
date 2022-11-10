@@ -1714,7 +1714,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     result |=
                         LogError(view.first, vuid.subpass_input,
                                  "%s(): Input attachment index %" PRIu32 " of subpass %" PRIu32 " is not bound by descriptor sets.",
-                                 CommandTypeString(cmd_type), view.second, cb_node->activeSubpass);
+                                 function, view.second, cb_node->activeSubpass);
                 }
             }
         }
@@ -1742,9 +1742,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         result |= LogError(objlist, vuid.compatible_pipeline,
                            "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                            ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
-                           CommandTypeString(cmd_type), report_data->FormatHandle(pipe->pipeline()).c_str(),
-                           pipe_layouts_log.str().c_str(), pipe->max_active_slot,
-                           report_data->FormatHandle(last_bound.pipeline_layout).c_str());
+                           function, report_data->FormatHandle(pipe->pipeline()).c_str(), pipe_layouts_log.str().c_str(),
+                           pipe->max_active_slot, report_data->FormatHandle(last_bound.pipeline_layout).c_str());
     } else {
         // if the bound set is not copmatible, the rest will just be extra redundant errors
         for (const auto &set_binding_pair : pipe->active_slots) {
@@ -1752,7 +1751,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             const auto set_info = last_bound.per_set[set_index];
             if (!set_info.bound_descriptor_set) {
                 result |= LogError(cb_node->commandBuffer(), vuid.compatible_pipeline,
-                                   "%s(): %s uses set #%" PRIu32 " but that set is not bound.", CommandTypeString(cmd_type),
+                                   "%s(): %s uses set #%" PRIu32 " but that set is not bound.", function,
                                    report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
             } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
                 // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
@@ -1760,8 +1759,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 LogObjectList objlist(set_handle);
                 objlist.add(pipeline_layout->layout());
                 result |= LogError(objlist, vuid.compatible_pipeline,
-                                   "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s",
-                                   CommandTypeString(cmd_type), report_data->FormatHandle(set_handle).c_str(), set_index,
+                                   "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
+                                   report_data->FormatHandle(set_handle).c_str(), set_index,
                                    report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
             } else {  // Valid set is bound and layout compatible, validate that it's updated
                 // Pull the set node
@@ -1840,7 +1839,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 result |= LogError(objlist, vuid.push_constants_set,
                                    "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                    "pipeline layout %s.",
-                                   CommandTypeString(cmd_type), string_VkShaderStageFlags(stage.stage_flag).c_str(),
+                                   function, string_VkShaderStageFlags(stage.stage_flag).c_str(),
                                    report_data->FormatHandle(pipeline_layout->layout()).c_str());
             }
 
