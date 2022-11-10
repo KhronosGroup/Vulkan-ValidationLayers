@@ -1750,11 +1750,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
             const auto set_info = last_bound.per_set[set_index];
-            // If valid set is not bound throw an error
-            if ((last_bound.per_set.size() <= set_index) || (!set_info.bound_descriptor_set)) {
-                result |=
-                    LogError(cb_node->commandBuffer(), vuid.compatible_pipeline, "%s(): %s uses set #%u but that set is not bound.",
-                             CommandTypeString(cmd_type), report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
+            if (!set_info.bound_descriptor_set) {
+                result |= LogError(cb_node->commandBuffer(), vuid.compatible_pipeline,
+                                   "%s(): %s uses set #%" PRIu32 " but that set is not bound.", CommandTypeString(cmd_type),
+                                   report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
             } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
                 // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                 VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
