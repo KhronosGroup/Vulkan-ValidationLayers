@@ -3237,8 +3237,8 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     bool primitive_restart_enable = false;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto& pipeline_binding_iter = cmd_state.lastBound[lv_bind_point];
-    const auto* pipeline_state = pipeline_binding_iter.pipeline_state;
+    const auto& last_bound = cmd_state.lastBound[lv_bind_point];
+    const auto* pipeline_state = last_bound.pipeline_state;
 
     const auto* ia_state = pipeline_state ? pipeline_state->InputAssemblyState() : nullptr;
     if (ia_state) {
@@ -3246,7 +3246,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
     }
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
-    if (ib_mem && pipeline_binding_iter.IsUsing()) {
+    if (ib_mem && last_bound.IsUsing()) {
         const uint32_t scan_stride = GetIndexAlignment(ib_type);
         const uint8_t* scan_begin = static_cast<const uint8_t*>(ib_mem) + ib_mem_offset + firstIndex * scan_stride;
         const uint8_t* scan_end = scan_begin + indexCount * scan_stride;
@@ -3879,9 +3879,9 @@ void BestPractices::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
 void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
                                                 const char* function_name) {
     auto lvl_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto& state = cb_state.lastBound[lvl_bind_point];
+    auto& last_bound = cb_state.lastBound[lvl_bind_point];
 
-    for (const auto& descriptor_set : state.per_set) {
+    for (const auto& descriptor_set : last_bound.per_set) {
         if (!descriptor_set.bound_descriptor_set) continue;
         for (const auto& binding : *descriptor_set.bound_descriptor_set) {
             // For bindless scenarios, we should not attempt to track descriptor set state.

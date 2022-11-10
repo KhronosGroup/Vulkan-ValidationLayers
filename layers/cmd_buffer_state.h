@@ -376,12 +376,12 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_STATE **rtn_pipe,
                                             const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) const {
         const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-        const auto &last_bound_it = lastBound[lv_bind_point];
-        if (!last_bound_it.IsUsing()) {
+        const auto &last_bound = lastBound[lv_bind_point];
+        if (!last_bound.IsUsing()) {
             return;
         }
-        *rtn_pipe = last_bound_it.pipeline_state;
-        *rtn_sets = &(last_bound_it.per_set);
+        *rtn_pipe = last_bound.pipeline_state;
+        *rtn_sets = &(last_bound.per_set);
     }
 
     VkQueueFlags GetQueueFlags() const {

@@ -1281,9 +1281,9 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
         return;
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    auto const &state = cb_node->lastBound[lv_bind_point];
+    auto const &last_bound = cb_node->lastBound[lv_bind_point];
 
-    uint32_t number_of_sets = static_cast<uint32_t>(state.per_set.size());
+    uint32_t number_of_sets = static_cast<uint32_t>(last_bound.per_set.size());
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
     if (number_of_sets > 0 && (descriptor_indexing || buffer_oob_enabled)) {
@@ -1298,7 +1298,7 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
 
         // Figure out how much memory we need for the input block based on how many sets and bindings there are
         // and how big each of the bindings is
-        for (const auto &s : state.per_set) {
+        for (const auto &s : last_bound.per_set) {
             auto desc = s.bound_descriptor_set;
             if (desc && (desc->GetBindingCount() > 0)) {
                 binding_count += desc->GetLayout()->GetMaxBinding() + 1;
@@ -1374,7 +1374,7 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 // Index of the start of the sets_to_bindings array
                 data_ptr[0] = number_of_sets + binding_count + 1;
 
-                for (const auto &s : state.per_set) {
+                for (const auto &s : last_bound.per_set) {
                     auto desc = s.bound_descriptor_set;
                     if (desc && (desc->GetBindingCount() > 0)) {
                         auto layout = desc->GetLayout();
@@ -1430,7 +1430,7 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 uint32_t bind_counter = number_of_sets + 1;
                 data_ptr[0] = 1;
 
-                for (const auto &s : state.per_set) {
+                for (const auto &s : last_bound.per_set) {
                     auto desc = s.bound_descriptor_set;
                     if (desc && (desc->GetBindingCount() > 0)) {
                         auto layout = desc->GetLayout();
@@ -1934,8 +1934,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         return;
     }
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto const &state = cb_node->lastBound[lv_bind_point];
-    const auto *pipeline_state = state.pipeline_state;
+    auto const &last_bound = cb_node->lastBound[lv_bind_point];
+    const auto *pipeline_state = last_bound.pipeline_state;
 
     // TODO (ncesario) remove once VK_EXT_graphics_pipeline_library support is added for GPU-AV
     if (pipeline_state->IsGraphicsLibrary()) {
@@ -2108,7 +2108,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     }
 
     if (cb_node->current_input_buffer != VK_NULL_HANDLE) {
-        di_input_desc_buffer_info.range = VK_WHOLE_SIZE; 
+        di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
         di_input_desc_buffer_info.buffer = cb_node->current_input_buffer;
         di_input_desc_buffer_info.offset = 0;
 
@@ -2120,7 +2120,6 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         desc_writes[desc_count].dstSet = desc_sets[0];
         desc_count++;
     }
-    
 
     if ((IsExtEnabled(device_extensions.vk_ext_buffer_device_address) ||
          IsExtEnabled(device_extensions.vk_khr_buffer_device_address)) &&

@@ -867,16 +867,16 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     RecordCmd(cmd_type);
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto &state = lastBound[lv_bind_point];
-    PIPELINE_STATE *pipe = state.pipeline_state;
-    if (VK_NULL_HANDLE != state.pipeline_layout) {
+    auto &last_bound = lastBound[lv_bind_point];
+    PIPELINE_STATE *pipe = last_bound.pipeline_state;
+    if (VK_NULL_HANDLE != last_bound.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
-            if (set_index >= state.per_set.size()) {
+            if (set_index >= last_bound.per_set.size()) {
                 continue;
             }
             // Pull the set node
-            auto &descriptor_set = state.per_set[set_index].bound_descriptor_set;
+            auto &descriptor_set = last_bound.per_set[set_index].bound_descriptor_set;
             if (!descriptor_set) {
                 continue;
             }
@@ -898,15 +898,15 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
             bool descriptor_set_changed =
                 !reduced_map.IsManyDescriptors() ||
                 // Update if descriptor set (or contents) has changed
-                state.per_set[set_index].validated_set != descriptor_set.get() ||
-                state.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                last_bound.per_set[set_index].validated_set != descriptor_set.get() ||
+                last_bound.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
                 (!dev_data->disabled[image_layout_validation] &&
-                 state.per_set[set_index].validated_set_image_layout_change_count != image_layout_change_count);
+                 last_bound.per_set[set_index].validated_set_image_layout_change_count != image_layout_change_count);
             bool need_update = descriptor_set_changed ||
                                // Update if previous bindingReqMap doesn't include new bindingReqMap
-                               !std::includes(state.per_set[set_index].validated_set_binding_req_map.begin(),
-                                              state.per_set[set_index].validated_set_binding_req_map.end(), binding_req_map.begin(),
-                                              binding_req_map.end());
+                               !std::includes(last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
+                                              last_bound.per_set[set_index].validated_set_binding_req_map.end(),
+                                              binding_req_map.begin(), binding_req_map.end());
 
             if (need_update) {
                 if (!dev_data->disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
@@ -918,25 +918,25 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
                     // Only record the bindings that haven't already been recorded
                     BindingReqMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        state.per_set[set_index].validated_set_binding_req_map.begin(),
-                                        state.per_set[set_index].validated_set_binding_req_map.end(),
+                                        last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
+                                        last_bound.per_set[set_index].validated_set_binding_req_map.end(),
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, delta_reqs);
                 } else {
                     descriptor_set->UpdateDrawState(dev_data, this, cmd_type, pipe, binding_req_map);
                 }
 
-                state.per_set[set_index].validated_set = descriptor_set.get();
-                state.per_set[set_index].validated_set_change_count = descriptor_set->GetChangeCount();
-                state.per_set[set_index].validated_set_image_layout_change_count = image_layout_change_count;
+                last_bound.per_set[set_index].validated_set = descriptor_set.get();
+                last_bound.per_set[set_index].validated_set_change_count = descriptor_set->GetChangeCount();
+                last_bound.per_set[set_index].validated_set_image_layout_change_count = image_layout_change_count;
                 if (reduced_map.IsManyDescriptors()) {
                     // Check whether old == new before assigning, the equality check is much cheaper than
                     // freeing and reallocating the map.
-                    if (state.per_set[set_index].validated_set_binding_req_map != set_binding_pair.second) {
-                        state.per_set[set_index].validated_set_binding_req_map = set_binding_pair.second;
+                    if (last_bound.per_set[set_index].validated_set_binding_req_map != set_binding_pair.second) {
+                        last_bound.per_set[set_index].validated_set_binding_req_map = set_binding_pair.second;
                     }
                 } else {
-                    state.per_set[set_index].validated_set_binding_req_map = BindingReqMap();
+                    last_bound.per_set[set_index].validated_set_binding_req_map = BindingReqMap();
                 }
             }
         }

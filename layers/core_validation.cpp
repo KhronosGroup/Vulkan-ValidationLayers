@@ -1615,8 +1615,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *function = CommandTypeString(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto &state = cb_node->lastBound[lv_bind_point];
-    const auto *pipe = state.pipeline_state;
+    const auto &last_bound = cb_node->lastBound[lv_bind_point];
+    const auto *pipe = last_bound.pipeline_state;
 
     if (nullptr == pipe) {
         return LogError(cb_node->commandBuffer(), vuid.pipeline_bound,
@@ -1680,12 +1680,13 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     // Remove input attachment views that are bound
                     // Look into pipeline layout for input attachments
                     const auto &set_layouts = pipe->PipelineLayoutState()->set_layouts;
-                    for (uint32_t set_index = 0; set_index < set_layouts.size() && set_index < state.per_set.size(); ++set_index) {
+                    for (uint32_t set_index = 0; set_index < set_layouts.size() && set_index < last_bound.per_set.size();
+                         ++set_index) {
                         const auto &set_layout = set_layouts[set_index];
                         for (const auto &binding : set_layout->GetBindings()) {
                             if (binding.descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
                                 // Layout binding is input so get descriptors at that set/binding
-                                const auto set = state.per_set[set_index].bound_descriptor_set;
+                                const auto set = last_bound.per_set[set_index].bound_descriptor_set;
                                 if (!set) continue;
                                 const auto count = set->GetDescriptorCountFromBinding(binding.binding);
                                 for (uint32_t i = 0; i < count; ++i) {
@@ -1723,7 +1724,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     auto const &pipeline_layout = pipe->PipelineLayoutState();
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
-    if (pipe->active_slots.size() > 0 && !CompatForSet(pipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
+    if (pipe->active_slots.size() > 0 && !CompatForSet(pipe->max_active_slot, last_bound, pipeline_layout->compat_for_set)) {
         LogObjectList objlist(pipe->pipeline());
         const auto layouts = pipe->PipelineLayoutStateUnion();
         std::ostringstream pipe_layouts_log;
@@ -1737,26 +1738,26 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
         } else {
             pipe_layouts_log << report_data->FormatHandle(layouts.front()->layout());
         }
-        objlist.add(state.pipeline_layout);
+        objlist.add(last_bound.pipeline_layout);
         result |= LogError(objlist, vuid.compatible_pipeline,
                            "%s(): The %s (created with %s) statically uses descriptor set (index #%" PRIu32
                            ") which is not compatible with the currently bound descriptor set's pipeline layout (%s)",
                            CommandTypeString(cmd_type), report_data->FormatHandle(pipe->pipeline()).c_str(),
                            pipe_layouts_log.str().c_str(), pipe->max_active_slot,
-                           report_data->FormatHandle(state.pipeline_layout).c_str());
+                           report_data->FormatHandle(last_bound.pipeline_layout).c_str());
     }
 
     for (const auto &set_binding_pair : pipe->active_slots) {
         uint32_t set_index = set_binding_pair.first;
         // If valid set is not bound throw an error
-        if ((state.per_set.size() <= set_index) || (!state.per_set[set_index].bound_descriptor_set)) {
+        if ((last_bound.per_set.size() <= set_index) || (!last_bound.per_set[set_index].bound_descriptor_set)) {
             result |= LogError(cb_node->commandBuffer(), kVUID_Core_DrawState_DescriptorSetNotBound,
                                "%s(): %s uses set #%u but that set is not bound.", CommandTypeString(cmd_type),
                                report_data->FormatHandle(pipe->pipeline()).c_str(), set_index);
-        } else if (!VerifySetLayoutCompatibility(*state.per_set[set_index].bound_descriptor_set, *pipeline_layout, set_index,
+        } else if (!VerifySetLayoutCompatibility(*last_bound.per_set[set_index].bound_descriptor_set, *pipeline_layout, set_index,
                                                  error_string)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-            VkDescriptorSet set_handle = state.per_set[set_index].bound_descriptor_set->GetSet();
+            VkDescriptorSet set_handle = last_bound.per_set[set_index].bound_descriptor_set->GetSet();
             LogObjectList objlist(set_handle);
             objlist.add(pipeline_layout->layout());
             result |= LogError(objlist, kVUID_Core_DrawState_PipelineLayoutsIncompatible,
@@ -1765,7 +1766,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                report_data->FormatHandle(pipeline_layout->layout()).c_str(), error_string.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
-            const auto *descriptor_set = state.per_set[set_index].bound_descriptor_set.get();
+            const auto *descriptor_set = last_bound.per_set[set_index].bound_descriptor_set.get();
             // Validate the draw-time state for this descriptor set
             std::string err_str;
             // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor
@@ -1783,16 +1784,16 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
             bool descriptor_set_changed =
                 !reduced_map.IsManyDescriptors() ||
                 // Revalidate each time if the set has dynamic offsets
-                state.per_set[set_index].dynamicOffsets.size() > 0 ||
+                last_bound.per_set[set_index].dynamicOffsets.size() > 0 ||
                 // Revalidate if descriptor set (or contents) has changed
-                state.per_set[set_index].validated_set != descriptor_set ||
-                state.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                last_bound.per_set[set_index].validated_set != descriptor_set ||
+                last_bound.per_set[set_index].validated_set_change_count != descriptor_set->GetChangeCount() ||
                 (!disabled[image_layout_validation] &&
-                 state.per_set[set_index].validated_set_image_layout_change_count != cb_node->image_layout_change_count);
+                 last_bound.per_set[set_index].validated_set_image_layout_change_count != cb_node->image_layout_change_count);
             bool need_validate = descriptor_set_changed ||
                                  // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
-                                 !std::includes(state.per_set[set_index].validated_set_binding_req_map.begin(),
-                                                state.per_set[set_index].validated_set_binding_req_map.end(),
+                                 !std::includes(last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
+                                                last_bound.per_set[set_index].validated_set_binding_req_map.end(),
                                                 binding_req_map.begin(), binding_req_map.end());
 
             if (need_validate) {
@@ -1800,15 +1801,14 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     // Only validate the bindings that haven't already been validated
                     BindingReqMap delta_reqs;
                     std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                        state.per_set[set_index].validated_set_binding_req_map.begin(),
-                                        state.per_set[set_index].validated_set_binding_req_map.end(),
+                                        last_bound.per_set[set_index].validated_set_binding_req_map.begin(),
+                                        last_bound.per_set[set_index].validated_set_binding_req_map.end(),
                                         layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
-                    result |=
-                        ValidateDrawState(descriptor_set, delta_reqs, state.per_set[set_index].dynamicOffsets, cb_node,
-                                          cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
+                    result |= ValidateDrawState(descriptor_set, delta_reqs, last_bound.per_set[set_index].dynamicOffsets, cb_node,
+                                                cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 } else {
                     result |=
-                        ValidateDrawState(descriptor_set, binding_req_map, state.per_set[set_index].dynamicOffsets, cb_node,
+                        ValidateDrawState(descriptor_set, binding_req_map, last_bound.per_set[set_index].dynamicOffsets, cb_node,
                                           cb_node->active_attachments.get(), cb_node->active_subpasses.get(), function, vuid);
                 }
             }
@@ -1817,7 +1817,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check general pipeline state that needs to be validated at drawtime
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pipe);
+        result |= ValidatePipelineDrawtimeState(last_bound, cb_node, cmd_type, pipe);
     }
 
     // Verify if push constants have been set
@@ -1859,8 +1859,8 @@ bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE *cb_state, CMD_
     bool skip = false;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const auto &state = cb_state->lastBound[lv_bind_point];
-    const auto *pipe = state.pipeline_state;
+    const auto &last_bound = cb_state->lastBound[lv_bind_point];
+    const auto *pipe = last_bound.pipeline_state;
 
     bool ray_query_shader = false;
     if (nullptr != pipe) {
@@ -10054,11 +10054,11 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             if (cb_state->activeRenderPass &&
                 phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
                 const auto lvl_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-                const auto &last_bound_it = cb_state->lastBound[lvl_bind_point];
-                if (last_bound_it.pipeline_state) {
+                const auto &last_bound = cb_state->lastBound[lvl_bind_point];
+                if (last_bound.pipeline_state) {
                     auto last_bound_provoking_vertex_state_ci =
                         LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
-                            last_bound_it.pipeline_state->RasterizationState()->pNext);
+                            last_bound.pipeline_state->RasterizationState()->pNext);
 
                     auto current_provoking_vertex_state_ci =
                         LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(
@@ -10068,7 +10068,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                         skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipelineBindPoint-04881",
                                          "Previous %s's provokingVertexMode is %s, but %s doesn't chain "
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
-                                         report_data->FormatHandle(last_bound_it.pipeline_state->pipeline()).c_str(),
+                                         report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
                                          string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode),
                                          report_data->FormatHandle(pipeline).c_str());
                     } else if (!last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci) {
@@ -10077,7 +10077,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                          "VkPipelineRasterizationProvokingVertexStateCreateInfoEXT.",
                                          report_data->FormatHandle(pipeline).c_str(),
                                          string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                         report_data->FormatHandle(last_bound_it.pipeline_state->pipeline()).c_str());
+                                         report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str());
                     } else if (last_bound_provoking_vertex_state_ci && current_provoking_vertex_state_ci &&
                                last_bound_provoking_vertex_state_ci->provokingVertexMode !=
                                    current_provoking_vertex_state_ci->provokingVertexMode) {
@@ -10086,7 +10086,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                      "%s's provokingVertexMode is %s, but previous %s's provokingVertexMode is %s.",
                                      report_data->FormatHandle(pipeline).c_str(),
                                      string_VkProvokingVertexModeEXT(current_provoking_vertex_state_ci->provokingVertexMode),
-                                     report_data->FormatHandle(last_bound_it.pipeline_state->pipeline()).c_str(),
+                                     report_data->FormatHandle(last_bound.pipeline_state->pipeline()).c_str(),
                                      string_VkProvokingVertexModeEXT(last_bound_provoking_vertex_state_ci->provokingVertexMode));
                     }
                 }
