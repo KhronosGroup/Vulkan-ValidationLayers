@@ -8240,7 +8240,6 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout.handle(), 0, 1,
                               &binding_descriptor_set.set_, 0, nullptr);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-02697");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-PipelineLayoutsIncompatible");
     vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
