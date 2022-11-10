@@ -654,7 +654,7 @@ struct LAST_BOUND_STATE {
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,
                                     const PIPELINE_LAYOUT_STATE *pipeline_layout) {
     bool result = (set < last_bound.per_set.size()) && (set < pipeline_layout->set_compat_ids.size()) &&
-                  (*(last_bound.per_set[set].compat_id_for_set) == *pipeline_layout->set_compat_ids[set]);
+                  (*(last_bound.per_set[set].compat_id_for_set) == *(pipeline_layout->set_compat_ids[set]));
     return result;
 }
 

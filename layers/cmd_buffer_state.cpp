@@ -872,7 +872,7 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     if (VK_NULL_HANDLE != last_bound.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
-            auto set_info = last_bound.per_set[set_index];
+            auto &set_info = last_bound.per_set[set_index];
             if (set_index >= last_bound.per_set.size()) {
                 continue;
             }
@@ -1005,7 +1005,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
-        auto set_info = last_bound.per_set[set_idx];
+        auto &set_info = last_bound.per_set[set_idx];
         if (set_info.compat_id_for_set != pipe_compat_ids[set_idx]) {
             push_descriptor_cleanup(set_info.bound_descriptor_set);
             set_info.bound_descriptor_set = nullptr;
@@ -1018,7 +1018,7 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
-        auto set_info = last_bound.per_set[set_idx];
+        auto &set_info = last_bound.per_set[set_idx];
         auto descriptor_set =
             push_descriptor_set ? push_descriptor_set : dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
 
