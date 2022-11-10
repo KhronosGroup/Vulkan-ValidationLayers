@@ -44,16 +44,18 @@ action("vulkan_clean_old_validation_layer_objects") {
 }
 
 config("generated_layers_config") {
-  cflags = [
-    "-Wno-conversion",
-    "-Wno-deprecated-copy",
-    "-Wno-extra-semi",
-    "-Wno-implicit-fallthrough",
-    "-Wno-missing-field-initializers",
-    "-Wno-newline-eof",
-    "-Wno-sign-compare",
-    "-Wno-unused-const-variable",
-  ]
+  if (is_clang) {
+    cflags = [
+      "-Wno-conversion",
+      "-Wno-deprecated-copy",
+      "-Wno-extra-semi",
+      "-Wno-implicit-fallthrough",
+      "-Wno-missing-field-initializers",
+      "-Wno-newline-eof",
+      "-Wno-sign-compare",
+      "-Wno-unused-const-variable",
+    ]
+  }
 }
 
 config("vulkan_internal_config") {
@@ -81,7 +83,9 @@ config("vulkan_internal_config") {
   if (is_fuchsia) {
     configs = [ "//build/config:Wno-unused-but-set-variable" ]
   }
-  cflags += [ "-Wno-extra-semi" ]
+  if (is_clang) {
+    cflags += [ "-Wno-extra-semi" ]
+  }
 }
 
 # The validation layers
@@ -92,7 +96,9 @@ config("vulkan_layer_config") {
     "layers",
     "layers/generated",
   ]
-  cflags = [ "-Wno-extra-semi" ]
+  if (is_clang) {
+    cflags = [ "-Wno-extra-semi" ]
+  }
 }
 
 core_validation_sources = [
