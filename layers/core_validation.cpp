@@ -1629,6 +1629,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         // First check flag states
         result |= ValidateDrawStateFlags(cb_node, pipe, vuid.dynamic_state);
+        result |= ValidatePipelineDrawtimeState(last_bound, cb_node, cmd_type, pipe);
 
         if (indexed && !cb_node->index_buffer_binding.bound()) {
             return LogError(cb_node->commandBuffer(), vuid.index_binding,
@@ -1813,11 +1814,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 }
             }
         }
-    }
-
-    // Check general pipeline state that needs to be validated at drawtime
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
-        result |= ValidatePipelineDrawtimeState(last_bound, cb_node, cmd_type, pipe);
     }
 
     // Verify if push constants have been set
