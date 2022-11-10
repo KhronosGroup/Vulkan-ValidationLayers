@@ -45,6 +45,7 @@ txt_filename = "validation_error_database.txt"
 csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
 header_filename = "vk_validation_error_messages.h"
+extension_coverage_filename = "validation_extension_coverage.csv"
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 spirvtools_path = None # default is to not search for repo
 
@@ -94,41 +95,44 @@ spirvtools_source_files = ["source/val/validation_state.cpp"]
 spirvtools_test_files = ["test/val/*.cpp"]
 
 def printHelp():
-    print ("Usage:")
-    print ("  python vk_validation_stats.py <json_file>")
-    print ("                                [ -c ]")
-    print ("                                [ -todo ]")
-    print ("                                [ -vuid <vuid_name> ]")
-    print ("                                [ -unassigned ]")
-    print ("                                [ -spirvtools [ <path_to_spirv_tools_repo>] ]")
-    print ("                                [ -text [ <text_out_filename>] ]")
-    print ("                                [ -csv  [ <csv_out_filename>]  ]")
-    print ("                                [ -html [ <html_out_filename>] ]")
-    print ("                                [ -export_header ]")
-    print ("                                [ -summary ]")
-    print ("                                [ -verbose ]")
-    print ("                                [ -help ]")
-    print ("\n  The vk_validation_stats script parses validation layer source files to")
-    print ("  determine the set of valid usage checks and tests currently implemented,")
-    print ("  and generates coverage values by comparing against the full set of valid")
-    print ("  usage identifiers in the Vulkan-Headers registry file 'validusage.json'")
-    print ("\nArguments: ")
-    print (" <json-file>        (required) registry file 'validusage.json'")
-    print (" -c                 report consistency warnings")
-    print (" -todo              report unimplemented VUIDs")
-    print (" -vuid <vuid_name>  report status of individual VUID <vuid_name>")
-    print (" -unassigned        report unassigned VUIDs")
-    print (" -spirvtools [path] when pointed to root directory of SPIRV-Tools repo, will search")
-    print ("                    the repo for VUs that are implemented there")
-    print (" -text [filename]   output the error database text to <text_database_filename>,")
-    print ("                    defaults to 'validation_error_database.txt'")
-    print (" -csv [filename]    output the error database in csv to <csv_database_filename>,")
-    print ("                    defaults to 'validation_error_database.csv'")
-    print (" -html [filename]   output the error database in html to <html_database_filename>,")
-    print ("                    defaults to 'validation_error_database.html'")
-    print (" -export_header     export a new VUID error text header file to <%s>" % header_filename)
-    print (" -summary           output summary of VUID coverage")
-    print (" -verbose           show your work (to stdout)")
+    print( "Usage:")
+    print( "  python vk_validation_stats.py <json_file>")
+    print( "                                [ -c ]")
+    print( "                                [ -todo ]")
+    print( "                                [ -vuid <vuid_name> ]")
+    print( "                                [ -unassigned ]")
+    print( "                                [ -spirvtools [ <path_to_spirv_tools_repo>] ]")
+    print( "                                [ -text [ <text_out_filename>] ]")
+    print( "                                [ -csv  [ <csv_out_filename>]  ]")
+    print( "                                [ -html [ <html_out_filename>] ]")
+    print( "                                [ -extension_coverage")
+    print( "                                [ -export_header ]")
+    print( "                                [ -summary ]")
+    print( "                                [ -verbose ]")
+    print( "                                [ -help ]")
+    print( "\n  The vk_validation_stats script parses validation layer source files to")
+    print( "  determine the set of valid usage checks and tests currently implemented,")
+    print( "  and generates coverage values by comparing against the full set of valid")
+    print( "  usage identifiers in the Vulkan-Headers registry file 'validusage.json'")
+    print( "\nArguments: ")
+    print( " <json-file>                    (required) registry file 'validusage.json'")
+    print( " -c                             report consistency warnings")
+    print( " -todo                          report unimplemented VUIDs")
+    print( " -vuid <vuid_name>              report status of individual VUID <vuid_name>")
+    print( " -unassigned                    report unassigned VUIDs")
+    print( " -spirvtools [path]             when pointed to root directory of SPIRV-Tools repo, will search")
+    print( "                                the repo for VUs that are implemented there")
+    print( " -text [filename]               output the error database text to <text_database_filename>,")
+    print(f"                                defaults to '{txt_filename}'")
+    print( " -csv [filename]                output the error database in csv to <csv_database_filename>,")
+    print(f"                                defaults to '{csv_filename}'")
+    print( " -html [filename]               output the error database in html to <html_database_filename>,")
+    print(f"                                defaults to '{html_filename}'")
+    print( " -extension_coverage [filename] export an extension coverage report to <extension_coverage_filename>")
+    print(f"                                defaults to '{extension_coverage_filename}'")
+    print(f" -export_header                 export a new VUID error text header file to '{header_filename}'")
+    print( " -summary                       output summary of VUID coverage")
+    print( " -verbose                       show your work (to stdout)")
 
 class ValidationJSON:
     def __init__(self, filename):
@@ -618,6 +622,28 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     hfile.write('<th>%s</th></tr>\n' % db_entry['text'])
             hfile.write('</table>\n</body>\n</html>\n')
 
+    def dump_extension_coverage(self):
+        from dataclasses import dataclass
+        @dataclass
+        class ExtEntry:
+            checked = 0
+            total = 0
+        ext_db = defaultdict(ExtEntry)
+        vuid_list = list(self.vj.all_vuids)
+        for vuid in vuid_list:
+            for db_entry in self.vj.vuid_db[vuid]:
+                for ext_name in set(re.findall(r'\w+', db_entry['ext'])):
+                    ext_db[ext_name].total += 1
+                    if vuid in self.vs.all_vuids:
+                        ext_db[ext_name].checked += 1
+
+        with open (extension_coverage_filename, 'w', newline='') as csvfile:
+            cw = csv.writer(csvfile)
+            cw.writerow(['EXTENSION','CHECKED','TOTAL','COVERAGE'])
+            for ext_name in sorted(ext_db):
+                ext_entry = ext_db[ext_name]
+                cw.writerow([ext_name, ext_entry.checked, ext_entry.total, ext_entry.checked/ext_entry.total])
+
     # make list of spec versions containing given VUID
     @staticmethod
     def make_vuid_spec_version_list(pattern, max_minor_version):
@@ -756,6 +782,7 @@ def main(argv):
     global txt_filename
     global csv_filename
     global html_filename
+    global extension_coverage_filename
     global spirvtools_path
 
     run_consistency = False
@@ -765,6 +792,7 @@ def main(argv):
     txt_out = False
     csv_out = False
     html_out = False
+    extension_coverage_out = False
     header_out = False
     show_summary = False
 
@@ -807,6 +835,12 @@ def main(argv):
             # Set filename if supplied, else use default
             if i < len(argv) and not argv[i].startswith('-'):
                 html_filename = argv[i]
+                i = i + 1
+        elif (arg == '-extension_coverage'):
+            extension_coverage_out = True
+            # Set filename if supplied, else use default
+            if i < len(argv) and not argv[i].startswith('-'):
+                extension_coverage_filename = argv[i]
                 i = i + 1
         elif (arg == '-export_header'):
             header_out = True
@@ -982,6 +1016,8 @@ def main(argv):
         db_out.dump_csv(report_unimplemented)
     if html_out:
         db_out.dump_html(report_unimplemented)
+    if extension_coverage_out:
+        db_out.dump_extension_coverage()
     if header_out:
         db_out.export_header()
     return result
