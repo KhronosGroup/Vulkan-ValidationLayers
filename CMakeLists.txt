@@ -258,7 +258,6 @@ if(WIN32)
         target_compile_definitions(VkLayer_utils PUBLIC "_WIN32_WINNT=0x0600")
     endif()
 endif()
-install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/layers
