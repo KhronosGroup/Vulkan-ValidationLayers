@@ -33,8 +33,7 @@ TEST_F(VkPortabilitySubsetTest, ValidatePortabilityCreateDevice) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
 
     vk_testing::PhysicalDevice phys_device(gpu());
@@ -74,8 +73,7 @@ TEST_F(VkPortabilitySubsetTest, PortabilityCreateEvent) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -99,8 +97,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImage) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -144,8 +141,7 @@ TEST_F(VkPortabilitySubsetTest, CreateImageView) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -225,8 +221,7 @@ TEST_F(VkPortabilitySubsetTest, CreateSampler) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -249,8 +244,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesTriangleFans) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -283,8 +277,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexInputStride) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -333,8 +326,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesVertexAttributes) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -379,8 +371,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesRasterizationState) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -431,8 +422,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesDepthStencilState) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -476,8 +466,7 @@ TEST_F(VkPortabilitySubsetTest, CreateGraphicsPipelinesColorBlendAttachmentState
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -528,8 +517,7 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
@@ -584,8 +572,7 @@ TEST_F(VkPortabilitySubsetTest, ShaderValidation) {
 
     bool portability_supported = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     if (!portability_supported) {
-        printf("%s Test requires VK_KHR_portability_subset, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_KHR_portability_subset";
     }
     m_device_extension_names.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 

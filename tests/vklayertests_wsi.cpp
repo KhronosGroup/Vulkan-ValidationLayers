@@ -233,8 +233,7 @@ TEST_F(VkLayerTest, ValidSwapchainImage) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     VkImage image;
@@ -343,8 +342,7 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -496,8 +494,7 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     if (found_bad_usage) {
@@ -506,9 +503,8 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
         m_errorMonitor->VerifyFound();
     } else {
         printf(
-            "%s could not find imageFormat and imageUsage values, supported by "
-            "surface but unsupported by image, skipping test\n",
-            kSkipPrefix);
+            "could not find imageFormat and imageUsage values, supported by "
+            "surface but unsupported by image, skipping test\n");
     }
     vk::DestroySwapchainKHR(device(), m_swapchain, nullptr);
 
@@ -517,8 +513,7 @@ TEST_F(VkLayerTest, ValidSwapchainImageParams) {
                                                               VK_IMAGE_TILING_OPTIMAL, good_create_info.imageUsage,
                                                               VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, &props);
     if (res != VK_SUCCESS) {
-        printf("%s Swapchain image format does not support SPLIT_INSTANCE_BIND_REGIONS, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Swapchain image format does not support SPLIT_INSTANCE_BIND_REGIONS";
     }
 
     VkSwapchainCreateInfoKHR create_info_bad_flags = good_create_info;
@@ -763,8 +758,7 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     // The validation layers currently don't validate this VUID for Android surfaces
     if (std::find(instance_extensions_.begin(), instance_extensions_.end(), VK_KHR_ANDROID_SURFACE_EXTENSION_NAME) !=
         instance_extensions_.end()) {
-        printf("%s Test does not run on Android Surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test does not run on Android Surface";
     }
 #endif
 
@@ -775,8 +769,7 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     }
 
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
@@ -799,8 +792,7 @@ TEST_F(VkLayerTest, SwapchainNotSupported) {
     }
 
     if (!found) {
-        printf("%s All queues support surface present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "All queues support surface present";
     }
     float queue_priority = 1.0f;
     auto queue_create_info = LvlInitStruct<VkDeviceQueueCreateInfo>();
@@ -916,16 +908,14 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     // To make test use, assume a common surface format
@@ -940,8 +930,7 @@ TEST_F(VkLayerTest, InvalidSwapchainImageFormatList) {
         }
     }
     if (valid_surface_format.format == VK_FORMAT_UNDEFINED) {
-        printf("%s Test requires VK_FORMAT_B8G8R8A8_UNORM as a supported surface format, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires VK_FORMAT_B8G8R8A8_UNORM as a supported surface format";
     }
 
     // Use sampled formats that will always be supported
@@ -1019,20 +1008,17 @@ TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
     if (m_surface_capabilities.minImageCount <= 1) {
-        printf("%s minImageCount is not at least 2, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "minImageCount is not at least 2";
     }
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
@@ -1061,44 +1047,26 @@ TEST_F(VkLayerTest, SwapchainMinImageCountNonShared) {
 
 TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
     TEST_DESCRIPTION("Use invalid minImageCount for shared swapchain creation");
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    if (InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-        return;
-    }
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-        return;
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     VkPresentModeKHR shared_present_mode = m_surface_non_shared_present_mode;
@@ -1111,8 +1079,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
         }
     }
     if (shared_present_mode == m_surface_non_shared_present_mode) {
-        printf("%s Cannot find supported shared present mode, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot find supported shared present mode";
     }
 
     PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
@@ -1128,8 +1095,7 @@ TEST_F(VkLayerTest, SwapchainMinImageCountShared) {
 
     // This was recently added to CTS, but some drivers might not correctly advertise the flag
     if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
-        printf("%s Driver was suppose to support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Driver was suppose to support VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT";
     }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
@@ -1168,22 +1134,19 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     // No implementation should support depth/stencil for swapchain
     if ((m_surface_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
-        printf("%s Test has supported usage already the test is using, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test has supported usage already the test is using";
     }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
@@ -1208,45 +1171,27 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageNonShared) {
 
 TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
     TEST_DESCRIPTION("Use invalid imageUsage for shared swapchain creation");
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    if (InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-        return;
-    }
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
-        return;
-    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     VkPresentModeKHR shared_present_mode = m_surface_non_shared_present_mode;
@@ -1259,8 +1204,7 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
         }
     }
     if (shared_present_mode == m_surface_non_shared_present_mode) {
-        printf("%s Cannot find supported shared present mode, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot find supported shared present mode";
     }
 
     PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR vkGetPhysicalDeviceSurfaceCapabilities2KHR =
@@ -1276,8 +1220,7 @@ TEST_F(VkLayerTest, SwapchainInvalidUsageShared) {
 
     // No implementation should support depth/stencil for swapchain
     if ((shared_present_capabilities.sharedPresentSupportedUsageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
-        printf("%s Test has supported usage already the test is using, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test has supported usage already the test is using";
     }
 
     VkSwapchainCreateInfoKHR swapchain_create_info = LvlInitStruct<VkSwapchainCreateInfoKHR>();
@@ -1319,8 +1262,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
 
     if (physical_device_group_count == 0) {
-        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "physical_device_group_count is 0";
     }
 
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
@@ -1333,8 +1275,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping VkAcquireNextImageInfoKHR test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     // Test VkMemoryAllocateFlagsInfo
@@ -1537,22 +1478,20 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     uint32_t plane_prop_count = 0;
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, nullptr);
     if (plane_prop_count == 0) {
-        GTEST_SKIP() << "Test requires at least 1 supported display plane property.  Skipping.";
+        GTEST_SKIP() << "Test requires at least 1 supported display plane property";
     }
     std::vector<VkDisplayPlanePropertiesKHR> display_plane_props(plane_prop_count);
     vkGetPhysicalDeviceDisplayPlanePropertiesKHR(gpu(), &plane_prop_count, display_plane_props.data());
     // using plane 0 for rest of test
     VkDisplayKHR current_display = display_plane_props[0].currentDisplay;
     if (current_display == VK_NULL_HANDLE) {
-        printf("%s VkDisplayPlanePropertiesKHR[0].currentDisplay is not attached to device.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkDisplayPlanePropertiesKHR[0].currentDisplay is not attached to device";
     }
 
     uint32_t mode_prop_count = 0;
     vkGetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, nullptr);
     if (plane_prop_count == 0) {
-        printf("%s test requires at least 1 supported display mode property.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "test requires at least 1 supported display mode property";
     }
     std::vector<VkDisplayModePropertiesKHR> display_mode_props(mode_prop_count);
     vkGetDisplayModePropertiesKHR(gpu(), current_display, &mode_prop_count, display_mode_props.data());
@@ -1563,15 +1502,13 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     m_errorMonitor->VerifyFound();
     ASSERT_VK_SUCCESS(vkGetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, nullptr));
     if (plane_count == 0) {
-        printf("%s test requires at least 1 supported display plane.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "test requires at least 1 supported display plane";
     }
     std::vector<VkDisplayKHR> supported_displays(plane_count);
     plane_count = 1;
     ASSERT_VK_SUCCESS(vkGetDisplayPlaneSupportedDisplaysKHR(gpu(), 0, &plane_count, supported_displays.data()));
     if (supported_displays[0] != current_display) {
-        printf("%s Current VkDisplayKHR used is not supported.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Current VkDisplayKHR used is not supported";
     }
 
     VkDisplayModeKHR display_mode;
@@ -1587,8 +1524,7 @@ TEST_F(VkLayerTest, DisplayPlaneSurface) {
     display_mode_info.parameters = display_mode_props[0].parameters;
     VkResult result = vkCreateDisplayModeKHR(gpu(), current_display, &display_mode_info, nullptr, &display_mode);
     if (result != VK_SUCCESS) {
-        printf("%s test failed to create a display mode with vkCreateDisplayModeKHR.  Skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "test failed to create a display mode with vkCreateDisplayModeKHR";
     }
 
     VkDisplayPlaneCapabilitiesKHR plane_capabilities;
@@ -1986,8 +1922,7 @@ TEST_F(VkLayerTest, PresentIdWaitFeatures) {
     m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     bool retval = InitFrameworkAndRetrieveFeatures(features2);
     if (!retval) {
-        printf("%s Error initializing extensions or retrieving features, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -2129,8 +2064,7 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
 
     uint32_t queueFamilyPropertyCount;
@@ -2144,8 +2078,7 @@ TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
         }
     }
     if (supported) {
-        printf("%s Physical device supports present, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Physical device supports present";
     }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -2247,44 +2180,25 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 #ifndef VK_USE_PLATFORM_WIN32_KHR
-    printf("%s Test not supported on platform, skipping test\n", kSkipPrefix);
+    printf("Test not supported on platform, skipping test\n");
 #else
     AddSurfaceExtension();
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    if (InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     auto vkAcquireFullScreenExclusiveModeEXT = reinterpret_cast<PFN_vkAcquireFullScreenExclusiveModeEXT>(
@@ -2356,7 +2270,7 @@ TEST_F(VkLayerTest, TestCreatingWin32Surface) {
     TEST_DESCRIPTION("Test creating win32 surface with invalid hwnd");
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
-    printf("%s test not supported on platform, skipping test.\n", kSkipPrefix);
+    GTEST_SKIP() << "test not supported on platform";
 #else
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2385,8 +2299,7 @@ TEST_F(VkLayerTest, UseSwapchainImageBeforeWait) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPresentInfoKHR-pImageIndices-01296");
@@ -2428,8 +2341,7 @@ TEST_F(VkLayerTest, TestCreatingSwapchainWithInvalidExtent) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     InitSwapchainInfo();
@@ -2486,8 +2398,7 @@ TEST_F(VkLayerTest, TestSurfaceQueryImageCompressionControlWithoutExtension) {
     }
 
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
 
     PFN_vkGetPhysicalDeviceSurfaceFormats2KHR vkGetPhysicalDeviceSurfaceFormats2KHR =

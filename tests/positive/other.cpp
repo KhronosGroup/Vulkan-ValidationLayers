@@ -143,12 +143,10 @@ TEST_F(VkPositiveLayerTest, TestDestroyFreeNullHandles) {
 TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     TEST_DESCRIPTION("Validate various special cases for the Maintenance1_KHR extension");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
-        printf("%s Maintenance1 Extension not supported, skipping tests\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -164,12 +162,10 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     TEST_DESCRIPTION("Verify that a valid pNext value is handled correctly");
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
-        printf("%s VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME Extension not supported, skipping test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -240,14 +236,12 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
 
 TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
     TEST_DESCRIPTION("Ensure parameter_validation_layer correctly captures physical device features");
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
-        return;
-    }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     VkResult err;
 
@@ -292,7 +286,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         ASSERT_VK_SUCCESS(err);
         vk::DestroySampler(device, sampler, nullptr);
     } else {
-        printf("%s Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n", kSkipPrefix);
+        printf("Feature samplerAnisotropy not enabled;  parameter_layer check skipped.\n");
     }
 
     // Verify the core validation layer has captured the physical device features by creating a a query pool.
@@ -306,7 +300,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
 
         vk::DestroyQueryPool(device, query_pool, nullptr);
     } else {
-        printf("%s Feature pipelineStatisticsQuery not enabled;  core_validation_layer check skipped.\n", kSkipPrefix);
+        printf("Feature pipelineStatisticsQuery not enabled;  core_validation_layer check skipped.\n");
     }
 
     vk::DestroyDevice(device, nullptr);
@@ -351,8 +345,7 @@ TEST_F(VkPositiveLayerTest, TestPhysicalDeviceSurfaceSupport) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
 
     VkBool32 supported;
@@ -369,25 +362,13 @@ TEST_F(VkPositiveLayerTest, ModifyPnext) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
-    } else {
-        printf("%s test requires %s\n", kSkipPrefix, VK_NV_FRAGMENT_SHADING_RATE_ENUMS_EXTENSION_NAME);
     }
 
     auto shading = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateEnumsPropertiesNV>();
@@ -401,21 +382,12 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     // This is a positive test. No failures are expected.
     TEST_DESCRIPTION("Use vkResetQueryPoolEXT normally");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
-        return;
-    }
-
-    m_device_extension_names.push_back(VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
 
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features =
         LvlInitStruct<VkPhysicalDeviceHostQueryResetFeaturesEXT>();
@@ -460,13 +432,10 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
 #if !defined(ANDROID)
 TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-    } else {
-        printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_KHR_SURFACE_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -580,8 +549,7 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     }
     // Test randomly fails with VK_TIMEOUT, most likely a driver bug
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        printf("%s Test does not run on AMD proprietary driver, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test does not run on AMD proprietary driver";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -651,8 +619,7 @@ TEST_F(VkPositiveLayerTest, TestAcquiringSwapchainImages) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
@@ -727,8 +694,7 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
 
     // Crashes without any warnings
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
-        printf("%s Test does not run on AMD proprietary driver, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test does not run on AMD proprietary driver";
     }
 
     if (!AreRequiredExtensionsEnabled()) {
@@ -744,8 +710,7 @@ TEST_F(VkPositiveLayerTest, ValidateGetAccelerationStructureBuildSizes) {
     GetPhysicalDeviceFeatures2(features2);
 
     if (ray_tracing_features.rayTracingPipeline == VK_FALSE) {
-        printf("%s rayTracingPipeline feature not supported, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "rayTracingPipeline feature not supported";
     }
 
     ray_query_features.rayQuery = VK_FALSE;
@@ -914,8 +879,7 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     VkFenceObj fence;
@@ -972,7 +936,7 @@ TEST_F(VkPositiveLayerTest, TestSwapchainImageFenceWait) {
 }
 
 TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
-    TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups"); 
+    TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
 
 #ifdef __linux__
     if (std::getenv("NODEVICE_SELECT") == nullptr)

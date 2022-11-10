@@ -85,8 +85,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     std::vector<VkSurfaceFormatKHR> formats;
     result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, NULL);
     if (result != VK_SUCCESS || format_count <= 1) {
-        printf("%s test requires 2 or more extensions available, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "test requires 2 or more extensions available";
     }
     format_count -= 1;
     formats.resize(format_count);
@@ -180,13 +179,10 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
 TEST_F(VkBestPracticesLayerTest, SpecialUseExtensions) {
     TEST_DESCRIPTION("Create a device with a 'specialuse' extension.");
 
+    AddRequiredExtensions(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping test\n", kSkipPrefix, VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkDevice local_device;
@@ -248,8 +244,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     InitState();
 
     if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
-        printf("%s Test CmdClearAttachmentTestSecondary is unstable on ShieldTV, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test CmdClearAttachmentTestSecondary is unstable on ShieldTV";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -698,8 +693,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
 
     if (IsPlatform(kPixel2XL) || IsPlatform(kPixel3) || IsPlatform(kPixel3aXL) || IsPlatform(kShieldTV) || IsPlatform(kShieldTVb) ||
         IsPlatform(kNexusPlayer)) {
-        printf("%s This test seems super-picky on Android platforms\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test seems super-picky on Android platforms";
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
@@ -871,8 +865,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     InitState();
 
     if (IsPlatform(PlatformType::kShieldTV) || IsPlatform(PlatformType::kShieldTVb)) {
-        printf("%s Test CmdClearAttachmentAfterLoadSecondary is unstable on ShieldTV, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test CmdClearAttachmentAfterLoadSecondary is unstable on ShieldTV";
     }
 
     m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
@@ -1007,16 +1000,14 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-suboptimal-swapchain-image-count");
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     bool fifo_present = false;
@@ -1027,8 +1018,7 @@ TEST_F(VkBestPracticesLayerTest, TripleBufferingTest) {
         }
     }
     if (!fifo_present) {
-        printf("%s fifo present mode not supported, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "fifo present mode not supported";
     }
 
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -1068,8 +1058,7 @@ TEST_F(VkBestPracticesLayerTest, SwapchainCreationTest) {
     }
     InitState();
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -1225,8 +1214,7 @@ TEST_F(VkBestPracticesLayerTest, GetSwapchainImagesInvalidCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain()) {
-        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
     uint32_t swapchain_images_count = 0;
@@ -1400,8 +1388,7 @@ TEST_F(VkBestPracticesLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollisio
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
 
     if (VK_FALSE == indexing_features.descriptorBindingStorageBufferUpdateAfterBind) {
-        printf("%s Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind, skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) descriptorBindingStorageBufferUpdateAfterBind";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -1505,16 +1492,14 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
     }
     InitState();
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present";
     }
 
     bool fifo_relaxed = false;
@@ -1525,8 +1510,7 @@ TEST_F(VkBestPracticesLayerTest, CreateFifoRelaxedSwapchain) {
         }
     }
     if (!fifo_relaxed) {
-        printf("%s fifo relaxed present mode not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "fifo relaxed present mode not supported";
     }
 
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;

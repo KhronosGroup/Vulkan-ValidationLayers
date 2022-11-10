@@ -39,8 +39,7 @@ TEST_F(VkLayerTest, InstanceExtensionDependencies) {
     TEST_DESCRIPTION("Test enabling instance extension without dependencies met.");
 
     if (!InstanceExtensionSupported(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Did not find required instance extension";
     }
     ASSERT_TRUE(InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME));  // Driver should always provide dependencies
 
@@ -66,8 +65,7 @@ TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
     TEST_DESCRIPTION("Test creating instance with duplicate sType in the pNext chain.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Did not find required instance extension";
     }
     instance_extensions_.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
@@ -100,8 +98,7 @@ TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
     TEST_DESCRIPTION("Test creating instance with invalid flags in VkValidationFeaturesEXT.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Did not find required instance extension";
     }
     instance_extensions_.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
 
@@ -148,8 +145,7 @@ TEST_F(VkLayerTest, InstanceBadValidationFlags) {
     TEST_DESCRIPTION("Test creating instance with invalid VkValidationFlagsEXT.");
 
     if (!InstanceExtensionSupported(VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s.\n", kSkipPrefix, VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "Did not find required instance extension";
     }
     instance_extensions_.push_back(VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME);
 

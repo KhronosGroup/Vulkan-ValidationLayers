@@ -412,14 +412,12 @@ TEST_F(VkLayerTest, ViewportInheritance) {
                                 this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
                                 &missing_feature_string, true, false));
     if (!has_features) {
-        printf("%s\n", missing_feature_string);
-        return;
+        GTEST_SKIP() << missing_feature_string;
     }
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
-        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
-        return;
+        GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
     VkCommandPool pool = m_commandPool->handle();
 
@@ -650,14 +648,12 @@ TEST_F(VkLayerTest, ViewportInheritanceMissingFeature) {
                                 this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
                                 &missing_feature_string, false, false));
     if (!has_features) {
-        printf("%s\n", missing_feature_string);
-        return;
+        GTEST_SKIP() << missing_feature_string;
     }
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
-        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
-        return;
+        GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
     VkCommandPool pool = m_commandPool->handle();
 
@@ -679,14 +675,12 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
                                 this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
                                 &missing_feature_string, true, true));
     if (!has_features) {
-        printf("%s\n", missing_feature_string);
-        return;
+        GTEST_SKIP() << missing_feature_string;
     }
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
-        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
-        return;
+        GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
     VkCommandPool pool = m_commandPool->handle();
 
@@ -918,14 +912,12 @@ TEST_F(VkLayerTest, ViewportInheritanceScissorMissingFeature) {
                                 this, [self](const char* extension) { self->m_device_extension_names.push_back(extension); },
                                 &missing_feature_string, true, false, true));
     if (!has_features) {
-        printf("%s\n", missing_feature_string);
-        return;
+        GTEST_SKIP() << missing_feature_string;
     }
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
-        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
-        return;
+        GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
     VkCommandPool pool = m_commandPool->handle();
 
@@ -968,8 +960,7 @@ TEST_F(VkLayerTest, PipelineMissingDynamicStateDiscardRectangle) {
 
     ViewportInheritanceTestData test_data(m_device, gpu());
     if (test_data.FailureReason()) {
-        printf("%s Test internal failure: %s\n", kSkipPrefix, test_data.FailureReason());
-        return;
+        GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
 
     VkCommandBufferInheritanceViewportScissorInfoNV viewport_scissor =
