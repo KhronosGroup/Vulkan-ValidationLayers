@@ -244,8 +244,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginTransitionsAttachmentUnused) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     // A renderpass with no attachments
@@ -287,8 +286,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0,
                                                &formatProps);
     if (formatProps.maxExtent.width < 100 || formatProps.maxExtent.height < 100) {
-        printf("%s Image format max extent is too small.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Image format max extent is too small";
     }
 
     VkFormat depth_stencil_fmt = depth_format;
@@ -442,8 +440,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginDepthStencilLayoutTransitionFromUndef
     vk::GetPhysicalDeviceImageFormatProperties(gpu(), depth_format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0, &format_props);
     if (format_props.maxExtent.width < 32 || format_props.maxExtent.height < 32) {
-        printf("%s Depth extent too small, RenderPassDepthStencilLayoutTransition skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Depth extent too small";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -510,8 +507,7 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     TEST_DESCRIPTION("Draw using a pipeline whose create renderPass has been destroyed.");
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

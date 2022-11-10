@@ -1058,9 +1058,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
         printf(
-            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n",
-            kSkipPrefix);
+            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n");
         return false;
     }
 
@@ -1079,9 +1078,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
     if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
         printf(
-            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n",
-            kSkipPrefix);
+            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n");
         return false;
     }
 
@@ -1098,9 +1096,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf(
-            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n",
-            kSkipPrefix);
+            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n");
         return false;
     }
 
@@ -1117,9 +1114,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
 
     if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
         printf(
-            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n",
-            kSkipPrefix);
+            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n");
         return false;
     }
 
@@ -1133,9 +1129,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
 
     if (!fpvkSetPhysicalDeviceProperties2EXT) {
         printf(
-            "%s Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
-            "are built, the device profile layer should be in the same directory.\n",
-            kSkipPrefix);
+            "Can't find device_profile_api functions; make sure VK_LAYER_PATH is set correctly to where the validation layers "
+            "are built, the device profile layer should be in the same directory.\n");
         return false;
     }
 
@@ -1939,8 +1934,7 @@ bool CreateNVRayTracingPipelineHelper::InitInstanceExtensions(VkLayerTest &test,
     if (test.InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        printf("Did not find required instance extension %s; skipped.\n", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return false;
     }
     return true;
@@ -1953,7 +1947,7 @@ bool CreateNVRayTracingPipelineHelper::InitDeviceExtensions(VkLayerTest &test, s
         if (test.DeviceExtensionSupported(test.gpu(), nullptr, device_extension)) {
             device_extension_names.push_back(device_extension);
         } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            printf("%s Extension not supported, skipping tests\n", device_extension);
             return false;
         }
     }
@@ -2440,13 +2434,12 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, V
 
     framework->InitFramework(&framework->Monitor(), enabled_features);
     if (!framework->AreRequiredExtensionsEnabled()) {
-        printf("%s %s device extension not supported, skipping test\n", kSkipPrefix,
-               framework->RequiredExtensionsNotSupported().c_str());
+        printf("%s device extension not supported, skipping test\n", framework->RequiredExtensionsNotSupported().c_str());
         return false;
     }
 
     if (!mockicd_valid && (framework->IsPlatform(kMockICD) || framework->DeviceSimulation())) {
-        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        printf("Test not supported by MockICD, skipping tests\n");
         return false;
     }
 
@@ -2553,8 +2546,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     if (ray_tracing_properties.maxTriangleCount == 0) {
-        printf("%s Did not find required ray tracing properties; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Did not find required ray tracing properties";
     }
 
     VkQueue ray_tracing_queue = m_device->m_queue;

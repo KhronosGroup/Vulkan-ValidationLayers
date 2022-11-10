@@ -126,12 +126,10 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
 
     // Verify VK_FORMAT_R8_UNORM supports VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
     const VkFormat format_texel_case = VK_FORMAT_R8_UNORM;
-    const char *format_texel_case_string = "VK_FORMAT_R8_UNORM";
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(gpu(), format_texel_case, &format_properties);
     if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
-        printf("%s Test requires %s to support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT\n", kSkipPrefix, format_texel_case_string);
-        return;
+        GTEST_SKIP() << "Test requires to support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
     }
 
     // Image Case
@@ -290,8 +288,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     // Create layout with two uniform buffer descriptors w/ empty binding between them
@@ -318,9 +315,8 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, 0);
     if (!pass) {
-        printf("%s Failed to allocate memory.\n", kSkipPrefix);
         vk::DestroyBuffer(m_device->device(), buffer, NULL);
-        return;
+        GTEST_SKIP() << "Failed to allocate memory";
     }
     // Make sure allocation is sufficiently large to accommodate buffer requirements
     if (mem_reqs.size > mem_alloc.allocationSize) {
@@ -358,27 +354,20 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
 TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     TEST_DESCRIPTION("Use null dstSet in CmdPushDescriptorSetKHR");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
-        printf("%s Push Descriptors Extension not supported, skipping tests\n", kSkipPrefix);
-        return;
-    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
-        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -434,18 +423,12 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     TEST_DESCRIPTION("Ensure that no validation errors are produced for not bound push descriptor sets");
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
-        printf("%s Push Descriptors Extension not supported, skipping tests\n", kSkipPrefix);
-        return;
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -453,8 +436,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
-        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -635,28 +617,18 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         "Ensure that no validation errors are produced when the push descriptor set number changes "
         "between two vk::CmdPushDescriptorSetKHR calls.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
-        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -855,30 +827,18 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
 TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
     TEST_DESCRIPTION("Test that layers conditionally do ignore the pImmutableSamplers on vkCreateDescriptorSetLayout");
 
-    bool prop2_found = false;
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        prop2_found = true;
-    } else {
-        printf("%s %s Extension not supported, skipping push descriptor sub-tests\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool push_descriptor_found = false;
-    if (prop2_found && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-
-        // In addition to the extension being supported we need to have at least one available
-        // Some implementations report an invalid maxPushDescriptors of 0
-        VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop =
-            LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
-        GetPhysicalDeviceProperties2(push_descriptor_prop);
-        push_descriptor_found = push_descriptor_prop.maxPushDescriptors > 0;
-    } else {
-        printf("%s %s Extension not supported, skipping push descriptor sub-tests\n", kSkipPrefix,
-               VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    // In addition to the extension being supported we need to have at least one available
+    // Some implementations report an invalid maxPushDescriptors of 0
+    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    GetPhysicalDeviceProperties2(push_descriptor_prop);
+    bool push_descriptor_found = push_descriptor_prop.maxPushDescriptors > 0;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     const uint64_t fake_address_64 = 0xCDCDCDCDCDCDCDCD;
@@ -934,27 +894,18 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
 TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     TEST_DESCRIPTION("Use a push descriptor with an immutable sampler.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
-        return;
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
-        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1002,32 +953,18 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
 TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
     TEST_DESCRIPTION("Test nullDescriptor works wih CmdBindVertexBuffers variants");
 
-    if (!InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
-    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME)) {
-        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-        return;
-    }
-    m_device_extension_names.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-
-    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
-        printf("%s Extension %s is not supported; skipped.\n", kSkipPrefix, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        return;
-    }
-    m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
 
     auto robustness2_features = LvlInitStruct<VkPhysicalDeviceRobustness2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(robustness2_features);
     if (!robustness2_features.nullDescriptor) {
-        printf("%s nullDescriptor feature not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "nullDescriptor feature not supported";
     }
 
     PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT =
@@ -1071,8 +1008,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);
     if (mutable_descriptor_type_features.mutableDescriptorType == VK_FALSE) {
-        printf("%s mutableDescriptorType feature not supported. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "mutableDescriptorType feature not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -1381,8 +1317,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
     auto mutable_descriptor = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor);
     if (mutable_descriptor.mutableDescriptorType == VK_FALSE) {
-        printf("%s mutableDescriptorType feature not supported, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "mutableDescriptorType feature not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

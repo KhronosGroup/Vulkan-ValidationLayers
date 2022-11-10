@@ -63,8 +63,6 @@ using std::vector;
 // Mesh and VertexFormat Data
 //--------------------------------------------------------------------------------------
 
-static const char kSkipPrefix[] = "             TEST SKIPPED:";
-
 enum BsoFailSelect {
     BsoFailNone,
     BsoFailLineWidth,

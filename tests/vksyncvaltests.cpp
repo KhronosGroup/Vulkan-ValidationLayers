@@ -203,7 +203,7 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
         auto fpCmdWriteBufferMarkerAMD =
             (PFN_vkCmdWriteBufferMarkerAMD)vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteBufferMarkerAMD");
         if (!fpCmdWriteBufferMarkerAMD) {
-            printf("%s Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n", kSkipPrefix);
+            printf("Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n");
         } else {
             m_commandBuffer->reset();
             m_commandBuffer->begin();
@@ -219,7 +219,7 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
             m_commandBuffer->end();
         }
     } else {
-        printf("%s Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n", kSkipPrefix);
+        printf("Test requires unsupported vkCmdWriteBufferMarkerAMD feature. Skipped.\n");
     }
 }
 
@@ -467,7 +467,7 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
                                                VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &formProps);
 
     if (!(formProps.sampleCounts & VK_SAMPLE_COUNT_2_BIT)) {
-        printf("%s CmdResolveImage Test requires unsupported VK_SAMPLE_COUNT_2_BIT feature. Skipped.\n", kSkipPrefix);
+        printf("CmdResolveImage Test requires unsupported VK_SAMPLE_COUNT_2_BIT feature. Skipped.\n");
     } else {
         VkImageObj image_s2_a(m_device), image_s2_b(m_device);
         image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -631,25 +631,10 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
 
 TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {
     // TODO: Add code to enable sync validation
-    // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -662,8 +647,8 @@ TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_ci,
                                                      VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
     if (!supported) {
-        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;  // Assume there's low ROI on searching for different mp formats
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
     }
 
     image_a.Init(image_ci);
@@ -840,25 +825,10 @@ TEST_F(VkSyncValTest, SyncCopyLinearImageHazards) {
 
 TEST_F(VkSyncValTest, SyncCopyLinearMultiPlanarHazards) {
     // TODO: Add code to enable sync validation
-    // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -871,8 +841,8 @@ TEST_F(VkSyncValTest, SyncCopyLinearMultiPlanarHazards) {
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_ci,
                                                      VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT);
     if (!supported) {
-        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;  // Assume there's low ROI on searching for different mp formats
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
     }
 
     image_a.Init(image_ci);
@@ -1635,7 +1605,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
         auto fpCmdDrawIndirectCountKHR =
             (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCountKHR");
         if (!fpCmdDrawIndirectCountKHR) {
-            printf("%s Test requires unsupported vkCmdDrawIndirectCountKHR feature. Skipped.\n", kSkipPrefix);
+            printf("Test requires unsupported vkCmdDrawIndirectCountKHR feature. Skipped.\n");
         } else {
             VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
@@ -1685,7 +1655,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
         auto fpCmdDrawIndexIndirectCountKHR =
             (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCountKHR");
         if (!fpCmdDrawIndexIndirectCountKHR) {
-            printf("%s Test requires unsupported vkCmdDrawIndexedIndirectCountKHR feature. Skipped.\n", kSkipPrefix);
+            printf("Test requires unsupported vkCmdDrawIndexedIndirectCountKHR feature. Skipped.\n");
         } else {
             VkBufferObj buffer_count, buffer_count2;
             buffer_usage =
@@ -1733,8 +1703,7 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
             m_commandBuffer->end();
         }
     } else {
-        printf("%s Test requires unsupported vkCmdDrawIndirectCountKHR & vkDrawIndexedIndirectCountKHR feature. Skipped.\n",
-               kSkipPrefix);
+        printf("Test requires unsupported vkCmdDrawIndirectCountKHR & vkDrawIndexedIndirectCountKHR feature. Skipped.\n");
     }
 }
 
@@ -1820,20 +1789,17 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
-        printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Queue family needs to have multiple queues to run this test";
     }
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
     std::vector<VkQueueFamilyProperties> queue_props(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props.data());
     if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
-        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
     vk_testing::QueryPool query_pool;
@@ -2103,7 +2069,7 @@ TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         m_commandBuffer->EndRenderPass();
     } else {
-        printf("%s VK_EXT_load_store_op_none not supported, skipping sub-test\n", kSkipPrefix);
+        printf("VK_EXT_load_store_op_none not supported, skipping sub-test\n");
     }
 }
 
@@ -2111,8 +2077,7 @@ TEST_F(VkSyncValTest, SyncRenderPassWithWrongDepthStencilInitialLayout) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -2619,8 +2584,7 @@ TEST_F(VkSyncValTest, SyncSubpassMultiDep) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     CreateRenderPassHelper rp_helper_positive(m_device);
@@ -3605,12 +3569,10 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     auto features2 = GetPhysicalDeviceFeatures2(indexing_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     if (!indexing_features.descriptorBindingPartiallyBound) {
-        printf("%s Partially bound bindings not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Partially bound bindings not supported, skipping test\n";
     }
     if (!indexing_features.descriptorBindingUpdateUnusedWhilePending) {
-        printf("%s Updating unused while pending is not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Updating unused while pending is not supported, skipping test\n";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -3953,10 +3915,8 @@ TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
     VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
     vk::GetPhysicalDeviceFormatProperties(gpu(), mp_format, &format_properties);
     if ((format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0) {
-        printf(
-            "%s Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n",
-            kSkipPrefix);
-        return;
+        GTEST_SKIP()
+            << "Device does not support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT for VK_FORMAT_BC1_RGBA_UNORM_BLOCK, skipping test.\n";
     }
 
     VkImageObj src_image(m_device);
@@ -4686,8 +4646,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyQSORules) {
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
-        printf("%s Test requires at least 2 TRANSFER capable queues in the same queue_family. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family";
     }
 
     // Need an extra buffer and CB
@@ -4771,8 +4730,7 @@ TEST_F(VkSyncValTest, SyncQSBufferEvents) {
 
     QSTestContext test(m_device);
     if (!test.Valid()) {
-        printf("%s Test requires at least 2 TRANSFER capable queues in the same queue_family. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires at least 2 TRANSFER capable queues in the same queue_family";
     }
 
     // Command Buffer A reads froms buffer A and writes to buffer B
@@ -4903,8 +4861,7 @@ TEST_F(VkSyncValTest, SyncQSRenderPass) {
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework(true));  // Enable QueueSubmit validation
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test should not run on Nexus Player";
     }
 
     CreateRenderPassHelper rp_helper(m_device);

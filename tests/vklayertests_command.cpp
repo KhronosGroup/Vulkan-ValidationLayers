@@ -191,8 +191,7 @@ TEST_F(VkLayerTest, DynamicLineStippleNotBound) {
     auto line_rasterization_features = LvlInitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(line_rasterization_features);
     if (!line_rasterization_features.stippledBresenhamLines || !line_rasterization_features.bresenhamLines) {
-        printf("%sStipple Bresenham lines not supported; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Stipple Bresenham lines not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -242,8 +241,7 @@ TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     if (!m_device->phy().features().depthBounds) {
-        printf("%s Device does not support depthBounds test; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Device does not support depthBounds test";
     }
     // Dynamic depth bounds
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Dynamic depth bounds state not set for this command buffer");
@@ -1406,8 +1404,7 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_format, &format_props);
     if ((format_props.optimalTilingFeatures & (VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) == 0) {
-        printf("%s Transfer for format is not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Transfer for format is not supported";
     }
 
     // Create two images to copy between
@@ -1490,8 +1487,7 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
     } else if (device_features.textureCompressionASTC_LDR) {
         compressed_format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;
     } else {
-        printf("%s No compressed formats supported - CompressedImageMipCopyTests skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No compressed formats supported - CompressedImageMipCopyTests skipped";
     }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
@@ -1747,8 +1743,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     if ((queue_family_properties[index].minImageTransferGranularity.depth == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.width == 0) ||
         (queue_family_properties[index].minImageTransferGranularity.height == 0)) {
-        printf("%s Subresource copies are disallowed when xfer granularity (x|y|z) is 0. Skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Subresource copies are disallowed when xfer granularity (x|y|z) is 0";
     }
 
     // All VkImageObj must be defined here as if defined inside below scopes will cause image memory to be deleted when out of scope
@@ -1865,7 +1860,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     mem_barriers[2].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
     if (missing_rgba_support) {
-        printf("%s R8G8B8A8_UINT transfer unsupported - skipping RGBA tests.\n", kSkipPrefix);
+        printf("R8G8B8A8_UINT transfer unsupported - skipping RGBA tests.\n");
 
         // start recording for future tests
         m_commandBuffer->begin();
@@ -2056,7 +2051,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
     // Test Depth/Stencil copies
     if (missing_ds_support) {
-        printf("%s Depth / Stencil formats unsupported - skipping D/S tests.\n", kSkipPrefix);
+        printf("Depth / Stencil formats unsupported - skipping D/S tests.\n");
     } else {
         VkBufferImageCopy ds_region = {};
         ds_region.bufferOffset = 0;
@@ -2162,7 +2157,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     if (!(device_features.textureCompressionBC || device_features.textureCompressionETC2 ||
           device_features.textureCompressionASTC_LDR)) {
-        printf("%s No compressed formats supported - block compression tests skipped.\n", kSkipPrefix);
+        printf("No compressed formats supported - block compression tests skipped.\n");
     } else {
         // Verify transfer support for each compression format used blow
         bool missing_bc_support = false;
@@ -2205,7 +2200,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         }
 
         if (missing_compression_support) {
-            printf("%s No compressed formats transfers bits are supported - block compression tests skipped.\n", kSkipPrefix);
+            printf("No compressed formats transfers bits are supported - block compression tests skipped.\n");
         } else {
             ASSERT_TRUE(image_16k_4x4comp.initialized());
             std::string vuid;
@@ -2297,7 +2292,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
     // Test multi-planar formats, if supported
     if (!mp_extensions) {
-        printf("%s multi-planar extensions not supported; skipped.\n", kSkipPrefix);
+        printf("multi-planar extensions not supported; skipped.\n");
     } else {
         // Try to use G8_B8R8_2PLANE_420_UNORM because need 2-plane format for some tests and likely supported due to copy support
         // being required with samplerYcbcrConversion feature
@@ -2308,7 +2303,7 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         missing_mp_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
 
         if (missing_mp_support) {
-            printf("%s VK_FORMAT_G8_B8R8_2PLANE_420_UNORM transfer not supported; skipped.\n", kSkipPrefix);
+            printf("VK_FORMAT_G8_B8R8_2PLANE_420_UNORM transfer not supported; skipped.\n");
         } else {
             VkBufferImageCopy mp_region = {};
             mp_region.bufferOffset = 0;
@@ -2745,14 +2740,12 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
 }
 
 TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
-    // Image copy tests where format type and extents don't match and the Maintenance1 extension is enabled
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
-        printf("%s Maintenance1 extension cannot be enabled, test skipped.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2762,8 +2755,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     // use of devsim and the mock ICD violate this guarantee.
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_format, &format_props);
     if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
-        printf("%s Maintenance1 extension is not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT not supported";
     }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
@@ -2916,8 +2908,7 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), ci.format, ci.imageType, ci.tiling,
                                                                  ci.usage, ci.flags, &img_prop)) {
-        printf("%s No compressed formats supported - CopyImageCompressedBlockAlignment skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No compressed formats supported - CopyImageCompressedBlockAlignment skipped";
     }
 
     // Create images
@@ -3023,25 +3014,10 @@ TEST_F(VkLayerTest, CopyImageCompressedBlockAlignment) {
 TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     // Image copy tests on single-plane _422 formats with block alignment errors
 
-    // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -3064,8 +3040,8 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("%s Single-plane _422 image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;  // Assume there's low ROI on searching for different mp formats
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Single-plane _422 image format not supported";
     }
 
     // Create images
@@ -3133,25 +3109,10 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
 TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     // Image copy tests on multiplane images with aspect errors
 
-    // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -3182,9 +3143,8 @@ TEST_F(VkLayerTest, CopyImageMultiplaneAspectBits) {
     ci.format = mp3_format;
     supported = supported && ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
     if (!supported) {
-        printf("%s Multiplane image formats or optimally tiled depth-stencil buffers not supported.  Skipping test.\n",
-               kSkipPrefix);
-        return;  // Assume there's low ROI on searching for different mp formats
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image formats or optimally tiled depth-stencil buffers not supported";
     }
 
     // Create images
@@ -3526,25 +3486,10 @@ TEST_F(VkLayerTest, CopyImageZeroSize) {
 TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     TEST_DESCRIPTION("Image Copy for multi-planar format that exceed size of plane for both src and dst");
 
-    // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
-    if (mp_extensions == true) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions == true) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -3558,8 +3503,7 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     missing_format_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
 
     if (missing_format_support == true) {
-        printf("%s VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM transfer not supported; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM transfer not supported";
     }
 
     // 128^2 texels in plane_0 and 64^2 texels in plane_1
@@ -3767,7 +3711,7 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
 
     // DstImage is a mismatched plane of a multi-planar format
     if (!mp_features.samplerYcbcrConversion) {
-        printf("%s No multi-planar support; section of tests skipped.\n", kSkipPrefix);
+        printf("No multi-planar support; section of tests skipped.\n");
     } else {
         fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &format_props);
         format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -3852,8 +3796,7 @@ TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
     VkFormatProperties properties;
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D32_SFLOAT, &properties);
     if (properties.optimalTilingFeatures == 0) {
-        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Image format not supported";
     }
 
     VkImageObj srcImage(m_device);
@@ -3905,8 +3848,7 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
 
     if ((0 == (VK_SAMPLE_COUNT_2_BIT & image_format_properties.sampleCounts)) ||
         (0 == (VK_SAMPLE_COUNT_4_BIT & image_format_properties.sampleCounts))) {
-        printf("%s Image multi-sample support not found; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Image multi-sample support not found";
     }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
@@ -4869,8 +4811,7 @@ TEST_F(VkLayerTest, CommandQueueFlags) {
 
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (queueFamilyIndex == UINT32_MAX) {
-        printf("%s Non-graphics queue family not found; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Non-graphics queue family not found";
     } else {
         // Create command pool on a non-graphics queue
         VkCommandPoolObj command_pool(m_device, queueFamilyIndex);
@@ -4896,8 +4837,7 @@ TEST_F(VkLayerTest, DepthStencilImageCopyNoGraphicsQueueFlags) {
 
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
     if (queueFamilyIndex == UINT32_MAX) {
-        printf("%s Non-graphics queue family not found; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Non-graphics queue family not found";
     } else {
         // Create Depth image
         const VkFormat ds_format = FindSupportedDepthOnlyFormat(gpu());
@@ -4945,8 +4885,7 @@ TEST_F(VkLayerTest, ImageCopyTransferQueueFlags) {
     // Should be left with a tranfser queue
     uint32_t queueFamilyIndex = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
     if (queueFamilyIndex == UINT32_MAX) {
-        printf("%s Non-graphics/compute queue family not found; skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Non-graphics/compute queue family not found";
     }
 
     VkImageObj image(m_device);
@@ -5202,13 +5141,10 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
 TEST_F(VkLayerTest, SetDynViewportParamMaintenance1Tests) {
     TEST_DESCRIPTION("Verify errors are detected on misuse of SetViewport with a negative viewport extension enabled.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    } else {
-        printf("%s VK_KHR_maintenance1 extension not supported -- skipping test\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -5221,8 +5157,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!m_device->phy().features().multiViewport) {
-        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
     }
 
     m_commandBuffer->begin();
@@ -5239,8 +5174,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
 
     const uint32_t too_big_max_viewports = 65536 + 1;  // let's say this is too much to allocate
     if (max_viewports >= too_big_max_viewports) {
-        printf("%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n",
-               kSkipPrefix);
+        printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
     } else {
         const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
         const std::vector<VkViewport> viewports(max_viewports + 1, vp);
@@ -5373,8 +5307,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
-        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     // Create ordinary and push descriptor set layout
@@ -5411,7 +5344,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     const uint32_t transfer_only_qfi =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
     if ((UINT32_MAX == transfer_only_qfi) && (UINT32_MAX == no_gfx_qfi)) {
-        printf("%s No compute or transfer only queue family, skipping bindpoint and queue tests.\n", kSkipPrefix);
+        printf("No compute or transfer only queue family, skipping bindpoint and queue tests.\n");
     } else {
         const uint32_t err_qfi = (UINT32_MAX == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
 
@@ -5490,14 +5423,12 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0.
-        printf("%s maxPushDescriptors is zero, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxPushDescriptors is zero";
     }
 
     auto const min_alignment = m_device->props.limits.minUniformBufferOffsetAlignment;
     if (min_alignment == 0) {
-        printf("%s minUniformBufferOffsetAlignment is zero, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "minUniformBufferOffsetAlignment is zero";
     }
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -5591,8 +5522,7 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     if (!m_device->phy().features().multiViewport) {
-        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported -- skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
     }
 
     m_commandBuffer->begin();
@@ -5609,8 +5539,7 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
 
     const uint32_t too_big_max_scissors = 65536 + 1;  // let's say this is too much to allocate
     if (max_scissors >= too_big_max_scissors) {
-        printf("%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n",
-               kSkipPrefix);
+        printf("VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n");
     } else {
         const VkRect2D scissor = {{0, 0}, {16, 16}};
         const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
@@ -5636,7 +5565,11 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
 TEST_F(VkLayerTest, MultiDrawTests) {
     TEST_DESCRIPTION("Test validation of multi_draw extension");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
@@ -5644,14 +5577,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!multi_draw_features.multiDraw) {
-        printf("%s Test requires (unsupported) multiDraw, skipping\n", kSkipPrefix);
-        return;
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    } else {
-        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) multiDraw";
     }
     auto multi_draw_properties = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_properties);
@@ -5732,15 +5658,13 @@ TEST_F(VkLayerTest, MultiDrawTests) {
 TEST_F(VkLayerTest, MultiDrawFeatures) {
     TEST_DESCRIPTION("Test validation of multi draw feature enabled");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_MULTI_DRAW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
-    } else {
-        printf("%s VK_EXT_multi_draw extension not supported, skipping test\n", kSkipPrefix);
-        return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -6220,22 +6144,11 @@ TEST_F(VkLayerTest, DrawIndirectCountFeature) {
 TEST_F(VkLayerTest, ExclusiveScissorNV) {
     TEST_DESCRIPTION("Test VK_NV_scissor_exclusive with multiViewport disabled.");
 
-    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    } else {
-        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
-               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        return;
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    std::array<const char *, 1> required_device_extensions = {{VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME}};
-    for (auto device_extension : required_device_extensions) {
-        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
-            m_device_extension_names.push_back(device_extension);
-        } else {
-            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
-            return;
-        }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     // Create a device that enables exclusive scissor but disables multiViewport
@@ -6247,8 +6160,7 @@ TEST_F(VkLayerTest, ExclusiveScissorNV) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     if (m_device->phy().properties().limits.maxViewports) {
-        printf("%s Device doesn't support the necessary number of viewports, skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Device doesn't support the necessary number of viewports";
     }
 
     // Based on PSOViewportStateTests
@@ -6623,21 +6535,17 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
 TEST_F(VkLayerTest, ViewportWScalingNV) {
     TEST_DESCRIPTION("Verify VK_NV_clip_space_w_scaling");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    AddRequiredExtensions(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     if (!device_features.multiViewport) {
-        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported, skipping tests\n", kSkipPrefix);
-        return;
-    }
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-    } else {
-        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
-        return;
+        GTEST_SKIP() << "VkPhysicalDeviceFeatures::multiViewport is not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
@@ -6749,28 +6657,12 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
 TEST_F(VkLayerTest, CreateSamplerYcbcrConversionEnable) {
     TEST_DESCRIPTION("Checks samplerYcbcrConversion is enabled before calling vkCreateSamplerYcbcrConversion");
 
-    // Enable Sampler YCbCr Conversion req'd extensions
-    // Only need revision 1 of vkGetPhysicalDeviceProperties2 and this allows more device capable for testing
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
-    if (mp_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    if (mp_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
-    } else {
-        printf("%s test requires Sampler YCbCr Conversion extensions, not available.  Skipping.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     // Explictly not enable Ycbcr Conversion Features
     VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = LvlInitStruct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
     ycbcr_features.samplerYcbcrConversion = VK_FALSE;
@@ -6778,10 +6670,6 @@ TEST_F(VkLayerTest, CreateSamplerYcbcrConversionEnable) {
 
     PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction =
         (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
-    if (vkCreateSamplerYcbcrConversionFunction == nullptr) {
-        printf("%s did not find vkCreateSamplerYcbcrConversionKHR function pointer;  Skipping.\n", kSkipPrefix);
-        return;
-    }
 
     // Create Ycbcr conversion
     VkSamplerYcbcrConversion conversions;
@@ -7328,8 +7216,7 @@ TEST_F(VkLayerTest, InvalidUnprotectedCommands) {
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
 
     if (protected_memory_features.protectedMemory == VK_FALSE) {
-        printf("%s protectedMemory feature not supported, skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "protectedMemory feature not supported";
     };
 
     // Turns m_commandBuffer into a protected command buffer
@@ -7840,8 +7727,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     if (atomic_float_features.shaderImageFloat32Atomics == VK_FALSE) {
-        printf("%s shaderImageFloat32Atomics not supported.  Skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "shaderImageFloat32Atomics not supported.";
     }
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_STORAGE_BIT;
@@ -7850,16 +7736,14 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     auto image_ci = VkImageObj::ImageCreateInfo2D(64, 64, 1, 1, image_format, usage, VK_IMAGE_TILING_OPTIMAL);
 
     if (ImageFormatAndFeaturesSupported(instance(), gpu(), image_ci, VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
-        printf("%s Cannot make VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT not supported.  Skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT not supported.";
     }
 
     VkFormat buffer_view_format =
         VK_FORMAT_R8_UNORM;  // The format doesn't support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT to
                              // cause DesiredFailure. VK_FORMAT_R32_UINT is right format.
     if (BufferFormatAndFeaturesSupported(gpu(), buffer_view_format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
-        printf("%s Cannot make VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT not supported.  Skipping test.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot make VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT not supported.";
     }
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferViewCreateInfo-buffer-00934");
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -7867,8 +7751,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     if (!device_features.vertexPipelineStoresAndAtomics || !device_features.fragmentStoresAndAtomics) {
-        printf("%s vertexPipelineStoresAndAtomics & fragmentStoresAndAtomics NOT supported. skipped.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "vertexPipelineStoresAndAtomics & fragmentStoresAndAtomics NOT supported";
     }
 
     VkImageObj image(m_device);
@@ -8352,8 +8235,7 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&multiview_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     if (multiview_props.maxMultiviewInstanceIndex == std::numeric_limits<uint32_t>::max()) {
-        printf("%s maxMultiviewInstanceIndex is uint32_t max, skipping tests\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "maxMultiviewInstanceIndex is uint32_t max";
     }
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -8375,27 +8257,11 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
     TEST_DESCRIPTION("Specify invalid fragment shading rate values");
 
-    // Enable KHR_fragment_shading_rate and all of its required extensions
-    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    } else {
-        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
@@ -8456,27 +8322,11 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValues) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
-    // Enable KHR_fragment_shading_rate and all of its required extensions
-    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    } else {
-        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -8502,29 +8352,12 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateValuesNoFeatures) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
     TEST_DESCRIPTION("Specify combiner operations when only pipeline rate is supported");
 
-    // Enable KHR_fragment_shading_rate and all of its required extensions
-    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    } else {
-        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
-        return;
-    }
-
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
@@ -8566,35 +8399,18 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoFeatures) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
     TEST_DESCRIPTION("Specify pipeline rate when only attachment or primitive rate are supported");
 
-    // Enable KHR_fragment_shading_rate and all of its required extensions
-    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    } else {
-        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
-        return;
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (fsr_features.attachmentFragmentShadingRate == VK_FALSE && fsr_features.primitiveFragmentShadingRate == VK_FALSE) {
-        printf("%s requires attachmentFragmentShadingRate or primitiveFragmentShadingRate.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "requires attachmentFragmentShadingRate or primitiveFragmentShadingRate";
     }
 
     fsr_features.pipelineFragmentShadingRate = VK_FALSE;
@@ -8630,29 +8446,12 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsNoPipelineRate) {
 TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     TEST_DESCRIPTION("Specify invalid fsr pipeline settings for the enabled features");
 
-    // Enable KHR_fragment_shading_rate and all of its required extensions
-    bool fsr_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    fsr_extensions = fsr_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (fsr_extensions) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    } else {
-        printf("%s requires VK_KHR_fragment_shading_rate.\n", kSkipPrefix);
-        return;
-    }
-
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
         (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
@@ -8662,16 +8461,14 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
     if (fsr_properties.fragmentShadingRateNonTrivialCombinerOps) {
-        printf("%s requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "requires fragmentShadingRateNonTrivialCombinerOps to be unsupported.";
     }
 
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
     VkPhysicalDeviceFeatures2KHR features2 = GetPhysicalDeviceFeatures2(fsr_features);
 
     if (!fsr_features.primitiveFragmentShadingRate && !fsr_features.attachmentFragmentShadingRate) {
-        printf("%s requires primitiveFragmentShadingRate or attachmentFragmentShadingRate to be supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "requires primitiveFragmentShadingRate or attachmentFragmentShadingRate to be supported.";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -8824,8 +8621,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetPipelineBindPoint) {
     const uint32_t no_gfx_qfi = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
     const uint32_t INVALID_QUEUE = std::numeric_limits<uint32_t>::max();
     if (INVALID_QUEUE == no_gfx_qfi) {
-        printf("%s No compute and transfer only queue family, skipping bindpoint and queue tests.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "No compute and transfer only queue family, skipping bindpoint and queue tests.";
     }
 
     VkCommandPoolObj command_pool(m_device, no_gfx_qfi);
@@ -9204,8 +9000,7 @@ TEST_F(VkLayerTest, DrawBlendEnabledFormatFeatures) {
     VkFormatProperties formatProps;
     fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), render_format, &formatProps);
     if ((formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0) {
-        printf("%s Required linear tiling features not supported.\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Required linear tiling features not supported";
     }
     // Gets pass pipeline creation but not the actual tiling used
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
@@ -9466,8 +9261,7 @@ TEST_F(VkLayerTest, BeginRenderingWithSecondaryContents) {
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -9560,8 +9354,7 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -9792,8 +9585,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithNonNullRenderPass) {
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -9882,8 +9674,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingFlags) {
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -9956,8 +9747,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorAttach
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10029,8 +9819,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingColorImageV
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10108,8 +9897,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10257,8 +10045,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewRa
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -10379,8 +10166,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAt
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     bool amd_samples = false;
@@ -10396,9 +10182,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingImageViewAt
     }
 
     if (!amd_samples && !nv_samples) {
-        printf("%s Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples, skipping\n",
-               kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -11157,8 +10941,7 @@ TEST_F(VkLayerTest, TestCommandBufferInheritanceWithInvalidDepthFormat) {
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -11332,8 +11115,7 @@ TEST_F(VkLayerTest, DynamicRenderingInSecondaryCommandBuffers) {
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeaturesKHR>();
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
-        printf("%s Test requires (unsupported) dynamicRendering , skipping\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

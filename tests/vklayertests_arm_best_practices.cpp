@@ -515,16 +515,14 @@ TEST_F(VkArmBestPracticesLayerTest, PresentModeTest) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-swapchain-presentmode-not-fifo");
     if (!InitSurface()) {
-        printf("%s Cannot create surface, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Cannot create surface, skipping test";
     }
     InitSwapchainInfo();
 
     VkBool32 supported;
     vk::GetPhysicalDeviceSurfaceSupportKHR(gpu(), m_device->graphics_queue_node_index_, m_surface, &supported);
     if (!supported) {
-        printf("%s Graphics queue does not support present, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Graphics queue does not support present, skipping test";
     }
 
     VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -627,8 +625,7 @@ TEST_F(VkArmBestPracticesLayerTest, RobustBufferAccessTest) {
         vk::CreateDevice(this->gpu(), &dev_info, nullptr, &local_device);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("%s robustBufferAccess is not available, skipping test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "robustBufferAccess is not available, skipping test";
     }
 }
 
@@ -637,8 +634,7 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     InitState();
 
     if (IsPlatform(kNexusPlayer)) {
-        printf("%s This test crashes on the NexusPlayer platform\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "This test crashes on the NexusPlayer platform";
     }
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
 

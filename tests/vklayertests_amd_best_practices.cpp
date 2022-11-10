@@ -499,8 +499,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     VkImageObj image_1D_2(m_device);
     image_1D_2.init(&img_info);
     if (!image_1D_2.initialized()) {
-        printf("%s Could not initilize Linear image, skipping image to image copy test\n", kSkipPrefix);
-        return;
+        GTEST_SKIP() << "Could not initilize Linear image, skipping image to image copy test";
     }
 
     m_commandBuffer->begin();
