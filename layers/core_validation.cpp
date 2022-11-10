@@ -1724,7 +1724,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     auto const &pipeline_layout = pipe->PipelineLayoutState();
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
-    if (pipe->active_slots.size() > 0 && !CompatForSet(pipe->max_active_slot, last_bound, pipeline_layout->compat_for_set)) {
+    if (pipe->active_slots.size() > 0 && !IsBoundSetCompat(pipe->max_active_slot, last_bound, pipeline_layout.get())) {
         LogObjectList objlist(pipe->pipeline());
         const auto layouts = pipe->PipelineLayoutStateUnion();
         std::ostringstream pipe_layouts_log;
@@ -19054,7 +19054,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
         auto template_layout = Get<PIPELINE_LAYOUT_STATE>(template_ci.pipelineLayout);
-        if (!CompatForSet(set, layout_data.get(), template_layout.get())) {
+        if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
             LogObjectList objlist(cb_state->commandBuffer());
             objlist.add(descriptorUpdateTemplate);
             objlist.add(template_ci.pipelineLayout);

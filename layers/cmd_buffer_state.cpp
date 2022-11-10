@@ -824,7 +824,7 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
     auto &last_bound = lastBound[lv_bind_point];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
-    if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
+    if (!push_descriptor_set || !IsBoundSetCompat(set, last_bound, pipeline_layout)) {
         last_bound.UnbindAndResetPushDescriptorSet(
             std::make_shared<cvdescriptorset::DescriptorSet>(VK_NULL_HANDLE, nullptr, dsl, 0, dev_data));
     }
@@ -961,13 +961,13 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
 
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
-    assert(last_binding_index < pipeline_layout->compat_for_set.size());
+    assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
     last_bound.pipeline_layout = pipeline_layout->layout();
-    auto &pipe_compat_ids = pipeline_layout->compat_for_set;
+    auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     uint32_t last_set_index = first_set + set_count - 1;
     if (last_set_index >= last_bound.per_set.size()) {

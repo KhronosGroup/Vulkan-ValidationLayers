@@ -651,15 +651,17 @@ struct LAST_BOUND_STATE {
     inline bool IsUsing() const { return pipeline_state ? true : false; }
 };
 
-static inline bool CompatForSet(uint32_t set, const LAST_BOUND_STATE &a, const std::vector<PipelineLayoutCompatId> &b) {
-    bool result = (set < a.per_set.size()) && (set < b.size()) && (*(a.per_set[set].compat_id_for_set) == *b[set]);
+static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,
+                                    const PIPELINE_LAYOUT_STATE *pipeline_layout) {
+    bool result = (set < last_bound.per_set.size()) && (set < pipeline_layout->set_compat_ids.size()) &&
+                  (*(last_bound.per_set[set].compat_id_for_set) == *pipeline_layout->set_compat_ids[set]);
     return result;
 }
 
-static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
+static inline bool IsPipelineLayoutSetCompat(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
     // Intentionally have a result variable to simplify debugging
-    bool result = a && b && (set < a->compat_for_set.size()) && (set < b->compat_for_set.size()) &&
-                  (a->compat_for_set[set] == b->compat_for_set[set]);
+    bool result = a && b && (set < a->set_compat_ids.size()) && (set < b->set_compat_ids.size()) &&
+                  (a->set_compat_ids[set] == b->set_compat_ids[set]);
     return result;
 }
 

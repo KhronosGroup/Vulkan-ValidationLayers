@@ -82,7 +82,7 @@ class PIPELINE_LAYOUT_STATE : public BASE_NODE {
     // canonical form IDs for the "compatible for set" contents
     const PushConstantRangesId push_constant_ranges;
     // table of "compatible for set N" cannonical forms for trivial accept validation
-    const std::vector<PipelineLayoutCompatId> compat_for_set;
+    const std::vector<PipelineLayoutCompatId> set_compat_ids;
     VkPipelineLayoutCreateFlags create_flags;
 
     PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, VkPipelineLayout l, const VkPipelineLayoutCreateInfo *pCreateInfo);
