@@ -27,6 +27,15 @@
  */
 #include "base_node.h"
 #include "vk_layer_utils.h"
+#include <optional>
+#include <any>
+#include <charconv>
+#include <execution>
+#include <filesystem>
+#include <memory_resource>
+#include <optional>
+#include <string_view>
+#include <variant>
 
 BASE_NODE::~BASE_NODE() { Destroy(); }
 

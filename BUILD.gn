@@ -15,6 +15,14 @@
 
 import("//build_overrides/vulkan_validation_layers.gni")
 
+config("language") {
+  if (is_win) {
+    cflags_cc = [ "/std=c++17" ]
+  } else {
+    cflags_cc = [ "-std:c++17" ]
+  } 
+}
+
 vulkan_undefine_configs = []
 if (is_win) {
   vulkan_undefine_configs += [ "//build/config/win:unicode" ]
