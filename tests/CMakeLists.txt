@@ -82,6 +82,7 @@ set(COMMON_CPP
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
     vklayertests_graphics_library.cpp
+    vklayertests_android_hardware_buffer.cpp
     positive/command.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp
@@ -94,6 +95,7 @@ set(COMMON_CPP
     positive/sync.cpp
     positive/tooling.cpp
     positive/graphics_library.cpp
+    positive/android_hardware_buffer.cpp
     vksyncvaltests.cpp
     vkrenderframework.cpp
     vktestbinding.cpp
