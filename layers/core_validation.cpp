@@ -3871,12 +3871,14 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             for (decltype(link_info->libraryCount) i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
                 if (lib) {
-                    if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
-                        pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
-                        pre_raster_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
-                    } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
-                        fs_flags.first = lib->PipelineLayoutState()->CreateFlags();
-                        fs_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
+                    if (lib->PipelineLayoutState()) {
+                        if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
+                            pre_raster_flags.first = lib->PipelineLayoutState()->CreateFlags();
+                            pre_raster_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
+                        } else if (lib->graphics_lib_type == VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
+                            fs_flags.first = lib->PipelineLayoutState()->CreateFlags();
+                            fs_flags.second = {GPLInitInfo::from_link_info, lib->PipelineLayoutState().get()};
+                        }
                     }
 
                     const bool lib_has_retain_link_time_opt =
