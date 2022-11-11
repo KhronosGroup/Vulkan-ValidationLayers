@@ -107,7 +107,8 @@ Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is n
 ### Buffer device address checking
 The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.
 GPU-Assisted Validation code keeps track of all such addresses, along with the size of the associated buffer, and creates an input buffer listing all such address/size pairs
-Shader code is instrumented to validate buffer_reference addresses and report any reads or writes that do no fall within the listed address/size regions._
+Shader code is instrumented to validate buffer_reference addresses and report any reads or writes that do no fall within the listed address/size regions.
+Note: The mapping between a `VkBuffer` and a GPU address is not necessarily one to one. For instance, if multiple `VkBuffer` are bound to the same memory region, they can have the same GPU address.
 
 ## GPU-Assisted Validation Limitations
 
