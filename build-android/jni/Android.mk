@@ -125,6 +125,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
+                   $(SRC_DIR)/tests/vkerrormonitor.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
@@ -174,6 +175,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
+                   $(SRC_DIR)/tests/vkerrormonitor.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \

@@ -97,7 +97,10 @@ set(COMMON_CPP
     positive/graphics_library.cpp
     positive/android_hardware_buffer.cpp
     vksyncvaltests.cpp
+    vkerrormonitor.h
+    vkerrormonitor.cpp
     vkrenderframework.cpp
+    vkrenderframework.h
     vktestbinding.cpp
     vktestframework.cpp)
 
