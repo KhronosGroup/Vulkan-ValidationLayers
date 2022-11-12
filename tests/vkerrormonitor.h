@@ -43,14 +43,6 @@ class ErrorMonitor {
     void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string &msg);
     void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString);
 
-    // ErrorMonitor will look for an error message containing the specified string(s)
-    template <typename Iter>
-    void SetDesiredFailureMsg(const VkFlags msgFlags, Iter iter, const Iter end) {
-        for (; iter != end; ++iter) {
-            SetDesiredFailureMsg(msgFlags, *iter);
-        }
-    }
-
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
@@ -77,9 +69,7 @@ class ErrorMonitor {
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
     bool IgnoreMessage(std::string const &msg) const;
-    std::vector<std::string> GetOtherFailureMsgs() const;
     bool AnyDesiredMsgFound() const;
-    bool AllDesiredMsgsFound() const;
     void DumpFailureMsgs() const;
     void MonitorReset();
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }

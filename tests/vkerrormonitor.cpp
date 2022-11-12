@@ -25,7 +25,7 @@ ErrorMonitor::ErrorMonitor() {
 void ErrorMonitor::MonitorReset() {
     message_flags_ = kErrorBit;
     bailout_ = nullptr;
-    message_found_ = VK_FALSE;
+    message_found_ = false;
     failure_message_strings_.clear();
     desired_message_strings_.clear();
     ignore_message_strings_.clear();
@@ -113,13 +113,9 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
     return result;
 }
 
-std::vector<std::string> ErrorMonitor::GetOtherFailureMsgs() const { return other_messages_; }
-
 VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() { return message_flags_; }
 
 bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
-
-bool ErrorMonitor::AllDesiredMsgsFound() const { return desired_message_strings_.empty(); }
 
 void ErrorMonitor::SetError(const char *const errorString) {
     auto guard = Lock();
@@ -133,12 +129,13 @@ void ErrorMonitor::SetBailout(std::atomic<bool> *bailout) {
 }
 
 void ErrorMonitor::DumpFailureMsgs() const {
-    std::vector<std::string> other_msgs = GetOtherFailureMsgs();
-    if (other_msgs.size()) {
-        std::cout << "Other error messages logged for this test were:" << std::endl;
-        for (auto iter = other_msgs.begin(); iter != other_msgs.end(); iter++) {
-            std::cout << "     " << *iter << std::endl;
-        }
+    if (other_messages_.empty()) {
+        return;
+    }
+
+    std::cout << "Other error messages logged for this test were:" << std::endl;
+    for (auto const &msg : other_messages_) {
+        std::cout << "     " << msg << std::endl;
     }
 }
 
@@ -157,14 +154,14 @@ bool ErrorMonitor::NeedCheckSuccess() const { return ExpectingSuccess(); }
 
 void ErrorMonitor::VerifyFound() {
     {
-        // the lock must be released before the ExpectSuccess call at the end
+        // The lock must be released before the ExpectSuccess call at the end
         auto guard = Lock();
-        // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
-        if (!AllDesiredMsgsFound()) {
+        // Not receiving expected message(s) is a failure.
+        if (!desired_message_strings_.empty()) {
             for (const auto &desired_msg : desired_message_strings_) {
                 ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
             }
-        } else if (!GetOtherFailureMsgs().empty()) {
+        } else if (!other_messages_.empty()) {
             // Fail test case for any unexpected errors
 #if defined(ANDROID)
             // This will get unexpected errors into the adb log
@@ -191,7 +188,7 @@ void ErrorMonitor::VerifyNotFound() {
         for (const auto &msg : failure_message_strings_) {
             ADD_FAILURE() << "Expected to succeed but got error: " << msg;
         }
-    } else if (!GetOtherFailureMsgs().empty()) {
+    } else if (!other_messages_.empty()) {
         // Fail test case for any unexpected errors
 #if defined(ANDROID)
         // This will get unexpected errors into the adb log
