@@ -15375,6 +15375,96 @@ TEST_F(VkLayerTest, CreateColorImageWithDepthAspect) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, TestImageCopyMissingUsage) {
+    TEST_DESCRIPTION("Test copying from src image without VK_IMAGE_USAGE_TRANSFER_SRC_BIT.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required.";
+    }
+
+    auto format = FindSupportedDepthStencilFormat(gpu());
+    auto stencil_usage_ci = LvlInitStruct<VkImageStencilUsageCreateInfo>();
+    stencil_usage_ci.stencilUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto image_ci = LvlInitStruct<VkImageCreateInfo>();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = format;
+    image_ci.extent.width = 32;
+    image_ci.extent.height = 32;
+    image_ci.extent.depth = 1;
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageObj sampled_image(m_device);
+    sampled_image.Init(image_ci);
+
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageObj transfer_image(m_device);
+    transfer_image.Init(image_ci);
+
+    image_ci.pNext = &stencil_usage_ci;
+    image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageObj separate_stencil_sampled_image(m_device);
+    separate_stencil_sampled_image.Init(image_ci);
+
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    stencil_usage_ci.stencilUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageObj separate_stencil_transfer_image(m_device);
+    separate_stencil_transfer_image.Init(image_ci);
+
+    VkImageCopy region;
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.srcOffset.x = 0;
+    region.srcOffset.y = 0;
+    region.srcOffset.z = 0;
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    region.dstSubresource.mipLevel = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.dstOffset.x = 0;
+    region.dstOffset.y = 0;
+    region.dstOffset.z = 0;
+    region.extent.width = 32;
+    region.extent.height = 32;
+    region.extent.depth = 1;
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06662");
+    vk::CmdCopyImage(m_commandBuffer->handle(), sampled_image.handle(), VK_IMAGE_LAYOUT_GENERAL, transfer_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06663");
+    vk::CmdCopyImage(m_commandBuffer->handle(), transfer_image.handle(), VK_IMAGE_LAYOUT_GENERAL, sampled_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06664");
+    vk::CmdCopyImage(m_commandBuffer->handle(), separate_stencil_sampled_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                     separate_stencil_transfer_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-aspect-06665");
+    vk::CmdCopyImage(m_commandBuffer->handle(), separate_stencil_transfer_image.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                     separate_stencil_sampled_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, VideoBufferUsage) {
     TEST_DESCRIPTION("Create buffer with USAGE_VIDEO_DECODE.");
 
