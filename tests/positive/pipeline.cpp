@@ -6411,3 +6411,35 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
     vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
 }
+
+// TODO: CTS was written, but still fails on many older drivers in CI
+// https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/3736
+TEST_F(VkPositiveLayerTest, DISABLED_GraphicsPipelineStageCreationFeedbackCount0) {
+    TEST_DESCRIPTION("Test graphics pipeline feedback stage count check with 0.");
+
+    AddRequiredExtensions(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME);
+    // need for IsDriver check
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME << " not supported";
+    }
+    // This test hits a bug in the driver, CTS was written, but incase using an old driver
+    if (IsDriver(VK_DRIVER_ID_NVIDIA_PROPRIETARY)) {
+        GTEST_SKIP() << "This test should not be run on the NVIDIA proprietary driver.";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto feedback_info = LvlInitStruct<VkPipelineCreationFeedbackCreateInfoEXT>();
+    VkPipelineCreationFeedbackEXT feedbacks[1] = {};
+    // Set flags to known value that the driver has to overwrite
+    feedbacks[0].flags = VK_PIPELINE_CREATION_FEEDBACK_FLAG_BITS_MAX_ENUM;
+
+    feedback_info.pPipelineCreationFeedback = &feedbacks[0];
+    feedback_info.pipelineStageCreationFeedbackCount = 0;
+
+    auto set_feedback = [&feedback_info](CreatePipelineHelper &helper) { helper.gp_ci_.pNext = &feedback_info; };
+
+    CreatePipelineHelper::OneshotTest(*this, set_feedback, kErrorBit);
+}
