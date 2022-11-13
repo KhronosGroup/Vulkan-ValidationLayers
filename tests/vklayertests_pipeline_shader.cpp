@@ -1822,13 +1822,15 @@ TEST_F(VkLayerTest, InvalidPipelineCreateStateBadStageBit) {
 TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
     TEST_DESCRIPTION("Create a shader reading a storage image without an image format");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkPhysicalDeviceFeatures feat;
-    vk::GetPhysicalDeviceFeatures(gpu(), &feat);
-    if (feat.shaderStorageImageReadWithoutFormat) {
-        GTEST_SKIP() << "shaderStorageImageReadWithoutFormat is supported";
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageReadWithoutFormat = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
     // disabled if VK_KHR_format_feature_flags2 is supported.
@@ -1900,13 +1902,15 @@ TEST_F(VkLayerTest, MissingStorageImageFormatRead) {
 TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     TEST_DESCRIPTION("Create a shader writing a storage image without an image format");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
-
-    VkPhysicalDeviceFeatures feat;
-    vk::GetPhysicalDeviceFeatures(gpu(), &feat);
-    if (feat.shaderStorageImageWriteWithoutFormat) {
-        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is supported";
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageWriteWithoutFormat = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
     // Checks based off shaderStorageImage(Read|Write)WithoutFormat are
     // disabled if VK_KHR_format_feature_flags2 is supported.
@@ -1920,18 +1924,16 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
     // Make sure compute pipeline has a compute shader stage set
     const char *csSource = R"(
                   OpCapability Shader
-                  OpCapability StorageImageReadWithoutFormat
+                  OpCapability StorageImageWriteWithoutFormat
              %1 = OpExtInstImport "GLSL.std.450"
                   OpMemoryModel Logical GLSL450
-                  OpEntryPoint GLCompute %main "main"
+                  OpEntryPoint GLCompute %main "main" %img
                   OpExecutionMode %main LocalSize 1 1 1
-                  OpSource GLSL 450
-                  OpName %main "main"
-                  OpName %img "img"
                   OpDecorate %img DescriptorSet 0
                   OpDecorate %img Binding 0
-                  OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
                   OpDecorate %img NonWritable
+                  ; incase shaderStorageImageReadWithoutFormat is not supported
+                  OpDecorate %img NonReadable
           %void = OpTypeVoid
              %3 = OpTypeFunction %void
          %float = OpTypeFloat 32
@@ -1962,7 +1964,7 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWrite) {
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
-    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
@@ -2433,16 +2435,18 @@ TEST_F(VkLayerTest, MissingNonReadableDecorationStorageImageFormatRead) {
     // because checks for read/write without format has to be done per format
     // rather than as a device feature. The code we test here only looks at
     // the shader.
-    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageReadWithoutFormat = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
-    VkPhysicalDeviceFeatures feat;
-    vk::GetPhysicalDeviceFeatures(gpu(), &feat);
-    if (feat.shaderStorageImageReadWithoutFormat) {
-        GTEST_SKIP() << "format less storage image read supported";
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
     }
 
     // Make sure compute pipeline has a compute shader stage set
@@ -2505,16 +2509,18 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
     // because checks for read/write without format has to be done per format
     // rather than as a device feature. The code we test here only looks at
     // the shader.
-    AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageWriteWithoutFormat = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
-    VkPhysicalDeviceFeatures feat;
-    vk::GetPhysicalDeviceFeatures(gpu(), &feat);
-    if (feat.shaderStorageImageWriteWithoutFormat) {
-        GTEST_SKIP() << "format less storage image write supported";
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
     }
 
     // Make sure compute pipeline has a compute shader stage set
@@ -2522,14 +2528,11 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
                   OpCapability Shader
              %1 = OpExtInstImport "GLSL.std.450"
                   OpMemoryModel Logical GLSL450
-                  OpEntryPoint GLCompute %main "main"
+                  OpEntryPoint GLCompute %main "main" %img
                   OpExecutionMode %main LocalSize 1 1 1
-                  OpSource GLSL 450
-                  OpName %main "main"
-                  OpName %img "img"
                   OpDecorate %img DescriptorSet 0
                   OpDecorate %img Binding 0
-                  OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+                  OpDecorate %img NonReadable
           %void = OpTypeVoid
              %3 = OpTypeFunction %void
          %float = OpTypeFloat 32
@@ -2558,7 +2561,7 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
 
     CreateComputePipelineHelper cs_pipeline(*this);
     cs_pipeline.InitInfo();
-    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM));
+    cs_pipeline.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM));
     cs_pipeline.InitState();
     cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
@@ -2566,6 +2569,109 @@ TEST_F(VkLayerTest, MissingNonWritableDecorationStorageImageFormatWrite) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-RuntimeSpirv-OpTypeImage-06269");
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, SubpassInputWithoutFormat) {
+    TEST_DESCRIPTION("Non-InputAttachment shader input with unknown image format");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    features.shaderStorageImageReadWithoutFormat = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME)) {
+        GTEST_SKIP() << "VK_KHR_format_feature_flags2 is supported";
+    }
+
+    const std::string fs_source = R"(
+               OpCapability Shader
+               OpCapability StorageImageReadWithoutFormat
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main" %color %img
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 460
+               OpName %main "main"
+               OpName %color "color"
+               OpName %img "img"
+               OpDecorate %color Location 0
+               OpDecorate %img DescriptorSet 0
+               OpDecorate %img Binding 0
+               OpDecorate %img NonWritable
+               OpDecorate %img NonReadable
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %color = OpVariable %_ptr_Output_v4float Output
+               ;
+               ; Image has unknown format, but dimension != SubpassData and
+               ; shaderStorageImageReadWithoutFormat == VK_FALSE, which is invalid
+               ;
+         %10 = OpTypeImage %float 2D 0 0 0 2 Unknown
+
+%_ptr_UniformConstant_10 = OpTypePointer UniformConstant %10
+        %img = OpVariable %_ptr_UniformConstant_10 UniformConstant
+        %int = OpTypeInt 32 1
+      %v2int = OpTypeVector %int 2
+      %int_0 = OpConstant %int 0
+         %17 = OpConstantComposite %v2int %int_0 %int_0
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %13 = OpLoad %10 %img
+         %18 = OpImageRead %v4float %13 %17
+               OpStore %color %18
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.AddDefaultColorAttachment();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetLayoutBinding dslb = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj dsl(m_device, {dslb});
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    VkAttachmentDescription descs[2] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL},
+    };
+    VkAttachmentReference color = {
+        0,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkAttachmentReference input = {
+        1,
+        VK_IMAGE_LAYOUT_GENERAL,
+    };
+
+    VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
+    VkRenderPass rp;
+    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
+    pipe.CreateVKPipeline(pl.handle(), rp);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
