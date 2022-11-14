@@ -2763,7 +2763,7 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
 #ifndef VK_USE_PLATFORM_WIN32_KHR
-    GTEST_SKIP() << "Test not supported on platform, skipping".
+    GTEST_SKIP() << "Test not supported on platform, skipping.";
 #else
     AddSurfaceExtension();
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -2775,10 +2775,6 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (!InitSurface()) {
-        GTEST_SKIP() << "Cannot create surface";
-    }
-    InitSwapchainInfo();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain()) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
