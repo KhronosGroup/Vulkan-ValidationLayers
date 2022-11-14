@@ -4461,7 +4461,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Type mismatch on descriptor slot 0.0 ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -4495,7 +4495,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds.layout_});
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Shader uses descriptor slot 0.0 ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -6381,7 +6381,7 @@ TEST_F(VkLayerTest, CreateComputePipelineMissingDescriptor) {
     pipe.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Shader uses descriptor slot 0.0");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-00703");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -6404,8 +6404,7 @@ TEST_F(VkLayerTest, CreateComputePipelineDescriptorTypeMismatch) {
         helper.cs_.reset(new VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT));
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
     };
-    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                             "but descriptor of type VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER");
+    CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-00703");
 }
 
 TEST_F(VkLayerTest, MultiplePushDescriptorSets) {
