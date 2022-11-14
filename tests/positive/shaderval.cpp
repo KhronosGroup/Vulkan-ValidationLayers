@@ -1777,8 +1777,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicFloat2) {
     // Add binding for images
     current_bindings.push_back({1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr});
 
-    // NOTE: this fails on new mesa drivers with ACO compilers
-    if (atomic_float2_features.shaderSharedFloat32AtomicMinMax == VK_TRUE) {
+    if (atomic_float2_features.shaderImageFloat32AtomicMinMax == VK_TRUE) {
         current_shader = cs_image_32_min.c_str();
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 

@@ -594,13 +594,13 @@ TEST_F(VkPositiveLayerTest, CreateComputePipelineFragmentShadingRate) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDeviceFragmentShadingRateFeaturesKHR fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
-    fsr_features.pipelineFragmentShadingRate = true;
-    fsr_features.primitiveFragmentShadingRate = true;
+    auto fsr_features = LvlInitStruct<VkPhysicalDeviceFragmentShadingRateFeaturesKHR>();
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(fsr_features);
+    if (fsr_features.pipelineFragmentShadingRate == VK_FALSE || fsr_features.primitiveFragmentShadingRate == VK_FALSE) {
+        GTEST_SKIP() << "Test requires (unsupported) pipelineFragmentShadingRate and primitiveFragmentShadingRate";
+    }
 
-    VkPhysicalDeviceFeatures2 device_features = LvlInitStruct<VkPhysicalDeviceFeatures2>(&fsr_features);
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &device_features));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     char const *csSource = R"glsl(
         #version 450

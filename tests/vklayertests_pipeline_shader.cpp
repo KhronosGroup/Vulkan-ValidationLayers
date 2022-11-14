@@ -762,19 +762,16 @@ TEST_F(VkLayerTest, CreatePipelineExcessSubsampledPerStageDescriptors) {
 TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed per-stage limits");
 
-    bool descriptor_indexing = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (descriptor_indexing) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    descriptor_indexing = descriptor_indexing && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    descriptor_indexing =
-        descriptor_indexing && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    if (descriptor_indexing) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    bool descriptor_indexing =
+        IsExtensionsEnabled(VK_KHR_MAINTENANCE_3_EXTENSION_NAME) && IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
     uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
