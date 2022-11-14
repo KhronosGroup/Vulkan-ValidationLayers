@@ -117,7 +117,7 @@ add_executable(vk_layer_validation_tests
 if (CMAKE_CROSSCOMPILING)
     gtest_add_tests(TARGET vk_layer_validation_tests)
 else()
-    gtest_discover_tests(vk_layer_validation_tests)
+    gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 endif()
 
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
