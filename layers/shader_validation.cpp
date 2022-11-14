@@ -3041,28 +3041,28 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
             LogObjectList objlist(module_state.vk_shader_module());
             objlist.add(pipeline->PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Shader uses descriptor slot %u.%u (expected `%s`) but not declared in pipeline layout", use.first.set,
-                             use.first.binding, string_descriptorTypes(descriptor_types).c_str());
+                             "Set %u Binding %u in shader uses descriptor slot (expected `%s`) but not declared in pipeline layout",
+                             use.first.set, use.first.binding, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             LogObjectList objlist(module_state.vk_shader_module());
             objlist.add(pipeline->PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Shader uses descriptor slot %u.%u but descriptor not accessible from stage %s", use.first.set,
-                             use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
+                             "Set %u Binding %u in shader uses descriptor slot but descriptor not accessible from stage %s",
+                             use.first.set, use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             LogObjectList objlist(module_state.vk_shader_module());
             objlist.add(pipeline->PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Type mismatch on descriptor slot %u.%u (expected `%s`) but descriptor of type %s", use.first.set,
-                             use.first.binding, string_descriptorTypes(descriptor_types).c_str(),
-                             string_VkDescriptorType(binding->descriptorType));
+                             "Set %u Binding %u type mismatch on descriptor slot, uses type %s but expected %s", use.first.set,
+                             use.first.binding, string_VkDescriptorType(binding->descriptorType),
+                             string_descriptorTypes(descriptor_types).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             LogObjectList objlist(module_state.vk_shader_module());
             objlist.add(pipeline->PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Shader expects at least %u descriptors for binding %u.%u but only %u provided",
-                             required_descriptor_count, use.first.set, use.first.binding, binding->descriptorCount);
+                             "Set %u Binding %u in shader expects at least %u descriptors, but only %u provided", use.first.set,
+                             use.first.binding, required_descriptor_count, binding->descriptorCount);
         }
     }
 
