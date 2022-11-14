@@ -159,8 +159,10 @@ if (UNIX AND NOT APPLE) # Options for Linux only
     endif()
 endif()
 
-option(BUILD_WERROR "Treat compiler warnings as errors" ON)
-if(BUILD_WERROR)
+# NOTE: The idiom for open source projects is to not enable warnings as errors.
+# This reduces problems for users who simply want to build the repository.
+option(BUILD_WERROR "Treat compiler warnings as errors" OFF)
+if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
 endif()
 
