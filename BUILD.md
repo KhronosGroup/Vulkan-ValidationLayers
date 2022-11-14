@@ -309,10 +309,19 @@ on/off options currently supported by this repository:
 | BUILD_LAYER_SUPPORT_FILES | All | `OFF` | Controls whether or not layer support files are installed. |
 | BUILD_TESTS | All | `OFF` | Controls whether or not the validation layer tests are built. |
 | INSTALL_TESTS | All | `OFF` | Controls whether or not the validation layer tests are installed. This option is only available when `BUILD_TESTS` is `ON` |
-| BUILD_WERROR | All | `ON` | Controls whether or not to treat compiler warnings as errors. |
+| BUILD_WERROR | All | `OFF` | Controls whether or not to treat compiler warnings as errors. |
 | BUILD_WSI_XCB_SUPPORT | Linux | `ON` | Build the components with XCB support. |
 | BUILD_WSI_XLIB_SUPPORT | Linux | `ON` | Build the components with Xlib support. |
 | BUILD_WSI_WAYLAND_SUPPORT | Linux | `ON` | Build the components with Wayland support. |
+
+### CMakePresets.json (3.21+)
+
+CMakePresets.json can save developer time by specifying common build flags.
+
+```bash
+# Enables tests, enable werror, etc.
+cmake -S . -B build/ --preset dev
+```
 
 ### CCACHE
 

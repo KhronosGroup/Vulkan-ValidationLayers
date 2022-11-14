@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Generic Developer Preset",
+      "description": "Sets common developer flags",
+      "cacheVariables": {
+        "BUILD_TESTS": "ON",
+        "BUILD_WERROR": "ON",
+        "UPDATE_DEPS": "ON",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ]
+}
