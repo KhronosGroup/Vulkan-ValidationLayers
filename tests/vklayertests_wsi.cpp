@@ -2197,7 +2197,7 @@ TEST_F(VkLayerTest, TestvkAcquireFullScreenExclusiveModeEXT) {
     }
     InitSwapchainInfo();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (!InitSwapchain()) {
+    if (!InitSwapchain(m_surface)) {
         GTEST_SKIP() << "Cannot create surface or swapchain";
     }
 
