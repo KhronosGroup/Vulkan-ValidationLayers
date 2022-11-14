@@ -79,6 +79,8 @@ def BuildVVL(args, build_tests=False):
     utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    # By default BUILD_WERROR is OFF, CI should always enable it.
+    cmake_cmd = cmake_cmd + ' -DBUILD_WERROR=ON'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     if build_tests: cmake_cmd = cmake_cmd + ' -DBUILD_TESTS=ON'
     RunShellCmd(cmake_cmd, VVL_BUILD_DIR)
