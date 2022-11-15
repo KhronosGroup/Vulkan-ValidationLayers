@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # Copyright (C) 2016 The ANGLE Project Authors.
+# Copyright (c) 2022 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -127,9 +128,9 @@ def main():
         with open(json_out_fname,'w') as json_out_file, \
              open(json_in_name) as infile:
             for line in infile:
-                line = line.replace('@RELATIVE_LAYER_BINARY@',
+                line = line.replace('@JSON_LIBRARY_PATH@',
                                     relative_path_prefix + layer_lib_name)
-                line = line.replace('@VK_VERSION@', '1.3.' + vk_version)
+                line = line.replace('@JSON_API_VERSION@', '1.3.' + vk_version)
                 json_out_file.write(line)
 
 if __name__ == '__main__':

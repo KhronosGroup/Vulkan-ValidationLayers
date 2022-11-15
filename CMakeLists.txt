@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-project(Vulkan-ValidationLayers LANGUAGES CXX C)
+project(VVL LANGUAGES CXX C)
 
 set(VVL_CPP_STANDARD 11 CACHE STRING "Set the C++ standard to build against. The value will be passed to cmake's CXX_STANDARD property.")
 

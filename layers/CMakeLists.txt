@@ -241,116 +241,109 @@ if(INSTRUMENT_OPTICK)
     endif()
 endif()
 
-if(BUILD_LAYERS)
-    add_library(VkLayer_khronos_validation SHARED)
-
-    target_sources(VkLayer_khronos_validation PRIVATE
-        ${CHASSIS_LIBRARY_FILES}
-        ${CORE_VALIDATION_LIBRARY_FILES}
-        ${OBJECT_LIFETIMES_LIBRARY_FILES}
-        ${THREAD_SAFETY_LIBRARY_FILES}
-        ${STATELESS_VALIDATION_LIBRARY_FILES}
-        ${BEST_PRACTICES_LIBRARY_FILES}
-        ${GPU_UTILITY_LIBRARY_FILES}
-        ${GPU_ASSISTED_LIBRARY_FILES}
-        ${DEBUG_PRINTF_LIBRARY_FILES}
-        ${SYNC_VALIDATION_LIBRARY_FILES}
-        ${OPTICK_SOURCE_FILES}
-    )
-
-    set_target_properties(VkLayer_khronos_validation PROPERTIES
-        CXX_STANDARD ${VVL_CPP_STANDARD}
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS OFF
-    )
-    
-    target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
-    target_link_libraries(VkLayer_khronos_validation PRIVATE VkLayer_utils)
-
-    if (VVL_ENABLE_ASAN)
-        target_compile_options(VkLayer_khronos_validation PRIVATE -fsanitize=address)
-        # NOTE: Use target_link_options when cmake 3.13 is available on CI
-        target_link_libraries(VkLayer_khronos_validation PRIVATE "-fsanitize=address")
-    endif()
-
-    if(WIN32)
-        target_sources(VkLayer_khronos_validation PRIVATE VkLayer_khronos_validation.def)
-        target_compile_definitions(VkLayer_khronos_validation PUBLIC NOMINMAX)
-    elseif(APPLE)
-        set_target_properties(VkLayer_khronos_validation
-                                PROPERTIES LINK_FLAGS
-                                            "-Wl"
-                                            INSTALL_RPATH
-                                            "@loader_path/")
-    else(LINUX)
-        set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL")
-    endif()
-
-    install(TARGETS VkLayer_khronos_validation DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-    # Force generation of the PDB file for Release builds.
-    # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
-    if(MSVC)
-        target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
-        # Need to use this instead of target_link_options() for older versions of CMake.
-        target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
-    endif()
-
-    # Khronos validation additional dependencies
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_INCLUDE_DIR})
-    if(INSTRUMENT_OPTICK)
-        target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
-    endif()
-    if (USE_ROBIN_HOOD_HASHING)
-        target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
-        # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
-        target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
-    endif()
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
-    target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)
-
-    # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
-    # because the json format uses backslash escapes
-    file(TO_NATIVE_PATH "./" RELATIVE_PATH_PREFIX)
-    string(REPLACE "\\"
-                   "\\\\"
-                   RELATIVE_PATH_PREFIX
-                   "${RELATIVE_PATH_PREFIX}")
-
-    # Run each .json.in file through the generator We need to create the generator.cmake script so that the generator can be run at
-    # compile time, instead of configure time Running at compile time lets us use cmake generator expressions (TARGET_FILE_NAME and
-    # TARGET_FILE_DIR, specifically)
-    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake" "configure_file(\"\${INPUT_FILE}\" \"\${OUTPUT_FILE}\" @ONLY)")
-    
-    set(CONFIG_DEFINES -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json.in" -DVK_VERSION=${VulkanHeaders_VERSION})
-
-    set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_khronos_validation>/VkLayer_khronos_validation.json")
-
-    set(CONFIG_DEFINES ${CONFIG_DEFINES} -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:VkLayer_khronos_validation>")
-
-    add_custom_target(VkLayer_khronos_validation-json ALL
-                        COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
-
-    set_target_properties(VkLayer_khronos_validation-json PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-
-    # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system
-    # directories, so we do not include it in the staging-json files which are used for installation
-    if(UNIX)
-        set(INSTALL_DEFINES
-            -DINPUT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json.in"
-            -DOUTPUT_FILE="${CMAKE_CURRENT_BINARY_DIR}/staging-json/VkLayer_khronos_validation.json"
-            -DVK_VERSION=${VulkanHeaders_VERSION})
-
-        set(INSTALL_DEFINES ${INSTALL_DEFINES} -DRELATIVE_LAYER_BINARY="$<TARGET_FILE_NAME:VkLayer_khronos_validation>")
-
-        add_custom_target(VkLayer_khronos_validation-staging-json ALL
-                            COMMAND ${CMAKE_COMMAND} ${INSTALL_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
-    endif()
-
-    # Install the layer json files
-    if(WIN32)
-        install(FILES $<TARGET_FILE_DIR:VkLayer_khronos_validation>/VkLayer_khronos_validation.json DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    elseif(UNIX)
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/staging-json/VkLayer_khronos_validation.json DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
-    endif()
+if (NOT BUILD_LAYERS)
+    return()
 endif()
+
+add_library(VkLayer_khronos_validation SHARED)
+
+target_sources(VkLayer_khronos_validation PRIVATE
+    ${CHASSIS_LIBRARY_FILES}
+    ${CORE_VALIDATION_LIBRARY_FILES}
+    ${OBJECT_LIFETIMES_LIBRARY_FILES}
+    ${THREAD_SAFETY_LIBRARY_FILES}
+    ${STATELESS_VALIDATION_LIBRARY_FILES}
+    ${BEST_PRACTICES_LIBRARY_FILES}
+    ${GPU_UTILITY_LIBRARY_FILES}
+    ${GPU_ASSISTED_LIBRARY_FILES}
+    ${DEBUG_PRINTF_LIBRARY_FILES}
+    ${SYNC_VALIDATION_LIBRARY_FILES}
+    ${OPTICK_SOURCE_FILES}
+)
+
+set_target_properties(VkLayer_khronos_validation PROPERTIES
+    CXX_STANDARD ${VVL_CPP_STANDARD}
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+
+target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
+target_link_libraries(VkLayer_khronos_validation PRIVATE VkLayer_utils)
+
+if (VVL_ENABLE_ASAN)
+    target_compile_options(VkLayer_khronos_validation PRIVATE -fsanitize=address)
+    # NOTE: Use target_link_options when cmake 3.13 is available on CI
+    target_link_libraries(VkLayer_khronos_validation PRIVATE "-fsanitize=address")
+endif()
+
+if(WIN32)
+    target_sources(VkLayer_khronos_validation PRIVATE VkLayer_khronos_validation.def)
+    target_compile_definitions(VkLayer_khronos_validation PUBLIC NOMINMAX)
+elseif(APPLE)
+    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl" INSTALL_RPATH "@loader_path/")
+else(LINUX)
+    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL")
+endif()
+
+# Force generation of the PDB file for Release builds.
+# Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
+if(MSVC)
+    target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
+    # Need to use this instead of target_link_options() for older versions of CMake.
+    target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
+endif()
+
+# Khronos validation additional dependencies
+target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_INCLUDE_DIR})
+if(INSTRUMENT_OPTICK)
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
+endif()
+if (USE_ROBIN_HOOD_HASHING)
+    target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
+    # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
+    target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
+endif()
+target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
+target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)
+
+# There are 2 primary deliverables for the validation layers.
+# - The actual shared library VkLayer_khronos_validation.(dll|so|dlib)
+# - The respective json file, VkLayer_khronos_validation.json
+# This code generates the appropriate json for both local testing and the installation.
+# NOTE: For WIN32 the JSON and dll MUST be placed in the same location, due to Win32 using a relative path for installation.
+set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json.in")
+set(OUTPUT_FILE "${VVL_BINARY_DIR}/json/VkLayer_khronos_validation.json")
+set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+
+if (WIN32)
+    set(JSON_LIBRARY_PATH ".\\\\VkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}") # .\\VkLayer_khronos_validation.dll
+else()
+    set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}") # ./libVkLayer_khronos_validation.(so|dylib)
+endif()
+
+set(JSON_API_VERSION ${VulkanHeaders_VERSION})
+
+configure_file(${INPUT_FILE} ${OUTPUT_FILE} @ONLY)
+
+# To support both multi/single configuration generators just copy the json to the correct directory
+add_custom_command(TARGET VkLayer_khronos_validation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT_FILE} $<TARGET_FILE_DIR:VkLayer_khronos_validation>
+)
+
+# For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories
+# This json isn't used for regular local development, it's used installation.
+if (UNIX)
+    set(UNIX_OUTPUT_FILE "${VVL_BINARY_DIR}/json/unix/VkLayer_khronos_validation.json")
+
+    set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+    configure_file(${INPUT_FILE} ${UNIX_OUTPUT_FILE} @ONLY)
+
+    install(FILES ${UNIX_OUTPUT_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
+endif()
+
+if (WIN32)
+    install(FILES ${OUTPUT_FILE} DESTINATION ${LAYER_INSTALL_DIR})
+endif()
+
+install(TARGETS VkLayer_khronos_validation DESTINATION ${LAYER_INSTALL_DIR})
