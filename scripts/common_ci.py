@@ -90,6 +90,10 @@ def BuildVVL(args, build_tests=False):
     if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
     RunShellCmd(build_cmd, VVL_BUILD_DIR)
 
+    print("Install Validation Layers")
+    install_cmd = f'cmake --install . --prefix ./install/ --config {args.configuration}'
+    RunShellCmd(install_cmd, VVL_BUILD_DIR)
+
     print('Run vk_validation_stats.py')
     utils.make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration.capitalize()))
     RunShellCmd(f'python3 ../scripts/vk_validation_stats.py ../{EXTERNAL_DIR_NAME}/Vulkan-Headers/registry/validusage.json -text layers/{args.configuration.capitalize()}/vuid_coverage_database.txt', VVL_BUILD_DIR)

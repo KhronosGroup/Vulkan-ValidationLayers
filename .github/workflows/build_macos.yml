@@ -61,3 +61,5 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: 10.12
       - name: Build Vulkan-ValidationLayers
         run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
+      - name: Install Vulkan-ValidationLayers
+        run: cmake --install build --prefix build/install --config ${{matrix.config}}
