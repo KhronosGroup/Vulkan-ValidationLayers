@@ -2659,16 +2659,19 @@ TEST_F(VkLayerTest, SubpassInputWithoutFormat) {
 
     VkSubpassDescription sd = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &input, 1, &color, nullptr, nullptr, 0, nullptr};
 
-    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descs, 1, &sd, 0, nullptr};
-    VkRenderPass rp;
-    VkResult err = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
-    ASSERT_VK_SUCCESS(err);
+    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rpci.flags = 0;
+    rpci.attachmentCount = 2;
+    rpci.pAttachments = descs;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &sd;
+    rpci.dependencyCount = 0;
+    vk_testing::RenderPass rp(*m_device, rpci);
+    ASSERT_TRUE(rp.initialized());
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkShaderModuleCreateInfo-pCode-01091");
-    pipe.CreateVKPipeline(pl.handle(), rp);
+    pipe.CreateVKPipeline(pl.handle(), rp.handle());
     m_errorMonitor->VerifyFound();
-
-    vk::DestroyRenderPass(m_device->device(), rp, nullptr);
 }
 
 TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
