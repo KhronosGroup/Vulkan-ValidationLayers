@@ -120,7 +120,7 @@ else()
     gtest_discover_tests(vk_layer_validation_tests DISCOVERY_TIMEOUT 100)
 endif()
 
-add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
+add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
 target_include_directories(vk_layer_validation_tests
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
