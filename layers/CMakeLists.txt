@@ -245,7 +245,7 @@ if (NOT BUILD_LAYERS)
     return()
 endif()
 
-add_library(VkLayer_khronos_validation SHARED)
+add_library(VkLayer_khronos_validation MODULE)
 
 target_sources(VkLayer_khronos_validation PRIVATE
     ${CHASSIS_LIBRARY_FILES}
@@ -307,7 +307,7 @@ target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_IN
 target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)
 
 # There are 2 primary deliverables for the validation layers.
-# - The actual shared library VkLayer_khronos_validation.(dll|so|dlib)
+# - The actual library VkLayer_khronos_validation.(dll|so)
 # - The respective json file, VkLayer_khronos_validation.json
 # This code generates the appropriate json for both local testing and the installation.
 # NOTE: For WIN32 the JSON and dll MUST be placed in the same location, due to Win32 using a relative path for installation.
@@ -316,9 +316,9 @@ set(OUTPUT_FILE "${VVL_BINARY_DIR}/json/VkLayer_khronos_validation.json")
 set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
 
 if (WIN32)
-    set(JSON_LIBRARY_PATH ".\\\\VkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}") # .\\VkLayer_khronos_validation.dll
+    set(JSON_LIBRARY_PATH ".\\\\VkLayer_khronos_validation${CMAKE_SHARED_MODULE_SUFFIX}") # .\\VkLayer_khronos_validation.dll
 else()
-    set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}") # ./libVkLayer_khronos_validation.(so|dylib)
+    set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation${CMAKE_SHARED_MODULE_SUFFIX}") # ./libVkLayer_khronos_validation.so
 endif()
 
 set(JSON_API_VERSION ${VulkanHeaders_VERSION})
@@ -335,7 +335,7 @@ add_custom_command(TARGET VkLayer_khronos_validation POST_BUILD
 if (UNIX)
     set(UNIX_OUTPUT_FILE "${VVL_BINARY_DIR}/json/unix/VkLayer_khronos_validation.json")
 
-    set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation${CMAKE_SHARED_MODULE_SUFFIX}")
 
     configure_file(${INPUT_FILE} ${UNIX_OUTPUT_FILE} @ONLY)
 

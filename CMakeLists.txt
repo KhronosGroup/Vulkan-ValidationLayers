@@ -241,12 +241,12 @@ endif()
 # modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
 # files directly in layers.
 
-add_library(VkLayer_utils
-            STATIC
-            layers/vk_layer_config.cpp
-            layers/vk_layer_extension_utils.cpp
-            layers/vk_layer_utils.cpp
-            layers/generated/vk_format_utils.cpp)
+add_library(VkLayer_utils STATIC
+    layers/vk_layer_config.cpp
+    layers/vk_layer_extension_utils.cpp
+    layers/vk_layer_utils.cpp
+    layers/generated/vk_format_utils.cpp
+)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 if (VVL_ENABLE_ASAN)

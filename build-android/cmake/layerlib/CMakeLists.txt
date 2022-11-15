@@ -61,7 +61,7 @@ set_target_properties(SPIRV-Tools-prebuilt PROPERTIES IMPORTED_LOCATION
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
                      -fvisibility=hidden -DXXH_NO_LONG_LONG")
-add_library(VkLayer_khronos_validation SHARED
+add_library(VkLayer_khronos_validation MODULE
         ${SRC_DIR}/layers/state_tracker.cpp
         ${SRC_DIR}/layers/base_node.cpp
         ${SRC_DIR}/layers/buffer_state.cpp
