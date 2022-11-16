@@ -3520,18 +3520,15 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
         const auto combiner_ops = fragment_shading_rate_state->combinerOps;
         if (pipeline->pre_raster_state || pipeline->fragment_shader_state) {
-            // TODO automate what a "valid combiner op" is
-            const auto combiner_op0_valid = (combiner_ops[0] >= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) &&
-                                            (combiner_ops[0] <= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR);
-            const auto combiner_op1_valid = (combiner_ops[1] >= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) &&
-                                            (combiner_ops[1] <= VK_FRAGMENT_SHADING_RATE_COMBINER_OP_MUL_KHR);
-            if (!combiner_op0_valid) {
+            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
+                          combiner_ops[0]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567",
                                  "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
                                  "], combinerOp[0] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
                                  pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[0]));
             }
-            if (!combiner_op1_valid) {
+            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
+                          combiner_ops[1]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568",
                                  "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
                                  "], combinerOp[1] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
