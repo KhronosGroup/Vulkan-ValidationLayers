@@ -312,7 +312,8 @@ target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} S
 # This code generates the appropriate json for both local testing and the installation.
 # NOTE: For WIN32 the JSON and dll MUST be placed in the same location, due to Win32 using a relative path for installation.
 set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json.in")
-set(OUTPUT_FILE "${VVL_BINARY_DIR}/json/VkLayer_khronos_validation.json")
+set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/validation.json")
+set(OUTPUT_FILE_FINAL_NAME "VkLayer_khronos_validation.json")
 set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
 
 if (WIN32)
@@ -323,27 +324,27 @@ endif()
 
 set(JSON_API_VERSION ${VulkanHeaders_VERSION})
 
-configure_file(${INPUT_FILE} ${OUTPUT_FILE} @ONLY)
+configure_file(${INPUT_FILE} ${INTERMEDIATE_FILE} @ONLY)
 
 # To support both multi/single configuration generators just copy the json to the correct directory
 add_custom_command(TARGET VkLayer_khronos_validation POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT_FILE} $<TARGET_FILE_DIR:VkLayer_khronos_validation>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${INTERMEDIATE_FILE} $<TARGET_FILE_DIR:VkLayer_khronos_validation>/${OUTPUT_FILE_FINAL_NAME}
 )
 
 # For UNIX-based systems, `library_path` should not contain a relative path (indicated by "./") before installing to system directories
-# This json isn't used for regular local development, it's used installation.
+# This json isn't used for regular local development, it's used for installation
 if (UNIX)
-    set(UNIX_OUTPUT_FILE "${VVL_BINARY_DIR}/json/unix/VkLayer_khronos_validation.json")
+    set(UNIX_INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/unix_install_validation.json")
 
     set(JSON_LIBRARY_PATH "libVkLayer_khronos_validation${CMAKE_SHARED_LIBRARY_SUFFIX}")
 
-    configure_file(${INPUT_FILE} ${UNIX_OUTPUT_FILE} @ONLY)
+    configure_file(${INPUT_FILE} ${UNIX_INTERMEDIATE_FILE} @ONLY)
 
-    install(FILES ${UNIX_OUTPUT_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d)
+    install(FILES ${UNIX_INTERMEDIATE_FILE} DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vulkan/explicit_layer.d RENAME ${OUTPUT_FILE_FINAL_NAME})
 endif()
 
 if (WIN32)
-    install(FILES ${OUTPUT_FILE} DESTINATION ${LAYER_INSTALL_DIR})
+    install(FILES ${INTERMEDIATE_FILE} DESTINATION ${LAYER_INSTALL_DIR} RENAME ${OUTPUT_FILE_FINAL_NAME})
 endif()
 
 install(TARGETS VkLayer_khronos_validation DESTINATION ${LAYER_INSTALL_DIR})
