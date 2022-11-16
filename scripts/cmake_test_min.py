@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
+# Copyright (c) 2021-2022 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ def get_cmake_min_version():
         if m is not None:
             return m.group(1)
         else:
-            return '3.10.2'
+            return '3.16.3'
 
 
 curr_platform = platform.system().lower()

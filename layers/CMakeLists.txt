@@ -15,6 +15,51 @@
 # limitations under the License.
 # ~~~
 
+# VkLayer_utils library ----------------------------------------------------------------------------------------------------------
+# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
+# modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
+# files directly in layers.
+add_library(VkLayer_utils STATIC)
+
+target_sources(VkLayer_utils PRIVATE
+    vk_layer_config.cpp
+    vk_layer_extension_utils.cpp
+    vk_layer_utils.cpp
+    generated/vk_format_utils.cpp
+)
+
+target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
+set_target_properties(VkLayer_utils PROPERTIES
+    CXX_STANDARD ${VVL_CPP_STANDARD}
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+
+if (VVL_ENABLE_ASAN)
+    target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
+    # NOTE: Use target_link_options when cmake 3.13 is available on CI
+    target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
+endif()
+if(WIN32)
+    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
+    if(MINGW)
+        target_compile_definitions(VkLayer_utils PUBLIC "_WIN32_WINNT=0x0600")
+    endif()
+endif()
+
+set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
+
+target_include_directories(VkLayer_utils PUBLIC
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${VVL_BINARY_DIR}    
+    generated
+    .
+)
+
+if (USE_ROBIN_HOOD_HASHING)
+    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
+endif()
+
 if(WIN32)
     add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX -DWIN32_LEAN_AND_MEAN)
     add_custom_target(mk_layer_config_dir ALL
@@ -299,9 +344,7 @@ if(INSTRUMENT_OPTICK)
     target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
 endif()
 if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
-    # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
-    target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
+    target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)    
 endif()
 target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
 target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_TARGET} SPIRV-Tools-opt)

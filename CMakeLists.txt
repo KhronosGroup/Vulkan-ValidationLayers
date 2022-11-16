@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.16.3...3.22.1)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(VVL LANGUAGES CXX C)
@@ -25,10 +25,10 @@ option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=addres
 
 option(BUILD_TESTS "Build the tests" OFF)
 
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
+add_compile_definitions(VK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
 
 if (UPDATE_DEPS)
-    find_package(PythonInterp 3 REQUIRED)
+    find_package(Python3 REQUIRED QUIET COMPONENTS Interpreter)
 
     if (CMAKE_GENERATOR_PLATFORM)
         set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
@@ -69,7 +69,7 @@ if (UPDATE_DEPS)
     # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py 
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py
             --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
         DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json
     )
@@ -79,7 +79,7 @@ if (UPDATE_DEPS)
     # Check if update_deps.py needs to be run on first cmake run
     if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${CMAKE_CURRENT_LIST_DIR}/external/helper.cmake)
         execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py
                 --dir ${CMAKE_CURRENT_LIST_DIR}/external --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             RESULT_VARIABLE _update_deps_result
@@ -93,7 +93,7 @@ else()
     message("********************************************************************************")
     message("* NOTE: Not adding target to run update_deps.py automatically.                 *")
     message("********************************************************************************")
-    find_package(PythonInterp 3 QUIET)
+    find_package(Python3 QUIET COMPONENTS Interpreter)
 endif()
 # Dependencies can be installed in arbitrary locations. This is done by update_deps.py / users.
 if (ROBIN_HOOD_HASHING_INSTALL_DIR)
@@ -212,6 +212,9 @@ option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating fi
 option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
 if (USE_ROBIN_HOOD_HASHING)
     find_package(robin_hood REQUIRED CONFIG)
+    target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
+    # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
+    target_compile_options(robin_hood::robin_hood INTERFACE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
 endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)
@@ -234,43 +237,6 @@ if(BUILD_LAYERS OR BUILD_TESTS)
     else()
         message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
     endif()
-endif()
-
-# VkLayer_utils library ----------------------------------------------------------------------------------------------------------
-# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
-# modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
-# files directly in layers.
-
-add_library(VkLayer_utils
-            STATIC
-            layers/vk_layer_config.cpp
-            layers/vk_layer_extension_utils.cpp
-            layers/vk_layer_utils.cpp
-            layers/generated/vk_format_utils.cpp)
-target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
-set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
-if (VVL_ENABLE_ASAN)
-    target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
-    # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
-endif()
-if(WIN32)
-    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
-    if(MINGW)
-        target_compile_definitions(VkLayer_utils PUBLIC "_WIN32_WINNT=0x0600")
-    endif()
-endif()
-set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(VkLayer_utils
-                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/layers
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
-                                  ${CMAKE_CURRENT_BINARY_DIR}
-                                  ${CMAKE_CURRENT_BINARY_DIR}/layers
-                                  ${PROJECT_BINARY_DIR})
-
-if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
-    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
 endif()
 
 # uninstall target ---------------------------------------------------------------------------------------------------------------
