@@ -7901,11 +7901,10 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
             GTEST_SKIP() << "CreateDevice returned back not VK_SUCCESS";
         }
 
-        // TODO: Re-enable test when Vulkan-Loader MR #581 is resolved and upstream into next SDK - tested ToT
         // Try using GetDeviceQueue with a queue that has as flag
-        // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-flags-01841");
-        // vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
-        // m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-flags-01841");
+        vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
+        m_errorMonitor->VerifyFound();
 
         PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
         ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
@@ -7930,18 +7929,17 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         GTEST_SKIP() << "CreateDevice returned back not VK_SUCCESS";
     }
 
-    // TODO: Re-enable test when Vulkan-Loader MR #581 is resolved and upstream into next SDK - tested ToT
-    // if (queue_properties.queueCount > 1) {
-    //     // Set queueIndex 1 over size of queueCount used to create device
-    //     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueIndex-00385");
-    //     vk::GetDeviceQueue(test_device, queue_family_index, 1, &test_queue);
-    //     m_errorMonitor->VerifyFound();
-    // }
+    if (queue_properties.queueCount > 1) {
+        // Set queueIndex 1 over size of queueCount used to create device
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueIndex-00385");
+        vk::GetDeviceQueue(test_device, queue_family_index, 1, &test_queue);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Use an unknown queue family index
-    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
-    // vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
-    // m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
+    vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
+    m_errorMonitor->VerifyFound();
 
     PFN_vkGetDeviceQueue2 vkGetDeviceQueue2 = (PFN_vkGetDeviceQueue2)vk::GetDeviceProcAddr(test_device, "vkGetDeviceQueue2");
     ASSERT_TRUE(vkGetDeviceQueue2 != nullptr);
