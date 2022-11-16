@@ -1291,7 +1291,7 @@ static CBDynamicStatus ConvertToCBDynamicStatus(VkDynamicState state) {
 
 std::string DynamicStateString(CBDynamicFlags const &dynamic_state) {
     std::string ret;
-    for (int index = 0; index < CB_DYNAMIC_STATUS_NUM; ++index) {
+    for (int index = 1; index < CB_DYNAMIC_STATUS_NUM; ++index) {
         CBDynamicStatus status = static_cast<CBDynamicStatus>(index);
         if (dynamic_state[status]) {
             if (!ret.empty()) ret.append("|");
