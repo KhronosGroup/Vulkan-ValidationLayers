@@ -91,13 +91,10 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         self.capabilities = dict()
         self.formats = dict()
 
-        # TODO - Remove these ExludeList array in future when script is been used in a few releases
-        #
         # Sometimes the Vulkan-Headers XML will mention new SPIR-V capability or extensions
         # That require an update of the SPIRV-Headers which might not be ready to pull in.
         # These 2 arrays SHOULD be empty when possible and when the SPIR-V Headers are updated these
         # should be attempted to be cleared
-        self.extensionExcludeList = []
         self.capabilityExcludeList = [
             'TextureBlockMatchQCOM',
             'TextureBoxFilterQCOM',
@@ -418,9 +415,6 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
         # Sort so the order is the same on Windows and Unix
         for name, enables in sorted(self.extensions.items()):
             for enable in enables:
-                # Prepend with comment and comment out line if in exclude list as explained in declaration
-                if name in self.extensionExcludeList:
-                    output += '    // Not found in current SPIR-V Headers\n    //'
                 output += '    {\"' + name + '\", ' + self.createMapValue(name, enable, True) + '},\n'
         output += '};\n'
         output += '// clang-format on\n'
