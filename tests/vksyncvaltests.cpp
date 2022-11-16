@@ -630,7 +630,6 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
 }
 
 TEST_F(VkSyncValTest, SyncCopyOptimalMultiPlanarHazards) {
-    // TODO: Add code to enable sync validation
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -824,7 +823,6 @@ TEST_F(VkSyncValTest, SyncCopyLinearImageHazards) {
 }
 
 TEST_F(VkSyncValTest, SyncCopyLinearMultiPlanarHazards) {
-    // TODO: Add code to enable sync validation
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -1199,7 +1197,6 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
 }
 
 TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
-    // TODO: Add code to enable sync validation
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
