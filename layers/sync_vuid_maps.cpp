@@ -782,7 +782,7 @@ static const std::map<VkImageLayout, std::array<Entry, 2>> kImageLayoutErrors{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-01213"},
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-01213"},
      }}},
-    {VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,
+    {VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR,  // alias VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV
      {{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-02088"},
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-02088"},

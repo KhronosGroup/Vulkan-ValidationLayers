@@ -1099,24 +1099,22 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  pipline_rendering_ci.colorAttachmentCount, rendering_color_attachment_count);
             }
 
-            if (rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                        continue;
-                    }
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                    if ((pipline_rendering_ci.colorAttachmentCount > i) &&
-                        view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
-                        LogObjectList objlist(pCB->commandBuffer());
-                        objlist.add(pPipeline->pipeline());
-                        objlist.add(pCB->activeRenderPass->renderPass());
-                        skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
-                                         "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
-                                         "].imageView format (%s) must match corresponding format in "
-                                         "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                         caller, i, string_VkFormat(view_state->create_info.format), i,
-                                         string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
-                    }
+            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                    continue;
+                }
+                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                if ((pipline_rendering_ci.colorAttachmentCount > i) &&
+                    view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
+                    LogObjectList objlist(pCB->commandBuffer());
+                    objlist.add(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
+                                     "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                                     "].imageView format (%s) must match corresponding format in "
+                                     "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                                     caller, i, string_VkFormat(view_state->create_info.format), i,
+                                     string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
                 }
             }
 
@@ -1183,23 +1181,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         auto p_attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pPipeline->PNext());
 
         if (p_attachment_sample_count_info) {
-            if (rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                        continue;
-                    }
-                    auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                    auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
+            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                    continue;
+                }
+                auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
 
-                    if (p_attachment_sample_count_info &&
-                        (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
-                        skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
-                                         "%s: Color attachment (%" PRIu32
-                                         ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
-                                         "sample count (%s)",
-                                         caller, i, string_VkSampleCountFlagBits(color_image_samples),
-                                         string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
-                    }
+                if (p_attachment_sample_count_info &&
+                    (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
+                    skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
+                                     "%s: Color attachment (%" PRIu32
+                                     ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
+                                     "sample count (%s)",
+                                     caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                     string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
                 }
             }
 
@@ -1235,25 +1231,23 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
         } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
-            if (rendering_info.colorAttachmentCount > 0) {
-                for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
-                        continue;
-                    }
-                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                    auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
+            for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
+                if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                    continue;
+                }
+                auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
-                    if (samples != GetNumSamples(pPipeline)) {
-                        const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                      ? vuid.dynamic_rendering_07285
-                                                      : vuid.dynamic_rendering_multi_sample;
-                        skip |= LogError(pCB->commandBuffer(), vuid_string,
-                                         "%s: Color attachment (%" PRIu32
-                                         ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
-                                         "sample count (%s)",
-                                         caller, i, string_VkSampleCountFlagBits(samples),
-                                         string_VkSampleCountFlagBits(GetNumSamples(pPipeline)));
-                    }
+                if (samples != GetNumSamples(pPipeline)) {
+                    const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                  ? vuid.dynamic_rendering_07285
+                                                  : vuid.dynamic_rendering_multi_sample;
+                    skip |= LogError(pCB->commandBuffer(), vuid_string,
+                                     "%s: Color attachment (%" PRIu32
+                                     ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
+                                     "sample count (%s)",
+                                     caller, i, string_VkSampleCountFlagBits(samples),
+                                     string_VkSampleCountFlagBits(GetNumSamples(pPipeline)));
                 }
             }
 
@@ -1347,7 +1341,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
 
     // Verify vertex binding
-    if (pPipeline->vertex_input_state && pPipeline->vertex_input_state->binding_descriptions.size() > 0) {
+    if (pPipeline->vertex_input_state) {
         for (size_t i = 0; i < pPipeline->vertex_input_state->binding_descriptions.size(); i++) {
             const auto vertex_binding = pPipeline->vertex_input_state->binding_descriptions[i].binding;
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
