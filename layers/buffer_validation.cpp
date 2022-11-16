@@ -5094,8 +5094,6 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const {
     bool skip = false;
 
-    // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
-
     auto chained_devaddr_struct = LvlFindInChain<VkBufferDeviceAddressCreateInfoEXT>(pCreateInfo->pNext);
     if (chained_devaddr_struct) {
         if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) &&
