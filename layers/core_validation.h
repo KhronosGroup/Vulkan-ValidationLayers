@@ -916,8 +916,8 @@ class CoreChecks : public ValidationStateTracker {
                                                const VkImageLayout first_layout, const uint32_t attachment,
                                                const VkAttachmentDescription2& attachment_description) const;
 
-    bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
-                                 char const* func_name, char const* usage_string) const;
+    bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkImageUsageFlags desired, bool strict, const char* msgCode,
+                                 char const* func_name) const;
 
     bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags2KHR desired, char const* func_name,
                                          const char* vuid) const;
