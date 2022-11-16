@@ -7560,19 +7560,13 @@ TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
 
         if (i == 1) {
             // Test path where image layout in command buffer is known at draw time
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* "
-                                                 "time doesn't match actual image layout at time descriptor is used");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                                 "with specific layout VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL that doesn't match "
-                                                 "the previous known layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02699");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageLayout-00344");
             m_commandBuffer->Draw(1, 1, 0, 0);
             m_errorMonitor->VerifyFound();
             break;
         }
-        m_errorMonitor->SetDesiredFailureMsg(
-            kErrorBit,
-            "to be in layout VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_GENERAL.");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
         m_commandBuffer->Draw(1, 1, 0, 0);
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
