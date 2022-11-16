@@ -369,11 +369,11 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBDynamicStatus status, const char *fail_msg,
-                                const char *msg_code) const {
+bool CoreChecks::ValidateCBDynamicStatus(const CMD_BUFFER_STATE *pNode, CBDynamicStatus status, CMD_TYPE cmd_type,
+                                         const char *msg_code) const {
     if (!(pNode->status[status])) {
-        return LogError(pNode->commandBuffer(), msg_code, "%s: %s.", report_data->FormatHandle(pNode->commandBuffer()).c_str(),
-                        fail_msg);
+        return LogError(pNode->commandBuffer(), msg_code, "%s: %s state not set for this command buffer.",
+                        CommandTypeString(cmd_type), DynamicStateString(status).c_str());
     }
     return false;
 }
@@ -403,141 +403,89 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE *pCB, const PIP
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     if (pPipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_WIDTH_SET, "Dynamic line width state not set for this command buffer",
-                               vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LINE_WIDTH_SET, cmd_type, vuid.dynamic_state);
     }
     const auto rp_state = pPipeline->RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_SET, "Dynamic depth bias state not set for this command buffer",
-                               vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_state);
     }
     if (pPipeline->BlendConstantsEnabled()) {
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_BLEND_CONSTANTS_SET, "Dynamic blend constants state not set for this command buffer",
-                               vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_BLEND_CONSTANTS_SET, cmd_type, vuid.dynamic_state);
     }
 
     const auto ds_state = pPipeline->DepthStencilState();
     if (ds_state && (ds_state->depthBoundsTestEnable == VK_TRUE)) {
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BOUNDS_SET, "Dynamic depth bounds state not set for this command buffer",
-                               vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_BOUNDS_SET, cmd_type, vuid.dynamic_state);
     }
     if (ds_state && (ds_state->stencilTestEnable == VK_TRUE)) {
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET,
-                               "Dynamic stencil read mask state not set for this command buffer", vuid.dynamic_state);
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_WRITE_MASK_SET,
-                               "Dynamic stencil write mask state not set for this command buffer", vuid.dynamic_state);
-        skip |= ValidateStatus(pCB, CB_DYNAMIC_STENCIL_REFERENCE_SET,
-                               "Dynamic stencil reference state not set for this command buffer", vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET, cmd_type, vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_STENCIL_WRITE_MASK_SET, cmd_type, vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_STENCIL_REFERENCE_SET, cmd_type, vuid.dynamic_state);
     }
     if (pPipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
         const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
         if (line_state && line_state->stippledLineEnable) {
-            skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_EXT_SET,
-                                   "Dynamic line stipple state not set for this command buffer", vuid.dynamic_state);
+            skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_EXT_SET, cmd_type, vuid.dynamic_state);
         }
     }
 
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET,
-                           "Dynamic patch control points not set for this command buffer", vuid.patch_control_points);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZER_DISCARD_ENABLE_SET,
-                           "Dynamic rasterizer discard enable not set for this command buffer", vuid.rasterizer_discard_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_ENABLE_SET, "Dynamic depth bias enable not set for this command buffer",
-                           vuid.depth_bias_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_PATCH_CONTROL_POINTS_EXT_SET, cmd_type, vuid.patch_control_points);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_RASTERIZER_DISCARD_ENABLE_SET, cmd_type, vuid.rasterizer_discard_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_BIAS_ENABLE_SET, cmd_type, vuid.depth_bias_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LOGIC_OP_EXT_SET, cmd_type, vuid.logic_op);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET, cmd_type, vuid.primitive_restart_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET, cmd_type, vuid.vertex_input_binding_stride);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, cmd_type, vuid.vertex_input);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type, vuid.color_write_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET, cmd_type,
+                                    vuid.dynamic_tessellation_domain_origin);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clamp_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_POLYGON_MODE_EXT_SET, cmd_type, vuid.dynamic_polygon_mode);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET, cmd_type, vuid.dynamic_rasterization_samples);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, cmd_type, vuid.dynamic_sample_mask);
     skip |=
-        ValidateStatus(pCB, CB_DYNAMIC_LOGIC_OP_EXT_SET, "Dynamic state logicOp not set for this command buffer", vuid.logic_op);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET,
-                           "Dynamic primitive restart enable not set for this command buffer", vuid.primitive_restart_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET,
-                           "Dynamic vertex input binding stride not set for this command buffer", vuid.vertex_input_binding_stride);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, "Dynamic vertex input not set for this command buffer",
-                           vuid.vertex_input);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, "Dynamic color write enable not set for this command buffer",
-                           vuid.color_write_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET,
-                           "Dynamic tessellation domain origin state not set for this command buffer",
-                           vuid.dynamic_tessellation_domain_origin);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET,
-                           "Dynamic depth clamp enable state not set for this command buffer", vuid.dynamic_depth_clamp_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_POLYGON_MODE_EXT_SET, "Dynamic polygon mode state not set for this command buffer",
-                           vuid.dynamic_polygon_mode);
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_alpha_to_coverage_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_alpha_to_one_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_logic_op_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET, cmd_type, vuid.dynamic_color_blend_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET, cmd_type, vuid.dynamic_color_blend_equation);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET, cmd_type, vuid.dynamic_color_write_mask);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET, cmd_type, vuid.dynamic_rasterization_stream);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET, cmd_type,
+                                    vuid.dynamic_conservative_rasterization_mode);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET, cmd_type,
+                                    vuid.dynamic_extra_primitive_overestimation_size);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clip_enable);
     skip |=
-        ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET,
-                       "Dynamic rasterization samples state not set for this command buffer", vuid.dynamic_rasterization_samples);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_MASK_EXT_SET, "Dynamic sample mask state not set for this command buffer",
-                           vuid.dynamic_sample_mask);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE_EXT_SET,
-                           "Dynamic alpha to coverage enable state not set for this command buffer",
-                           vuid.dynamic_alpha_to_coverage_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_ALPHA_TO_ONE_ENABLE_EXT_SET,
-                           "Dynamic alpha to one enable state not set for this command buffer", vuid.dynamic_alpha_to_one_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_LOGIC_OP_ENABLE_EXT_SET,
-                           "Dynamic logic operation enable state not set for this command buffer", vuid.dynamic_logic_op_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ENABLE_EXT_SET,
-                           "Dynamic color blend enable state not set for this command buffer", vuid.dynamic_color_blend_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_EQUATION_EXT_SET,
-                           "Dynamic color blend equation state not set for this command buffer", vuid.dynamic_color_blend_equation);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_WRITE_MASK_EXT_SET,
-                           "Dynamic color write mask state not set for this command buffer", vuid.dynamic_color_write_mask);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_RASTERIZATION_STREAM_EXT_SET,
-                           "Dynamic rasterization stream state not set for this command buffer", vuid.dynamic_rasterization_stream);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_CONSERVATIVE_RASTERIZATION_MODE_EXT_SET,
-                           "Dynamic conservative rasterization mode state not set for this command buffer",
-                           vuid.dynamic_conservative_rasterization_mode);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT_SET,
-                           "Dynamic extra primitive overestimation size state not set for this command buffer",
-                           vuid.dynamic_extra_primitive_overestimation_size);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_ENABLE_EXT_SET,
-                           "Dynamic depth clip enable state not set for this command buffer", vuid.dynamic_depth_clip_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET,
-                           "Dynamic sample locations enable state not set for this command buffer",
-                           vuid.dynamic_sample_locations_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET,
-                           "Dynamic color blend advanced state not set for this command buffer", vuid.dynamic_color_blend_advanced);
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_ENABLE_EXT_SET, cmd_type, vuid.dynamic_sample_locations_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_BLEND_ADVANCED_EXT_SET, cmd_type, vuid.dynamic_color_blend_advanced);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET, cmd_type, vuid.dynamic_provoking_vertex_mode);
     skip |=
-        ValidateStatus(pCB, CB_DYNAMIC_PROVOKING_VERTEX_MODE_EXT_SET,
-                       "Dynamic provoking vertex mode state not set for this command buffer", vuid.dynamic_provoking_vertex_mode);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET,
-                           "Dynamic line rasterization mode state not set for this command buffer",
-                           vuid.dynamic_line_rasterization_mode);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET,
-                           "Dynamic line stipple enable state not set for this command buffer", vuid.dynamic_line_stipple_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET,
-                           "Dynamic depth clip negative one to one state not set for this command buffer",
-                           vuid.dynamic_depth_clip_negative_one_to_one);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET,
-                           "Dynamic viewport W scaling enable state not set for this command buffer",
-                           vuid.dynamic_viewport_w_scaling_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET,
-                           "Dynamic viewport swizzle state not set for this command buffer", vuid.dynamic_viewport_swizzle);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET,
-                           "Dynamic coverage to color enable state not set for this command buffer",
-                           vuid.dynamic_coverage_to_color_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET,
-                           "Dynamic coverage to color location state not set for this command buffer",
-                           vuid.dynamic_coverage_to_color_location);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET,
-                           "Dynamic coverage modulation mode state not set for this command buffer",
-                           vuid.dynamic_coverage_modulation_mode);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET,
-                           "Dynamic coverage modulation table enable state not set for this command buffer",
-                           vuid.dynamic_coverage_modulation_table_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET,
-                           "Dynamic coverage modulation table state not set for this command buffer",
-                           vuid.dynamic_coverage_modulation_table);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET,
-                           "Dynamic shading rate image enable state not set for this command buffer",
-                           vuid.dynamic_shading_rate_image_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET,
-                           "Dynamic representative fragment test enable state not set for this command buffer",
-                           vuid.dynamic_representative_fragment_test_enable);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET,
-                           "Dynamic coverage reduction mode state not set for this command buffer",
-                           vuid.dynamic_coverage_reduction_mode);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, "Dynamic sample locations not set for this command buffer",
-                           vuid.dynamic_sample_locations);
-    skip |= ValidateStatus(pCB, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET,
-                           "Dynamic primitive topology state not set for this command buffer", vuid.primitive_topology);
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LINE_RASTERIZATION_MODE_EXT_SET, cmd_type, vuid.dynamic_line_rasterization_mode);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_LINE_STIPPLE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_line_stipple_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT_SET, cmd_type,
+                                    vuid.dynamic_depth_clip_negative_one_to_one);
+    skip |=
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VIEWPORT_W_SCALING_ENABLE_NV_SET, cmd_type, vuid.dynamic_viewport_w_scaling_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VIEWPORT_SWIZZLE_NV_SET, cmd_type, vuid.dynamic_viewport_swizzle);
+    skip |=
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_ENABLE_NV_SET, cmd_type, vuid.dynamic_coverage_to_color_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_TO_COLOR_LOCATION_NV_SET, cmd_type,
+                                    vuid.dynamic_coverage_to_color_location);
+    skip |=
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_MODE_NV_SET, cmd_type, vuid.dynamic_coverage_modulation_mode);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_ENABLE_NV_SET, cmd_type,
+                                    vuid.dynamic_coverage_modulation_table_enable);
+    skip |=
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_MODULATION_TABLE_NV_SET, cmd_type, vuid.dynamic_coverage_modulation_table);
+    skip |=
+        ValidateCBDynamicStatus(pCB, CB_DYNAMIC_SHADING_RATE_IMAGE_ENABLE_NV_SET, cmd_type, vuid.dynamic_shading_rate_image_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV_SET, cmd_type,
+                                    vuid.dynamic_representative_fragment_test_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET, cmd_type, vuid.dynamic_coverage_reduction_mode);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_SAMPLE_LOCATIONS_EXT_SET, cmd_type, vuid.dynamic_sample_locations);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_PRIMITIVE_TOPOLOGY_SET, cmd_type, vuid.primitive_topology);
 
     // Verify if using dynamic state setting commands that it doesn't set up in pipeline
     CBDynamicFlags invalid_status(~CBDynamicFlags(0));
@@ -545,13 +493,12 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE *pCB, const PIP
     invalid_status &= ~pCB->static_status;
 
     if (invalid_status.any()) {
-        std::string dynamic_states = DynamicStateString(invalid_status);
         LogObjectList objlist(pCB->commandBuffer());
         objlist.add(pPipeline->pipeline());
-        skip |=
-            LogError(objlist, vuid.dynamic_state_setting_commands,
-                     "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands",
-                     CommandTypeString(cmd_type), report_data->FormatHandle(pPipeline->pipeline()).c_str(), dynamic_states.c_str());
+        skip |= LogError(objlist, vuid.dynamic_state_setting_commands,
+                         "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands",
+                         CommandTypeString(cmd_type), report_data->FormatHandle(pPipeline->pipeline()).c_str(),
+                         DynamicStateString(invalid_status).c_str());
     }
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
