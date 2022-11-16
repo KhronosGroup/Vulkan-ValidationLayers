@@ -914,8 +914,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     auto set = context.descriptor_set->GetSet();
                     return LogError(set, context.vuids.descriptor_valid,
                                     "Descriptor set %s encountered the following validation error at %s time: Image layout "
-                                    "specified "
-                                    "at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                                    "specified at vkCmdBindDescriptorSets time "
                                     "doesn't match actual image layout at time descriptor is used. See previous error callback for "
                                     "specific details.",
                                     report_data->FormatHandle(set).c_str(), context.caller);
