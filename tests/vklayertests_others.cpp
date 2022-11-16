@@ -7858,6 +7858,10 @@ TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
+    if (IsDriver(VK_DRIVER_ID_MESA_RADV)) {
+        GTEST_SKIP() << "This test should not be run on the RADV driver.";
+    }
+
     VkDeviceQueueInfo2 queue_info_2 = LvlInitStruct<VkDeviceQueueInfo2>();
     VkDevice test_device = VK_NULL_HANDLE;
     VkQueue test_queue = VK_NULL_HANDLE;
