@@ -869,20 +869,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
             if (rendering_info.colorAttachmentCount > 0) {
                 for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-                        auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                        if ((pipline_rendering_ci.colorAttachmentCount > i) &&
-                            view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
-                            LogObjectList objlist(pCB->commandBuffer());
-                            objlist.add(pPipeline->pipeline());
-                            objlist.add(pCB->activeRenderPass->renderPass());
-                            skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
-                                             "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
-                                             "].imageView format (%s) must match corresponding format in "
-                                             "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
-                                             caller, i, string_VkFormat(view_state->create_info.format), i,
-                                             string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
-                        }
+                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                        continue;
+                    }
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    if ((pipline_rendering_ci.colorAttachmentCount > i) &&
+                        view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
+                        LogObjectList objlist(pCB->commandBuffer());
+                        objlist.add(pPipeline->pipeline());
+                        objlist.add(pCB->activeRenderPass->renderPass());
+                        skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
+                                         "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
+                                         "].imageView format (%s) must match corresponding format in "
+                                         "VkPipelineRenderingCreateInfo::pColorAttachmentFormats[%" PRIu32 "] (%s)",
+                                         caller, i, string_VkFormat(view_state->create_info.format), i,
+                                         string_VkFormat(pipline_rendering_ci.pColorAttachmentFormats[i]));
                     }
                 }
             }
@@ -952,21 +953,20 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         if (p_attachment_sample_count_info) {
             if (rendering_info.colorAttachmentCount > 0) {
                 for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-                        auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                        auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
+                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                        continue;
+                    }
+                    auto color_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    auto color_image_samples = Get<IMAGE_STATE>(color_view_state->create_info.image)->createInfo.samples;
 
-                        if (p_attachment_sample_count_info) {
-                            if (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i]) {
-                                skip |= LogError(
-                                    pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
-                                    "%s: Color attachment (%" PRIu32
-                                    ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
-                                    "sample count (%s)",
-                                    caller, i, string_VkSampleCountFlagBits(color_image_samples),
-                                    string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
-                            }
-                        }
+                    if (p_attachment_sample_count_info &&
+                        (color_image_samples != p_attachment_sample_count_info->pColorAttachmentSamples[i])) {
+                        skip |= LogError(pCB->commandBuffer(), vuid.dynamic_rendering_color_sample,
+                                         "%s: Color attachment (%" PRIu32
+                                         ") sample count (%s) must match corresponding VkAttachmentSampleCountInfoAMD "
+                                         "sample count (%s)",
+                                         caller, i, string_VkSampleCountFlagBits(color_image_samples),
+                                         string_VkSampleCountFlagBits(p_attachment_sample_count_info->pColorAttachmentSamples[i]));
                     }
                 }
             }
@@ -1005,21 +1005,22 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
             if (rendering_info.colorAttachmentCount > 0) {
                 for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
-                    if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-                        auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
-                        auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
+                    if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
+                        continue;
+                    }
+                    auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
+                    auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
-                        if (samples != GetNumSamples(pPipeline)) {
-                            const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
-                                                          ? vuid.dynamic_rendering_07285
-                                                          : vuid.dynamic_rendering_multi_sample;
-                            skip |= LogError(pCB->commandBuffer(), vuid_string,
-                                             "%s: Color attachment (%" PRIu32
-                                             ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
-                                             "sample count (%s)",
-                                             caller, i, string_VkSampleCountFlagBits(samples),
-                                             string_VkSampleCountFlagBits(GetNumSamples(pPipeline)));
-                        }
+                    if (samples != GetNumSamples(pPipeline)) {
+                        const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
+                                                      ? vuid.dynamic_rendering_07285
+                                                      : vuid.dynamic_rendering_multi_sample;
+                        skip |= LogError(pCB->commandBuffer(), vuid_string,
+                                         "%s: Color attachment (%" PRIu32
+                                         ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
+                                         "sample count (%s)",
+                                         caller, i, string_VkSampleCountFlagBits(samples),
+                                         string_VkSampleCountFlagBits(GetNumSamples(pPipeline)));
                     }
                 }
             }
@@ -16484,21 +16485,21 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                         }
 
                         for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
-                            if (rendering_info.pColorAttachments[index].imageView != VK_NULL_HANDLE) {
-                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                            if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
+                                continue;
+                            }
+                            auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
 
-                                if (image_view_state->create_info.format !=
-                                    inheritance_rendering_info.pColorAttachmentFormats[index]) {
-                                    skip |= LogError(
-                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-imageView-06028",
-                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
-                                        "scope begun "
-                                        "by %s(), but "
-                                        "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats at index (%u) does "
-                                        "not match the format of the imageView in VkRenderingInfo::pColorAttachments.",
-                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(),
-                                        cb_state->begin_rendering_func_name.c_str(), index);
-                                }
+                            if (image_view_state->create_info.format != inheritance_rendering_info.pColorAttachmentFormats[index]) {
+                                skip |= LogError(
+                                    pCommandBuffers[i], "VUID-vkCmdExecuteCommands-imageView-06028",
+                                    "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                    "scope begun "
+                                    "by %s(), but "
+                                    "VkCommandBufferInheritanceRenderingInfo::pColorAttachmentFormats at index (%u) does "
+                                    "not match the format of the imageView in VkRenderingInfo::pColorAttachments.",
+                                    report_data->FormatHandle(pCommandBuffers[i]).c_str(),
+                                    cb_state->begin_rendering_func_name.c_str(), index);
                             }
                         }
 
@@ -16581,21 +16582,21 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                         if (amd_sample_count) {
                             for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
-                                if (rendering_info.pColorAttachments[index].imageView != VK_NULL_HANDLE) {
-                                    auto image_view_state =
-                                        Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                                if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
+                                    continue;
+                                }
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
 
-                                    if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
-                                        skip |= LogError(
-                                            pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06032",
-                                            "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
-                                            "scope begun "
-                                            "by vkCmdBeginRenderingKHR(), but "
-                                            "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%u) "
-                                            "does "
-                                            "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
-                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
-                                    }
+                                if (image_view_state->samples != amd_sample_count->pColorAttachmentSamples[index]) {
+                                    skip |= LogError(
+                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06032",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                        "scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but "
+                                        "VkAttachmentSampleCountInfo(AMD/NV)::pColorAttachmentSamples at index (%u) "
+                                        "does "
+                                        "not match the sample count of the imageView in VkRenderingInfoKHR::pColorAttachments.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
                             }
 
@@ -16632,20 +16633,20 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             }
                         } else {
                             for (uint32_t index = 0; index < rendering_info.colorAttachmentCount; index++) {
-                                if (rendering_info.pColorAttachments[index].imageView != VK_NULL_HANDLE) {
-                                    auto image_view_state =
-                                        Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
+                                if (rendering_info.pColorAttachments[index].imageView == VK_NULL_HANDLE) {
+                                    continue;
+                                }
+                                auto image_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[index].imageView);
 
-                                    if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
-                                        skip |= LogError(
-                                            pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06035",
-                                            "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
-                                            "scope begun "
-                                            "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%u) of "
-                                            "VkRenderingInfoKHR::pColorAttachments does not match "
-                                            "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
-                                            report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
-                                    }
+                                if (image_view_state->samples != inheritance_rendering_info.rasterizationSamples) {
+                                    skip |= LogError(
+                                        pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pNext-06035",
+                                        "vkCmdExecuteCommands(): Secondary %s is executed within a dynamic renderpass instance "
+                                        "scope begun "
+                                        "by vkCmdBeginRenderingKHR(), but the sample count of the image view at index (%u) of "
+                                        "VkRenderingInfoKHR::pColorAttachments does not match "
+                                        "VkCommandBufferInheritanceRenderingInfoKHR::rasterizationSamples.",
+                                        report_data->FormatHandle(pCommandBuffers[i]).c_str(), index);
                                 }
                             }
 
