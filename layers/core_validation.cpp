@@ -588,6 +588,88 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE *pCB, const PIP
         }
     }
 
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status[CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET]) {
+        const auto color_blend_state = pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
+        if (color_blend_state) {
+            uint32_t blend_attachment_count = color_blend_state->attachmentCount;
+            if (pCB->dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
+                skip |= LogError(
+                    pCB->commandBuffer(), vuid.color_write_enable,
+                    "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
+                    " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
+                    "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",
+                    CommandTypeString(cmd_type), blend_attachment_count, pCB->dynamicColorWriteEnableAttachmentCount);
+            }
+        }
+    }
+
+    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) &&
+        !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
+        bool compatible_topology = false;
+        const auto input_assembly_state = pPipeline->InputAssemblyState();
+        switch (input_assembly_state->topology) {
+            case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+                switch (pCB->primitiveTopology) {
+                    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+                        compatible_topology = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+        if (!compatible_topology) {
+            skip |= LogError(pPipeline->pipeline(), vuid.primitive_topology,
+                             "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopologyEXT is "
+                             "not compatible with the pipeline topology %s.",
+                             CommandTypeString(cmd_type), string_VkPrimitiveTopology(pCB->primitiveTopology),
+                             string_VkPrimitiveTopology(input_assembly_state->topology));
+        }
+    }
+
     return skip;
 }
 
@@ -1445,87 +1527,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     }
                 }
             }
-        }
-    }
-
-    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) && pCB->status[CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET]) {
-        const auto color_blend_state = pCB->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)->ColorBlendState();
-        if (color_blend_state) {
-            uint32_t blend_attachment_count = color_blend_state->attachmentCount;
-            if (pCB->dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
-                skip |= LogError(
-                    pCB->commandBuffer(), vuid.color_write_enable,
-                    "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
-                    " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
-                    "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",
-                    caller, blend_attachment_count, pCB->dynamicColorWriteEnableAttachmentCount);
-            }
-        }
-    }
-    if (IsDynamic(pPipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) &&
-        !phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
-        bool compatible_topology = false;
-        const auto input_assembly_state = pPipeline->InputAssemblyState();
-        switch (input_assembly_state->topology) {
-            case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-                switch (pCB->primitiveTopology) {
-                    case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-            case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-                switch (pCB->primitiveTopology) {
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-                    case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-            case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-                switch (pCB->primitiveTopology) {
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-                    case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-                switch (pCB->primitiveTopology) {
-                    case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-                        compatible_topology = true;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            default:
-                break;
-        }
-        if (!compatible_topology) {
-            skip |= LogError(pPipeline->pipeline(), vuid.primitive_topology,
-                             "%s: the last primitive topology %s state set by vkCmdSetPrimitiveTopologyEXT is "
-                             "not compatible with the pipeline topology %s.",
-                             caller, string_VkPrimitiveTopology(pCB->primitiveTopology),
-                             string_VkPrimitiveTopology(input_assembly_state->topology));
         }
     }
 
