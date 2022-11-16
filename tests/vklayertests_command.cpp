@@ -2359,8 +2359,24 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     TEST_DESCRIPTION("Image-related tests that don't belong elsewhere");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (!OverrideDevsimForDeviceProfileLayer()) {
+        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
+    }
 
-    // TODO: Ideally we should check if a format is supported, before using it.
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R16G16B16A16_UINT, &formatProps);
+    formatProps.optimalTilingFeatures |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R16G16B16A16_UINT, formatProps);
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8_UNORM, &formatProps);
+    formatProps.optimalTilingFeatures |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8_UNORM, formatProps);
+
     VkImageObj image(m_device);
     image.Init(128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL, 0);  // 64bpp
     ASSERT_TRUE(image.initialized());
