@@ -37,8 +37,7 @@ set_target_properties(VkLayer_utils PROPERTIES
 
 if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
-    # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
+    target_link_options(VkLayer_utils PRIVATE -fsanitize=address)
 endif()
 if(WIN32)
     target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
@@ -317,25 +316,21 @@ target_link_libraries(VkLayer_khronos_validation PRIVATE VkLayer_utils)
 
 if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_khronos_validation PRIVATE -fsanitize=address)
-    # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(VkLayer_khronos_validation PRIVATE "-fsanitize=address")
+    target_link_options(VkLayer_utils PRIVATE -fsanitize=address)
 endif()
 
 if(WIN32)
     target_sources(VkLayer_khronos_validation PRIVATE VkLayer_khronos_validation.def)
     target_compile_definitions(VkLayer_khronos_validation PUBLIC NOMINMAX)
-elseif(APPLE)
-    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl" INSTALL_RPATH "@loader_path/")
-else(LINUX)
-    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL")
+elseif(LINUX)
+    target_link_options(VkLayer_khronos_validation PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL")
 endif()
 
 # Force generation of the PDB file for Release builds.
 # Note that CMake reduces inlining optimization levels for RelWithDebInfo builds.
 if(MSVC)
     target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/Zi>")
-    # Need to use this instead of target_link_options() for older versions of CMake.
-    target_link_libraries(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:-DEBUG:FULL>")
+    target_link_options(VkLayer_khronos_validation PRIVATE "$<$<CONFIG:Release>:/DEBUG:FULL>")
 endif()
 
 # Khronos validation additional dependencies
