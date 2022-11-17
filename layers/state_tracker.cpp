@@ -1763,7 +1763,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                     // See: VUID-vkGetImageSubresourceLayout-image-01895
                     if (!image_state->fragment_encoder) {
                         image_state->fragment_encoder =
-                            layer_data::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
+                            std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
                     }
                     image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset,
                                             sparse_binding.resourceOffset, sparse_binding.size);
@@ -1783,7 +1783,7 @@ void ValidationStateTracker::PreCallRecordQueueBindSparse(VkQueue queue, uint32_
                     // See: VUID-vkGetImageSubresourceLayout-image-01895
                     if (!image_state->fragment_encoder) {
                         image_state->fragment_encoder =
-                            layer_data::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
+                            std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
                     }
                     image_state->BindMemory(image_state.get(), mem_state, sparse_binding.memoryOffset, offset, size);
                 }

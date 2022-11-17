@@ -110,13 +110,12 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, REND
         if (subpass_dep.barrier_from_external.size() == 0) {
             // Add implicit from barrier if they're aren't any
             subpass_dep.implicit_barrier_from_external =
-                layer_data::make_unique<VkSubpassDependency2>(ImplicitDependencyFromExternal(pass));
+                std::make_unique<VkSubpassDependency2>(ImplicitDependencyFromExternal(pass));
             subpass_dep.barrier_from_external.emplace_back(subpass_dep.implicit_barrier_from_external.get());
         }
         if (subpass_dep.barrier_to_external.size() == 0) {
             // Add implicit to barrier  if they're aren't any
-            subpass_dep.implicit_barrier_to_external =
-                layer_data::make_unique<VkSubpassDependency2>(ImplicitDependencyToExternal(pass));
+            subpass_dep.implicit_barrier_to_external = std::make_unique<VkSubpassDependency2>(ImplicitDependencyToExternal(pass));
             subpass_dep.barrier_to_external.emplace_back(subpass_dep.implicit_barrier_to_external.get());
         }
     }

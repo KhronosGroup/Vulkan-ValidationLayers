@@ -1971,8 +1971,8 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromGLSL(VkRenderFramework &fram
                                                          const std::string &code, const char *entry_point,
                                                          const VkSpecializationInfo *spec_info, const spv_target_env spv_env,
                                                          bool debug) {
-    auto shader = layer_data::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info,
-                                                       entry_point, debug);
+    auto shader =
+        std::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_GLSL_TRY, spec_info, entry_point, debug);
     if (VK_SUCCESS == shader->InitFromGLSLTry(debug)) {
         return shader;
     }
@@ -1984,7 +1984,7 @@ std::unique_ptr<VkShaderObj> VkShaderObj::CreateFromASM(VkRenderFramework &frame
                                                         const std::string &code, const char *entry_point,
                                                         const VkSpecializationInfo *spec_info, const spv_target_env spv_env) {
     auto shader =
-        layer_data::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
+        std::make_unique<VkShaderObj>(&framework, code.c_str(), stage, spv_env, SPV_SOURCE_ASM_TRY, spec_info, entry_point);
     if (VK_SUCCESS == shader->InitFromASMTry()) {
         return shader;
     }
