@@ -698,16 +698,24 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice ph
         }
         return result;
     }
+
+    const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+        if (validation_obj) {
+            LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
+            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfacePresentModesKHR", err);
+        }
+    };
+
     uint32_t count = 0;
-    VkResult err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, nullptr);
-    if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+    if (const VkResult err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, nullptr);
+        !IsValueIn(err, {VK_SUCCESS, VK_INCOMPLETE})) {
+        log_internal_error(err, phys_dev, surface());
         return result;
     }
     result.resize(count);
-    err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, result.data());
-    assert(err == VK_SUCCESS);
-    if (err != VK_SUCCESS) {
-        result.resize(0);
+    if (const VkResult err = DispatchGetPhysicalDeviceSurfacePresentModesKHR(phys_dev, surface(), &count, result.data());
+        err != VK_SUCCESS) {
+        log_internal_error(err, phys_dev, surface());
         return result;
     }
     return result;
@@ -731,17 +739,26 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
 
     std::vector<safe_VkSurfaceFormat2KHR> result;
     if (get_surface_capabilities2) {
+        const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+            if (validation_obj) {
+                LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
+                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceFormats2KHR", err);
+            }
+        };
+
         uint32_t count = 0;
         const auto surface_info2 = GetSurfaceInfo2(surface_info2_pnext);
-        VkResult err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, nullptr);
-        if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, nullptr);
+            !IsValueIn(err, {VK_SUCCESS, VK_INCOMPLETE})) {
+            log_internal_error(err, phys_dev, surface_info2.surface);
             return result;
         }
         std::vector<VkSurfaceFormat2KHR> formats2(count);
-        err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, formats2.data());
-        assert(err == VK_SUCCESS);
-        if (err != VK_SUCCESS) {
-            result.resize(0);
+
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceFormats2KHR(phys_dev, &surface_info2, &count, formats2.data());
+            err != VK_SUCCESS) {
+            log_internal_error(err, phys_dev, surface_info2.surface);
+            result.clear();
         } else {
             result.resize(count);
             for (uint32_t surface_format_index = 0; surface_format_index < count; ++surface_format_index) {
@@ -750,16 +767,27 @@ vvl::span<const safe_VkSurfaceFormat2KHR> SURFACE_STATE::GetFormats(bool get_sur
         }
 
     } else {
+        const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+            if (validation_obj) {
+                LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
+                validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceFormatsKHR", err);
+            }
+        };
+
         std::vector<VkSurfaceFormatKHR> formats;
         uint32_t count = 0;
-        VkResult err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, nullptr);
-        if (!(err == VK_SUCCESS || err == VK_INCOMPLETE)) {
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, nullptr);
+            !IsValueIn(err, {VK_SUCCESS, VK_INCOMPLETE})) {
+            log_internal_error(err, phys_dev, surface());
             return result;
         }
         formats.resize(count);
-        err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, formats.data());
-        assert(err == VK_SUCCESS);
-        if (err == VK_SUCCESS) {
+
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceFormatsKHR(phys_dev, surface(), &count, formats.data());
+            err != VK_SUCCESS) {
+            log_internal_error(err, phys_dev, surface());
+            result.clear();
+        } else {
             result.reserve(count);
             auto format2 = LvlInitStruct<VkSurfaceFormat2KHR>();
             for (const auto &format : formats) {
@@ -787,17 +815,26 @@ safe_VkSurfaceCapabilities2KHR SURFACE_STATE::GetCapabilities(bool get_surface_c
     if (auto search = capabilities_.find(phys_dev); search != capabilities_.end()) {
         return search->second;
     }
+
+    const auto log_internal_error = [validation_obj](VkResult err, auto &&...objects) {
+        if (validation_obj) {
+            LogObjectList obj_list(std::forward<decltype(objects)>(objects)...);
+            validation_obj->LogInternalError(VVL_PRETTY_FUNCTION, obj_list, "vkGetPhysicalDeviceSurfaceCapabilities2KHR", err);
+        }
+    };
+
     auto surface_caps2 = LvlInitStruct<VkSurfaceCapabilities2KHR>();
     if (get_surface_capabilities2) {
         const auto surface_info2 = GetSurfaceInfo2(surface_info2_pnext);
-        const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info2, &surface_caps2);
-        assert(err == VK_SUCCESS);
-        UNUSED(err);
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info2, &surface_caps2);
+            err != VK_SUCCESS) {
+            log_internal_error(err, phys_dev, surface_info2.surface);
+        }
     } else {
         VkSurfaceCapabilitiesKHR caps{};
-        const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface(), &caps);
-        assert(err == VK_SUCCESS);
-        UNUSED(err);
+        if (const VkResult err = DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(phys_dev, surface(), &caps); err != VK_SUCCESS) {
+            log_internal_error(err, phys_dev, surface());
+        }
         surface_caps2.surfaceCapabilities = caps;
     }
     safe_VkSurfaceCapabilities2KHR safe_surface_caps2(&surface_caps2);
