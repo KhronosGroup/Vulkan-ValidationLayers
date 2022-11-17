@@ -189,6 +189,14 @@ class PIPELINE_STATE : public BASE_NODE {
     // Additional metadata needed by pipeline_state initialization and validation
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_state;
+    bool HasShaderStage(VkShaderStageFlagBits stage_flag) const {
+        for (const auto &state : stage_state) {
+            if (state.stage_flag == stage_flag) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 

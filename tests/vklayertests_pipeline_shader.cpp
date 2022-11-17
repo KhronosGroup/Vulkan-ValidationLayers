@@ -386,7 +386,7 @@ TEST_F(VkLayerTest, PointSizeFailure) {
 
         helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Pipeline topology is set to POINT_LIST");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722");
 }
 
 TEST_F(VkLayerTest, InvalidTopology) {
@@ -483,7 +483,7 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
                                                           "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
 }
 
-TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
+TEST_F(VkLayerTest, PointSizeGeomShaderDontWrite) {
     TEST_DESCRIPTION(
         "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
 
@@ -495,7 +495,7 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     ASSERT_NO_FATAL_FAILURE(InitViewport());
 
-    // Create VS declaring PointSize and writing to it
+    // Create GS declaring PointSize and writing to it
     static char const *gsSource = R"glsl(
         #version 450
         layout (points) in;
@@ -515,7 +515,86 @@ TEST_F(VkLayerTest, PointSizeGeomShaderFailure) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
 
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Pipeline topology is set to POINT_LIST");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725");
+}
+
+TEST_F(VkLayerTest, PointSizeGeomShaderWrite) {
+    TEST_DESCRIPTION(
+        "Create a pipeline using TOPOLOGY_POINT_LIST, set PointSize vertex shader, but not in the final geometry stage.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.geometryShader == VK_FALSE) {
+        GTEST_SKIP() << "geometryShader not supported";
+    }
+    features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    // Compiled using the GLSL code below. GlslangValidator rearranges the members, but here they are kept in the order provided.
+    // #version 450
+    // layout (points) in;
+    // layout (points) out;
+    // layout (max_vertices = 1) out;
+    // void main() {
+    //     gl_Position = vec4(1.0f);
+    //     gl_PointSize = 1.0f;
+    //     EmitVertex();
+    // }
+    const char *gsSource = R"(
+               OpCapability Geometry
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Geometry %main "main" %_
+               OpExecutionMode %main InputPoints
+               OpExecutionMode %main Invocations 1
+               OpExecutionMode %main OutputPoints
+               OpExecutionMode %main OutputVertices 1
+               OpName %_ ""
+               OpMemberDecorate %gl_PerVertex 0 BuiltIn Position
+               OpMemberDecorate %gl_PerVertex 1 BuiltIn PointSize
+               OpMemberDecorate %gl_PerVertex 2 BuiltIn ClipDistance
+               OpMemberDecorate %gl_PerVertex 3 BuiltIn CullDistance
+               OpDecorate %gl_PerVertex Block
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+       %uint = OpTypeInt 32 0
+     %uint_1 = OpConstant %uint 1
+%_arr_float_uint_1 = OpTypeArray %float %uint_1
+%gl_PerVertex = OpTypeStruct %v4float %float %_arr_float_uint_1 %_arr_float_uint_1
+%_ptr_Output_gl_PerVertex = OpTypePointer Output %gl_PerVertex
+          %_ = OpVariable %_ptr_Output_gl_PerVertex Output
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+    %float_1 = OpConstant %float 1
+         %17 = OpConstantComposite %v4float %float_1 %float_1 %float_1 %float_1
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+      %int_1 = OpConstant %int 1
+%_ptr_Output_float = OpTypePointer Output %float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpAccessChain %_ptr_Output_v4float %_ %int_0
+               OpStore %19 %17
+         %22 = OpAccessChain %_ptr_Output_float %_ %int_1
+               OpStore %22 %float_1
+               OpEmitVertex
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkShaderObj vs(this, bindStateVertPointSizeShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
+    };
+
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-Geometry-07726");
 }
 
 TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
