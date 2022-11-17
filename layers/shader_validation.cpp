@@ -2815,10 +2815,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     const auto *pStage = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     auto entrypoint_optional = stage_state.entrypoint;
+    const auto module_identifier = LvlFindInChain<VkPipelineShaderStageModuleIdentifierCreateInfoEXT>(stage_state.create_info);
 
     skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline.GetPipelineCreateFlags());
 
-    if (module_state.vk_shader_module() == VK_NULL_HANDLE) return skip;  // No real shader for further validation
+    if (module_identifier && module_state.vk_shader_module() == VK_NULL_HANDLE) {
+        return skip;  // No real shader for further validation
+    }
 
     // to prevent const_cast on pipeline object, just store here as not needed outside function anyway
     uint32_t local_size_x = 0;
@@ -2832,6 +2835,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                          "%s does not contain valid spirv for stage %s.",
                          report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
                          string_VkShaderStageFlagBits(stage_state.stage_flag));
+
+        // No reason in continuing if the spir-v is invalid
+        return skip;
     }
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
@@ -3328,10 +3334,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
-    if (pipeline.IsGraphicsLibrary()) {
-        // Only validate stages in an executable pipeline, not a graphics library
-        // TODO This currently makes executing executable pipeline more expensive than they need to be since we could be validating
-        // more per library.
+    if (!(pipeline.pre_raster_state || pipeline.fragment_shader_state)) {
+        // Only validate pipelines that contain shader stages
         return skip;
     }
 
@@ -3349,11 +3353,10 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    auto vi_state = pipeline.InputState();
-
-    if (vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
+    if (pipeline.vertex_input_state && vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
         !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        skip |= ValidateViAgainstVsInputs(vi_state, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
+        skip |= ValidateViAgainstVsInputs(pipeline.vertex_input_state->input_state, *vertex_stage->module_state.get(),
+                                          *(vertex_stage->entrypoint));
     }
 
     for (size_t i = 1; i < pipeline.stage_state.size(); i++) {

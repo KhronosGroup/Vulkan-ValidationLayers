@@ -360,7 +360,7 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     {
         const char vs_src[] = R"glsl(
             #version 450
-            layout(set=2, binding=0) uniform foo { float x; } bar;
+            layout(set=0, binding=0) uniform foo { float x; } bar;
             void main() {
             gl_Position = vec4(bar.x);
             }
