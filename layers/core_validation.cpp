@@ -18139,7 +18139,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 #endif
     const auto surface_caps2 = surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                              physical_device_state->PhysDev(), full_screen_info_copy_addr);
+                                                              physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
 
     bool skip = false;
     VkSurfaceTransformFlagBitsKHR current_transform = surface_caps2.surfaceCapabilities.currentTransform;
@@ -18187,8 +18187,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                               surface_caps2.surfaceCapabilities.maxImageExtent)) {
         safe_VkSurfaceCapabilities2KHR cached_capabilities{};
         if (surface_state) {
-            cached_capabilities = surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                                 physical_device_state->PhysDev(), full_screen_info_copy_addr);
+            cached_capabilities =
+                surface_state->GetCapabilities(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
+                                               physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             cached_capabilities = physical_device_state->surfaceless_query_state.capabilities;
         }
@@ -18313,7 +18314,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         layer_data::span<const safe_VkSurfaceFormat2KHR> formats{};
         if (surface_state) {
             formats = surface_state->GetFormats(IsExtEnabled(instance_extensions.vk_khr_get_surface_capabilities2),
-                                                physical_device_state->PhysDev(), full_screen_info_copy_addr);
+                                                physical_device_state->PhysDev(), full_screen_info_copy_addr, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             formats = physical_device_state->surfaceless_query_state.formats;
         }
@@ -18353,7 +18354,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
     std::vector<VkPresentModeKHR> present_modes{};
     if (surface_state) {
-        present_modes = surface_state->GetPresentModes(physical_device);
+        present_modes = surface_state->GetPresentModes(physical_device, this);
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
@@ -18827,7 +18828,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const AcquireVersion 
         safe_VkSurfaceCapabilities2KHR caps{};
         if (swapchain_data->surface) {
             caps = swapchain_data->surface->GetCapabilities(IsExtEnabled(device_extensions.vk_khr_get_surface_capabilities2),
-                                                            physical_device);
+                                                            physical_device, nullptr, this);
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             caps = physical_device_state->surfaceless_query_state.capabilities;
         }

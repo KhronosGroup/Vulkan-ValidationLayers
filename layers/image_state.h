@@ -338,6 +338,8 @@ struct hash<GpuQueue> {
 };
 }  // namespace std
 
+class ValidationObject;
+
 // State for VkSurfaceKHR objects.
 // Parent -> child relationships in the object usage tree:
 //    SURFACE_STATE -> nothing
@@ -369,15 +371,16 @@ class SURFACE_STATE : public BASE_NODE {
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
     void SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes);
-    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
+    std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev, const ValidationObject *validation_obj) const;
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<safe_VkSurfaceFormat2KHR> &&fmts);
     layer_data::span<const safe_VkSurfaceFormat2KHR> GetFormats(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                                const void *surface_info2_pnext = nullptr) const;
+                                                                const void *surface_info2_pnext,
+                                                                const ValidationObject *validation_obj) const;
 
     void SetCapabilities(VkPhysicalDevice phys_dev, const safe_VkSurfaceCapabilities2KHR &caps);
     safe_VkSurfaceCapabilities2KHR GetCapabilities(bool get_surface_capabilities2, VkPhysicalDevice phys_dev,
-                                                   const void *surface_info2_pnext = nullptr) const;
+                                                   const void *surface_info2_pnext, const ValidationObject *validation_obj) const;
 
     SWAPCHAIN_NODE *swapchain{nullptr};
 
