@@ -30,6 +30,7 @@
 #include <string.h>
 #include <algorithm>
 #include <memory>
+#include <string_view>
 
 #include "vulkan/vulkan.h"
 #include "utils/cast_utils.h"
@@ -4089,6 +4090,15 @@ class ValidationObject {
             const bool result = LogMsg(report_data, kInformationBit, objlist, vuid_text, format, argptr);
             va_end(argptr);
             return result;
+        }
+
+        void LogInternalError(std::string_view failure_location, const LogObjectList &obj_list,
+                              std::string_view entrypoint, VkResult err) const {
+            const std::string_view err_string = string_VkResult(err);
+            std::string vuid = "INTERNAL-ERROR-";
+            vuid += entrypoint;
+            LogError(obj_list, vuid, "In %s: %s() was called in the Validation Layer state tracking and failed with result = %s.",
+                     failure_location.data(), entrypoint.data(), err_string.data());
         }
 
         // Handle Wrapping Data
