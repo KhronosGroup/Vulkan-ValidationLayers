@@ -1231,10 +1231,11 @@ struct GraphicsPipelineFromLibraries {
             auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
             pipe.init(dev, exe_pipe_ci);
         }
-        assert(pipe.initialized());
+        pipe.initialized();
     }
 
     operator VkPipeline() const { return pipe.handle(); }
+    operator bool() const { return pipe.initialized(); }
 };
 
 }  // namespace vk_testing
