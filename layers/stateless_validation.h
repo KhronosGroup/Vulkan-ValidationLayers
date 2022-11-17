@@ -968,7 +968,7 @@ class StatelessValidation : public ValidationObject {
         }
 
         return skip;
-    };
+    }
 
     template <typename RenderPassCreateInfoGeneric>
     bool CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,

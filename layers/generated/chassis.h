@@ -3958,7 +3958,7 @@ class ValidationObject {
                 }
             }
             return nullptr;
-        };
+        }
 
         // Debug Logging Helpers
         bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
@@ -3976,7 +3976,7 @@ class ValidationObject {
             }
             va_end(argptr);
             return LogMsgLocked(report_data, kErrorBit, objects, vuid_text, str);
-        };
+        }
 
         template <typename HANDLE_T>
         bool DECORATE_PRINTF(4, 5) LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
@@ -3996,7 +3996,7 @@ class ValidationObject {
             LogObjectList single_object(src_object);
             return LogMsgLocked(report_data, kErrorBit, single_object, vuid_text, str);
 
-        };
+        }
 
         bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
@@ -4013,7 +4013,7 @@ class ValidationObject {
             }
             va_end(argptr);
             return LogMsgLocked(report_data, kWarningBit, objects, vuid_text, str);
-        };
+        }
 
         template <typename HANDLE_T>
         bool DECORATE_PRINTF(4, 5) LogWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
@@ -4032,7 +4032,7 @@ class ValidationObject {
             va_end(argptr);
             LogObjectList single_object(src_object);
             return LogMsgLocked(report_data, kWarningBit, single_object, vuid_text, str);
-        };
+        }
 
         bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
@@ -4049,7 +4049,7 @@ class ValidationObject {
             }
             va_end(argptr);
             return LogMsgLocked(report_data, kPerformanceWarningBit, objects, vuid_text, str);
-        };
+        }
 
         template <typename HANDLE_T>
         bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
@@ -4068,7 +4068,7 @@ class ValidationObject {
             va_end(argptr);
             LogObjectList single_object(src_object);
             return LogMsgLocked(report_data, kPerformanceWarningBit, single_object, vuid_text, str);
-        };
+        }
 
         bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
@@ -4085,7 +4085,7 @@ class ValidationObject {
             }
             va_end(argptr);
             return LogMsgLocked(report_data, kInformationBit, objects, vuid_text, str);
-        };
+        }
 
         template <typename HANDLE_T>
         bool DECORATE_PRINTF(4, 5) LogInfo(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
@@ -4104,7 +4104,7 @@ class ValidationObject {
             va_end(argptr);
             LogObjectList single_object(src_object);
             return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
-        };
+        }
 
         // Handle Wrapping Data
         // Reverse map display handles

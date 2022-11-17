@@ -392,7 +392,7 @@ class ValidationStateTracker : public ValidationObject {
         // NOTE: vl_concurrent_unordered_map::find() makes a copy of the value, so it is safe to move out.
         // But this will break everything, when switching to a different map type.
         return std::static_pointer_cast<State>(std::move(found_it->second));
-    };
+    }
 
     template <typename State, typename Traits = typename state_object::Traits<State>>
     typename Traits::ConstSharedType Get(typename Traits::HandleType handle) const {
@@ -402,7 +402,7 @@ class ValidationStateTracker : public ValidationObject {
             return nullptr;
         }
         return std::static_pointer_cast<State>(std::move(found_it->second));
-    };
+    }
 
     // GetRead() and GetWrite() return an already locked state object. Currently this is only supported by
     // CMD_BUFFER_STATE, because it has public ReadLock() and WriteLock() methods.
@@ -419,7 +419,7 @@ class ValidationStateTracker : public ValidationObject {
         } else {
             return ReadLockedType();
         }
-    };
+    }
 
     template <typename State, typename Traits = state_object::Traits<State>,
               typename WriteLockedType = typename Traits::WriteLockedType>
@@ -431,7 +431,7 @@ class ValidationStateTracker : public ValidationObject {
         } else {
             return WriteLockedType();
         }
-    };
+    }
 
     // When needing to share ownership, control over constness of access with another object (i.e. adding references while
     // not modifying the contents of the ValidationStateTracker)
@@ -443,7 +443,7 @@ class ValidationStateTracker : public ValidationObject {
             return nullptr;
         }
         return found_it->second;
-    };
+    }
 
     std::shared_ptr<BUFFER_STATE> GetBufferByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
@@ -1503,7 +1503,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, acceleration_structure_khr_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map_)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map_)
-    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_);
+    VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, PHYSICAL_DEVICE_STATE, physical_device_map_)
 
     // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
     // At 256GB allocated/sec  ( > 8GB at 30Hz), will overflow in just over 2 years
