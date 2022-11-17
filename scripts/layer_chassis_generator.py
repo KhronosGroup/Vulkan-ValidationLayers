@@ -220,6 +220,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include <string.h>
 #include <algorithm>
 #include <memory>
+#include <string_view>
 
 #include "vulkan/vulkan.h"
 #include "vk_layer_settings_ext.h"
@@ -589,6 +590,15 @@ class ValidationObject {
             LogObjectList single_object(src_object);
             return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
         };
+
+        void LogInternalError(std::string_view failure_location, const LogObjectList &obj_list,
+                              std::string_view entrypoint, VkResult err) const {
+            const std::string_view err_string = string_VkResult(err);
+            std::string vuid = "INTERNAL-ERROR-";
+            vuid += entrypoint;
+            LogError(obj_list, vuid, "In %s: %s() failed with result = %s.", failure_location.data(), entrypoint.data(),
+                                       err_string.data());
+        }
 
         // Handle Wrapping Data
         // Reverse map display handles
