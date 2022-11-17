@@ -583,7 +583,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirect-None-07649";
         primitives_generated               = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
-        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirext-stage-06481";
+        invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirect-stage-06481";
     }
 };
 

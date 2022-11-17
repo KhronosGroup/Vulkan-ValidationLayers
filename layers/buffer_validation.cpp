@@ -3515,7 +3515,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                        "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
         }
         if (!src_separate_stencil || has_non_stencil_aspect) {
-            vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-06662" : "VUID-vkCmdCopyImage-aspect-06662";
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-aspect-06662" : "VUID-vkCmdCopyImage-aspect-06662";
             skip |= ValidateImageUsageFlags(src_image_state.get(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT, false, vuid, func_name);
         }
 

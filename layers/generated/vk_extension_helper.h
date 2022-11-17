@@ -804,7 +804,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_MESH_SHADER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_mesh_shader, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME}}})},
+                           {&DeviceExtensions::vk_khr_spirv_1_4, VK_KHR_SPIRV_1_4_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {VK_EXT_METAL_OBJECTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_metal_objects, {})},
 #endif
