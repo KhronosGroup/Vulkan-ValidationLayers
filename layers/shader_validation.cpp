@@ -374,8 +374,8 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     }
 
     // Validate directly off the offsets. this isn't quite correct for arrays and matrices, but is a good first step.
-    const auto *entrypoint = module_state.FindEntrypointStruct(pStage->pName, pStage->stage);
-    if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
+    const auto *push_constants = module_state.FindEntrypointPushConstant(pStage->pName, pStage->stage);
+    if (!push_constants || !push_constants->IsUsed()) {
         return skip;
     }
     const auto &pipeline_layout = pipeline.PipelineLayoutState();
@@ -392,11 +392,10 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
             }
             push_constant_bytes_set.resize(range.offset + range.size, PC_Byte_Updated);
             uint32_t issue_index = 0;
-            const auto ret =
-                ValidatePushConstantSetUpdate(push_constant_bytes_set, entrypoint->push_constant_used_in_shader, issue_index);
+            const auto ret = ValidatePushConstantSetUpdate(push_constant_bytes_set, *push_constants, issue_index);
 
             if (ret == PC_Byte_Not_Set) {
-                const auto loc_descr = entrypoint->push_constant_used_in_shader.GetLocationDesc(issue_index);
+                const auto loc_descr = push_constants->GetLocationDesc(issue_index);
                 LogObjectList objlist(module_state.vk_shader_module());
                 objlist.add(pipeline_layout->layout());
                 skip |= LogError(objlist, vuid, "Push constant buffer:%s in %s is out of range in %s.", loc_descr.c_str(),
@@ -3012,9 +3011,6 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
     const Instruction &entrypoint = *entrypoint_optional;
 
-    // Mark accessible ids
-    auto &accessible_ids = stage_state.accessible_ids;
-
     // Validate descriptor set layout against what the entrypoint actually uses
 
     // The following tries to limit the number of passes through the shader module. The validation passes in here are "stateless"
@@ -3122,7 +3118,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
     // Validate use of input attachments against subpass structure
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(accessible_ids);
+        auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(entrypoint);
 
         const auto &rp_state = pipeline->RenderPassState();
         if (rp_state && !rp_state->UsesDynamicRendering()) {

@@ -156,10 +156,6 @@ struct DecorationSet {
 };
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
-    struct FunctionInfo {
-        std::vector<const Instruction *> op_lists;
-    };
-
     // Contains all the details for a OpTypeStruct
     struct StructInfo {
         uint32_t offset;
@@ -219,10 +215,17 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     };
 
     struct EntryPoint {
-        std::reference_wrapper<const Instruction> insn;  // OpEntryPoint instruction
-        VkShaderStageFlagBits stage;
-        std::vector<FunctionInfo> function_infos;
+        // "A module must not have two OpEntryPoint instructions with the same Execution Model and the same Name string."
+        // There is no single unique item for a single entry point
+        const Instruction &entrypoint_insn;  // OpEntryPoint instruction
+        const VkShaderStageFlagBits stage;
+        const std::string name;
+        // All ids that can be accessed from the entry point
+        layer_data::unordered_set<uint32_t> accessible_ids;
+
         StructInfo push_constant_used_in_shader;
+
+        EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint);
     };
 
     // Static/const data extracted from a SPIRV module at initialization time
@@ -230,7 +233,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     struct StaticData {
         StaticData() = default;
         StaticData(const SHADER_MODULE_STATE &module_state);
-        // because there is a std::reference_wrapper value in here there is no copy constructor
         StaticData &operator=(StaticData &&) = default;
         StaticData(StaticData &&) = default;
 
@@ -260,9 +262,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         bool has_specialization_constants{false};
         bool has_invocation_repack_instruction{false};
 
-        // entry point is not unqiue to single value so need multimap
-        std::unordered_multimap<std::string, EntryPoint> entry_points;
-        bool multiple_entry_points{false};
+        std::vector<EntryPoint> entry_points;
 
         bool has_group_decoration{false};
 
@@ -286,9 +286,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // This is the SPIR-V module data content
     const std::vector<uint32_t> words_;
 
+    const bool has_valid_spirv{false};
     const StaticData static_data_;
 
-    const bool has_valid_spirv{false};
     uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
     SHADER_MODULE_STATE(const uint32_t *code, std::size_t count, spv_target_env env = SPV_ENV_VULKAN_1_0)
@@ -306,8 +306,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                         uint32_t unique_shader_id)
         : BASE_NODE(shaderModule, kVulkanObjectTypeShaderModule),
           words_(create_info.pCode, create_info.pCode + create_info.codeSize / sizeof(uint32_t)),
-          static_data_(*this),
           has_valid_spirv(true),
+          static_data_(*this),
           gpu_validation_shader_id(unique_shader_id) {
         PreprocessShaderBinary(env);
     }
@@ -325,6 +325,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const std::vector<const Instruction *> &GetMemberDecorationInstructions() const { return static_data_.member_decoration_inst; }
     const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
     const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
+    const layer_data::unordered_set<uint32_t> *GetAccessibleIds(const Instruction &entrypoint) const {
+        for (const auto &entry_point : static_data_.entry_points) {
+            if (entry_point.entrypoint_insn == entrypoint) {
+                return &entry_point.accessible_ids;
+            }
+        }
+        return nullptr;
+    }
 
     const layer_data::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
@@ -337,9 +345,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool HasSpecConstants() const { return static_data_.has_specialization_constants; }
     bool HasInvocationRepackInstruction() const { return static_data_.has_invocation_repack_instruction; }
 
-    const std::unordered_multimap<std::string, EntryPoint> &GetEntryPoints() const { return static_data_.entry_points; }
-
-    bool HasMultipleEntryPoints() const { return static_data_.multiple_entry_points; }
+    bool HasMultipleEntryPoints() const { return static_data_.entry_points.size() > 1; }
 
     VkShaderModule vk_shader_module() const { return handle_.Cast<VkShaderModule>(); }
 
@@ -358,14 +364,13 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type) const;
     std::string DescribeType(uint32_t type) const;
 
-    layer_data::unordered_set<uint32_t> MarkAccessibleIds(layer_data::optional<Instruction> entrypoint) const;
     layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
     // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
     // Since we currently don't support multiple entry points, this is a helper to return the topology
     // for the "first" (and for our purposes _only_) entrypoint.
     layer_data::optional<VkPrimitiveTopology> GetTopology() const;
 
-    const EntryPoint *FindEntrypointStruct(char const *name, VkShaderStageFlagBits stageBits) const;
+    const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
     layer_data::optional<Instruction> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
@@ -384,15 +389,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // State tracking helpers for collecting interface information
     void FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable &interface_var) const;
     std::vector<std::pair<DescriptorSlot, InterfaceVariable>> CollectInterfaceByDescriptorSlot(
-        layer_data::unordered_set<uint32_t> const &accessible_ids) const;
+        layer_data::optional<Instruction> entrypoint) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable> *out, bool is_array_of_verts, bool is_patch,
                                       const Instruction *variable_insn) const;
     std::map<location_t, InterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
                                                                        bool is_array_of_verts) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
-    std::vector<std::pair<uint32_t, InterfaceVariable>> CollectInterfaceByInputAttachmentIndex(
-        layer_data::unordered_set<uint32_t> const &accessible_ids) const;
+    std::vector<std::pair<uint32_t, InterfaceVariable>> CollectInterfaceByInputAttachmentIndex(const Instruction &entrypoint) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;
@@ -412,7 +416,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     // Used to set push constants values at shader module initialization time
     static void SetPushConstantUsedInShader(const SHADER_MODULE_STATE &module_state,
-                                            std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint> &entry_points);
+                                            std::vector<SHADER_MODULE_STATE::EntryPoint> &entry_points);
 
   private:
     // Functions used for initialization only
@@ -429,7 +433,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                       const Instruction *access_chain, const StructInfo &data) const;
     void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
                        const StructInfo &data) const;
-    void SetUsedStructMember(const uint32_t variable_id, const std::vector<FunctionInfo> &function_infos,
+    void SetUsedStructMember(const uint32_t variable_id, layer_data::unordered_set<uint32_t> &accessible_ids,
                              const StructInfo &data) const;
 };
 
