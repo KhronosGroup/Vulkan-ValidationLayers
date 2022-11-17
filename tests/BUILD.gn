@@ -1,0 +1,154 @@
+# Copyright (c) 2022 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/components.gni")
+import("//src/graphics/lib/magma/gnbuild/magma.gni")
+
+config("test_config") {
+  cflags = [
+    "-Wno-missing-field-initializers",
+    "-Wno-sign-compare",
+    "-Wno-newline-eof",
+    "-Wno-thread-safety-analysis",
+    "-Wno-missing-field-initializers",
+    "-Wno-implicit-fallthrough",
+  ]
+}
+
+executable("vk_layer_validation_tests_bin") {
+  testonly = true
+  output_name = "vk_layer_validation_tests"
+  sources = [
+    "../layers/convert_to_renderpass2.cpp",
+    "../layers/generated/lvt_function_pointers.cpp",
+    "../layers/generated/vk_format_utils.cpp",
+    "../layers/generated/vk_safe_struct.cpp",
+    "../layers/vk_layer_config.cpp",
+    "../layers/vk_layer_config.h",
+    "icd-spv.h",
+    "layer_validation_tests.cpp",
+    "layer_validation_tests.h",
+    "positive/command.cpp",
+    "positive/descriptors.cpp",
+    "positive/dynamic_rendering.cpp",
+    "positive/graphics_library.cpp",
+    "positive/image_buffer.cpp",
+    "positive/instance.cpp",
+    "positive/other.cpp",
+    "positive/pipeline.cpp",
+    "positive/render_pass.cpp",
+    "positive/shaderval.cpp",
+    "positive/sync.cpp",
+    "positive/tooling.cpp",
+    "test_common.h",
+    "vklayertests_amd_best_practices.cpp",
+    "vklayertests_arm_best_practices.cpp",
+    "vklayertests_best_practices.cpp",
+    "vklayertests_buffer_image_memory_sampler.cpp",
+    "vklayertests_command.cpp",
+    "vklayertests_descriptor_renderpass_framebuffer.cpp",
+    "vklayertests_dynamic_rendering.cpp",
+    "vklayertests_gpu.cpp",
+    "vklayertests_graphics_library.cpp",
+    "vklayertests_imageless_framebuffer.cpp",
+    "vklayertests_instanceless.cpp",
+    "vklayertests_nvidia_best_practices.cpp",
+    "vklayertests_others.cpp",
+    "vklayertests_pipeline_shader.cpp",
+    "vklayertests_portability_subset.cpp",
+    "vklayertests_viewport_inheritance.cpp",
+    "vklayertests_wsi.cpp",
+    "vkrenderframework.cpp",
+    "vkrenderframework.h",
+    "vksyncvaltests.cpp",
+    "vktestbinding.cpp",
+    "vktestbinding.h",
+    "vktestframework.cpp",
+    "vktestframework.h",
+  ]
+  if (false) {
+    # These sources are intentionally not used. They're listed here to mollify validategntestlist.py
+    sources += [
+      "vktestframeworkandroid.cpp",
+      "vktestframeworkandroid.h",
+    ]
+  }
+  deps = [
+    "//sdk/lib/fdio",
+    "//src/lib/vulkan",
+    "//third_party/glslang:glslang_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/spirv-tools:spvtools",
+  ]
+  configs += [
+    "..:vulkan_layer_config",
+    ":test_config",
+  ]
+  configs -= [ "//build/config:no_exceptions" ]
+  defines = [ "VK_ENABLE_BETA_EXTENSIONS" ]
+
+  # Glslang headers are included with an extra `glslang/` in front, so we need
+  # to add a "third_party/" include dir to resolve them properly.
+  include_dirs = [ "//third_party" ]
+
+  # Needed for VkLayerTest.CustomBorderColor
+  ldflags = [ "-Wl,-z,stack-size=0x1000000" ]
+}
+
+fuchsia_component("vk_layer_validation_tests_cmp") {
+  testonly = true
+  component_name = "vk_layer_validation_tests"
+  deps = [
+    ":vk_layer_validation_tests_bin",
+    "//src/lib/vulkan/validation_layers",
+  ]
+  manifest = "meta/vk_layer_validation_tests.cml"
+}
+
+fuchsia_test_package("vk_layer_validation_tests_package") {
+  package_name = "vk_layer_validation_tests"
+  test_components = [ ":vk_layer_validation_tests_cmp" ]
+  test_specs = {
+    environments = magma_libvulkan_hardware_envs
+    log_settings = {
+      max_severity = "ERROR"
+    }
+  }
+}
+
+# Attempt to validate that the test list in this file is accurate by checking
+# that c/cpp files in this directory and in `positive` are included.
+action("validate_test_list") {
+  script = "../scripts/validategntestlist.py"
+  sources = [
+    "BUILD.gn",
+    "CMakeLists.txt",
+  ]
+  outputs = [ "$target_out_dir/validate.stamp" ]
+  depfile = "$target_out_dir/validate_test_list.d"
+  args = [
+    rebase_path(".", root_build_dir),
+    rebase_path("BUILD.gn", root_build_dir),
+    rebase_path(outputs[0], root_build_dir),
+    rebase_path(depfile, root_build_dir),
+  ]
+}
+
+group("tests") {
+  testonly = true
+  deps = [
+    ":validate_test_list",
+    ":vk_layer_validation_tests_package",
+  ]
+}
