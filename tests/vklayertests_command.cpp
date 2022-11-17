@@ -10672,7 +10672,7 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065",
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066", "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066",
             "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067"};
-        VkPipelineDynamicStateCreateInfo dyn_state = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+        VkPipelineDynamicStateCreateInfo dyn_state = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
         for (int i = 0; i < 5; i++) {
             dyn_state.dynamicStateCount = dyn_states[i].size();
             dyn_state.pDynamicStates = dyn_states[i].data();
@@ -11045,52 +11045,6 @@ TEST_F(VkLayerTest, MeshShaderEXTMultiDrawIndirect) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, MeshShaderEXTLimits) {
-    TEST_DESCRIPTION("Test VK_EXT_mesh_shader VUs where shader exceeds the vertex and primitive count limit.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto maintenance4 = LvlInitStruct<VkPhysicalDeviceMaintenance4Features>();
-    auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesEXT>(&maintenance4);
-    GetPhysicalDeviceFeatures2(mesh_shader_features);
-    if (mesh_shader_features.meshShader != VK_TRUE) {
-        GTEST_SKIP() << "Mesh shader feature not supported";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &mesh_shader_features));
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    static const char mesh_src[] = R"glsl(
-        #version 450
-
-        #extension GL_EXT_mesh_shader : require
-
-        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-        layout(max_vertices = 0) out;
-        layout(max_primitives = 0) out;
-        layout(triangles) out;
-
-        void main() {
-        }
-    )glsl";
-
-    VkShaderObj mesh_shader(this, mesh_src, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
-    VkShaderObj fs(this, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    // mesh and task shaders not supported
-    const auto break_vp = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {mesh_shader.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
-                                      vector<std::string>({"VUID-VkPipelineShaderStageCreateInfo-stage-02093",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02094"}));
-}
-
 TEST_F(VkLayerTest, MeshShaderNVDrawCmds) {
     TEST_DESCRIPTION("Test VK_NV_mesh_shader draw commands.");
 
@@ -11344,9 +11298,7 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
         helper.shader_stages_ = {mesh_shader_2.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit,
-                                      vector<std::string>({"VUID-RuntimeSpirv-MeshEXT-07115", "VUID-RuntimeSpirv-MeshEXT-07116",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02093",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02094"}));
+                                      vector<std::string>({"VUID-RuntimeSpirv-MeshEXT-07115", "VUID-RuntimeSpirv-MeshEXT-07116"}));
 }
 
 TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
@@ -11407,9 +11359,7 @@ TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
         helper.shader_stages_ = {ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
     CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit,
-                                      vector<std::string>({"VUID-RuntimeSpirv-MeshNV-07113", "VUID-RuntimeSpirv-MeshNV-07114",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02093",
-                                                           "VUID-VkPipelineShaderStageCreateInfo-stage-02094"}));
+                                      vector<std::string>({"VUID-RuntimeSpirv-MeshNV-07113", "VUID-RuntimeSpirv-MeshNV-07114"}));
 }
 
 TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
