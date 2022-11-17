@@ -71,9 +71,10 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 
     // VkImportMemoryBufferCollectionFUCHSIA
     auto import_buffer_collection_fuchsia = LvlFindInChain<VkImportMemoryBufferCollectionFUCHSIA>(pAllocateInfo->pNext);
-    count += (import_buffer_collection_fuchsia);  // NOTE: There's no handleType on VkImportMemoryBufferCollectionFUCHSIA, so we
-                                                  // can't check that, and from the "Valid Usage (Implicit)" collection has to
-                                                  // always be valid.
+    count += static_cast<bool>(
+        import_buffer_collection_fuchsia);  // NOTE: There's no handleType on VkImportMemoryBufferCollectionFUCHSIA, so we
+                                            // can't check that, and from the "Valid Usage (Implicit)" collection has to
+                                            // always be valid.
 #endif
 
     ImportOperationsInfo info = {};
