@@ -574,6 +574,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
         frag_out.pipeline_,
     };
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    ASSERT_TRUE(pipe);
 
     VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
@@ -721,6 +722,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
         };
 
         vk_testing::GraphicsPipelineFromLibraries pipe2(*m_device, libraries_i64);
+        ASSERT_TRUE(pipe2);
 
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -889,6 +891,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
         frag_out.pipeline_,
     };
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1045,6 +1048,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
         frag_out.pipeline_,
     };
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    ASSERT_TRUE(pipe);
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

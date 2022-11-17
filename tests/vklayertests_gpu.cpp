@@ -2314,6 +2314,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
         frag_out.pipeline_,
     };
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    ASSERT_TRUE(pipe);
 
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
@@ -2519,6 +2520,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
         frag_out.pipeline_,
     };
     vk_testing::GraphicsPipelineFromLibraries pipe(*m_device, libraries);
+    ASSERT_TRUE(pipe);
 
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
