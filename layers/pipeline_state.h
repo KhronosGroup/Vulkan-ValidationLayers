@@ -213,7 +213,7 @@ class PIPELINE_STATE : public BASE_NODE {
 
     // Flag of which shader stages are active for this pipeline
     const uint32_t active_shaders = 0;
-    const VkPrimitiveTopology topology_at_rasterizer;
+    const VkPrimitiveTopology topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     const bool uses_shader_module_id;
     const bool descriptor_buffer_mode = false;
     const bool uses_pipeline_robustness;
@@ -274,7 +274,7 @@ class PIPELINE_STATE : public BASE_NODE {
         }
     }
 
-    bool IsGraphicsLibrary() const { return graphics_lib_type != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0); }
+    bool IsGraphicsLibrary() const { return !HasFullState(); }
     bool HasFullState() const { return vertex_input_state && pre_raster_state && fragment_shader_state && fragment_output_state; }
 
     template <VkGraphicsPipelineLibraryFlagBitsEXT type_flag>

@@ -439,6 +439,7 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
         pipe.InitPreRasterLibInfo(1, &stage_ci);
         pipe.InitState();
 
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-stage-06846");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06607");
         pipe.CreateGraphicsPipeline();
@@ -929,7 +930,7 @@ TEST_F(VkGraphicsLibraryLayerTest, ImmutableSamplersIncompatibleDSL) {
     {
         const char vs_src[] = R"glsl(
             #version 450
-            layout(set=2, binding=0) uniform foo { float x; } bar;
+            layout(set=0, binding=0) uniform foo { float x; } bar;
             void main() {
             gl_Position = vec4(bar.x);
             }
