@@ -828,16 +828,11 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         }
     }
 
-    if (is_xfb_execution_mode) {
-        for (auto &stage : pipeline->stage_state) {
-            if (stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_EXT || stage.stage_flag == VK_SHADER_STAGE_TASK_BIT_EXT) {
-                skip |=
-                    LogError(pipeline->pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
-                             "If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
-                             "stages in the pipeline there must not be any shader stage in the pipeline with a Xfb execution mode");
-                break;
-            }
-        }
+    if (is_xfb_execution_mode &&
+        (pipeline->HasShaderStage(VK_SHADER_STAGE_MESH_BIT_EXT) || pipeline->HasShaderStage(VK_SHADER_STAGE_TASK_BIT_EXT))) {
+        skip |= LogError(pipeline->pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
+                         "If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
+                         "stages in the pipeline there must not be any shader stage in the pipeline with a Xfb execution mode");
     }
 
     bool strip_output_array_level =
@@ -2154,23 +2149,21 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     return pipelineLayout->set_layouts[slot.set]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.binding);
 }
 
-// If PointList topology is specified in the pipeline, verify that a shader geometry stage writes PointSize
-//    o If there is only a vertex shader : gl_PointSize must be written when using points
-//    o If there is a geometry or tessellation shader:
-//        - If shaderTessellationAndGeometryPointSize feature is enabled:
-//            * gl_PointSize must be written in the final geometry stage
-//        - If shaderTessellationAndGeometryPointSize feature is disabled:
-//            * gl_PointSize must NOT be written and a default of 1.0 is assumed
-bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
                                               const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
-    if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        return false;
+    bool skip = false;
+    // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
+    //
+    // Vertex - Need to read input topology in pipeline
+    // Geo/Tess - Need to know the feature bit is on
+    // Mesh - are checked in spirv-val as they don't require any runtime information
+    if (stage != VK_SHADER_STAGE_VERTEX_BIT && stage != VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT &&
+        stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+        return skip;
     }
 
-    bool pointsize_written = false;
-    bool skip = false;
-
     // Search for PointSize built-in decorations
+    bool pointsize_written = false;
     for (const Instruction *insn : module_state.GetBuiltinDecorationList()) {
         if (insn->GetBuiltIn() == spv::BuiltInPointSize) {
             pointsize_written = module_state.IsBuiltInWritten(insn, entrypoint);
@@ -2180,19 +2173,60 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, co
         }
     }
 
-    if ((stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_GEOMETRY_BIT) &&
-        !enabled_features.core.shaderTessellationAndGeometryPointSize) {
-        if (pointsize_written) {
-            skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_PointSizeBuiltInOverSpecified,
-                             "Pipeline topology is set to POINT_LIST and geometry or tessellation shaders write PointSize which "
-                             "is prohibited when the shaderTessellationAndGeometryPointSize feature is not enabled.");
+    // Search for execution modes used, unless a vertex shader where points are determined by the input topology
+    bool output_points = false;
+    bool point_mode = false;
+    if (stage != VK_SHADER_STAGE_VERTEX_BIT) {
+        uint32_t entrypoint_id = entrypoint.Word(2);
+        const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
+        auto it = execution_mode_inst.find(entrypoint_id);
+        if (it != execution_mode_inst.end()) {
+            for (const Instruction *insn : it->second) {
+                uint32_t mode = insn->Word(2);
+                if (mode == spv::ExecutionModeOutputPoints) {
+                    output_points = true;  // for geometry
+                    break;
+                } else if (mode == spv::ExecutionModePointMode) {
+                    point_mode = true;  // for tessellation
+                    break;
+                }
+            }
         }
-    } else if (!pointsize_written) {
-        skip |=
-            LogError(module_state.vk_shader_module(), kVUID_Core_Shader_MissingPointSizeBuiltIn,
-                     "Pipeline topology is set to POINT_LIST, but PointSize is not written to in the shader corresponding to %s.",
-                     string_VkShaderStageFlagBits(stage));
     }
+
+    if (stage == VK_SHADER_STAGE_GEOMETRY_BIT && output_points) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Geometry-07725",
+                             "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is enabled, but PointSize is not "
+                             "written in the Geometry shader.");
+        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && pointsize_written) {
+            skip |=
+                LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Geometry-07726",
+                         "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is not enabled, but PointSize is "
+                         "written to in the Geometry shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).");
+        }
+    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT && !pipeline->HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
+               point_mode) {
+        if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723",
+                             "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is enabled, but PointSize is not "
+                             "written in the Tessellation Evaluation shader.");
+        } else if (!enabled_features.core.shaderTessellationAndGeometryPointSize && pointsize_written) {
+            skip |= LogError(
+                module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07724",
+                "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is not enabled, but PointSize is written to "
+                "in the Tessellation Evaluation shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).");
+        }
+    } else if (stage == VK_SHADER_STAGE_VERTEX_BIT && !pipeline->HasShaderStage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
+               !pipeline->HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
+               pipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+        if (!pointsize_written) {
+            skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722",
+                             "vkCreateGraphicsPipelines(): Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST, but "
+                             "PointSize is not written in the Vertex shader.");
+        }
+    }
+
     return skip;
 }
 
@@ -2780,8 +2814,7 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, con
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, const PipelineStageState &stage_state,
-                                             bool check_point_size) const {
+bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, const PipelineStageState &stage_state) const {
     bool skip = false;
     const auto *pStage = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
@@ -3038,10 +3071,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidateSpecializations(module_state, pStage);
     skip |= ValidateDecorations(module_state);
     skip |= ValidateVariables(module_state);
-    const auto *raster_state = pipeline->RasterizationState();
-    if (check_point_size && raster_state && !raster_state->rasterizerDiscardEnable) {
-        skip |= ValidatePointListShaderState(pipeline, module_state, entrypoint, pStage->stage);
-    }
+    skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, pStage->stage);
     skip |= ValidateBuiltinLimits(module_state, entrypoint);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
         skip |= ValidateCooperativeMatrix(module_state, pStage, pipeline);
@@ -3300,23 +3330,6 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
     return skip;
 }
 
-static inline uint32_t DetermineFinalGeomStage(const PIPELINE_STATE &pipeline) {
-    uint32_t stage_mask = pipeline.active_shaders;
-    if (pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        // Determine which shader in which PointSize should be written (the final geometry stage)
-        if (stage_mask & VK_SHADER_STAGE_MESH_BIT_NV) {
-            stage_mask = VK_SHADER_STAGE_MESH_BIT_NV;
-        } else if (stage_mask & VK_SHADER_STAGE_GEOMETRY_BIT) {
-            stage_mask = VK_SHADER_STAGE_GEOMETRY_BIT;
-        } else if (stage_mask & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-            stage_mask = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        } else if (stage_mask & VK_SHADER_STAGE_VERTEX_BIT) {
-            stage_mask = VK_SHADER_STAGE_VERTEX_BIT;
-        }
-    }
-    return stage_mask;
-}
-
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
 bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
@@ -3329,11 +3342,9 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         return skip;
     }
 
-    uint32_t pointlist_stage_mask = DetermineFinalGeomStage(*pipeline);
-
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
     for (auto &stage : pipeline->stage_state) {
-        skip |= ValidatePipelineShaderStage(pipeline, stage, (pointlist_stage_mask == stage.stage_flag));
+        skip |= ValidatePipelineShaderStage(pipeline, stage);
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage;
         }
@@ -3410,7 +3421,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
 }
 
 bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) const {
-    return ValidatePipelineShaderStage(pipeline, pipeline->stage_state[0], false);
+    return ValidatePipelineShaderStage(pipeline, pipeline->stage_state[0]);
 }
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
@@ -3517,7 +3528,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
-        skip |= ValidatePipelineShaderStage(pipeline, pipeline->stage_state[stage_index], false);
+        skip |= ValidatePipelineShaderStage(pipeline, pipeline->stage_state[stage_index]);
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
