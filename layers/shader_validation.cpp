@@ -1066,7 +1066,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
             break;
 
         case VK_SHADER_STAGE_MESH_BIT_NV:
-            if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
+            if (entrypoint.Word(1) == spv::ExecutionModelMeshNV) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
@@ -1081,7 +1081,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                      phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives,
                                      num_primitives - phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives);
                 }
-            } else if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
+            } else if (entrypoint.Word(1) == spv::ExecutionModelMeshEXT) {
                 if (num_vertices > phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07115",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
@@ -1819,7 +1819,6 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
     bool skip = false;
 
     uint32_t vertices_out = 0;
-    uint32_t primitives_out = 0;
     uint32_t invocations = 0;
 
     const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
@@ -2066,11 +2065,6 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                     break;
                 }
 
-                case spv::ExecutionModeOutputPrimitivesEXT: {  // alias ExecutionModeOutputPrimitivesNV
-                    primitives_out = insn->Word(3);
-                    break;
-                }
-
                 case spv::ExecutionModeInvocations: {
                     invocations = insn->Word(3);
                     break;
@@ -2146,37 +2140,6 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
         }
     }
 
-    if ((IsExtEnabled(device_extensions.vk_nv_mesh_shader) && entrypoint.Word(1) == spv::ExecutionModelMeshNV) ||
-        (IsExtEnabled(device_extensions.vk_ext_mesh_shader) && entrypoint.Word(1) == spv::ExecutionModelMeshEXT)) {
-        uint32_t max_mesh_output_vertices = 0;
-        uint32_t max_mesh_output_primitives = 0;
-
-        if (IsExtEnabled(device_extensions.vk_ext_mesh_shader)) {
-            max_mesh_output_vertices = phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices;
-            max_mesh_output_primitives = phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives;
-        } else if (IsExtEnabled(device_extensions.vk_nv_mesh_shader)) {
-            max_mesh_output_vertices = phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices;
-            max_mesh_output_primitives = phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives;
-        }
-
-        if (vertices_out == 0 || vertices_out > max_mesh_output_vertices) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-stage-02093",
-                             "Mesh shader entry point must have an OpExecutionMode instruction that "
-                             "specifies a maximum output vertex count that is greater than 0 and less "
-                             "than or equal to maxMeshOutputVertices. "
-                             "OutputVertices=%d, maxMeshOutputVertices=%d",
-                             vertices_out, max_mesh_output_vertices);
-        }
-
-        if (primitives_out == 0 || primitives_out > max_mesh_output_primitives) {
-            skip |= LogError(module_state.vk_shader_module(), "VUID-VkPipelineShaderStageCreateInfo-stage-02094",
-                             "Mesh shader entry point must have an OpExecutionMode instruction that "
-                             "specifies a maximum output primitive count that is greater than 0 and less "
-                             "than or equal to maxMeshOutputPrimitives. "
-                             "OutputPrimitives=%d, maxMeshOutputPrimitives=%d",
-                             primitives_out, max_mesh_output_primitives);
-        }
-    }
     return skip;
 }
 
@@ -3874,14 +3837,6 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
     const uint32_t shader_stage = entrypoint.Word(1);
 
     switch (shader_stage) {
-        case spv::ExecutionModelTaskNV: {
-            return skip;
-        }
-
-        case spv::ExecutionModelMeshNV: {
-            return skip;
-        }
-
         case spv::ExecutionModelTaskEXT: {
             x_vuid = "VUID-RuntimeSpirv-TaskEXT-07291";
             y_vuid = "VUID-RuntimeSpirv-TaskEXT-07292";
@@ -3906,6 +3861,7 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
             break;
         }
 
+        // skip for spv::ExecutionModelTaskNV and spv::ExecutionModelMeshNV case
         default: {
             // must match one of the above case
             return skip;

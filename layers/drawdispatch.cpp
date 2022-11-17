@@ -2236,11 +2236,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
                                                 drawCount, offset, buffer_state.get());
     }
     if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->createInfo.size) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089",
-                         "CmdDrawIndirect: drawCount equals 1 and (offset + sizeof(vkCmdDrawMeshTasksIndirectEXT)) (%" PRIu64
-                         ") is not less than "
-                         "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->createInfo.size);
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089",
+            "vkCmdDrawMeshTasksIndirectEXT: drawCount equals 1 and (offset + sizeof(vkCmdDrawMeshTasksIndirectEXT)) (%" PRIu64
+            ") is not less than "
+            "or equal to the size of buffer (%" PRIu64 ").",
+            (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->createInfo.size);
     }
     skip |= ValidateMeshShaderStage(*cb_state, CMD_DRAWMESHTASKSINDIRECTEXT, false);
     return skip;
