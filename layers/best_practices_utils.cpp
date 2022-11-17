@@ -1329,8 +1329,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto accessible_ids = module_state->MarkAccessibleIds(entrypoint_optional);
-    auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(accessible_ids);
+    auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(entrypoint_optional);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;

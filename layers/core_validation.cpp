@@ -1772,8 +1772,9 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     //       Discussion on validity of these checks can be found at https://gitlab.khronos.org/vulkan/vulkan/-/issues/2602.
     if (!cb_node->push_constant_data_ranges || (pipeline_layout->push_constant_ranges == cb_node->push_constant_data_ranges)) {
         for (const auto &stage : pipe->stage_state) {
-            const auto *entrypoint = stage.module_state->FindEntrypointStruct(stage.create_info->pName, stage.create_info->stage);
-            if (!entrypoint || !entrypoint->push_constant_used_in_shader.IsUsed()) {
+            const auto *push_constants =
+                stage.module_state->FindEntrypointPushConstant(stage.create_info->pName, stage.create_info->stage);
+            if (!push_constants || !push_constants->IsUsed()) {
                 continue;
             }
 

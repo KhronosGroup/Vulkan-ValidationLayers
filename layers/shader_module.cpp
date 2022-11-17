@@ -121,120 +121,119 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
     }
 }
 
-// For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
-// important for identifying the set of shader resources actually used by an entrypoint, for example.
-// Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
-//  - NOT the shader input/output interfaces.
-//
-// TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
-// converting parts of this to be generated from the machine-readable spec instead.
-layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::MarkAccessibleIds(layer_data::optional<Instruction> entrypoint) const {
-    layer_data::unordered_set<uint32_t> ids;
-    if (!entrypoint || !has_valid_spirv) {
-        return ids;
-    }
-    layer_data::unordered_set<uint32_t> worklist;
-    worklist.insert((*entrypoint).Word(2));
+SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint)
+    : entrypoint_insn(entrypoint),
+      stage(static_cast<VkShaderStageFlagBits>(ExecutionModelToShaderStageFlagBits(entrypoint.Word(1)))),
+      name(entrypoint.GetAsString(3)) {
+    if (module_state.has_valid_spirv) {
+        // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
+        // important for identifying the set of shader resources actually used by an entrypoint, for example.
+        // Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
+        //  - NOT the shader input/output interfaces.
+        //
+        // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
+        // converting parts of this to be generated from the machine-readable spec instead.
+        layer_data::unordered_set<uint32_t> worklist;
+        worklist.insert(entrypoint_insn.Word(2));
 
-    while (!worklist.empty()) {
-        auto id_iter = worklist.begin();
-        auto id = *id_iter;
-        worklist.erase(id_iter);
+        while (!worklist.empty()) {
+            auto id_iter = worklist.begin();
+            auto id = *id_iter;
+            worklist.erase(id_iter);
 
-        const Instruction* insn = FindDef(id);
-        if (!insn) {
-            // ID is something we didn't collect in SpirvStaticData. that's OK -- we'll stumble across all kinds of things here
-            // that we may not care about.
-            continue;
-        }
+            const Instruction* insn = module_state.FindDef(id);
+            if (!insn) {
+                // ID is something we didn't collect in SpirvStaticData. that's OK -- we'll stumble across all kinds of things here
+                // that we may not care about.
+                continue;
+            }
 
-        // Try to add to the output set
-        if (!ids.insert(id).second) {
-            continue;  // If we already saw this id, we don't want to walk it again.
-        }
+            // Try to add to the output set
+            if (!accessible_ids.insert(id).second) {
+                continue;  // If we already saw this id, we don't want to walk it again.
+            }
 
-        switch (insn->Opcode()) {
-            case spv::OpFunction:
-                // Scan whole body of the function, enlisting anything interesting
-                while (++insn, insn->Opcode() != spv::OpFunctionEnd) {
-                    switch (insn->Opcode()) {
-                        case spv::OpLoad:
-                            worklist.insert(insn->Word(3));  // ptr
-                            break;
-                        case spv::OpStore:
-                            worklist.insert(insn->Word(1));  // ptr
-                            break;
-                        case spv::OpAccessChain:
-                        case spv::OpInBoundsAccessChain:
-                            worklist.insert(insn->Word(3));  // base ptr
-                            break;
-                        case spv::OpSampledImage:
-                        case spv::OpImageSampleImplicitLod:
-                        case spv::OpImageSampleExplicitLod:
-                        case spv::OpImageSampleDrefImplicitLod:
-                        case spv::OpImageSampleDrefExplicitLod:
-                        case spv::OpImageSampleProjImplicitLod:
-                        case spv::OpImageSampleProjExplicitLod:
-                        case spv::OpImageSampleProjDrefImplicitLod:
-                        case spv::OpImageSampleProjDrefExplicitLod:
-                        case spv::OpImageFetch:
-                        case spv::OpImageGather:
-                        case spv::OpImageDrefGather:
-                        case spv::OpImageRead:
-                        case spv::OpImage:
-                        case spv::OpImageQueryFormat:
-                        case spv::OpImageQueryOrder:
-                        case spv::OpImageQuerySizeLod:
-                        case spv::OpImageQuerySize:
-                        case spv::OpImageQueryLod:
-                        case spv::OpImageQueryLevels:
-                        case spv::OpImageQuerySamples:
-                        case spv::OpImageSparseSampleImplicitLod:
-                        case spv::OpImageSparseSampleExplicitLod:
-                        case spv::OpImageSparseSampleDrefImplicitLod:
-                        case spv::OpImageSparseSampleDrefExplicitLod:
-                        case spv::OpImageSparseSampleProjImplicitLod:
-                        case spv::OpImageSparseSampleProjExplicitLod:
-                        case spv::OpImageSparseSampleProjDrefImplicitLod:
-                        case spv::OpImageSparseSampleProjDrefExplicitLod:
-                        case spv::OpImageSparseFetch:
-                        case spv::OpImageSparseGather:
-                        case spv::OpImageSparseDrefGather:
-                        case spv::OpImageTexelPointer:
-                            worklist.insert(insn->Word(3));  // Image or sampled image
-                            break;
-                        case spv::OpImageWrite:
-                            worklist.insert(insn->Word(1));  // Image -- different operand order to above
-                            break;
-                        case spv::OpFunctionCall:
-                            for (uint32_t i = 3; i < insn->Length(); i++) {
-                                worklist.insert(insn->Word(i));  // fn itself, and all args
-                            }
-                            break;
-
-                        case spv::OpExtInst:
-                            for (uint32_t i = 5; i < insn->Length(); i++) {
-                                worklist.insert(insn->Word(i));  // Operands to ext inst
-                            }
-                            break;
-
-                        default: {
-                            if (AtomicOperation(insn->Opcode())) {
-                                if (insn->Opcode() == spv::OpAtomicStore) {
-                                    worklist.insert(insn->Word(1));  // ptr
-                                } else {
-                                    worklist.insert(insn->Word(3));  // ptr
+            switch (insn->Opcode()) {
+                case spv::OpFunction:
+                    // Scan whole body of the function, enlisting anything interesting
+                    while (++insn, insn->Opcode() != spv::OpFunctionEnd) {
+                        switch (insn->Opcode()) {
+                            case spv::OpLoad:
+                                worklist.insert(insn->Word(3));  // ptr
+                                break;
+                            case spv::OpStore:
+                                worklist.insert(insn->Word(1));  // ptr
+                                break;
+                            case spv::OpAccessChain:
+                            case spv::OpInBoundsAccessChain:
+                                worklist.insert(insn->Word(3));  // base ptr
+                                break;
+                            case spv::OpSampledImage:
+                            case spv::OpImageSampleImplicitLod:
+                            case spv::OpImageSampleExplicitLod:
+                            case spv::OpImageSampleDrefImplicitLod:
+                            case spv::OpImageSampleDrefExplicitLod:
+                            case spv::OpImageSampleProjImplicitLod:
+                            case spv::OpImageSampleProjExplicitLod:
+                            case spv::OpImageSampleProjDrefImplicitLod:
+                            case spv::OpImageSampleProjDrefExplicitLod:
+                            case spv::OpImageFetch:
+                            case spv::OpImageGather:
+                            case spv::OpImageDrefGather:
+                            case spv::OpImageRead:
+                            case spv::OpImage:
+                            case spv::OpImageQueryFormat:
+                            case spv::OpImageQueryOrder:
+                            case spv::OpImageQuerySizeLod:
+                            case spv::OpImageQuerySize:
+                            case spv::OpImageQueryLod:
+                            case spv::OpImageQueryLevels:
+                            case spv::OpImageQuerySamples:
+                            case spv::OpImageSparseSampleImplicitLod:
+                            case spv::OpImageSparseSampleExplicitLod:
+                            case spv::OpImageSparseSampleDrefImplicitLod:
+                            case spv::OpImageSparseSampleDrefExplicitLod:
+                            case spv::OpImageSparseSampleProjImplicitLod:
+                            case spv::OpImageSparseSampleProjExplicitLod:
+                            case spv::OpImageSparseSampleProjDrefImplicitLod:
+                            case spv::OpImageSparseSampleProjDrefExplicitLod:
+                            case spv::OpImageSparseFetch:
+                            case spv::OpImageSparseGather:
+                            case spv::OpImageSparseDrefGather:
+                            case spv::OpImageTexelPointer:
+                                worklist.insert(insn->Word(3));  // Image or sampled image
+                                break;
+                            case spv::OpImageWrite:
+                                worklist.insert(insn->Word(1));  // Image -- different operand order to above
+                                break;
+                            case spv::OpFunctionCall:
+                                for (uint32_t i = 3; i < insn->Length(); i++) {
+                                    worklist.insert(insn->Word(i));  // fn itself, and all args
                                 }
+                                break;
+
+                            case spv::OpExtInst:
+                                for (uint32_t i = 5; i < insn->Length(); i++) {
+                                    worklist.insert(insn->Word(i));  // Operands to ext inst
+                                }
+                                break;
+
+                            default: {
+                                if (AtomicOperation(insn->Opcode())) {
+                                    if (insn->Opcode() == spv::OpAtomicStore) {
+                                        worklist.insert(insn->Word(1));  // ptr
+                                    } else {
+                                        worklist.insert(insn->Word(3));  // ptr
+                                    }
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
-                }
-                break;
+                    break;
+            }
         }
     }
-
-    return ids;
 }
 
 layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction& entrypoint) const {
@@ -281,8 +280,7 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
 
 layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() const {
     if (static_data_.entry_points.size() > 0) {
-        const auto entrypoint = static_data_.entry_points.cbegin()->second;
-        return GetTopology(entrypoint.insn);
+        return GetTopology(static_data_.entry_points[0].entrypoint_insn);
     }
     return {};
 }
@@ -314,9 +312,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         instructions.shrink_to_fit();
     }
 
-    FunctionInfo function_info = {};
-    EntryPoint* entry_point = nullptr;
-    bool first_function_found = false;
+    std::vector<const Instruction*> entry_point_instructions;
 
     // Loop through once and build up the static data
     // Also process the entry points
@@ -324,10 +320,6 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         // Build definition list
         if (insn.ResultId() != 0) {
             definitions[insn.Word(insn.ResultId())] = &insn;
-        }
-
-        if (first_function_found) {
-            function_info.op_lists.push_back(&insn);
         }
 
         switch (insn.Opcode()) {
@@ -380,34 +372,9 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
                 has_invocation_repack_instruction = true;
                 break;
 
-            // Functions
-            case spv::OpFunction:
-                first_function_found = true;
-                function_info.op_lists.clear();
-                break;
-
-            // Entry points ... add to the entrypoint table
+            // Entry points
             case spv::OpEntryPoint: {
-                // Entry points do not have an id (the id is the function id) and thus need their own table
-                auto entrypoint_name = insn.GetAsString(3);
-                auto execution_model = insn.Word(1);
-                auto entrypoint_stage = ExecutionModelToShaderStageFlagBits(execution_model);
-                entry_points.emplace(entrypoint_name, EntryPoint{insn, static_cast<VkShaderStageFlagBits>(entrypoint_stage)});
-
-                auto range = entry_points.equal_range(entrypoint_name);
-                for (auto it = range.first; it != range.second; ++it) {
-                    if (insn == it->second.insn.get()) {
-                        entry_point = &(it->second);
-                        break;
-                    }
-                }
-                assert(entry_point != nullptr);
-                break;
-            }
-
-            case spv::OpFunctionEnd: {
-                assert(entry_point != nullptr);
-                entry_point->function_infos.emplace_back(function_info);
+                entry_point_instructions.push_back(&insn);
                 break;
             }
 
@@ -527,9 +494,12 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
         }
     }
 
-    SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
+    // Need to build the definitions table for FindDef before looking for which instructions each entry point uses
+    for (const auto& insn : entry_point_instructions) {
+        entry_points.emplace_back(EntryPoint{module_state, *insn});
+    }
 
-    multiple_entry_points = entry_points.size() > 1;
+    SHADER_MODULE_STATE::SetPushConstantUsedInShader(module_state, entry_points);
 }
 
 void SHADER_MODULE_STATE::PreprocessShaderBinary(const spv_target_env env) {
@@ -624,12 +594,11 @@ std::string SHADER_MODULE_STATE::DescribeType(uint32_t type) const {
     return ss.str();
 }
 
-const SHADER_MODULE_STATE::EntryPoint *SHADER_MODULE_STATE::FindEntrypointStruct(char const *name,
-                                                                                 VkShaderStageFlagBits stageBits) const {
-    auto range = static_data_.entry_points.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second.stage == stageBits) {
-            return &(it->second);
+const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushConstant(char const* name,
+                                                                                       VkShaderStageFlagBits stageBits) const {
+    for (const auto& entry_point : static_data_.entry_points) {
+        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
+            return &(entry_point.push_constant_used_in_shader);
         }
     }
     return nullptr;
@@ -637,12 +606,9 @@ const SHADER_MODULE_STATE::EntryPoint *SHADER_MODULE_STATE::FindEntrypointStruct
 
 layer_data::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
     layer_data::optional<Instruction> result;
-    auto range = static_data_.entry_points.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second.stage == stageBits) {
-            assert(it->second.insn.get().Opcode() == spv::OpEntryPoint);
-            result.emplace(it->second.insn);
-            break;
+    for (const auto& entry_point : static_data_.entry_points) {
+        if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
+            result.emplace(entry_point.entrypoint_insn);
         }
     }
     return result;
@@ -1013,21 +979,20 @@ void SHADER_MODULE_STATE::RunUsedStruct(uint32_t offset, uint32_t access_chain_w
     }
 }
 
-void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, const std::vector<FunctionInfo>& function_infos,
+void SHADER_MODULE_STATE::SetUsedStructMember(const uint32_t variable_id, layer_data::unordered_set<uint32_t>& accessible_ids,
                                               const StructInfo& data) const {
-    for (const auto& function_info : function_infos) {
-        for (const Instruction* insn : function_info.op_lists) {
-            if (insn->Opcode() == spv::OpAccessChain) {
-                if (insn->Word(3) == variable_id) {
-                    RunUsedStruct(0, 4, insn, data);
-                }
+    for (const auto& id : accessible_ids) {
+        const Instruction* insn = FindDef(id);
+        if (insn->Opcode() == spv::OpAccessChain) {
+            if (insn->Word(3) == variable_id) {
+                RunUsedStruct(0, 4, insn, data);
             }
         }
     }
 }
 
-void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
-    const SHADER_MODULE_STATE& module_state, std::unordered_multimap<std::string, SHADER_MODULE_STATE::EntryPoint>& entry_points) {
+void SHADER_MODULE_STATE::SetPushConstantUsedInShader(const SHADER_MODULE_STATE& module_state,
+                                                      std::vector<SHADER_MODULE_STATE::EntryPoint>& entry_points) {
     for (auto &entrypoint : entry_points) {
         for (const Instruction* var_insn : module_state.GetVariableInstructions()) {
             if (var_insn->StorageClass() == spv::StorageClassPushConstant) {
@@ -1038,10 +1003,10 @@ void SHADER_MODULE_STATE::SetPushConstantUsedInShader(
                         member_decorate_insn.emplace_back(member_decorate);
                     }
                 }
-                entrypoint.second.push_constant_used_in_shader.root = &entrypoint.second.push_constant_used_in_shader;
-                module_state.DefineStructMember(type, member_decorate_insn, entrypoint.second.push_constant_used_in_shader);
-                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.second.function_infos,
-                                                 entrypoint.second.push_constant_used_in_shader);
+                entrypoint.push_constant_used_in_shader.root = &entrypoint.push_constant_used_in_shader;
+                module_state.DefineStructMember(type, member_decorate_insn, entrypoint.push_constant_used_in_shader);
+                module_state.SetUsedStructMember(var_insn->Word(2), entrypoint.accessible_ids,
+                                                 entrypoint.push_constant_used_in_shader);
             }
         }
     }
@@ -1390,24 +1355,30 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
 }
 
 std::vector<std::pair<DescriptorSlot, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    layer_data::unordered_set<uint32_t> const& accessible_ids) const {
+    layer_data::optional<Instruction> entrypoint) const {
     std::vector<std::pair<DescriptorSlot, InterfaceVariable>> out;
+    if (!entrypoint) {
+        return out;
+    }
 
-    for (auto id : accessible_ids) {
-        const Instruction* insn = FindDef(id);
-        if (insn->Opcode() != spv::OpVariable) {
-            continue;
-        }
-        const uint32_t storage_class = insn->StorageClass();
-        // These are the only storage classes that interface with a descriptor
-        // see vkspec.html#interfaces-resources-descset
-        if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
-            storage_class == spv::StorageClassStorageBuffer) {
-            InterfaceVariable interface_var(insn);
-            FindVariableDescriptorType(storage_class == spv::StorageClassStorageBuffer, interface_var);
+    const auto* accessible_ids = GetAccessibleIds(*entrypoint);
+    if (accessible_ids) {
+        for (const auto& id : *accessible_ids) {
+            const Instruction* insn = FindDef(id);
+            if (insn->Opcode() != spv::OpVariable) {
+                continue;
+            }
+            const uint32_t storage_class = insn->StorageClass();
+            // These are the only storage classes that interface with a descriptor
+            // see vkspec.html#interfaces-resources-descset
+            if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
+                storage_class == spv::StorageClassStorageBuffer) {
+                InterfaceVariable interface_var(insn);
+                FindVariableDescriptorType(storage_class == spv::StorageClassStorageBuffer, interface_var);
 
-            auto decoration_set = GetDecorationSet(insn->Word(2));
-            out.emplace_back(DescriptorSlot{decoration_set.descriptor_set, decoration_set.binding}, interface_var);
+                auto decoration_set = GetDecorationSet(insn->Word(2));
+                out.emplace_back(DescriptorSlot{decoration_set.descriptor_set, decoration_set.binding}, interface_var);
+            }
         }
     }
 
@@ -1618,24 +1589,27 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
 }
 
 std::vector<std::pair<uint32_t, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByInputAttachmentIndex(
-    layer_data::unordered_set<uint32_t> const& accessible_ids) const {
+    const Instruction& entrypoint) const {
     std::vector<std::pair<uint32_t, InterfaceVariable>> out;
 
-    for (const Instruction* insn : GetDecorationInstructions()) {
-        if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
-            auto attachment_index = insn->Word(3);
-            auto id = insn->Word(1);
+    const auto* accessible_ids = GetAccessibleIds(entrypoint);
+    if (accessible_ids) {
+        for (const Instruction* insn : GetDecorationInstructions()) {
+            if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
+                auto attachment_index = insn->Word(3);
+                auto id = insn->Word(1);
 
-            if (accessible_ids.count(id)) {
-                const Instruction* def = FindDef(id);
-                if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
-                    auto num_locations = GetLocationsConsumedByType(def->Word(1), false);
-                    for (uint32_t offset = 0; offset < num_locations; offset++) {
-                        InterfaceVariable interface_var = {};
-                        interface_var.id = id;
-                        interface_var.type_id = def->Word(1);
-                        interface_var.offset = offset;
-                        out.emplace_back(attachment_index + offset, interface_var);
+                if (accessible_ids->count(id)) {
+                    const Instruction* def = FindDef(id);
+                    if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
+                        auto num_locations = GetLocationsConsumedByType(def->Word(1), false);
+                        for (uint32_t offset = 0; offset < num_locations; offset++) {
+                            InterfaceVariable interface_var = {};
+                            interface_var.id = id;
+                            interface_var.type_id = def->Word(1);
+                            interface_var.offset = offset;
+                            out.emplace_back(attachment_index + offset, interface_var);
+                        }
                     }
                 }
             }
