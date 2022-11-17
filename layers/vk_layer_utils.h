@@ -326,6 +326,21 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
     return result;
 }
 
+// Find whether or not an element is in list
+// Two definitions, to be able to do the following calls:
+// IsIn(1, {1, 2, 3});
+// std::array arr {1, 2, 3};
+// IsIn(1, arr);
+template <typename T, typename RANGE>
+bool IsValueIn(const T &v, const RANGE &range) {
+    return std::find(std::begin(range), std::end(range), v) != std::end(range);
+}
+
+template <typename T>
+bool IsValueIn(const T &v, const std::initializer_list<T> &list) {
+    return IsValueIn<T, decltype(list)>(v, list);
+}
+
 extern "C" {
 #endif
 
