@@ -37,7 +37,7 @@
 #include "chassis.h"
 #include "core_validation.h"
 #include "spirv_grammar_helper.h"
-#include "xxhash.h"
+#include "xxhash/xxhash.h"
 
 static shader_stage_attributes shader_stage_attribs[] = {
     {"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},

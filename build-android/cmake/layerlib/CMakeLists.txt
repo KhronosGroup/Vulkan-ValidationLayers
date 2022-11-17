@@ -101,10 +101,11 @@ add_library(VkLayer_khronos_validation SHARED
         ${COMMON_DIR}/include/thread_safety.cpp
         ${SRC_DIR}/layers/image_layout_map.cpp
         ${SRC_DIR}/layers/subresource_adapter.cpp
-        ${SRC_DIR}/layers/xxhash.c)
+        ${SRC_DIR}/layers/third_party/xxhash/xxhash.c)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
+        ${SRC_DIR}/layers/third_party
         ${COMMON_DIR}/include
         ${EXTERNAL_DIR}/glslang
         ${EXTERNAL_DIR}/spirv-tools/include

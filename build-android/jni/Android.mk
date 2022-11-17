@@ -28,6 +28,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_format_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/third_party \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_CPPFLAGS += -std=c++17 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
@@ -72,7 +73,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/third_party/xxhash/xxhash.c
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
@@ -85,6 +86,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/corechecks_optick_instrumentation
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/third_party \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
@@ -134,6 +136,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/third_party \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 
@@ -185,6 +188,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/third_party \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 

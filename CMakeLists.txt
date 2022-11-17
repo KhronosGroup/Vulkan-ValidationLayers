@@ -182,6 +182,7 @@ endif()
 if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
     add_compile_options(-Wall
                         -Wextra
+                        -Wpedantic
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
                         -fno-strict-aliasing
@@ -235,6 +236,8 @@ if(BUILD_LAYERS OR BUILD_TESTS)
         message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
     endif()
 endif()
+
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/layers/third_party)
 
 # VkLayer_utils library ----------------------------------------------------------------------------------------------------------
 # For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily

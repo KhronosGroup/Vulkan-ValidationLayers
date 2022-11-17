@@ -1591,7 +1591,7 @@ class CommandBuffer : public CMD_BUFFER_STATE {
     CommandBufferAccessContext access_context;
 };
 }  // namespace syncval_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE)
 
 class QueueSyncState;
 
@@ -1696,7 +1696,7 @@ class Swapchain : public SWAPCHAIN_NODE {
     PresentedImages presented;  // Build this on demand
 };
 }  // namespace syncval_state
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, SWAPCHAIN_NODE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, SWAPCHAIN_NODE)
 
 class QueueBatchContext : public CommandExecutionContext {
   public:

@@ -72,7 +72,7 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
 };
 };  // namespace debug_printf_state
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf_state::CommandBuffer, CMD_BUFFER_STATE);
+VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, debug_printf_state::CommandBuffer, CMD_BUFFER_STATE)
 
 class DebugPrintf : public GpuAssistedBase {
   public:

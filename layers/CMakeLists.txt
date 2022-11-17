@@ -40,6 +40,7 @@ endif()
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
 add_definitions(-DXXH_NO_LONG_LONG)
+set(XXHASH_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash/xxhash.h ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash/xxhash.c)
 
 # Configure installation of source files that are dependencies of other repos.
 if(BUILD_LAYER_SUPPORT_FILES)
@@ -55,8 +56,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_logging.h
         vk_layer_utils.h
         vk_layer_utils.cpp
-        xxhash.h
-        xxhash.c
+        ${XXHASH_FILES}
         generated/vk_format_utils.h
         generated/vk_format_utils.cpp
         generated/vk_validation_error_messages.h
@@ -168,8 +168,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     generated/synchronization_validation_types.cpp
     gpu_validation.cpp
     generated/corechecks_optick_instrumentation.cpp
-    xxhash.c
-    xxhash.h)
+    ${XXHASH_FILES})
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
     generated/object_tracker.cpp

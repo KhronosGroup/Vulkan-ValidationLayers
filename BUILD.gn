@@ -101,6 +101,7 @@ config("vulkan_layer_config") {
   include_dirs = [
     "layers",
     "layers/generated",
+    "layers/third_party",
   ]
   if (is_clang) {
     cflags = [ "-Wno-extra-semi" ]
@@ -303,6 +304,7 @@ source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
     "layers/generated",
+    "layers/third_party",
   ]
   sources = [
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",
@@ -328,9 +330,9 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_logging.h",
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
-    "layers/vk_mem_alloc.h",
-    "layers/xxhash.c",
-    "layers/xxhash.h",
+    "layers/third_party/vma/vk_mem_alloc.h",
+    "layers/third_party/xxhash/xxhash.c",
+    "layers/third_party/xxhash/xxhash.h",
   ]
   defines = [ "XXH_NO_LONG_LONG" ]
   public_configs = [

@@ -58,11 +58,11 @@ enum ExtEnabled : unsigned char {
 
 static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled extension) {
     return (extension != kNotEnabled);
-};
+}
 
 static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
-};
+}
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
 #define VK_VERSION_1_3_NAME "VK_VERSION_1_3"
 

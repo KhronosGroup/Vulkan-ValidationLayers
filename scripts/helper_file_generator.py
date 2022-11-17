@@ -153,18 +153,18 @@ void CoreChecksOptickInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, 
     OPTICK_FRAME("CPU FRAME");
     OPTICK_EVENT();
     CoreChecks::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-};
+}
 
 bool CoreChecksOptickInstrumented::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateQueuePresentKHR(queue, pPresentInfo);
     return result;
-};
+}
 
 void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordQueuePresentKHR(queue, pPresentInfo);
-};
+}
 
 // Code-generated intercepts
 """
@@ -892,11 +892,11 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             '',
             'static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled extension) {',
             '    return (extension != kNotEnabled);',
-            '};',
+            '}',
             '',
             'static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {',
             '    return (extension == kEnabledByCreateinfo);',
-            '};',
+            '}',
             '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
             '#define VK_VERSION_1_3_NAME "VK_VERSION_1_3"',
             '']
@@ -1188,7 +1188,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
             object_type_info[object_type]['VkoType'] = kenum_type
         object_types_header += '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
         object_types_header += '    }\n'
-        object_types_header += '};\n'
+        object_types_header += '}\n'
 
         # Output a function converting from core object type definitions to the Vulkan object type enums
         object_types_header += '\n'
@@ -1205,7 +1205,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 object_types_header += '#endif\n'
         object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
         object_types_header += '    }\n'
-        object_types_header += '};\n'
+        object_types_header += '}\n'
 
         # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
         object_types_header +=     '\n'

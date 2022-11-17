@@ -42,18 +42,18 @@ void CoreChecksOptickInstrumented::PostCallRecordQueuePresentKHR(VkQueue queue, 
     OPTICK_FRAME("CPU FRAME");
     OPTICK_EVENT();
     CoreChecks::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-};
+}
 
 bool CoreChecksOptickInstrumented::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateQueuePresentKHR(queue, pPresentInfo);
     return result;
-};
+}
 
 void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) {
     OPTICK_EVENT();
     CoreChecks::PreCallRecordQueuePresentKHR(queue, pPresentInfo);
-};
+}
 
 // Code-generated intercepts
 bool CoreChecksOptickInstrumented::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) const {
