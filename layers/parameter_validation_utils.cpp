@@ -1048,10 +1048,14 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR (or the "
                                  "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), samples must be VK_SAMPLE_COUNT_1_BIT.");
             }
-            if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
-                skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-02084",
-                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR (or the "
-                                 "alias VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV), tiling must be VK_IMAGE_TILING_OPTIMAL.");
+            const auto *shading_rate_image_features =
+                LvlFindInChain<VkPhysicalDeviceShadingRateImageFeaturesNV>(device_createinfo_pnext);
+            if (shading_rate_image_features && shading_rate_image_features->shadingRateImage &&
+                pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+                // KHR flag can be non-optimal
+                skip |= LogError(device, "VUID-VkImageCreateInfo-shadingRateImage-07727",
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, tiling must be "
+                                 "VK_IMAGE_TILING_OPTIMAL.");
             }
         }
 

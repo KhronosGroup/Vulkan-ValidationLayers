@@ -4146,6 +4146,9 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     // Create a device that enables shading_rate_image but disables multiViewport
     auto shading_rate_image_features = LvlInitStruct<VkPhysicalDeviceShadingRateImageFeaturesNV>();
     auto features2 = GetPhysicalDeviceFeatures2(shading_rate_image_features);
+    if (!shading_rate_image_features.shadingRateImage) {
+        GTEST_SKIP() << "shadingRateImage not supported";
+    }
 
     features2.features.multiViewport = VK_FALSE;
 
@@ -4186,7 +4189,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     // tiling must be optimal
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-tiling-02084");
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-shadingRateImage-07727");
 
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 
