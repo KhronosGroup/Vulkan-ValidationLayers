@@ -11175,7 +11175,7 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    vector<std::string> error_vuids;
+    vector<std::string> error_vuids, error_vuids_1;
     uint32_t max_task_workgroup_size_x = mesh_shader_properties.maxTaskWorkGroupSize[0];
     uint32_t max_task_workgroup_size_y = mesh_shader_properties.maxTaskWorkGroupSize[1];
     uint32_t max_task_workgroup_size_z = mesh_shader_properties.maxTaskWorkGroupSize[2];
@@ -11183,6 +11183,9 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
     uint32_t max_mesh_workgroup_size_x = mesh_shader_properties.maxMeshWorkGroupSize[0];
     uint32_t max_mesh_workgroup_size_y = mesh_shader_properties.maxMeshWorkGroupSize[1];
     uint32_t max_mesh_workgroup_size_z = mesh_shader_properties.maxMeshWorkGroupSize[2];
+
+    uint32_t max_mesh_output_vertices = mesh_shader_properties.maxMeshOutputVertices;
+    uint32_t max_mesh_output_primitives = mesh_shader_properties.maxMeshOutputPrimitives;
 
     if (max_task_workgroup_size_x < layer_data::MaxTypeValue(max_task_workgroup_size_x)) {
         error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07291");
@@ -11215,6 +11218,16 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
         max_mesh_workgroup_size_z += 1;
     }
     error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07298");
+
+    if (max_mesh_output_vertices < layer_data::MaxTypeValue(max_mesh_output_vertices)) {
+        error_vuids_1.push_back("VUID-RuntimeSpirv-MeshEXT-07115");
+        max_mesh_output_vertices += 1;
+    }
+
+    if (max_mesh_output_primitives < layer_data::MaxTypeValue(max_mesh_output_primitives)) {
+        error_vuids_1.push_back("VUID-RuntimeSpirv-MeshEXT-07116");
+        max_mesh_output_primitives += 1;
+    }
 
     std::string task_src =
         "#version 450\n"
@@ -11261,10 +11274,10 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
                OpEntryPoint MeshEXT %main "main"
                OpExecutionModeId %main LocalSizeId %uint_2 %uint_1 %uint_1
                OpExecutionMode %main OutputVertices )";
-    mesh_src_2 += std::to_string(mesh_shader_properties.maxMeshOutputVertices + 1);
+    mesh_src_2 += std::to_string(max_mesh_output_vertices);
     mesh_src_2 += R"(
                OpExecutionMode %main OutputPrimitivesEXT )";
-    mesh_src_2 += std::to_string(mesh_shader_properties.maxMeshOutputPrimitives + 1);
+    mesh_src_2 += std::to_string(max_mesh_output_primitives);
     mesh_src_2 += R"(
                OpExecutionMode %main OutputTrianglesEXT
                OpSource GLSL 450
@@ -11297,8 +11310,7 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
     const auto break_vp1 = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {mesh_shader_2.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit,
-                                      vector<std::string>({"VUID-RuntimeSpirv-MeshEXT-07115", "VUID-RuntimeSpirv-MeshEXT-07116"}));
+    CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit, error_vuids_1);
 }
 
 TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
