@@ -1257,3 +1257,103 @@ TEST_F(VkLayerTest, DescriptorBufferLibrary) {
     vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &exe_pipe_ci, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
+    TEST_DESCRIPTION(
+        "Attempt to bind invalid descriptor sets with and without VK_EXT_graphics_pipeline_library and independent sets");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vs_src[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform foo { float x; } bar;
+        void main() {
+            gl_Position = vec4(bar.x);
+        }
+    )glsl";
+
+    const char fs_src[] = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform foo { float x; } bar;
+        layout(location = 0) out vec4 c;
+        void main() {
+            c = vec4(bar.x);
+        }
+    )glsl";
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo();
+    vi_lib.InitState();
+    ASSERT_VK_SUCCESS(vi_lib.CreateGraphicsPipeline(true, false));
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    ASSERT_VK_SUCCESS(fo_lib.CreateGraphicsPipeline(true, false));
+
+    // Check pre-raster library with shader accessing FS-only descriptor
+    {
+        OneOffDescriptorSet fs_ds(m_device, {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                            });
+
+        VkPipelineLayoutObj pipeline_layout(m_device, {&fs_ds.layout_});
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
+        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv);
+        CreatePipelineHelper vs_lib(*this);
+        vs_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
+        vs_lib.InitState();
+        vs_lib.gp_ci_.layout = pipeline_layout.handle();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+        vs_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        CreatePipelineHelper fs_lib(*this);
+        fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+        fs_lib.InitState();
+        fs_lib.gp_ci_.layout = pipeline_layout.handle();
+        ASSERT_VK_SUCCESS(fs_lib.CreateGraphicsPipeline(true, false));
+    }
+
+    // Check FS library with shader accessing FS-only descriptor
+    {
+        OneOffDescriptorSet vs_ds(m_device, {
+                                                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                            });
+
+        VkPipelineLayoutObj pipeline_layout(m_device, {&vs_ds.layout_});
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
+        vk_testing::GraphicsPipelineLibraryStage stage(vs_spv);
+        CreatePipelineHelper vs_lib(*this);
+        vs_lib.InitPreRasterLibInfo(1, &stage.stage_ci);
+        vs_lib.InitState();
+        vs_lib.gp_ci_.layout = pipeline_layout.handle();
+        ASSERT_VK_SUCCESS(vs_lib.CreateGraphicsPipeline(true, false));
+
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
+        vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        CreatePipelineHelper fs_lib(*this);
+        fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+        fs_lib.InitState();
+        fs_lib.gp_ci_.layout = pipeline_layout.handle();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-00756");
+        fs_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+}
