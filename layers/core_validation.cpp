@@ -2713,11 +2713,11 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    if (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) {
+    if (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) {
         if (IsDynamic(pipeline, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT) ||
             IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07065",
-                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] pDynamicState must not contain "
                              "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT or VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT because "
                              "the pipeline contains a mesh shader.",
@@ -2727,7 +2727,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         if (IsDynamic(pipeline, VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT) ||
             IsDynamic(pipeline, VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07066",
-                             "Invalid Pipeline CreateInfo[%" PRIu32
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] pDynamicState must not contain "
                              "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT or VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT because "
                              "the pipeline contains a mesh shader.",
@@ -2737,7 +2737,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         if (IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
             skip |= LogError(
                 device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07067",
-                "Invalid Pipeline CreateInfo[%" PRIu32
+                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                 "] pDynamicState must not contain VK_DYNAMIC_STATE_VERTEX_INPUT_EXT because the pipeline contains a mesh shader.",
                 pipe_index);
         }
@@ -3664,12 +3664,12 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
         if ((rendering_struct->viewMask != 0) && !enabled_features.mesh_shader_features.multiviewMeshShader &&
             (pipeline->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            skip |=
-                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064",
-                         "vkCreateGraphicsPipelines(): Pipeline %" PRIu32 " has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
-                         ") and "
-                         "multiviewMeshShader is not enabled, contains mesh shader",
-                         pipe_index, rendering_struct->viewMask);
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                             "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                             ") and "
+                             "multiviewMeshShader is not enabled, contains mesh shader",
+                             pipe_index, rendering_struct->viewMask);
         }
 
         for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {

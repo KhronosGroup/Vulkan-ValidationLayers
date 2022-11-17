@@ -5715,7 +5715,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuf
     }
     if (fail) {
         skip |= LogError(commandBuffer, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325",
-                         "The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32
+                         "vkCmdDrawMeshTasksEXT(): The product of groupCountX (0x%" PRIxLEAST32 "), groupCountY (0x%" PRIxLEAST32
                          ") and groupCountZ (0x%" PRIxLEAST32
                          ") must be less than or equal to "
                          "VkPhysicalDeviceMeshShaderPropertiesEXT::maxTaskWorkGroupTotalCount (0x%" PRIxLEAST32 ").",
