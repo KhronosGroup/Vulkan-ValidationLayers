@@ -841,7 +841,7 @@ class UpdateStateResolveAction {
 
 void HazardResult::Set(const ResourceAccessState *access_state_, SyncStageAccessIndex usage_index_, SyncHazard hazard_,
                        const SyncStageAccessFlags &prior_, const ResourceUsageTag tag_) {
-    access_state = layer_data::make_unique<const ResourceAccessState>(*access_state_);
+    access_state = std::make_unique<const ResourceAccessState>(*access_state_);
     usage_index = usage_index_;
     hazard = hazard_;
     prior_access = prior_;
@@ -865,7 +865,7 @@ void HazardResult::Set(const ResourceAccessState *access_state_, SyncStageAccess
 }
 
 void HazardResult::AddRecordedAccess(const ResourceFirstAccess &first_access) {
-    recorded_access = layer_data::make_unique<const ResourceFirstAccess>(first_access);
+    recorded_access = std::make_unique<const ResourceFirstAccess>(first_access);
 }
 
 void AccessContext::DeleteAccess(const AddressRange &address) { GetAccessStateMap(address.type).erase_range(address.range); }
@@ -2453,7 +2453,7 @@ ResourceUsageTag CommandBufferAccessContext::RecordBeginRenderPass(CMD_TYPE cmd_
     const auto barrier_tag = NextCommandTag(cmd_type, NamedHandle("renderpass", rp_state.Handle()),
                                             ResourceUsageRecord::SubcommandType::kSubpassTransition);
     const auto load_tag = NextSubcommandTag(cmd_type, ResourceUsageRecord::SubcommandType::kLoadOp);
-    render_pass_contexts_.emplace_back(layer_data::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(),
+    render_pass_contexts_.emplace_back(std::make_unique<RenderPassAccessContext>(rp_state, render_area, GetQueueFlags(),
                                                                                         attachment_views, &cb_access_context_));
     current_renderpass_context_ = render_pass_contexts_.back().get();
     current_renderpass_context_->RecordBeginRenderPass(barrier_tag, load_tag);
@@ -8733,7 +8733,7 @@ void PresentedImage::UpdateMemoryAccess(SyncStageAccessIndex usage, ResourceUsag
 }
 
 QueueBatchContext::PresentResourceRecord::Base_::Record QueueBatchContext::PresentResourceRecord::MakeRecord() const {
-    return layer_data::make_unique<PresentResourceRecord>(presented_);
+    return std::make_unique<PresentResourceRecord>(presented_);
 }
 
 std::ostream &QueueBatchContext::PresentResourceRecord::Format(std::ostream &out, const SyncValidator &sync_state) const {
@@ -8748,7 +8748,7 @@ std::ostream &QueueBatchContext::PresentResourceRecord::Format(std::ostream &out
 }
 
 QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::AcquireResourceRecord::MakeRecord() const {
-    return layer_data::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, func_name_.c_str());
+    return std::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, func_name_.c_str());
 }
 
 std::ostream &QueueBatchContext::AcquireResourceRecord::Format(std::ostream &out, const SyncValidator &sync_state) const {

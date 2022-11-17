@@ -1866,9 +1866,9 @@ TEST_F(VkPositiveLayerTest, QueueSubmitTimelineSemaphore2Queue) {
         GTEST_SKIP() << "Test requires 2 queues";
     }
 
-    auto buffer_a = layer_data::make_unique<VkBufferObj>();
-    auto buffer_b = layer_data::make_unique<VkBufferObj>();
-    auto buffer_c = layer_data::make_unique<VkBufferObj>();
+    auto buffer_a = std::make_unique<VkBufferObj>();
+    auto buffer_b = std::make_unique<VkBufferObj>();
+    auto buffer_c = std::make_unique<VkBufferObj>();
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     buffer_a->init_as_src_and_dst(*m_device, 256, mem_prop);
     buffer_b->init_as_src_and_dst(*m_device, 256, mem_prop);
@@ -2264,7 +2264,7 @@ struct SemBufferRaceData {
             VkCommandBufferObj cb(&dev, &command_pool);
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-            auto buffer = layer_data::make_unique<vk_testing::Buffer>();
+            auto buffer = std::make_unique<vk_testing::Buffer>();
             buffer->init_as_dst(dev, (VkDeviceSize)20, reqs);
 
             // main thread sets up buffer

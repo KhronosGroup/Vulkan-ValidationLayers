@@ -120,36 +120,36 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
 std::unique_ptr<const safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
     const safe_VkPipelineColorBlendStateCreateInfo &cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
-    return layer_data::make_unique<const safe_VkPipelineColorBlendStateCreateInfo>(cbs);
+    return std::make_unique<const safe_VkPipelineColorBlendStateCreateInfo>(cbs);
 }
 std::unique_ptr<const safe_VkPipelineColorBlendStateCreateInfo> ToSafeColorBlendState(
     const VkPipelineColorBlendStateCreateInfo &cbs) {
-    return layer_data::make_unique<const safe_VkPipelineColorBlendStateCreateInfo>(&cbs);
+    return std::make_unique<const safe_VkPipelineColorBlendStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ToSafeMultisampleState(
     const safe_VkPipelineMultisampleStateCreateInfo &cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
-    return layer_data::make_unique<const safe_VkPipelineMultisampleStateCreateInfo>(cbs);
+    return std::make_unique<const safe_VkPipelineMultisampleStateCreateInfo>(cbs);
 }
 std::unique_ptr<const safe_VkPipelineMultisampleStateCreateInfo> ToSafeMultisampleState(
     const VkPipelineMultisampleStateCreateInfo &cbs) {
-    return layer_data::make_unique<const safe_VkPipelineMultisampleStateCreateInfo>(&cbs);
+    return std::make_unique<const safe_VkPipelineMultisampleStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthStencilState(
     const safe_VkPipelineDepthStencilStateCreateInfo &cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
-    return layer_data::make_unique<const safe_VkPipelineDepthStencilStateCreateInfo>(cbs);
+    return std::make_unique<const safe_VkPipelineDepthStencilStateCreateInfo>(cbs);
 }
 std::unique_ptr<const safe_VkPipelineDepthStencilStateCreateInfo> ToSafeDepthStencilState(
     const VkPipelineDepthStencilStateCreateInfo &cbs) {
-    return layer_data::make_unique<const safe_VkPipelineDepthStencilStateCreateInfo>(&cbs);
+    return std::make_unique<const safe_VkPipelineDepthStencilStateCreateInfo>(&cbs);
 }
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const safe_VkPipelineShaderStageCreateInfo &cbs) {
     // This is needlessly copied here. Might better to make this a plain pointer, with an optional "backing unique_ptr"
-    return layer_data::make_unique<const safe_VkPipelineShaderStageCreateInfo>(cbs);
+    return std::make_unique<const safe_VkPipelineShaderStageCreateInfo>(cbs);
 }
 std::unique_ptr<const safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI(const VkPipelineShaderStageCreateInfo &cbs) {
-    return layer_data::make_unique<const safe_VkPipelineShaderStageCreateInfo>(&cbs);
+    return std::make_unique<const safe_VkPipelineShaderStageCreateInfo>(&cbs);
 }
 
 template <typename CreateInfo>

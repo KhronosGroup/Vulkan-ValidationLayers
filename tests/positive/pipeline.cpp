@@ -5513,7 +5513,7 @@ TEST_F(VkPositiveLayerTest, AttachmentsDisableRasterization) {
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.fs_ = layer_data::make_unique<VkShaderObj>(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipe.fs_ = std::make_unique<VkShaderObj>(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.InitState();
     pipe.CreateGraphicsPipeline();

@@ -102,7 +102,7 @@ uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
         auto guard = Lock();
         submissions_.emplace_back(std::move(submission));
         if (!thread_) {
-            thread_ = layer_data::make_unique<std::thread>(&QUEUE_STATE::ThreadFunc, this);
+            thread_ = std::make_unique<std::thread>(&QUEUE_STATE::ThreadFunc, this);
         }
     }
     return retire_early ? submission.seq : 0;

@@ -2872,7 +2872,7 @@ TEST_F(VkLayerTest, PushDescriptorUniformDestroySignaled) {
     helper.CreateGraphicsPipeline();
 
     const float vbo_data[3] = {1.f, 0.f, 1.f};
-    auto vbo = layer_data::make_unique<VkConstantBufferObj>(m_device, sizeof(vbo_data), &vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    auto vbo = std::make_unique<VkConstantBufferObj>(m_device, sizeof(vbo_data), &vbo_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
     buff_info.buffer = vbo->handle();
@@ -5422,8 +5422,8 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureNV) {
         vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureNV"));
     assert(vkCmdBuildAccelerationStructureNV != nullptr);
 
-    auto vbo = layer_data::make_unique<VkBufferObj>();
-    auto ibo = layer_data::make_unique<VkBufferObj>();
+    auto vbo = std::make_unique<VkBufferObj>();
+    auto ibo = std::make_unique<VkBufferObj>();
     VkGeometryNV geometry;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometry);
 
@@ -5434,9 +5434,9 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureNV) {
     bot_level_as_create_info.info.geometryCount = 1;
     bot_level_as_create_info.info.pGeometries = &geometry;
 
-    auto bot_level_as = layer_data::make_unique<VkAccelerationStructureObj>(*m_device, bot_level_as_create_info);
+    auto bot_level_as = std::make_unique<VkAccelerationStructureObj>(*m_device, bot_level_as_create_info);
 
-    auto bot_level_as_scratch = layer_data::make_unique<VkBufferObj>();
+    auto bot_level_as_scratch = std::make_unique<VkBufferObj>();
     bot_level_as->create_scratch_buffer(*m_device, bot_level_as_scratch.get());
 
     m_commandBuffer->begin();
@@ -8975,8 +8975,8 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
         vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
     assert(vkDestroyAccelerationStructureKHR);
 
-    auto vbo = layer_data::make_unique<VkBufferObj>();
-    auto ibo = layer_data::make_unique<VkBufferObj>();
+    auto vbo = std::make_unique<VkBufferObj>();
+    auto ibo = std::make_unique<VkBufferObj>();
     VkGeometryNV geometryNV;
     const VkDeviceSize kBufferOffset = 256;
     GetSimpleGeometryForAccelerationStructureTests(*m_device, vbo.get(), ibo.get(), &geometryNV, kBufferOffset, true);
@@ -8990,7 +8990,7 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     as_create_info.size = 0;
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
-    auto bot_level_as = layer_data::make_unique<VkAccelerationStructurekhrObj>(*m_device, as_create_info);
+    auto bot_level_as = std::make_unique<VkAccelerationStructurekhrObj>(*m_device, as_create_info);
 
     auto address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     address_info.buffer = geometryNV.geometry.triangles.vertexData;
@@ -9018,7 +9018,7 @@ TEST_F(VkLayerTest, ObjInUseCmdBuildAccelerationStructureKHR) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
 
-    auto bot_level_as_scratch = layer_data::make_unique<VkBufferObj>();
+    auto bot_level_as_scratch = std::make_unique<VkBufferObj>();
     VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
     create_info.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;

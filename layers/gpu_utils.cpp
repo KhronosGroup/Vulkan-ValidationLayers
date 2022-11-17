@@ -325,7 +325,7 @@ void GpuAssistedBase::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
 
     VkResult result1 = UtilInitializeVma(instance, physical_device, device, &vmaAllocator);
     assert(result1 == VK_SUCCESS);
-    desc_set_manager = layer_data::make_unique<UtilDescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
+    desc_set_manager = std::make_unique<UtilDescriptorSetManager>(device, static_cast<uint32_t>(bindings_.size()));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0,
                                                                     static_cast<uint32_t>(bindings_.size()), bindings_.data()};

@@ -3609,7 +3609,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     VkBufferObj doit_buffer;
     doit_buffer.init(*m_device, buffer_create_info);
 
-    auto buffer = layer_data::make_unique<VkBufferObj>();
+    auto buffer = std::make_unique<VkBufferObj>();
     buffer->init(*m_device, buffer_create_info);
 
     VkDescriptorBufferInfo buffer_info[2] = {};
@@ -3630,7 +3630,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     bvci.offset = 0;
     bvci.range = VK_WHOLE_SIZE;
 
-    auto texel_bufferview = layer_data::make_unique<vk_testing::BufferView>();
+    auto texel_bufferview = std::make_unique<vk_testing::BufferView>();
     texel_bufferview->init(*m_device, bvci);
 
     auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -3643,7 +3643,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     VkImageObj sampled_image(m_device);
     auto image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     sampled_image.Init(image_ci);
-    auto sampled_view = layer_data::make_unique<vk_testing::ImageView>();
+    auto sampled_view = std::make_unique<vk_testing::ImageView>();
     auto imageview_ci = SafeSaneImageViewCreateInfo(sampled_image, format, VK_IMAGE_ASPECT_COLOR_BIT);
     sampled_view->init(*m_device, imageview_ci);
 
@@ -3651,7 +3651,7 @@ TEST_F(VkSyncValTest, DestroyedUnusedDescriptors) {
     image_ci = VkImageObj::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
     combined_image.Init(image_ci);
     imageview_ci = SafeSaneImageViewCreateInfo(combined_image, format, VK_IMAGE_ASPECT_COLOR_BIT);
-    auto combined_view = layer_data::make_unique<vk_testing::ImageView>();
+    auto combined_view = std::make_unique<vk_testing::ImageView>();
     combined_view->init(*m_device, imageview_ci);
 
     vk_testing::Sampler sampler;
