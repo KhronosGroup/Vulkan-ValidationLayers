@@ -41,9 +41,16 @@
 #define STRINGIFY(s) STRINGIFY_HELPER(s)
 #define STRINGIFY_HELPER(s) #s
 
+// For MSVC
+#if !defined(__PRETTY_FUNCTION__)
+#if defined(__FUNCSIG__)
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#else
+#define __PRETTY_FUNCTION__ __FILE__ ":" STRINGIFY(__LINE__)
+#endif
+#endif
+
 #ifdef __cplusplus
-template <typename... Types>
-void UNUSED(Types...) {}
 
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};
