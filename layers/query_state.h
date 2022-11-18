@@ -87,7 +87,7 @@ class QUERY_POOL_STATE : public BASE_NODE {
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
     std::vector<small_vector<QueryState, 1, uint32_t>> query_states_;
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
 };
 
 struct QueryObject {

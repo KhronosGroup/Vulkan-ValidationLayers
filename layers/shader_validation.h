@@ -151,7 +151,7 @@ class ValidationCache {
     // wrong with them; also, we expect they will get fixed, so we're less
     // likely to see them again.
     layer_data::unordered_set<uint32_t> good_shader_hashes_;
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
 };
 
 spv_target_env PickSpirvEnv(uint32_t api_version, bool spirv_1_4);

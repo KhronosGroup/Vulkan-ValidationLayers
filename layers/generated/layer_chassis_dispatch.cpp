@@ -28,7 +28,7 @@
 #include "vk_layer_utils.h"
 #include "vk_safe_struct.h"
 
-ReadWriteLock dispatch_lock;
+std::shared_mutex dispatch_lock;
 
 // Unique Objects pNext extension handling function
 void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
@@ -1272,7 +1272,7 @@ void DispatchGetPrivateData(
 
 layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 
-ReadWriteLock dispatch_secondary_cb_map_mutex;
+std::shared_mutex dispatch_secondary_cb_map_mutex;
 
 ReadLockGuard dispatch_cb_read_lock() {
     return ReadLockGuard(dispatch_secondary_cb_map_mutex);

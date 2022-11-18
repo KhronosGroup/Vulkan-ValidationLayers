@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (C) 2015-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ class ObjectLifetimes : public ValidationObject {
     ReadLockGuard ReadLock() override;
     WriteLockGuard WriteLock() override;
 
-    mutable ReadWriteLock object_lifetime_mutex;
+    mutable std::shared_mutex object_lifetime_mutex;
     WriteLockGuard WriteSharedLock() { return WriteLockGuard(object_lifetime_mutex); }
     ReadLockGuard ReadSharedLock() const { return ReadLockGuard(object_lifetime_mutex); }
 

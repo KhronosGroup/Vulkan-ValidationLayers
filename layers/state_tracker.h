@@ -1470,7 +1470,7 @@ class ValidationStateTracker : public ValidationObject {
     std::vector<DeviceQueueInfo> device_queue_info_list;
     // If vkGetBufferDeviceAddress is called, keep track of buffer <-> address mapping.
     sparse_container::range_map<VkDeviceAddress, std::shared_ptr<BUFFER_STATE>> buffer_address_map_;
-    mutable ReadWriteLock buffer_address_lock_;
+    mutable std::shared_mutex buffer_address_lock_;
 
     vl_concurrent_unordered_map<uint64_t, VkFormatFeatureFlags2KHR> ahb_ext_formats_map;
 

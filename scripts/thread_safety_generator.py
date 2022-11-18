@@ -421,7 +421,7 @@ private:
 class ThreadSafety : public ValidationObject {
 public:
 
-    ReadWriteLock thread_safety_lock;
+    std::shared_mutex thread_safety_lock;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.

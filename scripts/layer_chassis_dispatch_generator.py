@@ -1137,7 +1137,7 @@ void DispatchGetPrivateData(
 
 layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
 
-ReadWriteLock dispatch_secondary_cb_map_mutex;
+std::shared_mutex dispatch_secondary_cb_map_mutex;
 
 ReadLockGuard dispatch_cb_read_lock() {
     return ReadLockGuard(dispatch_secondary_cb_map_mutex);
@@ -1614,7 +1614,7 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
             write('#include "vk_layer_utils.h"', file=self.outFile)
             write('#include "vk_safe_struct.h"', file=self.outFile)
             self.newline()
-            write('ReadWriteLock dispatch_lock;', file=self.outFile)
+            write('std::shared_mutex dispatch_lock;', file=self.outFile)
             self.newline()
             write('// Unique Objects pNext extension handling function', file=self.outFile)
             write('%s' % extension_proc, file=self.outFile)

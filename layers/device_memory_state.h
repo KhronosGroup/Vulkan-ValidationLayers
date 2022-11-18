@@ -257,7 +257,7 @@ class BindableSparseMemoryTracker : public BindableMemoryTracker {
     using BindingMap = sparse_container::range_map<VkDeviceSize, MEM_BINDING>;
     BindingMap binding_map_;
     VkDeviceSize resource_size_;
-    mutable ReadWriteLock binding_lock_;
+    mutable std::shared_mutex binding_lock_;
 };
 
 // Non sparse multi planar bindable memory tracker
