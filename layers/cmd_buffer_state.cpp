@@ -868,10 +868,10 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     if (VK_NULL_HANDLE != last_bound.pipeline_layout) {
         for (const auto &set_binding_pair : pipe->active_slots) {
             uint32_t set_index = set_binding_pair.first;
-            auto &set_info = last_bound.per_set[set_index];
             if (set_index >= last_bound.per_set.size()) {
                 continue;
             }
+            auto &set_info = last_bound.per_set[set_index];
             // Pull the set node
             auto &descriptor_set = set_info.bound_descriptor_set;
             if (!descriptor_set) {
