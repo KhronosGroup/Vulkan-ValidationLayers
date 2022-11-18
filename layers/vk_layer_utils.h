@@ -354,60 +354,13 @@ static inline int u_ffs(int val) {
 #endif
 
 #ifdef __cplusplus
-// clang sets _MSC_VER to 1800 and _MSC_FULL_VER to 180000000, but we only want to clean up after MSVC.
-#if defined(_MSC_FULL_VER) && !defined(__clang__)
-// Minimum Visual Studio 2015 Update 2, or libc++ with C++17
-// But, before Visual Studio 2017 version 15.7, __cplusplus is not set
-// correctly. See:
-//   https://docs.microsoft.com/en-us/cpp/build/reference/zc-cplusplus?view=msvc-160
-// Also, according to commit e2a6c442cb1e4, SDKs older than NTDDI_WIN10_RS2 do not
-// support shared_mutex.
-#if _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
-#define VVL_USE_SHARED_MUTEX 1
-#endif
-#elif __cplusplus >= 201703
-#define VVL_USE_SHARED_MUTEX 1
-#elif __cplusplus >= 201402
-#define VVL_USE_SHARED_TIMED_MUTEX 1
-#endif
-
-#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
 #include <shared_mutex>
-#endif
 
-class ReadWriteLock {
-  private:
-#if defined(VVL_USE_SHARED_MUTEX)
-    typedef std::shared_mutex Lock;
-#elif defined(VVL_USE_SHARED_TIMED_MUTEX)
-    typedef std::shared_timed_mutex Lock;
-#else
-    typedef std::mutex Lock;
-#endif
-
-  public:
-    void lock() { m_lock.lock(); }
-    bool try_lock() { return m_lock.try_lock(); }
-    void unlock() { m_lock.unlock(); }
-#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
-    void lock_shared() { m_lock.lock_shared(); }
-    bool try_lock_shared() { return m_lock.try_lock_shared(); }
-    void unlock_shared() { m_lock.unlock_shared(); }
-#else
-    void lock_shared() { lock(); }
-    bool try_lock_shared() { return try_lock(); }
-    void unlock_shared() { unlock(); }
-#endif
-  private:
-    Lock m_lock;
-};
-
-#if defined(VVL_USE_SHARED_MUTEX) || defined(VVL_USE_SHARED_TIMED_MUTEX)
-typedef std::shared_lock<ReadWriteLock> ReadLockGuard;
-#else
-typedef std::unique_lock<ReadWriteLock> ReadLockGuard;
-#endif
-typedef std::unique_lock<ReadWriteLock> WriteLockGuard;
+// Aliases to avoid excessive typing. We can't easily auto these away because
+// there are virtual methods in ValidationObject which return lock guards
+// and those cannot use return type deduction.
+typedef std::shared_lock<std::shared_mutex> ReadLockGuard;
+typedef std::unique_lock<std::shared_mutex> WriteLockGuard;
 
 // helper class for the very common case of getting and then locking a command buffer (or other state object)
 template <typename T, typename Guard>
@@ -576,9 +529,9 @@ class vl_concurrent_unordered_map {
 
     layer_data::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
-        mutable ReadWriteLock lock;
+        mutable std::shared_mutex lock;
         // Put each lock on its own cache line to avoid false cache line sharing.
-        char padding[(-int(sizeof(ReadWriteLock))) & 63];
+        char padding[(-int(sizeof(std::shared_mutex))) & 63];
     } locks[BUCKETS];
 
     uint32_t ConcurrentMapHashObject(const Key &object) const {

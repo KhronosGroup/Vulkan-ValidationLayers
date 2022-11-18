@@ -1069,11 +1069,11 @@ class BestPractices : public ValidationStateTracker {
         uint32_t memory_type_index = 0;
     };
     std::deque<MemoryFreeEvent> memory_free_events_;
-    mutable ReadWriteLock memory_free_events_lock_;
+    mutable std::shared_mutex memory_free_events_lock_;
 
     std::set<std::array<uint32_t, 4>> clear_colors_;
-    mutable ReadWriteLock clear_colors_lock_;
+    mutable std::shared_mutex clear_colors_lock_;
 
     layer_data::unordered_set<VkPipeline> pipelines_used_in_frame_;
-    mutable ReadWriteLock pipeline_lock_;
+    mutable std::shared_mutex pipeline_lock_;
 };

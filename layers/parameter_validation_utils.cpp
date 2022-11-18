@@ -88,7 +88,7 @@ ReadLockGuard StatelessValidation::ReadLock() { return ReadLockGuard(validation_
 WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 static layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};
-static ReadWriteLock secondary_cb_map_mutex;
+static std::shared_mutex secondary_cb_map_mutex;
 static ReadLockGuard CBReadLock() { return ReadLockGuard(secondary_cb_map_mutex); }
 static WriteLockGuard CBWriteLock() { return WriteLockGuard(secondary_cb_map_mutex); }
 

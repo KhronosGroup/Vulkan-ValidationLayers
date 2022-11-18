@@ -152,7 +152,7 @@ This part of validation checks that all Vulkan objects used by a command buffer 
     // parent nodes should form a tree with the root being a command buffer.
     NodeMap parent_nodes_;
     // Lock guarding parent_nodes_, this lock MUST NOT be used for other purposes.
-    mutable ReadWriteLock tree_lock_;
+    mutable std::shared_mutex tree_lock_;
 ```
 
 
@@ -617,7 +617,7 @@ For ‘normal’ images it is set during creation, but for android AHB external 
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
   private:
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
   };
 
   std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;

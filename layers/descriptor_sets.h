@@ -86,7 +86,7 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
     TypeCountMap available_counts_;         // Available # of descriptors of each type in this pool
     layer_data::unordered_map<VkDescriptorSet, cvdescriptorset::DescriptorSet *> sets_;  // Collection of all sets in this pool
     ValidationStateTracker *dev_data_;
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
 };
 
 class UPDATE_TEMPLATE_STATE : public BASE_NODE {

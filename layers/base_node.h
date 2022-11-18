@@ -127,7 +127,7 @@ class BASE_NODE : public std::enable_shared_from_this<BASE_NODE> {
     // parent nodes should form a tree with the root being a command buffer.
     NodeMap parent_nodes_;
     // Lock guarding parent_nodes_, this lock MUST NOT be used for other purposes.
-    mutable ReadWriteLock tree_lock_;
+    mutable std::shared_mutex tree_lock_;
 };
 
 class REFCOUNTED_NODE : public BASE_NODE {

@@ -73,7 +73,7 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
   private:
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
 };
 
 // State for VkImage objects.

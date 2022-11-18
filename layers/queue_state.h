@@ -92,7 +92,7 @@ class FENCE_STATE : public REFCOUNTED_NODE {
     uint64_t seq_{0};
     FENCE_STATUS state_;
     SyncScope scope_{kSyncScopeInternal};
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
     std::promise<void> completed_;
     std::shared_future<void> waiter_;
     ValidationStateTracker &dev_data_;
@@ -261,7 +261,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     // Timeline operations can be added in any order and multiple wait operations
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
-    mutable ReadWriteLock lock_;
+    mutable std::shared_mutex lock_;
     ValidationStateTracker &dev_data_;
 };
 
