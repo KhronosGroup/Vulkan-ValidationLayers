@@ -12832,9 +12832,11 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         }
 
                         // Verify that image memory is valid
-                        auto image_data = Get<IMAGE_STATE>(ivci.image);
-                        skip |= ValidateMemoryIsBoundToImage(image_data.get(), "vkCreateFramebuffer()",
-                                                             kVUID_Core_Bound_Resource_FreedMemoryAccess);
+                        const auto &image_data = Get<IMAGE_STATE>(ivci.image);
+                        if (image_data) {
+                            skip |= ValidateMemoryIsBoundToImage(image_data.get(), "vkCreateFramebuffer()",
+                                                                 kVUID_Core_Bound_Resource_FreedMemoryAccess);
+                        }
 
                         // Verify that view only has a single mip level
                         if (subresource_range.levelCount != 1) {
@@ -13051,8 +13053,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
                         }
                         if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
-                            auto image_state = Get<IMAGE_STATE>(ivci.image);
-                            if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+                            const auto &image_state = Get<IMAGE_STATE>(ivci.image);
+                            if (image_state && image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                                 if (FormatIsDepthOrStencil(ivci.format)) {
                                     LogObjectList objlist(device);
                                     objlist.add(ivci.image);
