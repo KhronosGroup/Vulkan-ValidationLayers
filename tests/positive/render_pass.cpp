@@ -528,10 +528,6 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     ref.attachment = 0;
 
-    m_renderPassClearValues.clear();
-    VkClearValue clear = {};
-    clear.color = m_clear_color;
-
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
