@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-add_library(VkLayer_device_profile_api SHARED 
+add_library(VkLayer_device_profile_api MODULE
     ${CMAKE_CURRENT_SOURCE_DIR}/device_profile_api.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vk_lunarg_device_profile_api_layer.h
     ${PROJECT_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
@@ -29,6 +29,8 @@ if (WIN32)
     set_target_properties(VkLayer_device_profile_api PROPERTIES
         LINK_FLAGS "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_device_profile_api.def"
     )
+elseif(APPLE)
+    set_target_properties(VkLayer_device_profile_api PROPERTIES SUFFIX ".dylib")
 elseif (LINUX)
     set_target_properties(VkLayer_device_profile_api PROPERTIES
         LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map,-Bsymbolic"
@@ -48,9 +50,11 @@ target_include_directories(VkLayer_device_profile_api PRIVATE
 set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/profiling.json")
 
 if (WIN32)
-    set(JSON_LIBRARY_PATH ".\\\\VkLayer_device_profile_api${CMAKE_SHARED_LIBRARY_SUFFIX}") # .\\VkLayer_device_profile_api.dll
+    set(JSON_LIBRARY_PATH ".\\\\VkLayer_device_profile_api.dll")
+elseif(APPLE)
+    set(JSON_LIBRARY_PATH "./libVkLayer_device_profile_api.dylib")
 else()
-    set(JSON_LIBRARY_PATH "./libVkLayer_device_profile_api${CMAKE_SHARED_LIBRARY_SUFFIX}") # ./libVkLayer_device_profile_api.(so|dylib)
+    set(JSON_LIBRARY_PATH "./libVkLayer_device_profile_api.so")
 endif()
 
 set(JSON_API_VERSION ${VulkanHeaders_VERSION})
