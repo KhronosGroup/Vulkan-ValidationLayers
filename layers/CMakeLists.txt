@@ -305,6 +305,9 @@ set(INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/json/VkLayer_khronos_validation.json
 set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/json/validation.json")
 set(OUTPUT_FILE_FINAL_NAME "VkLayer_khronos_validation.json")
 set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+if (WIN32)
+    set(LAYER_INSTALL_DIR ${CMAKE_INSTALL_BINDIR})
+endif()
 
 if (WIN32)
     set(JSON_LIBRARY_PATH ".\\\\VkLayer_khronos_validation.dll")
