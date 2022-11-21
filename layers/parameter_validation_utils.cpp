@@ -2179,7 +2179,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (create_info.pVertexInputState != nullptr)) {
                 auto const &vertex_input_state = create_info.pVertexInputState;
 
-                if (create_info.pVertexInputState->flags != 0) {
+                if (vertex_input_state->flags != 0) {
                     skip |=
                         LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask",
                                  "vkCreateGraphicsPipelines: pararameter "
@@ -2189,22 +2189,20 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                 const VkStructureType allowed_structs_vk_pipeline_vertex_input_state_create_info[] = {
                     VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
-                skip |=
-                    validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->pNext",
-                                          "VkPipelineVertexInputDivisorStateCreateInfoEXT", create_info.pVertexInputState->pNext, 1,
-                                          allowed_structs_vk_pipeline_vertex_input_state_create_info, GeneratedVulkanHeaderVersion,
-                                          "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
-                                          "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->pNext",
+                                              "VkPipelineVertexInputDivisorStateCreateInfoEXT", vertex_input_state->pNext, 1,
+                                              allowed_structs_vk_pipeline_vertex_input_state_create_info,
+                                              GeneratedVulkanHeaderVersion, "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
+                                              "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
                 skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState",
                                              "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
                                              VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
                                              "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
-                skip |=
-                    validate_array("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount",
-                                   "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions",
-                                   create_info.pVertexInputState->vertexBindingDescriptionCount,
-                                   &create_info.pVertexInputState->pVertexBindingDescriptions, false, true, kVUIDUndefined,
-                                   "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
+                skip |= validate_array(
+                    "vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount",
+                    "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions",
+                    vertex_input_state->vertexBindingDescriptionCount, &vertex_input_state->pVertexBindingDescriptions, false, true,
+                    kVUIDUndefined, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
 
                 skip |= validate_array(
                     "vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount",
@@ -2212,30 +2210,30 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     &vertex_input_state->pVertexAttributeDescriptions, false, true, kVUIDUndefined,
                     "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
 
-                if (create_info.pVertexInputState->pVertexBindingDescriptions != NULL) {
+                if (vertex_input_state->pVertexBindingDescriptions != NULL) {
                     for (uint32_t vertex_binding_description_index = 0;
-                         vertex_binding_description_index < create_info.pVertexInputState->vertexBindingDescriptionCount;
+                         vertex_binding_description_index < vertex_input_state->vertexBindingDescriptionCount;
                          ++vertex_binding_description_index) {
                         skip |= validate_ranged_enum(
                             "vkCreateGraphicsPipelines",
                             "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions[j].inputRate", "VkVertexInputRate",
                             AllVkVertexInputRateEnums,
-                            create_info.pVertexInputState->pVertexBindingDescriptions[vertex_binding_description_index].inputRate,
+                            vertex_input_state->pVertexBindingDescriptions[vertex_binding_description_index].inputRate,
                             "VUID-VkVertexInputBindingDescription-inputRate-parameter");
                     }
                 }
 
-                if (create_info.pVertexInputState->pVertexAttributeDescriptions != NULL) {
+                if (vertex_input_state->pVertexAttributeDescriptions != NULL) {
                     for (uint32_t vertex_attribute_description_index = 0;
-                         vertex_attribute_description_index < create_info.pVertexInputState->vertexAttributeDescriptionCount;
+                         vertex_attribute_description_index < vertex_input_state->vertexAttributeDescriptionCount;
                          ++vertex_attribute_description_index) {
                         const VkFormat format =
-                            create_info.pVertexInputState->pVertexAttributeDescriptions[vertex_attribute_description_index].format;
+                            vertex_input_state->pVertexAttributeDescriptions[vertex_attribute_description_index].format;
                         skip |= validate_ranged_enum(
                             "vkCreateGraphicsPipelines",
                             "pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[i].format", "VkFormat",
                             AllVkFormatEnums,
-                            create_info.pVertexInputState->pVertexAttributeDescriptions[vertex_attribute_description_index].format,
+                            vertex_input_state->pVertexAttributeDescriptions[vertex_attribute_description_index].format,
                             "VUID-VkVertexInputAttributeDescription-format-parameter");
                         if (FormatIsDepthOrStencil(format)) {
                             // Should never hopefully get here, but there are known driver advertising the wrong feature flags
