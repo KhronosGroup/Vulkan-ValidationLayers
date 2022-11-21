@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019-2021 Valve Corporation
- * Copyright (c) 2019-2021 LunarG, Inc.
+ * Copyright (c) 2019-2022 Valve Corporation
+ * Copyright (c) 2019-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "sync_utils.h"
 #include "state_tracker.h"
 #include "synchronization_validation_types.h"
+#include "enum_flag_bits.h"
 
 namespace sync_utils {
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2KHR) * 8;
@@ -238,15 +239,17 @@ ExecScopes GetGlobalStageMasks(const VkDependencyInfoKHR &dep_info) {
 // to print masks as strings and this makes the output less confusing
 // for people not using synchronization2.
 std::string StringPipelineStageFlags(VkPipelineStageFlags2KHR mask) {
-    if (mask <= UINT32_MAX) {
-        return string_VkPipelineStageFlags(mask & UINT32_MAX);
+    VkPipelineStageFlags sync1_mask = static_cast<VkPipelineStageFlags>(mask & AllVkPipelineStageFlagBits);
+    if (sync1_mask) {
+        return string_VkPipelineStageFlags(sync1_mask);
     }
     return string_VkPipelineStageFlags2KHR(mask);
 }
 
 std::string StringAccessFlags(VkAccessFlags2KHR mask) {
-    if (mask <= UINT32_MAX) {
-        return string_VkAccessFlags(mask & UINT32_MAX);
+    VkAccessFlags sync1_mask = static_cast<VkAccessFlags>(mask & AllVkAccessFlagBits);
+    if (sync1_mask) {
+        return string_VkAccessFlags(sync1_mask);
     }
     return string_VkAccessFlags2KHR(mask);
 }
