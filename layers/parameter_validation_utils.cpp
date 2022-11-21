@@ -1987,6 +1987,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            const VkPipelineCreateFlags flags = create_info.flags;
             if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library)) {
                 if (create_info.stageCount == 0) {
                     skip |=
@@ -1994,6 +1995,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "].stageCount is 0, but %s is not enabled", i,
                                  VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
                 }
+                if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "]->flags (0x%x) must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
+                                     i, flags);
+                }
+
                 // TODO while PRIu32 should probably be used instead of %i below, %i is necessary due to
                 // ParameterName::IndexFormatSpecifier
                 skip |= validate_struct_type_array(
@@ -3413,7 +3421,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            const VkPipelineCreateFlags flags = create_info.flags;
             if (flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
                 if (create_info.basePipelineIndex != -1) {
                     if (create_info.basePipelineHandle != VK_NULL_HANDLE) {
@@ -3496,14 +3503,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                  "]->flags (0x%x) must not include "
                                  "VK_PIPELINE_CREATE_DISPATCH_BASE.",
-                                 i, flags);
-            }
-            if (!IsExtEnabled(device_extensions.vk_ext_graphics_pipeline_library) &&
-                (flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-03371",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "]->flags (0x%x) must not include "
-                                 "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.",
                                  i, flags);
             }
             if ((flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) != 0) {
