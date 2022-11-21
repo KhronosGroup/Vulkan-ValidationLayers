@@ -1027,17 +1027,24 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
 
 // Using the above code-generated map of APINames-to-parent extension names, this function will:
 //   o  Determine if the API has an associated extension
-//   o  If it does, determine if that extension name is present in the passed-in set of enabled_ext_names 
-//   If the APIname has no parent extension, OR its parent extension name is IN the set, return TRUE, else FALSE
+//   o  If it does, determine if that extension name is present in the passed-in set of device or instance enabled_ext_names
+//   If the APIname has no parent extension, OR its parent extension name is IN one of the sets, return TRUE, else FALSE
 static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {
     auto has_ext = api_extension_map.find(api_name);
     // Is this API part of an extension or feature group?
     if (has_ext != api_extension_map.end()) {
         // Was the extension for this API enabled in the CreateDevice call?
         auto info = device_extension_info->get_info(has_ext->second.c_str());
-        if ((!info.state) || (device_extension_info->*(info.state) != kEnabledByCreateinfo)) {
-            return false;
+        if (info.state) {
+            return device_extension_info->*(info.state) == kEnabledByCreateinfo;
         }
+        // Was the extension for this API enabled in the CreateInstance call?
+        auto instance_extension_info = static_cast<const InstanceExtensions*>(device_extension_info);
+        auto inst_info = instance_extension_info->get_info(has_ext->second.c_str());
+        if (inst_info.state) {
+            return instance_extension_info->*(inst_info.state) == kEnabledByCreateinfo;
+        }
+        return false;
     }
     return true;
 }
