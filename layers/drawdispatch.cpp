@@ -113,6 +113,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDraw-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDraw-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDraw-None-06479";
+        depth_read_only                    = "VUID-vkCmdDraw-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDraw-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDraw-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDraw-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDraw-None-07620";
@@ -221,6 +223,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawMultiEXT-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawMultiEXT-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawMultiEXT-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawMultiEXT-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawMultiEXT-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawMultiEXT-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawMultiEXT-None-07620";
@@ -330,6 +334,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexed-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndexed-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndexed-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndexed-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndexed-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexed-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndexed-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndexed-None-07620";
@@ -439,6 +445,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawMultiIndexedEXT-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawMultiIndexedEXT-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawMultiIndexedEXT-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawMultiIndexedEXT-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawMultiIndexedEXT-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawMultiIndexedEXT-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawMultiIndexedEXT-None-07620";
@@ -549,6 +557,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndirect-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndirect-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndirect-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndirect-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirect-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndirect-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndirect-None-07620";
@@ -660,6 +670,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndexedIndirect-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndexedIndirect-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndexedIndirect-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndexedIndirect-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexedIndirect-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndexedIndirect-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndexedIndirect-None-07620";
@@ -833,6 +845,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndirectCount-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndirectCount-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndirectCount-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndirectCount-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirectCount-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndirectCount-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndirectCount-None-07620";
@@ -947,6 +961,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndexedIndirectCount-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndexedIndirectCount-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndexedIndirectCount-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndexedIndirectCount-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndexedIndirectCount-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndexedIndirectCount-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndexedIndirectCount-None-07620";
@@ -1166,6 +1182,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawMeshTasksNV-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawMeshTasksNV-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawMeshTasksNV-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawMeshTasksNV-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksNV-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawMeshTasksNV-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawMeshTasksNV-None-07620";
@@ -1269,6 +1287,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawMeshTasksIndirectNV-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07620";
@@ -1376,6 +1396,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawMeshTasksIndirectCountNV-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07620";
@@ -1510,6 +1532,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         storage_texel_buffer_read_without_format  = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07030";
         storage_texel_buffer_write_without_format = "VUID-vkCmdDrawIndirectByteCountEXT-OpTypeImage-07029";
         depth_compare_sample               = "VUID-vkCmdDrawIndirectByteCountEXT-None-06479";
+        depth_read_only                    = "VUID-vkCmdDrawIndirectByteCountEXT-None-06886";
+        stencil_read_only                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-06887";
         dynamic_sample_locations           = "VUID-vkCmdDrawIndirectByteCountEXT-None-06666";
         dynamic_tessellation_domain_origin = "VUID-vkCmdDrawIndirectByteCountEXT-None-07619";
         dynamic_depth_clamp_enable         = "VUID-vkCmdDrawIndirectByteCountEXT-None-07620";

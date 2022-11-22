@@ -206,7 +206,7 @@ static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
 }
 
 static inline bool IsImageLayoutReadOnly(VkImageLayout layout) {
-    constexpr std::array<VkImageLayout, 7> read_only_layouts = {
+    constexpr std::array read_only_layouts = {
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
@@ -220,7 +220,7 @@ static inline bool IsImageLayoutReadOnly(VkImageLayout layout) {
 }
 
 static inline bool IsImageLayoutDepthReadOnly(VkImageLayout layout) {
-    constexpr std::array<VkImageLayout, 7> read_only_layouts = {
+    constexpr std::array read_only_layouts = {
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
@@ -231,7 +231,7 @@ static inline bool IsImageLayoutDepthReadOnly(VkImageLayout layout) {
 }
 
 static inline bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
-    constexpr std::array<VkImageLayout, 7> read_only_layouts = {
+    constexpr std::array read_only_layouts = {
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
         VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,

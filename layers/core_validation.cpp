@@ -1498,12 +1498,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             skip |= LogError(pPipeline->pipeline(), vuid.subpass_index,
                              "%s: Pipeline was built for subpass %u but used in subpass %u.", caller, subpass, pCB->activeSubpass);
         }
-        // Check if depth stencil attachment was created with sample location compatible bit
-        if (pPipeline->SampleLocationEnabled() == VK_TRUE) {
-            const safe_VkAttachmentReference2 *ds_attachment =
-                pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].pDepthStencilAttachment;
-            const FRAMEBUFFER_STATE *fb_state = pCB->activeFramebuffer.get();
-            if ((ds_attachment != nullptr) && (fb_state != nullptr)) {
+        const safe_VkAttachmentReference2 *ds_attachment =
+            pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].pDepthStencilAttachment;
+        if (ds_attachment != nullptr) {
+            // Check if depth stencil attachment was created with sample location compatible bit
+            if (pPipeline->SampleLocationEnabled() == VK_TRUE) {
                 const uint32_t attachment = ds_attachment->attachment;
                 if (attachment != VK_ATTACHMENT_UNUSED) {
                     const auto *imageview_state = pCB->GetActiveAttachmentImageViewState(attachment);
@@ -1522,10 +1521,38 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
         }
+        const auto ds_state = pPipeline->DepthStencilState();
+        if (ds_state) {
+            if (ds_state->depthWriteEnable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
+                LogObjectList objlist(pPipeline->pipeline());
+                objlist.add(pCB->activeRenderPass->renderPass());
+                objlist.add(pCB->commandBuffer());
+                skip |= LogError(objlist, vuid.depth_read_only,
+                                 "%s: VkPipelineDepthStencilStateCreateInfo::depthWriteEnable is VK_TRUE, while the layout (%s) of "
+                                 "the depth aspect of the depth/stencil attachment in the render pass is read only.",
+                                 caller, string_VkImageLayout(ds_attachment->layout));
+            }
+            if (IsImageLayoutStencilReadOnly(ds_attachment->layout) &&
+                ((ds_state->front.failOp != VK_STENCIL_OP_KEEP) || (ds_state->front.passOp != VK_STENCIL_OP_KEEP) ||
+                 (ds_state->front.depthFailOp != VK_STENCIL_OP_KEEP) || (ds_state->back.failOp != VK_STENCIL_OP_KEEP) ||
+                 (ds_state->back.passOp != VK_STENCIL_OP_KEEP) || (ds_state->back.depthFailOp != VK_STENCIL_OP_KEEP))) {
+                LogObjectList objlist(pPipeline->pipeline());
+                objlist.add(pCB->activeRenderPass->renderPass());
+                objlist.add(pCB->commandBuffer());
+                skip |= LogError(objlist, vuid.stencil_read_only,
+                                 "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
+                                 "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
+                                 "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
+                                 "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
+                                 caller, string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(ds_state->front.failOp),
+                                 string_VkStencilOp(ds_state->front.passOp), string_VkStencilOp(ds_state->front.depthFailOp),
+                                 string_VkStencilOp(ds_state->back.failOp), string_VkStencilOp(ds_state->back.passOp),
+                                 string_VkStencilOp(ds_state->back.depthFailOp));
+            }
+        }
     }
 
-    if (pPipeline->fragment_output_state->dual_source_blending  &&
-        pCB->activeRenderPass) {
+    if (pPipeline->fragment_output_state->dual_source_blending && pCB->activeRenderPass) {
         uint32_t count = pCB->activeRenderPass->UsesDynamicRendering()
                              ? pCB->activeRenderPass->dynamic_rendering_begin_rendering_info.colorAttachmentCount
                              : pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].colorAttachmentCount;
@@ -2265,46 +2292,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE && pipeline->fragment_shader_state) {
-        if (subpass_desc && subpass_desc->pDepthStencilAttachment != nullptr && pipeline->DepthStencilState()) {
-            if (IsImageLayoutStencilReadOnly(subpass_desc->pDepthStencilAttachment->layout)) {
-                std::stringstream msg;
-                if (pipeline->DepthStencilState()->front.failOp != VK_STENCIL_OP_KEEP) {
-                    msg << "VkPipelineDepthStencilStateCreateInfo::front.failOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.failOp);
-                }
-                if (pipeline->DepthStencilState()->front.passOp != VK_STENCIL_OP_KEEP) {
-                    if (!msg.str().empty()) msg << ", ";
-                    msg << "VkPipelineDepthStencilStateCreateInfo::front.passOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.passOp);
-                }
-                if (pipeline->DepthStencilState()->front.depthFailOp != VK_STENCIL_OP_KEEP) {
-                    if (!msg.str().empty()) msg << ", ";
-                    msg << "VkPipelineDepthStencilStateCreateInfo::front.depthFailOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.depthFailOp);
-                }
-                if (pipeline->DepthStencilState()->back.failOp != VK_STENCIL_OP_KEEP) {
-                    if (!msg.str().empty()) msg << ", ";
-                    msg << "VkPipelineDepthStencilStateCreateInfo::back.failOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.failOp);
-                }
-                if (pipeline->DepthStencilState()->back.passOp != VK_STENCIL_OP_KEEP) {
-                    if (!msg.str().empty()) msg << ", ";
-                    msg << "VkPipelineDepthStencilStateCreateInfo::back.passOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.passOp);
-                }
-                if (pipeline->DepthStencilState()->back.depthFailOp != VK_STENCIL_OP_KEEP) {
-                    if (!msg.str().empty()) msg << ", ";
-                    msg << "VkPipelineDepthStencilStateCreateInfo::back.depthFailOp is "
-                        << string_VkStencilOp(pipeline->DepthStencilState()->front.depthFailOp);
-                }
-            }
-        }
-    }
-
-    if (ValidateGraphicsPipelineShaderState(pipeline)) {
-        skip = true;
-    }
+    skip |= ValidateGraphicsPipelineShaderState(pipeline);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
     if (pipeline->pre_raster_state || pipeline->fragment_shader_state) {

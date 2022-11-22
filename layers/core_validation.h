@@ -115,6 +115,8 @@ struct DrawDispatchVuid {
     const char* storage_texel_buffer_read_without_format = kVUIDUndefined;
     const char* storage_texel_buffer_write_without_format = kVUIDUndefined;
     const char* depth_compare_sample = kVUIDUndefined;
+    const char* depth_read_only = kVUIDUndefined;
+    const char* stencil_read_only = kVUIDUndefined;
     const char* dynamic_sample_locations = kVUIDUndefined;
     const char* dynamic_tessellation_domain_origin = kVUIDUndefined;
     const char* dynamic_depth_clamp_enable = kVUIDUndefined;
