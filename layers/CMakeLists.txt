@@ -271,7 +271,7 @@ if(WIN32)
     target_compile_definitions(VkLayer_khronos_validation PUBLIC NOMINMAX)
 elseif(APPLE)
     set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
-else(LINUX)
+else()
     set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL")
 endif()
 
