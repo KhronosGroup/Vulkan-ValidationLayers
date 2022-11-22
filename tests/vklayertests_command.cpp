@@ -11024,3 +11024,100 @@ TEST_F(VkLayerTest, EndRenderPassWithActiveTransformFeedback) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
+    TEST_DESCRIPTION("invalid depth stencil state for subpass that uses read only image layout.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
+
+    VkImageObj ds_image(m_device);
+    ds_image.Init(32, 32, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                  VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(ds_image.initialized());
+
+    VkImageView image_view = ds_image.targetView(ds_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkAttachmentDescription attachment = {};
+    attachment.flags = 0;
+    attachment.format = ds_format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    VkAttachmentReference ds_attachment_ref = {};
+    ds_attachment_ref.attachment = 0;
+    ds_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.pDepthStencilAttachment = &ds_attachment_ref;
+
+    VkRenderPassCreateInfo rp_ci = LvlInitStruct<VkRenderPassCreateInfo>();
+    rp_ci.attachmentCount = 1;
+    rp_ci.pAttachments = &attachment;
+    rp_ci.subpassCount = 1;
+    rp_ci.pSubpasses = &subpass;
+
+    vk_testing::RenderPass render_pass;
+    render_pass.init(*m_device, rp_ci);
+
+    auto depth_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    depth_state_info.depthWriteEnable = VK_TRUE;
+
+    auto stencil_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    stencil_state_info.front.failOp = VK_STENCIL_OP_ZERO;
+
+    CreatePipelineHelper depth_pipe(*this);
+    depth_pipe.InitInfo();
+    depth_pipe.InitState();
+    depth_pipe.LateBindPipelineInfo();
+    depth_pipe.gp_ci_.renderPass = render_pass.handle();
+    depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
+    depth_pipe.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper stencil_pipe(*this);
+    stencil_pipe.InitInfo();
+    stencil_pipe.InitState();
+    stencil_pipe.LateBindPipelineInfo();
+    stencil_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
+    stencil_pipe.CreateGraphicsPipeline(true, false);
+
+    VkFramebufferCreateInfo framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
+    framebuffer_ci.width = 32;
+    framebuffer_ci.height = 32;
+    framebuffer_ci.layers = 1;
+    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.attachmentCount = 1;
+    framebuffer_ci.pAttachments = &image_view;
+
+    vk_testing::Framebuffer framebuffer(*m_device, framebuffer_ci);
+    ASSERT_TRUE(framebuffer.initialized());
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
+    render_pass_begin_info.renderPass = render_pass.handle();
+    render_pass_begin_info.framebuffer = framebuffer.handle();
+    render_pass_begin_info.renderArea.extent.width = 32;
+    render_pass_begin_info.renderArea.extent.height = 32;
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(render_pass_begin_info);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06886");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06887");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
