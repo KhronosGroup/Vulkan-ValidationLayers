@@ -2499,17 +2499,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             // Collect active stages and other information
             // Only want to loop through pStages once
             uint32_t active_shaders = 0;
-            bool has_eval = false;
-            bool has_control = false;
             if (create_info.pStages != nullptr) {
                 for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
                     active_shaders |= create_info.pStages[stage_index].stage;
-
-                    if (create_info.pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                        has_control = true;
-                    } else if (create_info.pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                        has_eval = true;
-                    }
 
                     skip |= validate_required_pointer(
                         "vkCreateGraphicsPipelines",
@@ -2531,8 +2523,28 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
-                (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) && (create_info.pTessellationState != nullptr)) {
-                skip |= ValidatePipelineTessellationStateCreateInfo(create_info.pTessellationState, i);
+                (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+                if (create_info.pTessellationState == nullptr) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
+                                     "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
+                                     "].pStages includes a tessellation control "
+                                     "shader stage and a tessellation evaluation shader stage, "
+                                     "pCreateInfos[%" PRIu32 "].pTessellationState must not be NULL.",
+                                     i, i);
+                } else {
+                    skip |= ValidatePipelineTessellationStateCreateInfo(create_info.pTessellationState, i);
+
+                    if (create_info.pTessellationState->patchControlPoints == 0 ||
+                        create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
+                        skip |=
+                            LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
+                                     "vkCreateGraphicsPipelines: invalid parameter "
+                                     "pCreateInfos[%" PRIu32 "].pTessellationState->patchControlPoints value %" PRIu32
+                                     ". patchControlPoints "
+                                     "should be >0 and <=%" PRIu32 ".",
+                                     i, create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
+                    }
+                }
             }
 
             if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (create_info.pInputAssemblyState != nullptr)) {
@@ -2650,29 +2662,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          ") is "
                                          "greater than VkPhysicalDeviceLimits::maxVertexInputAttributeOffset (%" PRIu32 ").",
                                          i, d, vertex_attrib_desc.offset, device_limits.maxVertexInputAttributeOffset);
-                    }
-                }
-            }
-
-            // pTessellationState is ignored without both tessellation control and tessellation evaluation shaders stages
-            if (has_control && has_eval) {
-                if (create_info.pTessellationState == nullptr) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
-                                     "vkCreateGraphicsPipelines: if pCreateInfos[%" PRIu32
-                                     "].pStages includes a tessellation control "
-                                     "shader stage and a tessellation evaluation shader stage, "
-                                     "pCreateInfos[%" PRIu32 "].pTessellationState must not be NULL.",
-                                     i, i);
-                } else {
-                    if (create_info.pTessellationState->patchControlPoints == 0 ||
-                        create_info.pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
-                        skip |=
-                            LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
-                                     "vkCreateGraphicsPipelines: invalid parameter "
-                                     "pCreateInfos[%" PRIu32 "].pTessellationState->patchControlPoints value %" PRIu32
-                                     ". patchControlPoints "
-                                     "should be >0 and <=%" PRIu32 ".",
-                                     i, create_info.pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
                     }
                 }
             }
