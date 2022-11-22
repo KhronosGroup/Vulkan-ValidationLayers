@@ -2766,7 +2766,7 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, con
                 const Instruction *texel_type = module_state.FindDef(texel_def->Word(1));
                 const uint32_t texel_component_count = (texel_type->Opcode() == spv::OpTypeVector) ? texel_type->Word(3) : 1;
                 if (texel_component_count < format_component_count) {
-                    skip |= LogError(device, " VUID-RuntimeSpirv-OpImageWrite-07112",
+                    skip |= LogError(device, "VUID-RuntimeSpirv-OpImageWrite-07112",
                                      "%s: OpImageWrite Texel operand only contains %" PRIu32
                                      " components, but the OpImage format mapping to %s has %" PRIu32 " components.\n%s\n%s",
                                      report_data->FormatHandle(module_state.vk_shader_module()).c_str(), texel_component_count,
