@@ -12776,6 +12776,13 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
         GTEST_SKIP() << "No format found without shading rate attachment support";
     }
 
+    VkImageFormatProperties imageFormatProperties;
+    if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                                   VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, 0,
+                                                   &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "Format not supported";
+    }
+
     VkImageObj image(m_device);
     // Initialize image with transfer source usage
     image.Init(128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, VK_IMAGE_TILING_OPTIMAL, 0);

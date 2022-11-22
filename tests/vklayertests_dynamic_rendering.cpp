@@ -1734,6 +1734,13 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
 
     if (shading_rate) image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
 
+    VkImageFormatProperties imageFormatProperties;
+    if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_create_info.format, image_create_info.imageType,
+                                                   image_create_info.tiling, image_create_info.usage, image_create_info.flags,
+                                                   &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "Format not supported";
+    }
+
     image.Init(image_create_info);
     ASSERT_TRUE(image.initialized());
 
@@ -1993,6 +2000,12 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRate) {
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+
+    VkImageFormatProperties imageFormatProperties;
+    if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
+                                                   image_ci.flags, &imageFormatProperties) == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "Format not supported";
+    }
 
     VkImageObj image(m_device);
     image.init(&image_ci);
