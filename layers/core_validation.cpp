@@ -1520,34 +1520,35 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     }
                 }
             }
-        }
-        const auto ds_state = pPipeline->DepthStencilState();
-        if (ds_state) {
-            if (ds_state->depthWriteEnable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
-                LogObjectList objlist(pPipeline->pipeline());
-                objlist.add(pCB->activeRenderPass->renderPass());
-                objlist.add(pCB->commandBuffer());
-                skip |= LogError(objlist, vuid.depth_read_only,
+            const auto ds_state = pPipeline->DepthStencilState();
+            if (ds_state) {
+                if (ds_state->depthWriteEnable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
+                    LogObjectList objlist(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    objlist.add(pCB->commandBuffer());
+                    skip |=
+                        LogError(objlist, vuid.depth_read_only,
                                  "%s: VkPipelineDepthStencilStateCreateInfo::depthWriteEnable is VK_TRUE, while the layout (%s) of "
                                  "the depth aspect of the depth/stencil attachment in the render pass is read only.",
                                  caller, string_VkImageLayout(ds_attachment->layout));
-            }
-            if (IsImageLayoutStencilReadOnly(ds_attachment->layout) &&
-                ((ds_state->front.failOp != VK_STENCIL_OP_KEEP) || (ds_state->front.passOp != VK_STENCIL_OP_KEEP) ||
-                 (ds_state->front.depthFailOp != VK_STENCIL_OP_KEEP) || (ds_state->back.failOp != VK_STENCIL_OP_KEEP) ||
-                 (ds_state->back.passOp != VK_STENCIL_OP_KEEP) || (ds_state->back.depthFailOp != VK_STENCIL_OP_KEEP))) {
-                LogObjectList objlist(pPipeline->pipeline());
-                objlist.add(pCB->activeRenderPass->renderPass());
-                objlist.add(pCB->commandBuffer());
-                skip |= LogError(objlist, vuid.stencil_read_only,
-                                 "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
-                                 "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
-                                 "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
-                                 "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
-                                 caller, string_VkImageLayout(ds_attachment->layout), string_VkStencilOp(ds_state->front.failOp),
-                                 string_VkStencilOp(ds_state->front.passOp), string_VkStencilOp(ds_state->front.depthFailOp),
-                                 string_VkStencilOp(ds_state->back.failOp), string_VkStencilOp(ds_state->back.passOp),
-                                 string_VkStencilOp(ds_state->back.depthFailOp));
+                }
+                if (IsImageLayoutStencilReadOnly(ds_attachment->layout) &&
+                    ((ds_state->front.failOp != VK_STENCIL_OP_KEEP) || (ds_state->front.passOp != VK_STENCIL_OP_KEEP) ||
+                     (ds_state->front.depthFailOp != VK_STENCIL_OP_KEEP) || (ds_state->back.failOp != VK_STENCIL_OP_KEEP) ||
+                     (ds_state->back.passOp != VK_STENCIL_OP_KEEP) || (ds_state->back.depthFailOp != VK_STENCIL_OP_KEEP))) {
+                    LogObjectList objlist(pPipeline->pipeline());
+                    objlist.add(pCB->activeRenderPass->renderPass());
+                    objlist.add(pCB->commandBuffer());
+                    skip |= LogError(objlist, vuid.stencil_read_only,
+                                     "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
+                                     "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
+                                     "front = { .failOp = %s,  .passOp = %s , .depthFailOp = %s }\n"
+                                     "back = { .failOp = %s, .passOp = %s, .depthFailOp = %s }\n",
+                                     caller, string_VkImageLayout(ds_attachment->layout),
+                                     string_VkStencilOp(ds_state->front.failOp), string_VkStencilOp(ds_state->front.passOp),
+                                     string_VkStencilOp(ds_state->front.depthFailOp), string_VkStencilOp(ds_state->back.failOp),
+                                     string_VkStencilOp(ds_state->back.passOp), string_VkStencilOp(ds_state->back.depthFailOp));
+                }
             }
         }
     }
