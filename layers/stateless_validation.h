@@ -1444,19 +1444,15 @@ class StatelessValidation : public ValidationObject {
 
     bool ValidatePipelineShaderStageCreateInfo(const char *func_name, const char *msg,
                                                const VkPipelineShaderStageCreateInfo *pCreateInfo) const;
-    bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo *create_info,
-                                                     uint32_t index) const;
-    bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo *create_info, uint32_t index) const;
-    bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo *create_info, uint32_t index) const;
-    bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo *create_info, uint32_t index) const;
+    bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineViewportStateCreateInfo(const VkPipelineViewportStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineMultisampleStateCreateInfo(const VkPipelineMultisampleStateCreateInfo &info, uint32_t index) const;
     bool ValidatePipelineColorBlendAttachmentState(const VkPipelineColorBlendAttachmentState &attachment_state, uint32_t pipe_index,
                                                    uint32_t attachment_index) const;
-    bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo *create_info, uint32_t index) const;
-    bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo *create_info,
-                                                     uint32_t index) const;
-    bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo *create_info,
-                                                      uint32_t index) const;
-
+    bool ValidatePipelineColorBlendStateCreateInfo(const VkPipelineColorBlendStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineDepthStencilStateCreateInfo(const VkPipelineDepthStencilStateCreateInfo &info, uint32_t index) const;
+    bool ValidatePipelineInputAssemblyStateCreateInfo(const VkPipelineInputAssemblyStateCreateInfo &info, uint32_t index) const;
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
