@@ -1258,7 +1258,7 @@ template <typename BarrierAction>
 void AccessContext::ResolveAccessRange(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                        BarrierAction &barrier_action, ResourceAccessRangeMap *descent_map,
                                        const ResourceAccessState *infill_state) const {
-    const auto *attachment_gen = view_gen.GetRangeGen(gen_type);
+    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
     if (!attachment_gen) return;
 
     subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
@@ -1520,7 +1520,7 @@ HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAc
 template <typename Detector>
 HazardResult AccessContext::DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                          DetectOptions options) const {
-    const auto *attachment_gen = view_gen.GetRangeGen(gen_type);
+    const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
     if (!attachment_gen) return HazardResult();
 
     subresource_adapter::ImageRangeGenerator range_gen(*attachment_gen);
@@ -1979,7 +1979,7 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                                       SyncStageAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
-    const ImageRangeGen *gen = view_gen.GetRangeGen(gen_type);
+    const std::optional<ImageRangeGen> &gen = view_gen.GetRangeGen(gen_type);
     if (!gen) return;
     subresource_adapter::ImageRangeGenerator range_gen(*gen);
     const auto address_type = view_gen.GetAddressType();
@@ -2003,7 +2003,7 @@ void AccessContext::ApplyUpdateAction(AccessAddressType address_type, const Acti
 
 template <typename Action>
 void AccessContext::ApplyUpdateAction(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, const Action &action) {
-    const ImageRangeGen *gen = view_gen.GetRangeGen(gen_type);
+    const std::optional<ImageRangeGen> &gen = view_gen.GetRangeGen(gen_type);
     if (!gen) return;
     UpdateMemoryAccessState(&GetAccessStateMap(view_gen.GetAddressType()), action, *gen);
 }
@@ -7927,27 +7927,14 @@ AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffse
     }
 }
 
-const ImageRangeGen *AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen gen_type) const {
-    const ImageRangeGen *got = nullptr;
-    switch (gen_type) {
-        case kViewSubresource:
-            got = &(*gen_store_[kViewSubresource]);
-            break;
-        case kRenderArea:
-            got = &(*gen_store_[kRenderArea]);
-            break;
-        case kDepthOnlyRenderArea:
-            got = (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT) ? &(*gen_store_[Gen::kRenderArea])
-                                                            : &(*gen_store_[Gen::kDepthOnlyRenderArea]);
-            break;
-        case kStencilOnlyRenderArea:
-            got = (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT) ? &(*gen_store_[Gen::kRenderArea])
-                                                              : &(*gen_store_[Gen::kStencilOnlyRenderArea]);
-            break;
-        default:
-            assert(got);
+const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
+    static_assert(Gen::kGenSize == 4, "Function written with this assumption");
+    const bool depth_only = (type == kDepthOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT);
+    const bool stencil_only = (type == kStencilOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT);
+    if (depth_only || stencil_only) {
+        type = Gen::kRenderArea;
     }
-    return got;
+    return gen_store_[type];
 }
 
 AttachmentViewGen::Gen AttachmentViewGen::GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const {
