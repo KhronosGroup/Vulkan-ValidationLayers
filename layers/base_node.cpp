@@ -29,6 +29,7 @@
 #include "vk_layer_utils.h"
 
 BASE_NODE::~BASE_NODE() { Destroy(); }
+#error this is a test
 
 void BASE_NODE::Destroy() {
     Invalidate();
