@@ -7929,6 +7929,9 @@ AttachmentViewGen::AttachmentViewGen(const IMAGE_VIEW_STATE *view, const VkOffse
 
 const std::optional<ImageRangeGen> &AttachmentViewGen::GetRangeGen(AttachmentViewGen::Gen type) const {
     static_assert(Gen::kGenSize == 4, "Function written with this assumption");
+    // If the view is a depth only view, then the depth only portion of the render area is simply the render area.
+    // If the view is a depth stencil view, then the depth only portion of the render area will be a subset,
+    // and thus needs the generator function that will produce the address ranges of that subset
     const bool depth_only = (type == kDepthOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_DEPTH_BIT);
     const bool stencil_only = (type == kStencilOnlyRenderArea) && (view_mask_ == VK_IMAGE_ASPECT_STENCIL_BIT);
     if (depth_only || stencil_only) {
