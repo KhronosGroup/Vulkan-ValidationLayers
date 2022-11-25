@@ -37,12 +37,6 @@ elseif (LINUX)
     )
 endif()
 
-set_target_properties(VkLayer_device_profile_api PROPERTIES 
-    CXX_STANDARD ${VVL_CPP_STANDARD}
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
-
 target_include_directories(VkLayer_device_profile_api PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

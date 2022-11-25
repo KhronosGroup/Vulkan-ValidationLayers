@@ -111,7 +111,6 @@ add_executable(vk_layer_validation_tests
                ../layers/generated/vk_safe_struct.cpp
                ../layers/generated/lvt_function_pointers.cpp
                ${COMMON_CPP})
-set_target_properties(vk_layer_validation_tests PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
 if (CMAKE_CROSSCOMPILING)

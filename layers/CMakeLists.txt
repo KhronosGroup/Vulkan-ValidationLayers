@@ -251,12 +251,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     ${OPTICK_SOURCE_FILES}
 )
 
-set_target_properties(VkLayer_khronos_validation PROPERTIES
-    CXX_STANDARD ${VVL_CPP_STANDARD}
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
-
 target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
 target_link_libraries(VkLayer_khronos_validation PRIVATE VkLayer_utils)
 
