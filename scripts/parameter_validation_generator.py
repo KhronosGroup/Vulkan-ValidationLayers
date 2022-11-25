@@ -1163,7 +1163,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if lenValue:
             if lenValue.ispointer:
                 # This is assumed to be an output array with a pointer to a count value
-                raise('Unsupported parameter validation case: Output handle array elements are not NULL checked')
+                raise Exception('Unsupported parameter validation case: Output handle array elements are not NULL checked')
             else:
                 count_required_vuid = self.GetVuid(funcPrintName, "%s-arraylength" % (value.len))
                 # This is an array with an integer count value
@@ -1171,7 +1171,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     funcPrintName, lenValueRequired, valueRequired, count_required_vuid, ln=value.len, ldn=lenPrintName, dn=valuePrintName, vn=value.name, pf=prefix, **postProcSpec))
         else:
             # This is assumed to be an output handle pointer
-            raise('Unsupported parameter validation case: Output handles are not NULL checked')
+            raise Exception('Unsupported parameter validation case: Output handles are not NULL checked')
         return checkExpr
     #
     # Generate check string for an array of VkFlags values
@@ -1179,7 +1179,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         checkExpr = []
         flagBitsName = value.type.replace('Flags', 'FlagBits')
         if not flagBitsName in self.flagBits:
-            raise('Unsupported parameter validation case: array of reserved VkFlags')
+            raise Exception('Unsupported parameter validation case: array of reserved VkFlags')
         else:
             allFlags = 'All' + flagBitsName
             checkExpr.append('skip |= validate_flags_array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, value.len, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
