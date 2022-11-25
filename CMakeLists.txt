@@ -19,8 +19,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(VVL LANGUAGES CXX C)
 
-set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against. The value will be passed to cmake's CXX_STANDARD property.")
-
 option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
 
 option(BUILD_TESTS "Build the tests" OFF)
@@ -116,6 +114,11 @@ if (VULKAN_HEADERS_INSTALL_DIR)
 endif()
 
 find_package(VulkanHeaders REQUIRED CONFIG QUIET)
+
+set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")
+set(CMAKE_CXX_STANDARD ${VVL_CPP_STANDARD})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
@@ -248,7 +251,6 @@ add_library(VkLayer_utils
             layers/vk_layer_utils.cpp
             layers/generated/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
-set_target_properties(VkLayer_utils PROPERTIES CXX_STANDARD ${VVL_CPP_STANDARD})
 if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI
