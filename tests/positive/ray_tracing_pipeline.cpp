@@ -47,6 +47,7 @@ TEST_F(VkPositiveLayerTest, NVRayTracingPipeline) {
 
 TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
+
     SetTargetApiVersion(VK_API_VERSION_1_2);
     if (!InitFrameworkForRayTracingTest(this, true)) {
         GTEST_SKIP() << "unable to init ray tracing test";
@@ -161,6 +162,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
 
 TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
     TEST_DESCRIPTION("Create ray tracing pipeline with VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT.");
+
     SetTargetApiVersion(VK_API_VERSION_1_3);
     if (!InitFrameworkForRayTracingTest(this, true)) {
         GTEST_SKIP() << "unable to init ray tracing test";

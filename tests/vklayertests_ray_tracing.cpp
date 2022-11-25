@@ -145,6 +145,7 @@ TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
     }
 
     std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
+    dslb_vec.reserve(maxBlocks);
     VkDescriptorSetLayoutBinding dslb = {};
     dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     dslb.descriptorCount = 1;
@@ -711,11 +712,13 @@ TEST_F(VkLayerTest, RayTracingValidationArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "Core validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders.");
+
     OOBRayTracingShadersTestBody(false);
 }
 
 TEST_F(VkLayerTest, NVRayTracingValidateGeometry) {
     TEST_DESCRIPTION("Validate acceleration structure geometries.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -973,6 +976,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateGeometry) {
 
 TEST_F(VkLayerTest, NVRayTracingValidateCreateAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1195,6 +1199,7 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHRReplayFeatur
 
     acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
         vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
     assert(vkCreateAccelerationStructureKHR != nullptr);
@@ -1229,6 +1234,7 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHRReplayFeatur
 
 TEST_F(VkLayerTest, NVRayTracingValidateBindAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1383,6 +1389,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateBindAccelerationStructure) {
 
 TEST_F(VkLayerTest, NVRayTracingValidateWriteDescriptorSetAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1416,6 +1423,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateWriteDescriptorSetAccelerationStructure)
 
 TEST_F(VkLayerTest, NVRayTracingValidateCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1546,6 +1554,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateCmdBuildAccelerationStructure) {
 
 TEST_F(VkLayerTest, NVRayTracingObjInUseCmdBuildAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1611,6 +1620,7 @@ TEST_F(VkLayerTest, NVRayTracingObjInUseCmdBuildAccelerationStructure) {
 
 TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1656,6 +1666,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
 
 TEST_F(VkLayerTest, NVRayTracingValidateCmdCopyAccelerationStructure) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
+
     if (!InitFrameworkForRayTracingTest(this, false)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -2260,6 +2271,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
 
 TEST_F(VkLayerTest, RayTracingObjInUseCmdBuildAccelerationStructureKHR) {
     TEST_DESCRIPTION("Validate acceleration structure building tracks the objects used.");
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
