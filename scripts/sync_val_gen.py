@@ -58,7 +58,7 @@ def DeclareFauxConst(enums_in_bit_order) :
         enum_list =enums_in_bit_order[enum_type]
         format_string = "static const " + enum_type + " {name} = 0x{mask:016X}ULL;"
         for enum_info in enum_list:
-            if (not vvl_fake_extension in enum_info['name']) :
+            if (vvl_fake_extension not in enum_info['name']) :
                 continue
             lines.append(format_string.format(**enum_info))
     return lines
