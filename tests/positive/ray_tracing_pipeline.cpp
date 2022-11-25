@@ -26,25 +26,6 @@
 
 #include "../layer_validation_tests.h"
 
-TEST_F(VkPositiveLayerTest, NVRayTracingPipeline) {
-    TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
-
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-
-    auto rtnv_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
-    GetPhysicalDeviceProperties2(rtnv_props);
-    if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
-        GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";
-    }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    auto ignore_update = [](CreateNVRayTracingPipelineHelper &helper) {};
-    CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
-}
-
 TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     TEST_DESCRIPTION("Test that no warning is produced when a library is referenced in the raytracing shader groups.");
 
@@ -231,4 +212,23 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
     VkPipeline library = VK_NULL_HANDLE;
     vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, NVRayTracingPipeline) {
+    TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
+
+    if (!InitFrameworkForRayTracingTest(this, false)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    auto rtnv_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
+    GetPhysicalDeviceProperties2(rtnv_props);
+    if (rtnv_props.maxDescriptorSetAccelerationStructures < 1) {
+        GTEST_SKIP() << "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures < 1";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto ignore_update = [](CreateNVRayTracingPipelineHelper &helper) {};
+    CreateNVRayTracingPipelineHelper::OneshotPositiveTest(*this, ignore_update);
 }
