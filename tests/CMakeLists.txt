@@ -82,6 +82,9 @@ set(COMMON_CPP
     vklayertests_wsi.cpp
     vklayertests_graphics_library.cpp
     vklayertests_android_hardware_buffer.cpp
+    vklayertests_ray_tracing.cpp
+    vklayertests_ray_tracing_pipeline.cpp
+    vklayertests_ray_tracing_gpu.cpp
     positive/command.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp
@@ -95,6 +98,8 @@ set(COMMON_CPP
     positive/tooling.cpp
     positive/graphics_library.cpp
     positive/android_hardware_buffer.cpp
+    positive/ray_tracing.cpp
+    positive/ray_tracing_pipeline.cpp
     vksyncvaltests.cpp
     vkerrormonitor.h
     vkerrormonitor.cpp

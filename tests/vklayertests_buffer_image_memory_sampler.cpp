@@ -15722,58 +15722,6 @@ TEST_F(VkLayerTest, TestBarrierAccessSync2) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestBarrierAccessAccelerationStructure) {
-    TEST_DESCRIPTION("Test barrier with access ACCELERATION_STRUCTURE bit.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
-    }
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (!CheckSynchronization2SupportAndInitState(this)) {
-        GTEST_SKIP() << "Synchronization2 not supported";
-    }
-
-    VkMemoryBarrier2 mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
-    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-
-    VkDependencyInfo dependency_info = LvlInitStruct<VkDependencyInfo>();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &mem_barrier;
-
-    m_commandBuffer->begin();
-
-    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03927");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
-
-    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-srcAccessMask-03928");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
-
-    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
-
-    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03927");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
-
-    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryBarrier2-dstAccessMask-03928");
-    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
-
-    m_commandBuffer->end();
-
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, TestBarrierAccessVideoDecode) {
     TEST_DESCRIPTION("Test barrier with access decode read bit.");
 

@@ -31,13 +31,6 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
-TEST_F(VkLayerTest, ValidationArrayOOBRayTracingShaders) {
-    TEST_DESCRIPTION(
-        "Core validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
-        "ray tracing shaders.");
-    OOBRayTracingShadersTestBody(false);
-}
-
 TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
     VkResult err;
 
@@ -10508,46 +10501,6 @@ TEST_F(VkLayerTest, DepthStencilResolveAttachmentInvalidFormat) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, ValidateDescriptorBindingUpdateAfterBindWithAccelerationStructure) {
-    TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    if (!InitFrameworkForRayTracingTest(this, false)) {
-        GTEST_SKIP() << "unable to init ray tracing test";
-    }
-    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    VkDescriptorSetLayoutBinding binding = {};
-    binding.binding = 0;
-    binding.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    binding.descriptorCount = 1;
-    binding.stageFlags = VK_SHADER_STAGE_ALL;
-    binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT;
-
-    auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
-    flags_create_info.bindingCount = 1;
-    flags_create_info.pBindingFlags = &flags;
-
-    VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
-    create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-    create_info.bindingCount = 1;
-    create_info.pBindings = &binding;
-
-    VkDescriptorSetLayout setLayout;
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingAccelerationStructureUpdateAfterBind-03570");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
     TEST_DESCRIPTION("Update a descriptor set containing multiple bindings with only one update");
 
@@ -10649,107 +10602,6 @@ TEST_F(VkLayerTest, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) {
 
     m_errorMonitor->Reset();
     vk::UpdateDescriptorSets(m_device->device(), 1, &writeDesc, 0, nullptr);
-}
-
-TEST_F(VkLayerTest, AccelerationStructureBindings) {
-    TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR than allowed");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto acc_structure_props = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
-    GetPhysicalDeviceProperties2(acc_structure_props);
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t maxBlocks = acc_structure_props.maxPerStageDescriptorUpdateAfterBindAccelerationStructures;
-    if (maxBlocks > 4096) {
-        GTEST_SKIP() << "Too large of a maximum number of per stage descriptor update after bind for acceleration structures, "
-                        "skipping tests";
-    }
-    if (maxBlocks < 1) {
-        GTEST_SKIP() << "Test requires maxPerStageDescriptorUpdateAfterBindAccelerationStructures >= 1";
-    }
-
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayoutBinding dslb = {};
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-    dslb.descriptorCount = 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    for (uint32_t i = 0; i <= maxBlocks; ++i) {
-        dslb.binding = i;
-        dslb_vec.push_back(dslb);
-    }
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-    ASSERT_TRUE(ds_layout.initialized());
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-03572");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, AccelerationStructureBindingsNV) {
-    TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
-
-    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-
-    auto ray_tracing_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
-    GetPhysicalDeviceProperties2(ray_tracing_props);
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
-
-    uint32_t maxBlocks = ray_tracing_props.maxDescriptorSetAccelerationStructures;
-    if (maxBlocks > 4096) {
-        GTEST_SKIP() << "Too large of a maximum number of descriptor set acceleration structures, skipping tests";
-    }
-    if (maxBlocks < 1) {
-        GTEST_SKIP() << "Test requires maxDescriptorSetAccelerationStructures >= 1";
-    }
-
-    std::vector<VkDescriptorSetLayoutBinding> dslb_vec = {};
-    VkDescriptorSetLayoutBinding dslb = {};
-    dslb.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-    dslb.descriptorCount = 1;
-    dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    for (uint32_t i = 0; i <= maxBlocks; ++i) {
-        dslb.binding = i;
-        dslb_vec.push_back(dslb);
-    }
-
-    VkDescriptorSetLayoutCreateInfo ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
-    ds_layout_ci.bindingCount = dslb_vec.size();
-    ds_layout_ci.pBindings = dslb_vec.data();
-
-    vk_testing::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
-    ASSERT_TRUE(ds_layout.initialized());
-
-    VkPipelineLayoutCreateInfo pipeline_layout_ci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-    pipeline_layout_ci.setLayoutCount = 1;
-    pipeline_layout_ci.pSetLayouts = &ds_layout.handle();
-
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02381");
-    vk_testing::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidWriteMutableDescriptorSet) {
