@@ -29,10 +29,8 @@
 TEST_F(VkPositiveLayerTest, NVRayTracingPipeline) {
     TEST_DESCRIPTION("Test VK_NV_ray_tracing.");
 
-    AddRequiredExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
+    if (!InitFrameworkForRayTracingTest(this, false)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
     }
 
     auto rtnv_props = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
