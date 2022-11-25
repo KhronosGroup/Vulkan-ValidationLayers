@@ -112,6 +112,9 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_imageless_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_graphics_library.cpp \
                    $(SRC_DIR)/tests/vklayertests_android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing_pipeline.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
@@ -123,6 +126,8 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/sync.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/positive/ray_tracing.cpp \
+                   $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
@@ -163,6 +168,9 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vklayertests_imageless_framebuffer.cpp \
                    $(SRC_DIR)/tests/vklayertests_graphics_library.cpp \
                    $(SRC_DIR)/tests/vklayertests_android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing_pipeline.cpp \
+                   $(SRC_DIR)/tests/vklayertests_ray_tracing_gpu.cpp \
                    $(SRC_DIR)/tests/positive/command.cpp \
                    $(SRC_DIR)/tests/positive/descriptors.cpp \
                    $(SRC_DIR)/tests/positive/image_buffer.cpp \
@@ -174,6 +182,8 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/positive/sync.cpp \
                    $(SRC_DIR)/tests/positive/tooling.cpp \
                    $(SRC_DIR)/tests/positive/android_hardware_buffer.cpp \
+                   $(SRC_DIR)/tests/positive/ray_tracing.cpp \
+                   $(SRC_DIR)/tests/positive/ray_tracing_pipeline.cpp \
                    $(SRC_DIR)/tests/vksyncvaltests.cpp \
                    $(SRC_DIR)/tests/vktestbinding.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
