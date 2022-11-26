@@ -89,6 +89,29 @@ Run **clang-format** on your changes to maintain consistent formatting
 Strive for commits that implement a single or related set of functionality, using as many commits as is necessary (more is better).
 That said, please ensure that the repository compiles and passes tests without error for each commit in your pull request.
 
+### TODO
+
+There have been many `todo` added and while those are slowly removed, all new `todo`'s must contain a GitHub issue number
+
+```c++
+// TODO Issue 1234 - Information about the TODO
+```
+
+### Dead code
+
+Because we can use git history, there's no reason to keep dead code around just because we might want it back later.
+
+This means no `ifdef 0` or large commented out code blocks. Instead a proper `TODO` should be added and done in a way to easily
+find the commit later where the code was removed
+
+For `./tests` GTest provides a `DISABLED_` prefix that can be used to keep code while a test is fixed.
+An issue must be tied to all disabled tests
+
+```c++
+// example
+TEST_F(VkLayerTest, DISABLED_TestName) { }
+```
+
 ### Coding Conventions for [CMake](http://cmake.org) files
 
 * When editing configuration files for CMake, follow the style conventions of the surrounding code.
