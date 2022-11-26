@@ -135,6 +135,21 @@ TEST_F(VkLayerTest, DISABLED_TestName) { }
   A workaround is to use the following command _before_ running cmake-format:
   `sed --in-place='' 's/^  *#/#/' $FILENAME`
 
+## Code Review
+
+Reviews are done with GitHub, but using a gerrit style `-2`, `-1`, `+1`, `+2` methodology
+
+- `-2` | code must not merge
+    - GitHub's `Request changes` option
+- `-1` | something seems wrong, but won't block merging
+    - Normal review comment
+- `+1` | code seems good, but not confident to give a `+2`
+    - Add `LGTM` comment (looks good to me)
+- `+2` | code should merge
+    - GitHub's `Approve` option
+
+All PR's must have been marked as `Approve` by 1 maintainer and have no outstanding request changes.
+
 ## GitHub Cloud CI Testing
 Pull Requests to GitHub are tested in the cloud on Linux and Windows VMs. The Linux VMs use [Github Actions](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) with the sequence of commands driven by the [ci_build.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.github/workflows/ci_build.yml) file. The Windows VMs use [AppVeyor](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) with the sequence of commands driven by the [.appveyor.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.appveyor.yml) file.
 
