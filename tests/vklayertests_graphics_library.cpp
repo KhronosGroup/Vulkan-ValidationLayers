@@ -401,6 +401,10 @@ TEST_F(VkGraphicsLibraryLayerTest, InvalidCreateStateGPL) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     // Do _not_ enable VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary
     ASSERT_NO_FATAL_FAILURE(InitState());

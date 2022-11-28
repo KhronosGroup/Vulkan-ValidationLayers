@@ -603,9 +603,8 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature12) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
-    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -655,9 +654,8 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithFeature) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    // Devsim won't read in values like maxDescriptorSetUpdateAfterBindUniformBuffers which cause OneshotTest to fail pipeline
-    // layout creation if using 1.2 devsim as it enables VK_EXT_descriptor_indexing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
