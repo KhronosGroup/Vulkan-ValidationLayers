@@ -151,7 +151,7 @@ TEST_F(VkLayerTest, RayTracingAccelerationStructureBindings) {
     dslb.descriptorCount = 1;
     dslb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    for (uint32_t i = 0; i <= maxBlocks; ++i) {
+    for (uint32_t i = 0; i < maxBlocks; ++i) {
         dslb.binding = i;
         dslb_vec.push_back(dslb);
     }
