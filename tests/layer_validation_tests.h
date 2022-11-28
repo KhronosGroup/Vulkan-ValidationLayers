@@ -270,6 +270,28 @@ class VkLayerTest : public VkRenderFramework {
         return GetPhysicalDeviceProperties2(props2);
     }
 
+    template <typename Proc, bool assert_proc = true>
+    [[nodiscard]] const Proc GetInstanceProcAddr(const char *proc_name) noexcept {
+        static_assert(std::is_pointer_v<Proc>);
+
+        auto proc = reinterpret_cast<Proc>(vk::GetInstanceProcAddr(instance(), proc_name));
+        if constexpr (assert_proc) {
+            assert(proc);
+        }
+        return proc;
+    }
+
+    template <typename Proc, bool assert_proc = true>
+    [[nodiscard]] const Proc GetDeviceProcAddr(const char *proc_name) noexcept {
+        static_assert(std::is_pointer_v<Proc>);
+
+        auto proc = reinterpret_cast<Proc>(vk::GetDeviceProcAddr(device(), proc_name));
+        if constexpr (assert_proc) {
+            assert(proc);
+        }
+        return proc;
+    }
+
     bool IsDriver(VkDriverId driver_id);
 
   protected:

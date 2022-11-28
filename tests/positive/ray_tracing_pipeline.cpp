@@ -53,13 +53,9 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineShaderGroupsKHR) {
     VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
-
-    PFN_vkDestroyPipeline vkDestroyPipeline =
-        reinterpret_cast<PFN_vkDestroyPipeline>(vk::GetInstanceProcAddr(instance(), "vkDestroyPipeline"));
-    ASSERT_TRUE(vkDestroyPipeline != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
+    const auto vkDestroyPipeline = GetInstanceProcAddr<PFN_vkDestroyPipeline>("vkDestroyPipeline");
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
@@ -175,12 +171,8 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineCacheControl) {
     VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    auto vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
-
-    auto vkDestroyPipeline = reinterpret_cast<PFN_vkDestroyPipeline>(vk::GetInstanceProcAddr(instance(), "vkDestroyPipeline"));
-    ASSERT_TRUE(vkDestroyPipeline != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 

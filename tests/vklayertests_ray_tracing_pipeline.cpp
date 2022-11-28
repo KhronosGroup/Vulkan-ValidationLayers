@@ -55,9 +55,9 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
     VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_KHR);
     VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
     VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_KHR);
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
+
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
@@ -232,9 +232,8 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsKHR) {
     VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineLibraryCreateInfoKHR library_info = {VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR, NULL, 0};
@@ -694,9 +693,8 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
 
     VkShaderObj rgen_shader(this, ray_generation_shader, VK_SHADER_STAGE_RAYGEN_BIT_NV);
 
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
@@ -801,6 +799,12 @@ TEST_F(VkLayerTest, RayTracingValidateGetCaptureReplayShaderGroupHandlesKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
+    const auto vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
+        GetInstanceProcAddr<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
+            "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+    const auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
+
     auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
     features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
     if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE) {
@@ -827,17 +831,11 @@ TEST_F(VkLayerTest, RayTracingValidateGetCaptureReplayShaderGroupHandlesKHR) {
     vk_testing::DeviceMemory mem(*m_device, alloc_info);
     vk::BindBufferMemory(device(), buffer.handle(), mem.handle(), 0);
 
-    PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
-        (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength");
     vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 1, 1, 0, &buffer);
     m_errorMonitor->VerifyFound();
 
     // dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
@@ -896,21 +894,12 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
     VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-    auto vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
-
-    auto vkCreateDeferredOperationKHR =
-        reinterpret_cast<PFN_vkCreateDeferredOperationKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateDeferredOperationKHR"));
-    ASSERT_TRUE(vkCreateDeferredOperationKHR != nullptr);
-
-    auto vkDeferredOperationJoinKHR =
-        reinterpret_cast<PFN_vkDeferredOperationJoinKHR>(vk::GetInstanceProcAddr(instance(), "vkDeferredOperationJoinKHR"));
-    ASSERT_TRUE(vkDeferredOperationJoinKHR != nullptr);
-
-    auto vkGetDeferredOperationResultKHR = reinterpret_cast<PFN_vkGetDeferredOperationResultKHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetDeferredOperationResultKHR"));
-    ASSERT_TRUE(vkDeferredOperationJoinKHR != nullptr);
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
+    const auto vkCreateDeferredOperationKHR = GetInstanceProcAddr<PFN_vkCreateDeferredOperationKHR>("vkCreateDeferredOperationKHR");
+    const auto vkDeferredOperationJoinKHR = GetInstanceProcAddr<PFN_vkDeferredOperationJoinKHR>("vkDeferredOperationJoinKHR");
+    const auto vkGetDeferredOperationResultKHR =
+        GetInstanceProcAddr<PFN_vkGetDeferredOperationResultKHR>("vkGetDeferredOperationResultKHR");
 
     PFN_vkDestroyDeferredOperationKHR vkDestroyDeferredOperationKHR =
         reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(vk::GetInstanceProcAddr(instance(), "vkDestroyDeferredOperationKHR"));
@@ -1063,8 +1052,8 @@ TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, m_device->phy().properties().limits.maxPerStageResources,
@@ -1117,8 +1106,8 @@ TEST_F(VkLayerTest, RayTracingInvalidPipelineFlags) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCreateRayTracingPipelinesKHR =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
+    const auto vkCreateRayTracingPipelinesKHR =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
     const char *empty_shader = R"glsl(
@@ -1164,8 +1153,8 @@ TEST_F(VkLayerTest, RayTracingTestWrongPipelineType) {
     pipe.InitState();
     pipe.CreateComputePipeline();
 
-    PFN_vkGetRayTracingShaderGroupStackSizeKHR vkGetRayTracingShaderGroupStackSizeKHR =
-        (PFN_vkGetRayTracingShaderGroupStackSizeKHR)vk::GetInstanceProcAddr(instance(), "vkGetRayTracingShaderGroupStackSizeKHR");
+    const auto vkGetRayTracingShaderGroupStackSizeKHR =
+        GetInstanceProcAddr<PFN_vkGetRayTracingShaderGroupStackSizeKHR>("vkGetRayTracingShaderGroupStackSizeKHR");
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622");
     vkGetRayTracingShaderGroupStackSizeKHR(device(), pipe.pipeline_, 0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
@@ -1185,6 +1174,9 @@ TEST_F(VkLayerTest, NVRayTracingValidatePipeline) {
     pipleline_features.pipelineCreationCacheControl = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
+    const auto vkCreateRayTracingPipelinesNV =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesNV>("vkCreateRayTracingPipelinesNV");
+
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
     const char *empty_shader = R"glsl(
         #version 460
@@ -1198,9 +1190,7 @@ TEST_F(VkLayerTest, NVRayTracingValidatePipeline) {
     VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_NV);
     VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
     VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_NV);
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesNV"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesNV != nullptr);
+
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
@@ -1322,6 +1312,9 @@ TEST_F(VkLayerTest, NVRayTracingPipelineShaderGroups) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    const auto vkCreateRayTracingPipelinesNV =
+        GetInstanceProcAddr<PFN_vkCreateRayTracingPipelinesNV>("vkCreateRayTracingPipelinesNV");
+
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
 
     const char *empty_shader = R"glsl(
@@ -1336,10 +1329,6 @@ TEST_F(VkLayerTest, NVRayTracingPipelineShaderGroups) {
     VkShaderObj miss_shader(this, empty_shader, VK_SHADER_STAGE_MISS_BIT_NV);
     VkShaderObj intr_shader(this, empty_shader, VK_SHADER_STAGE_INTERSECTION_BIT_NV);
     VkShaderObj call_shader(this, empty_shader, VK_SHADER_STAGE_CALLABLE_BIT_NV);
-
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesNV"));
-    ASSERT_TRUE(vkCreateRayTracingPipelinesNV != nullptr);
 
     VkPipeline pipeline = VK_NULL_HANDLE;
 
