@@ -446,10 +446,6 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         "Test that pipeline validation accepts basic use of 64bit vertex attributes. This is interesting because they consume "
         "multiple locations.");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -3991,7 +3987,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderOnly) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -4269,7 +4265,7 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     TEST_DESCRIPTION("Test to see if instance extensions are called during CreateInstance.");
 
     // See https://github.com/KhronosGroup/Vulkan-Loader/issues/537 for more details.
-    // This is specifically meant to ensure a crash encountered in devsim does not occur, but also to
+    // This is specifically meant to ensure a crash encountered in profiles does not occur, but also to
     // attempt to ensure that no extension calls have been added to CreateInstance hooks.
     // NOTE: it is certainly possible that a layer will call an extension during the Createinstance hook
     //       and the loader will _not_ crash (e.g., nvidia, android seem to not crash in this case, but AMD does).
@@ -5120,10 +5116,6 @@ TEST_F(VkPositiveLayerTest, MutableStorageImageFormatWriteForFormat) {
     // need to be compatible to use VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT
     const VkFormat image_format = VK_FORMAT_B8G8R8A8_SRGB;
     const VkFormat image_view_format = VK_FORMAT_R32_SFLOAT;
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));

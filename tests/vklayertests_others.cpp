@@ -165,7 +165,7 @@ TEST_F(VkLayerTest, PrivateDataExtTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -242,7 +242,7 @@ TEST_F(VkLayerTest, PrivateDataFeature) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -804,8 +804,8 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
         GTEST_SKIP() << "Can't find fpvkDebugMarkerSetObjectNameEXT; skipped";
     }
 
-    if (DeviceSimulation()) {
-        GTEST_SKIP() << "Skipping object naming test";
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
     VkBuffer buffer;
@@ -914,8 +914,8 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
         (PFN_vkCmdInsertDebugUtilsLabelEXT)vk::GetInstanceProcAddr(instance(), "vkCmdInsertDebugUtilsLabelEXT");
     ASSERT_TRUE(vkCmdInsertDebugUtilsLabelEXT);  // Must be extant if extension is enabled
 
-    if (DeviceSimulation()) {
-        GTEST_SKIP() << "Skipping object naming test with DeviceSimulation.";
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Skipping object naming test with MockICD.";
     }
 
     DebugUtilsLabelCheckData callback_data;
@@ -3625,8 +3625,8 @@ TEST_F(VkLayerTest, ThreadCommandBufferCollision) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Test takes magnitude of time longer for devsim and slows down testing
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    // Test takes magnitude of time longer for profiles and slows down testing
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -4138,7 +4138,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -8380,8 +8380,8 @@ TEST_F(VkLayerTest, InvalidSpirvExtension) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't support Vulkan 1.1+";
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, doesn't support Vulkan 1.1+";
     }
 
     const char *vertex_source = R"spirv(

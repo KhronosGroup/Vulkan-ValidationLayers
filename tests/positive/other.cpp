@@ -218,7 +218,7 @@ TEST_F(VkPositiveLayerTest, SurfacelessQueryTest) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

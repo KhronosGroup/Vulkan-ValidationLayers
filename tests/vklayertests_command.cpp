@@ -2359,10 +2359,6 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     TEST_DESCRIPTION("Image-related tests that don't belong elsewhere");
 
     ASSERT_NO_FATAL_FAILURE(Init());
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
     if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -2766,14 +2762,6 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties format_props;
-    // TODO: Remove this check if or when devsim handles extensions.
-    // The chosen format has mandatory support the transfer src and dst format features when Maitenance1 is enabled. However, our
-    // use of devsim and the mock ICD violate this guarantee.
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_format, &format_props);
-    if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
-        GTEST_SKIP() << "VK_FORMAT_FEATURE_TRANSFER_SRC_BIT not supported";
-    }
 
     VkImageCreateInfo ci = LvlInitStruct<VkImageCreateInfo>();
     ci.flags = 0;
@@ -3624,10 +3612,6 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
 }
 
 TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     // Enable KHR multiplane req'd extensions
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
@@ -3939,10 +3923,6 @@ TEST_F(VkLayerTest, CopyImageSampleCountMismatch) {
 
 TEST_F(VkLayerTest, CopyImageAspectMismatch) {
     TEST_DESCRIPTION("Image copies with aspect mask errors");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
     if (mp_extensions) {
@@ -5690,7 +5670,7 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_props);
     GetPhysicalDeviceProperties2(pd_props2);
     if (multi_draw_props.maxMultiDrawCount == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD and profiles the value might be zero'ed and cause false errors
         return;
     }
 
@@ -5730,7 +5710,7 @@ TEST_F(VkLayerTest, IndirectDrawTests) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     if (!AreRequiredExtensionsEnabled()) {
@@ -6316,7 +6296,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -10125,10 +10105,6 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
 
 TEST_F(VkLayerTest, ResolveInvalidUsage) {
     TEST_DESCRIPTION("Resolve image with missing usage flags.");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(Init());
 

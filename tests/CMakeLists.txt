@@ -134,11 +134,6 @@ target_include_directories(vk_layer_validation_tests
                                   ${PROJECT_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 
-option(PORTABILITY_TESTS_USE_DEVSIM "Automatically add the devsim layer for portability tests" OFF)
-if (PORTABILITY_TESTS_USE_DEVSIM)
-    target_compile_definitions(vk_layer_validation_tests PRIVATE PORTABILITY_TESTS_USE_DEVSIM=1)
-endif()
-
 if (VVL_ENABLE_ASAN)
     target_compile_options(vk_layer_validation_tests  PRIVATE -fsanitize=address)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI

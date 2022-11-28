@@ -1015,10 +1015,6 @@ TEST_F(VkLayerTest, RayTracingPipelineWrongBindPoint) {
 TEST_F(VkLayerTest, RayTracingPipelineMaxResources) {
     TEST_DESCRIPTION("Create ray tracing pipeline with too many resources.");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());

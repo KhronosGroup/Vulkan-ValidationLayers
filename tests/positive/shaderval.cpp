@@ -2023,7 +2023,7 @@ TEST_F(VkPositiveLayerTest, MeshShaderPointSize) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -2510,7 +2510,7 @@ TEST_F(VkPositiveLayerTest, SpecializationWordBoundryOffset) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // need real device to produce output to check
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

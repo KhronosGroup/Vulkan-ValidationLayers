@@ -2358,10 +2358,6 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
 TEST_F(VkLayerTest, MissingStorageTexelBufferFormatWriteForFormat) {
     TEST_DESCRIPTION("Create a shader writing a storage texel buffer without an image format");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -4055,10 +4051,6 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     uint32_t maxVertexInputAttributeOffset = 0;
@@ -4768,10 +4760,6 @@ TEST_F(VkLayerTest, InvalidPushConstantRange) {
 
 TEST_F(VkLayerTest, InvalidCmdPushConstantRange) {
     TEST_DESCRIPTION("Invalid use of VkPushConstantRange values in vkCmdPushConstants.");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -5578,10 +5566,6 @@ TEST_F(VkLayerTest, CreatePipelineFragmentOutputTypeMismatch) {
 TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpMemberDecorate built-ins");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -5660,10 +5644,6 @@ TEST_F(VkLayerTest, CreatePipelineExceedVertexMaxComponentsWithBuiltins) {
 
 TEST_F(VkLayerTest, CreatePipelineExceedFragmentMaxComponentsWithBuiltins) {
     TEST_DESCRIPTION("Test if the max componenets checks are being checked from OpDecorate built-ins");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -7157,7 +7137,7 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -7235,8 +7215,8 @@ TEST_F(VkLayerTest, SubgroupSupportedProperties) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't support Vulkan 1.1+";
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, doesn't support Vulkan 1.1+";
     }
 
     VkPhysicalDeviceFeatures features{};
@@ -7495,8 +7475,8 @@ TEST_F(VkLayerTest, SubgroupRequired) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required.";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
-        GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't support Vulkan 1.1+";
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, profiles doesn't support Vulkan 1.1+";
     }
 
     VkPhysicalDeviceSubgroupProperties subgroup_prop = LvlInitStruct<VkPhysicalDeviceSubgroupProperties>();
@@ -7680,7 +7660,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Driver data writeback check not supported by MockICD";
     }
 
@@ -8549,10 +8529,6 @@ TEST_F(VkLayerTest, NonGraphicsDynamicStates) {
 TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
     PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
@@ -8654,7 +8630,7 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // MockICD will return 0 for the executable count
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -8700,10 +8676,6 @@ TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
 
 TEST_F(VkLayerTest, LimitsMaxSampleMaskWords) {
     TEST_DESCRIPTION("Test limit of maxSampleMaskWords.");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -9099,10 +9071,6 @@ TEST_F(VkLayerTest, InvalidPrimitiveFragmentShadingRateWriteMultiViewportLimit) 
 TEST_F(VkLayerTest, SampledInvalidImageViews) {
     TEST_DESCRIPTION("Test if an VkImageView is sampled at draw/dispatch that the format has valid format features enabled");
     VkResult err;
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -11341,7 +11309,7 @@ TEST_F(VkLayerTest, PipelineInvalidAdvancedBlend) {
     pipe.gp_ci_.pColorBlendState = &color_blend_state;
 
     pipe.InitState();
-    // When using devsim, advancedBlendMaxColorAttachments will be zero
+    // When using profiles, advancedBlendMaxColorAttachments might be zero
     m_errorMonitor->SetUnexpectedError("VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-advancedBlendAllOperations-01409");
     pipe.CreateGraphicsPipeline();
@@ -11360,7 +11328,7 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendInvalidBlendOps) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD because need real advancedBlendMaxColorAttachments value";
     }
 
@@ -11412,9 +11380,6 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendInvalidBlendOps) {
 TEST_F(VkLayerTest, PipelineAdvancedBlendMaxBlendAttachment) {
     TEST_DESCRIPTION("Advanced blending with invalid VkBlendOps");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
     AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
@@ -13723,7 +13688,7 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &pd_props2);
 
-    // seen sometimes when using devsim and will crash
+    // seen sometimes when using profiles and will crash
     if (transform_feedback_props.maxTransformFeedbackStreams == 0) {
         GTEST_SKIP() << "maxTransformFeedbackStreams is zero";
     }
@@ -16076,7 +16041,7 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

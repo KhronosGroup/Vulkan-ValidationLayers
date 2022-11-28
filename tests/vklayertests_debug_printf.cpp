@@ -54,7 +54,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number
@@ -346,7 +346,7 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     InitDebugPrintfFramework();
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
 
@@ -454,7 +454,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     // Make a uniform buffer to be passed to the shader that contains the test number

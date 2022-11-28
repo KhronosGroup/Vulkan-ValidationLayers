@@ -8655,10 +8655,6 @@ void RenderPassCreatePotentialFormatFeaturesTest::Test(bool const useLinearColor
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     if (useLinearColorAttachment) {
         AddRequiredExtensions(VK_NV_LINEAR_COLOR_ATTACHMENT_EXTENSION_NAME);
     }

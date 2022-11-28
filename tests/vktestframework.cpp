@@ -129,7 +129,6 @@ VkTestFramework::~VkTestFramework() {}
 bool VkTestFramework::m_canonicalize_spv = false;
 bool VkTestFramework::m_strip_spv = false;
 bool VkTestFramework::m_do_everything_spv = false;
-bool VkTestFramework::m_devsim_layer = false;
 int VkTestFramework::m_width = 0;
 int VkTestFramework::m_height = 0;
 int VkTestFramework::m_phys_device_index = -1;
@@ -149,8 +148,6 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_strip_spv = true;
         else if (optionMatch("--canonicalize-SPV", argv[i]))
             m_canonicalize_spv = true;
-        else if (optionMatch("--devsim", argv[i]))
-            m_devsim_layer = true;
         else if (optionMatch("--device-index", argv[i]) && ((i + 1) < *argc)) {
             m_phys_device_index = std::atoi(argv[++i]);
         } else if (optionMatch("--help", argv[i]) || optionMatch("-h", argv[i])) {
