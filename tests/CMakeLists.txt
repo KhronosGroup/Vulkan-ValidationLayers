@@ -30,37 +30,23 @@ if(ANNOTATED_SPEC_LINK)
 endif()
 
 if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
+    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-    # If MSVC, allow Windows to use multiprocessor compilation
-    if(MSVC)
-        add_compile_options(/MP)
-    endif()
 elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 elseif(APPLE)
     add_definitions(-DVK_USE_PLATFORM_METAL_EXT)
-elseif(LINUX)
-else()
-    message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-if(WIN32)
-    file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_BINARY_DIR}/tests)
+if(MSVC_IDE)
+    file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
-if(WIN32)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES")
-
+if(MSVC)
     # If MSVC, disable some signed/unsigned mismatch warnings.
-    if(MSVC)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")
-    endif()
-
+    add_compile_options(/wd4267)
 endif()
-
-set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
 set(COMMON_CPP
     vklayertests_instanceless.cpp
@@ -103,14 +89,14 @@ set(COMMON_CPP
     vktestbinding.cpp
     vktestframework.cpp)
 
-set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
 add_executable(vk_layer_validation_tests
-               layer_validation_tests.cpp
-               ../layers/generated/vk_format_utils.cpp
-               ../layers/convert_to_renderpass2.cpp
-               ../layers/generated/vk_safe_struct.cpp
-               ../layers/generated/lvt_function_pointers.cpp
-               ${COMMON_CPP})
+    layer_validation_tests.cpp
+    ../layers/generated/vk_format_utils.cpp
+    ../layers/convert_to_renderpass2.cpp
+    ../layers/generated/vk_safe_struct.cpp
+    ../layers/generated/lvt_function_pointers.cpp
+    ${COMMON_CPP}
+)
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
 if (CMAKE_CROSSCOMPILING)
@@ -144,8 +130,6 @@ if (NOT MSVC)
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
 endif()
 
-target_include_directories(vk_layer_validation_tests PRIVATE ${SPIRV_HEADERS_INCLUDE_DIR})
-
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
     glslang::glslang
@@ -158,6 +142,7 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     glslang::SPVRemapper
     ${SPIRV_TOOLS_TARGET}
     SPIRV-Tools-opt
+    SPIRV-Headers::SPIRV-Headers
     GTest::gtest
     GTest::gtest_main
 )
