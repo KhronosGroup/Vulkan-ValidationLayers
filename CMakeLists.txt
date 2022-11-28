@@ -207,6 +207,14 @@ elseif(MSVC)
     add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
+
+    # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
+    if(MINGW)
+        add_definitions(-D_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
+    endif()
+
+    add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
 
 option(INSTALL_TESTS "Install tests" OFF)
@@ -255,12 +263,6 @@ if (VVL_ENABLE_ASAN)
     target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
     # NOTE: Use target_link_options when cmake 3.13 is available on CI
     target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
-endif()
-if(WIN32)
-    target_compile_definitions(VkLayer_utils PUBLIC _CRT_SECURE_NO_WARNINGS NOMINMAX)
-    if(MINGW)
-        target_compile_definitions(VkLayer_utils PUBLIC "_WIN32_WINNT=0x0600")
-    endif()
 endif()
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils
