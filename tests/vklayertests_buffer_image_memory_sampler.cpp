@@ -2533,10 +2533,6 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
     const int max_mems = 32;
     VkDeviceMemory mems[max_mems + 1];
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
@@ -2576,10 +2572,6 @@ TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
     VkResult err = VK_SUCCESS;
     const int max_samplers = 32;
     VkSampler samplers[max_samplers + 1];
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -3554,10 +3546,6 @@ TEST_F(VkLayerTest, MiscBlitImageTests) {
 }
 
 TEST_F(VkLayerTest, BlitToDepthImageTests) {
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(Init());
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -4892,7 +4880,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
         GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
     texel_buffer_alignment_features.texelBufferAlignment = VK_TRUE;
@@ -7674,11 +7662,6 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
 TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
-    // Used to force format to have feature bits to enable test can run on any device
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -7827,10 +7810,6 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
 
 TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
     TEST_DESCRIPTION("Usage modification via a chained VkImageViewUsageCreateInfo struct");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -8280,10 +8259,6 @@ TEST_F(VkLayerTest, ImageLayerUnsupportedFormat) {
 TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
     TEST_DESCRIPTION("Create an image with a color format, then try to create a depth view of it");
 
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -8321,10 +8296,6 @@ TEST_F(VkLayerTest, CreateImageViewFormatMismatchUnrelated) {
 
 TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
     TEST_DESCRIPTION("Create an image view with a different format, when the image does not have MUTABLE_FORMAT bit");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -10455,10 +10426,6 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
-
     m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     m_device_extension_names.push_back(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
     m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -10780,7 +10747,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
         GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -10841,7 +10808,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
         GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -10884,7 +10851,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
         GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -10994,7 +10961,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
         GTEST_SKIP() << "Error initializing extensions or retrieving features";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
@@ -11075,10 +11042,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
 
 TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
-
-    if (!OverrideDevsimForDeviceProfileLayer()) {
-        GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-    }
 
     // Enable KHR multiplane req'd extensions
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -11309,7 +11272,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, does not support the necessary memory type";
     }
 
@@ -12815,8 +12778,8 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
     GetPhysicalDeviceProperties2(properties);
 
     if (!fsrProperties.layeredShadingRateAttachments) {
-        if (IsPlatform(kMockICD) || DeviceSimulation()) {
-            GTEST_SKIP() << "Test not supported by MockICD, DevSim doesn't correctly advertise format support for fragment shading "
+        if (IsPlatform(kMockICD)) {
+            GTEST_SKIP() << "Test not supported by MockICD, doesn't correctly advertise format support for fragment shading "
                             "rate attachments";
         } else {
             VkImageObj image2(m_device);

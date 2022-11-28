@@ -201,7 +201,6 @@ class VkRenderFramework : public VkTestFramework {
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 
-    bool OverrideDevsimForDeviceProfileLayer();
     bool InstanceExtensionEnabled(const char *name);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
@@ -209,7 +208,6 @@ class VkRenderFramework : public VkTestFramework {
         return DeviceExtensionSupported(name, spec_version);
     }
     bool DeviceExtensionEnabled(const char *name);
-    bool DeviceSimulation();
 
     // Tracks ext_name to be enabled at device creation time and attempts to enable any required instance extensions.
     // Does not return anything as the caller should use AreRequiredExtensionsEnabled or AddOptionalExtensions then

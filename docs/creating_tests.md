@@ -236,15 +236,6 @@ There are times a test writer will want to test a case where an implementation r
 ### Device Profile Format Feature
 Here is an example of how To enable it to allow overriding format features (limits are the same idea, just different function names):
 ```cpp
-// Will replace VK_LAYER_LUNARG_device_simulation with VK_LAYER_LUNARG_device_profile_api
-//
-// This can be skipped if test doesn't allow for devsim (ex. GPU Validation tests)
-//
-// Needs to be done BEFORE creating an VkInstance (because they are instance level layers)
-if (!OverrideDevsimForDeviceProfileLayer()) {
-    GTEST_SKIP() << "Failed to override devsim for device profile layer.";
-}
-
 ASSERT_NO_FATAL_FAILURE(Init());
 
 // Load required functions

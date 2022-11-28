@@ -395,7 +395,7 @@ VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo ima
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         image_ci.format = format;
 
-        // WORKAROUND for dev_sim and mock_icd not containing valid format limits yet
+        // WORKAROUND for profile and mock_icd not containing valid format limits yet
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
         const VkFormatFeatureFlags core_filter = 0x1FFF;
@@ -417,7 +417,7 @@ bool FindFormatWithoutSamples(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci)
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         image_ci.format = format;
 
-        // WORKAROUND for dev_sim and mock_icd not containing valid format limits yet
+        // WORKAROUND for profile and mock_icd not containing valid format limits yet
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
         const VkFormatFeatureFlags core_filter = 0x1FFF;
@@ -673,7 +673,7 @@ bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramewor
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&timeline_semaphore_props);
     vkGetPhysicalDeviceProperties2KHR(renderFramework->gpu(), &pd_props2);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD the value might be zero'ed and cause false errors
         return false;
     }
 
@@ -925,18 +925,8 @@ VkLayerTest::VkLayerTest() {
 
     instance_layers_.push_back(kValidationLayerName);
 
-    // Devsim and device profile layer can't be on at the same time as they both override the vkGetPhysicalDevice* calls. Always try
-    // to set device profile unless running with devsim explicitly set
-    if (VkTestFramework::m_devsim_layer) {
-        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
-        } else {
-            VkTestFramework::m_devsim_layer = false;
-            printf("             Did not find VK_LAYER_LUNARG_device_simulation layer so it will not be enabled.\n");
-        }
-    } else {
-        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
-            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
+    if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
+        instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
     }
 
     if (InstanceLayerSupported(kSynchronization2LayerName)) {
@@ -1050,6 +1040,11 @@ bool VkLayerTest::IsDriver(VkDriverId driver_id) {
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
+    if (IsPlatform(kMockICD)) {
+        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
+        return false;
+    }
+
     // Load required functions
     fpvkSetPhysicalDeviceFormatPropertiesEXT =
         (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
@@ -1069,6 +1064,11 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
     PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
+    if (IsPlatform(kMockICD)) {
+        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
+        return false;
+    }
+
     // Load required functions
     fpvkSetPhysicalDeviceFormatProperties2EXT =
         (PFN_vkSetPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT");
@@ -1088,6 +1088,11 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkSetPhysicalDeviceLimitsEXT,
                                          PFN_vkGetOriginalPhysicalDeviceLimitsEXT &fpvkGetOriginalPhysicalDeviceLimitsEXT) {
+    if (IsPlatform(kMockICD)) {
+        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
+        return false;
+    }
+
     // Load required functions
     fpvkSetPhysicalDeviceLimitsEXT =
         (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
@@ -1106,6 +1111,11 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpvkSetPhysicalDeviceFeaturesEXT,
                                          PFN_vkGetOriginalPhysicalDeviceFeaturesEXT &fpvkGetOriginalPhysicalDeviceFeaturesEXT) {
+    if (IsPlatform(kMockICD)) {
+        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
+        return false;
+    }
+
     // Load required functions
     fpvkSetPhysicalDeviceFeaturesEXT =
         (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT");
@@ -1123,6 +1133,11 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &fpvkSetPhysicalDeviceProperties2EXT) {
+    if (IsPlatform(kMockICD)) {
+        printf("Device Profile layer is for real GPU, if using MockICD with profiles, just adjust the profile json file instead\n");
+        return false;
+    }
+
     // Load required functions
     fpvkSetPhysicalDeviceProperties2EXT =
         (PFN_VkSetPhysicalDeviceProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceProperties2EXT");
@@ -2438,11 +2453,10 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *framework, bool is_khr, V
         return false;
     }
 
-    if (!mockicd_valid && (framework->IsPlatform(kMockICD) || framework->DeviceSimulation())) {
+    if (!mockicd_valid && (framework->IsPlatform(kMockICD))) {
         printf("Test not supported by MockICD, skipping tests\n");
         return false;
     }
-
 
     if (features2) {
         // extension enabled as dependency of RT extension
@@ -2519,7 +2533,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

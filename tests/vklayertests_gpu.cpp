@@ -44,7 +44,7 @@ bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
     } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("At least Vulkan version 1.1 is required for GPU-AV\n");
         return false;
-    } else if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    } else if (IsPlatform(kMockICD)) {
         printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");
         return false;
     }
@@ -2083,7 +2083,7 @@ TEST_F(VkGpuAssistedLayerTest, DispatchIndirectWorkgroupSize) {
     TEST_DESCRIPTION("GPU validation: Validate VkDispatchIndirectCommand");
     VkValidationFeaturesEXT validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "GPU-Assisted validation test requires a driver that can draw.";
     }
 
@@ -2190,7 +2190,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPL) {
 
     auto validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (!AreRequiredExtensionsEnabled()) {
@@ -2369,7 +2369,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferOOBGPLIndependentSets) {
 
     auto validation_features = GetValidationFeatures();
     ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &validation_features));
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
     }
     if (!AreRequiredExtensionsEnabled()) {

@@ -26,7 +26,6 @@ VkTestFramework::VkTestFramework() {}
 VkTestFramework::~VkTestFramework() {}
 
 // Define static elements
-bool VkTestFramework::m_devsim_layer = false;
 int VkTestFramework::m_phys_device_index = -1;
 ANativeWindow *VkTestFramework::window = nullptr;
 

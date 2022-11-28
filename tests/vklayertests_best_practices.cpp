@@ -76,7 +76,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 

@@ -174,22 +174,6 @@ bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_n
     return std::any_of(available_extensions_.begin(), available_extensions_.end(), IsTheQueriedExtension);
 }
 
-// Enable device profile as last layer on stack overriding devsim if there, or return if not available
-bool VkRenderFramework::OverrideDevsimForDeviceProfileLayer() {
-    if (VkTestFramework::m_devsim_layer) {
-        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-            assert(0 == strncmp(instance_layers_.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
-            instance_layers_.back() = "VK_LAYER_LUNARG_device_profile_api";
-        } else {
-            printf(
-                "             Did not find VK_LAYER_LUNARG_device_profile_api layer; make sure VK_LAYER_PATH is set correctly to "
-                "where the validation layers are built, the device profile layer should be in the same directory.\n");
-            return false;
-        }
-    }
-    return true;
-}
-
 // Return true if instance exists and extension name is in the list
 bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
     if (!instance_) return false;
@@ -237,8 +221,6 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
     return ext_found;
 }
 
-// Some tests may need to be skipped if the devsim layer is in use.
-bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
 VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -1485,7 +1467,7 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
         return false;
 
     if (m_device->IsEnabledExtension(VK_KHR_MAINTENANCE_1_EXTENSION_NAME)) {
-        // WORKAROUND: for DevSim not reporting extended enums, and possibly some drivers too
+        // WORKAROUND: for Profile not reporting extended enums, and possibly some drivers too
         const auto all_nontransfer_feature_flags =
             all_feature_flags ^ (VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT_KHR | VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT_KHR);
         const bool transfer_probably_supported_anyway = (features & all_nontransfer_feature_flags) > 0;

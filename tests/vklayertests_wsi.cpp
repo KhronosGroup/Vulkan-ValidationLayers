@@ -611,7 +611,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
     auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
     GetPhysicalDeviceProperties2(timeline_semaphore_props);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD and profiles the value might be zero'ed and cause false errors
         GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
@@ -658,7 +658,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     auto timeline_semaphore_props = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreProperties>();
     GetPhysicalDeviceProperties2(timeline_semaphore_props);
     if (timeline_semaphore_props.maxTimelineSemaphoreValueDifference == 0) {
-        // If using MockICD and devsim the value might be zero'ed and cause false errors
+        // If using MockICD and profiles the value might be zero'ed and cause false errors
         GTEST_SKIP() << "maxTimelineSemaphoreValueDifference is 0";
     }
 
@@ -697,7 +697,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, will throw a std::bad_alloc sometimes";
     }
     ASSERT_TRUE(InitSwapchain());
@@ -856,7 +856,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    if (IsPlatform(kMockICD) || DeviceSimulation()) {
+    if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD, will throw a std::bad_alloc sometimes";
     }
     ASSERT_TRUE(InitSwapchain());
