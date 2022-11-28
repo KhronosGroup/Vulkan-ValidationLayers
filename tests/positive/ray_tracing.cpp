@@ -60,9 +60,8 @@ TEST_F(VkPositiveLayerTest, RayTracingValidateGetAccelerationStructureBuildSizes
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetAccelerationStructureBuildSizesKHR"));
-    assert(vkGetAccelerationStructureBuildSizesKHR != nullptr);
+    const auto vkGetAccelerationStructureBuildSizesKHR =
+        GetInstanceProcAddr<PFN_vkGetAccelerationStructureBuildSizesKHR>("vkGetAccelerationStructureBuildSizesKHR");
 
     auto build_info = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -97,13 +96,10 @@ TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR =
-        (PFN_vkGetAccelerationStructureBuildSizesKHR)vk::GetInstanceProcAddr(instance(), "vkGetAccelerationStructureBuildSizesKHR");
-    assert(vkGetAccelerationStructureBuildSizesKHR);
-
-    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
-        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
-    assert(vkBuildAccelerationStructuresKHR);
+    const auto vkGetAccelerationStructureBuildSizesKHR =
+        GetInstanceProcAddr<PFN_vkGetAccelerationStructureBuildSizesKHR>("vkGetAccelerationStructureBuildSizesKHR");
+    const auto vkBuildAccelerationStructuresKHR =
+        GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     // Build Bottom Level Acceleration Structure
     const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};

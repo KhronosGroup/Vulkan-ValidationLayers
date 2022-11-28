@@ -194,8 +194,7 @@ TEST_F(VkLayerTest, RayTracingValidateBeginQueryQueryPoolType) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    PFN_vkCmdBeginQueryIndexedEXT vkCmdBeginQueryIndexedEXT =
-        (PFN_vkCmdBeginQueryIndexedEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginQueryIndexedEXT");
+    const auto vkCmdBeginQueryIndexedEXT = GetDeviceProcAddr<PFN_vkCmdBeginQueryIndexedEXT, false>("vkCmdBeginQueryIndexedEXT");
 
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_ci.queryCount = 1;
@@ -415,20 +414,13 @@ TEST_F(VkLayerTest, RayTracingTestCmdCopyMemoryToAccelerationStructureKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    assert(vkGetBufferDeviceAddressKHR != nullptr);
-    PFN_vkCmdCopyMemoryToAccelerationStructureKHR vkCmdCopyMemoryToAccelerationStructureKHR =
-        (PFN_vkCmdCopyMemoryToAccelerationStructureKHR)vk::GetInstanceProcAddr(instance(),
-                                                                               "vkCmdCopyMemoryToAccelerationStructureKHR");
-    assert(vkCmdCopyMemoryToAccelerationStructureKHR != nullptr);
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
-    assert(vkCreateAccelerationStructureKHR != nullptr);
-
-    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
-    assert(vkDestroyAccelerationStructureKHR != nullptr);
+    const auto vkCmdCopyMemoryToAccelerationStructureKHR =
+        GetInstanceProcAddr<PFN_vkCmdCopyMemoryToAccelerationStructureKHR>("vkCmdCopyMemoryToAccelerationStructureKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
+    const auto vkCreateAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCreateAccelerationStructureKHR>("vkCreateAccelerationStructureKHR");
+    const auto vkDestroyAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkDestroyAccelerationStructureKHR>("vkDestroyAccelerationStructureKHR");
 
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -485,9 +477,8 @@ TEST_F(VkLayerTest, RayTracingBuildAccelerationStructureKHR) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
-        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
-    assert(vkBuildAccelerationStructuresKHR);
+    const auto vkBuildAccelerationStructuresKHR =
+        GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
@@ -560,12 +551,10 @@ TEST_F(VkLayerTest, RayTracingTestWriteAccelerationStructureMemory) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkWriteAccelerationStructuresPropertiesKHR = reinterpret_cast<PFN_vkWriteAccelerationStructuresPropertiesKHR>(
-        vk::GetInstanceProcAddr(instance(), "vkWriteAccelerationStructuresPropertiesKHR"));
-    assert(vkWriteAccelerationStructuresPropertiesKHR);
-    PFN_vkBuildAccelerationStructuresKHR vkBuildAccelerationStructuresKHR =
-        (PFN_vkBuildAccelerationStructuresKHR)vk::GetInstanceProcAddr(instance(), "vkBuildAccelerationStructuresKHR");
-    assert(vkBuildAccelerationStructuresKHR);
+    const auto vkWriteAccelerationStructuresPropertiesKHR =
+        GetInstanceProcAddr<PFN_vkWriteAccelerationStructuresPropertiesKHR>("vkWriteAccelerationStructuresPropertiesKHR");
+    const auto vkBuildAccelerationStructuresKHR =
+        GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
@@ -628,9 +617,8 @@ TEST_F(VkLayerTest, RayTracingTestCopyMemoryToAsBuffer) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCopyMemoryToAccelerationStructureKHR = reinterpret_cast<PFN_vkCopyMemoryToAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkCopyMemoryToAccelerationStructureKHR"));
-    assert(vkCopyMemoryToAccelerationStructureKHR != nullptr);
+    const auto vkCopyMemoryToAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCopyMemoryToAccelerationStructureKHR>("vkCopyMemoryToAccelerationStructureKHR");
 
     VkBufferObj buffer;
     buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
@@ -682,9 +670,10 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHR) {
         GTEST_SKIP() << "Both of the required features rayQuery and rayTracing are not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
-    assert(vkCreateAccelerationStructureKHR != nullptr);
+
+    const auto vkCreateAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCreateAccelerationStructureKHR>("vkCreateAccelerationStructureKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
 
     VkAccelerationStructureKHR as;
     VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
@@ -699,8 +688,6 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHR) {
     as_create_info.size = 0;
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -778,12 +765,9 @@ TEST_F(VkLayerTest, RayTracingValidateCreateAccelerationStructureKHRReplayFeatur
     acc_struct_features.accelerationStructureCaptureReplay = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
-    assert(vkCreateAccelerationStructureKHR != nullptr);
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-    assert(vkGetBufferDeviceAddressKHR != nullptr);
+    const auto vkCreateAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCreateAccelerationStructureKHR>("vkCreateAccelerationStructureKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
 
     auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -841,21 +825,15 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(properties2);
 
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysKHR");
-    ASSERT_TRUE(vkCmdTraceRaysKHR != nullptr);
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    const auto vkCmdTraceRaysKHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysKHR>("vkCmdTraceRaysKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer};
-    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+    VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(device(), &device_address_info);
 
     VkStridedDeviceAddressRegionKHR stridebufregion = {};
     stridebufregion.deviceAddress = device_address;
@@ -945,20 +923,12 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysIndirectKHR) {
     ASSERT_VK_SUCCESS(err);
     vk::BindBufferMemory(device(), buffer, mem, 0);
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
-
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(properties2);
 
-    PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR =
-        (PFN_vkCmdTraceRaysIndirectKHR)vk::GetInstanceProcAddr(instance(), "vkCmdTraceRaysIndirectKHR");
-    ASSERT_TRUE(vkCmdTraceRaysIndirectKHR != nullptr);
-
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    const auto vkCmdTraceRaysIndirectKHR = GetInstanceProcAddr<PFN_vkCmdTraceRaysIndirectKHR>("vkCmdTraceRaysIndirectKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
 
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL, buffer};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
@@ -1030,10 +1000,11 @@ TEST_F(VkLayerTest, RayTracingValidateVkAccelerationStructureVersionInfoKHR) {
         GTEST_SKIP() << "rayTracing not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ray_tracing_features));
-    PFN_vkGetDeviceAccelerationStructureCompatibilityKHR vkGetDeviceAccelerationStructureCompatibilityKHR =
-        (PFN_vkGetDeviceAccelerationStructureCompatibilityKHR)vk::GetInstanceProcAddr(
-            instance(), "vkGetDeviceAccelerationStructureCompatibilityKHR");
-    ASSERT_TRUE(vkGetDeviceAccelerationStructureCompatibilityKHR != nullptr);
+
+    const auto vkGetDeviceAccelerationStructureCompatibilityKHR =
+        GetInstanceProcAddr<PFN_vkGetDeviceAccelerationStructureCompatibilityKHR>(
+            "vkGetDeviceAccelerationStructureCompatibilityKHR");
+
     VkAccelerationStructureVersionInfoKHR valid_version = LvlInitStruct<VkAccelerationStructureVersionInfoKHR>();
     VkAccelerationStructureCompatibilityKHR compatablity;
     uint8_t mode[] = {VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR, VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR};
@@ -1069,20 +1040,13 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR =
-        (PFN_vkCmdBuildAccelerationStructuresKHR)vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR");
-    assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
-
-    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
-
-    auto vkCmdBuildAccelerationStructuresIndirectKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>(
-        vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresIndirectKHR"));
-    assert(vkCmdBuildAccelerationStructuresKHR);
-
+    const auto vkCmdBuildAccelerationStructuresKHR =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresKHR>("vkCmdBuildAccelerationStructuresKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
+    const auto vkCmdBuildAccelerationStructuresIndirectKHR =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>("vkCmdBuildAccelerationStructuresIndirectKHR");
     auto vkBuildAccelerationStructuresKHR =
-        reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(vk::GetDeviceProcAddr(device(), "vkBuildAccelerationStructuresKHR"));
-    assert(vkBuildAccelerationStructuresKHR);
+        GetDeviceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -1120,10 +1084,9 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     valid_geometry_triangles.flags = 0;
     VkAccelerationStructureGeometryKHR *pGeometry = &valid_geometry_triangles;
 
-    VkAccelerationStructureBuildGeometryInfoKHR build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    const auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
+
     auto acc_struct_properties = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
@@ -1136,6 +1099,7 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     VkBufferDeviceAddressInfo device_address_info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
                                                      bot_level_as_scratch.handle()};
     VkDeviceAddress device_address = vkGetBufferDeviceAddressKHR(m_device->handle(), &device_address_info);
+    VkAccelerationStructureBuildGeometryInfoKHR build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
     build_info_khr.flags = 0;
     build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
@@ -1357,16 +1321,11 @@ TEST_F(VkLayerTest, RayTracingObjInUseCmdBuildAccelerationStructureKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
-        vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructuresKHR"));
-    assert(vkCmdBuildAccelerationStructuresKHR != nullptr);
-
-    auto vkGetBufferDeviceAddressKHR =
-        reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
-
-    auto vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkDestroyAccelerationStructureKHR"));
-    assert(vkDestroyAccelerationStructureKHR);
+    const auto vkCmdBuildAccelerationStructuresKHR =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresKHR>("vkCmdBuildAccelerationStructuresKHR");
+    const auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddressKHR>("vkGetBufferDeviceAddressKHR");
+    const auto vkDestroyAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkDestroyAccelerationStructureKHR>("vkDestroyAccelerationStructureKHR");
 
     auto vbo = std::make_unique<VkBufferObj>();
     auto ibo = std::make_unique<VkBufferObj>();
@@ -1404,12 +1363,9 @@ TEST_F(VkLayerTest, RayTracingObjInUseCmdBuildAccelerationStructureKHR) {
     valid_geometry_triangles.geometry.triangles.maxVertex = 1;
     valid_geometry_triangles.flags = 0;
 
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
     auto acc_struct_properties = LvlInitStruct<VkPhysicalDeviceAccelerationStructurePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&acc_struct_properties);
-    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    GetPhysicalDeviceProperties2(properties2);
 
     auto bot_level_as_scratch = std::make_unique<VkBufferObj>();
     VkBufferCreateInfo create_info = LvlInitStruct<VkBufferCreateInfo>();
@@ -1492,14 +1448,12 @@ TEST_F(VkLayerTest, RayTracingCmdCopyAccelerationStructureToMemoryKHR) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &acc_struct_features));
 
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
-    assert(vkCreateAccelerationStructureKHR != nullptr);
-
-    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR =
-        reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureKHR"));
-    assert(vkDestroyAccelerationStructureKHR != nullptr);
+    const auto vkCreateAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCreateAccelerationStructureKHR>("vkCreateAccelerationStructureKHR");
+    const auto vkDestroyAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkDestroyAccelerationStructureKHR>("vkDestroyAccelerationStructureKHR");
+    const auto vkCmdCopyAccelerationStructureToMemoryKHR =
+        GetDeviceProcAddr<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>("vkCmdCopyAccelerationStructureToMemoryKHR");
 
     constexpr VkDeviceSize buffer_size = 4096;
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
@@ -1517,11 +1471,6 @@ TEST_F(VkLayerTest, RayTracingCmdCopyAccelerationStructureToMemoryKHR) {
     as_create_info.size = 0;
     as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     as_create_info.deviceAddress = 0;
-
-    PFN_vkCmdCopyAccelerationStructureToMemoryKHR vkCmdCopyAccelerationStructureToMemoryKHR =
-        reinterpret_cast<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>(
-            vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureToMemoryKHR"));
-    assert(vkCmdCopyAccelerationStructureToMemoryKHR != nullptr);
 
     VkAccelerationStructureKHR as;
     vkCreateAccelerationStructureKHR(m_device->handle(), &as_create_info, nullptr, &as);
@@ -1863,9 +1812,8 @@ TEST_F(VkLayerTest, NVRayTracingValidateCreateAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureNV"));
-    assert(vkCreateAccelerationStructureNV != nullptr);
+    const auto vkCreateAccelerationStructureNV =
+        GetDeviceProcAddr<PFN_vkCreateAccelerationStructureNV>("vkCreateAccelerationStructureNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -1976,10 +1924,8 @@ TEST_F(VkLayerTest, NVRayTracingValidateBindAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
-        reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkBindAccelerationStructureMemoryNV"));
-    assert(vkBindAccelerationStructureMemoryNV != nullptr);
+    const auto vkBindAccelerationStructureMemoryNV =
+        GetDeviceProcAddr<PFN_vkBindAccelerationStructureMemoryNV>("vkBindAccelerationStructureMemoryNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -2165,10 +2111,8 @@ TEST_F(VkLayerTest, NVRayTracingValidateCmdBuildAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
-        reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
-    assert(vkCmdBuildAccelerationStructureNV != nullptr);
+    const auto vkCmdBuildAccelerationStructureNV =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -2296,12 +2240,10 @@ TEST_F(VkLayerTest, NVRayTracingObjInUseCmdBuildAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdBuildAccelerationStructureNV"));
-    assert(vkCmdBuildAccelerationStructureNV != nullptr);
-    auto vkDestroyAccelerationStructureNV = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkDestroyAccelerationStructureNV"));
-    assert(vkCmdBuildAccelerationStructureNV != nullptr);
+    const auto vkCmdBuildAccelerationStructureNV =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructureNV>("vkCmdBuildAccelerationStructureNV");
+    const auto vkDestroyAccelerationStructureNV =
+        GetDeviceProcAddr<PFN_vkDestroyAccelerationStructureNV>("vkDestroyAccelerationStructureNV");
 
     auto vbo = std::make_unique<VkBufferObj>();
     auto ibo = std::make_unique<VkBufferObj>();
@@ -2362,10 +2304,8 @@ TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
-        reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(
-            vk::GetDeviceProcAddr(m_device->handle(), "vkGetAccelerationStructureHandleNV"));
-    assert(vkGetAccelerationStructureHandleNV != nullptr);
+    const auto vkGetAccelerationStructureHandleNV =
+        GetDeviceProcAddr<PFN_vkGetAccelerationStructureHandleNV>("vkGetAccelerationStructureHandleNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -2408,9 +2348,8 @@ TEST_F(VkLayerTest, NVRayTracingValidateCmdCopyAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    PFN_vkCmdCopyAccelerationStructureNV vkCmdCopyAccelerationStructureNV = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureNV>(
-        vk::GetDeviceProcAddr(m_device->handle(), "vkCmdCopyAccelerationStructureNV"));
-    assert(vkCmdCopyAccelerationStructureNV != nullptr);
+    const auto vkCmdCopyAccelerationStructureNV =
+        GetDeviceProcAddr<PFN_vkCmdCopyAccelerationStructureNV>("vkCmdCopyAccelerationStructureNV");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
