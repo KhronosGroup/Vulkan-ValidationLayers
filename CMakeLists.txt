@@ -230,9 +230,11 @@ endif()
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
-option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
+
+find_package(robin_hood CONFIG)
+option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
 if (USE_ROBIN_HOOD_HASHING)
-    find_package(robin_hood REQUIRED CONFIG)
+    add_definitions(-DUSE_ROBIN_HOOD_HASHING)
 endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)
@@ -284,7 +286,6 @@ target_include_directories(VkLayer_utils PUBLIC
 
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
-    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
 endif()
 
 # uninstall target ---------------------------------------------------------------------------------------------------------------
