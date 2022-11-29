@@ -238,10 +238,6 @@ endif()
 option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
-option(USE_ROBIN_HOOD_HASHING "Use robin-hood-hashing" ON)
-if (USE_ROBIN_HOOD_HASHING)
-    find_package(robin_hood REQUIRED CONFIG)
-endif()
 
 if(BUILD_LAYERS OR BUILD_TESTS)
     find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
