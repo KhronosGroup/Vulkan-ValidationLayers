@@ -90,7 +90,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDraw-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDraw-None-04914";
         blend_enable                       = "VUID-vkCmdDraw-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDraw-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDraw-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDraw-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDraw-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDraw-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDraw-colorAttachmentCount-06180";
@@ -205,7 +206,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMultiEXT-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawMultiEXT-None-04914";
         blend_enable                       = "VUID-vkCmdDrawMultiEXT-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawMultiEXT-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawMultiEXT-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawMultiEXT-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawMultiEXT-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06180";
@@ -321,7 +323,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexed-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndexed-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndexed-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndexed-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndexed-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndexed-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndexed-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndexed-colorAttachmentCount-06180";
@@ -437,7 +440,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawMultiIndexedEXT-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawMultiIndexedEXT-None-04914";
         blend_enable                       = "VUID-vkCmdDrawMultiIndexedEXT-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawMultiIndexedEXT-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawMultiIndexedEXT-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawMultiIndexedEXT-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawMultiIndexedEXT-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawMultiIndexedEXT-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawMultiIndexedEXT-colorAttachmentCount-06180";
@@ -554,7 +558,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirect-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndirect-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndirect-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndirect-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndirect-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndirect-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndirect-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndirect-colorAttachmentCount-06180";
@@ -672,7 +677,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirect-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndexedIndirect-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndexedIndirect-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndexedIndirect-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndexedIndirect-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndexedIndirect-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndexedIndirect-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndexedIndirect-colorAttachmentCount-06180";
@@ -862,7 +868,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectCount-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndirectCount-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndirectCount-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndirectCount-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndirectCount-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndirectCount-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndirectCount-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndirectCount-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndirectCount-colorAttachmentCount-06180";
@@ -983,7 +990,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndexedIndirectCount-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndexedIndirectCount-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndexedIndirectCount-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndexedIndirectCount-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndexedIndirectCount-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndexedIndirectCount-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndexedIndirectCount-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndexedIndirectCount-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndexedIndirectCount-colorAttachmentCount-06180";
@@ -1229,7 +1237,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksNV-logicOp-04878";
         blend_enable                       = "VUID-vkCmdDrawMeshTasksNV-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawMeshTasksNV-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawMeshTasksNV-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawMeshTasksNV-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawMeshTasksNV-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawMeshTasksNV-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawMeshTasksNV-colorAttachmentCount-06180";
@@ -1339,7 +1348,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectNV-logicOp-04878";
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectNV-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawMeshTasksIndirectNV-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawMeshTasksIndirectNV-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawMeshTasksIndirectNV-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawMeshTasksIndirectNV-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawMeshTasksIndirectNV-colorAttachmentCount-06180";
@@ -1452,7 +1462,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         depth_bias_enable                  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-04877";
         logic_op                           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-logicOp-04878";
         blend_enable                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-colorAttachmentCount-06180";
@@ -1602,7 +1613,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         vertex_input_binding_stride        = "VUID-vkCmdDrawIndirectByteCountEXT-pStrides-04884";
         vertex_input                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-04914";
         blend_enable                       = "VUID-vkCmdDrawIndirectByteCountEXT-blendEnable-04727";
-        color_write_enable                 = "VUID-vkCmdDrawIndirectByteCountEXT-attachmentCount-06667";
+        dynamic_color_write_enable         = "VUID-vkCmdDrawIndirectByteCountEXT-None-07749";
+        dynamic_color_write_enable_count   = "VUID-vkCmdDrawIndirectByteCountEXT-attachmentCount-07750";
         dynamic_rendering_view_mask        = "VUID-vkCmdDrawIndirectByteCountEXT-viewMask-06178";
         dynamic_rendering_color_count      = "VUID-vkCmdDrawIndirectByteCountEXT-colorAttachmentCount-06179";
         dynamic_rendering_color_formats    = "VUID-vkCmdDrawIndirectByteCountEXT-colorAttachmentCount-06180";
