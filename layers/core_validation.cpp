@@ -437,7 +437,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE *pCB, const PIP
     skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET, cmd_type, vuid.primitive_restart_enable);
     skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET, cmd_type, vuid.vertex_input_binding_stride);
     skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, cmd_type, vuid.vertex_input);
-    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type, vuid.color_write_enable);
+    skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_color_write_enable);
     skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET, cmd_type,
                                     vuid.dynamic_tessellation_domain_origin);
     skip |= ValidateCBDynamicStatus(pCB, CB_DYNAMIC_DEPTH_CLAMP_ENABLE_EXT_SET, cmd_type, vuid.dynamic_depth_clamp_enable);
@@ -594,7 +594,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE *pCB, const PIP
             uint32_t blend_attachment_count = color_blend_state->attachmentCount;
             if (pCB->dynamicColorWriteEnableAttachmentCount < blend_attachment_count) {
                 skip |= LogError(
-                    pCB->commandBuffer(), vuid.color_write_enable,
+                    pCB->commandBuffer(), vuid.dynamic_color_write_enable_count,
                     "%s(): Currently bound pipeline was created with VkPipelineColorBlendStateCreateInfo::attachmentCount %" PRIu32
                     " and VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, but the number of attachments written by "
                     "vkCmdSetColorWriteEnableEXT() is %" PRIu32 ".",

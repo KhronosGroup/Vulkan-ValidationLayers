@@ -11644,13 +11644,13 @@ TEST_F(VkLayerTest, ValidateColorWriteDynamicStateNotSet) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-attachmentCount-06667");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07749");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     VkBool32 color_write_enable[] = {VK_TRUE, VK_FALSE};
     vkCmdSetColorWriteEnableEXT(m_commandBuffer->handle(), 1, color_write_enable);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-attachmentCount-06667");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-attachmentCount-07750");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
