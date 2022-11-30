@@ -93,6 +93,9 @@ struct InterfaceVariable {
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
+    // For storage images - list of < OpImageWrite : Texel component length >
+    std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
+
     bool is_patch{false};
     bool is_block_member{false};
     bool is_relaxed_precision{false};
@@ -105,7 +108,6 @@ struct InterfaceVariable {
     bool is_read_without_format{false};   // For storage images
     bool is_write_without_format{false};  // For storage images
     bool is_dref_operation{false};
-    // TODO: collect the name, too? Isn't required to be present.
 
     InterfaceVariable() : id(0), type_id(0), offset(0) {}
 
@@ -270,6 +272,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // Example: the OpLoad does the "access" but need to know if a OpImageRead uses that OpLoad later
         std::vector<uint32_t> image_read_load_ids;
         std::vector<uint32_t> image_write_load_ids;
+        layer_data::unordered_map<const Instruction *, uint32_t> image_write_load_id_map;  // <OpImageWrite, load id>
         std::vector<uint32_t> atomic_pointer_ids;
         std::vector<uint32_t> store_pointer_ids;
         std::vector<uint32_t> atomic_store_pointer_ids;
@@ -403,6 +406,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
     uint32_t GetBaseType(const Instruction *insn) const;
     uint32_t GetTypeId(uint32_t id) const;
+    uint32_t GetTexelComponentCount(const Instruction &insn) const;
 
     bool WritesToGlLayer() const {
         return std::any_of(static_data_.builtin_decoration_inst.begin(), static_data_.builtin_decoration_inst.end(),

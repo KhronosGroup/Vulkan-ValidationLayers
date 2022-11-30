@@ -187,6 +187,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
                     ++image_index;
                 }
             }
+            entry.write_without_formats_component_count_list = use.second.write_without_formats_component_count_list;
         }
     }
     return active_slots;

@@ -114,6 +114,8 @@ struct DrawDispatchVuid {
     const char* storage_image_write_without_format = kVUIDUndefined;
     const char* storage_texel_buffer_read_without_format = kVUIDUndefined;
     const char* storage_texel_buffer_write_without_format = kVUIDUndefined;
+    const char* storage_image_write_texel_count = kVUIDUndefined;
+    const char* storage_texel_buffer_write_texel_count = kVUIDUndefined;
     const char* depth_compare_sample = kVUIDUndefined;
     const char* depth_read_only = kVUIDUndefined;
     const char* stencil_read_only = kVUIDUndefined;
@@ -595,9 +597,8 @@ class CoreChecks : public ValidationStateTracker {
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
     bool ValidateSamplerDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                   const cvdescriptorset::DescriptorSet* descriptor_set,
-                                   const std::pair<const uint32_t, DescriptorRequirement>& binding_info, uint32_t index,
-                                   VkSampler sampler, bool is_immutable, const SAMPLER_STATE* sampler_state) const;
+                                   const cvdescriptorset::DescriptorSet* descriptor_set, const DescriptorBindingInfo& binding_info,
+                                   uint32_t index, VkSampler sampler, bool is_immutable, const SAMPLER_STATE* sampler_state) const;
 
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;

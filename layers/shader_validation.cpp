@@ -2796,9 +2796,7 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, con
             const VkFormat compatible_format = CompatibleSpirvImageFormat(image_format);
             if (compatible_format != VK_FORMAT_UNDEFINED) {
                 const uint32_t format_component_count = FormatComponentCount(compatible_format);
-                const Instruction *texel_def = module_state.FindDef(insn.Word(3));
-                const Instruction *texel_type = module_state.FindDef(texel_def->Word(1));
-                const uint32_t texel_component_count = (texel_type->Opcode() == spv::OpTypeVector) ? texel_type->Word(3) : 1;
+                const uint32_t texel_component_count = module_state.GetTexelComponentCount(insn);
                 if (texel_component_count < format_component_count) {
                     skip |= LogError(device, "VUID-RuntimeSpirv-OpImageWrite-07112",
                                      "%s: OpImageWrite Texel operand only contains %" PRIu32

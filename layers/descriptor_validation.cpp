@@ -1200,6 +1200,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
 
+        const VkFormat image_view_format = image_view_state->create_info.format;
         for (const auto *sampler_state : sampler_states) {
             if (!sampler_state || sampler_state->Destroyed()) {
                 continue;
@@ -1209,9 +1210,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if ((sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
                  sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
                 (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
-                if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 ||
-                    image_view_state->create_info.format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
-                    image_view_state->create_info.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
+                if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
+                    image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
                     auto set = context.descriptor_set->GetSet();
                     LogObjectList objlist(set);
                     objlist.add(sampler_state->sampler());
@@ -1223,7 +1223,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     context.caller, report_data->FormatHandle(set).c_str(),
                                     report_data->FormatHandle(sampler_state->sampler()).c_str(), binding, index,
                                     report_data->FormatHandle(image_view_state->image_view()).c_str(),
-                                    string_VkFormat(image_view_state->create_info.format));
+                                    string_VkFormat(image_view_format));
                 }
             }
             const VkFilter sampler_mag_filter = sampler_state->createInfo.magFilter;
@@ -1243,7 +1243,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     context.caller, report_data->FormatHandle(set).c_str(),
                                     report_data->FormatHandle(sampler_state->sampler()).c_str(),
                                     report_data->FormatHandle(image_view_state->image_view()).c_str(),
-                                    string_VkFormat(image_view_state->create_info.format));
+                                    string_VkFormat(image_view_format));
                 }
                 if (sampler_state->createInfo.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
                     auto set = context.descriptor_set->GetSet();
@@ -1257,7 +1257,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     context.caller, report_data->FormatHandle(set).c_str(),
                                     report_data->FormatHandle(sampler_state->sampler()).c_str(),
                                     report_data->FormatHandle(image_view_state->image_view()).c_str(),
-                                    string_VkFormat(image_view_state->create_info.format));
+                                    string_VkFormat(image_view_format));
                 }
             }
 
@@ -1413,6 +1413,22 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
             }
         }
+
+        for (const auto &pair : binding_info.second.write_without_formats_component_count_list) {
+            const uint32_t texel_component_count = pair.second;
+            const uint32_t format_component_count = FormatComponentCount(image_view_format);
+            if (texel_component_count < format_component_count) {
+                auto set = context.descriptor_set->GetSet();
+                LogObjectList objlist(set);
+                objlist.add(image_view);
+                return LogError(device, context.vuids.storage_image_write_texel_count,
+                                "%s: OpImageWrite Texel operand only contains %" PRIu32
+                                " components, but the VkImageView is mapped to a OpImage format of %s has %" PRIu32
+                                " components.\n%s",
+                                context.caller, texel_component_count, string_VkFormat(image_view_format), format_component_count,
+                                pair.first.Describe().c_str());
+            }
+        }
     }
     return false;
 }
@@ -1539,6 +1555,22 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 return true;
             }
         }
+
+        for (const auto &pair : binding_info.second.write_without_formats_component_count_list) {
+            const uint32_t texel_component_count = pair.second;
+            const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
+            if (texel_component_count < format_component_count) {
+                auto set = context.descriptor_set->GetSet();
+                LogObjectList objlist(set);
+                objlist.add(buffer_view);
+                return LogError(device, context.vuids.storage_texel_buffer_write_texel_count,
+                                "%s: OpImageWrite Texel operand only contains %" PRIu32
+                                " components, but the VkImageView is mapped to a OpImage format of %s has %" PRIu32
+                                " components.\n%s",
+                                context.caller, texel_component_count, string_VkFormat(buffer_view_format), format_component_count,
+                                pair.first.Describe().c_str());
+            }
+        }
     }
     return false;
 }
@@ -1616,8 +1648,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 // DescriptorClass::Image) Here is to validate for only sampler.
 bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatchVuid &vuids, const CMD_BUFFER_STATE *cb_node,
                                            const cvdescriptorset::DescriptorSet *descriptor_set,
-                                           const std::pair<const uint32_t, DescriptorRequirement> &binding_info, uint32_t index,
-                                           VkSampler sampler, bool is_immutable, const SAMPLER_STATE *sampler_state) const {
+                                           const DescriptorBindingInfo &binding_info, uint32_t index, VkSampler sampler,
+                                           bool is_immutable, const SAMPLER_STATE *sampler_state) const {
     // Verify Sampler still valid
     if (!sampler_state || sampler_state->Destroyed()) {
         auto set = descriptor_set->GetSet();

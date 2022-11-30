@@ -89,6 +89,8 @@ struct DescriptorRequirement {
     bool is_writable;
     // Copy from StageState.InterfaceVariable. It combines from plural shader stages. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
+    // For storage images - list of < OpImageWrite : Texel component length >
+    std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
     DescriptorRequirement() : reqs(0), is_writable(false) {}
 };
 
@@ -96,6 +98,7 @@ inline bool operator==(const DescriptorRequirement &a, const DescriptorRequireme
 
 inline bool operator<(const DescriptorRequirement &a, const DescriptorRequirement &b) noexcept { return a.reqs < b.reqs; }
 
+// < binding index (of descriptor set) : meta data >
 typedef std::map<uint32_t, DescriptorRequirement> BindingReqMap;
 
 struct PipelineStageState {
