@@ -449,6 +449,7 @@ SHADER_MODULE_STATE::StaticData::StaticData(const SHADER_MODULE_STATE& module_st
             }
             case spv::OpImageWrite: {
                 image_write_load_ids.emplace_back(insn.Word(1));
+                image_write_load_id_map.emplace(&insn, insn.Word(1));
                 break;
             }
             case spv::OpSampledImage: {
@@ -1167,17 +1168,19 @@ bool SHADER_MODULE_STATE::IsBuiltInWritten(const Instruction* builtin_insn, cons
     return found_write;
 }
 
-static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32_t> &operator_members,
-                                    const layer_data::unordered_map<uint32_t, uint32_t> &load_members,
-                                    const layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> &accesschain_members) {
+// Returns the id from load_members that matched the object_id, otherwise returns zero
+static uint32_t CheckObjectIDFromOpLoad(
+    uint32_t object_id, const std::vector<uint32_t>& operator_members,
+    const layer_data::unordered_map<uint32_t, uint32_t>& load_members,
+    const layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>>& accesschain_members) {
     for (auto load_id : operator_members) {
-        if (object_id == load_id) return true;
+        if (object_id == load_id) return load_id;
         auto load_it = load_members.find(load_id);
         if (load_it == load_members.end()) {
             continue;
         }
         if (load_it->second == object_id) {
-            return true;
+            return load_it->first;
         }
 
         auto accesschain_it = accesschain_members.find(load_it->second);
@@ -1185,10 +1188,10 @@ static bool CheckObjectIDFromOpLoad(uint32_t object_id, const std::vector<uint32
             continue;
         }
         if (accesschain_it->second.first == object_id) {
-            return true;
+            return accesschain_it->first;
         }
     }
-    return false;
+    return 0;
 }
 
 // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
@@ -1212,37 +1215,49 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
             auto dim = type->Word(3);
             if (dim != spv::DimSubpassData) {
                 // Sampled == 2 indicates used without a sampler (a storage image)
-                bool is_image_without_format = false;
-                if (type->Word(7) == 2) is_image_without_format = type->Word(8) == spv::ImageFormatUnknown;
+                const bool is_image_without_format = ((type->Word(7) == 2) && (type->Word(8) == spv::ImageFormatUnknown));
 
-                if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_write_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members)) {
+                const uint32_t image_write_load_id =
+                    CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_write_load_ids, static_data_.load_members,
+                                            static_data_.accesschain_members);
+                if (image_write_load_id != 0) {
                     interface_var.is_writable = true;
-                    if (is_image_without_format) interface_var.is_write_without_format = true;
+                    if (is_image_without_format) {
+                        interface_var.is_write_without_format = true;
+                        for (const auto& entry : static_data_.image_write_load_id_map) {
+                            if (image_write_load_id == entry.second) {
+                                const uint32_t texel_component_count = GetTexelComponentCount(*entry.first);
+                                interface_var.write_without_formats_component_count_list.emplace_back(*entry.first,
+                                                                                                      texel_component_count);
+                            }
+                        }
+                    }
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_read_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members)) {
+                                            static_data_.accesschain_members) != 0) {
                     interface_var.is_readable = true;
-                    if (is_image_without_format) interface_var.is_read_without_format = true;
+                    if (is_image_without_format) {
+                        interface_var.is_read_without_format = true;
+                    }
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members)) {
+                                            static_data_.accesschain_members) != 0) {
                     interface_var.is_sampler_sampled = true;
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_implicitLod_dref_proj_load_ids,
-                                            static_data_.load_members, static_data_.accesschain_members)) {
+                                            static_data_.load_members, static_data_.accesschain_members) != 0) {
                     interface_var.is_sampler_implicitLod_dref_proj = true;
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.sampler_bias_offset_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members)) {
+                                            static_data_.accesschain_members) != 0) {
                     interface_var.is_sampler_bias_offset = true;
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.atomic_pointer_ids,
-                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members)) {
+                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members) != 0) {
                     interface_var.is_atomic_operation = true;
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.image_dref_load_ids, static_data_.load_members,
-                                            static_data_.accesschain_members)) {
+                                            static_data_.accesschain_members) != 0) {
                     interface_var.is_dref_operation = true;
                 }
 
@@ -1296,15 +1311,15 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
 
                         // Need to check again for these properties in case not using a combined image sampler
                         if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_load_ids, static_data_.load_members,
-                                                    static_data_.accesschain_members)) {
+                                                    static_data_.accesschain_members) != 0) {
                             interface_var.is_sampler_sampled = true;
                         }
                         if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_implicitLod_dref_proj_load_ids,
-                                                    static_data_.load_members, static_data_.accesschain_members)) {
+                                                    static_data_.load_members, static_data_.accesschain_members) != 0) {
                             interface_var.is_sampler_implicitLod_dref_proj = true;
                         }
                         if (CheckObjectIDFromOpLoad(sampler_id, static_data_.sampler_bias_offset_load_ids,
-                                                    static_data_.load_members, static_data_.accesschain_members)) {
+                                                    static_data_.load_members, static_data_.accesschain_members) != 0) {
                             interface_var.is_sampler_bias_offset = true;
                         }
 
@@ -1345,7 +1360,7 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
                     }
                 }
                 if (CheckObjectIDFromOpLoad(interface_var.id, static_data_.atomic_store_pointer_ids,
-                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members)) {
+                                            static_data_.image_texel_pointer_members, static_data_.accesschain_members) != 0) {
                     interface_var.is_writable = true;
                     return;
                 }
@@ -1730,6 +1745,22 @@ uint32_t SHADER_MODULE_STATE::GetBaseType(const Instruction* insn) const {
 uint32_t SHADER_MODULE_STATE::GetTypeId(uint32_t id) const {
     const Instruction* type = FindDef(id);
     return type ? type->Word(type->TypeId()) : 0;
+}
+
+// Return zero if nothing is found
+uint32_t SHADER_MODULE_STATE::GetTexelComponentCount(const Instruction& insn) const {
+    uint32_t texel_component_count = 0;
+    switch (insn.Opcode()) {
+        case spv::OpImageWrite: {
+            const Instruction* texel_def = FindDef(insn.Word(3));
+            const Instruction* texel_type = FindDef(texel_def->Word(1));
+            texel_component_count = (texel_type->Opcode() == spv::OpTypeVector) ? texel_type->Word(3) : 1;
+            break;
+        }
+        default:
+            break;
+    }
+    return texel_component_count;
 }
 
 std::vector<uint32_t> FindEntrypointInterfaces(const Instruction& entrypoint) {

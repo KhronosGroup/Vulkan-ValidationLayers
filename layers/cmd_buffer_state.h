@@ -190,9 +190,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     std::shared_ptr<const CMD_BUFFER_STATE> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<CMD_BUFFER_STATE> shared_from_this() { return SharedFromThisImpl(this); }
 
+    using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;
     struct CmdDrawDispatchInfo {
         CMD_TYPE cmd_type;
-        std::vector<std::pair<const uint32_t, DescriptorRequirement>> binding_infos;
+        std::vector<DescriptorBindingInfo> binding_infos;
         VkFramebuffer framebuffer;
         std::shared_ptr<std::vector<SUBPASS_INFO>> subpasses;
         std::shared_ptr<std::vector<IMAGE_VIEW_STATE *>> attachments;
