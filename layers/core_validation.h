@@ -156,7 +156,6 @@ struct DrawDispatchVuid {
     const char* missing_mesh_shader_stages = kVUIDUndefined;
     const char* descriptor_buffer_bit_set = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set = kVUIDUndefined;
-    const char* descriptor_buffer_set_offset_dynamic = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing = kVUIDUndefined;
 };
 

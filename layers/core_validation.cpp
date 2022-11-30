@@ -1628,16 +1628,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT", function);
     }
 
-    if (pipe->descriptor_buffer_mode) {
-        if (!cb_node->descriptor_buffer_bindings.empty()) {
-            // TODO Issue 4832 - VUID 08116 Descriptors in bound descriptor buffers, specified via vkCmdSetDescriptorBufferOffsetsEXT, must be valid
-            // if they are statically used by the VkPipeline bound to the pipeline bind point used by this command and the bound
-            // VkPipeline was created with VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT
-            // result |= LogError(pipe->pipeline(), vuid.descriptor_buffer_set_offset_dynamic,
-            //                    "TODO: Layers need to have access to content of buffers. GPU AV assistance needed.");
-        }
-    }
-
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
         result |= ValidateDrawDynamicState(cb_node, pipe, cmd_type);
         result |= ValidatePipelineDrawtimeState(last_bound, cb_node, cmd_type, pipe);
