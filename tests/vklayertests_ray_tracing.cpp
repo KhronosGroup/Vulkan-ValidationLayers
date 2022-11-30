@@ -1487,6 +1487,92 @@ TEST_F(VkLayerTest, RayTracingCmdCopyAccelerationStructureToMemoryKHR) {
     vkDestroyAccelerationStructureKHR(device(), as, nullptr);
 }
 
+TEST_F(VkLayerTest, RayTracingUpdateAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Test for updating an acceleration structure without a srcAccelerationStructure");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (!InitFrameworkForRayTracingTest(this, true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+
+    auto buffer_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto acc_structure_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(&buffer_address_features);
+    auto features2 = GetPhysicalDeviceFeatures2(acc_structure_features);
+    if (acc_structure_features.accelerationStructure == VK_FALSE) {
+        GTEST_SKIP() << "accelerationStructure feature not supported";
+    }
+    if (buffer_address_features.bufferDeviceAddress == VK_FALSE) {
+        GTEST_SKIP() << "bufferDeviceAddress feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkCmdBuildAccelerationStructuresKHR =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresKHR>("vkCmdBuildAccelerationStructuresKHR");
+    auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddress>("vkGetBufferDeviceAddressKHR");
+
+    // Create bottom level acceleration structure buffer
+    VkBufferObj as_buffer;
+    as_buffer.init(*m_device, 4096, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR);
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
+    as_create_info.buffer = as_buffer.handle();
+    as_create_info.createFlags = 0;
+    as_create_info.offset = 0;
+    as_create_info.size = 0;
+    as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    as_create_info.deviceAddress = 0;
+    VkAccelerationStructurekhrObj bot_level_as(*m_device, as_create_info);
+
+    // Create scratch buffer
+    VkBufferCreateInfo scratch_buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    scratch_buffer_ci.size = 4096;
+    scratch_buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    const VkBufferObj scratch_buffer = bot_level_as.create_scratch_buffer(*m_device, &scratch_buffer_ci, true);
+
+    VkBufferDeviceAddressInfo scratch_buffer_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    scratch_buffer_device_address_info.buffer = scratch_buffer.handle();
+    VkDeviceAddress scratch_address = vkGetBufferDeviceAddressKHR(device(), &scratch_buffer_device_address_info);
+    ASSERT_TRUE(scratch_address != 0);
+
+    // Build acceleration structure
+    auto build_info_khr = LvlInitStruct<VkAccelerationStructureBuildGeometryInfoKHR>();
+    build_info_khr.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    build_info_khr.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    build_info_khr.srcAccelerationStructure = VK_NULL_HANDLE;
+    build_info_khr.dstAccelerationStructure = bot_level_as.handle();
+    build_info_khr.geometryCount = 0;
+    build_info_khr.pGeometries = nullptr;
+    build_info_khr.ppGeometries = nullptr;
+    build_info_khr.scratchData.deviceAddress = scratch_address;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.firstVertex = 0;
+    build_range_info.primitiveCount = 1;
+    build_range_info.primitiveOffset = 3;
+    build_range_info.transformOffset = 0;
+
+    VkAccelerationStructureBuildRangeInfoKHR *p_build_range_info = &build_range_info;
+
+    m_commandBuffer->begin();
+    // Build acceleration structure
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+
+    // Update acceleration structure, .srcAccelerationStructure == VK_NULL_HANDLE
+    build_info_khr.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630");
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+    m_errorMonitor->VerifyFound();
+
+    // Update acceleration structure, .srcAccelerationStructure is a valid handle
+    build_info_khr.srcAccelerationStructure = bot_level_as.handle();
+    vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &build_info_khr, &p_build_range_info);
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, NVRayTracingAccelerationStructureBindings) {
     TEST_DESCRIPTION("Use more bindings with a descriptorType of VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV than allowed");
 
