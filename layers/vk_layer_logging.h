@@ -57,17 +57,10 @@
 #include "vk_safe_struct.h"
 #include "xxhash.h"
 
-// Suppress unused warning on Linux
-#if defined(__GNUC__)
-#define DECORATE_UNUSED __attribute__((unused))
-#else
-#define DECORATE_UNUSED
-#endif
-
 #if defined __ANDROID__
 #include <android/log.h>
 #define LOGCONSOLE(...) ((void)__android_log_print(ANDROID_LOG_INFO, "VALIDATION", __VA_ARGS__))
-static const char DECORATE_UNUSED *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
+[[maybe_unused]] static const char *kForceDefaultCallbackKey = "debug.vvl.forcelayerlog";
 #else
 #define LOGCONSOLE(...)      \
     {                        \
@@ -76,9 +69,7 @@ static const char DECORATE_UNUSED *kForceDefaultCallbackKey = "debug.vvl.forcela
     }
 #endif
 
-static const char DECORATE_UNUSED *kVUIDUndefined = "VUID_Undefined";
-
-#undef DECORATE_UNUSED
+[[maybe_unused]] static const char *kVUIDUndefined = "VUID_Undefined";
 
 typedef enum DebugCallbackStatusBits {
     DEBUG_CALLBACK_UTILS = 0x00000001,     // This struct describes a VK_EXT_debug_utils callback

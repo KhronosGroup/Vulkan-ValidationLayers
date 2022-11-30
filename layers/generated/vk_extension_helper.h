@@ -43,24 +43,17 @@
 #include "vk_layer_data.h"
 #define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
 
-// Suppress unused warning on Linux
-#if defined(__GNUC__)
-#define DECORATE_UNUSED __attribute__((unused))
-#else
-#define DECORATE_UNUSED
-#endif
-
 enum ExtEnabled : unsigned char {
     kNotEnabled,
     kEnabledByCreateinfo,
     kEnabledByApiLevel,
 };
 
-static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled extension) {
+[[maybe_unused]] static bool IsExtEnabled(ExtEnabled extension) {
     return (extension != kNotEnabled);
 };
 
-static bool DECORATE_UNUSED IsExtEnabledByCreateinfo(ExtEnabled extension) {
+[[maybe_unused]] static bool IsExtEnabledByCreateinfo(ExtEnabled extension) {
     return (extension == kEnabledByCreateinfo);
 };
 #define VK_VERSION_1_2_NAME "VK_VERSION_1_2"

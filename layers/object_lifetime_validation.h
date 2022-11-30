@@ -20,21 +20,12 @@
  * Author: Tobin Ehlis <tobine@google.com>
  */
 
-// Suppress unused warning on Linux
-#if defined(__GNUC__)
-#define DECORATE_UNUSED __attribute__((unused))
-#else
-#define DECORATE_UNUSED
-#endif
-
 // clang-format off
-static const char DECORATE_UNUSED *kVUID_ObjectTracker_Info = "UNASSIGNED-ObjectTracker-Info";
-static const char DECORATE_UNUSED *kVUID_ObjectTracker_InternalError = "UNASSIGNED-ObjectTracker-InternalError";
-static const char DECORATE_UNUSED *kVUID_ObjectTracker_ObjectLeak =    "UNASSIGNED-ObjectTracker-ObjectLeak";
-static const char DECORATE_UNUSED *kVUID_ObjectTracker_UnknownObject = "UNASSIGNED-ObjectTracker-UnknownObject";
+[[maybe_unused]] static const char *kVUID_ObjectTracker_Info = "UNASSIGNED-ObjectTracker-Info";
+[[maybe_unused]] static const char *kVUID_ObjectTracker_InternalError = "UNASSIGNED-ObjectTracker-InternalError";
+[[maybe_unused]] static const char *kVUID_ObjectTracker_ObjectLeak =    "UNASSIGNED-ObjectTracker-ObjectLeak";
+[[maybe_unused]] static const char *kVUID_ObjectTracker_UnknownObject = "UNASSIGNED-ObjectTracker-UnknownObject";
 // clang-format on
-
-#undef DECORATE_UNUSED
 
 extern uint64_t object_track_index;
 

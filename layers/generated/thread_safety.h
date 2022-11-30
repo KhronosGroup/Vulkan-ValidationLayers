@@ -46,20 +46,11 @@ static_assert(std::is_same<uint64_t, DISTINCT_NONDISPATCHABLE_PHONY_HANDLE>::val
               "Mismatched non-dispatchable handle handle, expected uint64_t.");
 #endif
 
-// Suppress unused warning on Linux
-#if defined(__GNUC__)
-#define DECORATE_UNUSED __attribute__((unused))
-#else
-#define DECORATE_UNUSED
-#endif
-
 // clang-format off
-static const char DECORATE_UNUSED *kVUID_Threading_Info = "UNASSIGNED-Threading-Info";
-static const char DECORATE_UNUSED *kVUID_Threading_MultipleThreads = "UNASSIGNED-Threading-MultipleThreads";
-static const char DECORATE_UNUSED *kVUID_Threading_SingleThreadReuse = "UNASSIGNED-Threading-SingleThreadReuse";
+[[maybe_unused]] static const char *kVUID_Threading_Info = "UNASSIGNED-Threading-Info";
+[[maybe_unused]] static const char *kVUID_Threading_MultipleThreads = "UNASSIGNED-Threading-MultipleThreads";
+[[maybe_unused]] static const char *kVUID_Threading_SingleThreadReuse = "UNASSIGNED-Threading-SingleThreadReuse";
 // clang-format on
-
-#undef DECORATE_UNUSED
 
 class ObjectUseData
 {
