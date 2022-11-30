@@ -22,7 +22,7 @@ on:
             - master
 
 jobs:
-  macos:
+  macos-min-sdk:
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -56,9 +56,46 @@ jobs:
       - name: Generate build files and dependencies
         run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DBUILD_WERROR=ON -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
         env:
-          # Specify the minimum version of macOS on which the target binaries are to be deployed.
-          # https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
+          # Ensure we can build against 10.12 SDK: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
           MACOSX_DEPLOYMENT_TARGET: 10.12
+      - name: Build Vulkan-ValidationLayers
+        run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
+      - name: Install Vulkan-ValidationLayers
+        run: cmake --install build --prefix build/install --config ${{matrix.config}}
+
+  macos-latest:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+      - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-macos-latest
+        with:
+          path: |
+            external/glslang/build/install
+            external/Vulkan-Headers/build/install
+            external/SPIRV-Headers/build/install
+            external/SPIRV-Tools/build/install
+            external/robin-hood-hashing/build/install
+            external/googletest/build/install
+            external/Vulkan-Headers/registry
+            external/SPIRV-Headers/include
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Generate build files and dependencies
+        run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DBUILD_WERROR=ON -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
       - name: Build Vulkan-ValidationLayers
         run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
       - name: Install Vulkan-ValidationLayers
