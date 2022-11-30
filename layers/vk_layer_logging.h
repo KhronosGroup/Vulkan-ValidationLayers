@@ -93,6 +93,11 @@ struct LogObjectList {
         add(object);
     }
 
+    template <typename... HANDLE_T>
+    LogObjectList(HANDLE_T... objects) {
+        (..., add(objects));
+    }
+
     LogObjectList(){};
 };
 
