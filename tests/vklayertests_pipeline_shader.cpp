@@ -1741,12 +1741,15 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     invocations_limit /= y_size_limit;
     z_size_limit = (z_size_limit > invocations_limit) ? invocations_limit : z_size_limit;
 
-    char cs_text[128] = "";
-    sprintf(cs_text, "#version 450\nlayout(local_size_x = %d, local_size_y = %d, local_size_z = %d) in;\nvoid main() {}\n",
-            x_size_limit, y_size_limit, z_size_limit);
+    std::stringstream cs_text;
+    cs_text << "#version 450\n";
+    cs_text << "layout(local_size_x = " << x_size_limit << ", ";
+    cs_text << "local_size_y = " << y_size_limit << ",";
+    cs_text << "local_size_z = " << z_size_limit << ") in;\n";
+    cs_text << "void main() {}\n";
 
-    VkShaderObj cs_obj(this, cs_text, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cs_.reset(new VkShaderObj(this, cs_text, VK_SHADER_STAGE_COMPUTE_BIT));
+    VkShaderObj cs_obj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_.reset(new VkShaderObj(this, cs_text.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT));
     pipe.CreateComputePipeline();
 
     // Bind pipeline to command buffer
