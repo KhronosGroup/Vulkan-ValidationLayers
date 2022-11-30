@@ -10472,47 +10472,75 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
         for (uint32_t info_index = 0; info_index < infoCount; ++info_index) {
             auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[info_index].srcAccelerationStructure);
             auto dst_as_state = Get<ACCELERATION_STRUCTURE_STATE_KHR>(pInfos[info_index].dstAccelerationStructure);
-            skip |= ValidateMemoryIsBoundToBuffer(dst_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
-                                                  "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
+
+            if (dst_as_state != nullptr) {
+                skip |= ValidateMemoryIsBoundToBuffer(dst_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
+                                                      "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03707");
+            }
+
             if (pInfos[info_index].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
-                skip |= ValidateMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
-                                                      "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708");
-                if (src_as_state == nullptr || !src_as_state->built ||
-                    !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
-                    skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
+                if (pInfos[info_index].srcAccelerationStructure == VK_NULL_HANDLE) {
+                    LogObjectList objs(device, commandBuffer);
+                    skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630",
+                                     "vkCmdBuildAccelerationStructuresKHR(): pInfos[%" PRIu32
+                                     "].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR but pInfos[%" PRIu32
+                                     "].srcAccelerationStructure=VK_NULL_HANDLE.",
+                                     info_index, info_index);
+                } else if (src_as_state == nullptr || !src_as_state->built ||
+                           !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
+                    LogObjectList objs(device, commandBuffer);
+                    skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
                                      "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
                                      "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its srcAccelerationStructure member must "
                                      "have been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set in "
                                      "VkAccelerationStructureBuildGeometryInfoKHR::flags.");
                 }
-                if (pInfos[info_index].geometryCount != src_as_state->build_info_khr.geometryCount) {
-                    skip |= LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03758",
-                                     "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
-                                     "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
-                                     " its geometryCount member must have the same value which was specified when "
-                                     "srcAccelerationStructure was last built.");
-                }
-                if (pInfos[info_index].flags != src_as_state->build_info_khr.flags) {
-                    skip |=
-                        LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759",
-                                 "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
-                                 " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its flags member must have the same value which"
-                                 " was specified when srcAccelerationStructure was last built.");
-                }
-                if (pInfos[info_index].type != src_as_state->build_info_khr.type) {
-                    skip |=
-                        LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03760",
-                                 "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
-                                 " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its type member must have the same value which"
-                                 " was specified when srcAccelerationStructure was last built.");
+                if (src_as_state != nullptr) {
+                    if (!src_as_state->buffer_state) {
+                        LogObjectList objs(device, commandBuffer, src_as_state->Handle());
+                        skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708",
+                                         "vkCmdBuildAccelerationStructuresKHR(): pInfos[%" PRIu32
+                                         "].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR but the buffer associated with "
+                                         "pInfos[%" PRIu32 "].srcAccelerationStructure is not valid.",
+                                         info_index, info_index);
+                    } else {
+                        skip |=
+                            ValidateMemoryIsBoundToBuffer(src_as_state->buffer_state.get(), "vkCmdBuildAccelerationStructuresKHR",
+                                                          "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708");
+                    }
+                    if (pInfos[info_index].geometryCount != src_as_state->build_info_khr.geometryCount) {
+                        LogObjectList objs(device, commandBuffer);
+                        skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03758",
+                                         "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
+                                         "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
+                                         " its geometryCount member must have the same value which was specified when "
+                                         "srcAccelerationStructure was last built.");
+                    }
+                    if (pInfos[info_index].flags != src_as_state->build_info_khr.flags) {
+                        LogObjectList objs(device, commandBuffer);
+                        skip |= LogError(
+                            objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759",
+                            "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
+                            " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its flags member must have the same value which"
+                            " was specified when srcAccelerationStructure was last built.");
+                    }
+                    if (pInfos[info_index].type != src_as_state->build_info_khr.type) {
+                        LogObjectList objs(device, commandBuffer);
+                        skip |= LogError(
+                            objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03760",
+                            "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
+                            " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its type member must have the same value which"
+                            " was specified when srcAccelerationStructure was last built.");
+                    }
                 }
             }
             if (pInfos[info_index].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
                 if (!dst_as_state ||
                     (dst_as_state && dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
                      dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR)) {
+                    LogObjectList objs(device, commandBuffer);
                     skip |=
-                        LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03700",
+                        LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03700",
                                  "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its type member is "
                                  "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, its dstAccelerationStructure member must have "
                                  "been created with a value of VkAccelerationStructureCreateInfoKHR::type equal to either "
@@ -10523,8 +10551,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 if (!dst_as_state ||
                     (dst_as_state && dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                      dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR)) {
+                    LogObjectList objs(device, commandBuffer);
                     skip |=
-                        LogError(device, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03699",
+                        LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03699",
                                  "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its type member is "
                                  "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, its dstAccelerationStructure member must have been "
                                  "created with a value of VkAccelerationStructureCreateInfoKHR::type equal to either "
