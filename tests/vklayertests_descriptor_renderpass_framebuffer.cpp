@@ -12833,6 +12833,11 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     VkResult err;
@@ -13046,6 +13051,11 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&acceleration_structure_features);
 
     InitFrameworkAndRetrieveFeatures(features2);
+
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -13635,6 +13645,11 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties =
@@ -14027,6 +14042,11 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
 
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties =
@@ -14121,6 +14141,11 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -14351,6 +14376,11 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
