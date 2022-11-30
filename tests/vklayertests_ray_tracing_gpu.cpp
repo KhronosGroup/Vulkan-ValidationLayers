@@ -90,8 +90,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
 
-    VkBufferObj top_level_as_scratch;
-    top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
+    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -186,8 +185,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
 
-    VkBufferObj top_level_as_scratch;
-    top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
+    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -259,8 +257,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
         destroyed_bot_level_as_handle = destroyed_bot_level_as.opaque_handle();
 
-        VkBufferObj bot_level_as_scratch;
-        destroyed_bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_scratch);
+        const VkBufferObj bot_level_as_scratch = destroyed_bot_level_as.create_scratch_buffer(*m_device);
 
         VkCommandBufferObj command_buffer(m_device, &command_pool);
         command_buffer.begin();
@@ -304,8 +301,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
 
-    VkBufferObj top_level_as_scratch;
-    top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
+    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     VkCommandBufferObj command_buffer(m_device, &command_pool);
     command_buffer.begin();
@@ -392,8 +388,7 @@ TEST_F(VkGpuAssistedLayerTest, NVRayTracingGpuBuildAccelerationStructureValidati
 
     VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
 
-    VkBufferObj top_level_as_scratch;
-    top_level_as.create_scratch_buffer(*m_device, &top_level_as_scratch);
+    const VkBufferObj top_level_as_scratch = top_level_as.create_scratch_buffer(*m_device);
 
     struct ComputeOutput {
         uint32_t push_constant_value;

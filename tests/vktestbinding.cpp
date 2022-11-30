@@ -833,8 +833,8 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
     }
 }
-void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo,
-                                                  bool buffer_device_address) {
+vk_testing::Buffer AccelerationStructure::create_scratch_buffer(const Device &device, VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+                                                                bool buffer_device_address /*= false*/) const {
     VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
     VkBufferCreateInfo create_info = {};
     create_info.size = scratch_buffer_memory_requirements.size;
@@ -846,13 +846,15 @@ void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buf
         create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
+
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    void *pNext = nullptr;
     if (buffer_device_address) {
-        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
-    } else {
-        buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        pNext = &alloc_flags;
     }
+
+    return vk_testing::Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
 }
 
 void AccelerationStructureKHR::init(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory) {
@@ -862,8 +864,10 @@ void AccelerationStructureKHR::init(const Device &dev, const VkAccelerationStruc
     NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureKHR, dev, &info);
     info_ = info;
 }
-void AccelerationStructureKHR::create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo,
-                                                     bool buffer_device_address) {
+
+vk_testing::Buffer AccelerationStructureKHR::create_scratch_buffer(const Device &device,
+                                                                   const VkBufferCreateInfo *pCreateInfo /*= nullptr*/,
+                                                                   bool buffer_device_address /*= false*/) const {
     VkBufferCreateInfo create_info = {};
     create_info.size = 0;
     if (pCreateInfo) {
@@ -875,13 +879,15 @@ void AccelerationStructureKHR::create_scratch_buffer(const Device &dev, Buffer *
         create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
         if (buffer_device_address) create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     }
+
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    void *pNext = nullptr;
     if (buffer_device_address) {
-        auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-        buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
-    } else {
-        buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        pNext = &alloc_flags;
     }
+
+    return vk_testing::Buffer(device, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, pNext);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
