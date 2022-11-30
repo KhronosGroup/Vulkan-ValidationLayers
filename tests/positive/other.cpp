@@ -776,3 +776,39 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     debug_reporter.Destroy(test_instance);
     vk::DestroyInstance(test_instance, nullptr);
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
+    TEST_DESCRIPTION("Test vkExportMetalObjectsEXT");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME << " not supported";
+    }
+    auto metal_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+    metal_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT;
+    ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &metal_info));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(portability_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    auto vkExportMetalObjectsEXT =
+        reinterpret_cast<PFN_vkExportMetalObjectsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkExportMetalObjectsEXT"));
+    ASSERT_TRUE(vkExportMetalObjectsEXT != nullptr);
+
+    auto deviceInfo = LvlInitStruct<VkExportMetalDeviceInfoEXT>();
+    auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&deviceInfo);
+
+    vkExportMetalObjectsEXT(m_device->device(), &objectsInfo);
+
+    ASSERT_TRUE(deviceInfo.mtlDevice != nullptr);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
