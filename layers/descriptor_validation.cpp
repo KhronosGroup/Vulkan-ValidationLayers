@@ -3925,7 +3925,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureOpaqueCaptureDescriptorD
         }
 
         if (pInfo->accelerationStructureNV != VK_NULL_HANDLE) {
-            LogError(device, "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructureNV-08093",
+            LogError(device, "VUID-VkAccelerationStructureCaptureDescriptorDataInfoEXT-accelerationStructure-08093",
                      "VkAccelerationStructureCaptureDescriptorDataInfoEXT(): If accelerationStructure is not VK_NULL_HANDLE, "
                      "accelerationStructureNV must be VK_NULL_HANDLE. ");
         }
@@ -4296,7 +4296,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                              "determined by the value in slink:VkPhysicalDeviceDescriptorBufferPropertiesEXT",
                              dataSize, size);
         } else {
-            skip |= LogError(device, "VUID-vkGetDescriptorEXT-pDescriptorInfo-08125",
+            skip |= LogError(device, "VUID-vkGetDescriptorEXT-dataSize-08125",
                              "vkGetDescriptorEXT(): dataSize (%zu) must equal the size of a descriptor (%zu) of type VkDescriptorGetInfoEXT::type "
                              "determined by the value in VkPhysicalDeviceDescriptorBufferPropertiesEXT, or "
                              "VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT::combinedImageSamplerDensityMapDescriptorSize if "
