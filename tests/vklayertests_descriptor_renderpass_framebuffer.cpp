@@ -8958,86 +8958,6 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
         m_commandBuffer->EndRenderPass();
         m_commandBuffer->end();
     }
-
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
-
-    {  // Binds wrong input attachment image view
-        char const *fsSource =
-            "#version 450\n"
-            "layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;\n"
-            "void main() {\n"
-            "   vec4 color = subpassLoad(x);\n"
-            "}\n";
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        CreatePipelineHelper g_pipe(*this);
-        g_pipe.InitInfo();
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-        g_pipe.gp_ci_.renderPass = rp.handle();
-        g_pipe.InitState();
-        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
-
-        auto ivci = image_input.TargetViewCI(format);
-        ivci.image = image_input.handle();
-        vk_testing::ImageView wrong_view_input(*m_device, ivci);
-
-        g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, wrong_view_input.handle(), sampler.handle(),
-                                                         VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        g_pipe.descriptor_set_->UpdateDescriptorSets();
-
-        m_commandBuffer->begin();
-
-        image_input.SetLayout(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
-        m_renderPassBeginInfo.renderPass = rp.handle();
-        m_renderPassBeginInfo.framebuffer = fb.handle();
-
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0,
-                                  1, &g_pipe.descriptor_set_->set_, 0, nullptr);
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-input-attachment-descriptor-not-in-subpass");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02686");
-        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
-
-    vk::ResetCommandPool(device(), m_commandPool->handle(), 0);
-
-    {  // Doesn't bind input attachment
-        char const *fsSource =
-            "#version 450\n"
-            "void main() {}\n";
-        VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        CreatePipelineHelper g_pipe(*this);
-        g_pipe.InitInfo();
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.gp_ci_.renderPass = rp.handle();
-        g_pipe.InitState();
-        ASSERT_VK_SUCCESS(g_pipe.CreateGraphicsPipeline());
-
-        m_commandBuffer->begin();
-        m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
-        m_renderPassBeginInfo.renderPass = rp.handle();
-        m_renderPassBeginInfo.framebuffer = fb.handle();
-
-        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_);
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-02686");
-        vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
-        m_errorMonitor->VerifyFound();
-
-        m_commandBuffer->EndRenderPass();
-        m_commandBuffer->end();
-    }
 }
 
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) {
@@ -13313,7 +13233,7 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
             vk::DestroyBuffer(m_device->device(), as_buffer, NULL);
             vk::FreeMemory(m_device->device(), mem, NULL);
         }
-        
+
         {
             VkSampler sampler2;
             VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();

@@ -1659,67 +1659,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     ++i;
                 }
             }
-
-            // Check if all input attachments are bound
-            // VUID-vkCmdDraw-None-02686
-            if (!pipe->descriptor_buffer_mode)
-            {
-                const auto &subpass = cb_node->activeRenderPass->createInfo.pSubpasses[cb_node->activeSubpass];
-                std::unordered_map<VkImageView, uint32_t> subpass_input_views(subpass.inputAttachmentCount);
-                // Get all subpass input attachment indices
-                for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-                    auto index = subpass.pInputAttachments[i].attachment;
-                    if (index != VK_ATTACHMENT_UNUSED) {
-                        auto &view_states = *cb_node->active_attachments;
-                        if (view_states.size() > index && view_states[index] != nullptr) {
-                            VkImageView input_attachment_view = view_states[index]->image_view();
-                            subpass_input_views.insert(std::make_pair(input_attachment_view, i));
-                        }
-                    }
-                }
-
-                // If no subpasses, skip checking pipeline layout
-                if (!subpass_input_views.empty()) {
-                    // Remove input attachment views that are bound
-                    // Look into pipeline layout for input attachments
-                    const auto &set_layouts = pipe->PipelineLayoutState()->set_layouts;
-                    for (uint32_t set_index = 0; set_index < set_layouts.size() && set_index < last_bound.per_set.size();
-                         ++set_index) {
-                        const auto &set_layout = set_layouts[set_index];
-                        for (const auto &binding : set_layout->GetBindings()) {
-                            if (binding.descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                                // Layout binding is input so get descriptors at that set/binding
-                                const auto set = last_bound.per_set[set_index].bound_descriptor_set;
-                                if (!set) continue;
-                                const auto count = set->GetDescriptorCountFromBinding(binding.binding);
-                                for (uint32_t i = 0; i < count; ++i) {
-                                    const auto descriptor = set->GetDescriptorFromBinding(binding.binding, i);
-                                    if (!descriptor) continue;
-
-                                    const auto image_descriptor = static_cast<const cvdescriptorset::ImageDescriptor *>(descriptor);
-                                    VkImageView image_view = image_descriptor->GetImageView();
-                                    if (subpass_input_views.count(image_view) == 0) {
-                                        // Image view isn't used by subpass as an input attachment with this framebuffer
-                                        result |=
-                                            LogError(image_view, kVUID_Core_InputDescriptorInvalid,
-                                                     "Input attachment descriptor image view is not a subpass input attachment");
-                                    } else {
-                                        subpass_input_views.erase(image_view);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Report error for every unbound input attachment
-                for (auto view : subpass_input_views) {
-                    result |=
-                        LogError(view.first, vuid.subpass_input,
-                                 "%s(): Input attachment index %" PRIu32 " of subpass %" PRIu32 " is not bound by descriptor sets.",
-                                 function, view.second, cb_node->activeSubpass);
-                }
-            }
         }
     }
     // Now complete other state checks

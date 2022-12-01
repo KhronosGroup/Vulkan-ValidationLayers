@@ -86,8 +86,6 @@
 
 [[maybe_unused]] static const char *kVUID_Core_VkBindImageMemoryInfo_pNext_missing_VkBindImagePlaneMemoryInfo = "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo";
 
-[[maybe_unused]] static const char *kVUID_Core_InputDescriptorInvalid = "UNASSIGNED-input-attachment-descriptor-not-in-subpass";
-
 // clang-format on
 
 #undef DECORATE_UNUSED
