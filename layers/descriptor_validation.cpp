@@ -181,7 +181,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(cb_state.get(), CMD_BINDDESCRIPTORSETS);
+    skip |= ValidateCmd(*cb_state.get(), CMD_BINDDESCRIPTORSETS);
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
     uint32_t total_dynamic_descriptors = 0;
     std::string error_string = "";
@@ -734,23 +734,21 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 //  This includes validating that all descriptors in the given bindings are updated,
 //  that any update buffers are valid, and that any dynamic offsets are within the bounds of their buffers.
 // Return true if state is acceptable, or false and write an error message into error string
-bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const BindingReqMap &bindings,
-                                   const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
-                                   const std::vector<IMAGE_VIEW_STATE *> *attachments, const std::vector<SUBPASS_INFO> *subpasses,
+bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingReqMap &bindings,
+                                   const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE &cb_state,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
     layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
-    if (descriptor_set->GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
+    if (descriptor_set.GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
         checked_layouts.emplace();
     }
     bool result = false;
-    VkFramebuffer framebuffer = cb_node->activeFramebuffer ? cb_node->activeFramebuffer->framebuffer() : VK_NULL_HANDLE;
-    DescriptorContext context{caller,    vuids,       cb_node, descriptor_set,  attachments,
-                              subpasses, framebuffer, true,    dynamic_offsets, checked_layouts};
+    VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->framebuffer() : VK_NULL_HANDLE;
+    DescriptorContext context{caller, vuids, cb_state, descriptor_set, framebuffer, true, dynamic_offsets, checked_layouts};
 
     for (const auto &binding_pair : bindings) {
-        const auto *binding = descriptor_set->GetBinding(binding_pair.first);
+        const auto *binding = descriptor_set.GetBinding(binding_pair.first);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
-            auto set = descriptor_set->GetSet();
+            auto set = descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? vuids.descriptor_buffer_bit_set
                                                                                           : vuids.descriptor_valid;
             result |= LogError(set, vuid_text,
@@ -778,7 +776,7 @@ bool CoreChecks::ValidateDescriptors(const DescriptorContext &context, const Des
         const auto &descriptor = binding.descriptors[index];
 
         if (!binding.updated[index]) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                           : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
@@ -831,7 +829,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     auto buffer = descriptor.GetBuffer();
     auto buffer_node = descriptor.GetBufferState();
     if ((!buffer_node && !enabled_features.robustness2_features.nullDescriptor) || (buffer_node && buffer_node->Destroyed())) {
-        auto set = context.descriptor_set->GetSet();
+        auto set = context.descriptor_set.GetSet();
         auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                       : context.vuids.descriptor_valid;
         return LogError(set, vuid_text,
@@ -843,7 +841,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     if (buffer) {
         if (buffer_node /* && !buffer_node->sparse*/) {
             for (const auto &binding : buffer_node->GetInvalidMemory()) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -855,12 +853,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
-            if (ValidateProtectedBuffer(context.cb_node, buffer_node, context.caller, context.vuids.unprotected_command_buffer,
+            if (ValidateProtectedBuffer(context.cb_state, buffer_node, context.caller, context.vuids.unprotected_command_buffer,
                                         "Buffer is in a descriptorSet")) {
                 return true;
             }
             if (binding_info.second.is_writable &&
-                ValidateUnprotectedBuffer(context.cb_node, buffer_node, context.caller, context.vuids.protected_command_buffer,
+                ValidateUnprotectedBuffer(context.cb_state, buffer_node, context.caller, context.vuids.protected_command_buffer,
                                           "Buffer is in a descriptorSet")) {
                 return true;
             }
@@ -883,7 +881,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         if (binding_info.second.samplers_used_by_image.size() > index) {
             for (const auto &desc_index : binding_info.second.samplers_used_by_image[index]) {
                 const auto *desc =
-                    context.descriptor_set->GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
+                    context.descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
                 // TODO: This check _shouldn't_ be necessary due to the checks made in FindVariableDescriptorType in
                 //       shader_validation.cpp. However, without this check some traces still crash.
                 if (desc && (desc->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler)) {
@@ -899,7 +897,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
 
-        auto set = context.descriptor_set->GetSet();
+        auto set = context.descriptor_set.GetSet();
         auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                       : context.vuids.descriptor_valid;
         return LogError(set, vuid_text,
@@ -914,7 +912,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
             if (~reqs & (1 << image_view_ci.viewType)) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -928,7 +926,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
             if (!(reqs & image_view_state->descriptor_format_bits)) {
                 // bad component type
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -958,10 +956,10 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
             if (!already_validated) {
                 bool hit_error = false;
-                VerifyImageLayout(*context.cb_node, *image_view_state, image_layout, context.caller,
+                VerifyImageLayout(context.cb_state, *image_view_state, image_layout, context.caller,
                                   "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
                 if (hit_error) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                          ? context.vuids.descriptor_buffer_bit_set
                                          : context.vuids.descriptor_valid;
@@ -979,7 +977,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         // Verify Sample counts
         if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                           : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
@@ -989,7 +987,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             string_VkSampleCountFlagBits(image_view_state->samples));
         }
         if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                           : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
@@ -1001,7 +999,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         // Verify VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT
         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) &&
             !(image_view_state->format_features & VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT)) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             LogObjectList objlist(set);
             objlist.add(image_view);
             return LogError(objlist, context.vuids.imageview_atomic,
@@ -1020,7 +1018,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
                     !(format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT)) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     return LogError(objlist, context.vuids.storage_image_read_without_format,
@@ -1034,7 +1032,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
                     !(format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT)) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     return LogError(objlist, context.vuids.storage_image_write_without_format,
@@ -1048,7 +1046,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
 
             if ((reqs & DESCRIPTOR_REQ_IMAGE_DREF) && !(format_features & VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT)) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 LogObjectList objlist(set);
                 objlist.add(image_view);
                 return LogError(objlist, context.vuids.depth_compare_sample,
@@ -1062,11 +1060,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         // Verify if attachments are used in DescriptorSet
-        if (context.attachments && context.attachments->size() > 0 && context.subpasses &&
-            (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
-            for (uint32_t att_index = 0; att_index < context.attachments->size(); ++att_index) {
-                const auto &view_state = (*context.attachments)[att_index];
-                const SUBPASS_INFO &subpass = (*context.subpasses)[att_index];
+        const std::vector<IMAGE_VIEW_STATE *> *attachments = context.cb_state.active_attachments.get();
+        const std::vector<SUBPASS_INFO> *subpasses = context.cb_state.active_subpasses.get();
+        if (attachments && attachments->size() > 0 && subpasses && (descriptor_type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+            for (uint32_t att_index = 0; att_index < attachments->size(); ++att_index) {
+                const auto &view_state = (*attachments)[att_index];
+                const SUBPASS_INFO &subpass = (*subpasses)[att_index];
                 if (!view_state || view_state->Destroyed()) {
                     continue;
                 }
@@ -1079,15 +1078,15 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 bool descriptor_readable = false;
                 bool descriptor_writable = false;
                 uint32_t set_index = std::numeric_limits<uint32_t>::max();
-                for (uint32_t i = 0; i < context.cb_node->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set.size(); ++i) {
-                    const auto &set = context.cb_node->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set[i];
-                    if (set.bound_descriptor_set.get() == context.descriptor_set) {
+                for (uint32_t i = 0; i < context.cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set.size(); ++i) {
+                    const auto &set = context.cb_state.lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].per_set[i];
+                    if (set.bound_descriptor_set.get() == &(context.descriptor_set)) {
                         set_index = i;
                         break;
                     }
                 }
                 assert(set_index != std::numeric_limits<uint32_t>::max());
-                const auto pipeline = context.cb_node->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+                const auto pipeline = context.cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 for (const auto &stage : pipeline->stage_state) {
                     for (const auto &descriptor : stage.descriptor_uses) {
                         if (descriptor.first.set == set_index && descriptor.first.binding == binding) {
@@ -1105,7 +1104,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     !layout_read_only;
                 if (write_attachment && descriptor_readable) {
                     if (same_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1116,7 +1115,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         report_data->FormatHandle(image_view).c_str(), binding, index,
                                         report_data->FormatHandle(context.framebuffer).c_str(), att_index);
                     } else if (overlapping_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1133,7 +1132,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
                 if (read_attachment && descriptor_writable) {
                     if (same_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1144,7 +1143,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             context.caller, report_data->FormatHandle(set).c_str(), report_data->FormatHandle(image_view).c_str(),
                             binding, index, report_data->FormatHandle(context.framebuffer).c_str(), att_index);
                     } else if (overlapping_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1161,7 +1160,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
                 if (descriptor_writable && !layout_read_only) {
                     if (same_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1172,7 +1171,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                         report_data->FormatHandle(image_view).c_str(), binding, index,
                                         report_data->FormatHandle(context.framebuffer).c_str(), att_index);
                     } else if (overlapping_view) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(image_view);
                         objlist.add(context.framebuffer);
@@ -1188,12 +1187,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
             }
             if (enabled_features.core11.protectedMemory == VK_TRUE) {
-                if (ValidateProtectedImage(context.cb_node, image_view_state->image_state.get(), context.caller,
+                if (ValidateProtectedImage(context.cb_state, image_view_state->image_state.get(), context.caller,
                                            context.vuids.unprotected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
                 }
                 if (binding_info.second.is_writable &&
-                    ValidateUnprotectedImage(context.cb_node, image_view_state->image_state.get(), context.caller,
+                    ValidateUnprotectedImage(context.cb_state, image_view_state->image_state.get(), context.caller,
                                              context.vuids.protected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
                 }
@@ -1212,7 +1211,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
                 if (image_view_format == VK_FORMAT_B4G4R4A4_UNORM_PACK16 || image_view_format == VK_FORMAT_B5G6R5_UNORM_PACK16 ||
                     image_view_format == VK_FORMAT_B5G5R5A1_UNORM_PACK16) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(sampler_state->sampler());
                     objlist.add(image_view_state->image_view());
@@ -1232,7 +1231,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if ((sampler_compare_enable == VK_FALSE) &&
                 !(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
                 if (sampler_mag_filter == VK_FILTER_LINEAR || sampler_min_filter == VK_FILTER_LINEAR) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(sampler_state->sampler());
                     objlist.add(image_view_state->image_view());
@@ -1246,7 +1245,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     string_VkFormat(image_view_format));
                 }
                 if (sampler_state->createInfo.mipmapMode == VK_SAMPLER_MIPMAP_MODE_LINEAR) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(sampler_state->sampler());
                     objlist.add(image_view_state->image_view());
@@ -1263,7 +1262,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
             if (sampler_mag_filter == VK_FILTER_CUBIC_EXT || sampler_min_filter == VK_FILTER_CUBIC_EXT) {
                 if (!(image_view_state->format_features & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(sampler_state->sampler());
                     objlist.add(image_view_state->image_view());
@@ -1284,7 +1283,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         (reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MIN ||
                          reduction_mode_info->reductionMode == VK_SAMPLER_REDUCTION_MODE_MAX) &&
                         !image_view_state->filter_cubic_props.filterCubicMinmax) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(sampler_state->sampler());
                         objlist.add(image_view_state->image_view());
@@ -1298,7 +1297,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     }
 
                     if (!image_view_state->filter_cubic_props.filterCubic) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(sampler_state->sampler());
                         objlist.add(image_view_state->image_view());
@@ -1315,7 +1314,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     if (image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_3D ||
                         image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE ||
                         image_view_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-                        auto set = context.descriptor_set->GetSet();
+                        auto set = context.descriptor_set.GetSet();
                         LogObjectList objlist(set);
                         objlist.add(sampler_state->sampler());
                         objlist.add(image_view_state->image_view());
@@ -1345,7 +1344,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                         : (sampler_state->createInfo.addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE)
                               ? sampler_state->createInfo.addressModeV
                               : sampler_state->createInfo.addressModeW;
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 LogObjectList objlist(set);
                 objlist.add(sampler_state->sampler());
                 objlist.add(image_state->image());
@@ -1370,7 +1369,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_1D_ARRAY ||
                     image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY ||
                     image_view_ci.viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     objlist.add(sampler_state->sampler());
@@ -1385,7 +1384,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions with ImplicitLod, Dref or Proj in their name
                 if (reqs & DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     objlist.add(sampler_state->sampler());
@@ -1400,7 +1399,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 // sampler must not be used with any of the SPIR-V OpImageSample* or OpImageSparseSample*
                 // instructions that includes a LOD bias or any offset values
                 if (reqs & DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(image_view);
                     objlist.add(sampler_state->sampler());
@@ -1418,7 +1417,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(image_view_format);
             if (texel_component_count < format_component_count) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 LogObjectList objlist(set);
                 objlist.add(image_view);
                 return LogError(device, context.vuids.storage_image_write_texel_count,
@@ -1437,9 +1436,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                                     VkDescriptorType descriptor_type, const cvdescriptorset::ImageSamplerDescriptor &descriptor) const {
     bool skip = ValidateDescriptor(context, binding_info, index, descriptor_type, static_cast<const cvdescriptorset::ImageDescriptor &>(descriptor));
     if (!skip) {
-        skip =
-            ValidateSamplerDescriptor(context.caller, context.vuids, context.cb_node, context.descriptor_set, binding_info, index,
-                                      descriptor.GetSampler(), descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
+        skip = ValidateSamplerDescriptor(context, context.descriptor_set, binding_info, index, descriptor.GetSampler(),
+                                         descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
     }
     return skip;
 }
@@ -1452,7 +1450,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
     const auto reqs = binding_info.second.reqs;
     if ((!buffer_view_state && !enabled_features.robustness2_features.nullDescriptor) ||
         (buffer_view_state && buffer_view_state->Destroyed())) {
-        auto set = context.descriptor_set->GetSet();
+        auto set = context.descriptor_set.GetSet();
         auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                       : context.vuids.descriptor_valid;
         return LogError(set, vuid_text,
@@ -1466,7 +1464,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         const auto *buffer_state = buffer_view_state->buffer_state.get();
         const VkFormat buffer_view_format = buffer_view_state->create_info.format;
         if (buffer_state->Destroyed()) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                           : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
@@ -1479,7 +1477,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
         if (!(reqs & format_bits)) {
             // bad component type
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
                                                                                           : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
@@ -1490,12 +1488,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         const VkFormatFeatureFlags2KHR buf_format_features = buffer_view_state->buf_format_features;
-        const VkDescriptorType descriptor_type = context.descriptor_set->GetBinding(binding)->type;
+        const VkDescriptorType descriptor_type = context.descriptor_set.GetBinding(binding)->type;
 
         // Verify VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT
         if ((reqs & DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION) && (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) &&
             !(buf_format_features & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT)) {
-            auto set = context.descriptor_set->GetSet();
+            auto set = context.descriptor_set.GetSet();
             LogObjectList objlist(set);
             objlist.add(buffer_view);
             return LogError(objlist, "UNASSIGNED-None-MismatchAtomicBufferFeature",
@@ -1514,7 +1512,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT) &&
                     !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(buffer_view);
                     return LogError(objlist, context.vuids.storage_texel_buffer_read_without_format,
@@ -1529,7 +1527,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 
                 if ((reqs & DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT) &&
                     !(buf_format_features & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT_KHR)) {
-                    auto set = context.descriptor_set->GetSet();
+                    auto set = context.descriptor_set.GetSet();
                     LogObjectList objlist(set);
                     objlist.add(buffer_view);
                     return LogError(objlist, context.vuids.storage_texel_buffer_write_without_format,
@@ -1545,12 +1543,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
-            if (ValidateProtectedBuffer(context.cb_node, buffer_view_state->buffer_state.get(), context.caller,
+            if (ValidateProtectedBuffer(context.cb_state, buffer_view_state->buffer_state.get(), context.caller,
                                         context.vuids.unprotected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;
             }
             if (binding_info.second.is_writable &&
-                ValidateUnprotectedBuffer(context.cb_node, buffer_view_state->buffer_state.get(), context.caller,
+                ValidateUnprotectedBuffer(context.cb_state, buffer_view_state->buffer_state.get(), context.caller,
                                           context.vuids.protected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;
             }
@@ -1560,7 +1558,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             const uint32_t texel_component_count = pair.second;
             const uint32_t format_component_count = FormatComponentCount(buffer_view_format);
             if (texel_component_count < format_component_count) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 LogObjectList objlist(set);
                 objlist.add(buffer_view);
                 return LogError(device, context.vuids.storage_texel_buffer_write_texel_count,
@@ -1584,7 +1582,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         auto acc_node = descriptor.GetAccelerationStructureStateKHR();
         if (!acc_node || acc_node->Destroyed()) {
             if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -1597,7 +1595,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         } else {
             for (const auto &mem_binding : acc_node->buffer_state->GetInvalidMemory()) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -1614,7 +1612,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         auto acc_node = descriptor.GetAccelerationStructureStateNV();
         if (!acc_node || acc_node->Destroyed()) {
             if (acc != VK_NULL_HANDLE || !enabled_features.robustness2_features.nullDescriptor) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -1627,7 +1625,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         } else {
             for (const auto &mem_binding : acc_node->GetInvalidMemory()) {
-                auto set = context.descriptor_set->GetSet();
+                auto set = context.descriptor_set.GetSet();
                 auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
                                      ? context.vuids.descriptor_buffer_bit_set
                                      : context.vuids.descriptor_valid;
@@ -1646,31 +1644,30 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
 // If the validation is related to both of image and sampler,
 // please leave it in (descriptor_class == DescriptorClass::ImageSampler || descriptor_class ==
 // DescriptorClass::Image) Here is to validate for only sampler.
-bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatchVuid &vuids, const CMD_BUFFER_STATE *cb_node,
-                                           const cvdescriptorset::DescriptorSet *descriptor_set,
+bool CoreChecks::ValidateSamplerDescriptor(const DescriptorContext &context, const cvdescriptorset::DescriptorSet &descriptor_set,
                                            const DescriptorBindingInfo &binding_info, uint32_t index, VkSampler sampler,
                                            bool is_immutable, const SAMPLER_STATE *sampler_state) const {
     // Verify Sampler still valid
     if (!sampler_state || sampler_state->Destroyed()) {
-        auto set = descriptor_set->GetSet();
-        auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? vuids.descriptor_buffer_bit_set
-                                                                                      : vuids.descriptor_valid;
+        auto set = descriptor_set.GetSet();
+        auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
+                                                                                      : context.vuids.descriptor_valid;
         return LogError(set, vuid_text,
                         "Descriptor set %s encountered the following validation error at %s time: Descriptor in "
                         "binding #%" PRIu32 " index %" PRIu32 " is using sampler %s that is invalid or has been destroyed.",
-                        report_data->FormatHandle(set).c_str(), caller, binding_info.first, index,
+                        report_data->FormatHandle(set).c_str(), context.caller, binding_info.first, index,
                         report_data->FormatHandle(sampler).c_str());
     } else {
         if (sampler_state->samplerConversion && !is_immutable) {
-            auto set = descriptor_set->GetSet();
-            auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? vuids.descriptor_buffer_bit_set
-                                                                                          : vuids.descriptor_valid;
+            auto set = descriptor_set.GetSet();
+            auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer ? context.vuids.descriptor_buffer_bit_set
+                                                                                          : context.vuids.descriptor_valid;
             return LogError(set, vuid_text,
                             "Descriptor set %s encountered the following validation error at %s time: sampler (%s) "
                             "in the descriptor set (%s) contains a YCBCR conversion (%s), then the sampler MUST "
                             "also exist as an immutable sampler.",
-                            report_data->FormatHandle(set).c_str(), caller, report_data->FormatHandle(sampler).c_str(),
-                            report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                            report_data->FormatHandle(set).c_str(), context.caller, report_data->FormatHandle(sampler).c_str(),
+                            report_data->FormatHandle(descriptor_set.GetSet()).c_str(),
                             report_data->FormatHandle(sampler_state->samplerConversion).c_str());
         }
     }
@@ -1679,8 +1676,8 @@ bool CoreChecks::ValidateSamplerDescriptor(const char *caller, const DrawDispatc
 
 bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const DescriptorBindingInfo &binding_info, uint32_t index,
                                     VkDescriptorType descriptor_type, const cvdescriptorset::SamplerDescriptor &descriptor) const {
-    return ValidateSamplerDescriptor(context.caller, context.vuids, context.cb_node, context.descriptor_set, binding_info, index,
-                                     descriptor.GetSampler(), descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
+    return ValidateSamplerDescriptor(context, context.descriptor_set, binding_info, index, descriptor.GetSampler(),
+                                     descriptor.IsImmutableSampler(), descriptor.GetSamplerState());
 }
 
 // Starting at offset descriptor of given binding, parse over update_count
