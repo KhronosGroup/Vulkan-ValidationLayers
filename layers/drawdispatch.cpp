@@ -61,7 +61,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDraw-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDraw-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDraw-flags-02696";
-        subpass_input                      = "VUID-vkCmdDraw-None-02686";
         imageview_atomic                   = "VUID-vkCmdDraw-None-02691";
         push_constants_set                 = "VUID-vkCmdDraw-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDraw-None-06537";
@@ -176,7 +175,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawMultiEXT-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawMultiEXT-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMultiEXT-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawMultiEXT-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMultiEXT-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawMultiEXT-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawMultiEXT-None-06537";
@@ -292,7 +290,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndexed-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndexed-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndexed-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndexed-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndexed-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndexed-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndexed-None-06537";
@@ -408,7 +405,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMultiIndexedEXT-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawMultiIndexedEXT-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMultiIndexedEXT-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawMultiIndexedEXT-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawMultiIndexedEXT-None-06537";
@@ -526,7 +522,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndirect-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndirect-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndirect-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndirect-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndirect-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndirect-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndirect-None-06537";
@@ -644,7 +639,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndexedIndirect-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndexedIndirect-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndexedIndirect-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndexedIndirect-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndexedIndirect-None-06537";
@@ -834,7 +828,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndirectCount-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndirectCount-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndirectCount-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndirectCount-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndirectCount-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndirectCount-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndirectCount-None-06537";
@@ -955,7 +948,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndexedIndirectCount-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndexedIndirectCount-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndexedIndirectCount-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndexedIndirectCount-None-06537";
@@ -1206,7 +1198,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         scissor_count                      = "VUID-vkCmdDrawMeshTasksNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksNV-viewportCount-03419";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksNV-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawMeshTasksNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksNV-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawMeshTasksNV-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawMeshTasksNV-None-06537";
@@ -1316,7 +1307,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-03419";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksIndirectNV-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawMeshTasksIndirectNV-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06537";
@@ -1429,7 +1419,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         scissor_count                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-scissorCount-03418";
         viewport_scissor_count             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-03419";
         corner_sampled_address_mode        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06537";
@@ -1574,7 +1563,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         viewport_scissor_count             = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419";
         primitive_topology                 = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-03420";
         corner_sampled_address_mode        = "VUID-vkCmdDrawIndirectByteCountEXT-flags-02696";
-        subpass_input                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-02686";
         imageview_atomic                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02691";
         push_constants_set                 = "VUID-vkCmdDrawIndirectByteCountEXT-maintenance4-06425";
         image_subresources_render_pass_write = "VUID-vkCmdDrawIndirectByteCountEXT-None-06537";
