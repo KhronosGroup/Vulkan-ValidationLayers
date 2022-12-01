@@ -776,3 +776,136 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     debug_reporter.Destroy(test_instance);
     vk::DestroyInstance(test_instance, nullptr);
 }
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+TEST_F(VkPositiveLayerTest, ExportMetalObjects) {
+    TEST_DESCRIPTION("Test vkExportMetalObjectsEXT");
+
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_METAL_OBJECTS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    if (!InstanceExtensionSupported(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME)) {
+        GTEST_SKIP() << VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME << " not supported";
+    }
+
+    // Initialize framework
+    {
+        auto queue_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        queue_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_COMMAND_QUEUE_BIT_EXT;
+
+        auto metal_info = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        metal_info.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_DEVICE_BIT_EXT;
+        metal_info.pNext = &queue_info;
+
+        ASSERT_NO_FATAL_FAILURE(InitFramework(nullptr, &metal_info));
+        if (!AreRequiredExtensionsEnabled()) {
+            GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+        }
+
+        auto portability_features = LvlInitStruct<VkPhysicalDevicePortabilitySubsetFeaturesKHR>();
+        auto features2 = GetPhysicalDeviceFeatures2(portability_features);
+
+        ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    }
+
+    auto vkExportMetalObjectsEXT =
+        reinterpret_cast<PFN_vkExportMetalObjectsEXT>(vk::GetDeviceProcAddr(m_device->device(), "vkExportMetalObjectsEXT"));
+    ASSERT_TRUE(vkExportMetalObjectsEXT != nullptr);
+
+    const VkDevice device = m_device->device();
+
+    // Get Metal Device and Metal Command Queue in 1 call
+    {
+        const VkQueue queue = m_device->m_queue;
+
+        auto queueInfo = LvlInitStruct<VkExportMetalCommandQueueInfoEXT>();
+        queueInfo.queue = queue;
+        auto deviceInfo = LvlInitStruct<VkExportMetalDeviceInfoEXT>(&queueInfo);
+        auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&deviceInfo);
+
+        // This tests both device, queue, and pNext chaining
+        vkExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(deviceInfo.mtlDevice != nullptr);
+        ASSERT_TRUE(queueInfo.mtlCommandQueue != nullptr);
+    }
+
+    // Get Metal Buffer
+    {
+        auto metalBufferCreateInfo = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        metalBufferCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT;
+
+        VkMemoryAllocateInfo mem_info = LvlInitStruct<VkMemoryAllocateInfo>();
+        mem_info.allocationSize = 1024;
+        mem_info.pNext = &metalBufferCreateInfo;
+
+        VkDeviceMemory memory;
+        const VkResult err = vk::AllocateMemory(device, &mem_info, NULL, &memory);
+        ASSERT_VK_SUCCESS(err);
+
+        auto bufferInfo = LvlInitStruct<VkExportMetalBufferInfoEXT>();
+        bufferInfo.memory = memory;
+        auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&bufferInfo);
+
+        vkExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(bufferInfo.mtlBuffer != nullptr);
+
+        vk::FreeMemory(device, memory, nullptr);
+    }
+
+    // Get Metal Texture and Metal IOSurfaceRef
+    {
+        auto metalSurfaceInfo = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        metalSurfaceInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT;
+        auto metalTextureCreateInfo = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>(&metalSurfaceInfo);
+        metalTextureCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT;
+
+        // Image contents don't matter
+        VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>(&metalTextureCreateInfo);
+        ici.imageType = VK_IMAGE_TYPE_2D;
+        ici.format = VK_FORMAT_B8G8R8A8_UNORM;
+        ici.extent = {32, 32, 1};
+        ici.mipLevels = 1;
+        ici.arrayLayers = 1;
+        ici.samples = VK_SAMPLE_COUNT_1_BIT;
+        ici.tiling = VK_IMAGE_TILING_LINEAR;
+        ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        VkImageObj image(m_device);
+        image.Init(ici);
+        ASSERT_TRUE(image.initialized());
+
+        auto surfaceInfo = LvlInitStruct<VkExportMetalIOSurfaceInfoEXT>();
+        surfaceInfo.image = image.handle();
+        auto textureInfo = LvlInitStruct<VkExportMetalTextureInfoEXT>(&surfaceInfo);
+        textureInfo.image = image.handle();
+        textureInfo.plane = VK_IMAGE_ASPECT_PLANE_0_BIT;  // Image is not multi-planar
+        auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&textureInfo);
+
+        // This tests both texture, surface, and pNext chaining
+        vkExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(textureInfo.mtlTexture != nullptr);
+        ASSERT_TRUE(surfaceInfo.ioSurface != nullptr);
+    }
+
+    // Get Metal Shared Event
+    {
+        auto metalEventCreateInfo = LvlInitStruct<VkExportMetalObjectCreateInfoEXT>();
+        metalEventCreateInfo.exportObjectType = VK_EXPORT_METAL_OBJECT_TYPE_METAL_SHARED_EVENT_BIT_EXT;
+
+        auto eventCreateInfo = LvlInitStruct<VkEventCreateInfo>(&metalEventCreateInfo);
+        VkEventObj event(*m_device, eventCreateInfo);
+        ASSERT_TRUE(event.initialized());
+
+        auto eventInfo = LvlInitStruct<VkExportMetalSharedEventInfoEXT>();
+        eventInfo.event = event.handle();
+        auto objectsInfo = LvlInitStruct<VkExportMetalObjectsInfoEXT>(&eventInfo);
+
+        vkExportMetalObjectsEXT(device, &objectsInfo);
+
+        ASSERT_TRUE(eventInfo.mtlSharedEvent != nullptr);
+    }
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
