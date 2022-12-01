@@ -1749,27 +1749,27 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
 bool CoreChecks::ValidateCmdDrawType(const CMD_BUFFER_STATE &cb_state, bool indexed, VkPipelineBindPoint bind_point,
                                      CMD_TYPE cmd_type) const {
     bool skip = false;
-    skip |= ValidateCmd(&cb_state, cmd_type);
-    skip |= ValidateCmdBufDrawState(&cb_state, cmd_type, indexed, bind_point);
-    skip |= ValidateCmdRayQueryState(&cb_state, cmd_type, bind_point);
+    skip |= ValidateCmd(cb_state, cmd_type);
+    skip |= ValidateCmdBufDrawState(cb_state, cmd_type, indexed, bind_point);
+    skip |= ValidateCmdRayQueryState(cb_state, cmd_type, bind_point);
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_node, uint32_t instanceCount, uint32_t firstInstance,
+bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint32_t instanceCount, uint32_t firstInstance,
                                          CMD_TYPE cmd_type) const {
     bool skip = false;
     const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const char *caller = CommandTypeString(cmd_type);
 
     // Verify maxMultiviewInstanceIndex
-    if (cb_node.activeRenderPass && cb_node.activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
+    if (cb_state.activeRenderPass && cb_state.activeRenderPass->renderPass() && enabled_features.multiview_features.multiview &&
         ((instanceCount + firstInstance) > phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex)) {
-        LogObjectList objlist(cb_node.Handle());
-        objlist.add(cb_node.activeRenderPass->Handle());
+        LogObjectList objlist(cb_state.Handle());
+        objlist.add(cb_state.activeRenderPass->Handle());
         skip |= LogError(objlist, vuid.max_multiview_instance_index,
                          "%s: renderpass %s multiview is enabled, and maxMultiviewInstanceIndex: %" PRIu32
                          ", but instanceCount: %" PRIu32 "and firstInstance: %" PRIu32 ".",
-                         caller, report_data->FormatHandle(cb_node.activeRenderPass->Handle()).c_str(),
+                         caller, report_data->FormatHandle(cb_state.activeRenderPass->Handle()).c_str(),
                          phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
     return skip;

@@ -284,9 +284,10 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE &secondary, const CMD_BUFFER_STATE *primary, const FRAMEBUFFER_STATE *)>>
         cmd_execute_commands_functions;
-    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, EventToStageMap *localEventToStageMap)>> eventUpdates;
-    std::vector<std::function<bool(CMD_BUFFER_STATE &cb, bool do_validate, VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                   QueryMap *localQueryToStateMap)>>
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, EventToStageMap *localEventToStageMap)>>
+        eventUpdates;
+    std::vector<std::function<bool(CMD_BUFFER_STATE &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                   uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
     layer_data::unordered_map<const cvdescriptorset::DescriptorSet *, cvdescriptorset::DescriptorSet::CachedValidation>
         descriptorset_cache;

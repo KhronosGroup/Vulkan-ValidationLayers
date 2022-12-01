@@ -482,9 +482,9 @@ class ValidationStateTracker : public ValidationObject {
         set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
     }
 
-    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& iv_state, VkImageLayout layout) {
+    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_state, const IMAGE_VIEW_STATE& iv_state, VkImageLayout layout) {
         if (set_image_view_initial_layout_callback) {
-            (*set_image_view_initial_layout_callback)(cb_node, iv_state, layout);
+            (*set_image_view_initial_layout_callback)(cb_state, iv_state, layout);
         }
     }
 

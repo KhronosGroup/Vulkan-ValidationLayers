@@ -246,7 +246,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const void* pNext, const char* api_name) const;
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo, const char* func_name) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
-    bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code) const;
+    bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_state, const char* action, const char* error_code) const;
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str) const;
     bool ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
@@ -254,16 +254,16 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkPipelineRenderingCreateInfo* rendering_struct, uint32_t pipe_index, int lib_index,
                                       const char* vuid) const;
     bool ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipelines, int pipe_index) const;
-    bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
+    bool ValidImageBufferQueue(const CMD_BUFFER_STATE& cb_state, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
                                uint32_t count, const uint32_t* indices) const;
     bool ValidateFenceForSubmit(const FENCE_STATE* pFence, const char* inflight_vuid, const char* retired_vuid,
                                 const char* func_name) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo& submit, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo2KHR& submit, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit, const Location& loc) const;
-    bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE* pNode, CBDynamicStatus status, CMD_TYPE cmd_type,
+    bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE& cb_state, CBDynamicStatus status, CMD_TYPE cmd_type,
                                  const char* msg_code) const;
-    bool ValidateDrawDynamicState(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
+    bool ValidateDrawDynamicState(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
@@ -287,19 +287,19 @@ class CoreChecks : public ValidationStateTracker {
                                          const char* error_code) const;
     bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code) const;
-    bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;
+    bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE& cb_state, const char* call_source) const;
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* err_code,
                                   const char* cmd_name, const char* queue_family_var_name) const;
     bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,
                                         const VkDeviceQueueCreateInfo* infos) const;
 
-    bool ValidateProtectedImage(const CMD_BUFFER_STATE* cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
                                 const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE* cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
                                   const char* vuid, const char* more_message = "") const;
-    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE* cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
                                  const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE* cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
                                    const char* vuid, const char* more_message = "") const;
 
     bool ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipe_state_vec, const uint32_t count,
@@ -369,9 +369,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges) const;
     bool ValidateMappedMemoryRangeDeviceLimits(const char* func_name, uint32_t mem_range_count,
                                                const VkMappedMemoryRange* mem_ranges) const;
-    bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE* pCB, const CMD_BUFFER_STATE* pSubCB) const;
-    bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE* pCB, VkCommandBuffer secondaryBuffer,
-                             const CMD_BUFFER_STATE* pSubCB, const char* caller) const;
+    bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE& cb_state, const CMD_BUFFER_STATE& sub_cb_state) const;
+    bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE& cb_state, VkCommandBuffer secondaryBuffer,
+                             const CMD_BUFFER_STATE& sub_cb_state, const char* caller) const;
     bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo) const;
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const char* caller_name) const;
@@ -380,7 +380,7 @@ class CoreChecks : public ValidationStateTracker {
                                   const char* semaphore_type_vuid) const;
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin, const char* func_name) const;
     bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo, const char* func_name) const;
-    bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
+    bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE& cb_state, char const* cmd_name, const char* error_code) const;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     bool ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer, CMD_TYPE cmd_type,
@@ -397,19 +397,17 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos, const char* api_name) const;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  const char* api_name) const;
-    static bool ValidateCopyQueryPoolResults(CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
+    static bool ValidateCopyQueryPoolResults(const CMD_BUFFER_STATE& cb_state, VkQueryPool queryPool, uint32_t firstQuery,
                                              uint32_t queryCount, uint32_t perfPass, VkQueryResultFlags flags,
                                              QueryMap* localQueryToStateMap);
-    static bool VerifyQueryIsReset(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
+    static bool VerifyQueryIsReset(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                    VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    static bool ValidatePerformanceQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
+    static bool ValidatePerformanceQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, const CMD_TYPE cmd_type,
                                          VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
-    bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, uint32_t index,
+    bool ValidateBeginQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, VkFlags flags, uint32_t index,
                             CMD_TYPE cmd, const ValidateBeginQueryVuids* vuids) const;
-    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, uint32_t index, CMD_TYPE cmd,
+    bool ValidateCmdEndQuery(const CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj, uint32_t index, CMD_TYPE cmd,
                              const ValidateEndQueryVuids* vuids) const;
-    bool ValidateCmdResetQuery(const CMD_BUFFER_STATE* cb_state, VkQueryPool queryPool, uint32_t firstQuery,
-                               uint32_t queryCount) const;
 
     const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawInstance(const CMD_BUFFER_STATE& cb_state, uint32_t instanceCount, uint32_t firstInstance,
@@ -428,9 +426,10 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode) const;
-    bool ValidateCommandBufferState(const CMD_BUFFER_STATE* cb_state, const char* call_source, int current_submit_count,
+    bool ValidateCommandBufferState(const CMD_BUFFER_STATE& cb_state, const char* call_source, int current_submit_count,
                                     const char* vu_id) const;
-    bool ValidateCommandBufferSimultaneousUse(const Location& loc, const CMD_BUFFER_STATE* pCB, int current_submit_count) const;
+    bool ValidateCommandBufferSimultaneousUse(const Location& loc, const CMD_BUFFER_STATE& cb_state,
+                                              int current_submit_count) const;
     bool ValidateAttachmentReference(RenderPassCreateVersion rp_version, VkAttachmentReference2 reference,
                                      const VkFormat attachment_format, bool input, const char* error_type,
                                      const char* function_name) const;
@@ -469,18 +468,18 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR*, const char*, const char*) const;
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const char* caller_name, const char* error_code) const;
-    bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
+    bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE& cb_state, const char* caller_name, VkQueueFlags flags,
                                const char* error_code) const;
     bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const char* apiName) const;
     bool MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo1,
                                   const VkSampleLocationsInfoEXT* pSampleLocationsInfo2) const;
-    bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
-    bool OutsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
+    bool InsideRenderPass(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
+    bool OutsideRenderPass(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
 
     bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
                                   const std::string& msgCode) const;
-    bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
-    bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd) const;
+    bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
+    bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, CMD_TYPE cmd_type) const;
     bool ValidateIndirectCountCmd(const BUFFER_STATE& count_buffer_state, VkDeviceSize count_buffer_offset,
                                   CMD_TYPE cmd_type) const;
@@ -494,9 +493,9 @@ class CoreChecks : public ValidationStateTracker {
     template <typename T1>
     bool ValidateDeviceMaskToZero(uint32_t deviceMask, const T1 object, const char* VUID) const;
     template <typename T1>
-    bool ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE* pCB, uint32_t deviceMask, const T1 object,
+    bool ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE& cb_state, uint32_t deviceMask, const T1 object,
                                            const char* VUID) const;
-    bool ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE* pCB, uint32_t deviceMask, const char* VUID) const;
+    bool ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE& cb_state, uint32_t deviceMask, const char* VUID) const;
 
     bool ValidateDepthStencilResolve(const VkRenderPassCreateInfo2* pCreateInfo, const char* function_name) const;
 
@@ -508,14 +507,14 @@ class CoreChecks : public ValidationStateTracker {
     bool FormatRequiresYcbcrConversionExplicitly(const VkFormat format) const;
 
     template <typename TransferBarrier>
-    bool ValidateQueuedQFOTransferBarriers(const CMD_BUFFER_STATE* cb_state, QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
+    bool ValidateQueuedQFOTransferBarriers(const CMD_BUFFER_STATE& cb_state, QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
                                            const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers) const;
-    bool ValidateQueuedQFOTransfers(const CMD_BUFFER_STATE* cb_state,
+    bool ValidateQueuedQFOTransfers(const CMD_BUFFER_STATE& cb_state,
                                     QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                     QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
 
     template <typename Barrier, typename Scoreboard>
-    bool ValidateAndUpdateQFOScoreboard(const debug_report_data* report_data, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateAndUpdateQFOScoreboard(const debug_report_data* report_data, const CMD_BUFFER_STATE& cb_state,
                                         const char* operation, const Barrier& barrier, Scoreboard* scoreboard) const;
     template <typename Barrier, typename TransferBarrier>
     void RecordBarrierValidationInfo(const Location& loc, CMD_BUFFER_STATE* cb_state, const Barrier& barrier,
@@ -525,20 +524,17 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateQFOTransferBarrierUniqueness(const Location& loc, const CMD_BUFFER_STATE* cb_state, const Barrier& barrier,
                                               const QFOTransferBarrierSets<TransferBarrier>& barrier_sets) const;
 
-    bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE* pCB, int current_submit_count,
+    bool ValidatePrimaryCommandBufferState(const Location& loc, const CMD_BUFFER_STATE& cb_state, int current_submit_count,
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
-    bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
+    bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type,
                                        const PIPELINE_STATE& pipeline) const;
-    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
+    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point) const;
-    bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
-    static bool ValidateEventStageMask(const ValidationStateTracker* state_data, const CMD_BUFFER_STATE* pCB, size_t eventCount,
-                                       size_t firstEventIndex, VkPipelineStageFlags2KHR sourceStageMask,
-                                       EventToStageMap* localEventToStageMap);
-    bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE* pCB, VkQueue queue) const;
-    bool ValidatePerformanceQueries(const CMD_BUFFER_STATE* pCB, VkQueue queue, VkQueryPool& first_query_pool,
-                                    uint32_t counterPassIndex) const;
+    bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE& cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
+    static bool ValidateEventStageMask(const CMD_BUFFER_STATE& cb_state, size_t eventCount, size_t firstEventIndex,
+                                       VkPipelineStageFlags2KHR sourceStageMask, EventToStageMap* localEventToStageMap);
+    bool ValidateQueueFamilyIndices(const Location& loc, const CMD_BUFFER_STATE& cb_state, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator,
                                                VkValidationCacheEXT* pValidationCache) override;
@@ -549,10 +545,9 @@ class CoreChecks : public ValidationStateTracker {
     VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                 void* pData) override;
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const BindingReqMap& bindings,
-                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node,
-                           const std::vector<IMAGE_VIEW_STATE*>* attachments, const std::vector<SUBPASS_INFO>* subpasses,
-                           const char* caller, const DrawDispatchVuid& vuids) const;
+    bool ValidateDrawState(const cvdescriptorset::DescriptorSet& descriptor_set, const BindingReqMap& bindings,
+                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE& cb_state, const char* caller,
+                           const DrawDispatchVuid& vuids) const;
 
     bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSetLayout& layout_dsl,
                                       const cvdescriptorset::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
@@ -564,10 +559,8 @@ class CoreChecks : public ValidationStateTracker {
     struct DescriptorContext {
         const char* caller;
         const DrawDispatchVuid& vuids;
-        const CMD_BUFFER_STATE* cb_node;
-        const cvdescriptorset::DescriptorSet* descriptor_set;
-        const std::vector<IMAGE_VIEW_STATE*>* attachments;
-        const std::vector<SUBPASS_INFO>* subpasses;
+        const CMD_BUFFER_STATE& cb_state;
+        const cvdescriptorset::DescriptorSet& descriptor_set;
         const VkFramebuffer framebuffer;
         bool record_time_validate;
         const std::vector<uint32_t>& dynamic_offsets;
@@ -595,9 +588,9 @@ class CoreChecks : public ValidationStateTracker {
                             VkDescriptorType descriptor_type, const cvdescriptorset::SamplerDescriptor& descriptor) const;
 
     // helper for the common parts of ImageSamplerDescriptor and SamplerDescriptor validation
-    bool ValidateSamplerDescriptor(const char* caller, const DrawDispatchVuid& vuids, const CMD_BUFFER_STATE* cb_node,
-                                   const cvdescriptorset::DescriptorSet* descriptor_set, const DescriptorBindingInfo& binding_info,
-                                   uint32_t index, VkSampler sampler, bool is_immutable, const SAMPLER_STATE* sampler_state) const;
+    bool ValidateSamplerDescriptor(const DescriptorContext& context, const cvdescriptorset::DescriptorSet& descriptor_set,
+                                   const DescriptorBindingInfo& binding_info, uint32_t index, VkSampler sampler, bool is_immutable,
+                                   const SAMPLER_STATE* sampler_state) const;
 
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
@@ -632,8 +625,8 @@ class CoreChecks : public ValidationStateTracker {
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline) const;
-    bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE* pCB, const char* caller,
-                                                    const DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
+                                                    const char* caller, const DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pPipeline) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stageBit) const;
@@ -708,7 +701,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageWrite(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
 
     template <typename RegionType>
-    bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,
+    bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* src_img,
                                                           const IMAGE_STATE* dst_img, const RegionType* region, const uint32_t i,
                                                           const char* function, CMD_TYPE cmd_type) const;
     template <typename T1>
@@ -728,7 +721,7 @@ class CoreChecks : public ValidationStateTracker {
                                                               VkRenderPass renderpass, uint32_t attachment_index,
                                                               const char* variable_name) const;
     template <typename RegionType>
-    bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE* cb_node, uint32_t regionCount, const RegionType* pRegions,
+    bool ValidateBufferImageCopyData(const CMD_BUFFER_STATE& cb_state, uint32_t regionCount, const RegionType* pRegions,
                                      const IMAGE_STATE* image_state, const char* function, CMD_TYPE cmd_type,
                                      bool image_to_buffer) const;
     bool ValidateBufferViewRange(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo,
@@ -750,49 +743,50 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                                  const char* param_name) const;
 
-    bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE &cb_node, uint32_t attachment_index,
-                                       const IMAGE_VIEW_STATE *image_view_state, const VkRect2D& render_area,
-                                       uint32_t rect_count, const VkClearRect* clear_rects) const;
+    bool ValidateClearAttachmentExtent(const CMD_BUFFER_STATE& cb_state, uint32_t attachment_index,
+                                       const IMAGE_VIEW_STATE* image_view_state, const VkRect2D& render_area, uint32_t rect_count,
+                                       const VkClearRect* clear_rects) const;
 
     template <typename RegionType>
     bool ValidateImageCopyData(const uint32_t regionCount, const RegionType* pRegions, const IMAGE_STATE* src_state,
                                const IMAGE_STATE* dst_state, CMD_TYPE cmd_type) const;
 
-    bool VerifyClearImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
+    bool VerifyClearImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
 
     template <typename RangeFactory>
-    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
+    bool VerifyImageLayoutRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, VkImageAspectFlags aspect_mask,
                                 VkImageLayout explicit_layout, const RangeFactory& range_factory, const char* caller,
                                 const char* layout_mismatch_msg_code, bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_VIEW_STATE& image_view_state, VkImageLayout explicit_layout,
-                           const char* caller, const char* layout_mismatch_msg_code, bool* error) const;
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE& image_view_state,
+                           VkImageLayout explicit_layout, const char* caller, const char* layout_mismatch_msg_code,
+                           bool* error) const;
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
                            const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
-        return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
+        return VerifyImageLayout(cb_state, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
                                  layout_mismatch_msg_code, error);
     }
 
-    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_node, const IMAGE_STATE& image_state,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
                            const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
-    bool CheckItgExtent(const CMD_BUFFER_STATE* cb_node, const VkExtent3D* extent, const VkOffset3D* offset,
+    bool CheckItgExtent(const CMD_BUFFER_STATE& cb_state, const VkExtent3D* extent, const VkOffset3D* offset,
                         const VkExtent3D* granularity, const VkExtent3D* subresource_extent, const VkImageType image_type,
                         const uint32_t i, const char* function, const char* member, const char* vuid) const;
 
-    bool CheckItgOffset(const CMD_BUFFER_STATE* cb_node, const VkOffset3D* offset, const VkExtent3D* granularity, const uint32_t i,
+    bool CheckItgOffset(const CMD_BUFFER_STATE& cb_state, const VkOffset3D* offset, const VkExtent3D* granularity, const uint32_t i,
                         const char* function, const char* member, const char* vuid) const;
-    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img) const;
+    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img) const;
 
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
@@ -815,17 +809,17 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FindLayouts(const IMAGE_STATE& image_state, std::vector<VkImageLayout>& layouts) const;
 
-    bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, const CMD_BUFFER_STATE* pCB,
+    bool VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion rp_version, const CMD_BUFFER_STATE& cb_state,
                                                const VkRenderPassBeginInfo* pRenderPassBegin,
                                                const FRAMEBUFFER_STATE* framebuffer_state) const;
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
-    void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* pCB, FRAMEBUFFER_STATE* pFramebuffer,
+    void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* cb_state, FRAMEBUFFER_STATE* pFramebuffer,
                                        const safe_VkAttachmentReference2& ref);
 
-    void TransitionSubpassLayouts(CMD_BUFFER_STATE*, const RENDER_PASS_STATE*, const int, FRAMEBUFFER_STATE*);
+    void TransitionSubpassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE*, const int, FRAMEBUFFER_STATE*);
 
-    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE*, const RENDER_PASS_STATE*, FRAMEBUFFER_STATE*);
+    void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE*, FRAMEBUFFER_STATE*);
 
     bool ValidateBarrierLayoutToImageUsage(const Location& loc, VkImage image, VkImageLayout layout, VkImageUsageFlags usage) const;
 
@@ -846,7 +840,7 @@ class CoreChecks : public ValidationStateTracker {
                         const VkImageMemoryBarrier* pImageMemBarriers);
     void RecordBarriers(Func func_name, CMD_BUFFER_STATE* cb_state, const VkDependencyInfoKHR& dep_info);
 
-    void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* pCB, const VkRenderPassBeginInfo* pRenderPassBegin,
+    void TransitionFinalSubpassLayouts(CMD_BUFFER_STATE* cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
                                        FRAMEBUFFER_STATE* framebuffer_state);
 
     template <typename RegionType>
@@ -909,9 +903,10 @@ class CoreChecks : public ValidationStateTracker {
 
     void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo) override;
 
-    bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE* pCB, GlobalImageLayoutMap& overlayLayoutMap) const;
+    bool ValidateCmdBufImageLayouts(const Location& loc, const CMD_BUFFER_STATE& cb_state,
+                                    GlobalImageLayoutMap& overlayLayoutMap) const;
 
-    void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
+    void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE* cb_state);
 
     template <typename T1>
     bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
@@ -930,7 +925,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags2KHR desired, char const* func_name,
                                          const char* vuid) const;
 
-    bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE* cb_node, const VkImageSubresourceLayers* subresource_layers,
+    bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceLayers* subresource_layers,
                                         char const* func_name, char const* member, uint32_t i) const;
 
     bool ValidateBufferUsageFlags(BUFFER_STATE const* buffer_state, VkFlags desired, bool strict, const char* msgCode,
@@ -977,14 +972,14 @@ class CoreChecks : public ValidationStateTracker {
                               const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
-    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img,
+    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img,
                                                                 const RegionType* region, const uint32_t i, const char* function,
                                                                 const char* vuid) const;
 
-    bool ValidateImageMipLevel(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
+    bool ValidateImageMipLevel(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
 
-    bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, const uint32_t base_layer,
+    bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
                                       const char* vuid) const;
     bool ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, const char* apiName) const;
@@ -1268,7 +1263,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) const override;
     bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                         VkPipeline pipeline) const override;
-    bool ForbidInheritedViewportScissor(VkCommandBuffer, const CMD_BUFFER_STATE*, const char* vuid, const CMD_TYPE cmd_type) const;
+    bool ForbidInheritedViewportScissor(VkCommandBuffer, const CMD_BUFFER_STATE* cb_state, const char* vuid,
+                                        const CMD_TYPE cmd_type) const;
     bool PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                        const VkViewport* pViewports) const override;
     bool PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
@@ -1449,7 +1445,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                       VkFlags flags) const override;
     void PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) override;
-    void EnqueueVerifyEndQuery(CMD_BUFFER_STATE&, const QueryObject& query_obj);
+    void EnqueueVerifyEndQuery(CMD_BUFFER_STATE& cb_state, const QueryObject& query_obj);
     bool PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) const override;
     void PreCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) override;
     bool ValidateQueryPoolIndex(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, const char* func_name,
@@ -1713,8 +1709,6 @@ class CoreChecks : public ValidationStateTracker {
                                           uint32_t queryCount) const override;
     bool PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                        uint32_t queryCount) const override;
-    bool ValidateComputeWorkGroupInvocations(CMD_BUFFER_STATE* cb_state, uint32_t groupCountX, uint32_t groupCountY,
-                                             uint32_t groupCountZ);
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
                                  const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags) const;
     bool ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,

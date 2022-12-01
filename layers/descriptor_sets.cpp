@@ -585,13 +585,13 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 }
 
 // Update the drawing state for the affected descriptors.
-// Set cb_node to this set and this set to cb_node.
+// Set cb_state to this set and this set to cb_state.
 // Add the bindings of the descriptor
 // Set the layout based on the current descriptor layout (will mask subsequent layer mismatch errors)
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
-// Prereq: This should be called for a set that has been confirmed to be active for the given cb_node, meaning it's going
-//   to be used in a draw by the given cb_node
-void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
+// Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
+//   to be used in a draw by the given cb_state
+void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_state,
                                                      CMD_TYPE cmd_type, const PIPELINE_STATE *pipe,
                                                      const BindingReqMap &binding_req_map) {
     // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
@@ -617,21 +617,21 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
             case Image: {
                 auto *image_binding = static_cast<ImageBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_node);
+                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
                 }
                 break;
             }
             case ImageSampler: {
                 auto *image_binding = static_cast<ImageSamplerBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_node);
+                    image_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
                 }
                 break;
             }
             case Mutable: {
                 auto *mutable_binding = static_cast<MutableBinding *>(binding);
                 for (uint32_t i = 0; i < mutable_binding->count; ++i) {
-                    mutable_binding->descriptors[i].UpdateDrawState(device_data, cb_node);
+                    mutable_binding->descriptors[i].UpdateDrawState(device_data, cb_state);
                 }
                 break;
             }
@@ -642,12 +642,12 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
     if (cmd_info.binding_infos.size() > 0) {
         cmd_info.cmd_type = cmd_type;
-        if (cb_node->activeFramebuffer) {
-            cmd_info.framebuffer = cb_node->activeFramebuffer->framebuffer();
-            cmd_info.attachments = cb_node->active_attachments;
-            cmd_info.subpasses = cb_node->active_subpasses;
+        if (cb_state->activeFramebuffer) {
+            cmd_info.framebuffer = cb_state->activeFramebuffer->framebuffer();
+            cmd_info.attachments = cb_state->active_attachments;
+            cmd_info.subpasses = cb_state->active_subpasses;
         }
-        cb_node->validate_descriptorsets_in_queuesubmit[GetSet()].emplace_back(cmd_info);
+        cb_state->validate_descriptorsets_in_queuesubmit[GetSet()].emplace_back(cmd_info);
     }
 }
 
@@ -829,11 +829,11 @@ void cvdescriptorset::ImageDescriptor::CopyUpdate(DescriptorSet *set_state, cons
     ReplaceStatePtr(set_state, image_view_state_, image_src->image_view_state_, is_bindless);
 }
 
-void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
+void cvdescriptorset::ImageDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_state) {
     // Add binding for image
     auto iv_state = GetImageViewState();
     if (iv_state) {
-        dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *iv_state, image_layout_);
+        dev_data->CallSetImageViewInitialLayoutCallback(cb_state, *iv_state, image_layout_);
     }
 }
 
@@ -1087,11 +1087,11 @@ void cvdescriptorset::MutableDescriptor::CopyUpdate(DescriptorSet *set_state, co
     }
 }
 
-void cvdescriptorset::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_node) {
+void cvdescriptorset::MutableDescriptor::UpdateDrawState(ValidationStateTracker *dev_data, CMD_BUFFER_STATE *cb_state) {
     auto active_class = DescriptorTypeToClass(active_descriptor_type_);
     if (active_class == Image || active_class == ImageSampler) {
         if (image_view_state_) {
-            dev_data->CallSetImageViewInitialLayoutCallback(cb_node, *image_view_state_, image_layout_);
+            dev_data->CallSetImageViewInitialLayoutCallback(cb_state, *image_view_state_, image_layout_);
         }
     }
 }

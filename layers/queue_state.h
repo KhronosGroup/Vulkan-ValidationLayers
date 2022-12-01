@@ -282,7 +282,7 @@ struct CB_SUBMISSION {
     std::promise<void> completed;
     std::shared_future<void> waiter;
 
-    void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_node) { cbs.emplace_back(std::move(cb_node)); }
+    void AddCommandBuffer(std::shared_ptr<CMD_BUFFER_STATE> &&cb_state) { cbs.emplace_back(std::move(cb_state)); }
 
     void AddSignalSemaphore(std::shared_ptr<SEMAPHORE_STATE> &&semaphore_state, uint64_t value) {
         signal_semaphores.emplace_back(std::move(semaphore_state), value);

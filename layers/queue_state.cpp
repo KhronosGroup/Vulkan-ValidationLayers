@@ -41,8 +41,8 @@ void CB_SUBMISSION::BeginUse() {
     for (auto &wait : wait_semaphores) {
         wait.semaphore->BeginUse();
     }
-    for (auto &cb_node : cbs) {
-        cb_node->BeginUse();
+    for (auto &cb_state : cbs) {
+        cb_state->BeginUse();
     }
     for (auto &signal : signal_semaphores) {
         signal.semaphore->BeginUse();
@@ -56,8 +56,8 @@ void CB_SUBMISSION::EndUse() {
     for (auto &wait : wait_semaphores) {
         wait.semaphore->EndUse();
     }
-    for (auto &cb_node : cbs) {
-        cb_node->EndUse();
+    for (auto &cb_state : cbs) {
+        cb_state->EndUse();
     }
     for (auto &signal : signal_semaphores) {
         signal.semaphore->EndUse();
@@ -68,14 +68,14 @@ void CB_SUBMISSION::EndUse() {
 }
 
 uint64_t QUEUE_STATE::Submit(CB_SUBMISSION &&submission) {
-    for (auto &cb_node : submission.cbs) {
-        auto cb_guard = cb_node->WriteLock();
-        for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+    for (auto &cb_state : submission.cbs) {
+        auto cb_guard = cb_state->WriteLock();
+        for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
             auto secondary_guard = secondary_cmd_buffer->WriteLock();
             secondary_cmd_buffer->IncrementResources();
         }
-        cb_node->IncrementResources();
-        cb_node->Submit(submission.perf_submit_pass);
+        cb_state->IncrementResources();
+        cb_state->Submit(submission.perf_submit_pass);
     }
     // seq_ is atomic so we don't need a lock until updating the deque below.
     // Note that this relies on the external synchonization requirements for the
@@ -192,11 +192,11 @@ void QUEUE_STATE::ThreadFunc() {
                 first = false;
                 continue;
             }
-            for (const auto &next_cb_node : submission.cbs) {
+            for (const auto &next_cb_state : submission.cbs) {
                 if (query_object.perf_pass != submission.perf_submit_pass) {
                     continue;
                 }
-                if (next_cb_node->UpdatesQuery(query_object)) {
+                if (next_cb_state->UpdatesQuery(query_object)) {
                     return true;
                 }
             }
@@ -210,13 +210,13 @@ void QUEUE_STATE::ThreadFunc() {
         for (auto &wait : submission->wait_semaphores) {
             wait.semaphore->Retire(this, wait.payload);
         }
-        for (auto &cb_node : submission->cbs) {
-            auto cb_guard = cb_node->WriteLock();
-            for (auto *secondary_cmd_buffer : cb_node->linkedCommandBuffers) {
+        for (auto &cb_state : submission->cbs) {
+            auto cb_guard = cb_state->WriteLock();
+            for (auto *secondary_cmd_buffer : cb_state->linkedCommandBuffers) {
                 auto secondary_guard = secondary_cmd_buffer->WriteLock();
                 secondary_cmd_buffer->Retire(submission->perf_submit_pass, is_query_updated_after);
             }
-            cb_node->Retire(submission->perf_submit_pass, is_query_updated_after);
+            cb_state->Retire(submission->perf_submit_pass, is_query_updated_after);
         }
         for (auto &signal : submission->signal_semaphores) {
             signal.semaphore->Retire(this, signal.payload);

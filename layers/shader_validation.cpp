@@ -3389,7 +3389,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipel
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE *pCB,
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE &cb_state,
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     bool skip = false;
 
@@ -3397,7 +3397,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
+                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && cb_state.viewportWithCountCount != 1) {
                 if (stage.wrote_primitive_shading_rate) {
                     skip |=
                         LogError(stage.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate,
