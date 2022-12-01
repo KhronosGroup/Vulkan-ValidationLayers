@@ -182,7 +182,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreate
 
 bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE &module_state,
                                                                     const Instruction &entrypoint,
-                                                                    PIPELINE_STATE const *pipeline) const {
+                                                                    const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
     struct Attachment {
@@ -197,14 +197,14 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
         location_map[location].output = &output_it.second;
     }
 
-    const auto ms_state = pipeline->MultisampleState();
+    const auto ms_state = pipeline.MultisampleState();
     const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
 
     for (uint32_t location = 0; location < location_map.size(); ++location) {
          const auto output = location_map[location].output;
 
-         const auto &rp_state = pipeline->RenderPassState();
-         const auto &attachments = pipeline->Attachments();
+         const auto &rp_state = pipeline.RenderPassState();
+         const auto &attachments = pipeline.Attachments();
          if (!output && location < attachments.size() && attachments[location].colorWriteMask != 0) {
              skip |= LogWarning(
                  module_state.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
@@ -237,7 +237,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
 }
 
 bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
-                                                    PIPELINE_STATE const *pipeline, uint32_t subpass_index) const {
+                                                    const PIPELINE_STATE &pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
     struct Attachment {
@@ -247,7 +247,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     };
     std::map<uint32_t, Attachment> location_map;
 
-    const auto &rp_state = pipeline->RenderPassState();
+    const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && !rp_state->UsesDynamicRendering()) {
         const auto rpci = rp_state->createInfo.ptr();
         const auto subpass = rpci->pSubpasses[subpass_index];
@@ -269,11 +269,11 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
         location_map[location].output = &output_it.second;
     }
 
-    const auto *ms_state = pipeline->MultisampleState();
+    const auto *ms_state = pipeline.MultisampleState();
     const bool alpha_to_coverage_enabled = ms_state && (ms_state->alphaToCoverageEnable == VK_TRUE);
 
     // Don't check any color attachments if rasterization is disabled
-    const auto raster_state = pipeline->RasterizationState();
+    const auto raster_state = pipeline.RasterizationState();
     if (raster_state && !raster_state->rasterizerDiscardEnable) {
         for (const auto &location_it : location_map) {
             const auto reference = location_it.second.reference;
@@ -285,7 +285,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
             const auto attachment = location_it.second.attachment;
             const auto output = location_it.second.output;
             if (attachment && !output) {
-                const auto &attachments = pipeline->Attachments();
+                const auto &attachments = pipeline.Attachments();
                 if (location < attachments.size() && attachments[location].colorWriteMask != 0) {
                     skip |= LogWarning(module_state.vk_shader_module(), kVUID_Core_Shader_InputNotProduced,
                                        "Attachment %" PRIu32
@@ -747,7 +747,7 @@ bool CoreChecks::ValidateMemoryScope(const SHADER_MODULE_STATE &module_state, co
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE &module_state,
                                                       safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                                      const PIPELINE_STATE *pipeline, const Instruction &entrypoint) const {
+                                                      const PIPELINE_STATE &pipeline, const Instruction &entrypoint) const {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
         pStage->stage == VK_SHADER_STAGE_ALL) {
         return false;
@@ -828,8 +828,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     }
 
     if (is_xfb_execution_mode &&
-        (pipeline->HasShaderStage(VK_SHADER_STAGE_MESH_BIT_EXT) || pipeline->HasShaderStage(VK_SHADER_STAGE_TASK_BIT_EXT))) {
-        skip |= LogError(pipeline->pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
+        (pipeline.HasShaderStage(VK_SHADER_STAGE_MESH_BIT_EXT) || pipeline.HasShaderStage(VK_SHADER_STAGE_TASK_BIT_EXT))) {
+        skip |= LogError(pipeline.pipeline(), "VUID-VkGraphicsPipelineCreateInfo-None-02322",
                          "If the pipeline is being created with pre-rasterization shader state, and there are any mesh shader "
                          "stages in the pipeline there must not be any shader stage in the pipeline with a Xfb execution mode");
     }
@@ -1150,23 +1150,23 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
 }
 
 bool CoreChecks::ValidateShaderStageMaxResources(const SHADER_MODULE_STATE &module_state, VkShaderStageFlagBits stage,
-                                                 const PIPELINE_STATE *pipeline) const {
+                                                 const PIPELINE_STATE &pipeline) const {
     bool skip = false;
     uint32_t total_resources = 0;
 
-    const auto &rp_state = pipeline->RenderPassState();
+    const auto &rp_state = pipeline.RenderPassState();
     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) && rp_state) {
         if (rp_state->UsesDynamicRendering()) {
             total_resources += rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount;
         } else {
             // "For the fragment shader stage the framebuffer color attachments also count against this limit"
-            total_resources += rp_state->createInfo.pSubpasses[pipeline->Subpass()].colorAttachmentCount;
+            total_resources += rp_state->createInfo.pSubpasses[pipeline.Subpass()].colorAttachmentCount;
         }
     }
 
     // TODO: This reuses a lot of GetDescriptorCountMaxPerStage but currently would need to make it agnostic in a way to handle
     // input from CreatePipeline and CreatePipelineLayout level
-    const auto &layout_state = pipeline->PipelineLayoutState();
+    const auto &layout_state = pipeline.PipelineLayoutState();
     if (layout_state) {
         for (const auto &set_layout : layout_state->set_layouts) {
             if (!set_layout) {
@@ -1288,8 +1288,7 @@ VkComponentTypeNV GetComponentType(const Instruction *insn) {
 // Validate SPV_NV_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_state,
-                                           safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                           const PIPELINE_STATE *pipeline) const {
+                                           safe_VkPipelineShaderStageCreateInfo const *pStage) const {
     bool skip = false;
 
     // Map SPIR-V result ID to specialization constant id (SpecId decoration value)
@@ -1462,7 +1461,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const SHADER_MODULE_STATE &module_sta
 
 bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_state,
                                            safe_VkPipelineShaderStageCreateInfo const *pStage,
-                                           const PIPELINE_STATE *pipeline) const {
+                                           const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
     // If the pipeline's subpass description contains flag VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
@@ -1472,8 +1471,8 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
             switch (insn.Opcode()) {
                 case spv::OpCapability:
                     if (insn.Word(1) == spv::CapabilitySampleRateShading) {
-                        const auto &rp_state = pipeline->RenderPassState();
-                        auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline->Subpass()].flags;
+                        const auto &rp_state = pipeline.RenderPassState();
+                        auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline.Subpass()].flags;
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
                             LogObjectList objlist(module_state.vk_shader_module());
                             objlist.add(rp_state->renderPass());
@@ -1799,7 +1798,7 @@ bool CoreChecks::ValidateAtomicsTypes(const SHADER_MODULE_STATE &module_state) c
 }
 
 bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
-                                        VkShaderStageFlagBits stage, const PIPELINE_STATE *pipeline) const {
+                                        VkShaderStageFlagBits stage, const PIPELINE_STATE &pipeline) const {
     auto entrypoint_id = entrypoint.Word(2);
 
     // The first denorm execution mode encountered, along with its bit width.
@@ -2078,7 +2077,7 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                 }
 
                 case spv::ExecutionModeEarlyFragmentTests: {
-                    const auto *ds_state = (pipeline) ? pipeline->DepthStencilState() : nullptr;
+                    const auto *ds_state = pipeline.DepthStencilState();
                     if ((stage == VK_SHADER_STAGE_FRAGMENT_BIT) &&
                         (ds_state &&
                          (ds_state->flags &
@@ -2148,7 +2147,7 @@ static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_
     return pipelineLayout->set_layouts[slot.set]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.binding);
 }
 
-bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                               const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
     bool skip = false;
     // vkspec.html#primsrast-points describes which is the final stage that needs to check for points
@@ -2204,7 +2203,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE *pipeline, co
                          "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is not enabled, but PointSize is "
                          "written to in the Geometry shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).");
         }
-    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT && !pipeline->HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
+    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT && !pipeline.HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
                point_mode) {
         if (enabled_features.core.shaderTessellationAndGeometryPointSize && !pointsize_written) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-TessellationEvaluation-07723",
@@ -2216,9 +2215,9 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE *pipeline, co
                 "vkCreateGraphicsPipelines(): shaderTessellationAndGeometryPointSize is not enabled, but PointSize is written to "
                 "in the Tessellation Evaluation shader (gl_PointSize must NOT be written and a default of 1.0 is assumed).");
         }
-    } else if (stage == VK_SHADER_STAGE_VERTEX_BIT && !pipeline->HasShaderStage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
-               !pipeline->HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
-               pipeline->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+    } else if (stage == VK_SHADER_STAGE_VERTEX_BIT && !pipeline.HasShaderStage(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
+               !pipeline.HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT) &&
+               pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         if (!pointsize_written) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-VkGraphicsPipelineCreateInfo-Vertex-07722",
                              "vkCreateGraphicsPipelines(): Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST, but "
@@ -2229,7 +2228,7 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE *pipeline, co
     return skip;
 }
 
-bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline, const SHADER_MODULE_STATE &module_state,
+bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                                   const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
     bool primitiverate_written = false;
     bool viewportindex_written = false;
@@ -2251,10 +2250,10 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE *pipeline
         }
     }
 
-    const auto viewport_state = pipeline->ViewportState();
+    const auto viewport_state = pipeline.ViewportState();
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-        (pipeline->GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
-        if (!IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
+        (pipeline.GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
             primitiverate_written) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
@@ -2811,13 +2810,13 @@ bool CoreChecks::ValidateImageWrite(const SHADER_MODULE_STATE &module_state, con
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, const PipelineStageState &stage_state) const {
+bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, const PipelineStageState &stage_state) const {
     bool skip = false;
     const auto *pStage = stage_state.create_info;
     const SHADER_MODULE_STATE &module_state = *stage_state.module_state.get();
     auto entrypoint_optional = stage_state.entrypoint;
 
-    skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline->GetPipelineCreateFlags());
+    skip |= ValidateShaderModuleId(module_state, stage_state, pStage, pipeline.GetPipelineCreateFlags());
 
     if (module_state.vk_shader_module() == VK_NULL_HANDLE) return skip;  // No real shader for further validation
 
@@ -3068,7 +3067,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     skip |= ValidatePointSizeShaderState(pipeline, module_state, entrypoint, pStage->stage);
     skip |= ValidateBuiltinLimits(module_state, entrypoint);
     if (enabled_features.cooperative_matrix_features.cooperativeMatrix) {
-        skip |= ValidateCooperativeMatrix(module_state, pStage, pipeline);
+        skip |= ValidateCooperativeMatrix(module_state, pStage);
     }
     if (enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate) {
         skip |= ValidatePrimitiveRateShaderState(pipeline, module_state, entrypoint, pStage->stage);
@@ -3083,7 +3082,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     // "layout must be consistent with the layout of the * shader"
     // 'consistent' -> #descriptorsets-pipelinelayout-consistency
     std::string vuid_layout_mismatch;
-    switch (pipeline->GetCreateInfoSType()) {
+    switch (pipeline.GetCreateInfoSType()) {
         case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
             vuid_layout_mismatch = "VUID-VkGraphicsPipelineCreateInfo-layout-00756";
             break;
@@ -3102,14 +3101,14 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     }
 
     // Validate Push Constants use
-    skip |= ValidatePushConstantUsage(*pipeline, module_state, pStage, vuid_layout_mismatch);
+    skip |= ValidatePushConstantUsage(pipeline, module_state, pStage, vuid_layout_mismatch);
 
     // Validate descriptor use
     for (const auto &use : stage_state.descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
         // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
-        const auto &binding = GetDescriptorBinding(pipeline->PipelineLayoutState().get(), use.first);
+        const auto &binding = GetDescriptorBinding(pipeline.PipelineLayoutState().get(), use.first);
         unsigned required_descriptor_count;
         bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         std::set<uint32_t> descriptor_types =
@@ -3117,27 +3116,27 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
         if (!binding) {
             LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline->PipelineLayoutState()->layout());
+            objlist.add(pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader uses descriptor slot (expected `%s`) but not declared in pipeline layout",
                              use.first.set, use.first.binding, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline->PipelineLayoutState()->layout());
+            objlist.add(pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader uses descriptor slot but descriptor not accessible from stage %s",
                              use.first.set, use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline->PipelineLayoutState()->layout());
+            objlist.add(pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u type mismatch on descriptor slot, uses type %s but expected %s", use.first.set,
                              use.first.binding, string_VkDescriptorType(binding->descriptorType),
                              string_descriptorTypes(descriptor_types).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline->PipelineLayoutState()->layout());
+            objlist.add(pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader expects at least %u descriptors, but only %u provided", use.first.set,
                              use.first.binding, required_descriptor_count, binding->descriptorCount);
@@ -3148,10 +3147,10 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
         auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(entrypoint);
 
-        const auto &rp_state = pipeline->RenderPassState();
+        const auto &rp_state = pipeline.RenderPassState();
         if (rp_state && !rp_state->UsesDynamicRendering()) {
             auto rpci = rp_state->createInfo.ptr();
-            auto subpass = pipeline->Subpass();
+            auto subpass = pipeline.Subpass();
             for (const auto &use : input_attachment_uses) {
                 auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
                 auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
@@ -3160,13 +3159,13 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE *pipeline, con
 
                 if (index == VK_ATTACHMENT_UNUSED) {
                     LogObjectList objlist(module_state.vk_shader_module());
-                    objlist.add(pipeline->PipelineLayoutState()->layout());
+                    objlist.add(pipeline.PipelineLayoutState()->layout());
                     skip |= LogError(objlist, kVUID_Core_Shader_MissingInputAttachment,
                                      "Shader consumes input attachment index %d but not provided in subpass", use.first);
                 } else if (!(GetFormatType(rpci->pAttachments[index].format) &
                              module_state.GetFundamentalType(use.second.type_id))) {
                     LogObjectList objlist(module_state.vk_shader_module());
-                    objlist.add(pipeline->PipelineLayoutState()->layout());
+                    objlist.add(pipeline.PipelineLayoutState()->layout());
                     skip |= LogError(objlist, kVUID_Core_Shader_InputAttachmentTypeMismatch,
                                      "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
                                      string_VkFormat(rpci->pAttachments[index].format),
@@ -3326,10 +3325,10 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE &pipeline) const {
     bool skip = false;
 
-    if (pipeline->IsGraphicsLibrary()) {
+    if (pipeline.IsGraphicsLibrary()) {
         // Only validate stages in an executable pipeline, not a graphics library
         // TODO This currently makes executing executable pipeline more expensive than they need to be since we could be validating
         // more per library.
@@ -3337,7 +3336,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     }
 
     const PipelineStageState *vertex_stage = nullptr, *fragment_stage = nullptr;
-    for (auto &stage : pipeline->stage_state) {
+    for (auto &stage : pipeline.stage_state) {
         skip |= ValidatePipelineShaderStage(pipeline, stage);
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) {
             vertex_stage = &stage;
@@ -3350,16 +3349,16 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    auto vi_state = pipeline->InputState();
+    auto vi_state = pipeline.InputState();
 
     if (vertex_stage && vertex_stage->entrypoint && vertex_stage->module_state->has_valid_spirv &&
-        !IsDynamic(pipeline, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         skip |= ValidateViAgainstVsInputs(vi_state, *vertex_stage->module_state.get(), *(vertex_stage->entrypoint));
     }
 
-    for (size_t i = 1; i < pipeline->stage_state.size(); i++) {
-        const auto &producer = pipeline->stage_state[i - 1];
-        const auto &consumer = pipeline->stage_state[i];
+    for (size_t i = 1; i < pipeline.stage_state.size(); i++) {
+        const auto &producer = pipeline.stage_state[i - 1];
+        const auto &consumer = pipeline.stage_state[i];
         assert(producer.module_state);
         if (&producer == fragment_stage) {
             break;
@@ -3377,28 +3376,28 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     }
 
     if (fragment_stage && fragment_stage->entrypoint && fragment_stage->module_state->has_valid_spirv) {
-        const auto &rp_state = pipeline->RenderPassState();
+        const auto &rp_state = pipeline.RenderPassState();
         if (rp_state && rp_state->UsesDynamicRendering()) {
             skip |= ValidateFsOutputsAgainstDynamicRenderingRenderPass(*fragment_stage->module_state.get(),
                                                                        *(fragment_stage->entrypoint), pipeline);
         } else {
             skip |= ValidateFsOutputsAgainstRenderPass(*fragment_stage->module_state.get(), *(fragment_stage->entrypoint), pipeline,
-                                                       pipeline->Subpass());
+                                                       pipeline.Subpass());
         }
     }
 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE *pipeline, const CMD_BUFFER_STATE *pCB,
+bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE &pipeline, const CMD_BUFFER_STATE *pCB,
                                                             const char *caller, const DrawDispatchVuid &vuid) const {
     bool skip = false;
 
-    for (auto &stage : pipeline->stage_state) {
+    for (auto &stage : pipeline.stage_state) {
         if (stage.stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage.stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
             stage.stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
             if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-                IsDynamic(pipeline, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
+                pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && pCB->viewportWithCountCount != 1) {
                 if (stage.wrote_primitive_shading_rate) {
                     skip |=
                         LogError(stage.module_state.get()->vk_shader_module(), vuid.viewport_count_primitive_shading_rate,
@@ -3414,8 +3413,8 @@ bool CoreChecks::ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE
     return skip;
 }
 
-bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) const {
-    return ValidatePipelineShaderStage(pipeline, pipeline->stage_state[0]);
+bool CoreChecks::ValidateComputePipelineShaderState(const PIPELINE_STATE &pipeline) const {
+    return ValidatePipelineShaderStage(pipeline, pipeline.stage_state[0]);
 }
 
 uint32_t CoreChecks::CalcShaderStageCount(const PIPELINE_STATE &pipeline, VkShaderStageFlagBits stageBit) const {
@@ -3469,7 +3468,8 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
     return false;
 }
 
-bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe_VkRayTracingPipelineCreateInfoCommon &create_info,
+bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
+                                            const safe_VkRayTracingPipelineCreateInfoCommon &create_info,
                                             VkPipelineCreateFlags flags, bool isKHR) const {
     bool skip = false;
 
@@ -3522,11 +3522,11 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
     const auto *groups = create_info.ptr()->pGroups;
 
     for (uint32_t stage_index = 0; stage_index < create_info.stageCount; stage_index++) {
-        skip |= ValidatePipelineShaderStage(pipeline, pipeline->stage_state[stage_index]);
+        skip |= ValidatePipelineShaderStage(pipeline, pipeline.stage_state[stage_index]);
     }
 
     if ((create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
-        const uint32_t raygen_stages_count = CalcShaderStageCount(*pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        const uint32_t raygen_stages_count = CalcShaderStageCount(pipeline, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
         if (raygen_stages_count == 0) {
             skip |= LogError(
                 device,
@@ -3548,7 +3548,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV) {
             if (!GroupHasValidIndex(
-                    *pipeline, group.generalShader,
+                    pipeline, group.generalShader,
                     VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03474"
@@ -3563,7 +3563,7 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
                                  ": pGroups[%d]", group_index);
             }
         } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV) {
-            if (!GroupHasValidIndex(*pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_NV)) {
+            if (!GroupHasValidIndex(pipeline, group.intersectionShader, VK_SHADER_STAGE_INTERSECTION_BIT_NV)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-type-03476"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415",
@@ -3580,13 +3580,13 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, const safe
 
         if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
             group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
-            if (!GroupHasValidIndex(*pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
+            if (!GroupHasValidIndex(pipeline, group.anyHitShader, VK_SHADER_STAGE_ANY_HIT_BIT_KHR)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-anyHitShader-03479"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418",
                                  ": pGroups[%d]", group_index);
             }
-            if (!GroupHasValidIndex(*pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
+            if (!GroupHasValidIndex(pipeline, group.closestHitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)) {
                 skip |= LogError(device,
                                  isKHR ? "VUID-VkRayTracingShaderGroupCreateInfoKHR-closestHitShader-03478"
                                        : "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417",

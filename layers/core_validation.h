@@ -263,7 +263,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit, const Location& loc) const;
     bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE* pNode, CBDynamicStatus status, CMD_TYPE cmd_type,
                                  const char* msg_code) const;
-    bool ValidateDrawDynamicState(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipeline, CMD_TYPE cmd_type) const;
+    bool ValidateDrawDynamicState(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
@@ -363,7 +363,7 @@ class CoreChecks : public ValidationStateTracker {
     bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
-    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE* pipeline_state) const;
+    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors) const;
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges) const;
@@ -389,7 +389,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo* pCreateInfo) const;
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
-    bool IsDynamic(const PIPELINE_STATE* pPipeline, const VkDynamicState state) const;
     bool CheckDependencyExists(const VkRenderPass renderpass, const uint32_t subpass, const VkImageLayout layout,
                                const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,
                                bool& skip) const;
@@ -530,7 +529,7 @@ class CoreChecks : public ValidationStateTracker {
                                            QFOTransferCBScoreboards<QFOImageTransferBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<QFOBufferTransferBarrier>* qfo_buffer_scoreboards) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
-                                       const PIPELINE_STATE* pPipeline) const;
+                                       const PIPELINE_STATE& pipeline) const;
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point) const;
     bool ValidateCmdRayQueryState(const CMD_BUFFER_STATE* cb_state, CMD_TYPE cmd_type, const VkPipelineBindPoint bind_point) const;
@@ -632,14 +631,14 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* p_cds, const char* func_name) const;
 
     // Stuff from shader_validation
-    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
-    bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE* pPipeline, const CMD_BUFFER_STATE* pCB,
-                                                    const char* caller, const DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE* pPipeline) const;
-    bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
+    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline) const;
+    bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE* pCB, const char* caller,
+                                                    const DrawDispatchVuid& vuid) const;
+    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pPipeline) const;
+    bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const PIPELINE_STATE& pipeline, uint32_t group, uint32_t stage) const;
-    bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, const safe_VkRayTracingPipelineCreateInfoCommon& create_info,
+    bool ValidateRayTracingPipeline(const PIPELINE_STATE& pipeline, const safe_VkRayTracingPipelineCreateInfoCommon& create_info,
                                     VkPipelineCreateFlags flags, bool isKHR) const;
     bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                      VkShaderModuleIdentifierEXT* pIdentifier) const override;
@@ -647,10 +646,10 @@ class CoreChecks : public ValidationStateTracker {
                                                                VkShaderModuleIdentifierEXT* pIdentifier) const override;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const override;
-    bool ValidatePipelineShaderStage(const PIPELINE_STATE* pipeline, const PipelineStageState& stage_state) const;
-    bool ValidatePointSizeShaderState(const PIPELINE_STATE* pipeline, const SHADER_MODULE_STATE& module_state,
+    bool ValidatePipelineShaderStage(const PIPELINE_STATE& pipeline, const PipelineStageState& stage_state) const;
+    bool ValidatePointSizeShaderState(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                       const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
-    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE* pipeline, const SHADER_MODULE_STATE& module_state,
+    bool ValidatePrimitiveRateShaderState(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                           const Instruction& entrypoint, VkShaderStageFlagBits stage) const;
     bool ValidateTexelOffsetLimits(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
 
@@ -661,30 +660,30 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateShaderStageWritableOrAtomicDescriptor(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                                        bool has_writable_descriptor, bool has_atomic_descriptor) const;
     bool ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE& module_state,
-                                              safe_VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
+                                              safe_VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE& pipeline,
                                               const Instruction& entrypoint) const;
     bool ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_STATE& module_state, const Instruction* insn) const;
     bool ValidateShaderStageMaxResources(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
-                                         const PIPELINE_STATE* pipeline) const;
+                                         const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderStageGroupNonUniform(const SHADER_MODULE_STATE& module_state, VkShaderStageFlagBits stage,
                                             const Instruction& insn) const;
     bool ValidateMemoryScope(const SHADER_MODULE_STATE& module_state, const Instruction& insn) const;
-    bool ValidateCooperativeMatrix(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* pStage,
-                                   const PIPELINE_STATE* pipeline) const;
+    bool ValidateCooperativeMatrix(const SHADER_MODULE_STATE& module_state,
+                                   safe_VkPipelineShaderStageCreateInfo const* pStage) const;
     bool ValidateShaderResolveQCOM(const SHADER_MODULE_STATE& module_state, safe_VkPipelineShaderStageCreateInfo const* pStage,
-                                   const PIPELINE_STATE* pipeline) const;
+                                   const PIPELINE_STATE& pipeline) const;
     bool ValidateShaderSubgroupSizeControl(const SHADER_MODULE_STATE& module_state,
                                            safe_VkPipelineShaderStageCreateInfo const* pStage) const;
     bool ValidateComputeSharedMemory(const SHADER_MODULE_STATE& module_state, uint32_t total_shared_size) const;
     bool ValidateAtomicsTypes(const SHADER_MODULE_STATE& module_state) const;
     bool ValidateExecutionModes(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint, VkShaderStageFlagBits stage,
-                                const PIPELINE_STATE* pipeline) const;
+                                const PIPELINE_STATE& pipeline) const;
     bool ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreateInfo const* vi, const SHADER_MODULE_STATE& module_state,
                                    const Instruction& entrypoint) const;
     bool ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
-                                            PIPELINE_STATE const* pipeline, uint32_t subpass_index) const;
+                                            const PIPELINE_STATE& pipeline, uint32_t subpass_index) const;
     bool ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint,
-                                                            PIPELINE_STATE const* pipeline) const;
+                                                            const PIPELINE_STATE& pipeline) const;
     bool ValidatePushConstantUsage(const PIPELINE_STATE& pipeline, const SHADER_MODULE_STATE& module_state,
                                    safe_VkPipelineShaderStageCreateInfo const* pStage, const std::string& vuid) const;
     bool ValidateBuiltinLimits(const SHADER_MODULE_STATE& module_state, const Instruction& entrypoint) const;
@@ -1763,7 +1762,7 @@ class CoreChecks : public ValidationStateTracker {
                                                                    uint32_t firstQuery) const override;
 
     // Calculates the total number of shader groups taking libraries into account.
-    uint32_t CalcTotalShaderGroupCount(const PIPELINE_STATE* pipelineState) const;
+    uint32_t CalcTotalShaderGroupCount(const PIPELINE_STATE& pipeline) const;
 
     bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                            uint32_t groupCount, size_t dataSize, void* pData) const override;
