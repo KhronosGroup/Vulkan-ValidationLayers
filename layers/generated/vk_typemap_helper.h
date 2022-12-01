@@ -6495,6 +6495,24 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CR
     typedef VkRenderPassSubpassFeedbackCreateInfoEXT Type;
 };
 
+// Map type VkDirectDriverLoadingInfoLUNARG to id VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG
+template <> struct LvlTypeMap<VkDirectDriverLoadingInfoLUNARG> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG> {
+    typedef VkDirectDriverLoadingInfoLUNARG Type;
+};
+
+// Map type VkDirectDriverLoadingListLUNARG to id VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG
+template <> struct LvlTypeMap<VkDirectDriverLoadingListLUNARG> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG> {
+    typedef VkDirectDriverLoadingListLUNARG Type;
+};
+
 // Map type VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT;
@@ -6646,6 +6664,15 @@ template <> struct LvlTypeMap<VkAmigoProfilingSubmitInfoSEC> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC> {
     typedef VkAmigoProfilingSubmitInfoSEC Type;
+};
+
+// Map type VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM
+template <> struct LvlTypeMap<VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM> {
+    typedef VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM Type;
 };
 
 // Map type VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV

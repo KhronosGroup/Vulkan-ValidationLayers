@@ -528,10 +528,9 @@ bool ObjectLifetimes::PreCallValidateBeginCommandBuffer(VkCommandBuffer command_
 bool ObjectLifetimes::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                            uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetSwapchainImagesKHR-device-parameter",
-                           "VUID-vkGetSwapchainImagesKHR-commonparent");
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetSwapchainImagesKHR-device-parameter", kVUIDUndefined);
     skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkGetSwapchainImagesKHR-swapchain-parameter",
-                           "VUID-vkGetSwapchainImagesKHR-commonparent");
+                           "VUID-vkGetSwapchainImagesKHR-swapchain-parent");
     return skip;
 }
 

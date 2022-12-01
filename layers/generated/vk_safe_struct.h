@@ -8730,8 +8730,8 @@ struct safe_VkVideoDecodeH265PictureInfoEXT {
     VkStructureType sType;
     const void* pNext{};
     StdVideoDecodeH265PictureInfo* pStdPictureInfo{};
-    uint32_t sliceCount;
-    const uint32_t* pSliceOffsets{};
+    uint32_t sliceSegmentCount;
+    const uint32_t* pSliceSegmentOffsets{};
     safe_VkVideoDecodeH265PictureInfoEXT(const VkVideoDecodeH265PictureInfoEXT* in_struct);
     safe_VkVideoDecodeH265PictureInfoEXT(const safe_VkVideoDecodeH265PictureInfoEXT& copy_src);
     safe_VkVideoDecodeH265PictureInfoEXT& operator=(const safe_VkVideoDecodeH265PictureInfoEXT& copy_src);
@@ -10576,7 +10576,7 @@ union safe_VkDescriptorDataEXT {
     safe_VkDescriptorAddressInfoEXT* pStorageTexelBuffer;
     safe_VkDescriptorAddressInfoEXT* pUniformBuffer;
     safe_VkDescriptorAddressInfoEXT* pStorageBuffer;
-     VkDeviceAddress accelerationStructure;
+    VkDeviceAddress accelerationStructure;
     char type_at_end[sizeof(VkDescriptorDataEXT)+sizeof(VkDescriptorGetInfoEXT::type)];
     safe_VkDescriptorDataEXT(const VkDescriptorDataEXT* in_struct, const VkDescriptorType type);
     safe_VkDescriptorDataEXT(const safe_VkDescriptorDataEXT& copy_src);
@@ -12582,6 +12582,39 @@ struct safe_VkRenderPassSubpassFeedbackCreateInfoEXT {
     VkRenderPassSubpassFeedbackCreateInfoEXT const *ptr() const { return reinterpret_cast<VkRenderPassSubpassFeedbackCreateInfoEXT const *>(this); }
 };
 
+struct safe_VkDirectDriverLoadingInfoLUNARG {
+    VkStructureType sType;
+    void* pNext{};
+    VkDirectDriverLoadingFlagsLUNARG flags;
+    PFN_vkGetInstanceProcAddr pfnGetInstanceProcAddr;
+    safe_VkDirectDriverLoadingInfoLUNARG(const VkDirectDriverLoadingInfoLUNARG* in_struct);
+    safe_VkDirectDriverLoadingInfoLUNARG(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src);
+    safe_VkDirectDriverLoadingInfoLUNARG& operator=(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src);
+    safe_VkDirectDriverLoadingInfoLUNARG();
+    ~safe_VkDirectDriverLoadingInfoLUNARG();
+    void initialize(const VkDirectDriverLoadingInfoLUNARG* in_struct);
+    void initialize(const safe_VkDirectDriverLoadingInfoLUNARG* copy_src);
+    VkDirectDriverLoadingInfoLUNARG *ptr() { return reinterpret_cast<VkDirectDriverLoadingInfoLUNARG *>(this); }
+    VkDirectDriverLoadingInfoLUNARG const *ptr() const { return reinterpret_cast<VkDirectDriverLoadingInfoLUNARG const *>(this); }
+};
+
+struct safe_VkDirectDriverLoadingListLUNARG {
+    VkStructureType sType;
+    void* pNext{};
+    VkDirectDriverLoadingModeLUNARG mode;
+    uint32_t driverCount;
+    safe_VkDirectDriverLoadingInfoLUNARG* pDrivers{};
+    safe_VkDirectDriverLoadingListLUNARG(const VkDirectDriverLoadingListLUNARG* in_struct);
+    safe_VkDirectDriverLoadingListLUNARG(const safe_VkDirectDriverLoadingListLUNARG& copy_src);
+    safe_VkDirectDriverLoadingListLUNARG& operator=(const safe_VkDirectDriverLoadingListLUNARG& copy_src);
+    safe_VkDirectDriverLoadingListLUNARG();
+    ~safe_VkDirectDriverLoadingListLUNARG();
+    void initialize(const VkDirectDriverLoadingListLUNARG* in_struct);
+    void initialize(const safe_VkDirectDriverLoadingListLUNARG* copy_src);
+    VkDirectDriverLoadingListLUNARG *ptr() { return reinterpret_cast<VkDirectDriverLoadingListLUNARG *>(this); }
+    VkDirectDriverLoadingListLUNARG const *ptr() const { return reinterpret_cast<VkDirectDriverLoadingListLUNARG const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT {
     VkStructureType sType;
     void* pNext{};
@@ -12862,6 +12895,21 @@ struct safe_VkAmigoProfilingSubmitInfoSEC {
     void initialize(const safe_VkAmigoProfilingSubmitInfoSEC* copy_src);
     VkAmigoProfilingSubmitInfoSEC *ptr() { return reinterpret_cast<VkAmigoProfilingSubmitInfoSEC *>(this); }
     VkAmigoProfilingSubmitInfoSEC const *ptr() const { return reinterpret_cast<VkAmigoProfilingSubmitInfoSEC const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 multiviewPerViewViewports;
+    safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct);
+    safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& operator=(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src);
+    safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM();
+    ~safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM();
+    void initialize(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct);
+    void initialize(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* copy_src);
+    VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *ptr() { return reinterpret_cast<VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *>(this); }
+    VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV {

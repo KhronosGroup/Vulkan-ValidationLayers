@@ -14313,7 +14313,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
             if (!DeviceExtensionSupported(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08120");
             } else {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-pDescriptorInfo-08125");
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDescriptorEXT-dataSize-08125");
             }
 
             vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize-1, &buffer);

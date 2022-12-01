@@ -41306,16 +41306,16 @@ void safe_VkVideoDecodeH265SessionParametersCreateInfoEXT::initialize(const safe
 safe_VkVideoDecodeH265PictureInfoEXT::safe_VkVideoDecodeH265PictureInfoEXT(const VkVideoDecodeH265PictureInfoEXT* in_struct) :
     sType(in_struct->sType),
     pStdPictureInfo(nullptr),
-    sliceCount(in_struct->sliceCount),
-    pSliceOffsets(nullptr)
+    sliceSegmentCount(in_struct->sliceSegmentCount),
+    pSliceSegmentOffsets(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoDecodeH265PictureInfo(*in_struct->pStdPictureInfo);
     }
-    if (in_struct->pSliceOffsets) {
-        pSliceOffsets = new uint32_t[in_struct->sliceCount];
-        memcpy ((void *)pSliceOffsets, (void *)in_struct->pSliceOffsets, sizeof(uint32_t)*in_struct->sliceCount);
+    if (in_struct->pSliceSegmentOffsets) {
+        pSliceSegmentOffsets = new uint32_t[in_struct->sliceSegmentCount];
+        memcpy ((void *)pSliceSegmentOffsets, (void *)in_struct->pSliceSegmentOffsets, sizeof(uint32_t)*in_struct->sliceSegmentCount);
     }
 }
 
@@ -41323,23 +41323,23 @@ safe_VkVideoDecodeH265PictureInfoEXT::safe_VkVideoDecodeH265PictureInfoEXT() :
     sType(VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_EXT),
     pNext(nullptr),
     pStdPictureInfo(nullptr),
-    sliceCount(),
-    pSliceOffsets(nullptr)
+    sliceSegmentCount(),
+    pSliceSegmentOffsets(nullptr)
 {}
 
 safe_VkVideoDecodeH265PictureInfoEXT::safe_VkVideoDecodeH265PictureInfoEXT(const safe_VkVideoDecodeH265PictureInfoEXT& copy_src)
 {
     sType = copy_src.sType;
     pStdPictureInfo = nullptr;
-    sliceCount = copy_src.sliceCount;
-    pSliceOffsets = nullptr;
+    sliceSegmentCount = copy_src.sliceSegmentCount;
+    pSliceSegmentOffsets = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoDecodeH265PictureInfo(*copy_src.pStdPictureInfo);
     }
-    if (copy_src.pSliceOffsets) {
-        pSliceOffsets = new uint32_t[copy_src.sliceCount];
-        memcpy ((void *)pSliceOffsets, (void *)copy_src.pSliceOffsets, sizeof(uint32_t)*copy_src.sliceCount);
+    if (copy_src.pSliceSegmentOffsets) {
+        pSliceSegmentOffsets = new uint32_t[copy_src.sliceSegmentCount];
+        memcpy ((void *)pSliceSegmentOffsets, (void *)copy_src.pSliceSegmentOffsets, sizeof(uint32_t)*copy_src.sliceSegmentCount);
     }
 }
 
@@ -41349,22 +41349,22 @@ safe_VkVideoDecodeH265PictureInfoEXT& safe_VkVideoDecodeH265PictureInfoEXT::oper
 
     if (pStdPictureInfo)
         delete pStdPictureInfo;
-    if (pSliceOffsets)
-        delete[] pSliceOffsets;
+    if (pSliceSegmentOffsets)
+        delete[] pSliceSegmentOffsets;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = copy_src.sType;
     pStdPictureInfo = nullptr;
-    sliceCount = copy_src.sliceCount;
-    pSliceOffsets = nullptr;
+    sliceSegmentCount = copy_src.sliceSegmentCount;
+    pSliceSegmentOffsets = nullptr;
     pNext = SafePnextCopy(copy_src.pNext);
     if (copy_src.pStdPictureInfo) {
         pStdPictureInfo = new StdVideoDecodeH265PictureInfo(*copy_src.pStdPictureInfo);
     }
-    if (copy_src.pSliceOffsets) {
-        pSliceOffsets = new uint32_t[copy_src.sliceCount];
-        memcpy ((void *)pSliceOffsets, (void *)copy_src.pSliceOffsets, sizeof(uint32_t)*copy_src.sliceCount);
+    if (copy_src.pSliceSegmentOffsets) {
+        pSliceSegmentOffsets = new uint32_t[copy_src.sliceSegmentCount];
+        memcpy ((void *)pSliceSegmentOffsets, (void *)copy_src.pSliceSegmentOffsets, sizeof(uint32_t)*copy_src.sliceSegmentCount);
     }
 
     return *this;
@@ -41374,8 +41374,8 @@ safe_VkVideoDecodeH265PictureInfoEXT::~safe_VkVideoDecodeH265PictureInfoEXT()
 {
     if (pStdPictureInfo)
         delete pStdPictureInfo;
-    if (pSliceOffsets)
-        delete[] pSliceOffsets;
+    if (pSliceSegmentOffsets)
+        delete[] pSliceSegmentOffsets;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -41384,21 +41384,21 @@ void safe_VkVideoDecodeH265PictureInfoEXT::initialize(const VkVideoDecodeH265Pic
 {
     if (pStdPictureInfo)
         delete pStdPictureInfo;
-    if (pSliceOffsets)
-        delete[] pSliceOffsets;
+    if (pSliceSegmentOffsets)
+        delete[] pSliceSegmentOffsets;
     if (pNext)
         FreePnextChain(pNext);
     sType = in_struct->sType;
     pStdPictureInfo = nullptr;
-    sliceCount = in_struct->sliceCount;
-    pSliceOffsets = nullptr;
+    sliceSegmentCount = in_struct->sliceSegmentCount;
+    pSliceSegmentOffsets = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoDecodeH265PictureInfo(*in_struct->pStdPictureInfo);
     }
-    if (in_struct->pSliceOffsets) {
-        pSliceOffsets = new uint32_t[in_struct->sliceCount];
-        memcpy ((void *)pSliceOffsets, (void *)in_struct->pSliceOffsets, sizeof(uint32_t)*in_struct->sliceCount);
+    if (in_struct->pSliceSegmentOffsets) {
+        pSliceSegmentOffsets = new uint32_t[in_struct->sliceSegmentCount];
+        memcpy ((void *)pSliceSegmentOffsets, (void *)in_struct->pSliceSegmentOffsets, sizeof(uint32_t)*in_struct->sliceSegmentCount);
     }
 }
 
@@ -41406,15 +41406,15 @@ void safe_VkVideoDecodeH265PictureInfoEXT::initialize(const safe_VkVideoDecodeH2
 {
     sType = copy_src->sType;
     pStdPictureInfo = nullptr;
-    sliceCount = copy_src->sliceCount;
-    pSliceOffsets = nullptr;
+    sliceSegmentCount = copy_src->sliceSegmentCount;
+    pSliceSegmentOffsets = nullptr;
     pNext = SafePnextCopy(copy_src->pNext);
     if (copy_src->pStdPictureInfo) {
         pStdPictureInfo = new StdVideoDecodeH265PictureInfo(*copy_src->pStdPictureInfo);
     }
-    if (copy_src->pSliceOffsets) {
-        pSliceOffsets = new uint32_t[copy_src->sliceCount];
-        memcpy ((void *)pSliceOffsets, (void *)copy_src->pSliceOffsets, sizeof(uint32_t)*copy_src->sliceCount);
+    if (copy_src->pSliceSegmentOffsets) {
+        pSliceSegmentOffsets = new uint32_t[copy_src->sliceSegmentCount];
+        memcpy ((void *)pSliceSegmentOffsets, (void *)copy_src->pSliceSegmentOffsets, sizeof(uint32_t)*copy_src->sliceSegmentCount);
     }
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -57566,6 +57566,172 @@ void safe_VkRenderPassSubpassFeedbackCreateInfoEXT::initialize(const safe_VkRend
     }
 }
 
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG(const VkDirectDriverLoadingInfoLUNARG* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    pfnGetInstanceProcAddr(in_struct->pfnGetInstanceProcAddr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG() :
+    sType(VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG),
+    pNext(nullptr),
+    flags(),
+    pfnGetInstanceProcAddr()
+{}
+
+safe_VkDirectDriverLoadingInfoLUNARG::safe_VkDirectDriverLoadingInfoLUNARG(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src)
+{
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnGetInstanceProcAddr = copy_src.pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG& safe_VkDirectDriverLoadingInfoLUNARG::operator=(const safe_VkDirectDriverLoadingInfoLUNARG& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    flags = copy_src.flags;
+    pfnGetInstanceProcAddr = copy_src.pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkDirectDriverLoadingInfoLUNARG::~safe_VkDirectDriverLoadingInfoLUNARG()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDirectDriverLoadingInfoLUNARG::initialize(const VkDirectDriverLoadingInfoLUNARG* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pfnGetInstanceProcAddr = in_struct->pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDirectDriverLoadingInfoLUNARG::initialize(const safe_VkDirectDriverLoadingInfoLUNARG* copy_src)
+{
+    sType = copy_src->sType;
+    flags = copy_src->flags;
+    pfnGetInstanceProcAddr = copy_src->pfnGetInstanceProcAddr;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG(const VkDirectDriverLoadingListLUNARG* in_struct) :
+    sType(in_struct->sType),
+    mode(in_struct->mode),
+    driverCount(in_struct->driverCount),
+    pDrivers(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (driverCount && in_struct->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&in_struct->pDrivers[i]);
+        }
+    }
+}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG() :
+    sType(VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG),
+    pNext(nullptr),
+    mode(),
+    driverCount(),
+    pDrivers(nullptr)
+{}
+
+safe_VkDirectDriverLoadingListLUNARG::safe_VkDirectDriverLoadingListLUNARG(const safe_VkDirectDriverLoadingListLUNARG& copy_src)
+{
+    sType = copy_src.sType;
+    mode = copy_src.mode;
+    driverCount = copy_src.driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (driverCount && copy_src.pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src.pDrivers[i]);
+        }
+    }
+}
+
+safe_VkDirectDriverLoadingListLUNARG& safe_VkDirectDriverLoadingListLUNARG::operator=(const safe_VkDirectDriverLoadingListLUNARG& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    mode = copy_src.mode;
+    driverCount = copy_src.driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src.pNext);
+    if (driverCount && copy_src.pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src.pDrivers[i]);
+        }
+    }
+
+    return *this;
+}
+
+safe_VkDirectDriverLoadingListLUNARG::~safe_VkDirectDriverLoadingListLUNARG()
+{
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDirectDriverLoadingListLUNARG::initialize(const VkDirectDriverLoadingListLUNARG* in_struct)
+{
+    if (pDrivers)
+        delete[] pDrivers;
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    mode = in_struct->mode;
+    driverCount = in_struct->driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (driverCount && in_struct->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&in_struct->pDrivers[i]);
+        }
+    }
+}
+
+void safe_VkDirectDriverLoadingListLUNARG::initialize(const safe_VkDirectDriverLoadingListLUNARG* copy_src)
+{
+    sType = copy_src->sType;
+    mode = copy_src->mode;
+    driverCount = copy_src->driverCount;
+    pDrivers = nullptr;
+    pNext = SafePnextCopy(copy_src->pNext);
+    if (driverCount && copy_src->pDrivers) {
+        pDrivers = new safe_VkDirectDriverLoadingInfoLUNARG[driverCount];
+        for (uint32_t i = 0; i < driverCount; ++i) {
+            pDrivers[i].initialize(&copy_src->pDrivers[i]);
+        }
+    }
+}
+
 safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT::safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT(const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     shaderModuleIdentifier(in_struct->shaderModuleIdentifier)
@@ -58747,6 +58913,62 @@ void safe_VkAmigoProfilingSubmitInfoSEC::initialize(const safe_VkAmigoProfilingS
     sType = copy_src->sType;
     firstDrawTimestamp = copy_src->firstDrawTimestamp;
     swapBufferTimestamp = copy_src->swapBufferTimestamp;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct) :
+    sType(in_struct->sType),
+    multiviewPerViewViewports(in_struct->multiviewPerViewViewports)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM),
+    pNext(nullptr),
+    multiviewPerViewViewports()
+{}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src)
+{
+    sType = copy_src.sType;
+    multiviewPerViewViewports = copy_src.multiviewPerViewViewports;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::operator=(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    multiviewPerViewViewports = copy_src.multiviewPerViewViewports;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::~safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::initialize(const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    multiviewPerViewViewports = in_struct->multiviewPerViewViewports;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM::initialize(const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM* copy_src)
+{
+    sType = copy_src->sType;
+    multiviewPerViewViewports = copy_src->multiviewPerViewViewports;
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
@@ -62405,6 +62627,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT:
             safe_pNext = new safe_VkRenderPassSubpassFeedbackCreateInfoEXT(reinterpret_cast<const VkRenderPassSubpassFeedbackCreateInfoEXT *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG:
+            safe_pNext = new safe_VkDirectDriverLoadingListLUNARG(reinterpret_cast<const VkDirectDriverLoadingListLUNARG *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT(reinterpret_cast<const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *>(pNext));
             break;
@@ -62440,6 +62665,9 @@ void *SafePnextCopy(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             safe_pNext = new safe_VkAmigoProfilingSubmitInfoSEC(reinterpret_cast<const VkAmigoProfilingSubmitInfoSEC *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM:
+            safe_pNext = new safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM(reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
             safe_pNext = new safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV(reinterpret_cast<const VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV *>(pNext));
@@ -63808,6 +64036,9 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_SUBPASS_FEEDBACK_CREATE_INFO_EXT:
             delete reinterpret_cast<const safe_VkRenderPassSubpassFeedbackCreateInfoEXT *>(header);
             break;
+        case VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG:
+            delete reinterpret_cast<const safe_VkDirectDriverLoadingListLUNARG *>(header);
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *>(header);
             break;
@@ -63843,6 +64074,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_AMIGO_PROFILING_SUBMIT_INFO_SEC:
             delete reinterpret_cast<const safe_VkAmigoProfilingSubmitInfoSEC *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceMultiviewPerViewViewportsFeaturesQCOM *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV:
             delete reinterpret_cast<const safe_VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV *>(header);
