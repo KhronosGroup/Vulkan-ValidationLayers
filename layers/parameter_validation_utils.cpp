@@ -5965,8 +5965,8 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
         }
 #ifdef VK_USE_PLATFORM_METAL_EXT
         skip |= ExportMetalObjectsPNextUtil(
-            VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
-            "vkAllocateMemory():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT", pAllocateInfo->pNext);
+            VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT, "VUID-VkMemoryAllocateInfo-pNext-06780",
+            "vkAllocateMemory():", "VK_EXPORT_METAL_OBJECT_TYPE_METAL_BUFFER_BIT_EXT", pAllocateInfo->pNext);
 #endif // VK_USE_PLATFORM_METAL_EXT
     }
     return skip;

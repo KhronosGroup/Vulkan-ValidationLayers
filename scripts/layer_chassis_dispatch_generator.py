@@ -153,6 +153,74 @@ class LayerChassisDispatchOutputGenerator(OutputGenerator):
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+// The vkExportMetalObjects extension returns data from the driver -- we've created a copy of the pNext chain, so
+// copy the returned data to the caller
+void CopyExportMetalObjects(const void *src_chain, const void *dst_chain) {
+    while (src_chain && dst_chain)
+    {
+        const VkStructureType type = reinterpret_cast<const VkBaseOutStructure *>(src_chain)->sType;
+        switch (type) {
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT:
+            {
+                auto *pSrc = reinterpret_cast<const VkExportMetalDeviceInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalDeviceInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalDeviceInfoEXT*>(pDstConst);
+                pDst->mtlDevice = pSrc->mtlDevice;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT:
+            {
+                const auto*pSrc = reinterpret_cast<const VkExportMetalCommandQueueInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalCommandQueueInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalCommandQueueInfoEXT*>(pDstConst);
+                pDst->mtlCommandQueue = pSrc->mtlCommandQueue;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT:
+            {
+                const auto*pSrc = reinterpret_cast<const VkExportMetalBufferInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalBufferInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalBufferInfoEXT*>(pDstConst);
+                pDst->mtlBuffer = pSrc->mtlBuffer;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT:
+            {
+                const auto*pSrc = reinterpret_cast<const VkExportMetalTextureInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalTextureInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalTextureInfoEXT*>(pDstConst);
+                pDst->mtlTexture = pSrc->mtlTexture;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
+            {
+                const auto*pSrc = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalIOSurfaceInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalIOSurfaceInfoEXT*>(pDstConst);
+                pDst->ioSurface = pSrc->ioSurface;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
+            {
+                const auto*pSrc = reinterpret_cast<const VkExportMetalSharedEventInfoEXT*>(src_chain);
+                auto *pDstConst = reinterpret_cast<const VkExportMetalSharedEventInfoEXT*>(dst_chain);
+                auto* pDst = const_cast<VkExportMetalSharedEventInfoEXT*>(pDstConst);
+                pDst->mtlSharedEvent = pSrc->mtlSharedEvent;
+                break;
+            }
+            default:
+                assert(false);
+                break;
+        }
+
+        // Handle pNext chaining
+        src_chain = reinterpret_cast<const VkBaseOutStructure *>(src_chain)->pNext;
+        dst_chain = reinterpret_cast<const VkBaseOutStructure *>(dst_chain)->pNext;
+    }
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 // The VK_EXT_pipeline_creation_feedback extension returns data from the driver -- we've created a copy of the pnext chain, so
 // copy the returned data to the caller before freeing the copy's data.
 void CopyCreatePipelineFeedbackData(const void *src_chain, const void *dst_chain) {
@@ -2393,6 +2461,10 @@ void DispatchGetDescriptorEXT(
                 copy_feedback_source += '        }\n'
                 copy_feedback_source += '    }\n'
                 self.appendSection('source_file', copy_feedback_source)
+            if ('ExportMetalObjects' in cmdname):
+                copy_feedback_source  = '    if (pMetalObjectsInfo) { CopyExportMetalObjects(local_pMetalObjectsInfo->pNext, pMetalObjectsInfo->pNext); }'
+                self.appendSection('source_file', copy_feedback_source)
+
             self.appendSection('source_file', "\n".join(str(api_post).rstrip().split("\n")))
             # Handle the return result variable, if any
             if (resulttype is not None):
