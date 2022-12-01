@@ -72,8 +72,8 @@ struct PreRasterState {
     const PIPELINE_STATE &parent;
 
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
+    safe_VkPipelineInputAssemblyStateCreateInfo *input_assembly_state = nullptr;
     safe_VkPipelineViewportStateCreateInfo *viewport_state = nullptr;
-
     safe_VkPipelineRasterizationStateCreateInfo *raster_state = nullptr;
 
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;

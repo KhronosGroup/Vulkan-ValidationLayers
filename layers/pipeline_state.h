@@ -393,6 +393,8 @@ class PIPELINE_STATE : public BASE_NODE {
     const safe_VkPipelineInputAssemblyStateCreateInfo *InputAssemblyState() const {
         if (vertex_input_state) {
             return vertex_input_state->input_assembly_state;
+        } else if (pre_raster_state) {
+            return pre_raster_state->input_assembly_state;
         }
         return nullptr;
     }

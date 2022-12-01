@@ -63,6 +63,7 @@ PreRasterState::PreRasterState(const PIPELINE_STATE &p, const ValidationStateTra
 
     rp_state = dev_data.Get<RENDER_PASS_STATE>(create_info.renderPass);
 
+    input_assembly_state = create_info.pInputAssemblyState;
     raster_state = create_info.pRasterizationState;
 
     tess_create_info = create_info.pTessellationState;
