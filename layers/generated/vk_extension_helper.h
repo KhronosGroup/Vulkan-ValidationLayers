@@ -94,6 +94,7 @@ struct InstanceExtensions {
     ExtEnabled vk_khr_win32_surface{kNotEnabled};
     ExtEnabled vk_khr_xcb_surface{kNotEnabled};
     ExtEnabled vk_khr_xlib_surface{kNotEnabled};
+    ExtEnabled vk_lunarg_direct_driver_loading{kNotEnabled};
     ExtEnabled vk_mvk_ios_surface{kNotEnabled};
     ExtEnabled vk_mvk_macos_surface{kNotEnabled};
     ExtEnabled vk_nn_vi_surface{kNotEnabled};
@@ -193,6 +194,7 @@ struct InstanceExtensions {
             {VK_KHR_XLIB_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_khr_xlib_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif
+            {VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_lunarg_direct_driver_loading, {})},
 #ifdef VK_USE_PLATFORM_IOS_MVK
             {VK_MVK_IOS_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_mvk_ios_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
@@ -343,6 +345,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 #ifdef VK_USE_PLATFORM_XLIB_KHR
     VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 #endif
+    VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_IOS_MVK
     VK_MVK_IOS_SURFACE_EXTENSION_NAME,
 #endif
@@ -628,6 +631,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_win32_keyed_mutex{kNotEnabled};
     ExtEnabled vk_qcom_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_qcom_image_processing{kNotEnabled};
+    ExtEnabled vk_qcom_multiview_per_view_viewports{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_shader_resolve{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
@@ -1219,6 +1223,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
             {VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_image_processing, {{
                            {&DeviceExtensions::vk_khr_format_feature_flags2, VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME}}})},
+            {VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_multiview_per_view_viewports, {})},
             {VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})},
             {VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
             {VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
@@ -1681,6 +1686,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #endif
     VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME,
     VK_QCOM_IMAGE_PROCESSING_EXTENSION_NAME,
+    VK_QCOM_MULTIVIEW_PER_VIEW_VIEWPORTS_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_STORE_OPS_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,

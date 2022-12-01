@@ -439,6 +439,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2";
         case VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT:
             return "VK_STRUCTURE_TYPE_DIRECTFB_SURFACE_CREATE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG:
+            return "VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_INFO_LUNARG";
+        case VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG:
+            return "VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG";
         case VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT:
             return "VK_STRUCTURE_TYPE_DISPLAY_EVENT_INFO_EXT";
         case VK_STRUCTURE_TYPE_DISPLAY_MODE_CREATE_INFO_KHR:
@@ -981,6 +985,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_VIEWPORTS_FEATURES_QCOM";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT:
@@ -10545,6 +10551,19 @@ static inline const char* string_VkSubpassMergeStatusEXT(VkSubpassMergeStatusEXT
             return "VK_SUBPASS_MERGE_STATUS_NOT_MERGED_VIEWS_MISMATCH_EXT";
         default:
             return "Unhandled VkSubpassMergeStatusEXT";
+    }
+}
+
+static inline const char* string_VkDirectDriverLoadingModeLUNARG(VkDirectDriverLoadingModeLUNARG input_value)
+{
+    switch (input_value)
+    {
+        case VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG:
+            return "VK_DIRECT_DRIVER_LOADING_MODE_EXCLUSIVE_LUNARG";
+        case VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG:
+            return "VK_DIRECT_DRIVER_LOADING_MODE_INCLUSIVE_LUNARG";
+        default:
+            return "Unhandled VkDirectDriverLoadingModeLUNARG";
     }
 }
 
