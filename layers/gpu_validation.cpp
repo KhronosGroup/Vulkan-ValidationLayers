@@ -1288,6 +1288,7 @@ void GpuAssisted::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuf
     ValidationStateTracker::PostCallRecordCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet,
                                                                 descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
                                                                 pDynamicOffsets);
+    if (aborted) return;
     auto cb_node = GetWrite<gpuav_state::CommandBuffer>(commandBuffer);
     if (!cb_node) {
         ReportSetupProblem(device, "Unrecognized command buffer");
@@ -2267,9 +2268,6 @@ void gpuav_state::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();
     auto gpuav = static_cast<GpuAssisted *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
-    if (gpuav->aborted) {
-        return;
-    }
     for (auto &buffer_info : per_draw_buffer_list) {
         gpuav->DestroyBuffer(buffer_info);
     }
