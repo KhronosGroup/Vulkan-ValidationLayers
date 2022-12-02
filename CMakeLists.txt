@@ -22,6 +22,7 @@ project(VVL LANGUAGES CXX C)
 option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
 
 option(BUILD_TESTS "Build the tests" OFF)
+option(UPDATE_DEPS "Clone & build dependencies" ON)
 
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
 
