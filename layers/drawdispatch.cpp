@@ -156,6 +156,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDraw-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDraw-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDraw-None-08117";
+        image_view_dim                     = "VUID-vkCmdDraw-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDraw-format-07753";
     }
 };
 
@@ -272,6 +274,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMultiEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMultiEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMultiEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMultiEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMultiEXT-format-07753";
     }
 };
 
@@ -389,6 +393,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexed-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexed-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexed-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndexed-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndexed-format-07753";
     }
 };
 
@@ -506,6 +512,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMultiIndexedEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMultiIndexedEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMultiIndexedEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMultiIndexedEXT-format-07753";
     }
 };
 
@@ -624,6 +632,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirect-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirect-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirect-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndirect-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndirect-format-07753";
     }
 };
 
@@ -743,6 +753,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexedIndirect-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexedIndirect-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexedIndirect-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndexedIndirect-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndexedIndirect-format-07753";
     }
 };
 
@@ -777,6 +789,8 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDispatch-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatch-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatch-None-08117";
+        image_view_dim                     = "VUID-vkCmdDispatch-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDispatch-format-07753";
     }
 };
 
@@ -813,6 +827,8 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDispatchIndirect-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatchIndirect-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatchIndirect-None-08117";
+        image_view_dim                     = "VUID-vkCmdDispatchIndirect-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDispatchIndirect-format-07753";
     }
 };
 
@@ -934,6 +950,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirectCount-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirectCount-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirectCount-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndirectCount-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndirectCount-format-07753";
     }
 };
 
@@ -1056,6 +1074,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndexedIndirectCount-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndexedIndirectCount-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndexedIndirectCount-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndexedIndirectCount-format-07753";
     }
 };
 
@@ -1090,6 +1110,8 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysNV-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysNV-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysNV-None-08117";
+        image_view_dim                     = "VUID-vkCmdTraceRaysNV-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdTraceRaysNV-format-07753";
     }
 };
 
@@ -1124,6 +1146,8 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysKHR-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysKHR-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysKHR-None-08117";
+        image_view_dim                     = "VUID-vkCmdTraceRaysKHR-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdTraceRaysKHR-format-07753";
     }
 };
 
@@ -1160,6 +1184,8 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysIndirectKHR-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysIndirectKHR-None-08117";
+        image_view_dim                     = "VUID-vkCmdTraceRaysIndirectKHR-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdTraceRaysIndirectKHR-format-07753";
     }
 };
 
@@ -1196,6 +1222,8 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdTraceRaysIndirect2KHR-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdTraceRaysIndirect2KHR-None-08117";
+        image_view_dim                     = "VUID-vkCmdTraceRaysIndirect2KHR-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdTraceRaysIndirect2KHR-format-07753";
     }
 };
 
@@ -1304,6 +1332,8 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksNV-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksNV-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksNV-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksNV-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksNV-format-07753";
     }
 };
 
@@ -1415,6 +1445,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksIndirectNV-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksIndirectNV-format-07753";
     }
 };
 
@@ -1529,6 +1561,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-format-07753";
     }
 };
 
@@ -1539,6 +1573,8 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksEXT-format-07753";
     }
 };
 
@@ -1549,6 +1585,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksIndirectEXT-format-07753";
     }
 };
 
@@ -1561,6 +1599,8 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-format-07753";
     }
 };
 
@@ -1679,6 +1719,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDrawIndirectByteCountEXT-None-08117";
+        image_view_dim                     = "VUID-vkCmdDrawIndirectByteCountEXT-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDrawIndirectByteCountEXT-format-07753";
     }
 };
 
@@ -1713,6 +1755,8 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         descriptor_buffer_bit_set          = "VUID-vkCmdDispatchBase-None-08114";
         descriptor_buffer_bit_not_set      = "VUID-vkCmdDispatchBase-None-08115";
         descriptor_buffer_set_offset_missing = "VUID-vkCmdDispatchBase-None-08117";
+        image_view_dim                     = "VUID-vkCmdDispatchBase-viewType-07752";
+        image_view_numeric_format          = "VUID-vkCmdDispatchBase-format-07753";
     }
 };
 

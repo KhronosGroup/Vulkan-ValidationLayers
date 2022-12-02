@@ -913,10 +913,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
             if (~reqs & (1 << image_view_ci.viewType)) {
                 auto set = context.descriptor_set.GetSet();
-                auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
-                                     ? context.vuids.descriptor_buffer_bit_set
-                                     : context.vuids.descriptor_valid;
-                return LogError(set, vuid_text,
+                return LogError(set, context.vuids.image_view_dim,
                                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                                 " requires an image view of type %s but got %s which is of type %s.",
                                 context.caller, report_data->FormatHandle(set).c_str(), binding, index,
@@ -927,10 +924,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             if (!(reqs & image_view_state->descriptor_format_bits)) {
                 // bad component type
                 auto set = context.descriptor_set.GetSet();
-                auto vuid_text = enabled_features.descriptor_buffer_features.descriptorBuffer
-                                     ? context.vuids.descriptor_buffer_bit_set
-                                     : context.vuids.descriptor_valid;
-                return LogError(set, vuid_text,
+                return LogError(set, context.vuids.image_view_numeric_format,
                                 "%s: Descriptor set %s in binding #%" PRIu32 " index %" PRIu32
                                 " requires %s component type, but bound descriptor format is %s (%s).",
                                 context.caller, report_data->FormatHandle(set).c_str(), binding, index,

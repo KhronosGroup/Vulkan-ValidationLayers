@@ -160,6 +160,8 @@ struct DrawDispatchVuid {
     const char* descriptor_buffer_bit_set = kVUIDUndefined;
     const char* descriptor_buffer_bit_not_set = kVUIDUndefined;
     const char* descriptor_buffer_set_offset_missing = kVUIDUndefined;
+    const char* image_view_dim = kVUIDUndefined;
+    const char* image_view_numeric_format = kVUIDUndefined;
 };
 
 struct ValidateBeginQueryVuids {
