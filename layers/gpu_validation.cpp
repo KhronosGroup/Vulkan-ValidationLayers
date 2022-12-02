@@ -2224,14 +2224,18 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
         // PipelineLayoutState should be used for the purposes of determining the number of sets in the layout, but this layout
         // may be a "pseudo layout" used to represent the union of pre-raster and fragment shader layouts, and therefore have a
         // null handle.
-        const auto pipeline_layout_handle =
-            (last_bound.pipeline_layout) ? last_bound.pipeline_layout : pipeline_state->PreRasterPipelineLayoutState()->layout();
-        if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && !pipeline_layout->Destroyed()) {
+        VkPipelineLayout pipeline_layout_handle = VK_NULL_HANDLE;
+        if (last_bound.pipeline_layout) {
+            pipeline_layout_handle = last_bound.pipeline_layout;
+        } else if (!pipeline_state->PreRasterPipelineLayoutState()->Destroyed()) {
+            pipeline_layout_handle = pipeline_state->PreRasterPipelineLayoutState()->layout();
+        }
+        if ((pipeline_layout->set_layouts.size() <= desc_set_bind_index) && pipeline_layout_handle != VK_NULL_HANDLE) {
             DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_layout_handle, desc_set_bind_index, 1, desc_sets.data(),
                                           0, nullptr);
         }
-        if (pipeline_layout->Destroyed()) {
-            ReportSetupProblem(device, "Pipeline layout has been destroyed, aborting GPU-AV");
+        if (pipeline_layout_handle == VK_NULL_HANDLE) {
+            ReportSetupProblem(device, "Unable to find pipeline layout to bind debug descriptor set. Aborting GPU-AV");
             aborted = true;
         } else {
             // Record buffer and memory info in CB state tracking
