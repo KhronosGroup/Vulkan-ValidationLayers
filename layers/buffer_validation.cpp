@@ -2375,7 +2375,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto image_state = Get<IMAGE_STATE>(image);
     if (cb_state_ptr && image_state) {
-        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
         skip |= ValidateMemoryIsBoundToImage(image_state.get(), "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmd(cb_state, CMD_CLEARCOLORIMAGE);
         if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
@@ -2444,7 +2444,7 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     auto cb_state_ptr = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     auto image_state = Get<IMAGE_STATE>(image);
     if (cb_state_ptr && image_state) {
-        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
         const VkFormat image_format = image_state->createInfo.format;
         skip |= ValidateMemoryIsBoundToImage(image_state.get(), "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
@@ -3124,7 +3124,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     if (!cb_state_ptr || !src_image_state || !dst_image_state) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const VkFormat src_format = src_image_state->createInfo.format;
     const VkFormat dst_format = dst_image_state->createInfo.format;
     const bool is_2 = (cmd_type == CMD_COPYIMAGE2KHR || cmd_type == CMD_COPYIMAGE2);
@@ -3717,7 +3717,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     if (!cb_state_ptr) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
 
     skip |= ValidateCmd(cb_state, CMD_CLEARATTACHMENTS);
 
@@ -3931,7 +3931,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
     if (!cb_state_ptr) {
         return;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     if (cb_state.activeRenderPass && (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
         if (cb_state.activeRenderPass->use_dynamic_rendering_inherited) {
@@ -4032,7 +4032,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
     const char *vuid;
 
     if (cb_state_ptr && src_image_state && dst_image_state) {
-        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00256" : "VUID-vkCmdResolveImage-srcImage-00256";
         skip |= ValidateMemoryIsBoundToImage(src_image_state.get(), func_name, vuid);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00258" : "VUID-vkCmdResolveImage-dstImage-00258";
@@ -4354,7 +4354,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
     const char *func_name = CommandTypeString(cmd_type);
 
     if (cb_state_ptr && src_image_state && dst_image_state) {
-        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+        const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
         skip |= ValidateCmd(cb_state, cmd_type);
 
         const char *vuid;
@@ -6799,7 +6799,7 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
     if (!cb_state_ptr || !src_buffer_state || !dst_buffer_state) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
 
     const bool is_2 = (cmd_type == CMD_COPYBUFFER2KHR || cmd_type == CMD_COPYBUFFER2);
     const char *func_name = CommandTypeString(cmd_type);
@@ -6942,7 +6942,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     if (!cb_state_ptr || !buffer_state) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmd(cb_state, CMD_FILLBUFFER);
     // Validate that DST buffer has correct usage flags set
@@ -7346,7 +7346,7 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
     if (!cb_state_ptr || !src_image_state || !dst_buffer_state) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
 
     const bool is_2 = (cmd_type == CMD_COPYIMAGETOBUFFER2KHR || cmd_type == CMD_COPYIMAGETOBUFFER2);
     const char *func_name = CommandTypeString(cmd_type);
@@ -7515,7 +7515,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
     if (!cb_state_ptr || !src_buffer_state || !dst_image_state) {
         return skip;
     }
-    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr.get();
+    const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
 
     const bool is_2 = (cmd_type == CMD_COPYBUFFERTOIMAGE2KHR || cmd_type == CMD_COPYBUFFERTOIMAGE2);
     const char *func_name = CommandTypeString(cmd_type);

@@ -181,7 +181,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    skip |= ValidateCmd(*cb_state.get(), CMD_BINDDESCRIPTORSETS);
+    skip |= ValidateCmd(*cb_state, CMD_BINDDESCRIPTORSETS);
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
     uint32_t total_dynamic_descriptors = 0;
     std::string error_string = "";
