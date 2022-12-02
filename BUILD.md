@@ -20,22 +20,38 @@
 
 The following will be enough for most people, for platform-specific instructions, see below.
 
+### Linux
+
 ```bash
 git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 cd Vulkan-ValidationLayers
-
-# Linux
-cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DUPDATE_DEPS=TRUE
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
 ninja -C build
+```
 
-# Windows
+### Windows & Visual Studio
+
+```bash
+git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
+cd Vulkan-ValidationLayers
 mkdir build
 cd build
 python3 ..\scripts\update_deps.py --dir ..\external --arch x64 --config debug
 cmake -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-
 cmake --build . --config Debug
 ```
+
+### Windows & Ninja
+
+```bash
+# Load MSBUILD x64 devenv
+C:\"Program Files (x86)"\"Microsoft Visual Studio"\2019\Professional\VC\Auxiliary\Build\vcvars64.bat
+git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
+cd Vulkan-ValidationLayers
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
+ninja -C build
+```
+
 ### CCACHE
 
 There are 2 methods to enable CCACHE:
@@ -457,6 +473,7 @@ This repository uses CMake to generate build or project files that are then
 used to build the repository. The CMake generators explicitly supported in
 this repository are:
 
+- Ninja
 - Unix Makefiles
 - Xcode
 
