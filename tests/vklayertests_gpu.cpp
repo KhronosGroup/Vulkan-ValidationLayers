@@ -1745,6 +1745,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     auto c_queue = m_device->GetDefaultComputeQueue();
     if (nullptr == c_queue) {
         GTEST_SKIP() << "Compute not supported";
@@ -1938,6 +1939,28 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
     *data = 0;
     buffer0.memory().unmap();
+
+    // Destroy pipeline layout after creating pipeline
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    {
+        const VkPipelineLayoutObj doomed_pipeline_layout(m_device);
+        pipe.CreateVKPipeline(doomed_pipeline_layout.handle(), m_renderPass);
+    }
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkViewport viewport = {0, 0, 16, 16, 0, 1};
+    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    VkRect2D scissor = {{0, 0}, {16, 16}};
+    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Unable to find pipeline layout to bind debug descriptor set");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
