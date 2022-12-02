@@ -84,8 +84,6 @@
 
 [[maybe_unused]] static const char *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
 
-[[maybe_unused]] static const char *kVUID_Core_VkBindImageMemoryInfo_pNext_missing_VkBindImagePlaneMemoryInfo = "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo";
-
 // clang-format on
 
 #undef DECORATE_UNUSED

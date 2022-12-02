@@ -1627,8 +1627,7 @@ TEST_F(VkLayerTest, BindInvalidMemoryYcbcr) {
 
         // Bind disjoint with BindImageMemory instead of BindImageMemory2
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-image-01608");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-07736");
         vk::BindImageMemory(device(), image, image_memory, 0);
         m_errorMonitor->VerifyFound();
 
@@ -2446,8 +2445,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
 
         // Try binding image_a with no plane specified
         bind_image_info[0].pNext = nullptr;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                             "UNASSIGNED-VkBindImageMemoryInfo-pNext-missing-VkBindImagePlaneMemoryInfo");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-image-07736");
         vkBindImageMemory2Function(device(), 1, bind_image_info);
         m_errorMonitor->VerifyFound();
         bind_image_info[0].pNext = (void *)&plane_memory_info[0];
