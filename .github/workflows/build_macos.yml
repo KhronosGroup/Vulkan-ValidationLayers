@@ -41,7 +41,7 @@ jobs:
         id: cache-deps
         uses: actions/cache@v3
         env:
-          cache-name: cache-macos
+          cache-name: cache-macos-xcode
         with:
           path: |
             external/glslang/build/install
@@ -54,7 +54,7 @@ jobs:
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
-        run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DBUILD_WERROR=ON -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
         env:
           # Ensure we can build against 10.12 SDK: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
           MACOSX_DEPLOYMENT_TARGET: 10.12
@@ -74,6 +74,8 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
+      - name: Install Ninja
+        run: brew install ninja
       - name: Cache dependent components
         # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
         # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
@@ -82,7 +84,7 @@ jobs:
         id: cache-deps
         uses: actions/cache@v3
         env:
-          cache-name: cache-macos-latest
+          cache-name: cache-macos-latest-ninja
         with:
           path: |
             external/glslang/build/install
@@ -95,7 +97,7 @@ jobs:
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
-        run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=${{matrix.config}} -DBUILD_TESTS=ON -DBUILD_WERROR=ON -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"
       - name: Build Vulkan-ValidationLayers
         run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
       - name: Install Vulkan-ValidationLayers

@@ -500,7 +500,7 @@ class GoodRepo(object):
             cmake_cmd.append('--config')
             cmake_cmd.append(CONFIG_MAP[self._args.config])
 
-        # Speed up the build.
+        # TODO: CMake 3.12 introduced gained --parallel [<jobs>] and -j [<jobs>] options
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
             cmake_cmd.append('--')
             num_make_jobs = multiprocessing.cpu_count()
@@ -511,7 +511,10 @@ class GoodRepo(object):
                 except ValueError:
                     print('warning: environment variable MAKE_JOBS has non-numeric value "{}".  '
                           'Using {} (CPU count) instead.'.format(env_make_jobs, num_make_jobs))
-            cmake_cmd.append('-j{}'.format(num_make_jobs))
+            
+            # Xcode doesn't have a '-j' flag, Xcode build performs parallel builds by default.
+            if self._args.generator != "Xcode":
+                cmake_cmd.append('-j{}'.format(num_make_jobs))
         if platform.system() == 'Windows' and self._args.generator != "Ninja":
             cmake_cmd.append('--')
             cmake_cmd.append('/maxcpucount')
