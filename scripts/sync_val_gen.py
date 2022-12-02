@@ -689,12 +689,16 @@ def StageAccessEnums(stage_accesses, config):
 
     map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
+    typename = 'layer_data::unordered_map<{}, {}>'.format(sync_mask_name, ordinal_name)
     if config['is_source']:
-        output.append('const layer_data::unordered_map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
-        output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
-        output.append('};')
+        output.append('const {}& {}() {{'.format(typename, map_name))
+        output.append('{}static const {} variable = {{'.format(indent, typename))
+        output.extend([ '{}{{ {}, {} }},'.format(indent * 2, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses if e['stage_access_bit'] is not None])
+        output.append('{}}};'.format(indent))
+        output.append('{}return variable;'.format(indent))
+        output.append('}')
     else:
-        output.append('extern const layer_data::unordered_map<{}, {}> {};'.format(sync_mask_name, ordinal_name, map_name))
+        output.append('const {}& {}();'.format(typename, map_name))
     output.append('')
 
     # stage/access debug information based on ordinal enum
@@ -710,8 +714,10 @@ def StageAccessEnums(stage_accesses, config):
 
     sa_info_var = '{}StageAccessInfoByStageAccessIndex'.format(config['var_prefix'])
     output.append('// Array of text names and component masks for each stage/access index')
+    typename = 'std::array<{}, {}>'.format(sa_info_type, len(stage_accesses))
     if config['is_source']:
-        output.append('const std::array<{}, {}> {} {{ {{'.format(sa_info_type, len(stage_accesses), sa_info_var))
+        output.append('const {}& {}() {{'.format(typename, sa_info_var))
+        output.append('static const {} variable = {{ {{'.format(typename))
         fields_format ='{tab}{tab}{}'
         fields = ['stage_access_string', 'stage', 'access', 'stage_access']
         for entry in stage_accesses:
@@ -721,9 +727,12 @@ def StageAccessEnums(stage_accesses, config):
             bit = entry['stage_access_bit']
             output.append(fields_format.format(bit if bit is not None else 'SyncStageAccessFlags(0)', tab=indent))
             output.append(indent +'},')
-        output.append('} };')
+        output.append('}};')
+        output.append('return variable;')
+        output.append('}')
     else:
-        output.append('extern const std::array<{}, {}> {};'.format(sa_info_type, len(stage_accesses), sa_info_var))
+        output.append('const {}& {}();'.format(typename, sa_info_var))
+
     output.append('')
 
     return output
@@ -735,9 +744,10 @@ def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, 
     indent = config['indent']
 
     table = ['// ' + table_desc]
+    typename = 'std::map<{}, {}>'.format(key_type, mapped_type)
     if config['is_source']:
-        table.append('const std::map<{}, {}> {} {{'.format(key_type, mapped_type, config['var_prefix'] + table_name))
-
+        table.append('const {}& {}() {{'.format(typename, config['var_prefix'] + table_name))
+        table.append('{}static const {} variable = {{'.format(indent, typename))
         for mask_key in key_vec:
             mask_vec = mask_map[mask_key]
             if len(mask_vec) == 0:
@@ -751,9 +761,11 @@ def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, 
         if(table_name == 'StageAccessMaskByAccessBit'):
             table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_2_MEMORY_READ_BIT', 'syncStageAccessReadMask'))
             table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_2_MEMORY_WRITE_BIT', 'syncStageAccessWriteMask'))
-        table.append('};')
+        table.append('{}}};'.format(indent))
+        table.append('{}return variable;'.format(indent))
+        table.append('}')
     else:
-        table.append('extern const std::map<{}, {}> {};'.format(key_type, mapped_type, config['var_prefix'] + table_name))
+        table.append('const {}& {}();'.format(typename, config['var_prefix'] + table_name))
     table.append('')
 
     return table
@@ -763,8 +775,10 @@ def DoubleCrossReferenceTable(table_name, table_desc, stage_keys, access_keys, s
     ordinal_name = config['ordinal_name']
 
     table = ['// ' + table_desc]
+    typename = 'std::map<{vk_stage_flags}, std::map<{vk_access_flags}, {ordinal_name}>>'.format(**config)
     if config['is_source']:
-        table.append('const std::map<{vk_stage_flags}, std::map<{vk_access_flags}, {ordinal_name}>> {var_prefix}{} {{'.format(table_name, **config))
+        table.append('const {}& {var_prefix}{}() {{'.format(typename, table_name, **config))
+        table.append('static const {} variable = {{'.format(typename))
         sep = ' },\n' + indent * 2 + '{ '
 
         # Because stage_access_stage_access_map's elements order might be different sometimes.
@@ -774,9 +788,11 @@ def DoubleCrossReferenceTable(table_name, table_desc, stage_keys, access_keys, s
             accesses = [ '{}, {}'.format(access, index) for access, index in sorted(stage_access_stage_access_map[i].items()) ]
             entry_format = '{tab}{{ {key}, {{\n{tab}{tab}{{ {val} }}\n{tab}}} }},'
             table.append( entry_format.format(key=i, val=sep.join(accesses), tab=indent))
-        table.append('};')
+        table.append('{}}};'.format(indent))
+        table.append('{}return variable;'.format(indent))
+        table.append('}')
     else:
-        table.append('extern const std::map<{vk_stage_flags}, std::map<{vk_access_flags}, {ordinal_name}>> {var_prefix}{};'.format(table_name, **config))
+        table.append('const {}& {var_prefix}{}();'.format(typename, table_name, **config))
     table.append('')
 
     return table
@@ -910,9 +926,10 @@ def ShaderStageAndSyncStageAccessMap(config):
         output.append('    SyncStageAccessIndex storage_write;')
         output.append('    SyncStageAccessIndex uniform_read;')
         output.append('};\n')
-        output.append('extern const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> syncStageAccessMaskByShaderStage;')
+        output.append('const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage();')
     else:
-        output.append('const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> syncStageAccessMaskByShaderStage {')
+        output.append('const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage() {')
+        output.append('    static const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> variable = {')
         output.append(ShaderStageToSyncStageAccess('VERTEX_BIT', 'VERTEX_SHADER'))
         output.append(ShaderStageToSyncStageAccess('TESSELLATION_CONTROL_BIT', 'TESSELLATION_CONTROL_SHADER'))
         output.append(ShaderStageToSyncStageAccess('TESSELLATION_EVALUATION_BIT', 'TESSELLATION_EVALUATION_SHADER'))
@@ -928,6 +945,8 @@ def ShaderStageAndSyncStageAccessMap(config):
         output.append(ShaderStageToSyncStageAccess('TASK_BIT_EXT', 'TASK_SHADER_EXT'))
         output.append(ShaderStageToSyncStageAccess('MESH_BIT_EXT', 'MESH_SHADER_EXT'))
         output.append('};\n')
+        output.append('return variable;\n')
+        output.append('}\n')
     return output
 
 def GenSyncTypeHelper(gen, is_source) :
