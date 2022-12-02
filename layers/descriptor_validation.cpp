@@ -3483,18 +3483,38 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                     }
 
                     if (setLayoutSize > 0) {
-                        const auto buffer_state_end = GetBufferByAddress(start + offset + setLayoutSize - 1);
+                        // It looks like enough to check last binding in set
+                        for (uint32_t j = 0; j < set_layout->GetBindingCount(); j++) {
+                            const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(j);
+                            const bool vdc = (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) != 0;
 
+                            if (vdc) {
+                                // If a binding is VARIABLE_DESCRIPTOR_COUNT, the effective setLayoutSize we
+                                // must validate is just the offset of the last binding.
+                                const auto pool = cb_state->command_pool;
+                                with_descriptor_indexing = true;
+                                uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
+                                DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->dev_data->device,
+                                                                               set_layout->GetDescriptorSetLayout(),
+                                                                               binding, &setLayoutSize);
+
+                                // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the
+                                // offset may be 0. In this case, treat the descriptor set layout as size 1,
+                                // so we validate that the offset is sensible.
+                                if (set_layout->GetBindingCount() == 1) {
+                                    setLayoutSize = 1;
+                                }
+
+                                // There can only be one binding with VARIABLE_COUNT.
+                                break;
+                            }
+                        }
+                    }
+
+                    if (setLayoutSize > 0) {
+                        const auto buffer_state_end = GetBufferByAddress(start + offset + setLayoutSize - 1);
                         if (buffer_state_end) {
                             valid_binding = true;
-                        } else {
-                            // It looks like enough to check last binding in set
-                            for (uint32_t j = 0; j < set_layout->GetBindingCount(); j++) {
-                                const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(j);
-                                const bool vdc = (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) != 0;
-
-                                if (vdc) with_descriptor_indexing = true;
-                            }
                         }
                     }
                 }
