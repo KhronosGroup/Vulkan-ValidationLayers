@@ -17046,7 +17046,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             auto mem_info = Get<DEVICE_MEMORY_STATE>(bind_info.memory);
 
             if (image_state->disjoint && plane_info == nullptr) {
-                skip |= LogError(bind_info.image, kVUID_Core_VkBindImageMemoryInfo_pNext_missing_VkBindImagePlaneMemoryInfo,
+                skip |= LogError(bind_info.image, "VUID-VkBindImageMemoryInfo-image-07736",
                                  "%s: In order to bind planes of a disjoint image, add a VkBindImagePlaneMemoryInfo structure to "
                                  "the pNext chain of VkBindImageMemoryInfo.",
                                  error_prefix);
