@@ -82,6 +82,8 @@
 [[maybe_unused]] static const char *kVUID_Core_BufferMemoryBarrier_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier-sharing-mode-exclusive-same-family";
 [[maybe_unused]] static const char *kVUID_Core_BufferMemoryBarrier2_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier2KHR-sharing-mode-exclusive-same-family";
 
+[[maybe_unused]] static const char *kVUID_Core_ImageCopy_Extent = "UNASSIGNED-VkImageCopy-extent";
+
 [[maybe_unused]] static const char *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
 
 // clang-format on

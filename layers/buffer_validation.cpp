@@ -159,11 +159,17 @@ static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool ima
             "VUID-VkCopyBufferToImageInfo2-aspectMask-00211",
             "VUID-VkCopyImageToBufferInfo2-aspectMask-00211",
         }},
-        {"01560", {
-            "VUID-vkCmdCopyBufferToImage-aspectMask-01560",
-            "VUID-vkCmdCopyImageToBuffer-aspectMask-01560",
-            "VUID-VkCopyBufferToImageInfo2-aspectMask-01560",
-            "VUID-VkCopyImageToBufferInfo2-aspectMask-01560",
+        {"07740", {
+            "VUID-vkCmdCopyBufferToImage-pRegions-07740",
+            "VUID-vkCmdCopyImageToBuffer-pRegions-07740",
+            "VUID-VkCopyBufferToImageInfo2-pRegions-07740",
+            "VUID-VkCopyImageToBufferInfo2-pRegions-07740",
+        }},
+        {"07741", {
+            "VUID-vkCmdCopyBufferToImage-pRegions-07741",
+            "VUID-vkCmdCopyImageToBuffer-pRegions-07741",
+            "VUID-VkCopyBufferToImageInfo2-pRegions-07741",
+            "VUID-VkCopyImageToBufferInfo2-pRegions-07741",
         }},
         {"00213", {
             "VUID-vkCmdCopyBufferToImage-baseArrayLayer-00213",
@@ -172,10 +178,11 @@ static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool ima
             "VUID-VkCopyImageToBufferInfo2-baseArrayLayer-00213",
         }},
         {"04052", {
-            "VUID-vkCmdCopyBufferToImage-commandBuffer-04052",
-            "VUID-vkCmdCopyImageToBuffer-commandBuffer-04052",
-            "VUID-VkCopyBufferToImageInfo2-commandBuffer-04052",
-            "VUID-VkCopyImageToBufferInfo2-commandBuffer-04052",
+            // was split up in 1.3.236 spec (internal MR 5371)
+            "VUID-vkCmdCopyBufferToImage-commandBuffer-07737",
+            "VUID-vkCmdCopyImageToBuffer-commandBuffer-07746",
+            "VUID-vkCmdCopyBufferToImage2-commandBuffer-07737",
+            "VUID-vkCmdCopyImageToBuffer2-commandBuffer-07746",
         }},
         {"04053", {
             "VUID-vkCmdCopyBufferToImage-srcImage-04053",
@@ -3187,8 +3194,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType ? dst_copy_extent.depth
                                                                                : region.dstSubresource.layerCount);
                 if (src_slices != dst_slices) {
-                    vuid = is_2 ? "VUID-VkImageCopy2-extent-00140" : "VUID-VkImageCopy-extent-00140";
-                    skip |= LogError(command_buffer, vuid,
+                    skip |= LogError(command_buffer, kVUID_Core_ImageCopy_Extent,
                                      "%s: number of depth slices in source (%" PRIu32 ") and destination (%" PRIu32
                                      ") subresources for pRegions[%" PRIu32
                                      "] "
@@ -7221,7 +7227,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         if (FormatIsMultiplane(image_format)) {
             // VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes
             if ((FormatPlaneCount(image_format) < 3) && (region_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
-                skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("01560", image_to_buffer, is_2),
+                skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("07740", image_to_buffer, is_2),
                                  "%s: pRegion[%d] subresource aspectMask cannot be VK_IMAGE_ASPECT_PLANE_2_BIT unless image "
                                  "format has three planes.",
                                  function, i);
@@ -7230,7 +7236,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
             // image subresource aspectMask must be VK_IMAGE_ASPECT_PLANE_*_BIT
             if (0 ==
                 (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
-                skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("01560", image_to_buffer, is_2),
+                skip |= LogError(image_state->image(), GetBufferImageCopyCommandVUID("07741", image_to_buffer, is_2),
                                  "%s: pRegion[%d] subresource aspectMask for multi-plane image formats must have a "
                                  "VK_IMAGE_ASPECT_PLANE_*_BIT when copying to or from.",
                                  function, i);
@@ -7426,9 +7432,8 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
         skip |= VerifyImageLayout(cb_state, *src_image_state, region.imageSubresource, srcImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, func_name, src_invalid_layout_vuid, vuid, &hit_error);
-        vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageOffset-01794" : "VUID-vkCmdCopyImageToBuffer-imageOffset-01794";
-        skip |=
-            ValidateCopyBufferImageTransferGranularityRequirements(cb_state, src_image_state.get(), &region, i, func_name, vuid);
+        vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-imageOffset-07747" : "VUID-vkCmdCopyImageToBuffer-imageOffset-07747";
+        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, src_image_state.get(), &region, i, func_name, vuid);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-imageSubresource-01703" : "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703";
         skip |= ValidateImageMipLevel(cb_state, src_image_state.get(), region.imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
@@ -7579,9 +7584,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-00180" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180";
         skip |= VerifyImageLayout(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout,
                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, func_name, dst_invalid_layout_vuid, vuid, &hit_error);
-        vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageOffset-01793" : "VUID-vkCmdCopyBufferToImage-imageOffset-01793";
-        skip |=
-            ValidateCopyBufferImageTransferGranularityRequirements(cb_state, dst_image_state.get(), &region, i, func_name, vuid);
+        vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-imageOffset-07738" : "VUID-vkCmdCopyBufferToImage-imageOffset-07738";
+        skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, dst_image_state.get(), &region, i, func_name, vuid);
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-imageSubresource-01701" : "VUID-vkCmdCopyBufferToImage-imageSubresource-01701";
         skip |= ValidateImageMipLevel(cb_state, dst_image_state.get(), region.imageSubresource.mipLevel, i, func_name,
                                       "imageSubresource", vuid);
@@ -7600,8 +7604,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
             LogObjectList objlist(cb_state.commandBuffer());
             objlist.add(command_pool->commandPool());
             objlist.add(dst_image_state->image());
-            vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-commandBuffer-04477"
-                           : "VUID-vkCmdCopyBufferToImage-commandBuffer-04477";
+            vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
             skip |= LogError(objlist, vuid,
                              "%s(): pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
                              "VK_IMAGE_ASPECT_STENCIL_BIT but the command buffer %s was allocated from the command pool %s "
