@@ -452,15 +452,6 @@ export PATH=/usr/local/bin:$PATH
 
       brew install python python3 git
 
-### CMake Generators
-
-This repository uses CMake to generate build or project files that are then
-used to build the repository. The CMake generators explicitly supported in
-this repository are:
-
-- Unix Makefiles
-- Xcode
-
 ### Building with the Xcode Generator
 
 To create and open an Xcode project:
