@@ -10173,7 +10173,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
         if (cb_state->activeRenderPass && cb_state->activeRenderPass->UsesDynamicRendering()) {
             const auto rendering_info = cb_state->activeRenderPass->dynamic_rendering_begin_rendering_info;
             const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(rendering_info.pNext);
-            const auto pipeline_rasterization_samples = pipeline_state.MultisampleState()->rasterizationSamples;
+            // If no color attachment exists, this can be nullptr.
+            const auto multisample_state = pipeline_state.MultisampleState();
+            const auto pipeline_rasterization_samples = multisample_state ? multisample_state->rasterizationSamples : 0;
             if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable &&
                 (msrtss_info->rasterizationSamples != pipeline_rasterization_samples)) {
                 skip |= LogError(pipeline, "VUID-vkCmdBindPipeline-pipeline-06856",
