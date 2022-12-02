@@ -267,7 +267,7 @@ static const SyncStageAccessFlags SYNC_IMAGE_LAYOUT_TRANSITION_BIT = (SyncStageA
 static const SyncStageAccessFlags SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER_BIT = (SyncStageAccessFlags(1) << SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER);
 
 // Map of the StageAccessIndices from the StageAccess Bit
-extern const layer_data::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex> syncStageAccessIndexByStageAccessBit;
+const layer_data::unordered_map<SyncStageAccessFlags, SyncStageAccessIndex>& syncStageAccessIndexByStageAccessBit();
 
 struct SyncStageAccessInfoType {
     const char *name;
@@ -278,7 +278,7 @@ struct SyncStageAccessInfoType {
 };
 
 // Array of text names and component masks for each stage/access index
-extern const std::array<SyncStageAccessInfoType, 107> syncStageAccessInfoByStageAccessIndex;
+const std::array<SyncStageAccessInfoType, 107>& syncStageAccessInfoByStageAccessIndex();
 
 // Constants defining the mask of all read and write stage_access states
 static const SyncStageAccessFlags syncStageAccessReadMask = ( //  Mask of all read StageAccess bits
@@ -394,28 +394,28 @@ static const SyncStageAccessFlags syncStageAccessWriteMask = ( //  Mask of all w
 );
 
 // Bit order mask of stage_access bit for each stage
-extern const std::map<VkPipelineStageFlags2, SyncStageAccessFlags> syncStageAccessMaskByStageBit;
+const std::map<VkPipelineStageFlags2, SyncStageAccessFlags>& syncStageAccessMaskByStageBit();
 
 // Bit order mask of stage_access bit for each access
-extern const std::map<VkAccessFlags2, SyncStageAccessFlags> syncStageAccessMaskByAccessBit;
+const std::map<VkAccessFlags2, SyncStageAccessFlags>& syncStageAccessMaskByAccessBit();
 
 // stage_access index for each stage and access
-extern const std::map<VkPipelineStageFlags2, std::map<VkAccessFlags2, SyncStageAccessIndex>> syncStageAccessIndexByStageAndAccess;
+const std::map<VkPipelineStageFlags2, std::map<VkAccessFlags2, SyncStageAccessIndex>>& syncStageAccessIndexByStageAndAccess();
 
 // Direct VkPipelineStageFlags to valid VkAccessFlags lookup table
-extern const std::map<VkPipelineStageFlags2, VkAccessFlags2> syncDirectStageToAccessMask;
+const std::map<VkPipelineStageFlags2, VkAccessFlags2>& syncDirectStageToAccessMask();
 
 // Pipeline stages corresponding to VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT for each VkQueueFlagBits
-extern const std::map<VkQueueFlagBits, VkPipelineStageFlags2> syncAllCommandStagesByQueueFlags;
+const std::map<VkQueueFlagBits, VkPipelineStageFlags2>& syncAllCommandStagesByQueueFlags();
 
 // Masks of logically earlier stage flags for a given stage flag
-extern const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> syncLogicallyEarlierStages;
+const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyEarlierStages();
 
 // Masks of logically later stage flags for a given stage flag
-extern const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2> syncLogicallyLaterStages;
+const std::map<VkPipelineStageFlags2, VkPipelineStageFlags2>& syncLogicallyLaterStages();
 
 // Lookup table of stage orderings
-extern const std::map<VkPipelineStageFlags2, int> syncStageOrder;
+const std::map<VkPipelineStageFlags2, int>& syncStageOrder();
 
 struct SyncShaderStageAccess {
     SyncStageAccessIndex sampled_read;
@@ -424,4 +424,4 @@ struct SyncShaderStageAccess {
     SyncStageAccessIndex uniform_read;
 };
 
-extern const std::map<VkShaderStageFlagBits, SyncShaderStageAccess> syncStageAccessMaskByShaderStage;
+const std::map<VkShaderStageFlagBits, SyncShaderStageAccess>& syncStageAccessMaskByShaderStage();

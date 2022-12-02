@@ -189,7 +189,7 @@ static const SyncStageAccessInfoType *SyncStageAccessInfoFromMask(SyncStageAcces
     const SyncStageAccessInfoType *info = nullptr;
     for (size_t i = 0; i < flags.size(); i++) {
         if (flags.test(i)) {
-            info = &syncStageAccessInfoByStageAccessIndex[i];
+            info = &syncStageAccessInfoByStageAccessIndex()[i];
             break;
         }
     }
@@ -201,8 +201,8 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
     if (flags.none()) {
         out_str = "0";
     } else {
-        for (size_t i = 0; i < syncStageAccessInfoByStageAccessIndex.size(); i++) {
-            const auto &info = syncStageAccessInfoByStageAccessIndex[i];
+        for (size_t i = 0; i < syncStageAccessInfoByStageAccessIndex().size(); i++) {
+            const auto &info = syncStageAccessInfoByStageAccessIndex()[i];
             if ((flags & info.stage_access_bit).any()) {
                 if (!out_str.empty()) {
                     out_str.append(sep);
@@ -219,8 +219,8 @@ static std::string string_SyncStageAccessFlags(const SyncStageAccessFlags &flags
 
 static std::string string_UsageIndex(SyncStageAccessIndex usage_index) {
     const char *stage_access_name = "INVALID_STAGE_ACCESS";
-    if (usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size())) {
-        stage_access_name = syncStageAccessInfoByStageAccessIndex[usage_index].name;
+    if (usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size())) {
+        stage_access_name = syncStageAccessInfoByStageAccessIndex()[usage_index].name;
     }
     return std::string(stage_access_name);
 }
@@ -296,8 +296,8 @@ std::ostream &operator<<(std::ostream &out, const ResourceUsageRecord::Formatter
 }
 
 std::ostream &operator<<(std::ostream &out, const HazardResult &hazard) {
-    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex.size()));
-    const auto &usage_info = syncStageAccessInfoByStageAccessIndex[hazard.usage_index];
+    assert(hazard.usage_index < static_cast<SyncStageAccessIndex>(syncStageAccessInfoByStageAccessIndex().size()));
+    const auto &usage_info = syncStageAccessInfoByStageAccessIndex()[hazard.usage_index];
     const auto *info = SyncStageAccessInfoFromMask(hazard.prior_access);
     const char *stage_access_name = info ? info->name : "INVALID_STAGE_ACCESS";
     out << "(";
@@ -673,8 +673,8 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
         assert(stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT);
         return SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
     }
-    auto stage_access = syncStageAccessMaskByShaderStage.find(stage_flag);
-    if (stage_access == syncStageAccessMaskByShaderStage.end()) {
+    auto stage_access = syncStageAccessMaskByShaderStage().find(stage_flag);
+    if (stage_access == syncStageAccessMaskByShaderStage().end()) {
         assert(0);
     }
     if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
@@ -1733,11 +1733,11 @@ SyncStageAccessFlags AccessScopeImpl(Flags flag_mask, const Map &map) {
 }
 
 SyncStageAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags2KHR stages) {
-    return AccessScopeImpl(stages, syncStageAccessMaskByStageBit);
+    return AccessScopeImpl(stages, syncStageAccessMaskByStageBit());
 }
 
 SyncStageAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2KHR accesses) {
-    return AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncStageAccessMaskByAccessBit);
+    return AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncStageAccessMaskByAccessBit());
 }
 
 // Getting from stage mask and access mask to stage/access masks is something we need to be good at...

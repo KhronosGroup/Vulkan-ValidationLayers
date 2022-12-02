@@ -64,7 +64,7 @@ VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mas
 
     if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-        for (const auto &all_commands : syncAllCommandStagesByQueueFlags) {
+        for (const auto &all_commands : syncAllCommandStagesByQueueFlags()) {
             if (all_commands.first & queue_flags) {
                 expanded |= all_commands.second & ~disabled_feature_mask;
             }
@@ -76,7 +76,7 @@ VkPipelineStageFlags2KHR ExpandPipelineStages(VkPipelineStageFlags2KHR stage_mas
         // The syncAllCommandStagesByQueueFlags table includes HOST for all queue types since it is
         // allowed but it shouldn't be part of ALL_GRAPHICS
         expanded |=
-            syncAllCommandStagesByQueueFlags.at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
+            syncAllCommandStagesByQueueFlags().at(VK_QUEUE_GRAPHICS_BIT) & ~disabled_feature_mask & ~VK_PIPELINE_STAGE_HOST_BIT;
     }
     if (VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR & stage_mask) {
         expanded &= ~VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT_KHR;
@@ -122,8 +122,8 @@ VkAccessFlags2KHR CompatibleAccessMask(VkPipelineStageFlags2KHR stage_mask) {
     for (size_t i = 0; i < kNumPipelineStageBits; i++) {
         VkPipelineStageFlags2KHR bit = 1ULL << i;
         if (stage_mask & bit) {
-            auto access_rec = syncDirectStageToAccessMask.find(bit);
-            if (access_rec != syncDirectStageToAccessMask.end()) {
+            auto access_rec = syncDirectStageToAccessMask().find(bit);
+            if (access_rec != syncDirectStageToAccessMask().end()) {
                 result |= access_rec->second;
                 continue;
             }
@@ -158,16 +158,16 @@ VkPipelineStageFlags2KHR RelatedPipelineStages(VkPipelineStageFlags2KHR stage_ma
 }
 
 VkPipelineStageFlags2KHR WithEarlierPipelineStages(VkPipelineStageFlags2KHR stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages);
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
 }
 
 VkPipelineStageFlags2KHR WithLaterPipelineStages(VkPipelineStageFlags2KHR stage_mask) {
-    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages);
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
 }
 
 int GetGraphicsPipelineStageLogicalOrdinal(VkPipelineStageFlags2KHR flag) {
-    const auto &rec = syncStageOrder.find(flag);
-    if (rec == syncStageOrder.end()) {
+    const auto &rec = syncStageOrder().find(flag);
+    if (rec == syncStageOrder().end()) {
         return -1;
     }
     return rec->second;
