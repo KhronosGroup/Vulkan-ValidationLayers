@@ -24,14 +24,13 @@ The following will be enough for most people, for platform-specific instructions
 git clone https://github.com/KhronosGroup/Vulkan-ValidationLayers.git
 cd Vulkan-ValidationLayers
 
-mkdir build
-cd build
-
 # Linux
-python3 ../scripts/update_deps.py --dir ../external --arch x64 --config debug
-cmake -G Ninja -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DUPDATE_DEPS=TRUE
+ninja -C build
 
 # Windows
+mkdir build
+cd build
 python3 ..\scripts\update_deps.py --dir ..\external --arch x64 --config debug
 cmake -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
 
