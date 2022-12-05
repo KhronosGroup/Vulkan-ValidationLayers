@@ -1603,30 +1603,28 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
     bool result = false;
 
-    if (pipeline.descriptor_buffer_mode) {
-        if (!last_bound.per_set.empty()) {
-            bool non_push = false;
-            for (const auto &ds : last_bound.per_set) {
-                non_push = ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor();
-
-                if (non_push) break;
+    for (const auto &ds : last_bound.per_set) {
+        if (pipeline.descriptor_buffer_mode) {
+            if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
+                LogObjectList obj_list(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
+                result |= LogError(pipeline.pipeline(), vuid.descriptor_buffer_set_offset_missing,
+                                   "%s: pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
+                                   function, string_VkPipelineBindPoint(bind_point),
+                                   report_data->FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
+                break;
             }
 
-            if (non_push)
-                result |=
-                    LogError(pipeline.pipeline(), vuid.descriptor_buffer_bit_not_set,
-                             "%s: If the descriptors used by the VkPipeline bound to the pipeline bind point were specified via "
-                             "vkCmdBindDescriptorSets, the bound VkPipeline must have been created without "
-                             "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT",
-                             function);
+        } else {
+            if (ds.bound_descriptor_buffer.has_value()) {
+                LogObjectList obj_list(cb_state.Handle(), pipeline.Handle());
+                result |= LogError(obj_list, vuid.descriptor_buffer_bit_not_set,
+                                   "%s: pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
+                                   " (index=%" PRIu32 " offset=%" PRIu64 ")",
+                                   function, string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
+                                   ds.bound_descriptor_buffer->offset);
+                break;
+            }
         }
-    } else {
-        if (cb_state.descriptor_buffer_bindings.size() > 0)
-            result |= LogError(pipeline.pipeline(), vuid.descriptor_buffer_set_offset_missing,
-                               "%s: If the descriptors used by the VkPipeline bound to the pipeline bind point were specified via "
-                               "vkCmdSetDescriptorBufferOffsetsEXT, the bound VkPipeline must have been created with "
-                               "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT",
-                               function);
     }
 
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) {
@@ -1668,7 +1666,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (!pipeline.descriptor_buffer_mode) {
-        if (pipeline.active_slots.size() > 0 && !IsBoundSetCompat(pipeline.max_active_slot, last_bound, pipeline_layout.get())) {
+        if (!pipeline.active_slots.empty() && !IsBoundSetCompat(pipeline.max_active_slot, last_bound, *pipeline_layout)) {
             LogObjectList objlist(pipeline.pipeline());
             const auto layouts = pipeline.PipelineLayoutStateUnion();
             std::ostringstream pipe_layouts_log;
