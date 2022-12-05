@@ -8905,6 +8905,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceImageSparseMemoryRequir
 bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice device,
                                                                       VkExportMetalObjectsInfoEXT *pMetalObjectsInfo) const {
     bool skip = false;
+
+    static_assert(AllVkExportMetalObjectTypeFlagBitsEXT == 0x3F, "Add new ExportMetalObjects support to VVL!");
+
     constexpr std::array allowed_structs = {
         VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_COMMAND_QUEUE_INFO_EXT,
         VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT,
