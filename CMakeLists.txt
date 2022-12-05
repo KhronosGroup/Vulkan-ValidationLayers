@@ -210,11 +210,13 @@ elseif(MSVC)
 
     # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
-    if(MINGW)
-        add_definitions(-D_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
-    endif()
 
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
+endif()
+
+if(MINGW)
+    add_definitions(-D_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
+    add_compile_options("-Wa,-mbig-obj")
 endif()
 
 option(INSTALL_TESTS "Install tests" OFF)
