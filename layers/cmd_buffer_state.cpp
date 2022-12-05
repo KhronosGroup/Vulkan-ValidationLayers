@@ -808,17 +808,17 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
     }
 }
 
-void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, PIPELINE_LAYOUT_STATE *pipeline_layout,
+void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const PIPELINE_LAYOUT_STATE &pipeline_layout,
                                               uint32_t set, uint32_t descriptorWriteCount,
                                               const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
-    if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
-        !pipeline_layout->set_layouts[set]->IsPushDescriptor()) {
+    if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
+        !pipeline_layout.set_layouts[set]->IsPushDescriptor()) {
         return;
     }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
-    const auto &dsl = pipeline_layout->set_layouts[set];
+    const auto &dsl = pipeline_layout.set_layouts[set];
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     auto &last_bound = lastBound[lv_bind_point];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
@@ -829,7 +829,7 @@ void CMD_BUFFER_STATE::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPo
     }
 
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set, 0, nullptr);
-    last_bound.pipeline_layout = pipeline_layout->layout();
+    last_bound.pipeline_layout = pipeline_layout.layout();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
     push_descriptor_set->PerformPushDescriptorsUpdate(dev_data, descriptorWriteCount, pDescriptorWrites);
@@ -944,51 +944,53 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
     }
 }
 
+// Helper for descriptor set (and buffer) updates.
+static bool PushDescriptorCleanup(LAST_BOUND_STATE &last_bound, uint32_t set_idx) {
+    // All uses are from loops over per_set, but just in case..
+    assert(set_idx < last_bound.per_set.size());
+
+    auto ds = last_bound.per_set[set_idx].bound_descriptor_set.get();
+    if (ds && ds->IsPushDescriptor()) {
+        assert(ds == last_bound.push_descriptor_set.get());
+        last_bound.push_descriptor_set = nullptr;
+        return true;
+    }
+    return true;
+}
+
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules.
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                     const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set,
+                                                     const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                                      std::shared_ptr<cvdescriptorset::DescriptorSet> &push_descriptor_set,
                                                      uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
-    // Defensive
-    assert(pipeline_layout);
-    if (!pipeline_layout) return;
 
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
-    assert(last_binding_index < pipeline_layout->set_compat_ids.size());
+    assert(last_binding_index < pipeline_layout.set_compat_ids.size());
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.pipeline_layout = pipeline_layout->layout();
-    auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
+    last_bound.pipeline_layout = pipeline_layout.layout();
+    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
     // Resize binding arrays
-    uint32_t last_set_index = first_set + set_count - 1;
-    if (last_set_index >= last_bound.per_set.size()) {
-        last_bound.per_set.resize(last_set_index + 1);
+    if (last_binding_index >= last_bound.per_set.size()) {
+        last_bound.per_set.resize(required_size);
     }
     const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
-
-    // We need this three times in this function, but nowhere else
-    auto push_descriptor_cleanup = [&last_bound](const std::shared_ptr<cvdescriptorset::DescriptorSet> &ds) -> bool {
-        if (ds && ds->IsPushDescriptor()) {
-            assert(ds == last_bound.push_descriptor_set);
-            last_bound.push_descriptor_set = nullptr;
-            return true;
-        }
-        return false;
-    };
 
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
         if (last_bound.per_set[last_binding_index].compat_id_for_set != pipe_compat_ids[last_binding_index]) {
             // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
             for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
-                if (push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set)) break;
+                if (PushDescriptorCleanup(last_bound, set_idx)) {
+                    break;
+                }
             }
         } else {
             // We're not disturbing past last, so leave the upper binding data alone.
@@ -1005,9 +1007,8 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
         auto &set_info = last_bound.per_set[set_idx];
         if (set_info.compat_id_for_set != pipe_compat_ids[set_idx]) {
-            push_descriptor_cleanup(set_info.bound_descriptor_set);
-            set_info.bound_descriptor_set = nullptr;
-            set_info.dynamicOffsets.clear();
+            PushDescriptorCleanup(last_bound, set_idx);
+            set_info.Reset();
             set_info.compat_id_for_set = pipe_compat_ids[set_idx];
         }
     }
@@ -1020,10 +1021,11 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
         auto descriptor_set =
             push_descriptor_set ? push_descriptor_set : dev_data->Get<cvdescriptorset::DescriptorSet>(pDescriptorSets[input_idx]);
 
+        set_info.Reset();
         // Record binding (or push)
         if (descriptor_set != last_bound.push_descriptor_set) {
             // Only cleanup the push descriptors if they aren't the currently used set.
-            push_descriptor_cleanup(set_info.bound_descriptor_set);
+            PushDescriptorCleanup(last_bound, set_idx);
         }
         set_info.bound_descriptor_set = descriptor_set;
         set_info.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
@@ -1040,6 +1042,63 @@ void CMD_BUFFER_STATE::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipelin
                 set_info.dynamicOffsets.clear();
             }
         }
+    }
+}
+
+void CMD_BUFFER_STATE::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
+                                                        const PIPELINE_LAYOUT_STATE &pipeline_layout, uint32_t first_set,
+                                                        uint32_t set_count, const uint32_t *buffer_indicies,
+                                                        const VkDeviceSize *buffer_offsets) {
+    uint32_t required_size = first_set + set_count;
+    const uint32_t last_binding_index = required_size - 1;
+    assert(last_binding_index < pipeline_layout.set_compat_ids.size());
+
+    // Some useful shorthand
+    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
+    auto &last_bound = lastBound[lv_bind_point];
+    last_bound.pipeline_layout = pipeline_layout.layout();
+    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
+    // Resize binding arrays
+    if (last_binding_index >= last_bound.per_set.size()) {
+        last_bound.per_set.resize(required_size);
+    }
+    const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
+
+    // Clean up the "disturbed" before and after the range to be set
+    if (required_size < current_size) {
+        if (last_bound.per_set[last_binding_index].compat_id_for_set != pipe_compat_ids[last_binding_index]) {
+            // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
+            for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
+                if (PushDescriptorCleanup(last_bound, set_idx)) {
+                    break;
+                }
+            }
+        } else {
+            // We're not disturbing past last, so leave the upper binding data alone.
+            required_size = current_size;
+        }
+    }
+
+    // We resize if we need more set entries or if those past "last" are disturbed
+    if (required_size != current_size) {
+        last_bound.per_set.resize(required_size);
+    }
+
+    // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
+    for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
+        PushDescriptorCleanup(last_bound, set_idx);
+        last_bound.per_set[set_idx].Reset();
+    }
+
+    // Now update the bound sets with the input sets
+    for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
+        auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
+        auto &set_info = last_bound.per_set[set_idx];
+        set_info.Reset();
+
+        // Record binding
+        set_info.bound_descriptor_buffer = {buffer_indicies[input_idx], buffer_offsets[input_idx]};
+        set_info.compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
     }
 }
 

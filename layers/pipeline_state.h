@@ -657,9 +657,15 @@ struct LAST_BOUND_STATE {
     VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
     std::shared_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
 
+    struct DescriptorBufferBinding {
+        uint32_t index{0};
+        VkDeviceSize offset{0};
+    };
     // Ordered bound set tracking where index is set# that given set is bound to
     struct PER_SET {
         std::shared_ptr<cvdescriptorset::DescriptorSet> bound_descriptor_set;
+        std::optional<DescriptorBufferBinding> bound_descriptor_buffer;
+
         // one dynamic offset per dynamic descriptor bound to this CB
         std::vector<uint32_t> dynamicOffsets;
         PipelineLayoutCompatId compat_id_for_set{0};
@@ -669,6 +675,12 @@ struct LAST_BOUND_STATE {
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};
         BindingReqMap validated_set_binding_req_map;
+
+        void Reset() {
+            bound_descriptor_set.reset();
+            bound_descriptor_buffer.reset();
+            dynamicOffsets.clear();
+        }
     };
 
     std::vector<PER_SET> per_set;
@@ -681,17 +693,21 @@ struct LAST_BOUND_STATE {
 };
 
 static inline bool IsBoundSetCompat(uint32_t set, const LAST_BOUND_STATE &last_bound,
-                                    const PIPELINE_LAYOUT_STATE *pipeline_layout) {
-    bool result = (set < last_bound.per_set.size()) && (set < pipeline_layout->set_compat_ids.size()) &&
-                  (*(last_bound.per_set[set].compat_id_for_set) == *(pipeline_layout->set_compat_ids[set]));
-    return result;
+                                    const PIPELINE_LAYOUT_STATE &pipeline_layout) {
+    if ((set >= last_bound.per_set.size()) || (set >= pipeline_layout.set_compat_ids.size())) {
+        return false;
+    }
+    return (*(last_bound.per_set[set].compat_id_for_set) == *(pipeline_layout.set_compat_ids[set]));
 }
 
 static inline bool IsPipelineLayoutSetCompat(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
-    // Intentionally have a result variable to simplify debugging
-    bool result = a && b && (set < a->set_compat_ids.size()) && (set < b->set_compat_ids.size()) &&
-                  (a->set_compat_ids[set] == b->set_compat_ids[set]);
-    return result;
+    if (!a || !b) {
+        return false;
+    }
+    if ((set >= a->set_compat_ids.size()) || (set >= b->set_compat_ids.size())) {
+        return false;
+    }
+    return a->set_compat_ids[set] == b->set_compat_ids[set];
 }
 
 enum LvlBindPoint {
