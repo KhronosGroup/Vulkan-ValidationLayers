@@ -794,21 +794,18 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
                                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                        VkResult result) {
     if (result != VK_SUCCESS) {
-        static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-                                                    VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
-                                                    VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
-        static std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkAllocateMemory", result, error_codes, success_codes);
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_TOO_MANY_OBJECTS,
+                                            VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
+        ValidateReturnCodes("vkAllocateMemory", result, error_codes, {});
         return;
     }
 }
 
-void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
-                                        const std::vector<VkResult>& success_codes) const {
+void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, layer_data::span<const VkResult> error_codes,
+                                        layer_data::span<const VkResult> success_codes) const {
     auto error = std::find(error_codes.begin(), error_codes.end(), result);
     if (error != error_codes.end()) {
-        static const std::vector<VkResult> common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR,
-                                                                   VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
+        constexpr std::array common_failure_codes = {VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
 
         auto common_failure = std::find(common_failure_codes.begin(), common_failure_codes.end(), result);
         if (common_failure != common_failure_codes.end()) {

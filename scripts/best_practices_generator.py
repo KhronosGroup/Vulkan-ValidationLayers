@@ -279,7 +279,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
             success_codes = cmdinfo.elem.attrib.get('successcodes')
             success_codes = success_codes.replace('VK_SUCCESS,','')
             success_codes = success_codes.replace('VK_SUCCESS','')
-            if error_codes is None and success_codes == '':
+            # Treat empty string as 'None' for consistency with 'error_codes'
+            if success_codes == '':
+                success_codes = None
+            if error_codes is None and success_codes is None:
                 return
             if self.featureExtraProtect is not None:
                 self.otwrite('both', '#ifdef %s\n' % self.featureExtraProtect)
@@ -300,15 +303,15 @@ class BestPracticesOutputGenerator(OutputGenerator):
             if cmdname in self.manual_postcallrecord_list:
                 intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
             intercept += '    if (result != VK_SUCCESS) {\n'
+            error_input   = '{}'
+            success_input = '{}'
             if error_codes is not None:
-                intercept += '        static const std::vector<VkResult> error_codes = {%s};\n' % error_codes
-            else:
-                intercept += '        static const std::vector<VkResult> error_codes = {};\n'
+                intercept += '        constexpr std::array error_codes = {%s};\n' % error_codes
+                error_input = 'error_codes'
             if success_codes is not None:
-                intercept += '        static const std::vector<VkResult> success_codes = {%s};\n' % success_codes
-            else:
-                intercept += '        static const std::vector<VkResult> success_codes = {};\n'
-            intercept += '        ValidateReturnCodes("%s", result, error_codes, success_codes);\n' % cmdname
+                intercept += '        constexpr std::array success_codes = {%s};\n' % success_codes
+                success_input = 'success_codes'
+            intercept += '        ValidateReturnCodes("%s", result, %s, %s);\n' % (cmdname, error_input, success_input)
             intercept += '    }\n'
             intercept += '}\n'
             self.otwrite('cpp', intercept)
