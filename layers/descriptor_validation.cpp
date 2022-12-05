@@ -3735,39 +3735,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(
     return skip;
 }
 
-void ValidationStateTracker::PostCallRecordGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
-    VkDeviceSize* pLayoutSizeInBytes) {
-    auto descriptor_set_layout = Get<cvdescriptorset::DescriptorSetLayout>(layout);
-
-    descriptor_set_layout->SetLayoutSizeInBytes(pLayoutSizeInBytes);
-}
-
-void ValidationStateTracker::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
-                                                          const VkDescriptorBufferBindingInfoEXT *pBindingInfos) {
-    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-
-    cb_state->descriptor_buffer_binding_info.clear();
-    cb_state->descriptor_buffer_binding_info.reserve(bufferCount);
-
-    for (uint32_t i = 0; i < bufferCount; i++) {
-        cb_state->descriptor_buffer_binding_info.push_back(pBindingInfos[i]);
-    }
-}
-
-void ValidationStateTracker::PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer commandBuffer,
-                                                                           VkPipelineBindPoint pipelineBindPoint,
-                                                               VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                               const uint32_t *pBufferIndices, const VkDeviceSize *pOffsets) {
-    auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
-
-    cb_state->descriptor_buffer_bindings.resize(setCount);
-
-    for (uint32_t i = 0; i < setCount; i++) {
-        cb_state->descriptor_buffer_bindings[i].index = pBufferIndices[i];
-        cb_state->descriptor_buffer_bindings[i].offset = pOffsets[i];
-    }
-}
-
 bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout,
                                                               VkDeviceSize *pLayoutSizeInBytes) const {
     bool skip = false;
