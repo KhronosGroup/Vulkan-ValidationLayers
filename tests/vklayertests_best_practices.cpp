@@ -32,8 +32,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* vendor_che
     bp_setting_string_value.arrayString.count = sizeof(bp_setting_string_value.arrayString.pCharArray);
     VkLayerSettingValueEXT bp_vendor_all_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
                                                         bp_setting_string_value};
-    VkLayerSettingsEXT bp_settings{static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                                   &bp_vendor_all_setting_val};
+    VkLayerSettingsEXT bp_settings{VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &bp_vendor_all_setting_val};
     features_.pNext = &bp_settings;
 
     InitFramework(m_errorMonitor, &features_);
