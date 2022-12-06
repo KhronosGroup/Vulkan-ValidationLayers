@@ -239,8 +239,7 @@ static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirvCapabilit
     {spv::CapabilitySampledImageArrayNonUniformIndexing, {0, &VkPhysicalDeviceVulkan12Features::shaderSampledImageArrayNonUniformIndexing, nullptr, ""}},
     {spv::CapabilityShader, {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
     {spv::CapabilityShaderClockKHR, {0, nullptr, &DeviceExtensions::vk_khr_shader_clock, ""}},
-    // Not found in current SPIR-V Headers
-    //    {spv::CapabilityShaderInvocationReorderNV, {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_invocation_reorder, ""}},
+    {spv::CapabilityShaderInvocationReorderNV, {0, nullptr, &DeviceExtensions::vk_nv_ray_tracing_invocation_reorder, ""}},
     {spv::CapabilityShaderLayer, {0, &VkPhysicalDeviceVulkan12Features::shaderOutputLayer, nullptr, ""}},
     {spv::CapabilityShaderNonUniform, {VK_API_VERSION_1_2, nullptr, nullptr, ""}},
     {spv::CapabilityShaderNonUniform, {0, nullptr, &DeviceExtensions::vk_ext_descriptor_indexing, ""}},
@@ -574,6 +573,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Shader";
          case spv::CapabilityShaderClockKHR:
             return "ShaderClockKHR";
+         case spv::CapabilityShaderInvocationReorderNV:
+            return "ShaderInvocationReorderNV";
          case spv::CapabilityShaderLayer:
             return "ShaderLayer";
          case spv::CapabilityShaderNonUniform:
