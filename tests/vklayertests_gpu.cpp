@@ -1174,6 +1174,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     ASSERT_VK_SUCCESS(err);
 
     if (mesh_shader_supported) {
+        PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
+            (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
         const unsigned push_constant_range_count = 1;
         VkPushConstantRange push_constant_ranges[push_constant_range_count] = {};
         push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_MESH_BIT_NV;
@@ -1231,7 +1233,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
                              pushConstants);
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
-        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
         vk::CmdEndRenderPass(m_commandBuffer->handle());
         m_commandBuffer->end();
 
