@@ -250,7 +250,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     uint32_t active_render_pass_device_mask;
     uint32_t activeSubpass;
     std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
-    layer_data::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     layer_data::unordered_set<std::shared_ptr<BASE_NODE>> object_bindings;
