@@ -46,14 +46,7 @@ action("vulkan_clean_old_validation_layer_objects") {
 config("generated_layers_config") {
   if (is_clang) {
     cflags = [
-      "-Wno-conversion",
-      "-Wno-deprecated-copy",
-      "-Wno-extra-semi",
-      "-Wno-implicit-fallthrough",
-      "-Wno-missing-field-initializers",
-      "-Wno-newline-eof",
-      "-Wno-sign-compare",
-      "-Wno-unused-const-variable",
+      "-Wno-everything"
     ]
   }
 }
