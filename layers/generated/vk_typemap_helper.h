@@ -7029,19 +7029,16 @@ template <typename T> T *LvlFindModInChain(void *next) {
     return found;
 }
 
-// Init the header of an sType struct with pNext
-template <typename T> T LvlInitStruct(void *p_next) {
-    T out = {};
-    out.sType = LvlTypeMap<T>::kSType;
-    out.pNext = p_next;
+// Init the header of an sType struct with pNext and optional fields
+template <typename T, typename... StructFields>
+T LvlInitStruct(void *p_next, StructFields... fields) {
+    T out = {LvlTypeMap<T>::kSType, p_next, fields...};
     return out;
 }
-
 // Init the header of an sType struct
-template <typename T> T LvlInitStruct() {
-    T out = {};
-    out.sType = LvlTypeMap<T>::kSType;
-    out.pNext = nullptr;
+template <typename T>
+T LvlInitStruct(void *p_next = nullptr) {
+    T out = {LvlTypeMap<T>::kSType, p_next};
     return out;
 }
 
