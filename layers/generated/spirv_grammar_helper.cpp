@@ -365,6 +365,39 @@ static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTa
     {spv::OpFragmentMaskFetchAMD, {"OpFragmentMaskFetchAMD", true, true, 0, 0, 0}},
     {spv::OpFragmentFetchAMD, {"OpFragmentFetchAMD", true, true, 0, 0, 0}},
     {spv::OpReadClockKHR, {"OpReadClockKHR", true, true, 0, 3, 0}},
+    {spv::OpHitObjectRecordHitMotionNV, {"OpHitObjectRecordHitMotionNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectRecordHitWithIndexMotionNV, {"OpHitObjectRecordHitWithIndexMotionNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectRecordMissMotionNV, {"OpHitObjectRecordMissMotionNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectGetWorldToObjectNV, {"OpHitObjectGetWorldToObjectNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetObjectToWorldNV, {"OpHitObjectGetObjectToWorldNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetObjectRayDirectionNV, {"OpHitObjectGetObjectRayDirectionNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetObjectRayOriginNV, {"OpHitObjectGetObjectRayOriginNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectTraceRayMotionNV, {"OpHitObjectTraceRayMotionNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectGetShaderRecordBufferHandleNV, {"OpHitObjectGetShaderRecordBufferHandleNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetShaderBindingTableRecordIndexNV, {"OpHitObjectGetShaderBindingTableRecordIndexNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectRecordEmptyNV, {"OpHitObjectRecordEmptyNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectTraceRayNV, {"OpHitObjectTraceRayNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectRecordHitNV, {"OpHitObjectRecordHitNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectRecordHitWithIndexNV, {"OpHitObjectRecordHitWithIndexNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectRecordMissNV, {"OpHitObjectRecordMissNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectExecuteShaderNV, {"OpHitObjectExecuteShaderNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectGetCurrentTimeNV, {"OpHitObjectGetCurrentTimeNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetAttributesNV, {"OpHitObjectGetAttributesNV", false, false, 0, 0, 0}},
+    {spv::OpHitObjectGetHitKindNV, {"OpHitObjectGetHitKindNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetPrimitiveIndexNV, {"OpHitObjectGetPrimitiveIndexNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetGeometryIndexNV, {"OpHitObjectGetGeometryIndexNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetInstanceIdNV, {"OpHitObjectGetInstanceIdNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetInstanceCustomIndexNV, {"OpHitObjectGetInstanceCustomIndexNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetWorldRayDirectionNV, {"OpHitObjectGetWorldRayDirectionNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetWorldRayOriginNV, {"OpHitObjectGetWorldRayOriginNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetRayTMaxNV, {"OpHitObjectGetRayTMaxNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectGetRayTMinNV, {"OpHitObjectGetRayTMinNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectIsEmptyNV, {"OpHitObjectIsEmptyNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectIsHitNV, {"OpHitObjectIsHitNV", true, true, 0, 0, 0}},
+    {spv::OpHitObjectIsMissNV, {"OpHitObjectIsMissNV", true, true, 0, 0, 0}},
+    {spv::OpReorderThreadWithHitObjectNV, {"OpReorderThreadWithHitObjectNV", false, false, 0, 0, 0}},
+    {spv::OpReorderThreadWithHintNV, {"OpReorderThreadWithHintNV", false, false, 0, 0, 0}},
+    {spv::OpTypeHitObjectNV, {"OpTypeHitObjectNV", false, true, 0, 0, 0}},
     {spv::OpImageSampleFootprintNV, {"OpImageSampleFootprintNV", true, true, 0, 0, 7}},
     {spv::OpEmitMeshTasksEXT, {"OpEmitMeshTasksEXT", false, false, 0, 0, 0}},
     {spv::OpSetMeshOutputsEXT, {"OpSetMeshOutputsEXT", false, false, 0, 0, 0}},
@@ -754,6 +787,8 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "ShaderRecordBufferNV";
         case spv::StorageClassPhysicalStorageBuffer:
             return "PhysicalStorageBuffer";
+        case spv::StorageClassHitObjectAttributeNV:
+            return "HitObjectAttributeNV";
         case spv::StorageClassTaskPayloadWorkgroupEXT:
             return "TaskPayloadWorkgroupEXT";
         case spv::StorageClassCodeSectionINTEL:

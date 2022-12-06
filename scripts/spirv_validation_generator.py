@@ -99,7 +99,6 @@ class SpirvValidationHelperOutputGenerator(OutputGenerator):
             'TextureBlockMatchQCOM',
             'TextureBoxFilterQCOM',
             'TextureSampleWeightedQCOM',
-            'ShaderInvocationReorderNV'
         ]
 
         # There are some enums that share the same value in the SPIR-V header.
