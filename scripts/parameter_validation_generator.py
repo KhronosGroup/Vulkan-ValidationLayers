@@ -725,7 +725,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     decl = 'const {} All{} = {};'.format(flag, flagBits, '|'.join(bits))
                     self.flag_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
                     if flag in self.flagBitsAsArray:
-                        decl = 'const std::array<%s, %d> All%s = {%s};' % (flag, len(bits), flag, ','.join(bits))
+                        decl = '[[maybe_unused]] constexpr std::array All%s = {%s};' % (flag, ','.join(bits))
                         self.flag_array_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
 
             endif = '\n'
@@ -885,13 +885,11 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 else:
                     enum_entry = ''
                 entry = ''
-                entry_len = 0
                 for enum in groupElem:
                     name = enum.get('name')
                     if name is not None and enum.get('alias') is None and enum.get('supported') != 'disabled':
                         entry += '%s, ' % name
-                        entry_len += 1
-                enum_entry += 'const std::array<%s, %d> All%sEnums = {%s};' % (groupName, entry_len, groupName, entry)
+                enum_entry += '[[maybe_unused]] constexpr std::array All%sEnums = {%s};' % (groupName, entry)
                 if self.featureExtraProtect is not None:
                     enum_entry += '\n#endif // %s' % self.featureExtraProtect
                 self.enum_values_definitions[groupName] = enum_entry
@@ -1093,7 +1091,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             elements = name.split('->')
             # Open the if expression blocks
             for i in range(0, count):
-                checkedExpr.append(localIndent + 'if ({} != NULL) {{\n'.format('->'.join(elements[0:i+1])))
+                checkedExpr.append(localIndent + 'if ({} != nullptr) {{\n'.format('->'.join(elements[0:i+1])))
                 localIndent = self.incIndent(localIndent)
             # Add the validation expression
             for expr in exprs:
@@ -1198,20 +1196,22 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         checkExpr = []
         # Generate an array of acceptable VkStructureType values for pNext
         extStructCount = 0
-        extStructVar = 'NULL'
-        extStructNames = 'NULL'
+        extStructVar = 'nullptr'
+        extStructNames = 'nullptr'
+        extStructData = 'nullptr'
         pNextVuid = self.GetVuid(struct_type_name, "pNext-pNext")
         sTypeVuid = self.GetVuid(struct_type_name, "sType-unique")
         if value.extstructs:
             extStructVar = 'allowed_structs_{}'.format(struct_type_name)
-            extStructCount = 'ARRAY_SIZE({})'.format(extStructVar)
+            extStructCount = '{}.size()'.format(extStructVar)
+            extStructData = '{}.data()'.format(extStructVar)
             if struct_type_name == 'VkInstanceCreateInfo':
                 value.extstructs.append('VkInstanceLayerSettingsEXT')
                 self.structTypes['VkInstanceLayerSettingsEXT'] = 'static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT)'
             extStructNames = '"' + ', '.join(value.extstructs) + '"'
-            checkExpr.append('const VkStructureType {}[] = {{ {} }};\n'.format(extStructVar, ', '.join([self.structTypes[s] for s in value.extstructs])))
+            checkExpr.append('constexpr std::array {} = {{ {} }};\n'.format(extStructVar, ', '.join([self.structTypes[s] for s in value.extstructs])))
         checkExpr.append('skip |= validate_struct_pnext("{}", {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedVulkanHeaderVersion, {}, {});\n'.format(
-            funcPrintName, valuePrintName, extStructNames, prefix, value.name, extStructCount, extStructVar, pNextVuid, sTypeVuid, **postProcSpec))
+            funcPrintName, valuePrintName, extStructNames, prefix, value.name, extStructCount, extStructData, pNextVuid, sTypeVuid, **postProcSpec))
         return checkExpr
     #
     # Generate the pointer check string
@@ -1277,7 +1277,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     def internalAllocationCheck(self, funcPrintName, prefix, name, complementaryName, postProcSpec):
         checkExpr = []
         vuid = '"VUID-VkAllocationCallbacks-pfnInternalAllocation-00635"'
-        checkExpr.append('if ({}{} != NULL)'.format(prefix, name))
+        checkExpr.append('if ({}{} != nullptr)'.format(prefix, name))
         checkExpr.append('{')
         local_indent = self.incIndent('')
         # Function pointers need a reinterpret_cast to void*
@@ -1364,7 +1364,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
     # Process struct pointer/array validation code, performing name substitution if required
     def expandStructPointerCode(self, prefix, value, lenValue, funcName, valueDisplayName, postProcSpec):
         expr = []
-        expr.append('if ({}{} != NULL)\n'.format(prefix, value.name))
+        expr.append('if ({}{} != nullptr)\n'.format(prefix, value.name))
         expr.append('{')
         indent = self.incIndent(None)
         if lenValue:

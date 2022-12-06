@@ -3263,13 +3263,13 @@ safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo(c
         memcpy ((void *)pViewports, (void *)in_struct->pViewports, sizeof(VkViewport)*in_struct->viewportCount);
     }
     else
-        pViewports = NULL;
+        pViewports = nullptr;
     if (in_struct->pScissors && !is_dynamic_scissors) {
         pScissors = new VkRect2D[in_struct->scissorCount];
         memcpy ((void *)pScissors, (void *)in_struct->pScissors, sizeof(VkRect2D)*in_struct->scissorCount);
     }
     else
-        pScissors = NULL;
+        pScissors = nullptr;
 }
 
 safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo() :
@@ -3296,13 +3296,13 @@ safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo(c
         memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);
     }
     else
-        pViewports = NULL;
+        pViewports = nullptr;
     if (copy_src.pScissors) {
         pScissors = new VkRect2D[copy_src.scissorCount];
         memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);
     }
     else
-        pScissors = NULL;
+        pScissors = nullptr;
 }
 
 safe_VkPipelineViewportStateCreateInfo& safe_VkPipelineViewportStateCreateInfo::operator=(const safe_VkPipelineViewportStateCreateInfo& copy_src)
@@ -3328,13 +3328,13 @@ safe_VkPipelineViewportStateCreateInfo& safe_VkPipelineViewportStateCreateInfo::
         memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);
     }
     else
-        pViewports = NULL;
+        pViewports = nullptr;
     if (copy_src.pScissors) {
         pScissors = new VkRect2D[copy_src.scissorCount];
         memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);
     }
     else
-        pScissors = NULL;
+        pScissors = nullptr;
 
     return *this;
 }
@@ -3369,13 +3369,13 @@ void safe_VkPipelineViewportStateCreateInfo::initialize(const VkPipelineViewport
         memcpy ((void *)pViewports, (void *)in_struct->pViewports, sizeof(VkViewport)*in_struct->viewportCount);
     }
     else
-        pViewports = NULL;
+        pViewports = nullptr;
     if (in_struct->pScissors && !is_dynamic_scissors) {
         pScissors = new VkRect2D[in_struct->scissorCount];
         memcpy ((void *)pScissors, (void *)in_struct->pScissors, sizeof(VkRect2D)*in_struct->scissorCount);
     }
     else
-        pScissors = NULL;
+        pScissors = nullptr;
 }
 
 void safe_VkPipelineViewportStateCreateInfo::initialize(const safe_VkPipelineViewportStateCreateInfo* copy_src)
@@ -3392,13 +3392,13 @@ void safe_VkPipelineViewportStateCreateInfo::initialize(const safe_VkPipelineVie
         memcpy ((void *)pViewports, (void *)copy_src->pViewports, sizeof(VkViewport)*copy_src->viewportCount);
     }
     else
-        pViewports = NULL;
+        pViewports = nullptr;
     if (copy_src->pScissors) {
         pScissors = new VkRect2D[copy_src->scissorCount];
         memcpy ((void *)pScissors, (void *)copy_src->pScissors, sizeof(VkRect2D)*copy_src->scissorCount);
     }
     else
-        pScissors = NULL;
+        pScissors = nullptr;
 }
 
 safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCreateInfo(const VkPipelineRasterizationStateCreateInfo* in_struct) :
@@ -3986,11 +3986,11 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
     if (in_struct->pVertexInputState)
         pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
     else
-        pVertexInputState = NULL;
+        pVertexInputState = nullptr;
     if (in_struct->pInputAssemblyState)
         pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(in_struct->pInputAssemblyState);
     else
-        pInputAssemblyState = NULL;
+        pInputAssemblyState = nullptr;
     bool has_tessellation_stage = false;
     if (stageCount && pStages)
         for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
@@ -3999,7 +3999,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
     if (in_struct->pTessellationState && has_tessellation_stage)
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
     else
-        pTessellationState = NULL; // original pTessellationState pointer ignored
+        pTessellationState = nullptr; // original pTessellationState pointer ignored
     bool is_dynamic_has_rasterization = false;
     if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
         for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
@@ -4020,29 +4020,29 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
         }
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(in_struct->pViewportState, is_dynamic_viewports, is_dynamic_scissors);
     } else
-        pViewportState = NULL; // original pViewportState pointer ignored
+        pViewportState = nullptr; // original pViewportState pointer ignored
     if (in_struct->pRasterizationState)
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
     else
-        pRasterizationState = NULL;
+        pRasterizationState = nullptr;
     if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
     else
-        pMultisampleState = NULL; // original pMultisampleState pointer ignored
+        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
     // needs a tracked subpass state uses_depthstencil_attachment
     if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
     else
-        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
+        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
     // needs a tracked subpass state usesColorAttachment
     if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
     else
-        pColorBlendState = NULL; // original pColorBlendState pointer ignored
+        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
     if (in_struct->pDynamicState)
         pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(in_struct->pDynamicState);
     else
-        pDynamicState = NULL;
+        pDynamicState = nullptr;
 }
 
 safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo() :
@@ -4098,11 +4098,11 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     if (copy_src.pVertexInputState)
         pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
     else
-        pVertexInputState = NULL;
+        pVertexInputState = nullptr;
     if (copy_src.pInputAssemblyState)
         pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);
     else
-        pInputAssemblyState = NULL;
+        pInputAssemblyState = nullptr;
     bool has_tessellation_stage = false;
     if (stageCount && pStages)
         for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
@@ -4111,7 +4111,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     if (copy_src.pTessellationState && has_tessellation_stage)
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
     else
-        pTessellationState = NULL; // original pTessellationState pointer ignored
+        pTessellationState = nullptr; // original pTessellationState pointer ignored
     bool is_dynamic_has_rasterization = false;
     if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
         for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
@@ -4122,27 +4122,27 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
-        pViewportState = NULL; // original pViewportState pointer ignored
+        pViewportState = nullptr; // original pViewportState pointer ignored
     if (copy_src.pRasterizationState)
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);
     else
-        pRasterizationState = NULL;
+        pRasterizationState = nullptr;
     if (copy_src.pMultisampleState && (has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);
     else
-        pMultisampleState = NULL; // original pMultisampleState pointer ignored
+        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
     if (copy_src.pDepthStencilState && (has_rasterization || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);
     else
-        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
+        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
     if (copy_src.pColorBlendState && (has_rasterization || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);
     else
-        pColorBlendState = NULL; // original pColorBlendState pointer ignored
+        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
     if (copy_src.pDynamicState)
         pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);
     else
-        pDynamicState = NULL;
+        pDynamicState = nullptr;
 }
 
 safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(const safe_VkGraphicsPipelineCreateInfo& copy_src)
@@ -4201,11 +4201,11 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     if (copy_src.pVertexInputState)
         pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);
     else
-        pVertexInputState = NULL;
+        pVertexInputState = nullptr;
     if (copy_src.pInputAssemblyState)
         pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);
     else
-        pInputAssemblyState = NULL;
+        pInputAssemblyState = nullptr;
     bool has_tessellation_stage = false;
     if (stageCount && pStages)
         for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
@@ -4214,7 +4214,7 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     if (copy_src.pTessellationState && has_tessellation_stage)
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);
     else
-        pTessellationState = NULL; // original pTessellationState pointer ignored
+        pTessellationState = nullptr; // original pTessellationState pointer ignored
     bool is_dynamic_has_rasterization = false;
     if (copy_src.pDynamicState && copy_src.pDynamicState->pDynamicStates) {
         for (uint32_t i = 0; i < copy_src.pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
@@ -4225,27 +4225,27 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
-        pViewportState = NULL; // original pViewportState pointer ignored
+        pViewportState = nullptr; // original pViewportState pointer ignored
     if (copy_src.pRasterizationState)
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);
     else
-        pRasterizationState = NULL;
+        pRasterizationState = nullptr;
     if (copy_src.pMultisampleState && (has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);
     else
-        pMultisampleState = NULL; // original pMultisampleState pointer ignored
+        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
     if (copy_src.pDepthStencilState && (has_rasterization || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);
     else
-        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
+        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
     if (copy_src.pColorBlendState && (has_rasterization || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);
     else
-        pColorBlendState = NULL; // original pColorBlendState pointer ignored
+        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
     if (copy_src.pDynamicState)
         pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);
     else
-        pDynamicState = NULL;
+        pDynamicState = nullptr;
 
     return *this;
 }
@@ -4329,11 +4329,11 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     if (in_struct->pVertexInputState)
         pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(in_struct->pVertexInputState);
     else
-        pVertexInputState = NULL;
+        pVertexInputState = nullptr;
     if (in_struct->pInputAssemblyState)
         pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(in_struct->pInputAssemblyState);
     else
-        pInputAssemblyState = NULL;
+        pInputAssemblyState = nullptr;
     bool has_tessellation_stage = false;
     if (stageCount && pStages)
         for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
@@ -4342,7 +4342,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     if (in_struct->pTessellationState && has_tessellation_stage)
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(in_struct->pTessellationState);
     else
-        pTessellationState = NULL; // original pTessellationState pointer ignored
+        pTessellationState = nullptr; // original pTessellationState pointer ignored
     bool is_dynamic_has_rasterization = false;
     if (in_struct->pDynamicState && in_struct->pDynamicState->pDynamicStates) {
         for (uint32_t i = 0; i < in_struct->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
@@ -4363,29 +4363,29 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
         }
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(in_struct->pViewportState, is_dynamic_viewports, is_dynamic_scissors);
     } else
-        pViewportState = NULL; // original pViewportState pointer ignored
+        pViewportState = nullptr; // original pViewportState pointer ignored
     if (in_struct->pRasterizationState)
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(in_struct->pRasterizationState);
     else
-        pRasterizationState = NULL;
+        pRasterizationState = nullptr;
     if (in_struct->pMultisampleState && (renderPass != VK_NULL_HANDLE || has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(in_struct->pMultisampleState);
     else
-        pMultisampleState = NULL; // original pMultisampleState pointer ignored
+        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
     // needs a tracked subpass state uses_depthstencil_attachment
     if (in_struct->pDepthStencilState && ((has_rasterization && uses_depthstencil_attachment) || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(in_struct->pDepthStencilState);
     else
-        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
+        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
     // needs a tracked subpass state usesColorAttachment
     if (in_struct->pColorBlendState && ((has_rasterization && uses_color_attachment) || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(in_struct->pColorBlendState);
     else
-        pColorBlendState = NULL; // original pColorBlendState pointer ignored
+        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
     if (in_struct->pDynamicState)
         pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(in_struct->pDynamicState);
     else
-        pDynamicState = NULL;
+        pDynamicState = nullptr;
 }
 
 void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipelineCreateInfo* copy_src)
@@ -4419,11 +4419,11 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     if (copy_src->pVertexInputState)
         pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src->pVertexInputState);
     else
-        pVertexInputState = NULL;
+        pVertexInputState = nullptr;
     if (copy_src->pInputAssemblyState)
         pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src->pInputAssemblyState);
     else
-        pInputAssemblyState = NULL;
+        pInputAssemblyState = nullptr;
     bool has_tessellation_stage = false;
     if (stageCount && pStages)
         for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)
@@ -4432,7 +4432,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     if (copy_src->pTessellationState && has_tessellation_stage)
         pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src->pTessellationState);
     else
-        pTessellationState = NULL; // original pTessellationState pointer ignored
+        pTessellationState = nullptr; // original pTessellationState pointer ignored
     bool is_dynamic_has_rasterization = false;
     if (copy_src->pDynamicState && copy_src->pDynamicState->pDynamicStates) {
         for (uint32_t i = 0; i < copy_src->pDynamicState->dynamicStateCount && !is_dynamic_has_rasterization; ++i)
@@ -4443,27 +4443,27 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     if (copy_src->pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src->pViewportState);
     } else
-        pViewportState = NULL; // original pViewportState pointer ignored
+        pViewportState = nullptr; // original pViewportState pointer ignored
     if (copy_src->pRasterizationState)
         pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src->pRasterizationState);
     else
-        pRasterizationState = NULL;
+        pRasterizationState = nullptr;
     if (copy_src->pMultisampleState && (has_rasterization || is_graphics_library))
         pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src->pMultisampleState);
     else
-        pMultisampleState = NULL; // original pMultisampleState pointer ignored
+        pMultisampleState = nullptr; // original pMultisampleState pointer ignored
     if (copy_src->pDepthStencilState && (has_rasterization || is_graphics_library))
         pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src->pDepthStencilState);
     else
-        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored
+        pDepthStencilState = nullptr; // original pDepthStencilState pointer ignored
     if (copy_src->pColorBlendState && (has_rasterization || is_graphics_library))
         pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src->pColorBlendState);
     else
-        pColorBlendState = NULL; // original pColorBlendState pointer ignored
+        pColorBlendState = nullptr; // original pColorBlendState pointer ignored
     if (copy_src->pDynamicState)
         pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src->pDynamicState);
     else
-        pDynamicState = NULL;
+        pDynamicState = nullptr;
 }
 
 safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo(const VkPipelineLayoutCreateInfo* in_struct) :

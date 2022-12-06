@@ -396,7 +396,7 @@ VkResult DispatchCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfo
                                     const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
-    safe_VkSwapchainCreateInfoKHR *local_pCreateInfo = NULL;
+    safe_VkSwapchainCreateInfoKHR *local_pCreateInfo = nullptr;
     if (pCreateInfo) {
         local_pCreateInfo = new safe_VkSwapchainCreateInfoKHR(pCreateInfo);
         local_pCreateInfo->oldSwapchain = layer_data->Unwrap(pCreateInfo->oldSwapchain);
@@ -419,7 +419,7 @@ VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator,
                                                                            pSwapchains);
-    safe_VkSwapchainCreateInfoKHR *local_pCreateInfos = NULL;
+    safe_VkSwapchainCreateInfoKHR *local_pCreateInfos = nullptr;
     {
         if (pCreateInfos) {
             local_pCreateInfos = new safe_VkSwapchainCreateInfoKHR[swapchainCount];
@@ -499,7 +499,7 @@ void DispatchDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, cons
 VkResult DispatchQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.QueuePresentKHR(queue, pPresentInfo);
-    safe_VkPresentInfoKHR *local_pPresentInfo = NULL;
+    safe_VkPresentInfoKHR *local_pPresentInfo = nullptr;
     {
         if (pPresentInfo) {
             local_pPresentInfo = new safe_VkPresentInfoKHR(pPresentInfo);
@@ -576,7 +576,7 @@ VkResult DispatchAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAl
                                         VkDescriptorSet *pDescriptorSets) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
-    safe_VkDescriptorSetAllocateInfo *local_pAllocateInfo = NULL;
+    safe_VkDescriptorSetAllocateInfo *local_pAllocateInfo = nullptr;
     {
         if (pAllocateInfo) {
             local_pAllocateInfo = new safe_VkDescriptorSetAllocateInfo(pAllocateInfo);
@@ -611,7 +611,7 @@ VkResult DispatchFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.FreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
-    VkDescriptorSet *local_pDescriptorSets = NULL;
+    VkDescriptorSet *local_pDescriptorSets = nullptr;
     VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     {
         local_descriptor_pool = layer_data->Unwrap(descriptorPool);
@@ -647,7 +647,7 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator,
                                                                                 pDescriptorUpdateTemplate);
     safe_VkDescriptorUpdateTemplateCreateInfo var_local_pCreateInfo;
-    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = NULL;
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = nullptr;
     if (pCreateInfo) {
         local_pCreateInfo = &var_local_pCreateInfo;
         local_pCreateInfo->initialize(pCreateInfo);
@@ -682,7 +682,7 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
                                                                                    pDescriptorUpdateTemplate);
     safe_VkDescriptorUpdateTemplateCreateInfo var_local_pCreateInfo;
-    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = NULL;
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = nullptr;
     if (pCreateInfo) {
         local_pCreateInfo = &var_local_pCreateInfo;
         local_pCreateInfo->initialize(pCreateInfo);
@@ -1219,7 +1219,7 @@ VkResult DispatchAllocateCommandBuffers(VkDevice device, const VkCommandBufferAl
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
     safe_VkCommandBufferAllocateInfo var_local_pAllocateInfo;
-    safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = NULL;
+    safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = nullptr;
     if (pAllocateInfo) {
         local_pAllocateInfo = &var_local_pAllocateInfo;
         local_pAllocateInfo->initialize(pAllocateInfo);
@@ -1278,7 +1278,7 @@ VkResult DispatchBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkComma
     }
     if (!wrap_handles || cb_is_primary) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
     safe_VkCommandBufferBeginInfo var_local_pBeginInfo;
-    safe_VkCommandBufferBeginInfo *local_pBeginInfo = NULL;
+    safe_VkCommandBufferBeginInfo *local_pBeginInfo = nullptr;
     if (pBeginInfo) {
         local_pBeginInfo = &var_local_pBeginInfo;
         local_pBeginInfo->initialize(pBeginInfo);
@@ -1455,7 +1455,7 @@ VkResult DispatchBuildAccelerationStructuresKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.BuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
-    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pInfos = NULL;
+    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pInfos = nullptr;
     {
         deferredOperation = layer_data->Unwrap(deferredOperation);
         if (pInfos) {
@@ -1511,7 +1511,7 @@ void DispatchGetAccelerationStructureBuildSizesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
     safe_VkAccelerationStructureBuildGeometryInfoKHR var_local_pBuildInfo;
-    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pBuildInfo = NULL;
+    safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pBuildInfo = nullptr;
     {
         if (pBuildInfo) {
             local_pBuildInfo = &var_local_pBuildInfo;
@@ -1959,7 +1959,7 @@ void DispatchGetDescriptorEXT(
         pnext_proc = ''
         pnext_proc += 'void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {\n'
         pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
-        pnext_proc += '    while (cur_pnext != NULL) {\n'
+        pnext_proc += '    while (cur_pnext != nullptr) {\n'
         pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
         pnext_proc += '        switch (header->sType) {\n'
         for item in self.ndo_extension_structs:
@@ -2097,7 +2097,7 @@ void DispatchGetDescriptorEXT(
         if ndo_count is not None:
             if top_level == True:
                 decl_code += '%s%s var_local_%s%s[DISPATCH_MAX_STACK_ALLOCATIONS];\n' % (indent, ndo_type, prefix, ndo_name)
-                decl_code += '%s%s *local_%s%s = NULL;\n' % (indent, ndo_type, prefix, ndo_name)
+                decl_code += '%s%s *local_%s%s = nullptr;\n' % (indent, ndo_type, prefix, ndo_name)
             pre_call_code += '%s    if (%s%s) {\n' % (indent, prefix, ndo_name)
             indent = self.incIndent(indent)
             if top_level == True:
@@ -2174,7 +2174,7 @@ void DispatchGetDescriptorEXT(
                         if first_level_param == True:
                             new_prefix = 'local_%s' % member.name
                             # Declare safe_VarType for struct
-                            decls += '%s%s *%s = NULL;\n' % (indent, safe_type, new_prefix)
+                            decls += '%s%s *%s = nullptr;\n' % (indent, safe_type, new_prefix)
                         else:
                             new_prefix = '%s%s' % (prefix, member.name)
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
@@ -2215,7 +2215,7 @@ void DispatchGetDescriptorEXT(
                             new_prefix = 'local_%s->' % member.name
                             if deferred_name is None:
                                 decls += '%s%s var_local_%s%s;\n' % (indent, safe_type, prefix, member.name)
-                            decls += '%s%s *local_%s%s = NULL;\n' % (indent, safe_type, prefix, member.name)
+                            decls += '%s%s *local_%s%s = nullptr;\n' % (indent, safe_type, prefix, member.name)
                         else:
                             new_prefix = '%s%s->' % (prefix, member.name)
                         # Declare safe_VarType for struct
