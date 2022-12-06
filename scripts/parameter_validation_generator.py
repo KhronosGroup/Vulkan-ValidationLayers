@@ -1207,7 +1207,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             extStructData = '{}.data()'.format(extStructVar)
             if struct_type_name == 'VkInstanceCreateInfo':
                 value.extstructs.append('VkInstanceLayerSettingsEXT')
-                self.structTypes['VkInstanceLayerSettingsEXT'] = 'static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT)'
+                self.structTypes['VkInstanceLayerSettingsEXT'] = 'VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT'
             extStructNames = '"' + ', '.join(value.extstructs) + '"'
             checkExpr.append('constexpr std::array {} = {{ {} }};\n'.format(extStructVar, ', '.join([self.structTypes[s] for s in value.extstructs])))
         checkExpr.append('skip |= validate_struct_pnext("{}", {ppp}"{}"{pps}, {}, {}{}, {}, {}, GeneratedVulkanHeaderVersion, {}, {});\n'.format(

@@ -40,8 +40,7 @@ class MessageIdFilter {
         strncpy(filter_setting_val.name, "message_id_filter", sizeof(filter_setting_val.name));
         filter_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT;
         filter_setting_val.data = filter_string_value;
-        filter_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                          &filter_setting_val};
+        filter_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &filter_setting_val};
     }
     VkLayerSettingsEXT *pnext{&filter_setting};
 
@@ -62,8 +61,7 @@ class CustomStypeList {
         strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
         custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT;
         custom_stype_setting_val.data = custom_stype_value;
-        custom_stype_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                                &custom_stype_setting_val};
+        custom_stype_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &custom_stype_setting_val};
     }
 
     CustomStypeList(const std::vector<uint32_t> &stype_id_array) {
@@ -74,8 +72,7 @@ class CustomStypeList {
         strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
         custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT;
         custom_stype_setting_val.data = custom_stype_value;
-        custom_stype_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                                &custom_stype_setting_val};
+        custom_stype_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &custom_stype_setting_val};
     }
     VkLayerSettingsEXT *pnext{&custom_stype_setting};
 
@@ -95,8 +92,7 @@ class DuplicateMsgLimit {
         strncpy(limit_setting_val.name, "duplicate_message_limit", sizeof(limit_setting_val.name));
         limit_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_EXT;
         limit_setting_val.data = limit_value;
-        limit_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                         &limit_setting_val};
+        limit_setting = {VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &limit_setting_val};
     }
     VkLayerSettingsEXT *pnext{&limit_setting};
 

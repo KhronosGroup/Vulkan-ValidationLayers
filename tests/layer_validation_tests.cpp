@@ -3516,8 +3516,7 @@ void VkSyncValTest::InitSyncValFramework(bool enable_queue_submit_validation) {
     qs_setting_string_value.arrayString.count = strlen(qs_setting_string_value.arrayString.pCharArray);
     VkLayerSettingValueEXT qs_enable_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
                                                     qs_setting_string_value};
-    VkLayerSettingsEXT qs_settings{static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
-                                   &qs_enable_setting_val};
+    VkLayerSettingsEXT qs_settings{VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT, nullptr, 1, &qs_enable_setting_val};
 
     if (enable_queue_submit_validation) {
         features_.pNext = &qs_settings;
