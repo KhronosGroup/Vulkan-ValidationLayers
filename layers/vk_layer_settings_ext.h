@@ -75,7 +75,9 @@
 #define VK_EXT_LAYER_SETTINGS_SPEC_VERSION 1
 #define VK_EXT_LAYER_SETTINGS_EXTENSION_NAME "VK_EXT_layer_settings"
 
-// These stype values were selected to prevent interference with Vulkan spec definitions
+// This extension is exclusively used by VVL, and is NOT intended as a deliverable.
+// The value of the VK_STRUCTURE_TYPE is arbitrary. The only requirement,
+// is that it must not conflict with existing sTypes.
 constexpr VkStructureType VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT =
     static_cast<VkStructureType>(VK_STRUCTURE_TYPE_MAX_ENUM - 1);
 
