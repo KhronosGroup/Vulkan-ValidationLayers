@@ -2380,3 +2380,173 @@ TEST_F(VkPositiveLayerTest, WaitTimelineSemThreadRace) {
     data.Run(*m_commandPool, *m_errorMonitor);
 }
 
+struct ImageRaceData {
+    ImageRaceData(VkDeviceObj &dev_)
+        : dev(dev_),
+          SignalSemaphore(reinterpret_cast<PFN_vkSignalSemaphoreKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkSignalSemaphoreKHR"))),
+          WaitSemaphores(reinterpret_cast<PFN_vkWaitSemaphoresKHR>(vk::GetDeviceProcAddr(dev.handle(), "vkWaitSemaphoresKHR"))) {
+        auto timeline_ci = LvlInitStruct<VkSemaphoreTypeCreateInfo>();
+        timeline_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timeline_ci.initialValue = 0;
+
+        auto sem_ci = LvlInitStruct<VkSemaphoreCreateInfo>(&timeline_ci);
+        sem.init(dev, sem_ci);
+    }
+
+    VkDeviceObj &dev;
+    PFN_vkSignalSemaphoreKHR SignalSemaphore{nullptr};
+    vk_testing::Semaphore sem;
+    uint64_t start_wait_value{0};
+    uint64_t timeout_ns{kWaitTimeout};
+    uint32_t iterations{10000};
+    std::atomic<bool> bailout{false};
+
+    std::unique_ptr<vk_testing::Image> thread_image;
+
+    VkResult Wait(uint64_t sem_value) {
+        auto wait_info = LvlInitStruct<VkSemaphoreWaitInfo>();
+        wait_info.semaphoreCount = 1;
+        wait_info.pSemaphores = &sem.handle();
+        wait_info.pValues = &sem_value;
+
+        return WaitSemaphores(dev.handle(), &wait_info, timeout_ns);
+    }
+
+    PFN_vkWaitSemaphoresKHR WaitSemaphores;
+
+    VkResult Signal(uint64_t sem_value) {
+        auto signal_info = LvlInitStruct<VkSemaphoreSignalInfo>();
+        signal_info.semaphore = sem.handle();
+        signal_info.value = sem_value;
+        return SignalSemaphore(dev.handle(), &signal_info);
+    }
+
+    void ThreadFunc() {
+        auto wait_value = start_wait_value;
+
+        while (!bailout) {
+            auto err = Wait(wait_value);
+            if (err != VK_SUCCESS) {
+                break;
+            }
+            auto image = std::move(thread_image);
+            if (!image) {
+                break;
+            }
+            image.reset();
+
+            err = Signal(wait_value + 1);
+            ASSERT_VK_SUCCESS(err);
+            wait_value += 3;
+        }
+    }
+
+    void Run(VkCommandPoolObj &command_pool, ErrorMonitor &error_mon) {
+        uint64_t gpu_wait_value, gpu_signal_value;
+        auto timeline_info = LvlInitStruct<VkTimelineSemaphoreSubmitInfo>();
+        timeline_info.waitSemaphoreValueCount = 1;
+        timeline_info.pWaitSemaphoreValues = &gpu_wait_value;
+        timeline_info.signalSemaphoreValueCount = 1;
+        timeline_info.pSignalSemaphoreValues = &gpu_signal_value;
+
+        VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        auto submit_info = LvlInitStruct<VkSubmitInfo>(&timeline_info);
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &sem.handle();
+        submit_info.pWaitDstStageMask = &wait_stage;
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = &sem.handle();
+        submit_info.commandBufferCount = 1;
+
+        VkResult err;
+        static const uint32_t kWidth = 1024;
+        static const uint32_t kHeight = 1024;
+        auto image_ci = lvl_init_struct<VkImageCreateInfo>();
+        image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+        image_ci.imageType = VK_IMAGE_TYPE_3D;
+        image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+        image_ci.extent.width = kWidth;
+        image_ci.extent.height = kHeight;
+        image_ci.extent.depth = 16;
+        image_ci.mipLevels = 8;
+        image_ci.arrayLayers = 1;
+        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+        VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+        start_wait_value = 2;
+        error_mon.SetBailout(&bailout);
+        std::thread thread(&ImageRaceData::ThreadFunc, this);
+        VkCommandBufferObj cb(&dev, &command_pool);
+        for (uint32_t i = 0; i < iterations; i++) {
+
+            auto image = std::make_unique<vk_testing::Image>(dev, image_ci);
+            if (!image->initialized()) {
+                bailout = true;
+                break;
+            }
+
+            // main thread sets up buffer
+            // main thread signals 1
+            // gpu queue waits for 1
+            // gpu queue signals 2
+            // sub thread waits for 2
+            // sub thread frees buffer
+            // sub thread signals 3
+            // main thread waits for 3
+            uint64_t host_signal_value = (i * 3) + 1;
+            gpu_wait_value = host_signal_value;
+            gpu_signal_value = (i * 3) + 2;
+            uint64_t host_wait_value = (i * 3) + 3;
+
+            cb.reset(0);
+            cb.begin();
+            auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
+            image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+            image_barrier.image = image->handle();
+            image_barrier.subresourceRange = full_range;
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+            cb.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0, nullptr, 1,
+                               &image_barrier);
+            cb.end();
+            thread_image = std::move(image);
+
+            submit_info.pCommandBuffers = &cb.handle();
+            err = vk::QueueSubmit(dev.m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            ASSERT_VK_SUCCESS(err);
+
+            err = Signal(host_signal_value);
+            ASSERT_VK_SUCCESS(err);
+
+            err = Wait(host_wait_value);
+            ASSERT_VK_SUCCESS(err);
+        }
+        bailout = true;
+        // make sure worker thread wakes up.
+        err = Signal((iterations + 1) * 3);
+        ASSERT_VK_SUCCESS(err);
+        thread.join();
+        error_mon.SetBailout(nullptr);
+        vk::QueueWaitIdle(dev.m_queue);
+    }
+};
+
+TEST_F(VkPositiveLayerTest, ImageBarrierFenceThreadRace) {
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        GTEST_SKIP() << "Timeline semaphore feature not supported.";
+    }
+    ImageRaceData data(*m_device);
+
+    data.Run(*m_commandPool, *m_errorMonitor);
+}
