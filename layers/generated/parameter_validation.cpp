@@ -4,10 +4,10 @@
  * Copyright (c) 2015-2022 The Khronos Group Inc.
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
+ * Copyright (c) 2015-2017 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * Copyright (c) 2015-2017 Valve Corporation
  * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
