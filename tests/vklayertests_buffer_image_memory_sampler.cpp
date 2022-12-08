@@ -3986,7 +3986,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferDestroyed) {
 TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    auto buf_info = lvl_init_struct<VkBufferCreateInfo>();
+    auto buf_info = LvlInitStruct<VkBufferCreateInfo>();
     buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buf_info.size = 256;
     buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -3997,7 +3997,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     VkMemoryRequirements mem_reqs;
     vk::GetBufferMemoryRequirements(m_device->device(), buffer.handle(), &mem_reqs);
 
-    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
 
     bool pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -4009,7 +4009,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
     ASSERT_VK_SUCCESS(vk::BindBufferMemory(m_device->device(), buffer.handle(), buffer_mem.handle(), 0));
 
     m_commandBuffer->begin();
-    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier>();
+    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier>();
     buf_barrier.buffer = buffer.handle();
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
@@ -4018,7 +4018,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierBufferDestroyed) {
                            0, 0, NULL, 1, &buf_barrier, 0, NULL);
     m_commandBuffer->end();
 
-    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -4044,7 +4044,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
 
     vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
 
-    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -4056,7 +4056,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->begin();
-    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier>();
     img_barrier.image = image.handle();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -4066,7 +4066,7 @@ TEST_F(VkLayerTest, InvalidCmdBarrierImageDestroyed) {
                            NULL, 0, NULL, 1, &img_barrier);
     m_commandBuffer->end();
 
-    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -4118,14 +4118,14 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
-    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier.buffer = buffer;
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
@@ -4137,7 +4137,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierBufferDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
-    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -4171,7 +4171,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
 
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
-    auto alloc_info = lvl_init_struct<VkMemoryAllocateInfo>();
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
     alloc_info.allocationSize = mem_reqs.size;
     bool pass = false;
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, 0);
@@ -4185,13 +4185,13 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
     m_commandBuffer->begin();
-    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
     img_barrier.image = image;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
 
@@ -4203,7 +4203,7 @@ TEST_F(VkLayerTest, Sync2InvalidCmdBarrierImageDestroyed) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkDeviceMemory");
-    auto submit_info = lvl_init_struct<VkSubmitInfo>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
@@ -6043,7 +6043,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     vk::CmdEndRenderPass(m_commandBuffer->handle());
 
     // Duplicate barriers that change layout
-    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
     img_barrier.image = image.handle();
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -6060,7 +6060,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     img_barrier.subresourceRange.levelCount = 1;
     VkImageMemoryBarrier2KHR img_barriers[2] = {img_barrier, img_barrier};
 
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 2;
     dep_info.pImageMemoryBarriers = img_barriers;
     dep_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
@@ -6337,7 +6337,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
         GTEST_SKIP() << "No non-graphics queue supporting compute found";
     }
 
-    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     buf_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
@@ -6348,7 +6348,7 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
 
-    dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buf_barrier;
 
@@ -16335,14 +16335,14 @@ TEST_F(VkLayerTest, AttachmentFeedbackLoopLayoutFeature) {
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->begin();
-    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+    auto img_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
     img_barrier.image = image.handle();
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
 
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &img_barrier;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier2-attachmentFeedbackLoopLayout-07313");

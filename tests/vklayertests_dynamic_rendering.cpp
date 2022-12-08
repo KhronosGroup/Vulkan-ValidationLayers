@@ -2474,14 +2474,14 @@ TEST_F(VkLayerTest, DynamicRenderingWithBarrier) {
     VkMemoryPropertyFlags mem_reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     buffer.init_as_src_and_dst(*m_device, 256, mem_reqs);
 
-    auto buf_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+    auto buf_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
     buf_barrier.buffer = buffer.handle();
     buf_barrier.offset = 0;
     buf_barrier.size = VK_WHOLE_SIZE;
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    auto dependency_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dependency_info = LvlInitStruct<VkDependencyInfoKHR>();
     dependency_info.bufferMemoryBarrierCount = 1;
     dependency_info.pBufferMemoryBarriers = &buf_barrier;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPipelineBarrier2-None-06191");

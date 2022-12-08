@@ -6577,14 +6577,14 @@ TEST_F(VkLayerTest, Sync2InvalidSignalSemaphoreValue) {
     semaphore_signal_info.value = 10;
     ASSERT_VK_SUCCESS(vk::SignalSemaphore(m_device->device(), &semaphore_signal_info));
 
-    auto signal_info = lvl_init_struct<VkSemaphoreSubmitInfoKHR>();
+    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfoKHR>();
     signal_info.semaphore = semaphore[0].handle();
 
-    auto wait_info = lvl_init_struct<VkSemaphoreSubmitInfoKHR>();
+    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfoKHR>();
     wait_info.semaphore = semaphore[0].handle();
     wait_info.stageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-    auto submit_info = lvl_init_struct<VkSubmitInfo2KHR>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     submit_info.signalSemaphoreInfoCount = 1;
     submit_info.pSignalSemaphoreInfos = &signal_info;
     submit_info.waitSemaphoreInfoCount = 1;

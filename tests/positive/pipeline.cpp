@@ -4149,7 +4149,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
     VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
     vk_testing::ImageView view;
-    auto image_view_create_info = lvl_init_struct<VkImageViewCreateInfo>();
+    auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
     image_view_create_info.image = image.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
@@ -4322,7 +4322,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     static const uint32_t kWidth = 128;
     static const uint32_t kHeight = 128;
 
-    auto image_ci_3d = lvl_init_struct<VkImageCreateInfo>();
+    auto image_ci_3d = LvlInitStruct<VkImageCreateInfo>();
     image_ci_3d.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci_3d.imageType = VK_IMAGE_TYPE_3D;
     image_ci_3d.format = format;
@@ -4351,7 +4351,7 @@ TEST_F(VkPositiveLayerTest, ImageDescriptor3D2DSubresourceLayout) {
     //    to the entire subresource referenced which is the entire mip level in this case.
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vk_testing::ImageView view_2d, other_view;
-    auto image_view_create_info = lvl_init_struct<VkImageViewCreateInfo>();
+    auto image_view_create_info = LvlInitStruct<VkImageViewCreateInfo>();
     image_view_create_info.image = image_3d.handle();
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
@@ -4666,7 +4666,7 @@ TEST_F(VkPositiveLayerTest, ShaderAtomicInt64) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto atomic_int64_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicInt64Features>();
+    auto atomic_int64_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicInt64Features>();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_int64_features);
     if (features2.features.shaderInt64 == VK_FALSE) {
         GTEST_SKIP() << "shaderInt64 feature not supported";
