@@ -630,7 +630,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;
-    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pPipeline) const;
+    bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pipeline) const;
     bool ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
                                                  const uint32_t pipe_index) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline) const;
