@@ -1824,19 +1824,19 @@ bool CoreChecks::ValidateCmdRayQueryState(const CMD_BUFFER_STATE &cb_state, CMD_
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pPipeline) const {
+bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pipeline) const {
     bool skip = false;
-    const auto *color_blend_state = pPipeline.ColorBlendState();
-    const auto &rp_state = pPipeline.RenderPassState();
+    const auto *color_blend_state = pipeline.ColorBlendState();
+    const auto &rp_state = pipeline.RenderPassState();
     if (rp_state && color_blend_state) {
-        const auto subpass = pPipeline.Subpass();
+        const auto subpass = pipeline.Subpass();
         const auto *subpass_desc = &rp_state->createInfo.pSubpasses[subpass];
 
         uint32_t numberColorAttachments = rp_state->UsesDynamicRendering()
                                               ? rp_state->dynamic_rendering_pipeline_create_info.colorAttachmentCount
                                               : subpass_desc->colorAttachmentCount;
 
-        for (uint32_t i = 0; i < pPipeline.Attachments().size() && i < numberColorAttachments; ++i) {
+        for (uint32_t i = 0; i < pipeline.Attachments().size() && i < numberColorAttachments; ++i) {
             VkFormatFeatureFlags2KHR format_features;
 
             if (rp_state->UsesDynamicRendering()) {
@@ -1844,7 +1844,7 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pPipe
                     skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06055",
                                      "Pipeline %s: VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
                                      ") must equal pColorBlendState->attachmentCount (%" PRIu32 ")",
-                                     report_data->FormatHandle(pPipeline.pipeline()).c_str(), numberColorAttachments,
+                                     report_data->FormatHandle(pipeline.pipeline()).c_str(), numberColorAttachments,
                                      color_blend_state->attachmentCount);
                 }
             } else {
@@ -1854,8 +1854,8 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pPipe
                 const auto attachment_desc = rp_state->createInfo.pAttachments[attachment];
                 format_features = GetPotentialFormatFeatures(attachment_desc.format);
 
-                const auto *raster_state = pPipeline.RasterizationState();
-                if (raster_state && !raster_state->rasterizerDiscardEnable && pPipeline.Attachments()[i].blendEnable &&
+                const auto *raster_state = pipeline.RasterizationState();
+                if (raster_state && !raster_state->rasterizerDiscardEnable && pipeline.Attachments()[i].blendEnable &&
                     !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT_KHR)) {
                     skip |= LogError(
                         device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06041",
