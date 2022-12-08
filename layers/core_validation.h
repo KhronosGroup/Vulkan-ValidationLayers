@@ -631,6 +631,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGraphicsPipelineShaderDynamicState(const PIPELINE_STATE& pipeline, const CMD_BUFFER_STATE& cb_state,
                                                     const char* caller, const DrawDispatchVuid& vuid) const;
     bool ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE& pPipeline) const;
+    bool ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE& pipeline, const safe_VkSubpassDescription2* subpass_desc,
+                                                 const uint32_t pipe_index) const;
     bool ValidateComputePipelineShaderState(const PIPELINE_STATE& pipeline) const;
     uint32_t CalcShaderStageCount(const PIPELINE_STATE& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const PIPELINE_STATE& pipeline, uint32_t group, uint32_t stage) const;
