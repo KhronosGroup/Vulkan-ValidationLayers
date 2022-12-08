@@ -2225,6 +2225,209 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE &pipeline,
+                                                            const safe_VkSubpassDescription2 *subpass_desc,
+                                                            const uint32_t pipe_index) const {
+    bool skip = false;
+    const auto raster_state = pipeline.RasterizationState();
+    if (raster_state) {
+        if ((raster_state->depthClampEnable == VK_TRUE) && (!enabled_features.core.depthClamp)) {
+            skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: the depthClamp device feature is disabled: the "
+                             "depthClampEnable member "
+                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to VK_FALSE.",
+                             pipe_index);
+        }
+
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS) && (raster_state->depthBiasClamp != 0.0) &&
+            (!enabled_features.core.depthBiasClamp)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: the depthBiasClamp device feature is disabled: the "
+                             "depthBiasClamp member "
+                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to 0.0 unless the "
+                             "VK_DYNAMIC_STATE_DEPTH_BIAS dynamic state is enabled",
+                             pipe_index);
+        }
+
+        // If rasterization is enabled...
+        if (raster_state->rasterizerDiscardEnable == VK_FALSE) {
+            // pMultisampleState can be null for graphics library
+            const bool has_ms_state =
+                !pipeline.IsGraphicsLibrary() ||
+                ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
+            if (has_ms_state) {
+                const auto ms_state = pipeline.MultisampleState();
+                if (ms_state && (ms_state->alphaToOneEnable == VK_TRUE) && (!enabled_features.core.alphaToOne)) {
+                    skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785",
+                                     "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                     "]: the alphaToOne device feature is disabled: the alphaToOneEnable "
+                                     "member of the VkPipelineMultisampleStateCreateInfo structure must be set to VK_FALSE.",
+                                     pipe_index);
+                }
+            }
+
+            // If subpass uses a depth/stencil attachment, pDepthStencilState must be a pointer to a valid structure
+            const bool has_ds_state = (!pipeline.IsGraphicsLibrary() && pipeline.HasFullState()) ||
+                                      ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0);
+            if (has_ds_state) {
+                if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
+                    subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                    const auto ds_state = pipeline.DepthStencilState();
+                    if (!ds_state) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06043",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] State: pDepthStencilState is NULL when rasterization is enabled "
+                                         "and subpass uses a depth/stencil attachment.",
+                                         pipe_index);
+                    } else if (ds_state->depthBoundsTestEnable == VK_TRUE) {
+                        if (!enabled_features.core.depthBounds) {
+                            skip |= LogError(
+                                device, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
+                                "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                "]: the depthBounds device feature is disabled: the "
+                                "depthBoundsTestEnable member of the VkPipelineDepthStencilStateCreateInfo structure must be "
+                                "set to VK_FALSE.",
+                                pipe_index);
+                        }
+
+                        // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
+                        if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
+                            !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
+                            const float minDepthBounds = ds_state->minDepthBounds;
+                            const float maxDepthBounds = ds_state->maxDepthBounds;
+                            // Also VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00755
+                            if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
+                                skip |= LogError(
+                                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
+                                    "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                    "]: VK_EXT_depth_range_unrestricted extension "
+                                    "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
+                                    "true, and pDepthStencilState::minDepthBounds (=%f) is not within the [0.0, 1.0] range.",
+                                    pipe_index, minDepthBounds);
+                            }
+                            if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
+                                skip |= LogError(
+                                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
+                                    "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                    "]: VK_EXT_depth_range_unrestricted extension "
+                                    "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
+                                    "true, and pDepthStencilState::maxDepthBounds (=%f) is not within the [0.0, 1.0] range.",
+                                    pipe_index, maxDepthBounds);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If subpass uses color attachments, pColorBlendState must be valid pointer
+            const bool has_color_blend_state =
+                !pipeline.IsGraphicsLibrary() ||
+                ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
+            if (has_color_blend_state && subpass_desc) {
+                uint32_t color_attachment_count = 0;
+                for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
+                    if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                        ++color_attachment_count;
+                    }
+                }
+
+                if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
+                    !pipeline.fragment_output_state->color_blend_state) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "] State: pColorBlendState is NULL when rasterization is enabled and "
+                                     "subpass uses color attachments.",
+                                     pipe_index);
+                }
+
+                const uint32_t active_shaders = pipeline.active_shaders;
+                constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
+                std::bitset<num_bits> view_bits(subpass_desc->viewMask);
+                uint32_t view_bits_count = static_cast<uint32_t>(view_bits.count());
+                if (view_bits_count > 1) {
+                    if (!enabled_features.core11.multiviewTessellationShader &&
+                        (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                         active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
+                                         " bits set in viewMask and pStages includes tessellation shaders, but the "
+                                         "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
+                                         pipe_index, view_bits_count);
+                    }
+                    if (!enabled_features.core11.multiviewGeometryShader && active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
+                                         " bits set in viewMask and pStages includes geometry shader, but the "
+                                         "VkPhysicalDeviceMultiviewFeatures::multiviewGeometryShader features is not enabled.",
+                                         pipe_index, view_bits_count);
+                    }
+                }
+            }
+        }
+
+        auto provoking_vertex_state_ci =
+            lvl_find_in_chain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(raster_state->pNext);
+        if (provoking_vertex_state_ci &&
+            provoking_vertex_state_ci->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
+            !enabled_features.provoking_vertex_features.provokingVertexLast) {
+            skip |= LogError(device, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883",
+                             "provokingVertexLast feature is not enabled.");
+        }
+
+        const auto rasterization_state_stream_ci =
+            LvlFindInChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(raster_state->pNext);
+        if (rasterization_state_stream_ci) {
+            if (!enabled_features.transform_feedback_features.geometryStreams) {
+                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
+                                 "geometryStreams feature is not enabled.",
+                                 pipe_index);
+            } else if (phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE &&
+                       rasterization_state_stream_ci->rasterizationStream != 0) {
+                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326",
+                                 "vkCreateGraphicsPipelines(): "
+                                 "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackRasterizationStreamSelect is "
+                                 "VK_FALSE, but pCreateInfos[%" PRIu32
+                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
+                                 "rasterizationStream (%" PRIu32 ") not equal to 0.",
+                                 pipe_index, rasterization_state_stream_ci->rasterizationStream);
+            } else if (rasterization_state_stream_ci->rasterizationStream >=
+                       phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325",
+                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                    "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
+                    "rasterizationStream (%" PRIu32
+                    ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
+                    pipe_index, rasterization_state_stream_ci->rasterizationStream,
+                    phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
+            }
+        }
+
+        const auto rasterization_conservative_state_ci =
+            LvlFindInChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(raster_state->pNext);
+        if (rasterization_conservative_state_ci) {
+            if (rasterization_conservative_state_ci->extraPrimitiveOverestimationSize < 0.0f ||
+                rasterization_conservative_state_ci->extraPrimitiveOverestimationSize >
+                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769",
+                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                    "].pRasterizationState pNext chain includes VkPipelineRasterizationConservativeStateCreateInfoEXT with "
+                    "extraPrimitiveOverestimationSize (%f), which is not between 0.0 and "
+                    "VkPipelineRasterizationConservativeStateCreateInfoEXT::maxExtraPrimitiveOverestimationSize (%f).",
+                    pipe_index, rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
+                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                               const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
@@ -2451,6 +2654,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
     skip |= ValidateGraphicsPipelinePreRasterState(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, pipe_index);
+    skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineShaderState(pipeline);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
@@ -2485,203 +2689,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
                          "] does not have pre-raster state, but stages (%s) contains pre-raster shader stages.",
                          pipe_index, string_VkShaderStageFlags(active_shaders).c_str());
-    }
-
-    // If a rasterization state is provided...
-    const auto raster_state = pipeline.RasterizationState();
-    if (raster_state) {
-        if ((raster_state->depthClampEnable == VK_TRUE) && (!enabled_features.core.depthClamp)) {
-            skip |= LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-depthClampEnable-00782",
-                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                             "]: the depthClamp device feature is disabled: the "
-                             "depthClampEnable member "
-                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to VK_FALSE.",
-                             pipe_index);
-        }
-
-        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS) && (raster_state->depthBiasClamp != 0.0) &&
-            (!enabled_features.core.depthBiasClamp)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00754",
-                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                             "]: the depthBiasClamp device feature is disabled: the "
-                             "depthBiasClamp member "
-                             "of the VkPipelineRasterizationStateCreateInfo structure must be set to 0.0 unless the "
-                             "VK_DYNAMIC_STATE_DEPTH_BIAS dynamic state is enabled",
-                             pipe_index);
-        }
-
-        // If rasterization is enabled...
-        if (raster_state->rasterizerDiscardEnable == VK_FALSE) {
-            // pMultisampleState can be null for graphics library
-            const bool has_ms_state =
-                !pipeline.IsGraphicsLibrary() ||
-                ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
-            if (has_ms_state) {
-                const auto ms_state = pipeline.MultisampleState();
-                if (ms_state && (ms_state->alphaToOneEnable == VK_TRUE) && (!enabled_features.core.alphaToOne)) {
-                    skip |= LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-alphaToOneEnable-00785",
-                                     "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                     "]: the alphaToOne device feature is disabled: the alphaToOneEnable "
-                                     "member of the VkPipelineMultisampleStateCreateInfo structure must be set to VK_FALSE.",
-                                     pipe_index);
-                }
-            }
-
-            // If subpass uses a depth/stencil attachment, pDepthStencilState must be a pointer to a valid structure
-            const bool has_ds_state = (!pipeline.IsGraphicsLibrary() && pipeline.HasFullState()) ||
-                                      ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT)) != 0);
-            if (has_ds_state) {
-                if (subpass_desc && subpass_desc->pDepthStencilAttachment &&
-                    subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                    if (!ds_state) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06043",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] State: pDepthStencilState is NULL when rasterization is enabled "
-                                         "and subpass uses a depth/stencil attachment.",
-                                         pipe_index);
-                    } else if (ds_state->depthBoundsTestEnable == VK_TRUE) {
-                        if (!enabled_features.core.depthBounds) {
-                            skip |= LogError(
-                                device, "VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598",
-                                "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                "]: the depthBounds device feature is disabled: the "
-                                "depthBoundsTestEnable member of the VkPipelineDepthStencilStateCreateInfo structure must be "
-                                "set to VK_FALSE.",
-                                pipe_index);
-                        }
-
-                        // The extension was not created with a feature bit whichs prevents displaying the 2 variations of the VUIDs
-                        if (!IsExtEnabled(device_extensions.vk_ext_depth_range_unrestricted) &&
-                            !pipeline.IsDynamic(VK_DYNAMIC_STATE_DEPTH_BOUNDS)) {
-                            const float minDepthBounds = ds_state->minDepthBounds;
-                            const float maxDepthBounds = ds_state->maxDepthBounds;
-                            // Also VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-00755
-                            if (!(minDepthBounds >= 0.0) || !(minDepthBounds <= 1.0)) {
-                                skip |= LogError(
-                                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
-                                    "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                    "]: VK_EXT_depth_range_unrestricted extension "
-                                    "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
-                                    "true, and pDepthStencilState::minDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                    pipe_index, minDepthBounds);
-                            }
-                            if (!(maxDepthBounds >= 0.0) || !(maxDepthBounds <= 1.0)) {
-                                skip |= LogError(
-                                    device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-02510",
-                                    "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                    "]: VK_EXT_depth_range_unrestricted extension "
-                                    "is not enabled, VK_DYNAMIC_STATE_DEPTH_BOUNDS is not used, depthBoundsTestEnable is "
-                                    "true, and pDepthStencilState::maxDepthBounds (=%f) is not within the [0.0, 1.0] range.",
-                                    pipe_index, maxDepthBounds);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // If subpass uses color attachments, pColorBlendState must be valid pointer
-            const bool has_color_blend_state =
-                !pipeline.IsGraphicsLibrary() ||
-                ((pipeline.graphics_lib_type & (VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) != 0);
-            if (has_color_blend_state && subpass_desc) {
-                uint32_t color_attachment_count = 0;
-                for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
-                    if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
-                        ++color_attachment_count;
-                    }
-                }
-
-                if (pipeline.fragment_output_state && (color_attachment_count > 0) &&
-                    !pipeline.fragment_output_state->color_blend_state) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06044",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] State: pColorBlendState is NULL when rasterization is enabled and "
-                                     "subpass uses color attachments.",
-                                     pipe_index);
-                }
-
-                constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
-                std::bitset<num_bits> view_bits(subpass_desc->viewMask);
-                uint32_t view_bits_count = static_cast<uint32_t>(view_bits.count());
-                if (view_bits_count > 1) {
-                    if (!enabled_features.core11.multiviewTessellationShader &&
-                        (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
-                         active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
-                                         " bits set in viewMask and pStages includes tessellation shaders, but the "
-                                         "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
-                                         pipe_index, view_bits_count);
-                    }
-                    if (!enabled_features.core11.multiviewGeometryShader && active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
-                                         " bits set in viewMask and pStages includes geometry shader, but the "
-                                         "VkPhysicalDeviceMultiviewFeatures::multiviewGeometryShader features is not enabled.",
-                                         pipe_index, view_bits_count);
-                    }
-                }
-            }
-        }
-
-        auto provoking_vertex_state_ci =
-            lvl_find_in_chain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(raster_state->pNext);
-        if (provoking_vertex_state_ci &&
-            provoking_vertex_state_ci->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
-            !enabled_features.provoking_vertex_features.provokingVertexLast) {
-            skip |= LogError(
-                device, "VUID-VkPipelineRasterizationProvokingVertexStateCreateInfoEXT-provokingVertexMode-04883",
-                "provokingVertexLast feature is not enabled.");
-        }
-
-        const auto rasterization_state_stream_ci =
-            LvlFindInChain<VkPipelineRasterizationStateStreamCreateInfoEXT>(raster_state->pNext);
-        if (rasterization_state_stream_ci) {
-            if (!enabled_features.transform_feedback_features.geometryStreams) {
-                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-geometryStreams-02324",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT, but "
-                                 "geometryStreams feature is not enabled.",
-                                 pipe_index);
-            } else if (phys_dev_ext_props.transform_feedback_props.transformFeedbackRasterizationStreamSelect == VK_FALSE &&
-                rasterization_state_stream_ci->rasterizationStream != 0) {
-                skip |= LogError(device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02326",
-                                 "vkCreateGraphicsPipelines(): "
-                                 "VkPhysicalDeviceTransformFeedbackPropertiesEXT::transformFeedbackRasterizationStreamSelect is "
-                                 "VK_FALSE, but pCreateInfos[%" PRIu32
-                                 "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
-                                 "rasterizationStream (%" PRIu32 ") not equal to 0.",
-                                 pipe_index, rasterization_state_stream_ci->rasterizationStream);
-            } else if (rasterization_state_stream_ci->rasterizationStream >=
-                       phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineRasterizationStateStreamCreateInfoEXT-rasterizationStream-02325",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "].pRasterizationState pNext chain includes VkPipelineRasterizationStateStreamCreateInfoEXT with "
-                    "rasterizationStream (%" PRIu32
-                    ") not less than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams (%" PRIu32 ").",
-                    pipe_index, rasterization_state_stream_ci->rasterizationStream,
-                    phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
-            }
-        }
-
-        const auto rasterization_conservative_state_ci =
-            LvlFindInChain<VkPipelineRasterizationConservativeStateCreateInfoEXT>(raster_state->pNext);
-        if (rasterization_conservative_state_ci) {
-            if (rasterization_conservative_state_ci->extraPrimitiveOverestimationSize < 0.0f ||
-                rasterization_conservative_state_ci->extraPrimitiveOverestimationSize >
-                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineRasterizationConservativeStateCreateInfoEXT-extraPrimitiveOverestimationSize-01769",
-                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                    "].pRasterizationState pNext chain includes VkPipelineRasterizationConservativeStateCreateInfoEXT with "
-                    "extraPrimitiveOverestimationSize (%f), which is not between 0.0 and "
-                    "VkPipelineRasterizationConservativeStateCreateInfoEXT::maxExtraPrimitiveOverestimationSize (%f).",
-                    pipe_index, rasterization_conservative_state_ci->extraPrimitiveOverestimationSize,
-                    phys_dev_ext_props.conservative_rasterization_props.maxExtraPrimitiveOverestimationSize);
-            }
-        }
     }
 
     if (active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT) {
@@ -2742,6 +2749,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    const auto raster_state = pipeline.RasterizationState();
     const auto *multisample_state = pipeline.MultisampleState();
     if (subpass_desc && multisample_state) {
         auto accum_color_samples = [subpass_desc, &rp_state](uint32_t &samples) {
@@ -3588,8 +3596,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     const auto color_blend_state = pipeline.ColorBlendState();
     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
     if (rendering_struct) {
-        const bool has_rasterization =
-            pipeline.RasterizationState() && (pipeline.RasterizationState()->rasterizerDiscardEnable == VK_FALSE);
+        const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
         if (has_rasterization &&
             ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
              (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
