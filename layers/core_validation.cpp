@@ -10483,10 +10483,8 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
 
     auto as_state = Get<ACCELERATION_STRUCTURE_STATE>(accelerationStructure);
     if (as_state != nullptr) {
-        // TODO: update the fake VUID below once the real one is generated.
-        skip = ValidateMemoryIsBoundToAccelerationStructure(
-            as_state.get(), "vkGetAccelerationStructureHandleNV",
-            "UNASSIGNED-vkGetAccelerationStructureHandleNV-accelerationStructure-XXXX");
+        skip = ValidateMemoryIsBoundToAccelerationStructure(as_state.get(), "vkGetAccelerationStructureHandleNV",
+                                                            "VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
     }
 
     return skip;

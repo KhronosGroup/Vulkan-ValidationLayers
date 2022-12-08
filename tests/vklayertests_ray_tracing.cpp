@@ -2402,7 +2402,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateGetAccelerationStructureHandle) {
         VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info, /*init_memory=*/false);
 
         uint64_t handle = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetAccelerationStructureHandleNV-accelerationStructure-XXXX");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetAccelerationStructureHandleNV-accelerationStructure-02787");
         vkGetAccelerationStructureHandleNV(device(), bot_level_as.handle(), sizeof(uint64_t), &handle);
         m_errorMonitor->VerifyFound();
     }
