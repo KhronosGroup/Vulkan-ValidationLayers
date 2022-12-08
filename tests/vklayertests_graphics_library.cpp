@@ -1357,3 +1357,214 @@ TEST_F(VkGraphicsLibraryLayerTest, BadDSLShaderStageMask) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
+    TEST_DESCRIPTION("Test various errors when creating a graphics pipeline with tessellation stages active.");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported.";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+
+    if (!m_device->phy().features().tessellationShader) {
+        GTEST_SKIP() << "Device does not support tessellation shaders";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText);
+    vk_testing::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    vk_testing::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    char const *tcs_src = R"glsl(
+        #version 450
+        layout(vertices=3) out;
+        void main(){
+           gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = 1;
+           gl_TessLevelInner[0] = 1;
+        }
+    )glsl";
+    const auto tcs_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, tcs_src);
+    vk_testing::GraphicsPipelineLibraryStage tcs_stage(tcs_spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+
+    char const *tes_src = R"glsl(
+        #version 450
+        layout(triangles, equal_spacing, cw) in;
+        void main(){
+           gl_Position.xyz = gl_TessCoord;
+           gl_Position.w = 0;
+        }
+    )glsl";
+    const auto tes_spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, tes_src);
+    vk_testing::GraphicsPipelineLibraryStage tes_stage(tes_spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+    auto iasci = LvlInitStruct<VkPipelineInputAssemblyStateCreateInfo>();
+    iasci.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+
+    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
+
+    VkPipelineInputAssemblyStateCreateInfo iasci_bad = iasci;
+    VkPipelineTessellationStateCreateInfo tsci_bad = tsci;
+
+    CreatePipelineHelper vi_bad_lib(*this);
+    vi_bad_lib.InitVertexInputLibInfo();
+    vi_bad_lib.InitState();
+    iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;  // otherwise we get a failure about invalid topology
+    vi_bad_lib.gp_ci_.pInputAssemblyState = &iasci_bad;
+    vi_bad_lib.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper fs_lib(*this);
+    fs_lib.InitFragmentLibInfo(1, &fs_stage.stage_ci);
+    fs_lib.InitState();
+    fs_lib.CreateGraphicsPipeline();
+
+    CreatePipelineHelper fo_lib(*this);
+    fo_lib.InitFragmentOutputLibInfo();
+    fo_lib.InitState();
+    fo_lib.CreateGraphicsPipeline(true, false);
+
+    // libs[0] == vertex input lib
+    // libs[1] == pre-raster lib
+    // libs[2] == FS lib
+    // libs[3] == FO lib
+    std::array libs = {
+        vi_bad_lib.pipeline_,
+        static_cast<VkPipeline>(VK_NULL_HANDLE),  // Filled out for each VUID check below
+        fs_lib.pipeline_,
+        fo_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = static_cast<uint32_t>(libs.size());
+    link_info.pLibraries = libs.data();
+
+    // Pass a tess control shader without a tess eval shader
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        const std::array shaders = {vs_stage.stage_ci, tcs_stage.stage_ci};
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(shaders);
+        pre_raster_lib.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729");
+        pre_raster_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass a tess eval shader without a tess control shader
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        const std::array shaders = {vs_stage.stage_ci, tes_stage.stage_ci};
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(shaders);
+        pre_raster_lib.InitState();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00730");
+        pre_raster_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass patch topology without tessellation shaders
+    CreatePipelineHelper vi_patch_lib(*this);
+    vi_patch_lib.InitVertexInputLibInfo();
+    vi_patch_lib.InitState();
+    vi_patch_lib.gp_ci_.pInputAssemblyState = &iasci;
+    vi_patch_lib.CreateGraphicsPipeline(true, false);
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfo(1, &vs_stage.stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
+        pre_raster_lib.CreateGraphicsPipeline();
+
+        libs[0] = vi_patch_lib.pipeline_;
+        libs[1] = pre_raster_lib.pipeline_;
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-topology-00737");
+        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass a NULL pTessellationState (with active tessellation shader stages)
+    const std::array tess_shaders = {vs_stage.stage_ci, tcs_stage.stage_ci, tes_stage.stage_ci};
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731");
+        pre_raster_lib.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass an invalid pTessellationState (bad sType)
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
+        pre_raster_lib.InitState();
+        // stype-check off
+        tsci_bad.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        // stype-check on
+        pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass out-of-range patchControlPoints
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
+        pre_raster_lib.InitState();
+        tsci_bad = tsci;
+        tsci_bad.patchControlPoints = 0;
+        pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
+        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
+        pre_raster_lib.InitState();
+        tsci_bad = tsci;
+        tsci_bad.patchControlPoints = m_device->props.limits.maxTessellationPatchSize + 1;
+        pre_raster_lib.gp_ci_.pTessellationState = &tsci_bad;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214");
+        pre_raster_lib.CreateGraphicsPipeline(true, false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Pass an invalid primitive topology
+    {
+        CreatePipelineHelper vi_lib(*this);
+        vi_lib.InitVertexInputLibInfo();
+        vi_lib.InitState();
+        iasci_bad = iasci;
+        iasci_bad.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        vi_lib.gp_ci_.pInputAssemblyState = &iasci_bad;
+        vi_lib.CreateGraphicsPipeline(true, false);
+
+        CreatePipelineHelper pre_raster_lib(*this);
+        pre_raster_lib.InitPreRasterLibInfoFromContainer(tess_shaders);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.pTessellationState = &tsci;
+        pre_raster_lib.gp_ci_.layout = fs_lib.gp_ci_.layout;
+        pre_raster_lib.CreateGraphicsPipeline(true, false);
+
+        libs[0] = vi_lib.pipeline_;
+        libs[1] = pre_raster_lib.pipeline_;
+        auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pStages-00736");
+        vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+        m_errorMonitor->VerifyFound();
+    }
+}
