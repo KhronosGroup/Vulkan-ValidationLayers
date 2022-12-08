@@ -13937,6 +13937,173 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
     vk::DestroyPipelineLayout(m_device->device(), pipeline_layout, NULL);
 }
 
+TEST_F(VkLayerTest, DescriptorBufferInconsistentBuffer) {
+    TEST_DESCRIPTION("Dispatch pipeline with descriptor set bound while descriptor buffer expected");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    InitFrameworkAndRetrieveFeatures(features2);
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    auto vkCmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdBindDescriptorBuffersEXT"));
+    ASSERT_TRUE(vkCmdBindDescriptorBuffersEXT);
+    auto vkCmdSetDescriptorBufferOffsetsEXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(
+        vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDescriptorBufferOffsetsEXT"));
+    ASSERT_TRUE(vkCmdSetDescriptorBufferOffsetsEXT);
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+
+    auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    dslci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    dslci.bindingCount = 1;
+    dslci.pBindings = &binding;
+
+    vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
+
+    auto plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    plci.setLayoutCount = 1;
+    plci.pSetLayouts = &dsl.handle();
+
+    vk_testing::PipelineLayout pipeline_layout(*m_device, plci);
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    uint32_t qfi = 0;
+    auto buffCI = LvlInitStruct<VkBufferCreateInfo>();
+    buffCI.size = 4096;
+    buffCI.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    buffCI.queueFamilyIndexCount = 1;
+    buffCI.pQueueFamilyIndices = &qfi;
+
+    auto memflagsinfo = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    memflagsinfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    vk_testing::Buffer buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memflagsinfo);
+
+    auto bdai = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    bdai.buffer = buffer.handle();
+
+    auto dbbi = LvlInitStruct<VkDescriptorBufferBindingInfoEXT>();
+    dbbi.address = vk::GetBufferDeviceAddress(m_device->device(), &bdai);
+    dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    ASSERT_VK_SUCCESS(pipe.CreateComputePipeline());
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    vkCmdBindDescriptorBuffersEXT(m_commandBuffer->handle(), 1, &dbbi);
+
+    uint32_t index = 0;
+    VkDeviceSize offset = 0;
+    vkCmdSetDescriptorBufferOffsetsEXT(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                                       &index, &offset);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08115");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, DescriptorBufferInconsistentSet) {
+    TEST_DESCRIPTION("Dispatch pipeline with descriptor buffer bound while of descriptor set expected");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+    auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
+    auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    InitFrameworkAndRetrieveFeatures(features2);
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    // TODO Issue 4867 - MockICD doesn't return proper values
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+
+    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>();
+    dslci.flags = 0;
+    dslci.bindingCount = 1;
+    dslci.pBindings = &binding;
+
+    vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ds_type_count.descriptorCount = 1;
+
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vk_testing::DescriptorPool pool(*m_device, ds_pool_ci);
+    ASSERT_TRUE(pool.initialized());
+
+    std::unique_ptr<vk_testing::DescriptorSet> ds(pool.alloc_sets(*m_device, dsl));
+    ASSERT_TRUE(ds);
+
+    auto plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+    plci.setLayoutCount = 1;
+    plci.pSetLayouts = &dsl.handle();
+
+    vk_testing::PipelineLayout pipeline_layout(*m_device, plci);
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.InitState();
+    ASSERT_VK_SUCCESS(pipe.CreateComputePipeline());
+
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &ds->handle(), 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatch-None-08117");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
     TEST_DESCRIPTION("Descriptor buffer invalid bind point.");
 
