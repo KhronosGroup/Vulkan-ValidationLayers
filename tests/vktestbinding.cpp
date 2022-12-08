@@ -952,6 +952,10 @@ void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
     info.setLayoutCount = layout_handles.size();
     info.pSetLayouts = layout_handles.data();
 
+    init(dev, info);
+}
+
+void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreatePipelineLayout, dev, &info);
 }
 
