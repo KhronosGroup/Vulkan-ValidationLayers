@@ -4988,6 +4988,87 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_F
     typedef VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT Type;
 };
 
+// Map type VkSurfacePresentModeEXT to id VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT
+template <> struct LvlTypeMap<VkSurfacePresentModeEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT> {
+    typedef VkSurfacePresentModeEXT Type;
+};
+
+// Map type VkSurfacePresentScalingCapabilitiesEXT to id VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT
+template <> struct LvlTypeMap<VkSurfacePresentScalingCapabilitiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT> {
+    typedef VkSurfacePresentScalingCapabilitiesEXT Type;
+};
+
+// Map type VkSurfacePresentModeCompatibilityEXT to id VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT
+template <> struct LvlTypeMap<VkSurfacePresentModeCompatibilityEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT> {
+    typedef VkSurfacePresentModeCompatibilityEXT Type;
+};
+
+// Map type VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT> {
+    typedef VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT Type;
+};
+
+// Map type VkSwapchainPresentFenceInfoEXT to id VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT
+template <> struct LvlTypeMap<VkSwapchainPresentFenceInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT> {
+    typedef VkSwapchainPresentFenceInfoEXT Type;
+};
+
+// Map type VkSwapchainPresentModesCreateInfoEXT to id VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkSwapchainPresentModesCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT> {
+    typedef VkSwapchainPresentModesCreateInfoEXT Type;
+};
+
+// Map type VkSwapchainPresentModeInfoEXT to id VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT
+template <> struct LvlTypeMap<VkSwapchainPresentModeInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT> {
+    typedef VkSwapchainPresentModeInfoEXT Type;
+};
+
+// Map type VkSwapchainPresentScalingCreateInfoEXT to id VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkSwapchainPresentScalingCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT> {
+    typedef VkSwapchainPresentScalingCreateInfoEXT Type;
+};
+
+// Map type VkReleaseSwapchainImagesInfoEXT to id VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT
+template <> struct LvlTypeMap<VkReleaseSwapchainImagesInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT> {
+    typedef VkReleaseSwapchainImagesInfoEXT Type;
+};
+
 // Map type VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV
 template <> struct LvlTypeMap<VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV;

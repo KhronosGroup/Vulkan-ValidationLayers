@@ -7696,6 +7696,22 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdSetStencilOpEXT(VkCommandBuf
     CoreChecks::PostCallRecordCmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
+bool CoreChecksOptickInstrumented::PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) const {
+    OPTICK_EVENT();
+    auto result = CoreChecks::PreCallValidateReleaseSwapchainImagesEXT(device, pReleaseInfo);
+    return result;
+}
+
+void CoreChecksOptickInstrumented::PreCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) {
+    OPTICK_EVENT();
+    CoreChecks::PreCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo);
+}
+
+void CoreChecksOptickInstrumented::PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo, VkResult result) {
+    OPTICK_EVENT();
+    CoreChecks::PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, result);
+}
+
 bool CoreChecksOptickInstrumented::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);

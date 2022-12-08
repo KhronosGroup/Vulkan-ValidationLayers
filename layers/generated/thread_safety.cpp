@@ -8202,6 +8202,19 @@ void ThreadSafety::PostCallRecordCmdSetStencilOpEXT(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
+    StartReadObjectParentInstance(device, "vkReleaseSwapchainImagesEXT");
+}
+
+void ThreadSafety::PostCallRecordReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkReleaseSwapchainImagesEXT");
+}
+
 void ThreadSafety::PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

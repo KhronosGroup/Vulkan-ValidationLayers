@@ -461,6 +461,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthCompareOpEXT(VkCommandBuffer co
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetDepthBoundsTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthBoundsTestEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, VkStencilOp failOp, VkStencilOp passOp, VkStencilOp depthFailOp, VkCompareOp compareOp) {  };
+static VKAPI_ATTR VkResult VKAPI_CALL StubReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubGetGeneratedCommandsMemoryRequirementsNV(VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo, VkMemoryRequirements2* pMemoryRequirements) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {  };
 static VKAPI_ATTR void VKAPI_CALL StubCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) {  };
@@ -1010,6 +1011,7 @@ const layer_data::unordered_map<std::string, std::string> api_extension_map {
     {"vkReleaseFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},
     {"vkReleasePerformanceConfigurationINTEL", "VK_INTEL_performance_query"},
     {"vkReleaseProfilingLockKHR", "VK_KHR_performance_query"},
+    {"vkReleaseSwapchainImagesEXT", "VK_EXT_swapchain_maintenance1"},
     {"vkResetQueryPool", "VK_VERSION_1_2"},
     {"vkResetQueryPoolEXT", "VK_EXT_host_query_reset"},
     {"vkSetBufferCollectionBufferConstraintsFUCHSIA", "VK_FUCHSIA_buffer_collection"},
@@ -1758,6 +1760,8 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CmdSetStencilTestEnableEXT == nullptr) { table->CmdSetStencilTestEnableEXT = (PFN_vkCmdSetStencilTestEnableEXT)StubCmdSetStencilTestEnableEXT; }
     table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT) gpa(device, "vkCmdSetStencilOpEXT");
     if (table->CmdSetStencilOpEXT == nullptr) { table->CmdSetStencilOpEXT = (PFN_vkCmdSetStencilOpEXT)StubCmdSetStencilOpEXT; }
+    table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT) gpa(device, "vkReleaseSwapchainImagesEXT");
+    if (table->ReleaseSwapchainImagesEXT == nullptr) { table->ReleaseSwapchainImagesEXT = (PFN_vkReleaseSwapchainImagesEXT)StubReleaseSwapchainImagesEXT; }
     table->GetGeneratedCommandsMemoryRequirementsNV = (PFN_vkGetGeneratedCommandsMemoryRequirementsNV) gpa(device, "vkGetGeneratedCommandsMemoryRequirementsNV");
     if (table->GetGeneratedCommandsMemoryRequirementsNV == nullptr) { table->GetGeneratedCommandsMemoryRequirementsNV = (PFN_vkGetGeneratedCommandsMemoryRequirementsNV)StubGetGeneratedCommandsMemoryRequirementsNV; }
     table->CmdPreprocessGeneratedCommandsNV = (PFN_vkCmdPreprocessGeneratedCommandsNV) gpa(device, "vkCmdPreprocessGeneratedCommandsNV");

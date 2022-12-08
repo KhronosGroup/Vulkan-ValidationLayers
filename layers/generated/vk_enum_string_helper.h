@@ -1163,6 +1163,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT:
@@ -1363,6 +1365,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR";
         case VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV:
             return "VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV";
+        case VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_RELEASE_SWAPCHAIN_IMAGES_INFO_EXT";
         case VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO:
             return "VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO";
         case VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT:
@@ -1483,6 +1487,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT";
         case VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT:
             return "VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT:
+            return "VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT";
+        case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT:
+            return "VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT";
+        case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT:
+            return "VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT";
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             return "VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR";
         case VK_STRUCTURE_TYPE_SWAPCHAIN_COUNTER_CREATE_INFO_EXT:
@@ -1493,6 +1503,14 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD";
         case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_BARRIER_CREATE_INFO_NV:
             return "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_BARRIER_CREATE_INFO_NV";
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT";
+        case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_SCALING_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA:
             return "VK_STRUCTURE_TYPE_SYSMEM_COLOR_SPACE_FUCHSIA";
         case VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD:
@@ -6398,6 +6416,8 @@ static inline const char* string_VkSwapchainCreateFlagBitsKHR(VkSwapchainCreateF
 {
     switch (input_value)
     {
+        case VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT:
+            return "VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT";
         case VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR:
             return "VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR";
         case VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR:
@@ -9840,6 +9860,68 @@ static inline const char* string_VkLineRasterizationModeEXT(VkLineRasterizationM
         default:
             return "Unhandled VkLineRasterizationModeEXT";
     }
+}
+
+static inline const char* string_VkPresentScalingFlagBitsEXT(VkPresentScalingFlagBitsEXT input_value)
+{
+    switch (input_value)
+    {
+        case VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT:
+            return "VK_PRESENT_SCALING_ASPECT_RATIO_STRETCH_BIT_EXT";
+        case VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT:
+            return "VK_PRESENT_SCALING_ONE_TO_ONE_BIT_EXT";
+        case VK_PRESENT_SCALING_STRETCH_BIT_EXT:
+            return "VK_PRESENT_SCALING_STRETCH_BIT_EXT";
+        default:
+            return "Unhandled VkPresentScalingFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkPresentScalingFlagsEXT(VkPresentScalingFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPresentScalingFlagBitsEXT(static_cast<VkPresentScalingFlagBitsEXT>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPresentScalingFlagBitsEXT(static_cast<VkPresentScalingFlagBitsEXT>(0)));
+    return ret;
+}
+
+static inline const char* string_VkPresentGravityFlagBitsEXT(VkPresentGravityFlagBitsEXT input_value)
+{
+    switch (input_value)
+    {
+        case VK_PRESENT_GRAVITY_CENTERED_BIT_EXT:
+            return "VK_PRESENT_GRAVITY_CENTERED_BIT_EXT";
+        case VK_PRESENT_GRAVITY_MAX_BIT_EXT:
+            return "VK_PRESENT_GRAVITY_MAX_BIT_EXT";
+        case VK_PRESENT_GRAVITY_MIN_BIT_EXT:
+            return "VK_PRESENT_GRAVITY_MIN_BIT_EXT";
+        default:
+            return "Unhandled VkPresentGravityFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkPresentGravityFlagsEXT(VkPresentGravityFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPresentGravityFlagBitsEXT(static_cast<VkPresentGravityFlagBitsEXT>(1U << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPresentGravityFlagBitsEXT(static_cast<VkPresentGravityFlagBitsEXT>(0)));
+    return ret;
 }
 
 static inline const char* string_VkIndirectStateFlagBitsNV(VkIndirectStateFlagBitsNV input_value)

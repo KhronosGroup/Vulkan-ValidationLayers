@@ -2845,6 +2845,9 @@ bool PreCallValidateCmdSetStencilOpEXT(
     VkStencilOp                                 passOp,
     VkStencilOp                                 depthFailOp,
     VkCompareOp                                 compareOp) const override;
+bool PreCallValidateReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) const override;
 bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

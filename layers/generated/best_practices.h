@@ -1619,6 +1619,12 @@ void PostCallRecordCreateHeadlessSurfaceEXT(
     VkResult                                    result) override;
 
 
+void PostCallRecordReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,
+    VkResult                                    result) override;
+
+
 void PostCallRecordCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
