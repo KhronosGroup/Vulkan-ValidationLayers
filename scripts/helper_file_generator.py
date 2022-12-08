@@ -2296,17 +2296,6 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 find_mod_func=find_mod_func, init_func=init_func), ''
             )))
 
-        # Generate utilities using legacy names for backwards compatibility
-        fprefix = 'lvl_'
-        find_func = fprefix + 'find_in_chain'
-        find_mod_func = fprefix + 'find_mod_in_chain'
-        init_func = fprefix + 'init_struct'
-        code.append('\n'.join((
-            utilities_format.format(id_member=id_member, type_map=typemap,
-                header=generic_header, find_func=find_func,
-                find_mod_func=find_mod_func, init_func=init_func), ''
-            )))
-
         return "\n".join(code)
 
     #

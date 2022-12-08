@@ -381,10 +381,10 @@ TEST_F(VkLayerTest, Sync2SecondaryCommandbufferAsPrimary) {
     secondary.ClearAllBuffers(m_renderTargets, m_clear_color, nullptr, m_depth_clear_color, m_stencil_clear_color);
     secondary.end();
 
-    auto cb_info = lvl_init_struct<VkCommandBufferSubmitInfoKHR>();
+    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfoKHR>();
     cb_info.commandBuffer = secondary.handle();
 
-    auto submit_info = lvl_init_struct<VkSubmitInfo2KHR>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -456,10 +456,10 @@ TEST_F(VkLayerTest, Sync2CommandBufferTwoSubmits) {
 
     // Bypass framework since it does the waits automatically
     VkResult err = VK_SUCCESS;
-    auto cb_info = lvl_init_struct<VkCommandBufferSubmitInfoKHR>();
+    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfoKHR>();
     cb_info.commandBuffer = m_commandBuffer->handle();
 
-    auto submit_info = lvl_init_struct<VkSubmitInfo2KHR>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo2KHR>();
     submit_info.commandBufferInfoCount = 1;
     submit_info.pCommandBufferInfos = &cb_info;
 
@@ -7741,7 +7741,7 @@ TEST_F(VkLayerTest, InvalidStorageAtomicOperation) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto atomic_float_features = lvl_init_struct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
+    auto atomic_float_features = LvlInitStruct<VkPhysicalDeviceShaderAtomicFloatFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(atomic_float_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 

@@ -3079,7 +3079,7 @@ SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const
       dst_access_scope(SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask)) {}
 
 SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &subpass) {
-    const auto barrier = lvl_find_in_chain<VkMemoryBarrier2KHR>(subpass.pNext);
+    const auto barrier = LvlFindInChain<VkMemoryBarrier2KHR>(subpass.pNext);
     if (barrier) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier->srcStageMask);
         src_exec_scope = src;
@@ -8536,20 +8536,20 @@ SignaledSemaphores::Signal::Signal(const std::shared_ptr<const SEMAPHORE_STATE> 
 FenceSyncState::FenceSyncState() : fence(), tag(kInvalidTag), queue_id(QueueSyncState::kQueueIdInvalid) {}
 
 VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::WaitSemaphore(const VkSubmitInfo &info, uint32_t index) {
-    auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+    auto semaphore_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
     semaphore_info.semaphore = info.pWaitSemaphores[index];
     semaphore_info.stageMask = info.pWaitDstStageMask[index];
     return semaphore_info;
 }
 VkCommandBufferSubmitInfo SubmitInfoConverter::BatchStore::CommandBuffer(const VkSubmitInfo &info, uint32_t index) {
-    auto cb_info = lvl_init_struct<VkCommandBufferSubmitInfo>();
+    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
     cb_info.commandBuffer = info.pCommandBuffers[index];
     return cb_info;
 }
 
 VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkSubmitInfo &info, uint32_t index,
                                                                        VkQueueFlags queue_flags) {
-    auto semaphore_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+    auto semaphore_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
     semaphore_info.semaphore = info.pSignalSemaphores[index];
     // Can't just use BOTTOM, because of how access expansion is done
     semaphore_info.stageMask =
@@ -8558,7 +8558,7 @@ VkSemaphoreSubmitInfo SubmitInfoConverter::BatchStore::SignalSemaphore(const VkS
 }
 
 SubmitInfoConverter::BatchStore::BatchStore(const VkSubmitInfo &info, VkQueueFlags queue_flags) {
-    info2 = lvl_init_struct<VkSubmitInfo2>();
+    info2 = LvlInitStruct<VkSubmitInfo2>();
 
     info2.waitSemaphoreInfoCount = info.waitSemaphoreCount;
     waits.reserve(info2.waitSemaphoreInfoCount);

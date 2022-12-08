@@ -261,7 +261,7 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto buffer_barrier = lvl_init_struct<VkBufferMemoryBarrier2KHR>();
+        auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier2KHR>();
         buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         buffer_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
@@ -269,7 +269,7 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
         buffer_barrier.buffer = buffer_a.handle();
         buffer_barrier.offset = 0;
         buffer_barrier.size = 256;
-        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.bufferMemoryBarrierCount = 1;
         dep_info.pBufferMemoryBarriers = &buffer_barrier;
         fpCmdPipelineBarrier2KHR(cb, &dep_info);
@@ -291,12 +291,12 @@ TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto mem_barrier = lvl_init_struct<VkMemoryBarrier2KHR>();
+        auto mem_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR;
-        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
         fpCmdPipelineBarrier2KHR(cb, &dep_info);
@@ -568,7 +568,7 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto image_barrier = lvl_init_struct<VkImageMemoryBarrier2KHR>();
+        auto image_barrier = LvlInitStruct<VkImageMemoryBarrier2KHR>();
         image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         image_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT_KHR;
@@ -577,7 +577,7 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
         image_barrier.subresourceRange = full_subresource_range;
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.imageMemoryBarrierCount = 1;
         dep_info.pImageMemoryBarriers = &image_barrier;
         fpCmdPipelineBarrier2KHR(cb, &dep_info);
@@ -599,12 +599,12 @@ TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
     {
-        auto mem_barrier = lvl_init_struct<VkMemoryBarrier2KHR>();
+        auto mem_barrier = LvlInitStruct<VkMemoryBarrier2KHR>();
         mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT_KHR;
         mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+        auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
         dep_info.memoryBarrierCount = 1;
         dep_info.pMemoryBarriers = &mem_barrier;
         fpCmdPipelineBarrier2KHR(cb, &dep_info);
@@ -2422,7 +2422,7 @@ struct CreateRenderPassHelper {
     }
 
     void InitBeginInfo() {
-        render_pass_begin = lvl_init_struct<VkRenderPassBeginInfo>();
+        render_pass_begin = LvlInitStruct<VkRenderPassBeginInfo>();
         render_pass_begin.renderArea = {{0, 0}, {width, height}};
         render_pass_begin.renderPass = render_pass->handle();
         render_pass_begin.framebuffer = framebuffer->handle();
@@ -4404,7 +4404,7 @@ void QSTestContext::TransferBarrierRAW(const VkBufferObj& buffer) { TransferBarr
 
 void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                            VkFence fence) {
-    auto submit1 = lvl_init_struct<VkSubmitInfo>();
+    auto submit1 = LvlInitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 1;
     VkCommandBuffer h_cb = cb.handle();
     submit1.pCommandBuffers = &h_cb;
@@ -4422,10 +4422,10 @@ void QSTestContext::Submit(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, 
 
 void QSTestContext::SubmitX(VkQueue q, VkCommandBufferObj& cb, VkSemaphore wait, VkPipelineStageFlags wait_mask, VkSemaphore signal,
                             VkPipelineStageFlags signal_mask, VkFence fence) {
-    auto submit1 = lvl_init_struct<VkSubmitInfo2>();
-    auto cb_info = lvl_init_struct<VkCommandBufferSubmitInfo>();
-    auto wait_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
-    auto signal_info = lvl_init_struct<VkSemaphoreSubmitInfo>();
+    auto submit1 = LvlInitStruct<VkSubmitInfo2>();
+    auto cb_info = LvlInitStruct<VkCommandBufferSubmitInfo>();
+    auto wait_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
+    auto signal_info = LvlInitStruct<VkSemaphoreSubmitInfo>();
 
     cb_info.commandBuffer = cb.handle();
     submit1.commandBufferInfoCount = 1;
@@ -4465,7 +4465,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
     test.RecordCopy(test.cba, test.buffer_a, test.buffer_b);
     test.RecordCopy(test.cbb, test.buffer_c, test.buffer_a);
 
-    auto submit1 = lvl_init_struct<VkSubmitInfo>();
+    auto submit1 = LvlInitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 2;
     VkCommandBuffer two_cbs[2] = {test.h_cba, test.h_cbb};
     submit1.pCommandBuffers = two_cbs;
@@ -4476,7 +4476,7 @@ TEST_F(VkSyncValTest, SyncQSBufferCopyHazards) {
 
     test.DeviceWait();
 
-    VkSubmitInfo submit2[2] = {lvl_init_struct<VkSubmitInfo>(), lvl_init_struct<VkSubmitInfo>()};
+    VkSubmitInfo submit2[2] = {LvlInitStruct<VkSubmitInfo>(), LvlInitStruct<VkSubmitInfo>()};
     submit2[0].commandBufferCount = 1;
     submit2[0].pCommandBuffers = &test.h_cba;
     submit2[1].commandBufferCount = 1;
@@ -4911,7 +4911,7 @@ TEST_F(VkSyncValTest, SyncQSRenderPass) {
     cb1.EndRenderPass();
     cb1.end();
 
-    auto submit2 = lvl_init_struct<VkSubmitInfo>();
+    auto submit2 = LvlInitStruct<VkSubmitInfo>();
     VkCommandBuffer two_cbs[2] = {cb0.handle(), cb1.handle()};
     submit2.commandBufferCount = 2;
     submit2.pCommandBuffers = two_cbs;
@@ -4942,7 +4942,7 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     const VkQueue q = m_device->m_queue;
     const VkDevice dev = m_device->handle();
 
-    auto fence_ci = lvl_init_struct<VkFenceCreateInfo>();
+    auto fence_ci = LvlInitStruct<VkFenceCreateInfo>();
     VkFenceObj fence(*m_device, fence_ci);
     VkFence h_fence = fence.handle();
 
@@ -4961,7 +4961,7 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
         }
 
         if (VK_SUCCESS == result) {
-            auto present_info = lvl_init_struct<VkPresentInfoKHR>();
+            auto present_info = LvlInitStruct<VkPresentInfoKHR>();
             present_info.swapchainCount = 1;
             present_info.pSwapchains = &m_swapchain;
             present_info.pImageIndices = &index;
@@ -4998,7 +4998,7 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
 
     auto write_barrier_cb = [this](const VkImage h_image, VkImageLayout from, VkImageLayout to) {
         VkImageSubresourceRange full_image{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        auto image_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+        auto image_barrier = LvlInitStruct<VkImageMemoryBarrier>();
         image_barrier.srcAccessMask = 0U;
         image_barrier.dstAccessMask = 0U;
         image_barrier.oldLayout = from;
@@ -5014,7 +5014,7 @@ TEST_F(VkSyncValTest, SyncQSPresentAcquire) {
     write_barrier_cb(images[acquired_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // Look for errors between the acquire and first use...
-    auto submit1 = lvl_init_struct<VkSubmitInfo>();
+    auto submit1 = LvlInitStruct<VkSubmitInfo>();
     submit1.commandBufferCount = 1;
     submit1.pCommandBuffers = &cb;
     // No sync operations...

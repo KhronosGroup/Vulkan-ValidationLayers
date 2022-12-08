@@ -697,7 +697,8 @@ void CMD_BUFFER_STATE::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
             }
             else
             {
-                auto inheritance_rendering_info = lvl_find_in_chain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
+                auto inheritance_rendering_info =
+                    LvlFindInChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     activeRenderPass = std::make_shared<RENDER_PASS_STATE>(inheritance_rendering_info);
                 }

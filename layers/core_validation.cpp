@@ -2177,7 +2177,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 }
             }
         }
-        auto color_write = lvl_find_in_chain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
+        auto color_write = LvlFindInChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
         if (color_write) {
             // if over limit don't give extra redundant error of mismatch of attachmentCount
             if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
@@ -2608,7 +2608,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
 
         auto provoking_vertex_state_ci =
-            lvl_find_in_chain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(raster_state->pNext);
+            LvlFindInChain<VkPipelineRasterizationProvokingVertexStateCreateInfoEXT>(raster_state->pNext);
         if (provoking_vertex_state_ci &&
             provoking_vertex_state_ci->provokingVertexMode == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT &&
             !enabled_features.provoking_vertex_features.provokingVertexLast) {

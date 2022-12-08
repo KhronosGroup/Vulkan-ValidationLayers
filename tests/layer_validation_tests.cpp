@@ -338,7 +338,7 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
 void ValidOwnershipTransferOp(ErrorMonitor *monitor, VkCommandBufferObj *cb, const VkBufferMemoryBarrier2KHR *buf_barrier,
                               const VkImageMemoryBarrier2KHR *img_barrier) {
     cb->begin();
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = (buf_barrier) ? 1 : 0;
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
@@ -686,17 +686,17 @@ bool CheckSynchronization2SupportAndInitState(VkRenderFramework *framework) {
         (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(framework->instance(), "vkGetPhysicalDeviceFeatures2");
 
     {
-        auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
-        auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
+        auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+        auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
         vkGetPhysicalDeviceFeatures2(framework->gpu(), &features2);
         if (!sync2_features.synchronization2) {
             return false;
         }
     }
 
-    auto sync2_features = lvl_init_struct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
+    auto sync2_features = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     sync2_features.synchronization2 = VK_TRUE;
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&sync2_features);
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&sync2_features);
     framework->InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     return true;
 }
@@ -2397,7 +2397,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     buffer_barrier_.srcQueueFamilyIndex = src;
     buffer_barrier_.dstQueueFamilyIndex = dst;
 
-    auto dep_info = lvl_init_struct<VkDependencyInfoKHR>();
+    auto dep_info = LvlInitStruct<VkDependencyInfoKHR>();
     dep_info.bufferMemoryBarrierCount = 1;
     dep_info.pBufferMemoryBarriers = &buffer_barrier_;
     dep_info.imageMemoryBarrierCount = 1;

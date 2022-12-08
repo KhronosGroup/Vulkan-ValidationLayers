@@ -148,12 +148,12 @@ static IMAGE_STATE::MemoryReqs GetMemoryRequirements(const ValidationStateTracke
             static const std::array<VkImageAspectFlagBits, 3> aspects{VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
                                                                       VK_IMAGE_ASPECT_PLANE_2_BIT};
             assert(plane_count <= aspects.size());
-            auto image_plane_req = lvl_init_struct<VkImagePlaneMemoryRequirementsInfo>();
-            auto mem_req_info2 = lvl_init_struct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
+            auto image_plane_req = LvlInitStruct<VkImagePlaneMemoryRequirementsInfo>();
+            auto mem_req_info2 = LvlInitStruct<VkImageMemoryRequirementsInfo2>(&image_plane_req);
             mem_req_info2.image = img;
 
             for (uint32_t i = 0; i < plane_count; i++) {
-                auto mem_reqs2 = lvl_init_struct<VkMemoryRequirements2>();
+                auto mem_reqs2 = LvlInitStruct<VkMemoryRequirements2>();
 
                 image_plane_req.planeAspect = aspects[i];
                 switch (dev_data->device_extensions.vk_khr_get_memory_requirements2) {

@@ -6698,8 +6698,8 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesNV) {
 
         ASSERT_VK_SUCCESS(err);
 
-        auto ds = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
-        auto cmi = lvl_init_struct<VkPipelineCoverageModulationStateCreateInfoNV>();
+        auto ds = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+        auto cmi = LvlInitStruct<VkPipelineCoverageModulationStateCreateInfoNV>();
 
         // Create a dummy modulation table that can be used for the positive
         // coverageModulationTableCount test.

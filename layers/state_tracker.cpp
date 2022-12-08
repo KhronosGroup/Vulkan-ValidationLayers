@@ -1187,7 +1187,7 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             enabled_features.workgroup_memory_explicit_layout_features = *workgroup_memory_explicit_layout_features;
         }
 
-        const auto *provoking_vertex_features = lvl_find_in_chain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(pCreateInfo->pNext);
+        const auto *provoking_vertex_features = LvlFindInChain<VkPhysicalDeviceProvokingVertexFeaturesEXT>(pCreateInfo->pNext);
         if (provoking_vertex_features) {
             enabled_features.provoking_vertex_features = *provoking_vertex_features;
         }
@@ -1699,7 +1699,7 @@ void ValidationStateTracker::RecordQueueSubmit2(VkQueue queue, uint32_t submitCo
             const auto &sem_info = submit->pSignalSemaphoreInfos[i];
             submission.AddSignalSemaphore(Get<SEMAPHORE_STATE>(sem_info.semaphore), sem_info.value);
         }
-        const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+        const auto perf_submit = LvlFindInChain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
         submission.perf_submit_pass = perf_submit ? perf_submit->counterPassIndex : 0;
 
         for (uint32_t i = 0; i < submit->commandBufferInfoCount; i++) {
@@ -4016,7 +4016,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
         auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
         surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
-               lvl_find_in_chain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
+               LvlFindInChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
         auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
         assert(pd_state);
         pd_state->surfaceless_query_state.capabilities = pSurfaceCapabilities->surfaceCapabilities;
