@@ -758,8 +758,11 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
   public:
     PipelineLayout() noexcept : NonDispHandle() {}
     PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info,
-                   const std::vector<const DescriptorSetLayout *> &layouts = {}) {
+                   const std::vector<const DescriptorSetLayout *> &layouts) {
         init(dev, info, layouts);
+    }
+    PipelineLayout(const Device &dev, VkPipelineLayoutCreateInfo &info) {
+        init(dev, info);
     }
     ~PipelineLayout() noexcept;
 
@@ -774,6 +777,7 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
 
     // vCreatePipelineLayout()
     void init(const Device &dev, VkPipelineLayoutCreateInfo &info, const std::vector<const DescriptorSetLayout *> &layouts);
+    void init(const Device &dev, VkPipelineLayoutCreateInfo &info);
 };
 
 class Sampler : public internal::NonDispHandle<VkSampler> {
