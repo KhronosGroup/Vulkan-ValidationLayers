@@ -221,6 +221,15 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
                     }
                 } break;
 
+            case VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT: {
+                    safe_VkSwapchainPresentFenceInfoEXT *safe_struct = reinterpret_cast<safe_VkSwapchainPresentFenceInfoEXT *>(cur_pnext);
+                    if (safe_struct->pFences) {
+                        for (uint32_t index0 = 0; index0 < safe_struct->swapchainCount; ++index0) {
+                            safe_struct->pFences[index0] = layer_data->Unwrap(safe_struct->pFences[index0]);
+                        }
+                    }
+                } break;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT 
             case VK_STRUCTURE_TYPE_EXPORT_METAL_BUFFER_INFO_EXT: {
                     safe_VkExportMetalBufferInfoEXT *safe_struct = reinterpret_cast<safe_VkExportMetalBufferInfoEXT *>(cur_pnext);
@@ -9449,6 +9458,28 @@ void DispatchCmdSetStencilOpEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     layer_data->device_dispatch_table.CmdSetStencilOpEXT(commandBuffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 
+}
+
+VkResult DispatchReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.ReleaseSwapchainImagesEXT(device, pReleaseInfo);
+    safe_VkReleaseSwapchainImagesInfoEXT var_local_pReleaseInfo;
+    safe_VkReleaseSwapchainImagesInfoEXT *local_pReleaseInfo = nullptr;
+    {
+        if (pReleaseInfo) {
+            local_pReleaseInfo = &var_local_pReleaseInfo;
+            local_pReleaseInfo->initialize(pReleaseInfo);
+            if (pReleaseInfo->swapchain) {
+                local_pReleaseInfo->swapchain = layer_data->Unwrap(pReleaseInfo->swapchain);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.ReleaseSwapchainImagesEXT(device, (const VkReleaseSwapchainImagesInfoEXT*)local_pReleaseInfo);
+
+    return result;
 }
 
 void DispatchGetGeneratedCommandsMemoryRequirementsNV(

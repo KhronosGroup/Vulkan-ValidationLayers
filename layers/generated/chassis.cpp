@@ -11707,6 +11707,30 @@ VKAPI_ATTR void VKAPI_CALL CmdSetStencilOpEXT(
 
 
 
+VKAPI_ATTR VkResult VKAPI_CALL ReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateReleaseSwapchainImagesEXT]) {
+        auto lock = intercept->ReadLock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateReleaseSwapchainImagesEXT(device, pReleaseInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordReleaseSwapchainImagesEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo);
+    }
+    VkResult result = DispatchReleaseSwapchainImagesEXT(device, pReleaseInfo);
+    for (auto intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordReleaseSwapchainImagesEXT]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, result);
+    }
+    return result;
+}
+
+
+
 VKAPI_ATTR void VKAPI_CALL GetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
@@ -15576,6 +15600,7 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdSetDepthBoundsTestEnableEXT", {kFuncTypeDev, (void*)CmdSetDepthBoundsTestEnableEXT}},
     {"vkCmdSetStencilTestEnableEXT", {kFuncTypeDev, (void*)CmdSetStencilTestEnableEXT}},
     {"vkCmdSetStencilOpEXT", {kFuncTypeDev, (void*)CmdSetStencilOpEXT}},
+    {"vkReleaseSwapchainImagesEXT", {kFuncTypeDev, (void*)ReleaseSwapchainImagesEXT}},
     {"vkGetGeneratedCommandsMemoryRequirementsNV", {kFuncTypeDev, (void*)GetGeneratedCommandsMemoryRequirementsNV}},
     {"vkCmdPreprocessGeneratedCommandsNV", {kFuncTypeDev, (void*)CmdPreprocessGeneratedCommandsNV}},
     {"vkCmdExecuteGeneratedCommandsNV", {kFuncTypeDev, (void*)CmdExecuteGeneratedCommandsNV}},

@@ -1142,6 +1142,9 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateCmdSetStencilOpEXT,
     InterceptIdPreCallRecordCmdSetStencilOpEXT,
     InterceptIdPostCallRecordCmdSetStencilOpEXT,
+    InterceptIdPreCallValidateReleaseSwapchainImagesEXT,
+    InterceptIdPreCallRecordReleaseSwapchainImagesEXT,
+    InterceptIdPostCallRecordReleaseSwapchainImagesEXT,
     InterceptIdPreCallValidateGetGeneratedCommandsMemoryRequirementsNV,
     InterceptIdPreCallRecordGetGeneratedCommandsMemoryRequirementsNV,
     InterceptIdPostCallRecordGetGeneratedCommandsMemoryRequirementsNV,
@@ -2802,6 +2805,9 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetStencilOpEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetStencilOpEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetStencilOpEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateReleaseSwapchainImagesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordReleaseSwapchainImagesEXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordReleaseSwapchainImagesEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetGeneratedCommandsMemoryRequirementsNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetGeneratedCommandsMemoryRequirementsNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetGeneratedCommandsMemoryRequirementsNV);

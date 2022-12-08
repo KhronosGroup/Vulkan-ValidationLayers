@@ -6714,6 +6714,18 @@ bool ObjectLifetimes::PreCallValidateCmdSetStencilOpEXT(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkReleaseSwapchainImagesEXT-device-parameter", kVUIDUndefined);
+    if (pReleaseInfo) {
+        skip |= ValidateObject(pReleaseInfo->swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-VkReleaseSwapchainImagesInfoEXT-swapchain-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,

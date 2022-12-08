@@ -2666,6 +2666,17 @@ void BestPractices::PostCallRecordCreateHeadlessSurfaceEXT(
     }
 }
 
+void BestPractices::PostCallRecordReleaseSwapchainImagesEXT(
+    VkDevice                                    device,
+    const VkReleaseSwapchainImagesInfoEXT*      pReleaseInfo,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordReleaseSwapchainImagesEXT(device, pReleaseInfo, result);
+    if (result != VK_SUCCESS) {
+        constexpr std::array error_codes = {VK_ERROR_SURFACE_LOST_KHR};
+        ValidateReturnCodes("vkReleaseSwapchainImagesEXT", result, error_codes, {});
+    }
+}
+
 void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,

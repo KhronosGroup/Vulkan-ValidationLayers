@@ -856,6 +856,9 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetStencilTestEnableEXT CmdSetStencilTestEnableEXT;
     PFN_vkCmdSetStencilOpEXT CmdSetStencilOpEXT;
 
+    // ---- VK_EXT_swapchain_maintenance1 extension commands
+    PFN_vkReleaseSwapchainImagesEXT ReleaseSwapchainImagesEXT;
+
     // ---- VK_NV_device_generated_commands extension commands
     PFN_vkGetGeneratedCommandsMemoryRequirementsNV GetGeneratedCommandsMemoryRequirementsNV;
     PFN_vkCmdPreprocessGeneratedCommandsNV CmdPreprocessGeneratedCommandsNV;

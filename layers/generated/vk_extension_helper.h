@@ -72,6 +72,7 @@ struct InstanceExtensions {
     ExtEnabled vk_ext_display_surface_counter{kNotEnabled};
     ExtEnabled vk_ext_headless_surface{kNotEnabled};
     ExtEnabled vk_ext_metal_surface{kNotEnabled};
+    ExtEnabled vk_ext_surface_maintenance1{kNotEnabled};
     ExtEnabled vk_ext_swapchain_colorspace{kNotEnabled};
     ExtEnabled vk_ext_validation_features{kNotEnabled};
     ExtEnabled vk_ext_validation_flags{kNotEnabled};
@@ -141,6 +142,9 @@ struct InstanceExtensions {
             {VK_EXT_METAL_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_metal_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
 #endif
+            {VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_surface_maintenance1, {{
+                           {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME},
+                           {&InstanceExtensions::vk_khr_get_surface_capabilities2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}}})},
             {VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_swapchain_colorspace, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
             {VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_validation_features, {})},
@@ -309,6 +313,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 #ifdef VK_USE_PLATFORM_METAL_EXT
     VK_EXT_METAL_SURFACE_EXTENSION_NAME,
 #endif
+    VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME,
     VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME,
     VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME,
     VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME,
@@ -480,6 +485,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_shader_viewport_index_layer{kNotEnabled};
     ExtEnabled vk_ext_subgroup_size_control{kNotEnabled};
     ExtEnabled vk_ext_subpass_merge_feedback{kNotEnabled};
+    ExtEnabled vk_ext_swapchain_maintenance1{kNotEnabled};
     ExtEnabled vk_ext_texel_buffer_alignment{kNotEnabled};
     ExtEnabled vk_ext_texture_compression_astc_hdr{kNotEnabled};
     ExtEnabled vk_ext_tooling_info{kNotEnabled};
@@ -877,6 +883,10 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subpass_merge_feedback, {})},
+            {VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_swapchain_maintenance1, {{
+                           {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_ext_surface_maintenance1, VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texture_compression_astc_hdr, {{
@@ -1497,6 +1507,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME,
+    VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME,
     VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
     VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
     VK_EXT_TOOLING_INFO_EXTENSION_NAME,
