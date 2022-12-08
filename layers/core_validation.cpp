@@ -1871,6 +1871,181 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const PIPELINE_STATE &pPipe
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &pipeline,
+                                                         const safe_VkSubpassDescription2 *subpass_desc,
+                                                         const uint32_t pipe_index) const {
+    bool skip = false;
+    const auto color_blend_state = pipeline.ColorBlendState();
+    if (color_blend_state) {
+        const auto &rp_state = pipeline.RenderPassState();
+        if (((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) !=
+             0) &&
+            (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06482",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: created with"
+                             "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM,"
+                             "renderpass must not be VK_NULL_HANDLE.",
+                             pipe_index);
+        }
+
+        // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
+        auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
+        const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+        if (rendering_struct && attachment_sample_count_info &&
+            (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06063",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                         "] interface VkAttachmentSampleCountInfo->attachmentCount %" PRIu32
+                         " and "
+                         "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
+                         pipe_index, attachment_sample_count_info->colorAttachmentCount, rendering_struct->colorAttachmentCount);
+        }
+
+        if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: %s subpass %u has colorAttachmentCount of %u which doesn't "
+                             "match the pColorBlendState->attachmentCount of %u.",
+                             pipe_index, report_data->FormatHandle(rp_state->renderPass()).c_str(), pipeline.Subpass(),
+                             subpass_desc->colorAttachmentCount, color_blend_state->attachmentCount);
+        }
+        const auto &pipe_attachments = pipeline.Attachments();
+        if (!enabled_features.core.independentBlend) {
+            if (pipe_attachments.size() > 1) {
+                const auto *const attachments = &pipe_attachments[0];
+                for (size_t i = 1; i < pipe_attachments.size(); i++) {
+                    // Quoting the spec: "If [the independent blend] feature is not enabled, the VkPipelineColorBlendAttachmentState
+                    // settings for all color attachments must be identical." VkPipelineColorBlendAttachmentState contains
+                    // only attachment state, so memcmp is best suited for the comparison
+                    if (memcmp(static_cast<const void *>(attachments), static_cast<const void *>(&attachments[i]),
+                               sizeof(attachments[0]))) {
+                        skip |= LogError(device, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605",
+                                         "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                                         "]: If independent blend feature not enabled, all elements of "
+                                         "pAttachments must be identical.",
+                                         pipe_index);
+                        break;
+                    }
+                }
+            }
+        }
+        if (!enabled_features.core.logicOp && (color_blend_state->logicOpEnable != VK_FALSE)) {
+            skip |= LogError(device, "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606",
+                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
+                             "]: If logic operations feature not enabled, logicOpEnable must be VK_FALSE.",
+                             pipe_index);
+        }
+        for (size_t i = 0; i < pipe_attachments.size(); i++) {
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcColorBlendFactor)) {
+                if (!enabled_features.core.dualSrcBlend) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
+                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "enabled.",
+                                     pipe_index, i, pipe_attachments[i].srcColorBlendFactor);
+                }
+            }
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstColorBlendFactor)) {
+                if (!enabled_features.core.dualSrcBlend) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
+                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "enabled.",
+                                     pipe_index, i, pipe_attachments[i].dstColorBlendFactor);
+                }
+            }
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcAlphaBlendFactor)) {
+                if (!enabled_features.core.dualSrcBlend) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
+                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "enabled.",
+                                     pipe_index, i, pipe_attachments[i].srcAlphaBlendFactor);
+                }
+            }
+            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstAlphaBlendFactor)) {
+                if (!enabled_features.core.dualSrcBlend) {
+                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
+                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                                     "].pColorBlendState.pAttachments[%zu]"
+                                     ".dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
+                                     "enabled.",
+                                     pipe_index, i, pipe_attachments[i].dstAlphaBlendFactor);
+                }
+            }
+        }
+        auto color_write = lvl_find_in_chain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
+        if (color_write) {
+            // if over limit don't give extra redundant error of mismatch of attachmentCount
+            if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655",
+                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pCreateInfo[%" PRIu32
+                    "].pColorBlendState has an attachmentCount of (%" PRIu32
+                    ") which is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
+                    pipe_index, color_write->attachmentCount, phys_dev_props.limits.maxColorAttachments);
+            } else if (color_write->attachmentCount != color_blend_state->attachmentCount) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802",
+                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pCreateInfo[%" PRIu32
+                    "].pColorBlendState has different attachmentCount (%" PRIu32 ") than pColorBlendState.attachmentCount (%" PRIu32
+                    ").",
+                    pipe_index, color_write->attachmentCount, color_blend_state->attachmentCount);
+            }
+            if (!enabled_features.color_write_features.colorWriteEnable) {
+                for (uint32_t i = 0; i < color_write->attachmentCount; ++i) {
+                    if (color_write->pColorWriteEnables[i] != VK_TRUE) {
+                        skip |= LogError(device, "VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801",
+                                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                                         "].pColorBlendState pNext chain includes VkPipelineColorWriteCreateInfoEXT with "
+                                         "pColorWriteEnables[%" PRIu32 "] = VK_FALSE, but colorWriteEnable is not enabled.",
+                                         pipe_index, i);
+                    }
+                }
+            }
+        }
+        const auto *color_blend_advanced = LvlFindInChain<VkPipelineColorBlendAdvancedStateCreateInfoEXT>(color_blend_state->pNext);
+        if (color_blend_advanced) {
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
+                color_blend_advanced->blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426",
+                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "blendOverlap equal to %s, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendCorrelatedOverlap is not supported.",
+                    pipe_index, string_VkBlendOverlapEXT(color_blend_advanced->blendOverlap));
+            }
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
+                color_blend_advanced->dstPremultiplied != VK_TRUE) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425",
+                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "dstPremultiplied equal to VK_FALSE, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedDstColor is not supported.",
+                    pipe_index);
+            }
+            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor &&
+                color_blend_advanced->srcPremultiplied != VK_TRUE) {
+                skip |= LogError(
+                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424",
+                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
+                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
+                    "srcPremultiplied equal to VK_FALSE, but "
+                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedSrcColor is not supported.",
+                    pipe_index);
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                               const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
@@ -2079,174 +2254,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
-    const auto color_blend_state = pipeline.ColorBlendState();
-    if (color_blend_state) {
-        if (((color_blend_state->flags & VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) !=
-             0) &&
-            (!rp_state || rp_state->renderPass() == VK_NULL_HANDLE)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06482",
-                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                             "]: created with"
-                             "VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM,"
-                             "renderpass must not be VK_NULL_HANDLE.",
-                             pipe_index);
-        }
-
-        // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
-        auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
-        const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-        if (rendering_struct && attachment_sample_count_info &&
-            (attachment_sample_count_info->colorAttachmentCount != rendering_struct->colorAttachmentCount)) {
-            skip |=
-                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06063",
-                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                         "] interface VkAttachmentSampleCountInfo->attachmentCount %" PRIu32
-                         " and "
-                         "VkPipelineRenderingCreateInfoKHR->colorAttachmentCount %" PRIu32 " must be equal",
-                         pipe_index, attachment_sample_count_info->colorAttachmentCount, rendering_struct->colorAttachmentCount);
-        }
-
-        if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042",
-                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                             "]: %s subpass %u has colorAttachmentCount of %u which doesn't "
-                             "match the pColorBlendState->attachmentCount of %u.",
-                             pipe_index, report_data->FormatHandle(rp_state->renderPass()).c_str(), subpass,
-                             subpass_desc->colorAttachmentCount, color_blend_state->attachmentCount);
-        }
-        const auto &pipe_attachments = pipeline.Attachments();
-        if (!enabled_features.core.independentBlend) {
-            if (pipe_attachments.size() > 1) {
-                const auto *const attachments = &pipe_attachments[0];
-                for (size_t i = 1; i < pipe_attachments.size(); i++) {
-                    // Quoting the spec: "If [the independent blend] feature is not enabled, the VkPipelineColorBlendAttachmentState
-                    // settings for all color attachments must be identical." VkPipelineColorBlendAttachmentState contains
-                    // only attachment state, so memcmp is best suited for the comparison
-                    if (memcmp(static_cast<const void *>(attachments), static_cast<const void *>(&attachments[i]),
-                               sizeof(attachments[0]))) {
-                        skip |= LogError(device, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605",
-                                         "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                                         "]: If independent blend feature not enabled, all elements of "
-                                         "pAttachments must be identical.",
-                                         pipe_index);
-                        break;
-                    }
-                }
-            }
-        }
-        if (!enabled_features.core.logicOp && (color_blend_state->logicOpEnable != VK_FALSE)) {
-            skip |= LogError(device, "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00606",
-                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
-                             "]: If logic operations feature not enabled, logicOpEnable must be VK_FALSE.",
-                             pipe_index);
-        }
-        for (size_t i = 0; i < pipe_attachments.size(); i++) {
-            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcColorBlendFactor)) {
-                if (!enabled_features.core.dualSrcBlend) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-00608",
-                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                                     "].pColorBlendState.pAttachments[%zu]"
-                                     ".srcColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                                     "enabled.",
-                                     pipe_index, i, pipe_attachments[i].srcColorBlendFactor);
-                }
-            }
-            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstColorBlendFactor)) {
-                if (!enabled_features.core.dualSrcBlend) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-00609",
-                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                                     "].pColorBlendState.pAttachments[%zu]"
-                                     ".dstColorBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                                     "enabled.",
-                                     pipe_index, i, pipe_attachments[i].dstColorBlendFactor);
-                }
-            }
-            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].srcAlphaBlendFactor)) {
-                if (!enabled_features.core.dualSrcBlend) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-00610",
-                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                                     "].pColorBlendState.pAttachments[%zu]"
-                                     ".srcAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                                     "enabled.",
-                                     pipe_index, i, pipe_attachments[i].srcAlphaBlendFactor);
-                }
-            }
-            if (IsSecondaryColorInputBlendFactor(pipe_attachments[i].dstAlphaBlendFactor)) {
-                if (!enabled_features.core.dualSrcBlend) {
-                    skip |= LogError(device, "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-00611",
-                                     "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                                     "].pColorBlendState.pAttachments[%zu]"
-                                     ".dstAlphaBlendFactor uses a dual-source blend factor (%d), but this device feature is not "
-                                     "enabled.",
-                                     pipe_index, i, pipe_attachments[i].dstAlphaBlendFactor);
-                }
-            }
-        }
-        auto color_write = lvl_find_in_chain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
-        if (color_write) {
-            // if over limit don't give extra redundant error of mismatch of attachmentCount
-            if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655",
-                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pCreateInfo[%" PRIu32
-                    "].pColorBlendState has an attachmentCount of (%" PRIu32
-                    ") which is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
-                    pipe_index, color_write->attachmentCount, phys_dev_props.limits.maxColorAttachments);
-            } else if (color_write->attachmentCount != color_blend_state->attachmentCount) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802",
-                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pCreateInfo[%" PRIu32
-                    "].pColorBlendState has different attachmentCount (%" PRIu32 ") than pColorBlendState.attachmentCount (%" PRIu32
-                    ").",
-                    pipe_index, color_write->attachmentCount, color_blend_state->attachmentCount);
-            }
-            if (!enabled_features.color_write_features.colorWriteEnable) {
-                for (uint32_t i = 0; i < color_write->attachmentCount; ++i) {
-                    if (color_write->pColorWriteEnables[i] != VK_TRUE) {
-                        skip |= LogError(device, "VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801",
-                                         "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                                         "].pColorBlendState pNext chain includes VkPipelineColorWriteCreateInfoEXT with "
-                                         "pColorWriteEnables[%" PRIu32 "] = VK_FALSE, but colorWriteEnable is not enabled.",
-                                         pipe_index, i);
-                    }
-                }
-            }
-        }
-        const auto *color_blend_advanced = LvlFindInChain<VkPipelineColorBlendAdvancedStateCreateInfoEXT>(color_blend_state->pNext);
-        if (color_blend_advanced) {
-            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap &&
-                color_blend_advanced->blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-blendOverlap-01426",
-                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
-                    "blendOverlap equal to %s, but "
-                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendCorrelatedOverlap is not supported.",
-                    pipe_index, string_VkBlendOverlapEXT(color_blend_advanced->blendOverlap));
-            }
-            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor &&
-                color_blend_advanced->dstPremultiplied != VK_TRUE) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-dstPremultiplied-01425",
-                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
-                    "dstPremultiplied equal to VK_FALSE, but "
-                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedDstColor is not supported.",
-                    pipe_index);
-            }
-            if (!phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor &&
-                color_blend_advanced->srcPremultiplied != VK_TRUE) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorBlendAdvancedStateCreateInfoEXT-srcPremultiplied-01424",
-                    "vkCreateGraphicsPipelines(): pCreateInfo[%" PRIu32
-                    "].pColorBlendState pNext chain contains VkPipelineColorBlendAdvancedStateCreateInfoEXT structure with "
-                    "srcPremultiplied equal to VK_FALSE, but "
-                    "VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::advancedBlendNonPremultipliedSrcColor is not supported.",
-                    pipe_index);
-            }
-        }
-    }
-
     if (rp_state && rp_state->renderPass() != VK_NULL_HANDLE &&
         IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)) {
         const auto msrtss_info = LvlFindInChain<VkMultisampledRenderToSingleSampledInfoEXT>(subpass_desc->pNext);
@@ -2263,6 +2270,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
     }
 
+    skip |= ValidateGraphicsPipelineColorBlendState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineShaderState(pipeline);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
@@ -3572,6 +3580,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index);
     }
 
+    const auto color_blend_state = pipeline.ColorBlendState();
     const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
     if (rendering_struct) {
         const bool has_rasterization =
@@ -3588,7 +3597,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
         }
 
-        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && !pipeline.ColorBlendState() &&
+        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
             pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
