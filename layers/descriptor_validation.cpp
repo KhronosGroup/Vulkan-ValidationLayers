@@ -3457,12 +3457,14 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
 
         if (bufferIndex < cb_state->descriptor_buffer_binding_info.size()) {
             const VkDeviceAddress start = cb_state->descriptor_buffer_binding_info[bufferIndex].address;
-            const auto buffer_state = GetBufferByAddress(start);
+            const auto buffer_states = GetBuffersByAddress(start);
 
-            if (buffer_state) {
-                const auto buffer_state_start = GetBufferByAddress(start + offset);
+            // TODO : Issue 4556 properly go through the list of buffers
+            if (!buffer_states.empty()) {
+                const auto buffer_state_starts = GetBuffersByAddress(start + offset);
 
-                if (buffer_state_start) {
+                // TODO : Issue 4556 properly go through the list of buffers
+                if (!buffer_state_starts.empty()) {
                     const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
                     const auto bindings = set_layout->GetBindings();
                     const auto pSetLayoutSize = set_layout->GetLayoutSizeInBytes();
@@ -3506,8 +3508,9 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                     }
 
                     if (setLayoutSize > 0) {
-                        const auto buffer_state_end = GetBufferByAddress(start + offset + setLayoutSize - 1);
-                        if (buffer_state_end) {
+                        // TODO : Issue 4556 properly go through the list of buffers
+                        const auto buffer_state_ends = GetBuffersByAddress(start + offset + setLayoutSize - 1);
+                        if (!buffer_state_ends.empty()) {
                             valid_binding = true;
                         }
                     }
@@ -3627,7 +3630,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(
 
     for (uint32_t i=0 ; i< bufferCount; i++) {
         const VkDescriptorBufferBindingInfoEXT& bindingInfo = pBindingInfos[i];
-        const auto buffer_state = GetBufferByAddress(bindingInfo.address);
+        const auto buffer_states = GetBuffersByAddress(bindingInfo.address);
+        // TODO : Issue 4556 properly go through the list of buffers
+        const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
 
         if (buffer_state) {
             skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkCmdBindDescriptorBuffersEXT()",
@@ -3975,7 +3980,9 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device,
                          "VkDescriptorAddressInfoEXT: address is 0, but the nullDescriptor feature is not enabled.");
     }
 
-    const auto buffer_state = GetBufferByAddress(address_info->address);
+    const auto buffer_states = GetBuffersByAddress(address_info->address);
+    // TODO : Issue 4556 properly go through the list of buffers
+    const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
     if ((address_info->address != 0) && (buffer_state == nullptr)) {
         skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-None-08044",
                          "VkDescriptorAddressInfoEXT: address not 0 or a valid buffer address.");
@@ -4050,7 +4057,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer && (pDescriptorInfo->data.pUniformTexelBuffer->address != 0) &&
-                (GetBufferByAddress(pDescriptorInfo->data.pUniformTexelBuffer->address) == nullptr)) {
+                (GetBuffersByAddress(pDescriptorInfo->data.pUniformTexelBuffer->address).empty())) {
                 skip |= LogError(device, "VUID-VkDescriptorGetInfoEXT-type-08024",
                                  "vkGetDescriptorEXT(): type is VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, but "
                                  "pUniformTexelBuffer is not NULL and pUniformTexelBuffer->address is not zero or "
@@ -4059,7 +4066,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer && (pDescriptorInfo->data.pStorageTexelBuffer->address != 0) &&
-                (GetBufferByAddress(pDescriptorInfo->data.pStorageTexelBuffer->address) == nullptr)) {
+                (GetBuffersByAddress(pDescriptorInfo->data.pStorageTexelBuffer->address).empty())) {
                 skip |= LogError(device, "VUID-VkDescriptorGetInfoEXT-type-08025",
                                  "vkGetDescriptorEXT(): type is VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, but "
                                  "pStorageTexelBuffer is not NULL and pStorageTexelBuffer->address is not zero or "
@@ -4068,7 +4075,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer && (pDescriptorInfo->data.pUniformBuffer->address != 0) &&
-                (GetBufferByAddress(pDescriptorInfo->data.pStorageTexelBuffer->address) == nullptr)) {
+                (GetBuffersByAddress(pDescriptorInfo->data.pStorageTexelBuffer->address).empty())) {
                 skip |= LogError(device, "VUID-VkDescriptorGetInfoEXT-type-08026",
                                  "vkGetDescriptorEXT(): type is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, but "
                                  "pUniformBuffer is not NULL and pUniformBuffer->address is not zero or "
@@ -4077,7 +4084,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer && (pDescriptorInfo->data.pStorageBuffer->address != 0) &&
-                (GetBufferByAddress(pDescriptorInfo->data.pStorageBuffer->address) == nullptr)) {
+                (GetBuffersByAddress(pDescriptorInfo->data.pStorageBuffer->address).empty())) {
                 skip |= LogError(device, "VUID-VkDescriptorGetInfoEXT-type-08027",
                                  "vkGetDescriptorEXT(): type is VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, but "
                                  "pStorageBuffer is not NULL and pStorageBuffer->address is not zero or "
@@ -4106,7 +4113,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer) {
-                const auto buffer_state = GetBufferByAddress(pDescriptorInfo->data.pUniformBuffer->address);
+                const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
+                // TODO : Issue 4556 properly go through the list of buffers
+                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
                     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08030");
@@ -4119,7 +4128,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer) {
-                const auto buffer_state = GetBufferByAddress(pDescriptorInfo->data.pStorageBuffer->address);
+                const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
+                // TODO : Issue 4556 properly go through the list of buffers
+                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
                     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08031");
@@ -4132,7 +4143,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer) {
-                const auto buffer_state = GetBufferByAddress(pDescriptorInfo->data.pUniformTexelBuffer->address);
+                const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
+                // TODO : Issue 4556 properly go through the list of buffers
+                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
                     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08032");
@@ -4145,7 +4158,9 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer) {
-                const auto buffer_state = GetBufferByAddress(pDescriptorInfo->data.pStorageTexelBuffer->address);
+                const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
+                // TODO : Issue 4556 properly go through the list of buffers
+                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
                     skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08033");
