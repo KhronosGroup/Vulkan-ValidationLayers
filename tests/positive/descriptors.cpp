@@ -80,7 +80,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
     ds_type_count.descriptorCount = 1;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>();
     ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
@@ -101,7 +101,7 @@ TEST_F(VkPositiveLayerTest, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
     {
         const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding});
 
-        VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+        auto alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
         alloc_info.descriptorSetCount = 1;
         alloc_info.descriptorPool = ds_pool_one;
         alloc_info.pSetLayouts = &ds_layout.handle();
@@ -147,7 +147,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         image_info.imageView = view;
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -169,7 +169,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
     // Buffer Case
     {
         uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
@@ -187,7 +187,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         buffer_info.offset = 0;
         buffer_info.range = 1024;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -209,7 +209,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
     // Texel Buffer Case
     {
         uint32_t queue_family_index = 0;
-        VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+        auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         buffer_create_info.size = 1024;
         buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
         buffer_create_info.queueFamilyIndexCount = 1;
@@ -218,7 +218,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
         VkBufferObj buffer;
         buffer.init(*m_device, buffer_create_info);
 
-        VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+        auto buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
         buff_view_ci.buffer = buffer.handle();
         buff_view_ci.format = format_texel_case;
         buff_view_ci.range = VK_WHOLE_SIZE;
@@ -230,7 +230,7 @@ TEST_F(VkPositiveLayerTest, IgnoreUnrelatedDescriptor) {
                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                            });
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -299,7 +299,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
                                      });
 
     // Create a buffer to be used for update
-    VkBufferCreateInfo buff_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buff_ci = LvlInitStruct<VkBufferCreateInfo>();
     buff_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buff_ci.size = 256;
     buff_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -307,7 +307,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     err = vk::CreateBuffer(m_device->device(), &buff_ci, NULL, &buffer);
     ASSERT_VK_SUCCESS(err);
     // Have to bind memory to buffer before descriptor update
-    VkMemoryAllocateInfo mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
+    auto mem_alloc = LvlInitStruct<VkMemoryAllocateInfo>();
     mem_alloc.allocationSize = 512;  // one allocation for both buffers
     mem_alloc.memoryTypeIndex = 0;
 
@@ -334,7 +334,7 @@ TEST_F(VkPositiveLayerTest, EmptyDescriptorUpdateTest) {
     buff_info.buffer = buffer;
     buff_info.offset = 0;
     buff_info.range = VK_WHOLE_SIZE;
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -363,7 +363,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
@@ -398,7 +398,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     buff_info.buffer = vbo.handle();
     buff_info.offset = 0;
     buff_info.range = sizeof(vbo_data);
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 2;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -432,7 +432,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
@@ -526,8 +526,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags =
-        LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
+    auto layout_createinfo_binding_flags = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     ds_binding_flags[0] = 0;
     // No Error
     ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
@@ -546,7 +545,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
                                        0, &layout_createinfo_binding_flags, 0);
     const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
     uint32_t qfi = 0;
-    VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffer_create_info.queueFamilyIndexCount = 1;
@@ -560,7 +559,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     buffer_info[0].offset = 0;
     buffer_info[0].range = sizeof(uint32_t);
 
-    VkBufferCreateInfo index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
+    auto index_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     index_buffer_create_info.size = sizeof(uint32_t);
     index_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBufferObj index_buffer;
@@ -595,7 +594,7 @@ TEST_F(VkPositiveLayerTest, BindingPartiallyBound) {
     pipe.AddShader(&fs);
     pipe.AddDefaultColorAttachment();
     pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     m_commandBuffer->begin(&begin_info);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -624,7 +623,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
@@ -756,7 +755,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     // Create two buffers to update the descriptors with
     // The first will be 2k and used for bindings 0 & 1, the second is 1k for binding 2
     uint32_t qfi = 0;
-    VkBufferCreateInfo buffCI = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffCI = LvlInitStruct<VkBufferCreateInfo>();
     buffCI.size = 2048;
     buffCI.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buffCI.queueFamilyIndexCount = 1;
@@ -780,7 +779,7 @@ TEST_F(VkPositiveLayerTest, DynamicOffsetWithInactiveBinding) {
     buff_info[2].offset = 0;
     buff_info[2].range = 512;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = BINDING_COUNT;
@@ -836,7 +835,7 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
 
     // In addition to the extension being supported we need to have at least one available
     // Some implementations report an invalid maxPushDescriptors of 0
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     bool push_descriptor_found = push_descriptor_prop.maxPushDescriptors > 0;
 
@@ -901,7 +900,7 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
+    auto push_descriptor_prop = LvlInitStruct<VkPhysicalDevicePushDescriptorPropertiesKHR>();
     GetPhysicalDeviceProperties2(push_descriptor_prop);
     if (push_descriptor_prop.maxPushDescriptors < 1) {
         // Some implementations report an invalid maxPushDescriptors of 0
@@ -935,7 +934,7 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     img_info.imageView = imageView;
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pTexelBufferView = nullptr;
@@ -1020,7 +1019,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     mutable_descriptor_type_lists[1].descriptorTypeCount = 0;
     mutable_descriptor_type_lists[1].pDescriptorTypes = nullptr;
 
-    VkMutableDescriptorTypeCreateInfoEXT mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
+    auto mdtci = LvlInitStruct<VkMutableDescriptorTypeCreateInfoEXT>();
     mdtci.mutableDescriptorTypeListCount = 2;
     mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
@@ -1030,7 +1029,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
     pool_sizes[1].descriptorCount = 2;
 
-    VkDescriptorPoolCreateInfo ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
+    auto ds_pool_ci = LvlInitStruct<VkDescriptorPoolCreateInfo>(&mdtci);
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 2;
     ds_pool_ci.pPoolSizes = pool_sizes;
@@ -1050,7 +1049,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     bindings[1].stageFlags = VK_SHADER_STAGE_ALL;
     bindings[1].pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutCreateInfo create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
+    auto create_info = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&mdtci);
     create_info.bindingCount = 2;
     create_info.pBindings = bindings;
 
@@ -1060,7 +1059,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
 
     VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
 
-    VkDescriptorSetAllocateInfo allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
+    auto allocate_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
     allocate_info.descriptorPool = pool.handle();
     allocate_info.descriptorSetCount = 2;
     allocate_info.pSetLayouts = layouts;
@@ -1068,7 +1067,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     VkDescriptorSet descriptor_sets[2];
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets);
 
-    VkBufferCreateInfo buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
+    auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
@@ -1080,7 +1079,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
     buffer_info.offset = 0;
     buffer_info.range = buffer_ci.size;
 
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = descriptor_sets[0];
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -1089,7 +1088,7 @@ TEST_F(VkPositiveLayerTest, CopyMutableDescriptors) {
 
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, nullptr);
 
-    VkCopyDescriptorSet copy_set = LvlInitStruct<VkCopyDescriptorSet>();
+    auto copy_set = LvlInitStruct<VkCopyDescriptorSet>();
     copy_set.srcSet = descriptor_sets[0];
     copy_set.srcBinding = 0;
     copy_set.dstSet = descriptor_sets[1];
@@ -1127,7 +1126,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-    VkRenderPassCreateInfo rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
     rpci.subpassCount = 1;
     rpci.pSubpasses = &subpass;
     rpci.attachmentCount = 1;
@@ -1178,7 +1177,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
 
     vk_testing::Framebuffer framebuffer(*m_device, fbci);
 
-    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
+    auto rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
     rpbi.framebuffer = framebuffer.handle();
     rpbi.renderPass = render_pass.handle();
     rpbi.renderArea.extent.width = width;
@@ -1234,7 +1233,7 @@ TEST_F(VkPositiveLayerTest, TestImageViewAsDescriptorReadAndInputAttachment) {
     image_info.sampler = sampler.handle();
     image_info.imageView = image_view.handle();
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+    auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
     descriptor_write.dstSet = descriptor_set.set_;
     descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
@@ -1271,10 +1270,10 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
 
-    VkImageViewUsageCreateInfo *image_view_usage_ci = new VkImageViewUsageCreateInfo();
-    *image_view_usage_ci = LvlInitStruct<VkImageViewUsageCreateInfo>();
-    image_view_usage_ci->usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    auto image_view_ci = LvlInitStruct<VkImageViewCreateInfo>(image_view_usage_ci);
+    auto image_view_usage_ci = LvlInitStruct<VkImageViewUsageCreateInfo>();
+    image_view_usage_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    auto image_view_ci = LvlInitStruct<VkImageViewCreateInfo>(&image_view_usage_ci);
     image_view_ci.image = image.handle();
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -1286,8 +1285,6 @@ TEST_F(VkPositiveLayerTest, UpdateImageDescriptorSetThatHasImageViewUsage) {
 
     vk_testing::ImageView image_view;
     image_view.init(*m_device, image_view_ci);
-
-    delete image_view_usage_ci;
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     vk_testing::Sampler sampler;
@@ -1342,7 +1339,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
         image_info.imageView = view1;
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.descriptorCount = 1;
@@ -1356,7 +1353,7 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
         image_info.imageView = view2;
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        VkWriteDescriptorSet descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
         descriptor_write.dstSet = descriptor_set.set_;
         descriptor_write.dstBinding = 0;
         descriptor_write.dstArrayElement = 1;
