@@ -235,6 +235,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool usedDynamicViewportCount;
     bool usedDynamicScissorCount;
 
+    uint32_t write_mask_front;
+    uint32_t write_mask_back;
+
     uint32_t initial_device_mask;
     VkPrimitiveTopology primitiveTopology;
 
