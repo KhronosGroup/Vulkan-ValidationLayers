@@ -4809,6 +4809,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 
         if (result != VK_SUCCESS) {
             LogInfo(device, "UNASSIGNED-cache-retrieval-error", "Validation Cache Retrieval Error");
+            free(validation_cache_data);
             return;
         }
 
