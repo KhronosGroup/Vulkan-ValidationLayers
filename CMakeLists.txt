@@ -267,12 +267,10 @@ if (VVL_ENABLE_ASAN)
     target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
 endif()
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(VkLayer_utils
-                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/layers
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
-                                  ${CMAKE_CURRENT_BINARY_DIR}
-                                  ${CMAKE_CURRENT_BINARY_DIR}/layers
-                                  ${PROJECT_BINARY_DIR})
+target_include_directories(VkLayer_utils PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/layers
+    ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
+)
 
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
@@ -296,5 +294,5 @@ endif()
 
 if(BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests ${CMAKE_BINARY_DIR}/tests)
+    add_subdirectory(tests)
 endif()
