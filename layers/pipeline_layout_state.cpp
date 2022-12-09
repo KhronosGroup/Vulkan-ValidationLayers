@@ -166,7 +166,9 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::sp
                 }
             }
         }
-        set_layouts.emplace_back(used_layout->set_layouts[i]);
+        if (used_layout) {
+            set_layouts.emplace_back(used_layout->set_layouts[i]);
+        }
     }
     return set_layouts;
 }
