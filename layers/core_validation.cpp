@@ -1534,10 +1534,17 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                  "the depth aspect of the depth/stencil attachment in the render pass is read only.",
                                  caller, string_VkImageLayout(ds_attachment->layout));
                 }
-                if (IsImageLayoutStencilReadOnly(ds_attachment->layout) &&
-                    ((ds_state->front.failOp != VK_STENCIL_OP_KEEP) || (ds_state->front.passOp != VK_STENCIL_OP_KEEP) ||
-                     (ds_state->front.depthFailOp != VK_STENCIL_OP_KEEP) || (ds_state->back.failOp != VK_STENCIL_OP_KEEP) ||
-                     (ds_state->back.passOp != VK_STENCIL_OP_KEEP) || (ds_state->back.depthFailOp != VK_STENCIL_OP_KEEP))) {
+
+                const bool all_keep_op =
+                    ((ds_state->front.failOp == VK_STENCIL_OP_KEEP) && (ds_state->front.passOp == VK_STENCIL_OP_KEEP) &&
+                     (ds_state->front.depthFailOp == VK_STENCIL_OP_KEEP) && (ds_state->back.failOp == VK_STENCIL_OP_KEEP) &&
+                     (ds_state->back.passOp == VK_STENCIL_OP_KEEP) && (ds_state->back.depthFailOp == VK_STENCIL_OP_KEEP));
+
+                const bool write_mask_enabled = (pipeline.IsDynamic(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK))
+                                                    ? ((cb_state.write_mask_front != 0) && (cb_state.write_mask_back != 0))
+                                                    : ((ds_state->front.writeMask != 0) && (ds_state->back.writeMask != 0));
+
+                if (IsImageLayoutStencilReadOnly(ds_attachment->layout) && !all_keep_op && write_mask_enabled) {
                     LogObjectList objlist(pipeline.pipeline());
                     objlist.add(cb_state.activeRenderPass->renderPass());
                     objlist.add(cb_state.commandBuffer());

@@ -3018,6 +3018,17 @@ void ValidationStateTracker::PreCallRecordCmdSetStencilWriteMask(VkCommandBuffer
     cb_state->RecordStateCmd(CMD_SETSTENCILWRITEMASK, CB_DYNAMIC_STENCIL_WRITE_MASK_SET);
 }
 
+void ValidationStateTracker::PostCallRecordCmdSetStencilWriteMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
+                                                                  uint32_t writeMask) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    if (faceMask == VK_STENCIL_FACE_FRONT_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
+        cb_state->write_mask_front = writeMask;
+    }
+    if (faceMask == VK_STENCIL_FACE_BACK_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
+        cb_state->write_mask_back = writeMask;
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                                                                  uint32_t reference) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
