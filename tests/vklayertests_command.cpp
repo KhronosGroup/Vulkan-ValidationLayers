@@ -11046,6 +11046,13 @@ TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
 
     auto stencil_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
     stencil_state_info.front.failOp = VK_STENCIL_OP_ZERO;
+    stencil_state_info.front.writeMask = 1;
+    stencil_state_info.back.writeMask = 1;
+
+    auto stencil_disabled_state_info = LvlInitStruct<VkPipelineDepthStencilStateCreateInfo>();
+    stencil_disabled_state_info.front.failOp = VK_STENCIL_OP_ZERO;
+    stencil_disabled_state_info.front.writeMask = 1;
+    stencil_disabled_state_info.back.writeMask = 0;
 
     CreatePipelineHelper depth_pipe(*this);
     depth_pipe.InitInfo();
@@ -11062,6 +11069,28 @@ TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
     stencil_pipe.gp_ci_.renderPass = render_pass.handle();
     stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_pipe.CreateGraphicsPipeline(true, false);
+
+    CreatePipelineHelper stencil_disabled_pipe(*this);
+    stencil_disabled_pipe.InitInfo();
+    stencil_disabled_pipe.InitState();
+    stencil_disabled_pipe.LateBindPipelineInfo();
+    stencil_disabled_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
+    stencil_disabled_pipe.CreateGraphicsPipeline(true, false);
+
+    const VkDynamicState dyn_states[] = {VK_DYNAMIC_STATE_STENCIL_WRITE_MASK};
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+    dyn_state_ci.dynamicStateCount = size(dyn_states);
+    dyn_state_ci.pDynamicStates = dyn_states;
+
+    CreatePipelineHelper stencil_dynamic_pipe(*this);
+    stencil_dynamic_pipe.InitInfo();
+    stencil_dynamic_pipe.dyn_state_ci_ = dyn_state_ci;
+    stencil_dynamic_pipe.InitState();
+    stencil_dynamic_pipe.LateBindPipelineInfo();
+    stencil_dynamic_pipe.gp_ci_.renderPass = render_pass.handle();
+    stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
+    stencil_dynamic_pipe.CreateGraphicsPipeline(true, false);
 
     VkFramebufferCreateInfo framebuffer_ci = LvlInitStruct<VkFramebufferCreateInfo>();
     framebuffer_ci.width = 32;
@@ -11091,6 +11120,20 @@ TEST_F(VkLayerTest, InvalidDepthStencilStateForReadOnlyLayout) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06887");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
+
+    // valid since writeMask is set to zero
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_disabled_pipe.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_dynamic_pipe.pipeline_);
+    vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_FRONT_AND_BACK, 1);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-06887");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // valid since writeMask is set to zero
+    vk::CmdSetStencilWriteMask(m_commandBuffer->handle(), VK_STENCIL_FACE_FRONT_BIT, 0);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
