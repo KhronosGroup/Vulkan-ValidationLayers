@@ -859,8 +859,8 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
             {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
             {8, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
         };
-        const VkDescriptorSetLayoutCreateInfo dslci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr, 0,
-                                                       static_cast<uint32_t>(size(non_sampler_bindings)), non_sampler_bindings};
+        const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
+            nullptr, 0u, static_cast<uint32_t>(size(non_sampler_bindings)), non_sampler_bindings);
         VkDescriptorSetLayout dsl;
         const VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &dslci, nullptr, &dsl);
         ASSERT_VK_SUCCESS(err);
@@ -879,9 +879,9 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
                 {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
                 {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
             };
-            const VkDescriptorSetLayoutCreateInfo dslci = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, nullptr,
-                                                           VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
-                                                           static_cast<uint32_t>(size(non_sampler_bindings)), non_sampler_bindings};
+            const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
+                nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR, static_cast<uint32_t>(size(non_sampler_bindings)),
+                non_sampler_bindings);
             VkDescriptorSetLayout dsl;
             const VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &dslci, nullptr, &dsl);
             ASSERT_VK_SUCCESS(err);
