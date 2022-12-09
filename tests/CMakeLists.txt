@@ -111,14 +111,11 @@ else()
 endif()
 
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
-target_include_directories(vk_layer_validation_tests
-                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-                                  ${PROJECT_SOURCE_DIR}/layers
-                                  ${PROJECT_SOURCE_DIR}/layers/generated
-                                  ${CMAKE_CURRENT_BINARY_DIR}
-                                  ${CMAKE_BINARY_DIR}
-                                  ${PROJECT_BINARY_DIR}
-                                  ${PROJECT_BINARY_DIR}/layers)
+target_include_directories(vk_layer_validation_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/layers
+    ${PROJECT_SOURCE_DIR}/layers/generated
+)
 
 if (VVL_ENABLE_ASAN)
     target_compile_options(vk_layer_validation_tests  PRIVATE -fsanitize=address)
