@@ -6848,6 +6848,36 @@ TEST_F(VkLayerTest, Bad2DArrayImageType) {
     CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-flags-00950");
 }
 
+TEST_F(VkLayerTest, Bad2DViewImageType) {
+    TEST_DESCRIPTION("Create an image with a flag specifying 2D_VIEW_COMPATIBLE but not of imageType 3D.");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
+    VkImageCreateInfo ici = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                             nullptr,
+                             VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT,
+                             VK_IMAGE_TYPE_2D,
+                             VK_FORMAT_R8G8B8A8_UNORM,
+                             {32, 32, 1},
+                             1,
+                             1,
+                             VK_SAMPLE_COUNT_1_BIT,
+                             VK_IMAGE_TILING_OPTIMAL,
+                             VK_IMAGE_USAGE_SAMPLED_BIT,
+                             VK_SHARING_MODE_EXCLUSIVE,
+                             0,
+                             nullptr,
+                             VK_IMAGE_LAYOUT_UNDEFINED};
+    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-flags-07755");
+}
+
 TEST_F(VkLayerTest, VertexBufferInvalid) {
     TEST_DESCRIPTION(
         "Submit a command buffer using deleted vertex buffer, delete a buffer twice, use an invalid offset for each buffer type, "
