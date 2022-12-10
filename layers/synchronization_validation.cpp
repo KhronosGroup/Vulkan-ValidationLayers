@@ -20,7 +20,6 @@
  */
 
 #include <algorithm>
-#include <bitset>
 #include <limits>
 #include <memory>
 #include <vector>

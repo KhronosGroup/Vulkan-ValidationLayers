@@ -7129,12 +7129,11 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         }
 
         // subresource aspectMask must have exactly 1 bit set
-        const int num_bits = sizeof(VkFlags) * CHAR_BIT;
-        std::bitset<num_bits> aspect_mask_bits(region_aspect_mask);
-        if (aspect_mask_bits.count() != 1) {
+        if (GetBitSetCount(region_aspect_mask) != 1) {
             vuid = (is_2) ? "VUID-VkBufferImageCopy2-aspectMask-00212" : "VUID-VkBufferImageCopy-aspectMask-00212";
             skip |= LogError(image_state->image(), vuid,
-                             "%s: aspectMasks for imageSubresource in pRegion[%d] must have only a single bit set.", function, i);
+                             "%s: aspectMasks for imageSubresource in pRegion[%d] must have only a single bit set (currently %s).",
+                             function, i, string_VkImageAspectFlags(region_aspect_mask).c_str());
         }
 
         // image subresource aspect bit must match format
@@ -7689,11 +7688,10 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     const VkImageAspectFlags sub_aspect = pSubresource->aspectMask;
 
     // The aspectMask member of pSubresource must only have a single bit set
-    const int num_bits = sizeof(sub_aspect) * CHAR_BIT;
-    std::bitset<num_bits> aspect_mask_bits(sub_aspect);
-    if (aspect_mask_bits.count() != 1) {
+    if (GetBitSetCount(sub_aspect) != 1) {
         skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-aspectMask-00997",
-                         "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must have exactly 1 bit set.");
+                         "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must have exactly 1 bit set (currently %s).",
+                         string_VkImageAspectFlags(sub_aspect).c_str());
     }
 
     auto image_entry = Get<IMAGE_STATE>(image);
