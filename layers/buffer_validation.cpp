@@ -5556,9 +5556,8 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange) const {
     bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
-    bool is_2d_compatible = (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) ? true : false;
-    if (device_extensions.vk_ext_image_2d_view_of_3d)
-        is_2d_compatible |= (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) ? true : false;
+    bool is_2d_compatible =
+        image_state->createInfo.flags & (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT);
     bool is_image_slicable =
             (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
     bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
