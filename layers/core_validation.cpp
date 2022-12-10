@@ -3395,17 +3395,14 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
     const uint32_t active_shaders = pipeline.active_shaders;
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
-        // Each shader's stage must be unique
-        for (uint32_t stage = VK_SHADER_STAGE_VERTEX_BIT; stage & VK_SHADER_STAGE_ALL_GRAPHICS; stage <<= 1) {
-            if (active_shaders & stage) {
-                const auto &states = pipeline.stage_state;
-                if (std::count_if(states.begin(), states.end(),
-                                  [stage](const PipelineStageState &pss) { return stage == pss.stage_flag; }) > 1) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-06897",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "] State: Multiple shaders provided for stage %s",
-                                     pipe_index, string_VkShaderStageFlagBits(VkShaderStageFlagBits(stage)));
-                }
+        layer_data::unordered_set<VkShaderStageFlags> unique_stage_set;
+        const auto stages = pipeline.GetShaderStages();
+        for (const auto &stage : stages) {
+            if (!unique_stage_set.insert(stage.stage).second) {
+                skip |=
+                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-stage-06897",
+                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Multiple shaders provided for stage %s",
+                             pipe_index, string_VkShaderStageFlagBits(stage.stage));
             }
         }
     }
