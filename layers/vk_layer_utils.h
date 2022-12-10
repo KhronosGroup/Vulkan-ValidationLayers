@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <string>
 #include <vector>
+#include <bitset>
 #include <iomanip>
 #include "cast_utils.h"
 #include "vk_format_utils.h"
@@ -314,6 +315,12 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
         result = dividend / divisor;
     }
     return result;
+}
+
+// Only 32 bit fields should need a bit count
+static inline uint32_t GetBitSetCount(uint32_t field) {
+    std::bitset<32> view_bits(field);
+    return static_cast<uint32_t>(view_bits.count());
 }
 
 extern "C" {

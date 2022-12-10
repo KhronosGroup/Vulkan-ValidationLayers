@@ -2342,25 +2342,22 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const PIPELINE_STATE
                 }
 
                 const uint32_t active_shaders = pipeline.active_shaders;
-                constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
-                std::bitset<num_bits> view_bits(subpass_desc->viewMask);
-                uint32_t view_bits_count = static_cast<uint32_t>(view_bits.count());
-                if (view_bits_count > 1) {
+                if (GetBitSetCount(subpass_desc->viewMask) > 1) {
                     if (!enabled_features.core11.multiviewTessellationShader &&
                         (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
                          active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
-                                         " bits set in viewMask and pStages includes tessellation shaders, but the "
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass (%" PRIx32
+                                         ") has more than 1 bit set in viewMask and pStages includes tessellation shaders, but the "
                                          "VkPhysicalDeviceMultiviewFeatures::multiviewTessellationShader features is not enabled.",
-                                         pipe_index, view_bits_count);
+                                         pipe_index, subpass_desc->viewMask);
                     }
                     if (!enabled_features.core11.multiviewGeometryShader && active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: subpass has %" PRIu32
-                                         " bits set in viewMask and pStages includes geometry shader, but the "
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State:subpass (%" PRIx32
+                                         ") has more than 1 bit set in viewMask and pStages includes geometry shader, but the "
                                          "VkPhysicalDeviceMultiviewFeatures::multiviewGeometryShader features is not enabled.",
-                                         pipe_index, view_bits_count);
+                                         pipe_index, subpass_desc->viewMask);
                     }
                 }
             }
@@ -3173,11 +3170,9 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
                                               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
                                               VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT;
 
-    constexpr int num_bits = sizeof(lib_flags) * CHAR_BIT;
-    std::bitset<num_bits> flags_bits(lib_flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
-    uint32_t flags_count = static_cast<uint32_t>(flags_bits.count());
+    const uint32_t flags_count = GetBitSetCount(lib_flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                             VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                             VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
     if (flags_count >= 1 && flags_count <= 2) {
         // We start iterating at the index after lib_index to avoid duplicating checks, because the caller will iterate the same
         // loop
@@ -3959,16 +3954,10 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
         }
 
         if (gpl_info && link_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
-                VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
-                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
-                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
-
-            constexpr int num_bits = sizeof(gpl_info->flags) * CHAR_BIT;
-            std::bitset<num_bits> flags_bits(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
-            uint32_t flags_count = static_cast<uint32_t>(flags_bits.count());
+            const uint32_t flags_count =
+                GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
             if (flags_count >= 1 && flags_count <= 2) {
                 for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
                     const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
@@ -3978,6 +3967,10 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                         continue;
                     }
                     bool other_flag = false;
+                    const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
+                        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
+                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
+                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
                     for (const auto flag : flags) {
                         if ((lib_gpl_info->flags & flag) > 0 && (gpl_info->flags & flag) == 0) {
                             other_flag = true;
@@ -4175,14 +4168,13 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     // VkAttachmentSampleCountInfoAMD == VkAttachmentSampleCountInfoNV
     const auto attachment_sample_count_info = LvlFindInChain<VkAttachmentSampleCountInfoAMD>(pipeline.PNext());
     if (attachment_sample_count_info) {
-        const int num_bits = sizeof(VkSampleCountFlagBits) * CHAR_BIT;
-        std::bitset<num_bits> bits(attachment_sample_count_info->depthStencilAttachmentSamples);
+        const uint32_t bits = GetBitSetCount(attachment_sample_count_info->depthStencilAttachmentSamples);
         if (pipeline.fragment_output_state && attachment_sample_count_info->depthStencilAttachmentSamples != 0 &&
-            ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits.count() > 1)) {
+            ((attachment_sample_count_info->depthStencilAttachmentSamples & AllVkSampleCountFlagBits) == 0 || bits > 1)) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-depthStencilAttachmentSamples-06593",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples.",
-                             pipe_index);
+                             "] includes VkAttachmentSampleCountInfoAMD with invalid depthStencilAttachmentSamples (%" PRIx32 ").",
+                             pipe_index, attachment_sample_count_info->depthStencilAttachmentSamples);
         }
     }
 
@@ -6817,9 +6809,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                     // Pipeline statistics queries write one integer value for each bit that is enabled in the pipelineStatistics
                     // when the pool is created
                     {
-                        const int num_bits = sizeof(VkFlags) * CHAR_BIT;
-                        std::bitset<num_bits> pipe_stats_bits(query_pool_state->createInfo.pipelineStatistics);
-                        query_items = static_cast<uint32_t>(pipe_stats_bits.count());
+                        query_items = GetBitSetCount(query_pool_state->createInfo.pipelineStatistics);
                         query_size = query_size_in_bytes * (query_items + query_avail_data);
                     }
                     break;
@@ -12150,14 +12140,12 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
         if (!cb_state.activeRenderPass->UsesDynamicRendering()) {
             const auto *subpass_desc = &render_pass_info->pSubpasses[cb_state.activeSubpass];
             if (subpass_desc) {
-                constexpr int num_bits = sizeof(subpass_desc->viewMask) * CHAR_BIT;
-                std::bitset<num_bits> view_bits(subpass_desc->viewMask);
-                uint32_t bits = static_cast<uint32_t>(view_bits.count());
+                uint32_t bits = GetBitSetCount(subpass_desc->viewMask);
                 if (query_obj.query + bits > query_pool_state->createInfo.queryCount) {
                     skip |= LogError(cb_state.commandBuffer(), vuids->vuid_multiview_query,
-                                     "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIu32
+                                     "%s: query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
                                      ") is greater than the number of queries in queryPool (%" PRIu32 ").",
-                                     cmd_name, query_obj.query, bits, query_pool_state->createInfo.queryCount);
+                                     cmd_name, query_obj.query, subpass_desc->viewMask, query_pool_state->createInfo.queryCount);
                 }
             }
         }
