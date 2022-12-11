@@ -3134,6 +3134,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
     const CMD_BUFFER_STATE &cb_state = *cb_state_ptr;
     const VkFormat src_format = src_image_state->createInfo.format;
     const VkFormat dst_format = dst_image_state->createInfo.format;
+    const VkImageType src_image_type = src_image_state->createInfo.imageType;
+    const VkImageType dst_image_type = dst_image_state->createInfo.imageType;
     const bool is_2 = (cmd_type == CMD_COPYIMAGE2KHR || cmd_type == CMD_COPYIMAGE2);
 
     const char *func_name = CommandTypeString(cmd_type);
@@ -3157,12 +3159,10 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
 
         // Special case for copying between a 1D/2D array and a 3D image
         // TBD: This seems like the only way to reconcile 3 mutually-exclusive VU checks for 2D/3D copies. Heads up.
-        if ((VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType) &&
-            (VK_IMAGE_TYPE_3D != dst_image_state->createInfo.imageType)) {
+        if ((VK_IMAGE_TYPE_3D == src_image_type) && (VK_IMAGE_TYPE_3D != dst_image_type)) {
             depth_slices = region.dstSubresource.layerCount;  // Slice count from 2D subresource
             slice_override = (depth_slices != 1);
-        } else if ((VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType) &&
-                   (VK_IMAGE_TYPE_3D != src_image_state->createInfo.imageType)) {
+        } else if ((VK_IMAGE_TYPE_3D == dst_image_type) && (VK_IMAGE_TYPE_3D != src_image_type)) {
             depth_slices = region.srcSubresource.layerCount;  // Slice count from 2D subresource
             slice_override = (depth_slices != 1);
         }
@@ -3188,11 +3188,9 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 // The number of depth slices in srcSubresource and dstSubresource must match
                 // Depth comes from layerCount for 1D,2D resources, from extent.depth for 3D
                 uint32_t src_slices =
-                    (VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType ? src_copy_extent.depth
-                                                                               : region.srcSubresource.layerCount);
+                    (VK_IMAGE_TYPE_3D == src_image_type ? src_copy_extent.depth : region.srcSubresource.layerCount);
                 uint32_t dst_slices =
-                    (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType ? dst_copy_extent.depth
-                                                                               : region.dstSubresource.layerCount);
+                    (VK_IMAGE_TYPE_3D == dst_image_type ? dst_copy_extent.depth : region.dstSubresource.layerCount);
                 if (src_slices != dst_slices) {
                     skip |= LogError(command_buffer, kVUID_Core_ImageCopy_Extent,
                                      "%s: number of depth slices in source (%" PRIu32 ") and destination (%" PRIu32
@@ -3204,9 +3202,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
 
             // Maintaince 1 requires both while prior only required one to be 2D
-            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
-                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
-                (src_copy_extent.depth != 1)) {
+            if (((VK_IMAGE_TYPE_2D == src_image_type) && (VK_IMAGE_TYPE_2D == dst_image_type)) && (src_copy_extent.depth != 1)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01790" : "VUID-vkCmdCopyImage-srcImage-01790";
                 skip |= LogError(command_buffer, vuid,
                                  "%s: pRegion[%" PRIu32 "] both srcImage and dstImage are 2D and extent.depth is %" PRIu32
@@ -3220,8 +3216,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, func_name, vuid);
 
             // Check if 2D with 3D and depth not equal to 2D layerCount
-            if ((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
-                (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType) &&
+            if ((VK_IMAGE_TYPE_2D == src_image_type) && (VK_IMAGE_TYPE_3D == dst_image_type) &&
                 (src_copy_extent.depth != region.srcSubresource.layerCount)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01791" : "VUID-vkCmdCopyImage-srcImage-01791";
                 skip |= LogError(command_buffer, vuid,
@@ -3229,8 +3224,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  " and has to be "
                                  "srcSubresource.layerCount (%" PRIu32 ")",
                                  func_name, i, src_copy_extent.depth, region.srcSubresource.layerCount);
-            } else if ((VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType) &&
-                       (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType) &&
+            } else if ((VK_IMAGE_TYPE_3D == src_image_type) && (VK_IMAGE_TYPE_2D == dst_image_type) &&
                        (src_copy_extent.depth != region.dstSubresource.layerCount)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01792" : "VUID-vkCmdCopyImage-dstImage-01792";
                 skip |= LogError(command_buffer, vuid,
@@ -3249,9 +3243,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  func_name, region.srcSubresource.layerCount, region.dstSubresource.layerCount, i);
             }
 
-            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) ||
-                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
-                (src_copy_extent.depth != 1)) {
+            if (((VK_IMAGE_TYPE_2D == src_image_type) || (VK_IMAGE_TYPE_2D == dst_image_type)) && (src_copy_extent.depth != 1)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01789" : "VUID-vkCmdCopyImage-srcImage-01789";
                 skip |= LogError(command_buffer, vuid,
                                  "%s: pRegion[%" PRIu32 "] either srcImage or dstImage is 2D and extent.depth is %" PRIu32
@@ -3437,8 +3429,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // must not overlap in memory
         if (src_image_state->image() == dst_image_state->image()) {
             for (uint32_t j = 0; j < regionCount; j++) {
-                if (RegionIntersects(&region, &pRegions[j], src_image_state->createInfo.imageType,
-                                     FormatIsMultiplane(src_format))) {
+                if (RegionIntersects(&region, &pRegions[j], src_image_type, FormatIsMultiplane(src_format))) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-pRegions-00124" : "VUID-vkCmdCopyImage-pRegions-00124";
                     skip |= LogError(command_buffer, vuid, "%s: pRegion[%" PRIu32 "] src overlaps with pRegions[%" PRIu32 "].",
                                      func_name, i, j);
