@@ -3210,6 +3210,19 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  func_name, i, src_copy_extent.depth);
             }
 
+            if (src_image_type != dst_image_type) {
+                // if different, one must be 3D and the other 2D
+                bool valid = ((src_image_type == VK_IMAGE_TYPE_2D) && (dst_image_type == VK_IMAGE_TYPE_3D)) ||
+                             ((src_image_type == VK_IMAGE_TYPE_3D) && (dst_image_type == VK_IMAGE_TYPE_2D));
+                if (!valid) {
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07743" : "VUID-vkCmdCopyImage-srcImage-07743";
+                    skip |= LogError(command_buffer, vuid,
+                                     "%s: pRegion[%" PRIu32
+                                     "] srcImage (%s) must be equal to dstImage (%s) or else one must be 2D and the other 3D",
+                                     func_name, i, string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
+                }
+            }
+
             vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01995" : "VUID-vkCmdCopyImage-srcImage-01995";
             skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT, func_name, vuid);
             vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
@@ -3249,6 +3262,14 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  "%s: pRegion[%" PRIu32 "] either srcImage or dstImage is 2D and extent.depth is %" PRIu32
                                  " and has to be 1",
                                  func_name, i, src_copy_extent.depth);
+            }
+
+            if (src_image_type != dst_image_type) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07742" : "VUID-vkCmdCopyImage-srcImage-07742";
+                skip |= LogError(command_buffer, vuid,
+                                 "%s: pRegion[%" PRIu32
+                                 "] srcImage (%s) must be equal to dstImage (%s) without VK_KHR_maintenance1 enabled",
+                                 func_name, i, string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
             }
         }
 
