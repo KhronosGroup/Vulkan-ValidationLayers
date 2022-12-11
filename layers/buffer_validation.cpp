@@ -3202,7 +3202,44 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                      func_name, src_slices, dst_slices, i);
                 }
             }
-        } else {
+
+            // Maintaince 1 requires both while prior only required one to be 2D
+            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
+                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
+                (src_copy_extent.depth != 1)) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01790" : "VUID-vkCmdCopyImage-srcImage-01790";
+                skip |= LogError(command_buffer, vuid,
+                                 "%s: pRegion[%" PRIu32 "] both srcImage and dstImage are 2D and extent.depth is %" PRIu32
+                                 " and has to be 1",
+                                 func_name, i, src_copy_extent.depth);
+            }
+
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01995" : "VUID-vkCmdCopyImage-srcImage-01995";
+            skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT, func_name, vuid);
+            vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
+            skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, func_name, vuid);
+
+            // Check if 2D with 3D and depth not equal to 2D layerCount
+            if ((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
+                (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType) &&
+                (src_copy_extent.depth != region.srcSubresource.layerCount)) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01791" : "VUID-vkCmdCopyImage-srcImage-01791";
+                skip |= LogError(command_buffer, vuid,
+                                 "%s: pRegion[%" PRIu32 "] srcImage is 2D, dstImage is 3D and extent.depth is %" PRIu32
+                                 " and has to be "
+                                 "srcSubresource.layerCount (%" PRIu32 ")",
+                                 func_name, i, src_copy_extent.depth, region.srcSubresource.layerCount);
+            } else if ((VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType) &&
+                       (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType) &&
+                       (src_copy_extent.depth != region.dstSubresource.layerCount)) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01792" : "VUID-vkCmdCopyImage-dstImage-01792";
+                skip |= LogError(command_buffer, vuid,
+                                 "%s: pRegion[%" PRIu32 "] srcImage is 3D, dstImage is 2D and extent.depth is %" PRIu32
+                                 " and has to be "
+                                 "dstSubresource.layerCount (%" PRIu32 ")",
+                                 func_name, i, src_copy_extent.depth, region.dstSubresource.layerCount);
+            }
+        } else {  // !vk_khr_maintenance1
             // For each region the layerCount member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
                 vuid = is_2 ? "VUID-VkImageCopy2-layerCount-00138" : "VUID-VkImageCopy-layerCount-00138";
@@ -3210,6 +3247,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  "%s: number of layers in source (%" PRIu32 ") and destination (%" PRIu32
                                  ") subresources for pRegions[%" PRIu32 "] do not match",
                                  func_name, region.srcSubresource.layerCount, region.dstSubresource.layerCount, i);
+            }
+
+            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) ||
+                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
+                (src_copy_extent.depth != 1)) {
+                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01789" : "VUID-vkCmdCopyImage-srcImage-01789";
+                skip |= LogError(command_buffer, vuid,
+                                 "%s: pRegion[%" PRIu32 "] either srcImage or dstImage is 2D and extent.depth is %" PRIu32
+                                 " and has to be 1",
+                                 func_name, i, src_copy_extent.depth);
             }
         }
 
@@ -3399,50 +3446,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             }
         }
 
-        // Check depth for 2D as post Maintaince 1 requires both while prior only required one to be 2D
-        if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
-                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
-                (src_copy_extent.depth != 1)) {
-                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01790" : "VUID-vkCmdCopyImage-srcImage-01790";
-                skip |= LogError(command_buffer, vuid,
-                                 "%s: pRegion[%" PRIu32 "] both srcImage and dstImage are 2D and extent.depth is %" PRIu32
-                                 " and has to be 1",
-                                 func_name, i, src_copy_extent.depth);
-            }
-        } else {
-            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) ||
-                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
-                (src_copy_extent.depth != 1)) {
-                vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01789" : "VUID-vkCmdCopyImage-srcImage-01789";
-                skip |= LogError(command_buffer, vuid,
-                                 "%s: pRegion[%" PRIu32 "] either srcImage or dstImage is 2D and extent.depth is %" PRIu32
-                                 " and has to be 1",
-                                 func_name, i, src_copy_extent.depth);
-            }
-        }
-
-        // Check if 2D with 3D and depth not equal to 2D layerCount
-        if ((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
-            (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType) &&
-            (src_copy_extent.depth != region.srcSubresource.layerCount)) {
-            vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01791" : "VUID-vkCmdCopyImage-srcImage-01791";
-            skip |= LogError(command_buffer, vuid,
-                             "%s: pRegion[%" PRIu32 "] srcImage is 2D, dstImage is 3D and extent.depth is %" PRIu32
-                             " and has to be "
-                             "srcSubresource.layerCount (%" PRIu32 ")",
-                             func_name, i, src_copy_extent.depth, region.srcSubresource.layerCount);
-        } else if ((VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType) &&
-                   (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType) &&
-                   (src_copy_extent.depth != region.dstSubresource.layerCount)) {
-            vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01792" : "VUID-vkCmdCopyImage-dstImage-01792";
-            skip |= LogError(command_buffer, vuid,
-                             "%s: pRegion[%" PRIu32 "] srcImage is 3D, dstImage is 2D and extent.depth is %" PRIu32
-                             " and has to be "
-                             "dstSubresource.layerCount (%" PRIu32 ")",
-                             func_name, i, src_copy_extent.depth, region.dstSubresource.layerCount);
-        }
-
         // Check for multi-plane format compatiblity
         if (FormatIsMultiplane(src_format) || FormatIsMultiplane(dst_format)) {
             const VkFormat src_plane_format = FormatIsMultiplane(src_format)
@@ -3575,12 +3578,6 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                      "%s: dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT", func_name);
     }
 
-    if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01995" : "VUID-vkCmdCopyImage-srcImage-01995";
-        skip |= ValidateImageFormatFeatureFlags(src_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT, func_name, vuid);
-        vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImage-01996" : "VUID-vkCmdCopyImage-dstImage-01996";
-        skip |= ValidateImageFormatFeatureFlags(dst_image_state.get(), VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT, func_name, vuid);
-    }
     skip |= ValidateCmd(cb_state, cmd_type);
     bool hit_error = false;
 
