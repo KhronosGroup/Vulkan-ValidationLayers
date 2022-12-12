@@ -3709,12 +3709,13 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(
                          num_sampler_buffers, phys_dev_ext_props.descriptor_buffer_props.maxSamplerDescriptorBufferBindings);
     }
 
-    if (num_sampler_buffers > phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings) {
+    if (num_resource_buffers > phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings) {
         skip |= LogError(device, "VUID-vkCmdBindDescriptorBuffersEXT-maxResourceDescriptorBufferBindings-08049",
-                         "vkCmdBindDescriptorBuffersEXT(): Number of sampler buffers is %" PRIu32 ". There must be no more than "
+                         "vkCmdBindDescriptorBuffersEXT(): Number of resource buffers is %" PRIu32
+                         ". There must be no more than "
                          "VkPhysicalDeviceDescriptorBufferPropertiesEXT::maxResourceDescriptorBufferBindings (%" PRIu32
                          ") descriptor buffers containing resource descriptor data bound.",
-                         num_sampler_buffers, phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings);
+                         num_resource_buffers, phys_dev_ext_props.descriptor_buffer_props.maxResourceDescriptorBufferBindings);
     }
 
     if (num_push_descriptor_buffers > 1) {
