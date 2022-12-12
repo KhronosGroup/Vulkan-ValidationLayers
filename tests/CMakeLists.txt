@@ -25,20 +25,6 @@ find_package(glslang CONFIG REQUIRED)
 # Needed to make structure definitions match with glslang libraries
 add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
 
-if(ANNOTATED_SPEC_LINK)
-    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
-endif()
-
-if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
-    # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
-    add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-elseif(ANDROID)
-    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
-elseif(APPLE)
-    add_definitions(-DVK_USE_PLATFORM_METAL_EXT)
-endif()
-
 if(MSVC_IDE)
     file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()

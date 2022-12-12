@@ -15,14 +15,6 @@
 # limitations under the License.
 # ~~~
 
-if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX)
-elseif(ANDROID)
-    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
-elseif(APPLE)
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
-endif()
-
 # XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
 # We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
 #
@@ -72,11 +64,6 @@ if(MSVC)
     add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
 else()
     add_compile_options(-Wpointer-arith -Wno-unused-function -Wno-sign-compare)
-endif()
-
-if(ANNOTATED_SPEC_LINK)
-    message("-- ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
-    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
 endif()
 
 # Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
