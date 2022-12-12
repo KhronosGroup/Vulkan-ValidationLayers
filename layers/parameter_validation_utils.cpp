@@ -4526,16 +4526,28 @@ bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderP
     } else {
         const auto *separate_depth_stencil_layouts_features =
             LvlFindInChain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(device_createinfo_pnext);
-        if (separate_depth_stencil_layouts_features)
+        if (separate_depth_stencil_layouts_features) {
             separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
+        }
     }
 
     VkBool32 attachment_feedback_loop_layout = false;
     const auto *attachment_feedback_loop_layout_features =
         LvlFindInChain<VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT>(device_createinfo_pnext);
-    if (attachment_feedback_loop_layout_features)
+    if (attachment_feedback_loop_layout_features) {
         attachment_feedback_loop_layout = attachment_feedback_loop_layout_features->attachmentFeedbackLoopLayout;
+    }
 
+    VkBool32 synchronization2 = false;
+    const auto *vulkan_13_features = LvlFindInChain<VkPhysicalDeviceVulkan13Features>(device_createinfo_pnext);
+    if (vulkan_13_features) {
+        synchronization2 = vulkan_13_features->synchronization2;
+    } else {
+        const auto *synchronization2_features = LvlFindInChain<VkPhysicalDeviceSynchronization2Features>(device_createinfo_pnext);
+        if (synchronization2_features) {
+            synchronization2 = synchronization2_features->synchronization2;
+        }
+    }
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         // if not null, also confirms rp2 is being used
         const auto *attachment_description_stencil_layout =
@@ -4605,6 +4617,29 @@ bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderP
                                  "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT but the "
                                  "attachmentFeedbackLoopLayout feature is not enabled",
                                  func_name, i);
+            }
+        }
+        if (!synchronization2) {
+            if (initial_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR ||
+                initial_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06908"
+                               : "VUID-VkAttachmentDescription-synchronization2-06908";
+                skip |= LogError(
+                    device, vuid,
+                    "%s: pCreateInfo->pAttachments[%" PRIu32
+                    "] initialLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
+                    "synchronization2 feature is not enabled",
+                    func_name, i);
+            }
+            if (final_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR || final_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR) {
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-synchronization2-06909"
+                               : "VUID-VkAttachmentDescription-synchronization2-06909";
+                skip |= LogError(
+                    device, vuid,
+                    "%s: pCreateInfo->pAttachments[%" PRIu32
+                    "] finalLayout is VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR or VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR but the "
+                    "synchronization2 feature is not enabled",
+                    func_name, i);
             }
         }
         if (!FormatIsDepthOrStencil(attachment_format)) {  // color format

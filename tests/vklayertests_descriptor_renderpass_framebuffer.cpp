@@ -650,6 +650,33 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03282",
                          "VUID-VkAttachmentDescription2-format-03282");
 
+    // invalid formats without synchronization2
+    {
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+                             "VUID-VkAttachmentDescription-synchronization2-06908",
+                             "VUID-VkAttachmentDescription2-synchronization2-06908");
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+                             "VUID-VkAttachmentDescription-synchronization2-06908",
+                             "VUID-VkAttachmentDescription2-synchronization2-06908");
+
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+                             "VUID-VkAttachmentDescription-synchronization2-06909",
+                             "VUID-VkAttachmentDescription2-synchronization2-06909");
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL_KHR;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+                             "VUID-VkAttachmentDescription-synchronization2-06909",
+                             "VUID-VkAttachmentDescription2-synchronization2-06909");
+
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
     // Test invalid layouts for depth/stencil format
     if (depth_stencil_format) {
         attach_desc.format = depth_stencil_format;
@@ -1151,18 +1178,17 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidSync2Layout) {
     TEST_DESCRIPTION("Attachment reference uses sync2 and ATTACHMENT_OPTIMAL_KHR or READ_ONLY_OPTIMAL_KHR layouts");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-
-    auto vk13features = LvlInitStruct<VkPhysicalDeviceVulkan13Features>();
-    if (!vk13features.synchronization2) {
-        GTEST_SKIP() << "Test requires (unsupported) synchronization2";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr));
+
+    // synchronization2 not enabled
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat ds_format = FindSupportedDepthStencilFormat(gpu());
 
