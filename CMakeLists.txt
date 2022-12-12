@@ -137,10 +137,13 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
-set(LINUX OFF) # NOTE: Variable as of 3.25
-if (UNIX AND NOT APPLE) # Options for Linux only
-    set(LINUX ON)
-
+if(WIN32)
+    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DVK_USE_PLATFORM_WIN32_KHX)
+elseif(ANDROID)
+    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
+elseif(APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
     option(BUILD_WSI_WAYLAND_SUPPORT "Build Wayland WSI support" ON)
@@ -160,6 +163,11 @@ if (UNIX AND NOT APPLE) # Options for Linux only
     if(BUILD_WSI_WAYLAND_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
     endif()
+endif()
+
+if (ANNOTATED_SPEC_LINK)
+    message("ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
+    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
 endif()
 
 # NOTE: The idiom for open source projects is to not enable warnings as errors.
