@@ -4653,6 +4653,31 @@ bool StatelessValidation::CreateRenderPassGeneric(VkDevice device, const RenderP
                                  "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL",
                                  func_name, i);
             }
+
+            if (!attachment_description_stencil_layout) {
+                if (initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                    initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06249" : "VUID-VkAttachmentDescription-format-06242";
+                    skip |=
+                        LogError(device, vuid,
+                                 "%s: pCreateInfo->pAttachments[%" PRIu32
+                                 "].initialLayout must not be "
+                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided",
+                                 func_name, i);
+                }
+                if (final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                    final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-06250" : "VUID-VkAttachmentDescription-format-06243";
+                    skip |=
+                        LogError(device, vuid,
+                                 "%s: pCreateInfo->pAttachments[%" PRIu32
+                                 "].finalLayout must not be "
+                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL with no VkAttachmentDescriptionStencilLayout provided",
+                                 func_name, i);
+                }
+            }
         } else if (FormatIsDepthOnly(attachment_format)) {
             if (initial_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
                 initial_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
