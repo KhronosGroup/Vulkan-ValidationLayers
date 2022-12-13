@@ -222,9 +222,6 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(VkImage image, VkFormat format
 
 VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFormat format, VkImageAspectFlags aspect_mask);
 
-// Helper for checking createRenderPass2 support and adding related extensions.
-bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vector<const char *> &device_extension_names);
-
 // Helper for checking timeline semaphore support and initializing
 bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework);
 

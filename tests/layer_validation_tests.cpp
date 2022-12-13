@@ -647,16 +647,6 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFor
     return SafeSaneImageViewCreateInfo(image.handle(), format, aspect_mask);
 }
 
-bool CheckCreateRenderPass2Support(VkRenderFramework *renderFramework, std::vector<const char *> &device_extension_names) {
-    if (renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-        device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-        device_extension_names.push_back(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-        return true;
-    }
-    return false;
-}
-
 bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework) {
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
