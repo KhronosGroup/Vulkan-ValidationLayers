@@ -103,16 +103,13 @@ class RangeEncoder {
     RangeEncoder(const RangeEncoder& from) = default;
 
     inline bool InRange(const VkImageSubresource& subres) const {
-        bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
-                        (subres.aspectMask & limits_.aspectMask);
-        return in_range;
+        return (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
+               (subres.aspectMask & limits_.aspectMask);
     }
     inline bool InRange(const VkImageSubresourceRange& range) const {
-        bool in_range = (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
-                        (range.baseArrayLayer < limits_.arrayLayer) &&
-                        ((range.baseArrayLayer + range.layerCount) <= limits_.arrayLayer) &&
-                        (range.aspectMask & limits_.aspectMask);
-        return in_range;
+        return (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
+               (range.baseArrayLayer < limits_.arrayLayer) && ((range.baseArrayLayer + range.layerCount) <= limits_.arrayLayer) &&
+               (range.aspectMask & limits_.aspectMask);
     }
 
     inline IndexType Encode(const Subresource& pos) const { return (this->*(encode_function_))(pos); }

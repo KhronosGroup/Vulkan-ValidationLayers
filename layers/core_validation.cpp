@@ -506,11 +506,11 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
-    bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+    const bool dyn_viewport = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT);
     const auto *viewport_state = pipeline.ViewportState();
     if ((!rp_state || (rp_state->rasterizerDiscardEnable == VK_FALSE)) && viewport_state &&
         (cb_state.inheritedViewportDepths.size() == 0)) {
-        bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
+        const bool dyn_scissor = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR);
 
         // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but
         // the dynamic state set is overwritten by binding a graphics pipeline with static viewport (scissor) state.
@@ -540,8 +540,8 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             }
         }
 
-        bool dyn_viewport_count = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
-        bool dyn_scissor_count = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
+        const bool dyn_viewport_count = pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT);
+        const bool dyn_scissor_count = pipeline.IsDynamic(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT);
 
         if (dyn_viewport_count && !dyn_scissor_count) {
             const auto required_viewport_mask = (1 << viewport_state->scissorCount) - 1;
@@ -1954,8 +1954,8 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
         }
 
         // Either both or neither TC/TE shaders should be defined
-        bool has_control = (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
-        bool has_eval = (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
+        const bool has_control = (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
+        const bool has_eval = (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) != 0;
         if (has_control && !has_eval) {
             skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00729",
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
@@ -3170,7 +3170,7 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
                                               const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
                                               int lib_index, const char *vuid) const {
-    bool current_pipeline = lib_index == -1;
+    const bool current_pipeline = lib_index == -1;
     bool skip = false;
 
     VkGraphicsPipelineLibraryFlagsEXT flags = VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
@@ -3186,7 +3186,7 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
         for (int i = lib_index + 1; i < static_cast<int>(link_info.libraryCount); ++i) {
             const auto lib = Get<PIPELINE_STATE>(link_info.pLibraries[i]);
             const auto lib_rendering_struct = lib->GetPipelineRenderingCreateInfo();
-            bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
+            const bool other_flag = (lib->graphics_lib_type & flags) && (lib->graphics_lib_type & ~lib_flags);
             if (other_flag) {
                 if (current_pipeline) {
                     if (lib->GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass != VK_NULL_HANDLE) {
@@ -5736,7 +5736,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
 
         skip |= ValidateSemaphoresForSubmit(sem_submit_state, submit, loc);
 
-        bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
+        const bool protected_submit = (submit.flags & VK_SUBMIT_PROTECTED_BIT_KHR) != 0;
         if ((protected_submit == true) && ((queue_state->flags & VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT)) == 0) {
             skip |= LogError(queue, "VUID-vkQueueSubmit2-queue-06447",
                              "%s: pSubmits[%u] contains a protected submission to %s which was not created with "
@@ -6941,7 +6941,7 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                           const void *pNext, const char *api_name) const {
     auto buffer_state = Get<BUFFER_STATE>(buffer);
-    bool bind_buffer_mem_2 = strcmp(api_name, "vkBindBufferMemory()") != 0;
+    const bool bind_buffer_mem_2 = strcmp(api_name, "vkBindBufferMemory()") != 0;
 
     bool skip = false;
     if (buffer_state) {
@@ -13582,7 +13582,7 @@ bool CoreChecks::CheckDependencyExists(const VkRenderPass renderpass, const uint
                                        const std::vector<SubpassLayout> &dependent_subpasses,
                                        const std::vector<DAGNode> &subpass_to_node, bool &skip) const {
     bool result = true;
-    bool b_image_layout_read_only = IsImageLayoutReadOnly(layout);
+    const bool b_image_layout_read_only = IsImageLayoutReadOnly(layout);
     // Loop through all subpasses that share the same attachment and make sure a dependency exists
     for (uint32_t k = 0; k < dependent_subpasses.size(); ++k) {
         const SubpassLayout &sp = dependent_subpasses[k];
@@ -14156,8 +14156,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                             ValidateLayoutVsAttachmentDescription(report_data, rp_version, subpass.pInputAttachments[j].layout,
                                                                   attachment_index, pCreateInfo->pAttachments[attachment_index]);
 
-                        bool used_as_depth = (subpass.pDepthStencilAttachment != NULL &&
-                                              subpass.pDepthStencilAttachment->attachment == attachment_index);
+                        const bool used_as_depth = (subpass.pDepthStencilAttachment != NULL &&
+                                                    subpass.pDepthStencilAttachment->attachment == attachment_index);
                         bool used_as_color = false;
                         for (uint32_t k = 0; !used_as_depth && !used_as_color && k < subpass.colorAttachmentCount; ++k) {
                             used_as_color = (subpass.pColorAttachments[k].attachment == attachment_index);
@@ -14903,9 +14903,9 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
         const VkFormat resolve_attachment_format = pCreateInfo->pAttachments[resolve_attachment].format;
 
         // "depthResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a depth component"
-        bool resolve_has_depth = FormatHasDepth(resolve_attachment_format);
+        const bool resolve_has_depth = FormatHasDepth(resolve_attachment_format);
         // "stencilResolveMode is ignored if the VkFormat of the pDepthStencilResolveAttachment does not have a stencil component"
-        bool resolve_has_stencil = FormatHasStencil(resolve_attachment_format);
+        const bool resolve_has_stencil = FormatHasStencil(resolve_attachment_format);
 
         if (resolve_has_depth) {
             if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE ||
@@ -15615,8 +15615,8 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
     if (color_depth_op != op && stencil_op != op) {
         return false;
     }
-    bool check_color_depth_load_op = !FormatIsStencilOnly(format);
-    bool check_stencil_load_op = FormatIsDepthAndStencil(format) || !check_color_depth_load_op;
+    const bool check_color_depth_load_op = !FormatIsStencilOnly(format);
+    const bool check_stencil_load_op = FormatIsDepthAndStencil(format) || !check_color_depth_load_op;
 
     return ((check_color_depth_load_op && (color_depth_op == op)) || (check_stencil_load_op && (stencil_op == op)));
 }
@@ -17050,7 +17050,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                          const char *api_name) const {
     bool skip = false;
 
-    bool bind_image_mem_2 = strcmp(api_name, "vkBindImageMemory()") != 0;
+    const bool bind_image_mem_2 = strcmp(api_name, "vkBindImageMemory()") != 0;
     char error_prefix[128];
     strcpy(error_prefix, api_name);
 
@@ -18133,7 +18133,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     // application to have established support on any other platform.
     if (!instance_extensions.vk_khr_android_surface) {
         // restrict search only to queue families of VkDeviceQueueCreateInfos, not the whole physical device
-        bool is_supported = AnyOf<QUEUE_STATE>([this, surface_state](const QUEUE_STATE &queue_state) {
+        const bool is_supported = AnyOf<QUEUE_STATE>([this, surface_state](const QUEUE_STATE &queue_state) {
             return surface_state->GetQueueSupport(physical_device, queue_state.queueFamilyIndex);
         });
 
@@ -18380,7 +18380,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
         present_modes = physical_device_state->surfaceless_query_state.present_modes;
     }
-    bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
+    const bool found_match = std::find(present_modes.begin(), present_modes.end(), present_mode) != present_modes.end();
     if (!found_match) {
         if (LogError(device, "VUID-VkSwapchainCreateInfoKHR-presentMode-01281",
                      "%s called with a non-supported presentMode (i.e. %s).", func_name, string_VkPresentModeKHR(present_mode))) {
@@ -18976,8 +18976,8 @@ bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
                          report_data->FormatHandle(pCreateInfo->descriptorSetLayout).c_str());
     } else if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR == pCreateInfo->templateType) {
         auto bind_point = pCreateInfo->pipelineBindPoint;
-        bool valid_bp = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) || (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ||
-                        (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+        const bool valid_bp = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) || (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ||
+                              (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
         if (!valid_bp) {
             skip |=
                 LogError(device, "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00351",

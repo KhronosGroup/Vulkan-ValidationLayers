@@ -1134,7 +1134,7 @@ bool GetLineAndFilename(const std::string &string, uint32_t *linenumber, std::st
 
     std::smatch captures;
 
-    bool found_line = std::regex_match(string, captures, line_regex);
+    const bool found_line = std::regex_match(string, captures, line_regex);
     if (!found_line) return false;
 
     // filename is optional and considered found only if the whitespace and the filename are captured
@@ -1226,10 +1226,10 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
             for (auto it = opsource_lines.begin(); it != opsource_lines.end(); ++it) {
                 uint32_t parsed_line_number;
                 std::string parsed_filename;
-                bool found_line = GetLineAndFilename(*it, &parsed_line_number, parsed_filename);
+                const bool found_line = GetLineAndFilename(*it, &parsed_line_number, parsed_filename);
                 if (!found_line) continue;
 
-                bool found_filename = parsed_filename.size() > 0;
+                const bool found_filename = parsed_filename.size() > 0;
                 if (found_filename) {
                     current_filename = parsed_filename;
                 }

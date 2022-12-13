@@ -3976,7 +3976,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
     basePipelineIndex(in_struct->basePipelineIndex)
 {
     pNext = SafePnextCopy(in_struct->pNext);
-    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
+    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4006,7 +4006,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
             if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 is_dynamic_has_rasterization = true;
     }
-    bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
+    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
     if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
@@ -4088,7 +4088,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
     pNext = SafePnextCopy(copy_src.pNext);
-    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
+    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4118,7 +4118,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
             if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 is_dynamic_has_rasterization = true;
     }
-    bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
+    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
@@ -4191,7 +4191,7 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     basePipelineHandle = copy_src.basePipelineHandle;
     basePipelineIndex = copy_src.basePipelineIndex;
     pNext = SafePnextCopy(copy_src.pNext);
-    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
+    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);
     if (stageCount && copy_src.pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4221,7 +4221,7 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
             if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 is_dynamic_has_rasterization = true;
     }
-    bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
+    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);
     } else
@@ -4319,7 +4319,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     basePipelineHandle = in_struct->basePipelineHandle;
     basePipelineIndex = in_struct->basePipelineIndex;
     pNext = SafePnextCopy(in_struct->pNext);
-    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
+    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;
     if (stageCount && in_struct->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4349,7 +4349,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
             if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 is_dynamic_has_rasterization = true;
     }
-    bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
+    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;
     if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {
         bool is_dynamic_viewports = false;
         bool is_dynamic_scissors = false;
@@ -4409,7 +4409,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     basePipelineHandle = copy_src->basePipelineHandle;
     basePipelineIndex = copy_src->basePipelineIndex;
     pNext = SafePnextCopy(copy_src->pNext);
-    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src->pNext);
+    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src->pNext);
     if (stageCount && copy_src->pStages) {
         pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];
         for (uint32_t i = 0; i < stageCount; ++i) {
@@ -4439,7 +4439,7 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
             if (copy_src->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)
                 is_dynamic_has_rasterization = true;
     }
-    bool has_rasterization = copy_src->pRasterizationState ? (is_dynamic_has_rasterization || !copy_src->pRasterizationState->rasterizerDiscardEnable) : false;
+    const bool has_rasterization = copy_src->pRasterizationState ? (is_dynamic_has_rasterization || !copy_src->pRasterizationState->rasterizerDiscardEnable) : false;
     if (copy_src->pViewportState && (has_rasterization || is_graphics_library)) {
         pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src->pViewportState);
     } else

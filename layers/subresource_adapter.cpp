@@ -612,8 +612,8 @@ void ImageRangeGenerator::SetUpSubresIncrementer() {
     } else if (is_3d || CoversAllLayers(full_range, subres_range_)) {
         if (!linear_image) {
             // Linear images are defined by the implementation and so we can't assume the ordering we use here
-            bool all_mips = (subres_range_.baseMipLevel == 0) && (subres_range_.levelCount == full_range.levelCount);
-            bool all_aspects = subres_range_.aspectMask == full_range.aspectMask;
+            const bool all_mips = (subres_range_.baseMipLevel == 0) && (subres_range_.levelCount == full_range.levelCount);
+            const bool all_aspects = subres_range_.aspectMask == full_range.aspectMask;
             if (all_aspects && all_mips) {
                 set_initial_pos_fn_ = &ImageRangeGenerator::SetInitialPosAllSubres;
             } else {

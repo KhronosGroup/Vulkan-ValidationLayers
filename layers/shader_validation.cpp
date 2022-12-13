@@ -226,8 +226,8 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     }
 
     const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
-    bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
-                                   module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
+    const bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
+                                         module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
     if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
         skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
@@ -317,8 +317,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     }
 
     const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
-    bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
-                                   module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
+    const bool location_zero_has_alpha = output_zero && module_state.FindDef(output_zero->type_id) &&
+                                         module_state.GetComponentsConsumedByType(output_zero->type_id, false) == 4;
     if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
         skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
@@ -892,7 +892,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         // Check if the variable is a patch. Patches can also be members of blocks,
         // but if they are then the top-level arrayness has already been stripped
         // by the time GetComponentsConsumedByType gets to it.
-        bool is_patch = patch_i_ds.find(var.ID) != patch_i_ds.end();
+        const bool is_patch = patch_i_ds.find(var.ID) != patch_i_ds.end();
 
         if (var.storageClass == spv::StorageClassInput) {
             num_comp_in += module_state.GetComponentsConsumedByType(var.baseTypePtrID, strip_input_array_level && !is_patch);
@@ -3116,7 +3116,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
         const auto &binding = GetDescriptorBinding(pipeline.PipelineLayoutState().get(), use.first);
         unsigned required_descriptor_count;
-        bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         std::set<uint32_t> descriptor_types =
             TypeToDescriptorTypeSet(module_state, use.second.type_id, required_descriptor_count, is_khr);
 
@@ -3208,8 +3208,8 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const SHADER_MODULE_STATE &produ
 
     // Maps sorted by key (location); walk them together to find mismatches
     while ((outputs.size() > 0 && output_it != outputs.end()) || (inputs.size() && input_it != inputs.end())) {
-        bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
-        bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
+        const bool output_at_end = outputs.size() == 0 || output_it == outputs.end();
+        const bool input_at_end = inputs.size() == 0 || input_it == inputs.end();
         auto output_first = output_at_end ? std::make_pair(0u, 0u) : output_it->first;
         auto input_first = input_at_end ? std::make_pair(0u, 0u) : input_it->first;
 

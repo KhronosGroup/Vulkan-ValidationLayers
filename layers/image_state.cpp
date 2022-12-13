@@ -37,9 +37,9 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     const VkExternalFormatANDROID *external_format_android = LvlFindInChain<VkExternalFormatANDROID>(&create_info);
-    bool is_external_format_conversion = (external_format_android != nullptr && external_format_android->externalFormat != 0);
+    const bool is_external_format_conversion = (external_format_android != nullptr && external_format_android->externalFormat != 0);
 #else
-    bool is_external_format_conversion = false;
+    const bool is_external_format_conversion = false;
 #endif
 
     if (FormatIsColor(format) || FormatIsMultiplane(format) || is_external_format_conversion) {

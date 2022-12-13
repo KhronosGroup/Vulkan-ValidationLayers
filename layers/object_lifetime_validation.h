@@ -83,7 +83,7 @@ class ObjectLifetimes : public ValidationObject {
     template <typename T1>
     void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, std::shared_ptr<ObjTrackState> pNode) {
         uint64_t object_handle = HandleToUint64(object);
-        bool inserted = map.insert(object_handle, pNode);
+        const bool inserted = map.insert(object_handle, pNode);
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
             // a race condition in the app. Report an error and move on.
@@ -188,7 +188,7 @@ class ObjectLifetimes : public ValidationObject {
     template <typename T1>
     void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
         uint64_t object_handle = HandleToUint64(object);
-        bool custom_allocator = (pAllocator != nullptr);
+        const bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].contains(object_handle)) {
             auto pNewObjNode = std::make_shared<ObjTrackState>();
             pNewObjNode->object_type = object_type;
@@ -241,7 +241,7 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateDestroyObject(T1 object_handle, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
                                const char *expected_custom_allocator_code, const char *expected_default_allocator_code) const {
         auto object = HandleToUint64(object_handle);
-        bool custom_allocator = pAllocator != nullptr;
+        const bool custom_allocator = pAllocator != nullptr;
         bool skip = false;
 
         if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&

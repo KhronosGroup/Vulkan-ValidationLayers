@@ -1586,7 +1586,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '    }\n',
                 # VkGraphicsPipelineCreateInfo is special case because its pointers may be non-null but ignored
                 'VkGraphicsPipelineCreateInfo' :
-                    '    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;\n'
+                    '    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(in_struct->pNext) != nullptr;\n'
                     '    if (stageCount && in_struct->pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
@@ -1616,7 +1616,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            if (in_struct->pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)\n'
                     '                is_dynamic_has_rasterization = true;\n'
                     '    }\n'
-                    '    bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;\n'
+                    '    const bool has_rasterization = in_struct->pRasterizationState ? (is_dynamic_has_rasterization || !in_struct->pRasterizationState->rasterizerDiscardEnable) : false;\n'
                     '    if (in_struct->pViewportState && (has_rasterization || is_graphics_library)) {\n'
                     '        bool is_dynamic_viewports = false;\n'
                     '        bool is_dynamic_scissors = false;\n'
@@ -1801,7 +1801,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                 # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
                 'VkGraphicsPipelineCreateInfo' :
                     '    pNext = SafePnextCopy(copy_src.pNext);\n'
-                    '    bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);\n'
+                    '    const bool is_graphics_library = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(copy_src.pNext);\n'
                     '    if (stageCount && copy_src.pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
@@ -1831,7 +1831,7 @@ void CoreChecksOptickInstrumented::PreCallRecordQueuePresentKHR(VkQueue queue, c
                     '            if (copy_src.pDynamicState->pDynamicStates[i] == VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT)\n'
                     '                is_dynamic_has_rasterization = true;\n'
                     '    }\n'
-                    '    bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;\n'
+                    '    const bool has_rasterization = copy_src.pRasterizationState ? (is_dynamic_has_rasterization || !copy_src.pRasterizationState->rasterizerDiscardEnable) : false;\n'
                     '    if (copy_src.pViewportState && (has_rasterization || is_graphics_library)) {\n'
                     '        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);\n'
                     '    } else\n'

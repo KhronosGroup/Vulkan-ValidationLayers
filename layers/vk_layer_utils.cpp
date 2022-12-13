@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016, 2020-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2021 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2021 LunarG, Inc.
+/* Copyright (c) 2015-2016, 2020-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2020-2022 Valve Corporation
+ * Copyright (c) 2015-2016, 2020-2022 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     LogMessageTypeFlags report_flags = GetLayerOptionFlags(report_flags_key, log_msg_type_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
+    const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
 
     auto dbg_create_info = LvlInitStruct<VkDebugUtilsMessengerCreateInfoEXT>();
     dbg_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
@@ -169,7 +169,7 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     VkDebugReportFlagsEXT report_flags = GetLayerOptionFlags(report_flags_key, report_flags_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
+    const bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
         const char *log_filename = getLayerOption(log_filename_key.c_str());

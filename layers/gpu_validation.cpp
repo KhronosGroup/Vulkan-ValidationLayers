@@ -106,7 +106,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     GpuAssistedBase::CreateDevice(pCreateInfo);
 
     buffer_oob_enabled = GpuGetOption("khronos_validation.gpuav_buffer_oob", true);
-    bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
+    const bool validate_descriptor_indexing = GpuGetOption("khronos_validation.gpuav_descriptor_indexing", true);
     validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
     validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
     warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
@@ -142,7 +142,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     if (validate_descriptor_indexing) {
         descriptor_indexing = CheckForDescriptorIndexing(enabled_features);
     }
-    bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
+    const bool use_linear_output_pool = GpuGetOption("khronos_validation.vma_linear_output", true);
     if (use_linear_output_pool) {
         auto output_buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
         output_buffer_create_info.size = output_buffer_size;
@@ -941,7 +941,7 @@ bool GpuAssisted::InstrumentShader(const layer_data::span<const uint32_t> &input
         shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
     }
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
+    const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
@@ -953,8 +953,8 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                 csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+    const bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
+                                       csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);
@@ -1133,7 +1133,8 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pipeline_handle = it->second.pipeline;
         pgm = it->second.pgm;
     }
-    bool gen_full_message = GenerateValidationMessage(debug_record, validation_message, vuid_msg, oob_access, buffer_info, this);
+    const bool gen_full_message =
+        GenerateValidationMessage(debug_record, validation_message, vuid_msg, oob_access, buffer_info, this);
     if (gen_full_message) {
         UtilGenerateStageMessage(debug_record, stage_message);
         UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,

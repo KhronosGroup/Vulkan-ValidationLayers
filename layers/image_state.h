@@ -37,8 +37,7 @@ class SURFACE_STATE;
 class SWAPCHAIN_NODE;
 
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
-    bool is_equal = (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
-    return is_equal;
+    return (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
 }
 
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info, const VkImageSubresourceRange &range);

@@ -385,7 +385,7 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard) co
 
 
 bool CommandExecutionContext::ValidForSyncOps() const {
-    bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
+    const bool valid = GetCurrentEventsContext() && GetCurrentAccessContext();
     assert(valid);
     return valid;
 }
@@ -881,7 +881,7 @@ AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<AccessContext> &contexts, const AccessContext *external_context) {
     Reset();
     const auto &subpass_dep = dependencies[subpass];
-    bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
+    const bool has_barrier_from_external = subpass_dep.barrier_from_external.size() > 0U;
     prev_.reserve(subpass_dep.prev.size() + (has_barrier_from_external ? 1U : 0U));
     prev_by_subpass_.resize(subpass, nullptr);  // Can't be more prevs than the subpass we're on
     for (const auto &prev_dep : subpass_dep.prev) {
@@ -3202,7 +3202,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index,
         return DetectBarrierHazard(usage_index, queue_id, ordering.exec_scope, ordering.access_scope);
     } else {
         // Only check for WAW if there are no reads since last_write
-        bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
+        const bool usage_write_is_ordered = (usage_bit & ordering.access_scope).any();
         if (last_reads.size()) {
             // Look for any WAR hazards outside the ordered set of stages
             VkPipelineStageFlags2KHR ordered_stages = 0;
@@ -6491,9 +6491,8 @@ SyncEventState::IgnoreReason SyncEventState::IsIgnoredByWait(CMD_TYPE cmd_type, 
 }
 
 bool SyncEventState::HasBarrier(VkPipelineStageFlags2KHR stageMask, VkPipelineStageFlags2KHR exec_scope_arg) const {
-    bool has_barrier = (last_command == CMD_NONE) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) ||
-                       (barriers & exec_scope_arg) || (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-    return has_barrier;
+    return (last_command == CMD_NONE) || (stageMask & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) || (barriers & exec_scope_arg) ||
+           (barriers & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 }
 
 void SyncEventState::AddReferencedTags(ResourceUsageTagSet &referenced) const {

@@ -895,13 +895,13 @@ void CMD_BUFFER_STATE::UpdatePipelineState(CMD_TYPE cmd_type, const VkPipelineBi
 
             // We can skip updating the state if "nothing" has changed since the last validation.
             // See CoreChecks::ValidateCmdBufDrawState for more details.
-            bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
-                                          // Update if descriptor set (or contents) has changed
-                                          set_info.validated_set != descriptor_set.get() ||
-                                          set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                                          (!dev_data->disabled[image_layout_validation] &&
-                                           set_info.validated_set_image_layout_change_count != image_layout_change_count);
-            bool need_update =
+            const bool descriptor_set_changed = !reduced_map.IsManyDescriptors() ||
+                                                // Update if descriptor set (or contents) has changed
+                                                set_info.validated_set != descriptor_set.get() ||
+                                                set_info.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                                                (!dev_data->disabled[image_layout_validation] &&
+                                                 set_info.validated_set_image_layout_change_count != image_layout_change_count);
+            const bool need_update =
                 descriptor_set_changed ||
                 // Update if previous bindingReqMap doesn't include new bindingReqMap
                 !std::includes(set_info.validated_set_binding_req_map.begin(), set_info.validated_set_binding_req_map.end(),

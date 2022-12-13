@@ -450,10 +450,9 @@ class ResourceAccessState : public SyncStageAccess {
         ReadState(VkPipelineStageFlags2KHR stage_, SyncStageAccessFlags access_, VkPipelineStageFlags2KHR barriers_,
                   ResourceUsageTag tag_);
         bool operator==(const ReadState &rhs) const {
-            bool same = (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) &&
-                        (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
-                        (pending_dep_chain == rhs.pending_dep_chain);
-            return same;
+            return (stage == rhs.stage) && (access == rhs.access) && (barriers == rhs.barriers) &&
+                   (sync_stages == rhs.sync_stages) && (tag == rhs.tag) && (queue == rhs.queue) &&
+                   (pending_dep_chain == rhs.pending_dep_chain);
         }
         void Normalize() { pending_dep_chain = VK_PIPELINE_STAGE_2_NONE; }
         bool IsReadBarrierHazard(VkPipelineStageFlags2KHR src_exec_scope) const {
