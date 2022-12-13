@@ -218,15 +218,18 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     }
 
     if (rp2_supported && nullptr != rp2_vuid) {
-        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
-        error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
-        err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
-        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
-        error_monitor->VerifyFound();
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+        // For API version >= 1.2 where the extension was not enabled
+        if (vkCreateRenderPass2KHR) {
+            error_monitor->SetDesiredFailureMsg(kErrorBit, rp2_vuid);
+            err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
+            if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+            error_monitor->VerifyFound();
+        }
 
         // For api version >= 1.2, try core entrypoint
         PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
