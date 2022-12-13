@@ -721,17 +721,17 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
 
     VkSubpassDescription subpass = {0,
                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    (uint32_t)input.size(),
+                                    size32(input),
                                     input.data(),
-                                    (uint32_t)color.size(),
+                                    size32(color),
                                     color.data(),
                                     resolve.data(),
                                     &depth,
-                                    (uint32_t)preserve.size(),
+                                    size32(preserve),
                                     preserve.data()};
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, (uint32_t)attachments.size(), attachments.data(), 1u, &subpass,
-                                                      0u, nullptr);
+    auto rpci =
+        LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 1u, &subpass, 0u, nullptr);
 
     // Test too many color attachments
     const uint32_t max_color_attachments = m_device->props.limits.maxColorAttachments;
@@ -741,7 +741,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
     } else {
         std::vector<VkAttachmentReference> too_many_colors(max_color_attachments + 1, color[0]);
         VkSubpassDescription test_subpass = subpass;
-        test_subpass.colorAttachmentCount = (uint32_t)too_many_colors.size();
+        test_subpass.colorAttachmentCount = size32(too_many_colors);
         test_subpass.pColorAttachments = too_many_colors.data();
         test_subpass.pResolveAttachments = NULL;
         VkRenderPassCreateInfo test_rpci = rpci;
@@ -772,7 +772,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                          "VUID-VkSubpassDescription2-multisampledRenderToSingleSampled-06872");
 
     attachments[subpass.pDepthStencilAttachment->attachment].samples = attachments[subpass.pColorAttachments[0].attachment].samples;
-    subpass.colorAttachmentCount = (uint32_t)color.size();
+    subpass.colorAttachmentCount = size32(color);
 
     // Test resolve attachment with UNUSED color attachment
     color[0].attachment = VK_ATTACHMENT_UNUSED;
@@ -793,7 +793,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                          "VUID-VkSubpassDescription2-pResolveAttachments-03066");
 
     attachments[subpass.pColorAttachments[0].attachment].samples = VK_SAMPLE_COUNT_4_BIT;
-    subpass.colorAttachmentCount = (uint32_t)color.size();
+    subpass.colorAttachmentCount = size32(color);
     subpass.pDepthStencilAttachment = &depth;
 
     // Test resolve to a multi-sampled resolve attachment
@@ -838,8 +838,8 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         subpasses[0].inputAttachmentCount = 0;
         subpasses[1].inputAttachmentCount = 0;
         attachments[input[0].attachment].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        auto rpci_multipass = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, (uint32_t)attachments.size(), attachments.data(),
-                                                                    (uint32_t)subpasses.size(), subpasses.data(), 0u, nullptr);
+        auto rpci_multipass = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(),
+                                                                    size32(subpasses), subpasses.data(), 0u, nullptr);
 
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci_multipass, rp2Supported,
                              "VUID-VkSubpassDescription-loadOp-00846", "VUID-VkSubpassDescription2-loadOp-03064");
@@ -936,24 +936,16 @@ TEST_F(VkLayerTest, InvalidRenderPassCreateRenderPassShaderResolveQCOM) {
         {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
     };
 
-    VkSubpassDescription subpass = {0,
-                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    (uint32_t)input.size(),
-                                    input.data(),
-                                    (uint32_t)color.size(),
-                                    color.data(),
-                                    nullptr,
-                                    &depth,
-                                    0,
-                                    nullptr};
+    VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, size32(input), input.data(), size32(color), color.data(), nullptr, &depth, 0, nullptr};
 
     std::vector<VkSubpassDependency> dependency = {
         {0, 1, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_ACCESS_MEMORY_WRITE_BIT,
          VK_ACCESS_MEMORY_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT},
     };
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, (uint32_t)attachments.size(), attachments.data(), 1u, &subpass,
-                                                      0u, nullptr);
+    auto rpci =
+        LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 1u, &subpass, 0u, nullptr);
 
     // Create a resolve subpass where the pResolveattachments are not VK_ATTACHMENT_UNUSED
     VkSubpassDescription test_subpass = subpass;
@@ -973,8 +965,8 @@ TEST_F(VkLayerTest, InvalidRenderPassCreateRenderPassShaderResolveQCOM) {
         subpasses[1].pResolveAttachments = nullptr;
         subpasses[1].flags = 0;
 
-        auto test2_rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, (uint32_t)attachments.size(), attachments.data(), 2u,
-                                                                subpasses, (uint32_t)dependency.size(), dependency.data());
+        auto test2_rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachments), attachments.data(), 2u, subpasses,
+                                                                size32(dependency), dependency.data());
 
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &test2_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03343",
                              "VUID-VkRenderPassCreateInfo2-flags-04909");
@@ -2804,15 +2796,15 @@ TEST_F(VkLayerTest, InvalidRenderPassEndFragmentDensityMapOffsetQCOM) {
     };
     std::vector<uint32_t> preserve = {6};
 
-    auto subpass = LvlInitStruct<VkSubpassDescription2>(nullptr, 0u, VK_PIPELINE_BIND_POINT_GRAPHICS, 0u, (uint32_t)input.size(),
-                                                        input.data(), (uint32_t)color.size(), color.data(), resolve.data(), &depth,
-                                                        (uint32_t)preserve.size(), preserve.data());
+    auto subpass = LvlInitStruct<VkSubpassDescription2>(nullptr, 0u, VK_PIPELINE_BIND_POINT_GRAPHICS, 0u, size32(input),
+                                                        input.data(), size32(color), color.data(), resolve.data(), &depth,
+                                                        size32(preserve), preserve.data());
 
     // Create a renderPass with a single color attachment for fragment density map
     auto fragment_density_map_create_info = LvlInitStruct<VkRenderPassFragmentDensityMapCreateInfoEXT>();
     fragment_density_map_create_info.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_GENERAL;
 
-    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>(&fragment_density_map_create_info, 0u, (uint32_t)attachments.size(),
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo2>(&fragment_density_map_create_info, 0u, size32(attachments),
                                                        attachments.data(), 1u, &subpass, 0u, nullptr, 0u, nullptr);
 
     // Create rp2[0] without Multiview (zero viewMask), rp2[1] with Multiview
@@ -5220,47 +5212,48 @@ TEST_F(VkLayerTest, InvalidDynamicDescriptorSet) {
     }
 
     // Larger than buffer
-    offsets[0] = static_cast<uint32_t>(partial_size);
+    const uint32_t partial_size32 = static_cast<uint32_t>(partial_size);
+    offsets[0] = partial_size32;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[0] = 0;
 
     // Larger than buffer
-    offsets[1] = static_cast<uint32_t>(partial_size);
+    offsets[1] = partial_size32;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[1] = 0;
 
     // Makes the range the same size of buffer which is valid
-    offsets[2] = static_cast<uint32_t>(partial_size);
+    offsets[2] = partial_size32;
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
 
     // Now an extra increment larger than buffer
-    offsets[2] = static_cast<uint32_t>(partial_size * 2);
+    offsets[2] = partial_size32 * 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[2] = 0;
 
     // Same thing but with [3] to test descriptor arrays
-    offsets[3] = static_cast<uint32_t>(partial_size);
+    offsets[3] = partial_size32;
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
 
-    offsets[3] = static_cast<uint32_t>(partial_size * 2);
+    offsets[3] = partial_size32 * 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
     offsets[3] = 0;
 
     // range should be at end of buffer (same size)
-    offsets[4] = static_cast<uint32_t>(partial_size);
+    offsets[4] = partial_size32;
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
 
     // Now an extra increment larger than buffer
     // tests (offset + range + dynamic_offset)
-    offsets[4] = static_cast<uint32_t>(partial_size * 2);
+    offsets[4] = partial_size32 * 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 3, descriptorSets, 5, offsets);
     m_errorMonitor->VerifyFound();
@@ -7491,7 +7484,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     std::array<VkDescriptorBindingFlagsEXT, 2> flags = {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
     auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
-    flags_create_info.bindingCount = (uint32_t)flags.size();
+    flags_create_info.bindingCount = size32(flags);
     flags_create_info.pBindingFlags = flags.data();
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
@@ -8703,22 +8696,13 @@ TEST_F(VkLayerTest, SubpassInputNotBoundDescriptorSet) {
     inputAttachments.push_back(inputRef);
 
     const VkSubpassDescription subpass = {
-        0u,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        static_cast<uint32_t>(inputAttachments.size()),
-        inputAttachments.data(),
-        0,
-        nullptr,
-        0u,
-        nullptr,
-        0u,
+        0u,      VK_PIPELINE_BIND_POINT_GRAPHICS, size32(inputAttachments), inputAttachments.data(), 0, nullptr, 0u, nullptr, 0u,
         nullptr,
     };
     const std::vector<VkSubpassDescription> subpasses(1u, subpass);
 
-    const auto rpci =
-        LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<uint32_t>(attachmentDescs.size()), attachmentDescs.data(),
-                                              static_cast<uint32_t>(subpasses.size()), subpasses.data(), 0u, nullptr);
+    const auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
+                                                            size32(subpasses), subpasses.data(), 0u, nullptr);
     vk_testing::RenderPass rp(*m_device, rpci);
     ASSERT_TRUE(rp.initialized());
 
@@ -8884,7 +8868,7 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     const VkSubpassDescription subpass = {
         0u,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
-        static_cast<uint32_t>(inputAttachments.size()),
+        size32(inputAttachments),
         inputAttachments.data(),
         0,
         nullptr,
@@ -8895,9 +8879,8 @@ TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenAttachmentsAndDescriptorSets) 
     };
     const std::vector<VkSubpassDescription> subpasses(1u, subpass);
 
-    const auto renderPassInfo =
-        LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, static_cast<uint32_t>(attachmentDescs.size()), attachmentDescs.data(),
-                                              static_cast<uint32_t>(subpasses.size()), subpasses.data(), 0u, nullptr);
+    const auto renderPassInfo = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachmentDescs), attachmentDescs.data(),
+                                                                      size32(subpasses), subpasses.data(), 0u, nullptr);
     vk_testing::RenderPass rp;
     rp.init(*m_device, renderPassInfo);
 
@@ -9653,9 +9636,8 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentLayout) {
     std::vector<VkSubpassDescription> subpasses = {subpass0, subpass1, subpass2};
     std::vector<VkSubpassDependency> deps = {dep0, dep1, dep2};
 
-    auto rpci =
-        LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, (uint32_t)attachs.size(), attachs.data(), (uint32_t)subpasses.size(),
-                                              subpasses.data(), (uint32_t)deps.size(), deps.data());
+    auto rpci = LvlInitStruct<VkRenderPassCreateInfo>(nullptr, 0u, size32(attachs), attachs.data(), size32(subpasses),
+                                                      subpasses.data(), size32(deps), deps.data());
 
     // Current setup should be OK -- no attachment is both input and output in same subpass
     PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported);
@@ -12698,7 +12680,7 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
         VkPipelineLayout pipeline_layout;
         const std::array<VkDescriptorSetLayout, 2> set_layouts{dsl1, dsl2};
         auto plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-        plci.setLayoutCount = static_cast<uint32_t>(set_layouts.size());
+        plci.setLayoutCount = size32(set_layouts);
         plci.pSetLayouts = set_layouts.data();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008");
@@ -13565,7 +13547,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         };
         const auto dslci1 = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
-            nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, static_cast<uint32_t>(size(bindings)), bindings);
+            nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, size32(bindings), bindings);
         err = vk::CreateDescriptorSetLayout(m_device->device(), &dslci1, nullptr, &dsl1);
         ASSERT_VK_SUCCESS(err);
 
@@ -13580,8 +13562,7 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
         };
         const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
                                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
-        const auto dslci2 =
-            LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, static_cast<uint32_t>(size(bindings2)), bindings2);
+        const auto dslci2 = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, size32(bindings2), bindings2);
         err = vk::CreateDescriptorSetLayout(m_device->device(), &dslci2, nullptr, &dsl2);
         ASSERT_VK_SUCCESS(err);
 
@@ -13922,7 +13903,7 @@ TEST_F(VkLayerTest, DescriptorBufferInvalidBindPoint) {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         };
         const auto dslci1 = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
-            nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, static_cast<uint32_t>(size(bindings)), bindings);
+            nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, size32(bindings), bindings);
         VkDescriptorSetLayout dsl1;
         err = vk::CreateDescriptorSetLayout(m_device->device(), &dslci1, nullptr, &dsl1);
         ASSERT_VK_SUCCESS(err);
