@@ -184,6 +184,16 @@ size_t size(ElementT (&)[array_size]) {
     return array_size;
 }
 
+template <class ElementT, size_t array_size>
+uint32_t size32(ElementT (&)[array_size]) {
+    return static_cast<uint32_t>(array_size);
+}
+
+template <class Container>
+uint32_t size32(const Container &c) {
+    return static_cast<uint32_t>(c.size());
+}
+
 // Format search helper
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy);
 VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy);
