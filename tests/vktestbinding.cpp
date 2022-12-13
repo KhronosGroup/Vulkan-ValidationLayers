@@ -678,6 +678,12 @@ void Buffer::bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkD
     bind_memory(internal_mem_, mem_offset);
 }
 
+VkDeviceAddress Buffer::address() const {
+    auto bdai = LvlInitStruct<VkBufferDeviceAddressInfo>();
+    bdai.buffer = handle();
+    return vk::GetBufferDeviceAddress(device(), &bdai);
+}
+
 NON_DISPATCHABLE_HANDLE_DTOR(BufferView, vk::DestroyBufferView)
 
 void BufferView::init(const Device &dev, const VkBufferViewCreateInfo &info) {
