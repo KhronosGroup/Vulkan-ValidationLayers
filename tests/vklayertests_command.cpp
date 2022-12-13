@@ -2446,7 +2446,7 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
 }
 
 TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
-    // Image copy tests where format type and extents don't match
+    TEST_DESCRIPTION("Image copy tests where format type and extents don't match");
     AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     const bool copy_commands2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
