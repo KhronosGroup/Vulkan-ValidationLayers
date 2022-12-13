@@ -437,6 +437,12 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
         init(dev, info, mem_props, alloc_info_pnext);
     }
+    explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props,
+                    VkMemoryAllocateFlags alloc_flags) {
+        auto memflagsinfo = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+        memflagsinfo.flags = alloc_flags;
+        init(dev, info, mem_props, &memflagsinfo);
+    }
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info, NoMemT) { init_no_mem(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
 
@@ -525,6 +531,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         }
         return barrier;
     }
+
+    [[nodiscard]] VkDeviceAddress address() const;
 
   private:
     VkBufferCreateInfo create_info_;
