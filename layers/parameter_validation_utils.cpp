@@ -474,7 +474,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        bool maint1 = IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
+        const bool maint1 =
+            IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE_1_EXTENSION_NAME));
         bool negative_viewport =
             IsExtEnabledByCreateinfo(extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
         if (negative_viewport) {
@@ -6970,7 +6971,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                              "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR, "
                              "rayTracingPipelineShaderGroupHandleCaptureReplay must be enabled.");
         }
-        bool library_enabled = IsExtEnabled(device_extensions.vk_khr_pipeline_library);
+        const bool library_enabled = IsExtEnabled(device_extensions.vk_khr_pipeline_library);
         if (!library_enabled && (pCreateInfos[i].pLibraryInfo || pCreateInfos[i].pLibraryInterface)) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595",
                              "vkCreateRayTracingPipelinesKHR: If the VK_KHR_pipeline_library extension is not enabled, "

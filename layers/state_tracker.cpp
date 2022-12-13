@@ -2441,7 +2441,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice
                                                                         VkPipeline *pPipelines, VkResult result,
                                                                         void *crtpl_state_data) {
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
-    bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
+    const bool operation_is_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
     // This API may create pipelines regardless of the return value
 
     if (!operation_is_deferred) {
@@ -2614,7 +2614,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     auto pipe_state = Get<PIPELINE_STATE>(pipeline);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
         const auto *raster_state = pipe_state->RasterizationState();
-        bool rasterization_enabled = raster_state && !raster_state->rasterizerDiscardEnable;
+        const bool rasterization_enabled = raster_state && !raster_state->rasterizerDiscardEnable;
         const auto *viewport_state = pipe_state->ViewportState();
         const auto *dynamic_state = pipe_state->DynamicState();
         cb_state->status &= ~cb_state->static_status;
@@ -4654,7 +4654,7 @@ std::shared_ptr<SHADER_MODULE_STATE> ValidationStateTracker::CreateShaderModuleS
                                                                                      uint32_t unique_shader_id,
                                                                                      VkShaderModule handle) const {
     spv_target_env spirv_environment = PickSpirvEnv(api_version, IsExtEnabled(device_extensions.vk_khr_spirv_1_4));
-    bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
+    const bool is_spirv = (create_info.pCode[0] == spv::MagicNumber);
     return is_spirv ? std::make_shared<SHADER_MODULE_STATE>(create_info, handle, spirv_environment, unique_shader_id)
                     : std::make_shared<SHADER_MODULE_STATE>();
 }

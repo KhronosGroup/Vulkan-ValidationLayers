@@ -468,7 +468,7 @@ class vl_concurrent_unordered_map {
         ReadLockGuard lock(locks[h].lock);
 
         auto itr = maps[h].find(key);
-        bool found = itr != maps[h].end();
+        const bool found = itr != maps[h].end();
 
         if (found) {
             return FindResult(true, itr->second);
@@ -482,7 +482,7 @@ class vl_concurrent_unordered_map {
         WriteLockGuard lock(locks[h].lock);
 
         auto itr = maps[h].find(key);
-        bool found = itr != maps[h].end();
+        const bool found = itr != maps[h].end();
 
         if (found) {
             auto ret = FindResult(true, itr->second);

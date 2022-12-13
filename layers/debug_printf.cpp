@@ -116,7 +116,7 @@ bool DebugPrintf::InstrumentShader(const layer_data::span<const uint32_t> &input
     };
     optimizer.SetMessageConsumer(debug_printf_console_message_consumer);
     optimizer.RegisterPass(CreateInstDebugPrintfPass(desc_set_bind_index, unique_shader_module_id));
-    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
+    const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
     }
@@ -128,8 +128,8 @@ void DebugPrintf::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
-                                 csm_state->instrumented_pgm, &csm_state->unique_shader_id);
+    const bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
+                                       csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
         csm_state->instrumented_create_info.codeSize = csm_state->instrumented_pgm.size() * sizeof(uint32_t);

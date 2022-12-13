@@ -328,7 +328,7 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplate(
     StartReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplate");
     StartReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplate");
 
-    bool read_only = DsReadOnly(descriptorSet);
+    const bool read_only = DsReadOnly(descriptorSet);
     if (read_only) {
         StartReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     } else {
@@ -345,7 +345,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplate(
     FinishReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplate");
     FinishReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplate");
 
-    bool read_only = DsReadOnly(descriptorSet);
+    const bool read_only = DsReadOnly(descriptorSet);
     if (read_only) {
         FinishReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     } else {
@@ -362,7 +362,7 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplateKHR(
     StartReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplateKHR");
     StartReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplateKHR");
 
-    bool read_only = DsReadOnly(descriptorSet);
+    const bool read_only = DsReadOnly(descriptorSet);
     if (read_only) {
         StartReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     } else {
@@ -379,7 +379,7 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(
     FinishReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplateKHR");
     FinishReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplateKHR");
 
-    bool read_only = DsReadOnly(descriptorSet);
+    const bool read_only = DsReadOnly(descriptorSet);
     if (read_only) {
         FinishReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     } else {
@@ -824,9 +824,8 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesKHR(
         }
     };
 
-    bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
-
-    if(is_operation_deferred) {
+    const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && result == VK_OPERATION_DEFERRED_KHR);
+    if (is_operation_deferred) {
         auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
         if (wrap_handles) {
             deferredOperation = layer_data->Unwrap(deferredOperation);

@@ -1063,8 +1063,8 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 if (!view_state || view_state->Destroyed()) {
                     continue;
                 }
-                bool same_view = view_state->image_view() == image_view;
-                bool overlapping_view = image_view_state->OverlapSubresource(*view_state);
+                const bool same_view = view_state->image_view() == image_view;
+                const bool overlapping_view = image_view_state->OverlapSubresource(*view_state);
                 if (!same_view && !overlapping_view) {
                     continue;
                 }
@@ -1092,7 +1092,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     }
                 }
 
-                bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
+                const bool layout_read_only = IsImageLayoutReadOnly(subpass.layout);
                 bool write_attachment =
                     (subpass.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) > 0 &&
                     !layout_read_only;
@@ -1123,7 +1123,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                             report_data->FormatHandle(context.framebuffer).c_str(), att_index);
                     }
                 }
-                bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
+                const bool read_attachment = (subpass.usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) > 0;
                 if (read_attachment && descriptor_writable) {
                     if (same_view) {
                         auto set = context.descriptor_set.GetSet();
@@ -2078,8 +2078,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         usage = image_node->createInfo.usage;
     }
     if (stencil_usage_info) {
-        bool stencil_aspect = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) > 0;
-        bool depth_aspect = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) > 0;
+        const bool stencil_aspect = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) > 0;
+        const bool depth_aspect = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) > 0;
         if (stencil_aspect && !depth_aspect) {
             usage = stencil_usage_info->stencilUsage;
         } else if (stencil_aspect && depth_aspect) {
@@ -2113,7 +2113,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     // TODO : The various image aspect and format checks here are based on general spec language in 11.5 Image Views section under
     // vkCreateImageView(). What's the best way to create unique id for these cases?
     *error_code = kVUID_Core_DrawState_InvalidImageView;
-    bool ds = FormatIsDepthOrStencil(format);
+    const bool ds = FormatIsDepthOrStencil(format);
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             // Only Color bit must be set
@@ -2277,8 +2277,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             return IsExtEnabled(device_extensions.*(ext_layout.extension)) && (ext_layout.layout == image_layout);
         };
 
-        bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
-                            std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
+        const bool valid_layout = (std::find(valid_layouts.cbegin(), valid_layouts.cend(), image_layout) != valid_layouts.cend()) ||
+                                  std::any_of(extended_layouts.cbegin(), extended_layouts.cend(), is_layout);
 
         if (!valid_layout) {
             // The following works as currently all 3 descriptor types share the same set of valid layouts
@@ -3117,7 +3117,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         auto current_iter = dest_set->FindBinding(update->dstBinding);
         VkShaderStageFlags stage_flags = (*current_iter)->stage_flags;
         VkDescriptorType descriptor_type = (*current_iter)->type;
-        bool immutable_samplers = (*current_iter)->has_immutable_samplers;
+        const bool immutable_samplers = (*current_iter)->has_immutable_samplers;
         uint32_t dst_array_element = update->dstArrayElement;
 
         for (uint32_t i = 0; i < update->descriptorCount;) {

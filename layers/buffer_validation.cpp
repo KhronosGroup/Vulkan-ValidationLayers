@@ -1179,7 +1179,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &loc, CMD_BUFFER_STA
         // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
         // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
         auto handle_state = BarrierHandleState(*this, barrier);
-        bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
+        const bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
         if (!mode_concurrent) {
             const auto typed_handle = BarrierTypedHandle(barrier);
             core_error::LocationCapture loc_capture(loc);
@@ -3593,7 +3593,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
             ? (is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-01395" : "VUID-vkCmdCopyImage-dstImageLayout-01395")
             : (is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00134" : "VUID-vkCmdCopyImage-dstImageLayout-00134");
 
-    bool same_image = (src_image_state == dst_image_state);
+    const bool same_image = (src_image_state == dst_image_state);
     for (uint32_t i = 0; i < regionCount; ++i) {
         // When performing copy from and to same subresource, VK_IMAGE_LAYOUT_GENERAL is the only option
         const RegionType region = pRegions[i];
@@ -4503,7 +4503,7 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                            ? "VUID-vkCmdBlitImage-dstImageLayout-01399"
                            : "VUID-vkCmdBlitImage-dstImageLayout-00227");
 
-        bool same_image = (src_image_state == dst_image_state);
+        const bool same_image = (src_image_state == dst_image_state);
         for (uint32_t i = 0; i < regionCount; i++) {
             const RegionType region = pRegions[i];
             bool hit_error = false;
@@ -4840,7 +4840,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const CMD_BUFFE
                 // TODO: Set memory invalid which is in mem_tracker currently
             } else if (image_layout != initial_layout) {
                 const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
-                bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
+                const bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
                 if (!matches) {
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
@@ -5555,12 +5555,11 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange) const {
-    bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
-    bool is_2d_compatible =
+    const bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
+    const bool is_2d_compatible =
         image_state->createInfo.flags & (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT);
-    bool is_image_slicable =
-            (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
-    bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
+    const bool is_image_slicable = (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) && is_2d_compatible;
+    const bool is_3_d_to_2_d_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
 
     uint32_t image_layer_count;
 
@@ -5746,7 +5745,7 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
     const bool dst_ignored = QueueFamilyIsIgnored(dst_queue_family);
     if (val.KhrExternalMem()) {
         if (mode_concurrent) {
-            bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
+            const bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
             // this requirement is removed by VK_KHR_synchronization2
             if (!(src_ignored || dst_ignored) && !sync2) {
                 skip |= val.LogMsg(QueueError::kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
@@ -5769,7 +5768,7 @@ bool Validate(const CoreChecks *device_data, const CMD_BUFFER_STATE *cb_state, c
     } else {
         // No memory extension
         if (mode_concurrent) {
-            bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
+            const bool sync2 = device_data->enabled_features.core13.synchronization2 != 0;
             // this requirement is removed by VK_KHR_synchronization2
             if ((!src_ignored || !dst_ignored) && !sync2) {
                 skip |= val.LogMsg(QueueError::kSrcAndDestMustBeIgnore, src_queue_family, dst_queue_family);
@@ -6736,7 +6735,7 @@ bool CoreChecks::ValidateCmdCopyBufferBounds(const BUFFER_STATE *src_buffer_stat
 
     VkDeviceSize src_buffer_size = src_buffer_state->createInfo.size;
     VkDeviceSize dst_buffer_size = dst_buffer_state->createInfo.size;
-    bool are_buffers_sparse = src_buffer_state->sparse || dst_buffer_state->sparse;
+    const bool are_buffers_sparse = src_buffer_state->sparse || dst_buffer_state->sparse;
 
     for (uint32_t i = 0; i < regionCount; i++) {
         const RegionType region = pRegions[i];

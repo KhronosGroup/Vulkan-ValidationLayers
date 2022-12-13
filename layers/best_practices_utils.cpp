@@ -598,7 +598,7 @@ bool BestPractices::ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uin
         if (view_state) {
             const auto& ici = view_state->image_state->createInfo;
 
-            bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
+            const bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
 
             // The check for an image that should not be transient applies to all GPUs
             if (!attachment_should_be_transient && image_is_transient) {
@@ -1760,8 +1760,10 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
         for (uint32_t i = 0; i < imageMemoryBarrierCount; i++) {
             // read to read barriers
             const auto &image_barrier = pImageMemoryBarriers[i];
-            bool old_is_read_layout = std::find(read_layouts.begin(), read_layouts.end(), image_barrier.oldLayout) != read_layouts.end();
-            bool new_is_read_layout = std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
+            const bool old_is_read_layout =
+                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.oldLayout) != read_layouts.end();
+            const bool new_is_read_layout =
+                std::find(read_layouts.begin(), read_layouts.end(), image_barrier.newLayout) != read_layouts.end();
 
             if (old_is_read_layout && new_is_read_layout) {
                 skip |= LogPerformanceWarning(device, kVUID_BestPractices_PipelineBarrier_readToReadBarrier,
@@ -1897,8 +1899,10 @@ void BestPractices::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, 
             auto dynamic_state_begin = dynamic_state->pDynamicStates;
             auto dynamic_state_end = dynamic_state->pDynamicStates + dynamic_state->dynamicStateCount;
 
-            bool dynamic_depth_test_enable = std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) != dynamic_state_end;
-            bool dynamic_depth_func = std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
+            const bool dynamic_depth_test_enable =
+                std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE) != dynamic_state_end;
+            const bool dynamic_depth_func =
+                std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
 
             if (!dynamic_depth_test_enable) {
                 RecordSetDepthTestState(*cb, cb->nv.depth_compare_op, depth_stencil_state->depthTestEnable != VK_FALSE);
@@ -3290,7 +3294,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBuffer& cmd_st
             min_index = std::min(min_index, scan_index);
 
             if (!primitive_restart_enable || scan_index != primitive_restart_value) {
-                bool in_cache = post_transform_cache.query_cache(scan_index);
+                const bool in_cache = post_transform_cache.query_cache(scan_index);
                 // if the shaded vertex corresponding to the index is not in the PT-cache, we need to shade again
                 if (!in_cache) vertex_shade_count++;
             }
@@ -3544,7 +3548,7 @@ void BestPractices::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuff
     auto cmd_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
     auto* rp_state = cmd_state->activeRenderPass.get();
     auto* fb_state = cmd_state->activeFramebuffer.get();
-    bool is_secondary = cmd_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    const bool is_secondary = cmd_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
     if (rectCount == 0 || !rp_state) {
         return;
@@ -4024,10 +4028,10 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer) cons
     auto &render_pass_state = cmd->render_pass_state;
 
     // Does the number of draw calls classified as depth only surpass the vendor limit for a specified vendor
-    bool depth_only_arm = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
-                          render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
-    bool depth_only_img = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsIMG &&
-                          render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsIMG;
+    const bool depth_only_arm = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
+                                render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsArm;
+    const bool depth_only_img = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsIMG &&
+                                render_pass_state.numDrawCallsDepthOnly >= kDepthPrePassNumDrawCallsIMG;
 
     // Only send the warning when the vendor is enabled and a depth prepass is detected
     bool uses_depth =
