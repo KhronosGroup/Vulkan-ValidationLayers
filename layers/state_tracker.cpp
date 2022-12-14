@@ -3017,10 +3017,10 @@ void ValidationStateTracker::PostCallRecordCmdSetStencilWriteMask(VkCommandBuffe
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETSTENCILWRITEMASK, CB_DYNAMIC_STENCIL_WRITE_MASK_SET);
     if (faceMask == VK_STENCIL_FACE_FRONT_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
-        cb_state->write_mask_front = writeMask;
+        cb_state->dynamic_state_value.write_mask_front = writeMask;
     }
     if (faceMask == VK_STENCIL_FACE_BACK_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
-        cb_state->write_mask_back = writeMask;
+        cb_state->dynamic_state_value.write_mask_back = writeMask;
     }
 }
 
@@ -4902,7 +4902,8 @@ void ValidationStateTracker::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer
 void ValidationStateTracker::RecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                          CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    cb_state->RecordStateCmd(CMD_SETDEPTHTESTENABLEEXT, CB_DYNAMIC_DEPTH_TEST_ENABLE_SET);
+    cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_DEPTH_TEST_ENABLE_SET);
+    cb_state->dynamic_state_value.depth_test_enable = depthTestEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable) {
@@ -4917,6 +4918,7 @@ void ValidationStateTracker::RecordCmdSetDepthWriteEnable(VkCommandBuffer comman
                                                           CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_DEPTH_WRITE_ENABLE_SET);
+    cb_state->dynamic_state_value.depth_write_enable = depthWriteEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetDepthWriteEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthWriteEnable) {
@@ -4961,6 +4963,7 @@ void ValidationStateTracker::RecordCmdSetStencilTestEnable(VkCommandBuffer comma
                                                            CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_STENCIL_TEST_ENABLE_SET);
+    cb_state->dynamic_state_value.stencil_test_enable = stencilTestEnable;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetStencilTestEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable) {
@@ -4976,6 +4979,16 @@ void ValidationStateTracker::RecordCmdSetStencilOp(VkCommandBuffer commandBuffer
                                                    CMD_TYPE cmd_type) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(cmd_type, CB_DYNAMIC_STENCIL_OP_SET);
+    if (faceMask == VK_STENCIL_FACE_FRONT_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
+        cb_state->dynamic_state_value.fail_op_front = failOp;
+        cb_state->dynamic_state_value.pass_op_front = passOp;
+        cb_state->dynamic_state_value.depth_fail_op_front = depthFailOp;
+    }
+    if (faceMask == VK_STENCIL_FACE_BACK_BIT || faceMask == VK_STENCIL_FACE_FRONT_AND_BACK) {
+        cb_state->dynamic_state_value.fail_op_back = failOp;
+        cb_state->dynamic_state_value.pass_op_back = passOp;
+        cb_state->dynamic_state_value.depth_fail_op_back = depthFailOp;
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetStencilOpEXT(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,

@@ -175,10 +175,31 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     bool pipeline_bound = false;  // True if CmdBindPipeline has been called on this command buffer, false otherwise
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
+
+    // Dynamic State
     CBDynamicFlags status;                             // Track status of various bindings on cmd buffer
     CBDynamicFlags static_status;                      // All state bits provided by current graphics pipeline
                                                        // rather than dynamic state
     CBDynamicFlags dynamic_status;                     // dynamic state set up in pipeline
+    struct DynamicStateValue {
+        // VK_DYNAMIC_STATE_STENCIL_WRITE_MASK
+        uint32_t write_mask_front;
+        uint32_t write_mask_back;
+        // VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE
+        bool depth_write_enable;
+        // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
+        bool depth_test_enable;
+        // VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE
+        bool stencil_test_enable;
+        // VK_DYNAMIC_STATE_STENCIL_OP
+        VkStencilOp fail_op_front;
+        VkStencilOp pass_op_front;
+        VkStencilOp depth_fail_op_front;
+        VkStencilOp fail_op_back;
+        VkStencilOp pass_op_back;
+        VkStencilOp depth_fail_op_back;
+    } dynamic_state_value;
+
     std::string begin_rendering_func_name;
     // Currently storing "lastBound" objects on per-CB basis
     //  long-term may want to create caches of "lastBound" states and could have
@@ -234,9 +255,6 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // True iff any draw command recorded to this command buffer consumes dynamic viewport/scissor with count state.
     bool usedDynamicViewportCount;
     bool usedDynamicScissorCount;
-
-    uint32_t write_mask_front;
-    uint32_t write_mask_back;
 
     uint32_t initial_device_mask;
     VkPrimitiveTopology primitiveTopology;
