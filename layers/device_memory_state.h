@@ -58,7 +58,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
     const VkExternalMemoryHandleTypeFlags import_handle_type_flags;
     const bool unprotected;     // can't be used for protected memory
     const bool multi_instance;  // Allocated from MULTI_INSTANCE heap or having more than one deviceMask bit set
-    const layer_data::optional<DedicatedBinding> dedicated;
+    const std::optional<DedicatedBinding> dedicated;
 
     MemRange mapped_range;
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -70,7 +70,7 @@ class DEVICE_MEMORY_STATE : public BASE_NODE {
 
     DEVICE_MEMORY_STATE(VkDeviceMemory mem, const VkMemoryAllocateInfo *p_alloc_info, uint64_t fake_address,
                         const VkMemoryType &memory_type, const VkMemoryHeap &memory_heap,
-                        layer_data::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
+                        std::optional<DedicatedBinding> &&dedicated_binding, uint32_t physical_device_count);
 
     bool IsImport() const { return import_handle_type_flags != 0; }
     bool IsImportAHB() const {

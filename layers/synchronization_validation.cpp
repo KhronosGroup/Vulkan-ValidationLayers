@@ -28,7 +28,7 @@
 #include "sync_utils.h"
 
 // Utilities to DRY up Get... calls
-template <typename Map, typename Key = typename Map::key_type, typename RetVal = layer_data::optional<typename Map::mapped_type>>
+template <typename Map, typename Key = typename Map::key_type, typename RetVal = std::optional<typename Map::mapped_type>>
 RetVal GetMappedOptional(const Map &map, const Key &key) {
     RetVal ret_val;
     auto it = map.find(key);
@@ -7622,9 +7622,6 @@ struct QueuePresentCmdState {
     QueuePresentCmdState(const SignaledSemaphores &parent_semaphores) : signaled(parent_semaphores) {}
 };
 
-template <>
-thread_local layer_data::optional<QueuePresentCmdState> layer_data::TlsGuard<QueuePresentCmdState>::payload_{};
-
 bool SyncValidator::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {
     bool skip = false;
 
@@ -7761,9 +7758,6 @@ void SyncValidator::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR 
         UpdateFenceWaitInfo(fence, presented, acquire_tag);
     }
 }
-
-template <>
-thread_local layer_data::optional<QueueSubmitCmdState> layer_data::TlsGuard<QueueSubmitCmdState>::payload_{};
 
 bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                VkFence fence) const {

@@ -105,7 +105,7 @@ struct PipelineStageState {
     std::shared_ptr<const SHADER_MODULE_STATE> module_state;
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
-    layer_data::optional<Instruction> entrypoint;
+    std::optional<Instruction> entrypoint;
     // Used to map each descriptor binding to the OpVariable decorated with it
     // <(set, binding), OpVariable>
     using DescriptorUse = std::pair<DescriptorSlot, InterfaceVariable>;

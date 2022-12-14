@@ -877,7 +877,7 @@ class ValidationStateTracker : public ValidationObject {
                                                                          const VkMemoryAllocateInfo* p_alloc_info,
                                                                          uint64_t fake_address, const VkMemoryType& memory_type,
                                                                          const VkMemoryHeap& memory_heap,
-                                                                         layer_data::optional<DedicatedBinding>&& dedicated_binding,
+                                                                         std::optional<DedicatedBinding>&& dedicated_binding,
                                                                          uint32_t physical_device_count);
 
     // Memory mapping

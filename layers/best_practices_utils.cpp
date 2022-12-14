@@ -2039,7 +2039,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(VkCommandBuffer commandBuffer)
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         std::shared_ptr<IMAGE_VIEW_STATE> depth_image_view_shared_ptr;
         IMAGE_VIEW_STATE* depth_image_view = nullptr;
-        layer_data::optional<VkAttachmentLoadOp> load_op;
+        std::optional<VkAttachmentLoadOp> load_op;
 
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
             const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;
@@ -2101,7 +2101,7 @@ void BestPractices::RecordCmdEndRenderingCommon(VkCommandBuffer commandBuffer) {
     assert(rp);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        layer_data::optional<VkAttachmentStoreOp> store_op;
+        std::optional<VkAttachmentStoreOp> store_op;
 
         if (rp->use_dynamic_rendering || rp->use_dynamic_rendering_inherited) {
             const auto depth_attachment = rp->dynamic_rendering_begin_rendering_info.pDepthAttachment;

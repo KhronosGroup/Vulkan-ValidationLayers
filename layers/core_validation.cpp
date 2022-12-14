@@ -5543,7 +5543,7 @@ struct CommandBufferSubmitState {
             for (const auto &cmd_info : descriptor_set.second) {
                 // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                 std::vector<uint32_t> dynamic_offsets;
-                layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+                std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
 
                 std::string function = loc.StringFunc();
                 function += ", ";

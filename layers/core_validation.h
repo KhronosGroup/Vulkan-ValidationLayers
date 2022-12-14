@@ -191,7 +191,7 @@ struct SubresourceRangeErrorCodes {
     const char *base_mip_err, *mip_count_err, *base_layer_err, *layer_count_err;
 };
 
-typedef layer_data::unordered_map<const IMAGE_STATE*, layer_data::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+typedef layer_data::unordered_map<const IMAGE_STATE*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 // Much of the data stored in CMD_BUFFER_STATE is only used by core validation, and is
 // set up by Record calls in class CoreChecks. Because both the state tracker and
@@ -567,7 +567,7 @@ class CoreChecks : public ValidationStateTracker {
         const VkFramebuffer framebuffer;
         bool record_time_validate;
         const std::vector<uint32_t>& dynamic_offsets;
-        layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
+        std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>>& checked_layouts;
     };
     using DescriptorBindingInfo = std::pair<const uint32_t, DescriptorRequirement>;
 

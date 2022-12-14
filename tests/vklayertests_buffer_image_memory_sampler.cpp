@@ -9004,7 +9004,7 @@ TEST_F(VkLayerTest, InvalidImageViewLayerCount) {
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
-    layer_data::optional<VkImageObj> image_3d_array;
+    std::optional<VkImageObj> image_3d_array;
     image_ci.arrayLayers = 1;  // arrayLayers must be 1 for 3D images
     if (img_limits.maxArrayLayers >= image_ci.arrayLayers) {
         image_3d_array.emplace(m_device);

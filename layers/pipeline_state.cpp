@@ -42,7 +42,7 @@ static bool HasAtomicDescriptor(const std::vector<PipelineStageState::Descriptor
                        [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
 }
 
-static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, layer_data::optional<Instruction> entrypoint,
+static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, std::optional<Instruction> entrypoint,
                                       const SHADER_MODULE_STATE *module_state) {
     bool primitiverate_written = false;
     if (entrypoint && (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||

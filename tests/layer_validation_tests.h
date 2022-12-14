@@ -517,7 +517,7 @@ struct CreatePipelineHelper {
     std::unique_ptr<VkShaderObj> vs_;
     std::unique_ptr<VkShaderObj> fs_;
     VkLayerTest &layer_test_;
-    layer_data::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
+    std::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     CreatePipelineHelper(VkLayerTest &test, uint32_t color_attachments_count = 1u);
     ~CreatePipelineHelper();
 

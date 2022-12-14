@@ -367,14 +367,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type) const;
     std::string DescribeType(uint32_t type) const;
 
-    layer_data::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
+    std::optional<VkPrimitiveTopology> GetTopology(const Instruction &entrypoint) const;
     // TODO (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2450)
     // Since we currently don't support multiple entry points, this is a helper to return the topology
     // for the "first" (and for our purposes _only_) entrypoint.
-    layer_data::optional<VkPrimitiveTopology> GetTopology() const;
+    std::optional<VkPrimitiveTopology> GetTopology() const;
 
     const StructInfo *FindEntrypointPushConstant(char const *name, VkShaderStageFlagBits stageBits) const;
-    layer_data::optional<Instruction> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
+    std::optional<Instruction> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     bool FindLocalSize(const Instruction &entrypoint, uint32_t &local_size_x, uint32_t &local_size_y, uint32_t &local_size_z) const;
 
     const Instruction *GetConstantDef(uint32_t id) const;
@@ -392,7 +392,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     // State tracking helpers for collecting interface information
     void FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable &interface_var) const;
     std::vector<std::pair<DescriptorSlot, InterfaceVariable>> CollectInterfaceByDescriptorSlot(
-        layer_data::optional<Instruction> entrypoint) const;
+        std::optional<Instruction> entrypoint) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable> *out, bool is_array_of_verts, bool is_patch,
                                       const Instruction *variable_insn) const;

@@ -1756,14 +1756,14 @@ struct update_prefer_source {
         return false;
     }
 
-    layer_data::optional<T> insert(const T &src) const { return layer_data::optional<T>(layer_data::in_place, src); }
+    std::optional<T> insert(const T &src) const { return std::optional<T>(layer_data::in_place, src); }
 };
 
 template <typename T>
 struct update_prefer_dest {
     bool update(T &dst, const T &src) const { return false; }
 
-    layer_data::optional<T> insert(const T &src) const { return layer_data::optional<T>(layer_data::in_place, src); }
+    std::optional<T> insert(const T &src) const { return std::optional<T>(layer_data::in_place, src); }
 };
 
 template <typename RangeMap, typename SourceIterator = typename RangeMap::const_iterator>

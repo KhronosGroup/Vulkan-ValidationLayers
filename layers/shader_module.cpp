@@ -236,8 +236,8 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
     }
 }
 
-layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction& entrypoint) const {
-    layer_data::optional<VkPrimitiveTopology> result;
+std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const Instruction& entrypoint) const {
+    std::optional<VkPrimitiveTopology> result;
 
     auto entrypoint_id = entrypoint.Word(2);
     bool is_point_mode = false;
@@ -278,7 +278,7 @@ layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology(const
     return result;
 }
 
-layer_data::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() const {
+std::optional<VkPrimitiveTopology> SHADER_MODULE_STATE::GetTopology() const {
     if (static_data_.entry_points.size() > 0) {
         return GetTopology(static_data_.entry_points[0].entrypoint_insn);
     }
@@ -605,8 +605,8 @@ const SHADER_MODULE_STATE::StructInfo* SHADER_MODULE_STATE::FindEntrypointPushCo
     return nullptr;
 }
 
-layer_data::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
-    layer_data::optional<Instruction> result;
+std::optional<Instruction> SHADER_MODULE_STATE::FindEntrypoint(char const* name, VkShaderStageFlagBits stageBits) const {
+    std::optional<Instruction> result;
     for (const auto& entry_point : static_data_.entry_points) {
         if (entry_point.name.compare(name) == 0 && entry_point.stage == stageBits) {
             result.emplace(entry_point.entrypoint_insn);
@@ -1370,7 +1370,7 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
 }
 
 std::vector<std::pair<DescriptorSlot, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    layer_data::optional<Instruction> entrypoint) const {
+    std::optional<Instruction> entrypoint) const {
     std::vector<std::pair<DescriptorSlot, InterfaceVariable>> out;
     if (!entrypoint) {
         return out;
