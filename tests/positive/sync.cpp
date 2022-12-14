@@ -2305,49 +2305,6 @@ struct SemBufferRaceData {
     }
 };
 
-struct SemBufferRaceGetCounterData : public SemBufferRaceData {
-    SemBufferRaceGetCounterData(VkDeviceObj &dev_)
-        : SemBufferRaceData(dev_),
-          GetSemaphoreCounterValue(reinterpret_cast<PFN_vkGetSemaphoreCounterValueKHR>(
-              vk::GetDeviceProcAddr(dev.handle(), "vkGetSemaphoreCounterValueKHR"))) {}
-
-    VkResult Wait(uint64_t sem_value) {
-        uint64_t read_value = 0;
-        auto end_time = std::chrono::steady_clock::now() + std::chrono::nanoseconds(timeout_ns);
-        do {
-            auto err = GetSemaphoreCounterValue(dev.handle(), sem.handle(), &read_value);
-            if (err != VK_SUCCESS) {
-                return err;
-            }
-            if (bailout) {
-                return VK_SUCCESS;
-            }
-            if (read_value >= sem_value) {
-                return VK_SUCCESS;
-            }
-        } while (std::chrono::steady_clock::now() < end_time);
-        return VK_TIMEOUT;
-    }
-
-    PFN_vkGetSemaphoreCounterValueKHR GetSemaphoreCounterValue;
-};
-
-TEST_F(VkPositiveLayerTest, GetTimelineSemThreadRace) {
-    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
-    }
-    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
-        GTEST_SKIP() << "Timeline semaphore feature not supported.";
-    }
-
-    SemBufferRaceGetCounterData data(*m_device);
-
-    data.Run(*m_commandPool, *m_errorMonitor);
-}
-
 struct WaitTimelineSemThreadData : public SemBufferRaceData {
     WaitTimelineSemThreadData(VkDeviceObj &dev_)
         : SemBufferRaceData(dev_),
