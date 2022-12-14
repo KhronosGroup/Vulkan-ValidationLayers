@@ -108,8 +108,8 @@ class ImageSubresourceLayoutMap {
         // updater for splice()
         struct Updater {
             bool update(LayoutEntry& dst, const LayoutEntry& src) const { return dst.Update(src); }
-            layer_data::optional<LayoutEntry> insert(const LayoutEntry& src) const {
-                return layer_data::optional<LayoutEntry>(layer_data::in_place, src);
+            std::optional<LayoutEntry> insert(const LayoutEntry& src) const {
+                return std::optional<LayoutEntry>(layer_data::in_place, src);
             }
         };
     };

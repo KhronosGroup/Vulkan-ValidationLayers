@@ -366,9 +366,9 @@ void SEMAPHORE_STATE::EnqueueAcquire() {
     timeline_.emplace(payload, acquire);
 }
 
-layer_data::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &, bool)> &filter) const {
+std::optional<SemOp> SEMAPHORE_STATE::LastOp(const std::function<bool(const SemOp &, bool)> &filter) const {
     auto guard = ReadLock();
-    layer_data::optional<SemOp> result;
+    std::optional<SemOp> result;
 
     for (auto pos = timeline_.rbegin(); pos != timeline_.rend(); ++pos) {
         auto &timepoint = pos->second;

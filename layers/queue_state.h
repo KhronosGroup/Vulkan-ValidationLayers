@@ -152,7 +152,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
                 signal_op.emplace(op);
             }
         }
-        layer_data::optional<SemOp> signal_op;
+        std::optional<SemOp> signal_op;
         std::set<SemOp> wait_ops;
         std::promise<void> completed;
         std::shared_future<void> waiter;
@@ -230,7 +230,7 @@ class SEMAPHORE_STATE : public REFCOUNTED_NODE {
     void Retire(QUEUE_STATE *current_queue, uint64_t payload);
 
     // look for most recent / highest payload operation that matches
-    layer_data::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
+    std::optional<SemOp> LastOp(const std::function<bool(const SemOp &, bool is_pending)> &filter = nullptr) const;
 
     bool CanBeSignaled() const;
     bool CanBeWaited() const;

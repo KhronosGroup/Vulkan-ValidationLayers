@@ -4785,8 +4785,8 @@ struct GlobalLayoutUpdater {
         return false;
     }
 
-    layer_data::optional<VkImageLayout> insert(const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
-        layer_data::optional<VkImageLayout> result;
+    std::optional<VkImageLayout> insert(const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {
+        std::optional<VkImageLayout> result;
         if (src.current_layout != image_layout_map::kInvalidLayout) {
             result.emplace(src.current_layout);
         }

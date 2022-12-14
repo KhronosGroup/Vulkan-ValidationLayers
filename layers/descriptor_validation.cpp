@@ -737,7 +737,7 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 bool CoreChecks::ValidateDrawState(const DescriptorSet &descriptor_set, const BindingReqMap &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE &cb_state,
                                    const char *caller, const DrawDispatchVuid &vuids) const {
-    layer_data::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+    std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
     if (descriptor_set.GetTotalDescriptorCount() > cvdescriptorset::PrefilterBindRequestMap::kManyDescriptors_) {
         checked_layouts.emplace();
     }
