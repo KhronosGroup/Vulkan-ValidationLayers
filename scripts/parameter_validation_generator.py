@@ -790,6 +790,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 if flagBits in self.flagBits:
                     bits = self.flagBits[flagBits]
                     decl = 'const {} All{} = {};'.format(flag, flagBits, '|'.join(bits))
+                    if flag == 'VkPipelineStageFlags2':
+                            decl += '\n// mask of all the VK_PIPELINE_STAGE_*_SHADER_BIT stages\nconst VkPipelineStageFlagBits2 allVkPipelineShaderStageBits2 = %s;' % ' | '.join([bit for bit in bits if '_SHADER_BIT' in bit])
                     self.flag_values_definitions[flag] = Guarded(self.featureExtraProtect, decl)
                     if flag in self.flagBitsAsArray:
                         decl = '[[maybe_unused]] constexpr std::array All%s = {%s};' % (flag, ','.join(bits))

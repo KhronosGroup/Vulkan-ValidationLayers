@@ -23,8 +23,9 @@
 
 #include "generated/vk_enum_string_helper.h"
 #include "generated/chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
+#include "generated/enum_flag_bits.h"
 
 ReadLockGuard CoreChecks::ReadLock() const {
     if (fine_grained_locking) {
@@ -986,6 +987,21 @@ bool CoreChecks::ValidatePipelineStage(const LogObjectList &objlist, const Locat
 bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location &loc, VkQueueFlags queue_flags,
                                     VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
+
+    const auto expanded_pipeline_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);
+
+    if (!enabled_features.ray_query_features.rayQuery && (access_mask & VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)) {
+        const auto illegal_pipeline_stages = allVkPipelineShaderStageBits2 & ~VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+        if (stage_mask & illegal_pipeline_stages) {
+            // Select right vuid based on enabled extensions
+            const char *vuid = sync_vuid_maps::GetAccessMaskRayQueryVUIDSelector(loc, device_extensions);
+            const auto stages_string = sync_utils::StringPipelineStageFlags(stage_mask);
+            std::stringstream msg;
+            msg << loc.Message() << " contains pipeline stages " << stages_string << '.';
+            skip |= LogError(objlist, vuid, "%s", msg.str().c_str());
+        }
+    }
+
     // Early out if all commands set
     if ((stage_mask & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR) != 0) return skip;
 
@@ -993,12 +1009,12 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
     access_mask &= ~(VK_ACCESS_2_MEMORY_READ_BIT_KHR | VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
     if (access_mask == 0) return skip;
 
-    auto expanded_stages = sync_utils::ExpandPipelineStages(stage_mask, queue_flags);  // TODO:
-    auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_stages);
-    auto bad_accesses = (access_mask & ~valid_accesses);
+    const auto valid_accesses = sync_utils::CompatibleAccessMask(expanded_pipeline_stages);
+    const auto bad_accesses = (access_mask & ~valid_accesses);
     if (bad_accesses == 0) {
         return skip;
     }
+
     for (size_t i = 0; i < sizeof(bad_accesses) * 8; i++) {
         VkAccessFlags2KHR bit = (1ULL << i);
         if (bad_accesses & bit) {
@@ -1009,6 +1025,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
             skip |= LogError(objlist, vuid, "%s", msg.str().c_str());
         }
     }
+
     return skip;
 }
 
