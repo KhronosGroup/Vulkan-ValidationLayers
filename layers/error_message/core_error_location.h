@@ -213,6 +213,7 @@ struct LocationCapture {
 //  if key.recurse_field is true, key.field can match loc.field or any fields in loc.prev
 //
 struct Key {
+    // If a new member is added, update operator<
     Func function;
     Struct structure;
     Field field;
@@ -223,6 +224,7 @@ struct Key {
         : function(fn), structure(Struct::Empty), field(f), recurse_field(recurse) {}
 };
 
+bool operator<(const Key& lhs, const Key& rhs);
 bool operator==(const Key& key, const Location& loc);
 
 // Entry in a VUID lookup table

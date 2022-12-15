@@ -16,8 +16,11 @@
  * limitations under the License.
  */
 #include "sync/sync_vuid_maps.h"
+#include "sync/sync_utils.h"
 #include "error_message/core_error_location.h"
 #include "core_checks/core_validation.h"
+#include "generated/enum_flag_bits.h"
+
 #include <cassert>
 #include <array>
 #include <vector>
@@ -720,6 +723,7 @@ static const std::vector<Entry> kFineSyncCommon = {
     {Key(Struct::VkSubpassDependency2, Field::srcAccessMask), "VUID-VkSubpassDependency2-srcAccessMask-03088"},
     {Key(Struct::VkSubpassDependency2, Field::dstAccessMask), "VUID-VkSubpassDependency2-dstAccessMask-03089"},
 };
+
 const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR bit) {
     const auto &result = FindVUID(bit, loc, kAccessMask2Common);
     if (!result.empty()) {
@@ -732,6 +736,71 @@ const std::string &GetBadAccessFlagsVUID(const Location &loc, VkAccessFlags2KHR 
         return unhandled;
     }
     return result2;
+}
+
+struct Vuids0625X {
+    const char *ray_query_off_rt_on;
+    const char *ray_query_off_rt_off;
+    const char *ray_query_on_rt_on;
+    const char *ray_query_on_rt_off;
+};
+
+static const char *WhichAccessMaskRayQueryVuid(const DeviceExtensions &device_extensions, const Vuids0625X &vuids) {
+    // This logic is based on VUIDs 06254, 06255, 06256 and 06257 from commonvalidity/access_mask_2_common.adoc
+    if (!IsExtEnabled(device_extensions.vk_khr_ray_query)) {
+        if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline) || IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
+            return vuids.ray_query_off_rt_on;
+        } else {
+            return vuids.ray_query_off_rt_off;
+        }
+    } else {
+        if (IsExtEnabled(device_extensions.vk_khr_ray_tracing_pipeline) || IsExtEnabled(device_extensions.vk_nv_ray_tracing)) {
+            return vuids.ray_query_on_rt_on;
+        } else {
+            return vuids.ray_query_on_rt_off;
+        }
+    }
+}
+
+// commonvalidity/access_mask_2_common.adoc
+static const auto &GetLocation2VUIDMap() {
+    static const std::map<Key, Vuids0625X> Location2VUID{
+        {Key(Struct::VkMemoryBarrier2, Field::srcAccessMask),
+         {"VUID-VkMemoryBarrier2-srcAccessMask-06254", "VUID-VkMemoryBarrier2-srcAccessMask-06255",
+          "VUID-VkMemoryBarrier2-srcAccessMask-06256", "VUID-VkMemoryBarrier2-srcAccessMask-06257"}},
+
+        {Key(Struct::VkMemoryBarrier2, Field::dstAccessMask),
+         {"VUID-VkMemoryBarrier2-dstAccessMask-06254", "VUID-VkMemoryBarrier2-dstAccessMask-06255",
+          "VUID-VkMemoryBarrier2-dstAccessMask-06256", "VUID-VkMemoryBarrier2-dstAccessMask-06257"}},
+
+        {Key(Struct::VkBufferMemoryBarrier2, Field::srcAccessMask),
+         {"VUID-VkBufferMemoryBarrier2-srcAccessMask-06254", "VUID-VkBufferMemoryBarrier2-srcAccessMask-06255",
+          "VUID-VkBufferMemoryBarrier2-srcAccessMask-06256", "VUID-VkBufferMemoryBarrier2-srcAccessMask-06257"}},
+
+        {Key(Struct::VkBufferMemoryBarrier2, Field::dstAccessMask),
+         {"VUID-VkBufferMemoryBarrier2-dstAccessMask-06254", "VUID-VkBufferMemoryBarrier2-dstAccessMask-06255",
+          "VUID-VkBufferMemoryBarrier2-dstAccessMask-06256", "VUID-VkBufferMemoryBarrier2-dstAccessMask-06257"}},
+
+        {Key(Struct::VkImageMemoryBarrier2, Field::srcAccessMask),
+         {"VUID-VkImageMemoryBarrier2-srcAccessMask-06254", "VUID-VkImageMemoryBarrier2-srcAccessMask-06255",
+          "VUID-VkImageMemoryBarrier2-srcAccessMask-06256", "VUID-VkImageMemoryBarrier2-srcAccessMask-06257"}},
+
+        {Key(Struct::VkImageMemoryBarrier2, Field::dstAccessMask),
+         {"VUID-VkImageMemoryBarrier2-dstAccessMask-06254", "VUID-VkImageMemoryBarrier2-dstAccessMask-06255",
+          "VUID-VkImageMemoryBarrier2-dstAccessMask-06256", "VUID-VkImageMemoryBarrier2-dstAccessMask-06257"}},
+    };
+    assert(Location2VUID.size() == 6);
+    return Location2VUID;
+}
+
+const char *GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions) {
+    const Key key(loc.structure, loc.field);
+    auto it = GetLocation2VUIDMap().find(key);
+    if (it != GetLocation2VUIDMap().end()) {
+        const Vuids0625X &vuids = it->second;
+        return WhichAccessMaskRayQueryVuid(device_extensions, vuids);
+    }
+    return nullptr;
 }
 
 static const std::vector<Entry> kQueueCapErrors{

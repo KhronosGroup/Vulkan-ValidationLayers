@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "core_error_location.h"
+#include "utils/vk_layer_utils.h"
 #include <map>
 
 namespace core_error {
@@ -145,6 +146,34 @@ void Location::AppendFields(std::ostream& out) const {
     if (index != Location::kNoIndex) {
         out << "[" << index << "]";
     }
+}
+
+bool operator<(const Key& lhs, const Key& rhs) {
+    if (lhs.function < rhs.function) {
+        return true;
+    } else if (lhs.function > rhs.function) {
+        return false;
+    }
+
+    if (lhs.structure < rhs.structure) {
+        return true;
+    } else if (lhs.structure > rhs.structure) {
+        return false;
+    }
+
+    if (lhs.field < rhs.field) {
+        return true;
+    } else if (lhs.field > rhs.field) {
+        return false;
+    }
+
+    if (lhs.recurse_field < rhs.recurse_field) {
+        return true;
+    } else if (lhs.recurse_field > rhs.recurse_field) {
+        return false;
+    }
+
+    return false;
 }
 
 bool operator==(const Key& key, const Location& loc) {

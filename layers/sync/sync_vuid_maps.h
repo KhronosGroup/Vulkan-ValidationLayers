@@ -26,6 +26,7 @@ struct Location;
 
 struct DeviceExtensions;
 struct SubresourceRangeErrorCodes;
+struct DeviceExtensions;
 
 namespace sync_vuid_maps {
 using core_error::Location;
@@ -115,5 +116,7 @@ const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 enum class ShaderTileImageError { kShaderTileImageFeatureError, kShaderTileImageBarrierError };
 
 const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error);
+
+const char *GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions);
 
 }  // namespace sync_vuid_maps
