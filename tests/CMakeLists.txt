@@ -109,6 +109,11 @@ if (VVL_ENABLE_ASAN)
     target_link_libraries(vk_layer_validation_tests  PRIVATE "-fsanitize=address")
 endif()
 
+if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+    # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
+    set_target_properties(vk_layer_validation_tests PROPERTIES LINK_FLAGS /LARGEADDRESSAWARE)
+endif()
+
 if (NOT MSVC)
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
 endif()
