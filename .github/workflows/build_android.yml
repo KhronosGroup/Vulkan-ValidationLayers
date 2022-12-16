@@ -1,5 +1,5 @@
-# Copyright (c) 2021 Valve Corporation
-# Copyright (c) 2021 LunarG, Inc.
+# Copyright (c) 2021-2022 Valve Corporation
+# Copyright (c) 2021-2022 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ jobs:
         abi: [ arm64-v8a, armeabi-v7a ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
       - name: Build ValidationLayers
