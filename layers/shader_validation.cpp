@@ -3461,7 +3461,7 @@ bool CoreChecks::GroupHasValidIndex(const PIPELINE_STATE &pipeline, uint32_t gro
             const auto lib_stages = library_pipeline->GetShaderStages();
             const uint32_t stage_count = static_cast<uint32_t>(lib_stages.size());
             if (group < stage_count) {
-                return (stages[group].stage & stage) != 0;
+                return (lib_stages[group].stage & stage) != 0;
             }
             group -= stage_count;
         }
