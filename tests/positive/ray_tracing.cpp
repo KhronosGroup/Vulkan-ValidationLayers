@@ -262,3 +262,163 @@ TEST_F(PositiveRayTracing, StridedDeviceAddressRegion) {
 
     vk::DestroyPipeline(device(), raytracing_pipeline, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQueryEnabledRTXDisabled) {
+    TEST_DESCRIPTION(
+        "Test barrier with access ACCELERATION_STRUCTURE bit."
+        "Ray query extension is enabled, as well as feature."
+        "RTX extensions are disabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
+    ray_query_feature.rayQuery = VK_TRUE;
+    if (!CheckSynchronization2SupportAndInitState(this, &ray_query_feature)) {
+        GTEST_SKIP() << "Synchronization2 not supported";
+    }
+
+    GetPhysicalDeviceFeatures2(ray_query_feature);
+    if (!ray_query_feature.rayQuery) {
+        GTEST_SKIP() << "Ray query feature needs to be enabled";
+    }
+
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+
+    VkBufferObj buffer(*m_device, 32);
+
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier2>();
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.size = 32;
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier2>();
+    image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    auto dependency_info = LvlInitStruct<VkDependencyInfo>();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+    dependency_info.bufferMemoryBarrierCount = 1;
+    dependency_info.pBufferMemoryBarriers = &buffer_barrier;
+    dependency_info.imageMemoryBarrierCount = 1;
+    dependency_info.pImageMemoryBarriers = &image_barrier;
+
+    m_commandBuffer->begin();
+
+    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    image_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkPositiveLayerTest, RayTracingBarrierAccessMaskAccelerationStructureRayQueryEnabledRTXEnabled) {
+    TEST_DESCRIPTION(
+        "Test barrier with access ACCELERATION_STRUCTURE bit."
+        "Ray query extension is enabled, as well as feature."
+        "RTX extensions are disabled.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "Test requires at least Vulkan 1.1.";
+    }
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    auto ray_query_feature = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>();
+    ray_query_feature.rayQuery = VK_TRUE;
+    if (!CheckSynchronization2SupportAndInitState(this, &ray_query_feature)) {
+        GTEST_SKIP() << "Synchronization2 not supported";
+    }
+
+    GetPhysicalDeviceFeatures2(ray_query_feature);
+    if (!ray_query_feature.rayQuery) {
+        GTEST_SKIP() << "Ray query feature needs to be enabled";
+    }
+
+    auto mem_barrier = LvlInitStruct<VkMemoryBarrier2>();
+    mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+
+    VkBufferObj buffer(*m_device, 32);
+
+    auto buffer_barrier = LvlInitStruct<VkBufferMemoryBarrier2>();
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.size = 32;
+
+    VkImageObj image(m_device);
+    image.Init(128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(image.initialized());
+
+    auto image_barrier = LvlInitStruct<VkImageMemoryBarrier2>();
+    image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+    image_barrier.image = image.handle();
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    auto dependency_info = LvlInitStruct<VkDependencyInfo>();
+    dependency_info.memoryBarrierCount = 1;
+    dependency_info.pMemoryBarriers = &mem_barrier;
+    dependency_info.bufferMemoryBarrierCount = 1;
+    dependency_info.pBufferMemoryBarriers = &buffer_barrier;
+    dependency_info.imageMemoryBarrierCount = 1;
+    dependency_info.pImageMemoryBarriers = &image_barrier;
+
+    m_commandBuffer->begin();
+
+    // specify VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR as srcStageMask and dstStageMask
+    mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    buffer_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.srcStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    image_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    buffer_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    buffer_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    image_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    m_commandBuffer->PipelineBarrier2KHR(&dependency_info);
+
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+}
