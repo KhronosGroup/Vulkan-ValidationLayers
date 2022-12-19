@@ -397,7 +397,7 @@ VkImageViewCreateInfo SafeSaneImageViewCreateInfo(VkImage image, VkFormat format
 
 VkImageViewCreateInfo SafeSaneImageViewCreateInfo(const VkImageObj &image, VkFormat format, VkImageAspectFlags aspect_mask);
 
-bool CheckSynchronization2SupportAndInitState(VkRenderFramework *renderFramework);
+bool CheckSynchronization2SupportAndInitState(VkRenderFramework *render_framework, void *phys_dev_pnext = nullptr);
 
 // Dependent "false" type for the static assert, as GCC will evaluate
 // non-dependent static_asserts even for non-instantiated templates
