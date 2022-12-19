@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +24,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #pragma once
@@ -35,6 +37,7 @@
 #include "qfo_transfer.h"
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
+#include "video_session_state.h"
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {
@@ -165,7 +168,6 @@ struct DrawDispatchVuid {
 };
 
 struct ValidateBeginQueryVuids {
-    const char* vuid_queue_flags = kVUIDUndefined;
     const char* vuid_queue_feedback = kVUIDUndefined;
     const char* vuid_queue_occlusion = kVUIDUndefined;
     const char* vuid_precise = kVUIDUndefined;
@@ -179,10 +181,13 @@ struct ValidateBeginQueryVuids {
     const char* vuid_graphics_support = kVUIDUndefined;
     const char* vuid_compute_support = kVUIDUndefined;
     const char* vuid_primitives_generated = kVUIDUndefined;
+    const char* vuid_result_status_support = kVUIDUndefined;
+    const char* vuid_no_active_in_vc_scope = kVUIDUndefined;
+    const char* vuid_result_status_profile_in_vc_scope = kVUIDUndefined;
+    const char* vuid_vc_scope_query_type = kVUIDUndefined;
 };
 
 struct ValidateEndQueryVuids {
-    const char* vuid_queue_flags = kVUIDUndefined;
     const char* vuid_active_queries = kVUIDUndefined;
     const char* vuid_protected_cb = kVUIDUndefined;
 };
@@ -478,7 +483,35 @@ class CoreChecks : public ValidationStateTracker {
                                   const VkSampleLocationsInfoEXT* pSampleLocationsInfo2) const;
     bool InsideRenderPass(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
     bool OutsideRenderPass(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
-
+    bool InsideVideoCodingScope(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
+    bool OutsideVideoCodingScope(const CMD_BUFFER_STATE& cb_state, const char* apiName, const char* msgCode) const;
+    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
+                                                                     const VkVideoProfileListInfoKHR* profile_list) const;
+    std::vector<VkVideoFormatPropertiesKHR> GetVideoFormatProperties(VkImageUsageFlags image_usage,
+                                                                     const VkVideoProfileInfoKHR* profile) const;
+    bool IsVideoFormatSupported(VkFormat format, VkImageUsageFlags image_usage, const VkVideoProfileInfoKHR* profile) const;
+    bool ValidateVideoPictureResource(const VideoPictureResource& picture_resource, VkCommandBuffer cmdbuf,
+                                      const VIDEO_SESSION_STATE& vs_state, const char* api_name, const char* where,
+                                      const char* coded_offset_vuid = nullptr, const char* coded_extent_vuid = nullptr) const;
+    template <typename T1>
+    bool ValidateVideoProfileInfo(const VkVideoProfileInfoKHR* profile, const T1 object, const char* api_name,
+                                  const char* where) const;
+    template <typename T1>
+    bool ValidateVideoProfileListInfo(const VkVideoProfileListInfoKHR* profile_list, const T1 object, const char* api_name,
+                                      bool expect_decode_profile, const char* missing_decode_profile_msg_code,
+                                      bool expect_encode_profile, const char* missing_encode_profile_msg_code) const;
+    bool ValidateDecodeH264ParametersAddInfo(const VkVideoDecodeH264SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const char* api_name, const char* where,
+                                             const VkVideoDecodeH264SessionParametersCreateInfoKHR* create_info = nullptr,
+                                             const VIDEO_SESSION_PARAMETERS_STATE* template_state = nullptr) const;
+    bool ValidateDecodeH265ParametersAddInfo(const VkVideoDecodeH265SessionParametersAddInfoKHR* add_info, VkDevice device,
+                                             const char* api_name, const char* where,
+                                             const VkVideoDecodeH265SessionParametersCreateInfoKHR* create_info = nullptr,
+                                             const VIDEO_SESSION_PARAMETERS_STATE* template_state = nullptr) const;
+    bool ValidateVideoDecodeInfoH264(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+    bool ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+    bool ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
+    bool ValidateReferencePictureUseCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
                                   const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
@@ -791,6 +824,10 @@ class CoreChecks : public ValidationStateTracker {
     bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state,
                            const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           bool* error) const;
+
+    bool VerifyImageLayout(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const VkImageSubresourceRange& range,
+                           VkImageLayout explicit_layout, const char* caller, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
     bool CheckItgExtent(const CMD_BUFFER_STATE& cb_state, const VkExtent3D* extent, const VkOffset3D* offset,
@@ -1666,6 +1703,35 @@ class CoreChecks : public ValidationStateTracker {
                                               uint32_t index) const override;
     void PreCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                             uint32_t index) override;
+
+    bool PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                              const VkVideoProfileInfoKHR* pVideoProfile,
+                                                              VkVideoCapabilitiesKHR* pCapabilities) const override;
+    bool PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
+        VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo,
+        uint32_t* pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR* pVideoFormatProperties) const override;
+    bool PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator,
+                                              VkVideoSessionKHR* pVideoSession) const override;
+    bool PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                               const VkAllocationCallbacks* pAllocator) const override;
+    bool PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                  uint32_t bindSessionMemoryInfoCount,
+                                                  const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) const override;
+    bool PreCallValidateCreateVideoSessionParametersKHR(VkDevice device, const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkVideoSessionParametersKHR* pVideoSessionParameters) const override;
+    bool PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
+                                                        const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) const override;
+    bool PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters,
+                                                         const VkAllocationCallbacks* pAllocator) const override;
+    bool PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                               const VkVideoBeginCodingInfoKHR* pBeginInfo) const override;
+    bool PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                             const VkVideoEndCodingInfoKHR* pEndCodingInfo) const override;
+    bool PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                                 const VkVideoCodingControlInfoKHR* pCodingControlInfo) const override;
+    bool PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) const override;
 
     bool PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDiscardRectangle,
                                                   uint32_t discardRectangleCount,

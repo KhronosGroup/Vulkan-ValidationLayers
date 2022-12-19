@@ -2336,6 +2336,38 @@ void VkCommandBufferObj::EndRendering() {
     vkCmdEndRenderingKHR(handle());
 }
 
+void VkCommandBufferObj::BeginVideoCoding(const VkVideoBeginCodingInfoKHR &beginInfo) {
+    static PFN_vkCmdBeginVideoCodingKHR vkCmdBeginVideoCodingKHR =
+        (PFN_vkCmdBeginVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdBeginVideoCodingKHR");
+    ASSERT_NE(vkCmdBeginVideoCodingKHR, nullptr);
+
+    vkCmdBeginVideoCodingKHR(handle(), &beginInfo);
+}
+
+void VkCommandBufferObj::ControlVideoCoding(const VkVideoCodingControlInfoKHR &controlInfo) {
+    static PFN_vkCmdControlVideoCodingKHR vkCmdControlVideoCodingKHR =
+        (PFN_vkCmdControlVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdControlVideoCodingKHR");
+    ASSERT_NE(vkCmdControlVideoCodingKHR, nullptr);
+
+    vkCmdControlVideoCodingKHR(handle(), &controlInfo);
+}
+
+void VkCommandBufferObj::DecodeVideo(const VkVideoDecodeInfoKHR &decodeInfo) {
+    static PFN_vkCmdDecodeVideoKHR vkCmdDecodeVideoKHR =
+        (PFN_vkCmdDecodeVideoKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDecodeVideoKHR");
+    ASSERT_NE(vkCmdDecodeVideoKHR, nullptr);
+
+    vkCmdDecodeVideoKHR(handle(), &decodeInfo);
+}
+
+void VkCommandBufferObj::EndVideoCoding(const VkVideoEndCodingInfoKHR &endInfo) {
+    static PFN_vkCmdEndVideoCodingKHR vkCmdEndVideoCodingKHR =
+        (PFN_vkCmdEndVideoCodingKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdEndVideoCodingKHR");
+    ASSERT_NE(vkCmdEndVideoCodingKHR, nullptr);
+
+    vkCmdEndVideoCodingKHR(handle(), &endInfo);
+}
+
 void VkCommandBufferObj::SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport *pViewports) {
     vk::CmdSetViewport(handle(), firstViewport, viewportCount, pViewports);
 }

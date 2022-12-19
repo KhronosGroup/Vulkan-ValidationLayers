@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #include "buffer_state.h"
 #include "layer_chassis_dispatch.h"
@@ -43,8 +45,10 @@ static VkMemoryRequirements GetMemoryRequirements(ValidationStateTracker *dev_da
 BUFFER_STATE::BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo)
     : BINDABLE(buff, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleType(pCreateInfo)),
-          safe_create_info(pCreateInfo),
-          createInfo(*safe_create_info.ptr()),
-          deviceAddress(0),
-          requirements(GetMemoryRequirements(dev_data, buff)),
-          memory_requirements_checked(false) {}
+      safe_create_info(pCreateInfo),
+      createInfo(*safe_create_info.ptr()),
+      deviceAddress(0),
+      requirements(GetMemoryRequirements(dev_data, buff)),
+      memory_requirements_checked(false),
+      supported_video_profiles(
+          dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {}

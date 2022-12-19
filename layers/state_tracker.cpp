@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Shannon McPherson <shannon@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #include <algorithm>
@@ -1622,6 +1624,29 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
             }
         }
     }
+
+    // Query queue family extension properties
+    {
+        uint32_t queue_family_count = (uint32_t)physical_device_state->queue_family_properties.size();
+        auto &ext_props = queue_family_ext_props;
+        ext_props.resize(queue_family_count);
+
+        std::vector<VkQueueFamilyProperties2> props(queue_family_count, LvlInitStruct<VkQueueFamilyProperties2>());
+
+        if (dev_ext.vk_khr_video_queue) {
+            for (uint32_t i = 0; i < queue_family_count; ++i) {
+                ext_props[i].query_result_status_props = LvlInitStruct<VkQueueFamilyQueryResultStatusPropertiesKHR>();
+                ext_props[i].video_props = LvlInitStruct<VkQueueFamilyVideoPropertiesKHR>(&ext_props[i].query_result_status_props);
+                props[i].pNext = &ext_props[i].video_props;
+            }
+        }
+
+        if (api_version >= VK_API_VERSION_1_1) {
+            DispatchGetPhysicalDeviceQueueFamilyProperties2(physical_device, &queue_family_count, props.data());
+        } else if (IsExtEnabled(instance_extensions.vk_khr_get_physical_device_properties2)) {
+            DispatchGetPhysicalDeviceQueueFamilyProperties2KHR(physical_device, &queue_family_count, props.data());
+        }
+    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
@@ -2279,8 +2304,9 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
         DispatchGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(physical_device_state->PhysDev(), perf, &n_perf_pass);
     }
 
-    Add(std::make_shared<QUERY_POOL_STATE>(*pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb));
-
+    Add(std::make_shared<QUERY_POOL_STATE>(
+        *pQueryPool, pCreateInfo, index_count, n_perf_pass, has_cb, has_rb,
+        video_profile_cache_.Get(this, LvlFindInChain<VkVideoProfileInfoKHR>(pCreateInfo->pNext))));
 }
 
 void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -3400,6 +3426,78 @@ void ValidationStateTracker::PostCallRecordCmdWriteAccelerationStructuresPropert
     cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
 }
 
+void ValidationStateTracker::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator,
+                                                                 VkVideoSessionKHR *pVideoSession, VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    auto profile_desc = video_profile_cache_.Get(this, pCreateInfo->pVideoProfile);
+    Add(std::make_shared<VIDEO_SESSION_STATE>(this, *pVideoSession, pCreateInfo, std::move(profile_desc)));
+}
+
+void ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
+    VkDevice device, VkVideoSessionKHR videoSession, uint32_t *pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR *pMemoryRequirements, VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    assert(vs_state);
+
+    if (pMemoryRequirements != nullptr) {
+        if (*pMemoryRequirementsCount > vs_state->memory_bindings_queried) {
+            vs_state->memory_bindings_queried = *pMemoryRequirementsCount;
+        }
+    } else {
+        vs_state->memory_binding_count_queried = true;
+    }
+}
+
+void ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                                     uint32_t bindSessionMemoryInfoCount,
+                                                                     const VkBindVideoSessionMemoryInfoKHR *pBindSessionMemoryInfos,
+                                                                     VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    assert(vs_state);
+
+    for (uint32_t i = 0; i < bindSessionMemoryInfoCount; ++i) {
+        vs_state->BindMemoryBindingIndex(pBindSessionMemoryInfos[i].memoryBindIndex);
+    }
+}
+
+void ValidationStateTracker::PreCallRecordDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                                 const VkAllocationCallbacks *pAllocator) {
+    Destroy<VIDEO_SESSION_STATE>(videoSession);
+}
+
+void ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(VkDevice device,
+                                                                           const VkVideoSessionParametersCreateInfoKHR *pCreateInfo,
+                                                                           const VkAllocationCallbacks *pAllocator,
+                                                                           VkVideoSessionParametersKHR *pVideoSessionParameters,
+                                                                           VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    Add(std::make_shared<VIDEO_SESSION_PARAMETERS_STATE>(
+        *pVideoSessionParameters, pCreateInfo, Get<VIDEO_SESSION_STATE>(pCreateInfo->videoSession),
+        Get<VIDEO_SESSION_PARAMETERS_STATE>(pCreateInfo->videoSessionParametersTemplate)));
+}
+
+void ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(VkDevice device,
+                                                                           VkVideoSessionParametersKHR videoSessionParameters,
+                                                                           const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo,
+                                                                           VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    Get<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters)->Update(pUpdateInfo);
+}
+
+void ValidationStateTracker::PreCallRecordDestroyVideoSessionParametersKHR(VkDevice device,
+                                                                           VkVideoSessionParametersKHR videoSessionParameters,
+                                                                           const VkAllocationCallbacks *pAllocator) {
+    Destroy<VIDEO_SESSION_PARAMETERS_STATE>(videoSessionParameters);
+}
+
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                              VkResult result) {
@@ -3453,6 +3551,12 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer
                                                                  const VkSubpassBeginInfo *pSubpassBeginInfo) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->BeginRenderPass(CMD_BEGINRENDERPASS2KHR, pRenderPassBegin, pSubpassBeginInfo->contents);
+}
+
+void ValidationStateTracker::PreCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                                                 const VkVideoBeginCodingInfoKHR *pBeginInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->BeginVideoCoding(pBeginInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
@@ -3558,6 +3662,12 @@ void ValidationStateTracker::PostCallRecordCmdEndRenderPass2(VkCommandBuffer com
                                                              const VkSubpassEndInfo *pSubpassEndInfo) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->EndRenderPass(CMD_ENDRENDERPASS2);
+}
+
+void ValidationStateTracker::PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                                                const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->EndVideoCoding(pEndCodingInfo);
 }
 
 void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
@@ -5346,6 +5456,18 @@ void ValidationStateTracker::PostCallRecordCmdSetCoverageReductionModeNV(VkComma
                                                                          VkCoverageReductionModeNV coverageReductionMode) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETCOVERAGEREDUCTIONMODENV, CB_DYNAMIC_COVERAGE_REDUCTION_MODE_NV_SET);
+}
+
+void ValidationStateTracker::PostCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
+                                                                    const VkVideoCodingControlInfoKHR *pCodingControlInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->ControlVideoCoding(pCodingControlInfo);
+}
+
+void ValidationStateTracker::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
+                                                             const VkVideoDecodeInfoKHR *pDecodeInfo) {
+    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
+    cb_state->DecodeVideo(pDecodeInfo);
 }
 
 void ValidationStateTracker::RecordGetBufferDeviceAddress(const VkBufferDeviceAddressInfo *pInfo, VkDeviceAddress address) {

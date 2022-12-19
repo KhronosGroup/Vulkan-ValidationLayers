@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +24,12 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #pragma once
 #include "base_node.h"
 #include "query_state.h"
+#include "video_session_state.h"
 #include "command_validation.h"
 #include "hash_vk_types.h"
 #include "subresource_adapter.h"
@@ -40,6 +43,8 @@
 struct SUBPASS_INFO;
 class FRAMEBUFFER_STATE;
 class RENDER_PASS_STATE;
+class VIDEO_SESSION_STATE;
+class VIDEO_SESSION_PARAMETERS_STATE;
 class CoreChecks;
 class ValidationStateTracker;
 
@@ -329,6 +334,12 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     // Used for Best Practices tracking
     uint32_t small_indexed_draw_call_count;
 
+    // Video coding related state tracking
+    std::shared_ptr<VIDEO_SESSION_STATE> bound_video_session;
+    std::shared_ptr<VIDEO_SESSION_PARAMETERS_STATE> bound_video_session_parameters;
+    BoundVideoPictureResources bound_video_picture_resources;
+    VideoSessionUpdateMap video_session_updates;
+
     bool transform_feedback_active{false};
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
@@ -441,6 +452,11 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
     void EndRenderPass(CMD_TYPE cmd_type);
 
     void BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo);
+
+    void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo);
+    void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);
+    void ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo);
+    void DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo);
 
     void ExecuteCommands(layer_data::span<const VkCommandBuffer> secondary_command_buffers);
 

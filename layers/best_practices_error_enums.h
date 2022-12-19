@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
  *
  * Author: Camden Stocker <camden@lunarg.com>
  * Author: Nadav Geva <nadav.geva@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #ifndef BEST_PRACTICES_ERROR_ENUMS_H_
@@ -85,6 +87,12 @@
     "UNASSIGNED-BestPractices-vkBindImageMemory-requirements-not-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_BindAccelNV_NoMemReqQuery =
     "UNASSIGNED-BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
+[[maybe_unused]] static const char *kVUID_BestPractices_GetVideoSessionMemReqCountNotRetrieved =
+    "UNASSIGNED-BestPractices-vkGetVideoSessionMemoryRequirementsKHR-count-not-retrieved";
+[[maybe_unused]] static const char *kVUID_BestPractices_BindVideoSessionMemReqCountNotRetrieved =
+    "UNASSIGNED-BestPractices-vkBindVideoSessionMemoryKHR-requirements-count-not-retrieved";
+[[maybe_unused]] static const char *kVUID_BestPractices_BindVideoSessionMemReqNotAllBindingsRetrieved =
+    "UNASSIGNED-BestPractices-vkBindVideoSessionMemoryKHR-requirements-not-all-retrieved";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_VtxIndexOutOfBounds =
     "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
 [[maybe_unused]] static const char *kVUID_BestPractices_DrawState_ClearCmdBeforeDraw =

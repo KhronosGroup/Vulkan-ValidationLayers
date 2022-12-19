@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +24,11 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
+#include "video_session_state.h"
 #include "state_tracker.h"
 #include "image_state.h"
 
@@ -192,6 +195,12 @@ void CMD_BUFFER_STATE::ResetCBState() {
 
     qfo_transfer_image_barriers.Reset();
     qfo_transfer_buffer_barriers.Reset();
+
+    // Clean up video specific states
+    bound_video_session = nullptr;
+    bound_video_session_parameters = nullptr;
+    bound_video_picture_resources.clear();
+    video_session_updates.clear();
 
     // Clean up the label data
     debug_label.Reset();
@@ -653,6 +662,200 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
             stencilResolveAttachment = res.first->get();
+        }
+    }
+}
+
+void CMD_BUFFER_STATE::BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo) {
+    RecordCmd(CMD_BEGINVIDEOCODINGKHR);
+    bound_video_session = dev_data->Get<VIDEO_SESSION_STATE>(pBeginInfo->videoSession);
+    bound_video_session_parameters = dev_data->Get<VIDEO_SESSION_PARAMETERS_STATE>(pBeginInfo->videoSessionParameters);
+
+    if (bound_video_session) {
+        // Connect this video session to cmdBuffer
+        if (!dev_data->disabled[command_buffer_state]) {
+            AddChild(bound_video_session);
+        }
+    }
+
+    if (bound_video_session_parameters) {
+        // Connect this video session parameters object to cmdBuffer
+        if (!dev_data->disabled[command_buffer_state]) {
+            AddChild(bound_video_session_parameters);
+        }
+    }
+
+    if (pBeginInfo && pBeginInfo->pReferenceSlots) {
+        std::vector<VideoReferenceSlot> expected_slots{};
+        expected_slots.reserve(pBeginInfo->referenceSlotCount);
+
+        for (uint32_t i = 0; i < pBeginInfo->referenceSlotCount; ++i) {
+            // Initialize the set of bound video picture resources
+            if (pBeginInfo->pReferenceSlots[i].pPictureResource != nullptr) {
+                int32_t slot_index = pBeginInfo->pReferenceSlots[i].slotIndex;
+                VideoPictureResource res(dev_data, *pBeginInfo->pReferenceSlots[i].pPictureResource);
+                bound_video_picture_resources.emplace(std::make_pair(res, slot_index));
+            }
+
+            if (pBeginInfo->pReferenceSlots[i].slotIndex >= 0) {
+                expected_slots.emplace_back(dev_data, *bound_video_session->profile, pBeginInfo->pReferenceSlots[i], false);
+            }
+        }
+
+        // Enqueue submission time validation
+        video_session_updates[bound_video_session->videoSession()].emplace_back(
+            [expected_slots](const ValidationStateTracker *dev_data, const VIDEO_SESSION_STATE *vs_state,
+                             VideoSessionDeviceState &dev_state, bool do_validate) {
+                bool skip = false;
+
+                if (do_validate) {
+                    for (const auto &slot : expected_slots) {
+                        if (!dev_state.IsSlotActive(slot.index)) {
+                            skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-slotIndex-07239",
+                                                       "DPB slot index %d is not active in %s", slot.index,
+                                                       dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                        } else if (slot.resource && !dev_state.IsSlotPicture(slot.index, slot.resource)) {
+                            skip |= dev_data->LogError(
+                                vs_state->Handle(), "VUID-vkCmdBeginVideoCodingKHR-pPictureResource-07265",
+                                "DPB slot index %d of %s is not currently associated with the specified "
+                                "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
+                                slot.index, dev_data->report_data->FormatHandle(vs_state->Handle()).c_str(),
+                                dev_data->report_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                                slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x, slot.resource.coded_offset.y,
+                                slot.resource.coded_extent.width, slot.resource.coded_extent.height);
+                        }
+                    }
+                }
+
+                for (const auto &slot : expected_slots) {
+                    if (!slot.resource) {
+                        dev_state.Deactivate(slot.index);
+                    }
+                }
+
+                return skip;
+            });
+    }
+}
+
+void CMD_BUFFER_STATE::EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo) {
+    RecordCmd(CMD_ENDVIDEOCODINGKHR);
+    bound_video_session = nullptr;
+    bound_video_session_parameters = nullptr;
+    bound_video_picture_resources.clear();
+}
+
+void CMD_BUFFER_STATE::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pControlInfo) {
+    RecordCmd(CMD_CONTROLVIDEOCODINGKHR);
+
+    if (pControlInfo && bound_video_session) {
+        auto control_flags = pControlInfo->flags;
+
+        if (control_flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
+            // Remove DPB slot index association for bound video picture resources
+            for (auto &binding : bound_video_picture_resources) {
+                binding.second = -1;
+            }
+        }
+
+        // Enqueue submission time validation and device state changes
+        video_session_updates[bound_video_session->videoSession()].emplace_back(
+            [control_flags](const ValidationStateTracker *dev_data, const VIDEO_SESSION_STATE *vs_state,
+                            VideoSessionDeviceState &dev_state, bool do_validate) {
+                bool skip = false;
+                bool reset_session = control_flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR;
+                if (do_validate) {
+                    if (!reset_session && !dev_state.IsInitialized()) {
+                        skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdControlVideoCodingKHR-flags-07017",
+                                                   "Bound video session %s is uninitialized",
+                                                   dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                    }
+                }
+
+                // Reset video session at submission time, if requested
+                if (reset_session) {
+                    dev_state.Reset();
+                }
+
+                return skip;
+            });
+    }
+}
+
+void CMD_BUFFER_STATE::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
+    RecordCmd(CMD_DECODEVIDEOKHR);
+
+    if (bound_video_session && pDecodeInfo) {
+        VideoReferenceSlot setup_slot{};
+        if (pDecodeInfo->pSetupReferenceSlot && pDecodeInfo->pSetupReferenceSlot->pPictureResource) {
+            setup_slot = VideoReferenceSlot(dev_data, *bound_video_session->profile, *pDecodeInfo->pSetupReferenceSlot);
+            // Update bound video picture resource DPB slot index association
+            bound_video_picture_resources[setup_slot.resource] = setup_slot.index;
+        }
+
+        // Need to also validate the picture kind (frame, top field, bottom field) for H.264
+        bool need_reference_slot_validation = (bound_video_session->GetCodecOp() == VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR);
+
+        std::vector<VideoReferenceSlot> reference_slots{};
+        if (need_reference_slot_validation) {
+            reference_slots.reserve(pDecodeInfo->referenceSlotCount);
+
+            for (uint32_t i = 0; i < pDecodeInfo->referenceSlotCount; ++i) {
+                reference_slots.emplace_back(dev_data, *bound_video_session->profile, pDecodeInfo->pReferenceSlots[i]);
+            }
+        }
+
+        // Enqueue submission time validation and device state changes
+        video_session_updates[bound_video_session->videoSession()].emplace_back(
+            [setup_slot, reference_slots](const ValidationStateTracker *dev_data, const VIDEO_SESSION_STATE *vs_state,
+                                          VideoSessionDeviceState &dev_state, bool do_validate) {
+                bool skip = false;
+                if (do_validate) {
+                    if (!dev_state.IsInitialized()) {
+                        skip |= dev_data->LogError(vs_state->Handle(), "VUID-vkCmdDecodeVideoKHR-None-07011", "%s is uninitialized",
+                                                   dev_data->report_data->FormatHandle(vs_state->Handle()).c_str());
+                    }
+
+                    const auto log_picture_kind_error = [&](const VideoReferenceSlot &slot, const char *vuid,
+                                                            const char *picture_kind) -> bool {
+                        return dev_data->LogError(
+                            vs_state->Handle(), vuid,
+                            "DPB slot index %d of %s does not currently contain a %s with the specified "
+                            "video picture resource: %s, layer %u, offset (%u,%u), extent (%u,%u)",
+                            slot.index, dev_data->report_data->FormatHandle(vs_state->Handle()).c_str(), picture_kind,
+                            dev_data->report_data->FormatHandle(slot.resource.image_state->Handle()).c_str(),
+                            slot.resource.range.baseArrayLayer, slot.resource.coded_offset.x, slot.resource.coded_offset.y,
+                            slot.resource.coded_extent.width, slot.resource.coded_extent.height);
+                    };
+
+                    for (const auto &slot : reference_slots) {
+                        if (slot.picture_id.IsFrame() &&
+                            !dev_state.IsSlotPicture(slot.index, VideoPictureID::Frame(), slot.resource)) {
+                            skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07266", "frame");
+                        }
+                        if (slot.picture_id.ContainsTopField() &&
+                            !dev_state.IsSlotPicture(slot.index, VideoPictureID::TopField(), slot.resource)) {
+                            skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07267", "top field");
+                        }
+                        if (slot.picture_id.ContainsBottomField() &&
+                            !dev_state.IsSlotPicture(slot.index, VideoPictureID::BottomField(), slot.resource)) {
+                            skip |= log_picture_kind_error(slot, "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07268", "bottom field");
+                        }
+                    }
+                }
+
+                // Set up reference slot at submission time, if requested
+                if (setup_slot) {
+                    dev_state.Activate(setup_slot.index, setup_slot.picture_id, setup_slot.resource);
+                }
+
+                return skip;
+            });
+
+        // Update active query indices
+        for (auto &query : activeQueries) {
+            uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
+            query.active_query_index += op_count;
         }
     }
 }
@@ -1307,6 +1510,14 @@ void CMD_BUFFER_STATE::Submit(uint32_t perf_submit_pass) {
     for (const auto &eventStagePair : local_event_to_stage_map) {
         auto event_state = dev_data->Get<EVENT_STATE>(eventStagePair.first);
         event_state->stageMask = eventStagePair.second;
+    }
+
+    for (const auto &it : video_session_updates) {
+        auto video_session_state = dev_data->Get<VIDEO_SESSION_STATE>(it.first);
+        auto device_state = video_session_state->DeviceStateWrite();
+        for (const auto &function : it.second) {
+            function(nullptr, video_session_state.get(), *device_state, /*do_validate*/ false);
+        }
     }
 }
 

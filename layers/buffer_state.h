@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +25,14 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #pragma once
 #include "device_memory_state.h"
 #include "range_vector.h"
 
 class ValidationStateTracker;
+class VideoProfileDesc;
 
 class BUFFER_STATE : public BINDABLE {
   public:
@@ -39,6 +42,8 @@ class BUFFER_STATE : public BINDABLE {
     const VkMemoryRequirements requirements;
     const VkMemoryRequirements *const memory_requirements_pointer = &requirements;
     bool memory_requirements_checked;
+
+    layer_data::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
     BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo);
 

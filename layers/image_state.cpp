@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #include "image_state.h"
 #include "pipeline_state.h"
@@ -239,7 +241,10 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
-      store_device_as_workaround(dev_data->device) {}  // TODO REMOVE WHEN encoder can be const
+      store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
+      supported_video_profiles(
+          dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
+}
 
 IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                          VkSwapchainKHR swapchain, uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
@@ -268,7 +273,9 @@ IMAGE_STATE::IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, co
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
       fragment_encoder(nullptr),
-      store_device_as_workaround(dev_data->device) {  // TODO REMOVE WHEN encoder can be const
+      store_device_as_workaround(dev_data->device),  // TODO REMOVE WHEN encoder can be const
+      supported_video_profiles(
+          dev_data->video_profile_cache_.Get(dev_data, LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
     fragment_encoder =
         std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 }
