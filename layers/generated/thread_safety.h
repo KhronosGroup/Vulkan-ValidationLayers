@@ -352,12 +352,8 @@ public:
     counter<VkSurfaceKHR> c_VkSurfaceKHR;
     counter<VkSwapchainKHR> c_VkSwapchainKHR;
     counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     counter<VkVideoSessionKHR> c_VkVideoSessionKHR;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     counter<VkVideoSessionParametersKHR> c_VkVideoSessionParametersKHR;
-#endif
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -422,12 +418,8 @@ public:
           c_VkSurfaceKHR("VkSurfaceKHR", kVulkanObjectTypeSurfaceKHR, this),
           c_VkSwapchainKHR("VkSwapchainKHR", kVulkanObjectTypeSwapchainKHR, this),
           c_VkValidationCacheEXT("VkValidationCacheEXT", kVulkanObjectTypeValidationCacheEXT, this),
-#ifdef VK_ENABLE_BETA_EXTENSIONS
           c_VkVideoSessionKHR("VkVideoSessionKHR", kVulkanObjectTypeVideoSessionKHR, this),
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
           c_VkVideoSessionParametersKHR("VkVideoSessionParametersKHR", kVulkanObjectTypeVideoSessionParametersKHR, this),
-#endif
 
 
 
@@ -526,12 +518,8 @@ WRAPPER(VkShaderModule)
 WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER_PARENT_INSTANCE(VkSwapchainKHR)
 WRAPPER(VkValidationCacheEXT)
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkVideoSessionKHR)
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkVideoSessionParametersKHR)
-#endif
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
@@ -3171,8 +3159,6 @@ void PostCallRecordCreateWin32SurfaceKHR(
     VkResult                                    result) override;
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PreCallRecordCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
@@ -3279,9 +3265,6 @@ void PreCallRecordCmdControlVideoCodingKHR(
 void PostCallRecordCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) override;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -3290,7 +3273,6 @@ void PreCallRecordCmdDecodeVideoKHR(
 void PostCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoDecodeInfoKHR*                 pDecodeInfo) override;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void PreCallRecordCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4380,9 +4362,6 @@ void PostCallRecordCmdDrawIndexedIndirectCountAMD(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
 void PreCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
@@ -5095,9 +5074,6 @@ void PostCallRecordGetCalibratedTimestampsEXT(
     uint64_t*                                   pTimestamps,
     uint64_t*                                   pMaxDeviation,
     VkResult                                    result) override;
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_USE_PLATFORM_GGP
 #endif // VK_USE_PLATFORM_GGP

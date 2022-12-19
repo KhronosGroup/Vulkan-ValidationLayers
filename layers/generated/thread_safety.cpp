@@ -4638,8 +4638,6 @@ void ThreadSafety::PostCallRecordCreateWin32SurfaceKHR(
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
@@ -4816,9 +4814,6 @@ void ThreadSafety::PostCallRecordCmdControlVideoCodingKHR(
     FinishWriteObject(commandBuffer, "vkCmdControlVideoCodingKHR");
     // Host access to commandBuffer must be externally synchronized
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4833,7 +4828,6 @@ void ThreadSafety::PostCallRecordCmdDecodeVideoKHR(
     FinishWriteObject(commandBuffer, "vkCmdDecodeVideoKHR");
     // Host access to commandBuffer must be externally synchronized
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -6487,9 +6481,6 @@ void ThreadSafety::PostCallRecordCmdDrawIndexedIndirectCountAMD(
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
 void ThreadSafety::PreCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
@@ -7571,9 +7562,6 @@ void ThreadSafety::PostCallRecordGetCalibratedTimestampsEXT(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device, "vkGetCalibratedTimestampsEXT");
 }
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_USE_PLATFORM_GGP
 #endif // VK_USE_PLATFORM_GGP

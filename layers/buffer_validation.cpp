@@ -5198,7 +5198,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         if (video_profiles) {
             for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
                 if (video_profiles->pProfiles[i].videoCodecOperation &
-                    (VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT | VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_EXT)) {
+                    (VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR | VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR)) {
                     has_decode_codec_operation = true;
                     break;
                 }

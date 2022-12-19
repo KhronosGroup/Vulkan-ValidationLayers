@@ -123,12 +123,8 @@ typedef struct VkLayerInstanceDispatchTable_ {
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
     // ---- VK_KHR_video_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceVideoCapabilitiesKHR GetPhysicalDeviceVideoCapabilitiesKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetPhysicalDeviceVideoFormatPropertiesKHR GetPhysicalDeviceVideoFormatPropertiesKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_get_physical_device_properties2 extension commands
     PFN_vkGetPhysicalDeviceFeatures2KHR GetPhysicalDeviceFeatures2KHR;
@@ -491,41 +487,19 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCreateSharedSwapchainsKHR CreateSharedSwapchainsKHR;
 
     // ---- VK_KHR_video_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateVideoSessionKHR CreateVideoSessionKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkDestroyVideoSessionKHR DestroyVideoSessionKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkGetVideoSessionMemoryRequirementsKHR GetVideoSessionMemoryRequirementsKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkBindVideoSessionMemoryKHR BindVideoSessionMemoryKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateVideoSessionParametersKHR CreateVideoSessionParametersKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkUpdateVideoSessionParametersKHR UpdateVideoSessionParametersKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkDestroyVideoSessionParametersKHR DestroyVideoSessionParametersKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdBeginVideoCodingKHR CmdBeginVideoCodingKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdEndVideoCodingKHR CmdEndVideoCodingKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdControlVideoCodingKHR CmdControlVideoCodingKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_video_decode_queue extension commands
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCmdDecodeVideoKHR CmdDecodeVideoKHR;
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
     // ---- VK_KHR_dynamic_rendering extension commands
     PFN_vkCmdBeginRenderingKHR CmdBeginRenderingKHR;

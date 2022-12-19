@@ -493,8 +493,6 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_validation_cache{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_divisor{kNotEnabled};
     ExtEnabled vk_ext_vertex_input_dynamic_state{kNotEnabled};
-    ExtEnabled vk_ext_video_decode_h264{kNotEnabled};
-    ExtEnabled vk_ext_video_decode_h265{kNotEnabled};
     ExtEnabled vk_ext_video_encode_h264{kNotEnabled};
     ExtEnabled vk_ext_video_encode_h265{kNotEnabled};
     ExtEnabled vk_ext_ycbcr_2plane_444_formats{kNotEnabled};
@@ -584,6 +582,8 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_timeline_semaphore{kNotEnabled};
     ExtEnabled vk_khr_uniform_buffer_standard_layout{kNotEnabled};
     ExtEnabled vk_khr_variable_pointers{kNotEnabled};
+    ExtEnabled vk_khr_video_decode_h264{kNotEnabled};
+    ExtEnabled vk_khr_video_decode_h265{kNotEnabled};
     ExtEnabled vk_khr_video_decode_queue{kNotEnabled};
     ExtEnabled vk_khr_video_encode_queue{kNotEnabled};
     ExtEnabled vk_khr_video_queue{kNotEnabled};
@@ -900,14 +900,6 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_vertex_input_dynamic_state, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-            {VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_video_decode_h264, {{
-                           {&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-            {VK_EXT_VIDEO_DECODE_H265_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_video_decode_h265, {{
-                           {&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_video_encode_h264, {{
                            {&DeviceExtensions::vk_khr_video_encode_queue, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME}}})},
 #endif
@@ -1115,22 +1107,22 @@ struct DeviceExtensions : public InstanceExtensions {
             {VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_variable_pointers, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_storage_buffer_storage_class, VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME}}})},
-#ifdef VK_ENABLE_BETA_EXTENSIONS
+            {VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_decode_h264, {{
+                           {&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
+            {VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_decode_h265, {{
+                           {&DeviceExtensions::vk_khr_video_decode_queue, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME}}})},
             {VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_decode_queue, {{
                            {&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
-#endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_encode_queue, {{
                            {&DeviceExtensions::vk_khr_video_queue, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME}}})},
 #endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
             {VK_KHR_VIDEO_QUEUE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_video_queue, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_synchronization2, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
-#endif
             {VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_vulkan_memory_model, {})},
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             {VK_KHR_WIN32_KEYED_MUTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_win32_keyed_mutex, {{
@@ -1516,12 +1508,6 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME,
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-    VK_EXT_VIDEO_DECODE_H264_EXTENSION_NAME,
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-    VK_EXT_VIDEO_DECODE_H265_EXTENSION_NAME,
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_EXT_VIDEO_ENCODE_H264_EXTENSION_NAME,
 #endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -1630,15 +1616,13 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
     VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,
     VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
-#ifdef VK_ENABLE_BETA_EXTENSIONS
+    VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME,
+    VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME,
     VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME,
-#endif
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME,
 #endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_KHR_VIDEO_QUEUE_EXTENSION_NAME,
-#endif
     VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_KHR_WIN32_KEYED_MUTEX_EXTENSION_NAME,

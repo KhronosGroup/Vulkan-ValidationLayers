@@ -746,18 +746,12 @@ void PostCallRecordCreateWin32SurfaceKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkVideoProfileInfoKHR*                pVideoProfile,
     VkVideoCapabilitiesKHR*                     pCapabilities,
     VkResult                                    result) override;
 
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -767,10 +761,6 @@ void PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkResult                                    result) override;
 
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
@@ -778,10 +768,6 @@ void PostCallRecordCreateVideoSessionKHR(
     VkVideoSessionKHR*                          pVideoSession,
     VkResult                                    result) override;
 
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
@@ -791,10 +777,6 @@ void PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkResult                                    result) override;
 
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordBindVideoSessionMemoryKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
@@ -802,10 +784,6 @@ void PostCallRecordBindVideoSessionMemoryKHR(
     const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos,
     VkResult                                    result) override;
 
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordCreateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -815,18 +793,12 @@ void PostCallRecordCreateVideoSessionParametersKHR(
     VkResult                                    result) override;
 
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void PostCallRecordUpdateVideoSessionParametersKHR(
     VkDevice                                    device,
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo,
     VkResult                                    result) override;
 
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,

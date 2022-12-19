@@ -3476,8 +3476,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKH
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkVideoProfileInfoKHR*                pVideoProfile,
@@ -3487,9 +3485,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -3501,9 +3496,6 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCreateVideoSessionKHR(
     VkDevice                                    device,
@@ -3526,9 +3518,6 @@ void ObjectLifetimes::PostCallRecordCreateVideoSessionKHR(
     CreateObject(*pVideoSession, kVulkanObjectTypeVideoSessionKHR, pAllocator);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateDestroyVideoSessionKHR(
     VkDevice                                    device,
@@ -3549,9 +3538,6 @@ void ObjectLifetimes::PreCallRecordDestroyVideoSessionKHR(
     RecordDestroyObject(videoSession, kVulkanObjectTypeVideoSessionKHR);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
@@ -3564,9 +3550,6 @@ bool ObjectLifetimes::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateBindVideoSessionMemoryKHR(
     VkDevice                                    device,
@@ -3584,9 +3567,6 @@ bool ObjectLifetimes::PreCallValidateBindVideoSessionMemoryKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCreateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -3613,9 +3593,6 @@ void ObjectLifetimes::PostCallRecordCreateVideoSessionParametersKHR(
     CreateObject(*pVideoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR, pAllocator);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateUpdateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -3627,9 +3604,6 @@ bool ObjectLifetimes::PreCallValidateUpdateVideoSessionParametersKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateDestroyVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -3650,9 +3624,6 @@ void ObjectLifetimes::PreCallRecordDestroyVideoSessionParametersKHR(
     RecordDestroyObject(videoSessionParameters, kVulkanObjectTypeVideoSessionParametersKHR);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -3673,9 +3644,6 @@ bool ObjectLifetimes::PreCallValidateCmdBeginVideoCodingKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -3685,9 +3653,6 @@ bool ObjectLifetimes::PreCallValidateCmdEndVideoCodingKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -3697,9 +3662,6 @@ bool ObjectLifetimes::PreCallValidateCmdControlVideoCodingKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -3725,7 +3687,6 @@ bool ObjectLifetimes::PreCallValidateCmdDecodeVideoKHR(
 
     return skip;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 bool ObjectLifetimes::PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
