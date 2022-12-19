@@ -59,6 +59,7 @@
 [[maybe_unused]] static const char *kVUID_Core_Shader_CooperativeMatrixType = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType";
 [[maybe_unused]] static const char *kVUID_Core_Shader_CooperativeMatrixMulAdd = "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd";
 [[maybe_unused]] static const char *kVUID_Core_Shader_MaxComputeWorkGroupSize = "UNASSIGNED-CoreValidation-Shader-MaxComputeWorkGroupSize";
+[[maybe_unused]] static const char *kVUID_Core_Shader_BuiltInLayerIncompatibleFramebuffer = "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer";
 
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PriorCount = "UNASSIGNED-CoreValidation-SwapchainPriorCount";
 [[maybe_unused]] static const char *kVUID_Core_Swapchain_PreTransform = "UNASSIGNED-CoreValidation-SwapchainPreTransform";

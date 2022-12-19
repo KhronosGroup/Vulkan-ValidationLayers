@@ -373,6 +373,10 @@ void FRAMEBUFFER_STATE::LinkChildNodes() {
     }
 }
 
+bool FRAMEBUFFER_STATE::IsMultiLayerAttachment(size_t i) const {
+    return (attachments_view_state[i]->normalized_subresource_range.layerCount > 1);
+}
+
 void FRAMEBUFFER_STATE::Destroy() {
     for (auto &view : attachments_view_state) {
         view->RemoveParent(this);

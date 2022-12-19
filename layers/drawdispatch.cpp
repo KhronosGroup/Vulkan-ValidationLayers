@@ -1801,6 +1801,61 @@ const DrawDispatchVuid &CoreChecks::GetDrawDispatchVuid(CMD_TYPE cmd_type) const
     }
 }
 
+bool CoreChecks::ValidateCmdDrawFramebuffer(const CMD_BUFFER_STATE &cb_state, const char *caller) const {
+    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const PIPELINE_STATE *pipeline_state = cb_state.lastBound[lv_bind_point].pipeline_state;
+    const std::shared_ptr<RENDER_PASS_STATE> &render_pass_state = cb_state.activeRenderPass;
+    if (!pipeline_state || !render_pass_state) {
+        return false;
+    }
+
+    // Nothing to validate if there is no geometry shader
+    // Only the geometry shader can write to gl_Layer
+    if (!pipeline_state->HasShaderStage(VK_SHADER_STAGE_GEOMETRY_BIT)) {
+        return false;
+    }
+
+    // Nothing to validate if we don't write to gl_Layer
+    if (!pipeline_state->WritesToGLLayer()) {
+        return false;
+    }
+
+    bool skip = false;
+
+    const safe_VkSubpassDescription2 *active_subpass_desc = &render_pass_state->createInfo.pSubpasses[cb_state.activeSubpass];
+    const safe_VkAttachmentReference2 *p_color_attachments = active_subpass_desc->pColorAttachments;
+    const uint32_t color_attachment_count = active_subpass_desc->colorAttachmentCount;
+    const std::shared_ptr<FRAMEBUFFER_STATE> &active_frame_buffer = cb_state.activeFramebuffer;
+
+    // Iterate over the output locations in the fragment shader, and find the framebuffer we are rendering to.
+    // Then check if that framebuffer is a multi-layer framebuffer. If not, then log the error.
+    for (const uint32_t output_location : pipeline_state->fragmentShader_writable_output_location_list) {
+        if (output_location >= color_attachment_count) {
+            continue;
+        }
+
+        // attachment is either an integer value identifying an attachment at the corresponding index in
+        // VkRenderPassCreateInfo::pAttachments, or VK_ATTACHMENT_UNUSED to signify that this attachment is not used.
+        const uint32_t attachment = p_color_attachments[output_location].attachment;
+
+        if (attachment == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
+
+        const bool is_multi_layer = active_frame_buffer->IsMultiLayerAttachment(attachment);
+
+        // "gl_Layer is used to select a specific layer (or face and layer of cube map) in a multi-layer framebuffer attachment."
+        if (!is_multi_layer) {
+            skip |= LogError(cb_state.Handle(), "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer",
+                             "%s: bound pipeline has a geometry shader that write to gl_Layer, but currently bound framebuffer "
+                             "is not a multi-layer framebuffer attachment.",
+                             caller);
+        }
+    }
+
+    return skip;
+}
+
 // Generic function to handle validation for all CmdDraw* type functions
 bool CoreChecks::ValidateCmdDrawType(const CMD_BUFFER_STATE &cb_state, bool indexed, VkPipelineBindPoint bind_point,
                                      CMD_TYPE cmd_type) const {
@@ -1828,6 +1883,9 @@ bool CoreChecks::ValidateCmdDrawInstance(const CMD_BUFFER_STATE &cb_state, uint3
                          caller, report_data->FormatHandle(cb_state.activeRenderPass->Handle()).c_str(),
                          phys_dev_ext_props.multiview_props.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
+
+    skip |= ValidateCmdDrawFramebuffer(cb_state, caller);
+
     return skip;
 }
 

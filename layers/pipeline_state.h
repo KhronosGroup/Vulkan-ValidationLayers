@@ -193,12 +193,14 @@ class PIPELINE_STATE : public BASE_NODE {
     using StageStateVec = std::vector<PipelineStageState>;
     const StageStateVec stage_state;
     bool HasShaderStage(VkShaderStageFlagBits stage_flag) const {
-        for (const auto &state : stage_state) {
-            if (state.stage_flag == stage_flag) {
-                return true;
-            }
-        }
-        return false;
+        return std::any_of(stage_state.begin(), stage_state.end(),
+                           [&stage_flag](const PipelineStageState &stage) { return (stage.stage_flag == stage_flag); });
+    }
+
+    // Returns true if any of the shaders writes to `gl_layer`
+    bool WritesToGLLayer() const {
+        return std::any_of(stage_state.begin(), stage_state.end(),
+                           [](const PipelineStageState &stage) { return stage.writes_to_gl_layer; });
     }
 
     const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;

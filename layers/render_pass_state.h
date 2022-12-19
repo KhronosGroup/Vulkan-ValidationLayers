@@ -139,6 +139,8 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
                       std::vector<std::shared_ptr<IMAGE_VIEW_STATE>> &&attachments);
     void LinkChildNodes() override;
 
+    bool IsMultiLayerAttachment(size_t i) const;
+
     VkFramebuffer framebuffer() const { return handle_.Cast<VkFramebuffer>(); }
 
     virtual ~FRAMEBUFFER_STATE() { Destroy(); }

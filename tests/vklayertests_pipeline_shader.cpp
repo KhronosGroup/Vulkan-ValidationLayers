@@ -16810,3 +16810,51 @@ TEST_F(VkLayerTest, MeshShaderNVRuntimeSpirv) {
     CreatePipelineHelper::OneshotTest(*this, break_vp1, kErrorBit,
                                       vector<std::string>({"VUID-RuntimeSpirv-MeshNV-07113", "VUID-RuntimeSpirv-MeshNV-07114"}));
 }
+
+TEST_F(VkLayerTest, WritingToGLLayerWithIncompatibleFramebuffer) {
+    TEST_DESCRIPTION("Validate gl_Layer is being used only when framebuffer attachment is multi-layer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Because we are using gl_Layer without a multi-layer framebuffer, there is no telling how an actual
+    // GPU driver will respond. It could handle it gracefully but there is no guarantee.
+    if (!IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Only run on MockICD";
+    }
+
+    // InitRenderTarget implicitly creates a 1 layer framebuffer we draw too.
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string_view gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+
+    const VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    const VkShaderObj gs(this, gsSource.data(), VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-Shader-BuiltInLayerIncompatibleFramebuffer");
+    m_commandBuffer->Draw(3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
