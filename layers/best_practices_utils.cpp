@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2022 Valve Corporation
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
  *
  * Author: Camden Stocker <camden@lunarg.com>
  * Author: Nadav Geva <nadav.geva@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #include "best_practices_validation.h"
@@ -1024,6 +1026,50 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
 void BestPractices::PreCallRecordSetDeviceMemoryPriorityEXT(VkDevice device, VkDeviceMemory memory, float priority) {
     auto mem_info = std::static_pointer_cast<bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
     mem_info->dynamic_priority.emplace(priority);
+}
+
+bool BestPractices::PreCallValidateGetVideoSessionMemoryRequirementsKHR(
+    VkDevice device, VkVideoSessionKHR videoSession, uint32_t* pMemoryRequirementsCount,
+    VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) const {
+    bool skip = false;
+
+    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    if (vs_state) {
+        if (pMemoryRequirements != nullptr && !vs_state->memory_binding_count_queried) {
+            skip |= LogWarning(videoSession, kVUID_BestPractices_GetVideoSessionMemReqCountNotRetrieved,
+                               "vkGetVideoSessionMemoryRequirementsKHR(): querying list of memory requirements of %s "
+                               "but the number of memory requirements has not been queried before by calling this "
+                               "command with pMemoryRequirements set to NULL.",
+                               report_data->FormatHandle(videoSession).c_str());
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession,
+                                                             uint32_t bindSessionMemoryInfoCount,
+                                                             const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) const {
+    bool skip = false;
+
+    auto vs_state = Get<VIDEO_SESSION_STATE>(videoSession);
+    if (vs_state) {
+        if (!vs_state->memory_binding_count_queried) {
+            skip |= LogWarning(videoSession, kVUID_BestPractices_BindVideoSessionMemReqCountNotRetrieved,
+                               "vkBindVideoSessionMemoryKHR(): binding memory to %s but "
+                               "vkGetVideoSessionMemoryRequirementsKHR() has not been called to retrieve the "
+                               "number of memory requirements for the video session.",
+                               report_data->FormatHandle(videoSession).c_str());
+        } else if (vs_state->memory_bindings_queried < vs_state->GetMemoryBindingCount()) {
+            skip |= LogWarning(videoSession, kVUID_BestPractices_BindVideoSessionMemReqNotAllBindingsRetrieved,
+                               "vkBindVideoSessionMemoryKHR(): binding memory to %s but "
+                               "not all memory requirements for the video session have been queried using "
+                               "vkGetVideoSessionMemoryRequirementsKHR().",
+                               report_data->FormatHandle(videoSession).c_str());
+        }
+    }
+
+    return skip;
 }
 
 static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {

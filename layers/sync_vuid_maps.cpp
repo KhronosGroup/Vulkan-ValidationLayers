@@ -811,6 +811,36 @@ static const std::map<VkImageLayout, std::array<Entry, 2>> kImageLayoutErrors{
          {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07006"},
          {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07006"},
      }}},
+    {VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07120"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07120"},
+     }}},
+    {VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07121"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07121"},
+     }}},
+    {VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07122"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07122"},
+     }}},
+    {VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07123"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07123"},
+     }}},
+    {VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07124"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07124"},
+     }}},
+    {VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,
+     {{
+         {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-07125"},
+         {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-07125"},
+     }}},
 };
 
 const std::string &GetBadImageLayoutVUID(const Location &loc, VkImageLayout layout) {

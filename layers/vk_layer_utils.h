@@ -1,6 +1,7 @@
 /* Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
  * Copyright (c) 2015-2017, 2019-2022 Valve Corporation
  * Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +18,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Courtney Goeltzenleuchter <courtney@LunarG.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #pragma once
@@ -298,6 +300,28 @@ static inline bool IsAdvanceBlendOperation(const VkBlendOp blend_op) {
 static inline bool IsSecondaryColorInputBlendFactor(VkBlendFactor blend_factor) {
     return (blend_factor == VK_BLEND_FACTOR_SRC1_COLOR || blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR ||
             blend_factor == VK_BLEND_FACTOR_SRC1_ALPHA || blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA);
+}
+
+// Check if size is in range
+static inline bool IsBetweenInclusive(VkDeviceSize value, VkDeviceSize min, VkDeviceSize max) {
+    return (value >= min) && (value <= max);
+}
+
+static inline bool IsBetweenInclusive(const VkExtent2D &value, const VkExtent2D &min, const VkExtent2D &max) {
+    return IsBetweenInclusive(value.width, min.width, max.width) && IsBetweenInclusive(value.height, min.height, max.height);
+}
+
+// Check if value is integer multiple of granularity
+static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granularity) {
+    if (granularity == 0) {
+        return value == 0;
+    } else {
+        return (value % granularity) == 0;
+    }
+}
+
+static inline bool IsIntegerMultipleOf(const VkOffset2D &value, const VkOffset2D &granularity) {
+    return IsIntegerMultipleOf(value.x, granularity.x) && IsIntegerMultipleOf(value.y, granularity.y);
 }
 
 // Perform a zero-tolerant modulo operation

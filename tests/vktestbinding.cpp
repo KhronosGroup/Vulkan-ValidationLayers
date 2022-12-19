@@ -418,7 +418,7 @@ VkResult Queue::submit(const CommandBuffer &cmd, const Fence &fence, bool expect
 
 VkResult Queue::submit(const CommandBuffer &cmd, bool expect_success) {
     Fence fence;
-    return submit(cmd, fence);
+    return submit(cmd, fence, expect_success);
 }
 
 VkResult Queue::submit2(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {

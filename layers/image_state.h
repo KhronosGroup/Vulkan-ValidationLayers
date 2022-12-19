@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #pragma once
 
@@ -33,6 +35,7 @@
 #include "vk_layer_utils.h"
 
 class ValidationStateTracker;
+class VideoProfileDesc;
 class SURFACE_STATE;
 class SWAPCHAIN_NODE;
 
@@ -129,6 +132,8 @@ class IMAGE_STATE : public BINDABLE {
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
 
     std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
+
+    layer_data::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                 VkFormatFeatureFlags2KHR features);

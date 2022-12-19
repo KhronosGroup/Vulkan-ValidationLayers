@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2022 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+ * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  * Shannon McPherson <shannon@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
+ * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
 #include <cmath>
@@ -881,6 +883,25 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage 
             is_error = ((usage_flags & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0);
             is_error |= ((usage_flags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0);
             is_error |= ((usage_flags & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) == 0);
+            break;
         default:
             // Other VkImageLayout values do not have VUs defined in this context.
             break;
@@ -1579,6 +1600,17 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE
                                   explicit_layout, range_factory, caller, layout_mismatch_msg_code, error);
 }
 
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &image_state,
+                                   const VkImageSubresourceRange &range, VkImageLayout explicit_layout, const char *caller,
+                                   const char *layout_mismatch_msg_code, bool *error) const {
+    if (disabled[image_layout_validation]) return false;
+
+    auto range_factory = [&range](const ImageSubresourceLayoutMap &map) { return map.RangeGen(range); };
+
+    return VerifyImageLayoutRange(cb_state, image_state, range.aspectMask, explicit_layout, range_factory, caller,
+                                  layout_mismatch_msg_code, error);
+}
+
 void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *cb_state, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                FRAMEBUFFER_STATE *framebuffer_state) {
     auto render_pass = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
@@ -2210,6 +2242,46 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-08105",
                          "vkCreateImage(): VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain, but "
                          "VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT is not set.");
+    }
+
+    bool has_decode_usage =
+        pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                              VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR);
+    bool has_encode_usage =
+        pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                              VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
+    if (has_decode_usage || has_encode_usage) {
+        const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
+        skip |= ValidateVideoProfileListInfo(video_profiles, device, "vkCreateImage", has_decode_usage,
+                                             "VUID-VkImageCreateInfo-usage-04815", has_encode_usage,
+                                             "VUID-VkImageCreateInfo-usage-04816");
+
+        if (video_profiles && video_profiles->profileCount > 0) {
+            auto format_props_list = GetVideoFormatProperties(pCreateInfo->usage, video_profiles);
+
+            bool supported_video_format = false;
+            for (auto &format_props : format_props_list) {
+                if (pCreateInfo->format == format_props.format &&
+                    (pCreateInfo->flags & format_props.imageCreateFlags) == pCreateInfo->flags &&
+                    pCreateInfo->imageType == format_props.imageType && pCreateInfo->tiling == format_props.imageTiling &&
+                    (pCreateInfo->usage & format_props.imageUsageFlags) == pCreateInfo->usage) {
+                    supported_video_format = true;
+                }
+            }
+
+            if (!supported_video_format) {
+                skip |=
+                    LogError(device, "VUID-VkImageCreateInfo-pNext-06811",
+                             "vkCreateImage: image creation parameters (flags: 0x%08x, format: %s, imageType: %s, "
+                             "tiling: %s) are not supported by any of the supported video format properties for "
+                             "the video profiles specified in the VkVideoProfileListInfoKHR structure included in "
+                             "the pCreateInfo->pNext chain, as reported by "
+                             "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
+                             "and the image usage flags specified in pCreateInfo->usage (0x%08x)",
+                             pCreateInfo->flags, string_VkFormat(pCreateInfo->format), string_VkImageType(pCreateInfo->imageType),
+                             string_VkImageTiling(pCreateInfo->tiling), pCreateInfo->usage);
+            }
+        }
     }
 
     return skip;
@@ -5144,43 +5216,15 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    if ((pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR)) > 0) {
-        bool has_decode_codec_operation = false;
-        const auto* video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        if (video_profiles) {
-            for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
-                if (video_profiles->pProfiles[i].videoCodecOperation &
-                    (VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR | VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR)) {
-                    has_decode_codec_operation = true;
-                    break;
-                }
-            }
-        }
-        if (!has_decode_codec_operation) {
-            skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-04813",
-                             "vkCreateBuffer(): pCreateInfo->usage is %s, but pNext chain does not include VkVideoProfileListInfoKHR with "
-                             "a decode codec-operation.",
-                             string_VkBufferUsageFlags(pCreateInfo->usage).c_str());
-        }
-    }
-    if ((pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR)) > 0) {
-        bool has_encode_codec_operation = false;
+    bool has_decode_usage =
+        pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR);
+    bool has_encode_usage =
+        pCreateInfo->usage & (VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR);
+    if (has_decode_usage || has_encode_usage) {
         const auto *video_profiles = LvlFindInChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        if (video_profiles) {
-            for (uint32_t i = 0; i < video_profiles->profileCount; ++i) {
-                if (video_profiles->pProfiles[i].videoCodecOperation &
-                    (VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_EXT | VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_EXT)) {
-                    has_encode_codec_operation = true;
-                    break;
-                }
-            }
-        }
-        if (!has_encode_codec_operation) {
-            skip |= LogError(device, "VUID-VkBufferCreateInfo-usage-04814",
-                             "vkCreateBuffer(): pCreateInfo->usage is %s, but pNext chain does not include VkVideoProfileListInfoKHR with "
-                             "an encode codec-operation.",
-                             string_VkBufferUsageFlags(pCreateInfo->usage).c_str());
-        }
+        skip |= ValidateVideoProfileListInfo(video_profiles, device, "vkCreateBuffer", has_decode_usage,
+                                             "VUID-VkBufferCreateInfo-usage-04813", has_encode_usage,
+                                             "VUID-VkBufferCreateInfo-usage-04814");
     }
 
     if (pCreateInfo->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
@@ -6307,28 +6351,6 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                              string_VkSampleCountFlagBits(image_state->createInfo.samples), string_VkImageViewType(view_type));
         }
 
-        if (image_state->createInfo.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
-                                             VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)) {
-            if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
-                                 "vkCreateImageView(): Image created with video decode usage flags, but pCreateInfo->viewType (%s) "
-                                 "is not VK_IMAGE_VIEW_TYPE_2D or VK_IMAGE_VIEW_TYPE_2D_ARRAY.",
-                                 string_VkImageViewType(view_type));
-            }
-            if (!IsIdentitySwizzle(pCreateInfo->components)) {
-                skip |= LogError(
-                    pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-04817",
-                    "vkCreateImageView(): Image created with video decode usage flags, but not all members of "
-                    "pCreateInfo->components have identity swizzle. Here are the actual swizzle values:\n"
-                    "r swizzle = %s\n"
-                    "g swizzle = %s\n"
-                    "b swizzle = %s\n"
-                    "a swizzle = %s\n",
-                    string_VkComponentSwizzle(pCreateInfo->components.r), string_VkComponentSwizzle(pCreateInfo->components.g),
-                    string_VkComponentSwizzle(pCreateInfo->components.b), string_VkComponentSwizzle(pCreateInfo->components.a));
-            }
-        }
-
         if (image_state->createInfo.usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
                                              VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
             if (view_type != VK_IMAGE_VIEW_TYPE_2D && view_type != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
@@ -6656,7 +6678,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        if (FormatRequiresYcbcrConversionExplicitly(view_format)) {
+        if (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT && FormatRequiresYcbcrConversionExplicitly(view_format)) {
             const auto ycbcr_conversion = LvlFindInChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
             if ((!ycbcr_conversion || ycbcr_conversion->conversion == VK_NULL_HANDLE) &&
                 (image_usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
@@ -6664,6 +6686,16 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  "vkCreateImageView(): When using VK_IMAGE_USAGE_SAMPLED_BIT, YCbCr Format %s requires a "
                                  "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
                                  string_VkFormat(view_format));
+            }
+        }
+
+        if (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D && pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+            VkImageUsageFlags decode_usage = VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                                             VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+            if (image_usage & decode_usage) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-image-04817",
+                                 "vkCreateImageView(): View type %s is incompatible with decode usage.",
+                                 string_VkImageViewType(pCreateInfo->viewType));
             }
         }
 

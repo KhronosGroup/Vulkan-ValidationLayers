@@ -52,6 +52,7 @@ set(COMMON_CPP
     vklayertests_portability_subset.cpp
     vklayertests_viewport_inheritance.cpp
     vklayertests_wsi.cpp
+    vklayertests_video.cpp
     vklayertests_graphics_library.cpp
     vklayertests_android_hardware_buffer.cpp
     vklayertests_ray_tracing.cpp
@@ -68,6 +69,7 @@ set(COMMON_CPP
     positive/shaderval.cpp
     positive/sync.cpp
     positive/tooling.cpp
+    positive/video.cpp
     positive/graphics_library.cpp
     positive/android_hardware_buffer.cpp
     positive/ray_tracing.cpp
