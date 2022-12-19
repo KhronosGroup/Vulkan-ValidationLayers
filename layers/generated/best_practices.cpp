@@ -1243,8 +1243,6 @@ void BestPractices::PostCallRecordCreateWin32SurfaceKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkVideoProfileInfoKHR*                pVideoProfile,
@@ -1256,10 +1254,6 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(
         ValidateReturnCodes("vkGetPhysicalDeviceVideoCapabilitiesKHR", result, error_codes, {});
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -1275,10 +1269,6 @@ void BestPractices::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
@@ -1292,10 +1282,6 @@ void BestPractices::PostCallRecordCreateVideoSessionKHR(
     }
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 void BestPractices::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
@@ -1304,15 +1290,10 @@ void BestPractices::PostCallRecordGetVideoSessionMemoryRequirementsKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements, result);
     if (result != VK_SUCCESS) {
-        constexpr std::array error_codes = {VK_ERROR_INITIALIZATION_FAILED};
         constexpr std::array success_codes = {VK_INCOMPLETE};
-        ValidateReturnCodes("vkGetVideoSessionMemoryRequirementsKHR", result, error_codes, success_codes);
+        ValidateReturnCodes("vkGetVideoSessionMemoryRequirementsKHR", result, {}, success_codes);
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordBindVideoSessionMemoryKHR(
     VkDevice                                    device,
@@ -1322,14 +1303,10 @@ void BestPractices::PostCallRecordBindVideoSessionMemoryKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos, result);
     if (result != VK_SUCCESS) {
-        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INITIALIZATION_FAILED};
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         ValidateReturnCodes("vkBindVideoSessionMemoryKHR", result, error_codes, {});
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordCreateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -1339,14 +1316,10 @@ void BestPractices::PostCallRecordCreateVideoSessionParametersKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters, result);
     if (result != VK_SUCCESS) {
-        constexpr std::array error_codes = {VK_ERROR_INITIALIZATION_FAILED,VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_TOO_MANY_OBJECTS};
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INITIALIZATION_FAILED};
         ValidateReturnCodes("vkCreateVideoSessionParametersKHR", result, error_codes, {});
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordUpdateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -1355,12 +1328,10 @@ void BestPractices::PostCallRecordUpdateVideoSessionParametersKHR(
     VkResult                                    result) {
     ValidationStateTracker::PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, result);
     if (result != VK_SUCCESS) {
-        constexpr std::array error_codes = {VK_ERROR_INITIALIZATION_FAILED,VK_ERROR_TOO_MANY_OBJECTS};
+        constexpr std::array error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
         ValidateReturnCodes("vkUpdateVideoSessionParametersKHR", result, error_codes, {});
     }
 }
-
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,

@@ -3946,7 +3946,6 @@ void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceWin32Presentat
 }
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, const VkVideoProfileInfoKHR* pVideoProfile, VkVideoCapabilitiesKHR* pCapabilities) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities);
@@ -3963,8 +3962,6 @@ void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceVideoCapabilit
     CoreChecks::PostCallRecordGetPhysicalDeviceVideoCapabilitiesKHR(physicalDevice, pVideoProfile, pCapabilities, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice, const VkPhysicalDeviceVideoFormatInfoKHR* pVideoFormatInfo, uint32_t* pVideoFormatPropertyCount, VkVideoFormatPropertiesKHR* pVideoFormatProperties) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties);
@@ -3981,8 +3978,6 @@ void CoreChecksOptickInstrumented::PostCallRecordGetPhysicalDeviceVideoFormatPro
     CoreChecks::PostCallRecordGetPhysicalDeviceVideoFormatPropertiesKHR(physicalDevice, pVideoFormatInfo, pVideoFormatPropertyCount, pVideoFormatProperties, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkVideoSessionKHR* pVideoSession) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession);
@@ -3999,8 +3994,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCreateVideoSessionKHR(VkDevice 
     CoreChecks::PostCallRecordCreateVideoSessionKHR(device, pCreateInfo, pAllocator, pVideoSession, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateDestroyVideoSessionKHR(VkDevice device, VkVideoSessionKHR videoSession, const VkAllocationCallbacks* pAllocator) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateDestroyVideoSessionKHR(device, videoSession, pAllocator);
@@ -4017,8 +4010,6 @@ void CoreChecksOptickInstrumented::PostCallRecordDestroyVideoSessionKHR(VkDevice
     CoreChecks::PostCallRecordDestroyVideoSessionKHR(device, videoSession, pAllocator);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateGetVideoSessionMemoryRequirementsKHR(VkDevice device, VkVideoSessionKHR videoSession, uint32_t* pMemoryRequirementsCount, VkVideoSessionMemoryRequirementsKHR* pMemoryRequirements) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements);
@@ -4035,8 +4026,6 @@ void CoreChecksOptickInstrumented::PostCallRecordGetVideoSessionMemoryRequiremen
     CoreChecks::PostCallRecordGetVideoSessionMemoryRequirementsKHR(device, videoSession, pMemoryRequirementsCount, pMemoryRequirements, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVideoSessionKHR videoSession, uint32_t bindSessionMemoryInfoCount, const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos);
@@ -4053,8 +4042,6 @@ void CoreChecksOptickInstrumented::PostCallRecordBindVideoSessionMemoryKHR(VkDev
     CoreChecks::PostCallRecordBindVideoSessionMemoryKHR(device, videoSession, bindSessionMemoryInfoCount, pBindSessionMemoryInfos, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device, const VkVideoSessionParametersCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkVideoSessionParametersKHR* pVideoSessionParameters) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters);
@@ -4071,8 +4058,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCreateVideoSessionParametersKHR
     CoreChecks::PostCallRecordCreateVideoSessionParametersKHR(device, pCreateInfo, pAllocator, pVideoSessionParameters, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateUpdateVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters, const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo);
@@ -4089,8 +4074,6 @@ void CoreChecksOptickInstrumented::PostCallRecordUpdateVideoSessionParametersKHR
     CoreChecks::PostCallRecordUpdateVideoSessionParametersKHR(device, videoSessionParameters, pUpdateInfo, result);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateDestroyVideoSessionParametersKHR(VkDevice device, VkVideoSessionParametersKHR videoSessionParameters, const VkAllocationCallbacks* pAllocator) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
@@ -4107,8 +4090,6 @@ void CoreChecksOptickInstrumented::PostCallRecordDestroyVideoSessionParametersKH
     CoreChecks::PostCallRecordDestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR* pBeginInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
@@ -4125,8 +4106,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdBeginVideoCodingKHR(VkComman
     CoreChecks::PostCallRecordCmdBeginVideoCodingKHR(commandBuffer, pBeginInfo);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR* pEndCodingInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
@@ -4143,8 +4122,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdEndVideoCodingKHR(VkCommandB
     CoreChecks::PostCallRecordCmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoCodingControlInfoKHR* pCodingControlInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
@@ -4161,8 +4138,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdControlVideoCodingKHR(VkComm
     CoreChecks::PostCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR* pDecodeInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
@@ -4179,7 +4154,6 @@ void CoreChecksOptickInstrumented::PostCallRecordCmdDecodeVideoKHR(VkCommandBuff
     CoreChecks::PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
 }
 
-#endif // VK_ENABLE_BETA_EXTENSIONS
 bool CoreChecksOptickInstrumented::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer                   commandBuffer, const VkRenderingInfo*                              pRenderingInfo) const {
     OPTICK_EVENT();
     auto result = CoreChecks::PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);

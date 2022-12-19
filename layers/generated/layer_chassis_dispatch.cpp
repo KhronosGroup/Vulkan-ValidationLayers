@@ -5557,8 +5557,6 @@ VkBool32 DispatchGetPhysicalDeviceWin32PresentationSupportKHR(
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-
 VkResult DispatchGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkVideoProfileInfoKHR*                pVideoProfile,
@@ -5569,9 +5567,6 @@ VkResult DispatchGetPhysicalDeviceVideoCapabilitiesKHR(
 
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -5584,9 +5579,6 @@ VkResult DispatchGetPhysicalDeviceVideoFormatPropertiesKHR(
 
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchCreateVideoSessionKHR(
     VkDevice                                    device,
@@ -5602,9 +5594,6 @@ VkResult DispatchCreateVideoSessionKHR(
     }
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchDestroyVideoSessionKHR(
     VkDevice                                    device,
@@ -5623,9 +5612,6 @@ void DispatchDestroyVideoSessionKHR(
     layer_data->device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
@@ -5642,9 +5628,6 @@ VkResult DispatchGetVideoSessionMemoryRequirementsKHR(
 
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchBindVideoSessionMemoryKHR(
     VkDevice                                    device,
@@ -5673,9 +5656,6 @@ VkResult DispatchBindVideoSessionMemoryKHR(
     }
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchCreateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -5705,9 +5685,6 @@ VkResult DispatchCreateVideoSessionParametersKHR(
     }
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchUpdateVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -5723,9 +5700,6 @@ VkResult DispatchUpdateVideoSessionParametersKHR(
 
     return result;
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchDestroyVideoSessionParametersKHR(
     VkDevice                                    device,
@@ -5744,9 +5718,6 @@ void DispatchDestroyVideoSessionParametersKHR(
     layer_data->device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5780,9 +5751,6 @@ void DispatchCmdBeginVideoCodingKHR(
     layer_data->device_dispatch_table.CmdBeginVideoCodingKHR(commandBuffer, (const VkVideoBeginCodingInfoKHR*)local_pBeginInfo);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5792,9 +5760,6 @@ void DispatchCmdEndVideoCodingKHR(
     layer_data->device_dispatch_table.CmdEndVideoCodingKHR(commandBuffer, pEndCodingInfo);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5804,9 +5769,6 @@ void DispatchCmdControlVideoCodingKHR(
     layer_data->device_dispatch_table.CmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5847,7 +5809,6 @@ void DispatchCmdDecodeVideoKHR(
     layer_data->device_dispatch_table.CmdDecodeVideoKHR(commandBuffer, (const VkVideoDecodeInfoKHR*)local_pDecodeInfo);
 
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 void DispatchCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,

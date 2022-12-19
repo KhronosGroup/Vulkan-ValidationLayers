@@ -15474,7 +15474,7 @@ TEST_F(VkLayerTest, VideoBufferUsage) {
 
     VkVideoProfileInfoKHR video_profile[2];
     video_profile[0] = LvlInitStruct<VkVideoProfileInfoKHR>();
-    video_profile[0].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_EXT;
+    video_profile[0].videoCodecOperation = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR;
     video_profile[0].chromaSubsampling = VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR;
     video_profile[0].chromaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;
     video_profile[0].lumaBitDepth = VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR;

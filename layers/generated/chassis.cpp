@@ -6232,7 +6232,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GetPhysicalDeviceWin32PresentationSupportKHR(
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -6506,9 +6505,7 @@ VKAPI_ATTR void VKAPI_CALL CmdControlVideoCodingKHR(
         intercept->PostCallRecordCmdControlVideoCodingKHR(commandBuffer, pCodingControlInfo);
     }
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
@@ -6530,7 +6527,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDecodeVideoKHR(
         intercept->PostCallRecordCmdDecodeVideoKHR(commandBuffer, pDecodeInfo);
     }
 }
-#endif // VK_ENABLE_BETA_EXTENSIONS
+
 
 
 VKAPI_ATTR void VKAPI_CALL CmdBeginRenderingKHR(
@@ -7936,6 +7933,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
@@ -9320,9 +9318,6 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountAMD(
 
 
 
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -10751,9 +10746,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetCalibratedTimestampsEXT(
     return result;
 }
 
-
-#ifdef VK_ENABLE_BETA_EXTENSIONS
-#endif // VK_ENABLE_BETA_EXTENSIONS
 
 
 
@@ -15296,45 +15288,19 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     {"vkGetPhysicalDeviceWin32PresentationSupportKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceWin32PresentationSupportKHR}},
 #endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetPhysicalDeviceVideoCapabilitiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceVideoCapabilitiesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetPhysicalDeviceVideoFormatPropertiesKHR", {kFuncTypePdev, (void*)GetPhysicalDeviceVideoFormatPropertiesKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateVideoSessionKHR", {kFuncTypeDev, (void*)CreateVideoSessionKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkDestroyVideoSessionKHR", {kFuncTypeDev, (void*)DestroyVideoSessionKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkGetVideoSessionMemoryRequirementsKHR", {kFuncTypeDev, (void*)GetVideoSessionMemoryRequirementsKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkBindVideoSessionMemoryKHR", {kFuncTypeDev, (void*)BindVideoSessionMemoryKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCreateVideoSessionParametersKHR", {kFuncTypeDev, (void*)CreateVideoSessionParametersKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkUpdateVideoSessionParametersKHR", {kFuncTypeDev, (void*)UpdateVideoSessionParametersKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkDestroyVideoSessionParametersKHR", {kFuncTypeDev, (void*)DestroyVideoSessionParametersKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdBeginVideoCodingKHR", {kFuncTypeDev, (void*)CmdBeginVideoCodingKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdEndVideoCodingKHR", {kFuncTypeDev, (void*)CmdEndVideoCodingKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdControlVideoCodingKHR", {kFuncTypeDev, (void*)CmdControlVideoCodingKHR}},
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     {"vkCmdDecodeVideoKHR", {kFuncTypeDev, (void*)CmdDecodeVideoKHR}},
-#endif
     {"vkCmdBeginRenderingKHR", {kFuncTypeDev, (void*)CmdBeginRenderingKHR}},
     {"vkCmdEndRenderingKHR", {kFuncTypeDev, (void*)CmdEndRenderingKHR}},
     {"vkGetPhysicalDeviceFeatures2KHR", {kFuncTypePdev, (void*)GetPhysicalDeviceFeatures2KHR}},

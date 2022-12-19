@@ -1139,85 +1139,59 @@ bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex) const override;
 #endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkVideoProfileInfoKHR*                pVideoProfile,
     VkVideoCapabilitiesKHR*                     pCapabilities) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetPhysicalDeviceVideoFormatPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceVideoFormatInfoKHR*   pVideoFormatInfo,
     uint32_t*                                   pVideoFormatPropertyCount,
     VkVideoFormatPropertiesKHR*                 pVideoFormatProperties) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateVideoSessionKHR(
     VkDevice                                    device,
     const VkVideoSessionCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkVideoSessionKHR*                          pVideoSession) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateDestroyVideoSessionKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
     const VkAllocationCallbacks*                pAllocator) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateGetVideoSessionMemoryRequirementsKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
     uint32_t*                                   pMemoryRequirementsCount,
     VkVideoSessionMemoryRequirementsKHR*        pMemoryRequirements) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateBindVideoSessionMemoryKHR(
     VkDevice                                    device,
     VkVideoSessionKHR                           videoSession,
     uint32_t                                    bindSessionMemoryInfoCount,
     const VkBindVideoSessionMemoryInfoKHR*      pBindSessionMemoryInfos) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateVideoSessionParametersKHR(
     VkDevice                                    device,
     const VkVideoSessionParametersCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkVideoSessionParametersKHR*                pVideoSessionParameters) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateUpdateVideoSessionParametersKHR(
     VkDevice                                    device,
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkVideoSessionParametersUpdateInfoKHR* pUpdateInfo) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateDestroyVideoSessionParametersKHR(
     VkDevice                                    device,
     VkVideoSessionParametersKHR                 videoSessionParameters,
     const VkAllocationCallbacks*                pAllocator) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdBeginVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoBeginCodingInfoKHR*            pBeginInfo) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdEndVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoEndCodingInfoKHR*              pEndCodingInfo) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdControlVideoCodingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoCodingControlInfoKHR*          pCodingControlInfo) const override;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCmdDecodeVideoKHR(
     VkCommandBuffer                             commandBuffer,
     const VkVideoDecodeInfoKHR*                 pDecodeInfo) const override;
-#endif
 bool PreCallValidateCmdBeginRenderingKHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderingInfo*                      pRenderingInfo) const override;

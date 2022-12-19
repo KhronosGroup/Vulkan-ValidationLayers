@@ -179,16 +179,8 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,   // kVulkanObjectTypeSwapchainKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT,   // kVulkanObjectTypeDisplayKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT,   // kVulkanObjectTypeDisplayModeKHR
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionKHR
-#else
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionKHR
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionParametersKHR
-#else
-    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeVideoSessionParametersKHR
-#endif
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDeferredOperationKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_CU_MODULE_NVX_EXT,   // kVulkanObjectTypeCuModuleNVX
@@ -243,12 +235,8 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeSwapchainKHR: return VK_OBJECT_TYPE_SWAPCHAIN_KHR;
         case kVulkanObjectTypeDisplayKHR: return VK_OBJECT_TYPE_DISPLAY_KHR;
         case kVulkanObjectTypeDisplayModeKHR: return VK_OBJECT_TYPE_DISPLAY_MODE_KHR;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         case kVulkanObjectTypeVideoSessionKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_KHR;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         case kVulkanObjectTypeVideoSessionParametersKHR: return VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR;
-#endif
         case kVulkanObjectTypeDeferredOperationKHR: return VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR;
         case kVulkanObjectTypeDebugReportCallbackEXT: return VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT;
         case kVulkanObjectTypeCuModuleNVX: return VK_OBJECT_TYPE_CU_MODULE_NVX;
@@ -303,12 +291,8 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_SWAPCHAIN_KHR: return kVulkanObjectTypeSwapchainKHR;
         case VK_OBJECT_TYPE_DISPLAY_KHR: return kVulkanObjectTypeDisplayKHR;
         case VK_OBJECT_TYPE_DISPLAY_MODE_KHR: return kVulkanObjectTypeDisplayModeKHR;
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_OBJECT_TYPE_VIDEO_SESSION_KHR: return kVulkanObjectTypeVideoSessionKHR;
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR: return kVulkanObjectTypeVideoSessionParametersKHR;
-#endif
         case VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR: return kVulkanObjectTypeDeferredOperationKHR;
         case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT: return kVulkanObjectTypeDebugReportCallbackEXT;
         case VK_OBJECT_TYPE_CU_MODULE_NVX: return kVulkanObjectTypeCuModuleNVX;
@@ -939,7 +923,6 @@ template <> struct VkHandleInfo<VkValidationCacheEXT> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeValidationCacheEXT> {
     typedef VkValidationCacheEXT Type;
 };
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 template <> struct VkHandleInfo<VkVideoSessionKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeVideoSessionKHR;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -951,8 +934,6 @@ template <> struct VkHandleInfo<VkVideoSessionKHR> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeVideoSessionKHR> {
     typedef VkVideoSessionKHR Type;
 };
-#endif
-#ifdef VK_ENABLE_BETA_EXTENSIONS
 template <> struct VkHandleInfo<VkVideoSessionParametersKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeVideoSessionParametersKHR;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -964,7 +945,6 @@ template <> struct VkHandleInfo<VkVideoSessionParametersKHR> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeVideoSessionParametersKHR> {
     typedef VkVideoSessionParametersKHR Type;
 };
-#endif
 #endif // TYPESAFE_NONDISPATCHABLE_HANDLES
 struct VulkanTypedHandle {
     uint64_t handle;
