@@ -569,6 +569,51 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
+    TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with VK_COMMAND_BUFFER_LEVEL_SECONDARY");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    uint32_t queue_family_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queue_family_props;
+    queue_family_props.resize(queue_family_count);
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, queue_family_props.data());
+
+    uint32_t queue_family_index = VK_QUEUE_FAMILY_IGNORED;
+    const VkQueueFlags sec_cmd_buf_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+    for (uint32_t i = 0; i < queue_family_count; ++i) {
+        if ((queue_family_props[i].queueFlags & sec_cmd_buf_queue_flags) == 0) {
+            queue_family_index = i;
+            break;
+        }
+    }
+
+    if (queue_family_index == VK_QUEUE_FAMILY_IGNORED) {
+        GTEST_SKIP() << "No queue family found without support for secondary command buffers";
+    }
+
+    VkCommandPool command_pool = VK_NULL_HANDLE;
+    VkCommandPoolCreateInfo pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
+    pool_create_info.queueFamilyIndex = queue_family_index;
+    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+    VkCommandBufferAllocateInfo alloc_info = LvlInitStruct<VkCommandBufferAllocateInfo>();
+    alloc_info.commandPool = command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    alloc_info.commandBufferCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkAllocateCommandBuffers-unusable-secondary");
+    vk::AllocateCommandBuffers(m_device->device(), &alloc_info, &command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeCommandBuffers(m_device->device(), command_pool, 1, &command_buffer);
+    vk::DestroyCommandPool(m_device->device(), command_pool, nullptr);
+}
+
 TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
     TEST_DESCRIPTION("Test for validating usage of vkBeginCommandBuffer with SIMULTANEOUS_USE");
 

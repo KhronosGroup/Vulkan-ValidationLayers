@@ -1486,6 +1486,28 @@ bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCo
     return skip;
 }
 
+bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
+                                                          VkCommandBuffer* pCommandBuffers) const {
+    bool skip = false;
+
+    auto cp_state = Get<COMMAND_POOL_STATE>(pAllocateInfo->commandPool);
+    if (!cp_state) return false;
+
+    const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[cp_state->queueFamilyIndex].queueFlags;
+    const VkQueueFlags sec_cmd_buf_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+
+    if (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY && (queue_flags & sec_cmd_buf_queue_flags) == 0) {
+        skip |= LogWarning(device, kVUID_BestPractices_AllocateCommandBuffers_UnusableSecondary,
+                           "vkAllocateCommandBuffer(): Allocating secondary level command buffer from command pool "
+                           "created against queue family #%u (queue flags: %s), but vkCmdExecuteCommands() is only "
+                           "supported on queue families supporting VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, or "
+                           "VK_QUEUE_TRANSFER_BIT. The allocated command buffer will not be submittable.",
+                           cp_state->queueFamilyIndex, string_VkQueueFlags(queue_flags).c_str());
+    }
+
+    return skip;
+}
+
 void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                                     const VkCommandBufferBeginInfo* pBeginInfo) {
     StateTracker::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo);
