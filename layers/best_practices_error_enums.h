@@ -91,6 +91,8 @@
     "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw";
 [[maybe_unused]] static const char *kVUID_BestPractices_CreateCommandPool_CommandBufferReset =
     "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset";
+[[maybe_unused]] static const char *kVUID_BestPractices_AllocateCommandBuffers_UnusableSecondary =
+    "UNASSIGNED-BestPractices-vkAllocateCommandBuffers-unusable-secondary";
 [[maybe_unused]] static const char *kVUID_BestPractices_BeginCommandBuffer_SimultaneousUse =
     "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use";
 [[maybe_unused]] static const char *kVUID_BestPractices_AllocateMemory_SmallAllocation =
