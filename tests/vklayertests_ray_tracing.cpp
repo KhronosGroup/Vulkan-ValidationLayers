@@ -2783,8 +2783,7 @@ TEST_F(VkLayerTest, NVRayTracingValidateCmdCopyAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     // Dst must have been bound with memory
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkAccelerationStructureNV");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
     vkCmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as_without_mem.handle(), src_as.handle(),
                                      VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_NV);
 

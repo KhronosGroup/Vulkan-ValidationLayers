@@ -10888,9 +10888,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     }
 
     if (dst_as_state != nullptr) {
-        skip |= ValidateMemoryIsBoundToAccelerationStructure(
-            dst_as_state.get(), "vkCmdBuildAccelerationStructureNV()",
-            "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkAccelerationStructureNV");
+        skip |= ValidateMemoryIsBoundToAccelerationStructure(dst_as_state.get(), "vkCmdBuildAccelerationStructureNV()",
+                                                             "VUID-vkCmdBuildAccelerationStructureNV-dst-07787");
     }
 
     if (update == VK_TRUE) {
@@ -10973,9 +10972,8 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     auto src_as_state = Get<ACCELERATION_STRUCTURE_STATE>(src);
 
     if (dst_as_state != nullptr) {
-        skip |= ValidateMemoryIsBoundToAccelerationStructure(
-            dst_as_state.get(), "vkCmdBuildAccelerationStructureNV()",
-            "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer-VkAccelerationStructureNV");
+        skip |= ValidateMemoryIsBoundToAccelerationStructure(dst_as_state.get(), "vkCmdCopyAccelerationStructureNV()",
+                                                             "VUID-vkCmdCopyAccelerationStructureNV-dst-07792");
     }
 
     if (mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV) {
