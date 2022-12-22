@@ -3777,17 +3777,8 @@ TEST_F(VkLayerTest, ImageBarrierSubpassConflicts) {
     ASSERT_TRUE(fb_noselfdep.initialized());
 
     m_commandBuffer->begin();
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                  nullptr,
-                                  rp_noselfdep.handle(),
-                                  fb_noselfdep.handle(),
-                                  {{
-                                       0,
-                                       0,
-                                   },
-                                   {32, 32}},
-                                  0,
-                                  nullptr};
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp_noselfdep.handle(), fb_noselfdep.handle(),
+                                                                      VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     VkMemoryBarrier mem_barrier = LvlInitStruct<VkMemoryBarrier>();

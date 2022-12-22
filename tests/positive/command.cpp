@@ -78,19 +78,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferBarrier) {
     ASSERT_VK_SUCCESS(err);
 
     m_commandBuffer->begin();
-
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                  nullptr,
-                                  rp,
-                                  fb,
-                                  {{
-                                       0,
-                                       0,
-                                   },
-                                   {32, 32}},
-                                  0,
-                                  nullptr};
-
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -809,7 +797,7 @@ TEST_F(VkPositiveLayerTest, FramebufferBindingDestroyCommandPool) {
     vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, &command_buffer);
 
     // Begin our cmd buffer with renderpass using our framebuffer
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp, fb, {{0, 0}, {32, 32}}, 0, nullptr};
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
     vk::BeginCommandBuffer(command_buffer, &begin_info);
 
