@@ -7709,13 +7709,13 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
     if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
         if ((image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
             (image_entry->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-02270",
+            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07790",
                              "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR or "
                              "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
         }
     } else {
         if (image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-00996",
+            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-07789",
                              "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR.");
         }
     }
