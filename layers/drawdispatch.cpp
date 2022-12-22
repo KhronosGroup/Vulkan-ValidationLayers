@@ -1907,7 +1907,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
 bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const CMD_BUFFER_STATE &cb_state, uint32_t indexCount, uint32_t firstIndex,
                                                   const char *caller, const char *first_index_vuid) const {
     bool skip = false;
-    if (cb_state.index_buffer_binding.bound()) {
+    if (!enabled_features.robustness2_features.robustBufferAccess2 && cb_state.index_buffer_binding.bound()) {
         const auto &index_buffer_binding = cb_state.index_buffer_binding;
         const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
         VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount)) + index_buffer_binding.offset;
@@ -1930,7 +1930,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     skip |= ValidateCmdDrawInstance(*cb_state, instanceCount, firstInstance, CMD_DRAWINDEXED);
     skip |= ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXED);
     skip |= ValidateCmdDrawIndexedBufferSize(*cb_state, indexCount, firstIndex, "vkCmdDrawIndexed()",
-                                             "VUID-vkCmdDrawIndexed-firstIndex-04932");
+                                             "VUID-vkCmdDrawIndexed-robustBufferAccess2-07788");
     skip |= ValidateVTGShaderStages(*cb_state, CMD_DRAWINDEXED);
     return skip;
 }
