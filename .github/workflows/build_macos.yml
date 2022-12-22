@@ -54,7 +54,8 @@ jobs:
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
-        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
+        # Note: Testing uses std::filesystem introduced in macOS 10.15, disable testing to ensure build passes against 10.12 SDK
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode" -D BUILD_TESTS=OFF
         env:
           # Ensure we can build against 10.12 SDK: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
           MACOSX_DEPLOYMENT_TARGET: 10.12
