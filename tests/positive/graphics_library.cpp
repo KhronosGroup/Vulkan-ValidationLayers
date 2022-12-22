@@ -324,19 +324,16 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     OneOffDescriptorSet ds2(m_device, {
                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       });
-    OneOffDescriptorSet ds_empty(m_device, {});  // empty set
 
     // We _vs and _fs layouts are identical, but we want them to be separate handles handles for the sake layout merging
     VkPipelineLayoutObj pipeline_layout_vs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     VkPipelineLayoutObj pipeline_layout_fs(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    VkPipelineLayoutObj pipeline_layout_empty(m_device, {&ds.layout_, &ds_empty.layout_, &ds2.layout_}, {},
-                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     VkPipelineLayoutObj pipeline_layout_null(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
 
-    const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds_empty.set_, ds2.set_};
+    const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, ds2.set_};
 
     auto ub_ci = LvlInitStruct<VkBufferCreateInfo>();
     ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -424,25 +421,15 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     link_info.pLibraries = libraries;
 
     auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_empty.handle();
-    vk_testing::Pipeline exe_pipe_empty(*m_device, exe_pipe_ci);
-    ASSERT_TRUE(exe_pipe_empty.initialized());
-
     exe_pipe_ci.layout = pipeline_layout_null.handle();
-    vk_testing::Pipeline exe_pipe_null(*m_device, exe_pipe_ci);
-    ASSERT_TRUE(exe_pipe_null.initialized());
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
-    // Draw with pipeline created with empty set
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe_empty.handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_empty.handle(), 0,
-                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-
     // Draw with pipeline created with null set
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe_null.handle());
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
