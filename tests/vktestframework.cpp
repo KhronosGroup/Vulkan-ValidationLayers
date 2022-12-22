@@ -22,6 +22,7 @@
 
 #include "vktestframework.h"
 #include "vkrenderframework.h"
+#include <filesystem>
 
 // For versions prior to VS 2015, suppress the warning
 // caused by the inconsistent redefinition of snprintf
@@ -108,9 +109,114 @@ int fopen_s(FILE **pFile, const char *filename, const char *mode) {
 
 #endif
 
+// Certain VK_* environment variables accept lists.
+// Return a vector of std::string containing each member in the list.
+//
+// EX input:
+//  export VK_DRIVER_FILES=/intel.json:/amd.json
+//  set VK_DRIVER_FILES=\nvidia.json;\mesa.json
+static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
+    const std::string str = GetEnvironment(env_var);
+    if (str.empty()) {
+        return {};
+    }
+
+    // Loader uses standard OS path separators per platform
+    constexpr char delimiter =
+#ifdef _WIN32
+        ';';
+#else
+        ':';
+#endif
+
+    std::vector<std::string> items;
+    std::string::size_type start = 0;
+
+    std::string::size_type pos = str.find_first_of(delimiter, start);
+    while (pos != std::string::npos) {
+        items.emplace_back(str, start, pos);
+
+        start = pos + 1;
+
+        pos = str.find_first_of(delimiter, start);
+    }
+
+    items.emplace_back(str, start);
+
+    return items;
+}
+
+static void CheckEnvironmentVariables() {
+    for (const char *env_var : {"VK_DRIVER_FILES", "VK_ICD_FILENAMES"}) {
+        const std::vector<std::string> driver_files = GetVkEnvironmentVariable(env_var);
+        for (const std::string &driver_file : driver_files) {
+            const std::filesystem::path icd_file(driver_file);
+
+            // TODO: Error check relative paths (platform dependent)
+            if (icd_file.is_relative()) {
+                continue;
+            }
+
+            std::string user_provided;
+            user_provided += "\n\n";
+            user_provided += env_var;
+            user_provided += " = ";
+            user_provided += driver_file;
+
+            if (!std::filesystem::exists(icd_file)) {
+                std::cerr << "Invalid " << env_var << "! File doesn't exist!" << user_provided << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+
+            if (icd_file.extension() != ".json") {
+                std::cerr << "Invalid " << env_var << "! " << env_var << " must be a json file!\n" << user_provided << std::endl;
+                std::exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable("VK_LAYER_PATH");
+    for (const std::string &layer_path : vk_layer_paths) {
+        const std::filesystem::path layer_dir(layer_path);
+
+        // TODO: Error check relative paths (platform dependent)
+        if (layer_dir.is_relative()) {
+            continue;
+        }
+        const std::string user_provided = "\n\nVK_LAYER_PATH = " + layer_path;
+
+        if (!std::filesystem::exists(layer_dir)) {
+            std::cerr << "Invalid VK_LAYER_PATH! Directory doesn't exist!" << user_provided << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        if (!std::filesystem::is_directory(layer_dir)) {
+            std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH must be a directory!" << user_provided << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        bool found_json = false;
+        for (auto const &dir_entry : std::filesystem::directory_iterator{layer_dir}) {
+            if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
+                found_json = true;
+                break;
+            }
+        }
+
+        if (!found_json) {
+            std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH directory must contain VkLayer_khronos_validation.json!"
+                      << user_provided << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
+}
+
 // Set up environment for GLSL compiler
 // Must be done once per process
 void TestEnvironment::SetUp() {
+    // Helps ensure common developer environment variables are set correctly
+    CheckEnvironmentVariables();
+
     // Initialize GLSL to SPV compiler utility
     glslang::InitializeProcess();
 
