@@ -1568,3 +1568,151 @@ TEST_F(VkGraphicsLibraryLayerTest, CreatePipelineTessErrors) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkGraphicsLibraryLayerTest, BindEmptyDS) {
+    TEST_DESCRIPTION("Bind an empty descriptor set");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Prepare descriptors
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds1(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds2(m_device, {
+                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                      });
+    OneOffDescriptorSet ds_empty(m_device, {});  // empty set
+
+    // vs and fs "do not use" set 1, so set it to null
+    VkPipelineLayoutObj pipeline_layout_lib(m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    // The final, linked layout will define something for set 1
+    VkPipelineLayoutObj pipeline_layout(m_device, {&ds.layout_, &ds1.layout_, &ds2.layout_}, {},
+                                              VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+
+    const std::array<VkDescriptorSet, 3> desc_sets_null = {ds.set_, VK_NULL_HANDLE, ds2.set_};
+    const std::array<VkDescriptorSet, 3> desc_sets_empty = {ds.set_, ds_empty.set_, ds2.set_};
+
+    auto ub_ci = LvlInitStruct<VkBufferCreateInfo>();
+    ub_ci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    ub_ci.size = 1024;
+    VkBufferObj uniform_buffer(*m_device, ub_ci);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds.UpdateDescriptorSets();
+    ds2.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds2.UpdateDescriptorSets();
+
+    // Layout, renderPass, and subpass all need to be shared across libraries in the same executable pipeline
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    uint32_t subpass = 0;
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.InitState();
+    ASSERT_VK_SUCCESS(vertex_input_lib.CreateGraphicsPipeline(true, false));
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const char vs_src[] = R"glsl(
+            #version 450
+            layout(set=0, binding=0) uniform foo { float x; } bar;
+            void main() {
+            gl_Position = vec4(bar.x);
+            }
+        )glsl";
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
+        auto vs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        vs_ci.codeSize = vs_spv.size() * sizeof(decltype(vs_spv)::value_type);
+        vs_ci.pCode = vs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&vs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        pre_raster_lib.InitPreRasterLibInfo(1, &stage_ci);
+        pre_raster_lib.InitState();
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_lib.handle();
+        ASSERT_VK_SUCCESS(pre_raster_lib.CreateGraphicsPipeline(true, false));
+    }
+
+    render_pass = pre_raster_lib.gp_ci_.renderPass;
+    subpass = pre_raster_lib.gp_ci_.subpass;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+        auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+        fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+        fs_ci.pCode = fs_spv.data();
+
+        auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+        stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        stage_ci.module = VK_NULL_HANDLE;
+        stage_ci.pName = "main";
+
+        frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
+        frag_shader_lib.InitState();
+
+        frag_shader_lib.gp_ci_.renderPass = render_pass;
+        frag_shader_lib.gp_ci_.subpass = subpass;
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_lib.handle();
+        frag_shader_lib.CreateGraphicsPipeline(true, false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.InitState();
+    ASSERT_VK_SUCCESS(frag_out_lib.CreateGraphicsPipeline(true, false));
+
+    std::array libraries = {
+        vertex_input_lib.pipeline_,
+        pre_raster_lib.pipeline_,
+        frag_shader_lib.pipeline_,
+        frag_out_lib.pipeline_,
+    };
+    auto link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
+    link_info.libraryCount = libraries.size();
+    link_info.pLibraries = libraries.data();
+
+    auto exe_pipe_ci = LvlInitStruct<VkGraphicsPipelineCreateInfo>(&link_info);
+    exe_pipe_ci.layout = pipeline_layout.handle();
+    vk_testing::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+    ASSERT_TRUE(exe_pipe.initialized());
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Using an "empty" descriptor set is not legal
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+                              static_cast<uint32_t>(desc_sets_empty.size()), desc_sets_empty.data(), 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    // Using a VK_NULL_HANDLE descriptor set _is_ legal
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+                              static_cast<uint32_t>(desc_sets_null.size()), desc_sets_null.data(), 0, nullptr);
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
