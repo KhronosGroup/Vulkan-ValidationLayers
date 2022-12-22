@@ -349,8 +349,8 @@ class ViewportInheritanceTestData {
 
     // Begin the render pass, with subpass contents provided by secondary command buffers.
     void BeginRenderPass(VkCommandBuffer cmd) const {
-        VkRenderPassBeginInfo info = {
-            VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, m_renderPass, m_framebuffer, {{0, 0}, {128, 128}}, 0, nullptr};
+        VkRenderPassBeginInfo info =
+            LvlInitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {128u, 128u}}, 0u, nullptr);
         vk::CmdBeginRenderPass(cmd, &info, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     }
 

@@ -956,8 +956,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = {};
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     render_pass_begin_info.renderPass = renderpasses[0];
     render_pass_begin_info.framebuffer = framebuffers[0];
     render_pass_begin_info.clearValueCount = 3;
@@ -987,8 +986,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     // Use the image somehow.
     execute_work([&](VkCommandBufferObj& command_buffer) {
-        VkRenderPassBeginInfo rpbi = {};
-        rpbi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>();
         rpbi.renderPass = renderpasses[1];
         rpbi.framebuffer = framebuffers[1];
         rpbi.clearValueCount = 3;
@@ -1062,8 +1060,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = {};
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     render_pass_begin_info.renderPass = renderpasses[0];
     render_pass_begin_info.framebuffer = framebuffers[0];
     render_pass_begin_info.clearValueCount = 3;
@@ -1173,8 +1170,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = {};
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     render_pass_begin_info.renderPass = rp.handle();
     render_pass_begin_info.framebuffer = fb;
     render_pass_begin_info.clearValueCount = 3;
@@ -1327,8 +1323,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));
 
-    VkRenderPassBeginInfo render_pass_begin_info = {};
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    VkRenderPassBeginInfo render_pass_begin_info = LvlInitStruct<VkRenderPassBeginInfo>();
     render_pass_begin_info.renderPass = rp.handle();
     render_pass_begin_info.framebuffer = framebuffers[0];
     render_pass_begin_info.clearValueCount = 3;
@@ -1488,8 +1483,8 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp.handle(), 1, &imageView, WIDTH, HEIGHT, 1};
     vk_testing::Framebuffer fb(*m_device, fbci);
 
-    VkRenderPassBeginInfo rpbi = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp.handle(), fb.handle(), {{0, 0}, {WIDTH, HEIGHT}}, 0, nullptr};
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp.handle(), fb.handle(), VkRect2D{{0, 0}, {WIDTH, HEIGHT}}, 0u, nullptr);
 
     // subtest 1: bind in the wrong subpass
     m_commandBuffer->BeginRenderPass(rpbi);

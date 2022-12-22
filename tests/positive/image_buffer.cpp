@@ -1999,8 +1999,8 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     fci.renderPass = rp2.handle();
     vk_testing::Framebuffer fb2(*m_device, fci);
     ASSERT_TRUE(fb2.initialized());
-    VkRenderPassBeginInfo rpbi = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp1.handle(), fb1.handle(), {{0, 0}, {1, 1}}, 0, nullptr};
+    VkRenderPassBeginInfo rpbi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp1.handle(), fb1.handle(), VkRect2D{{0, 0}, {1u, 1u}}, 0u, nullptr);
     m_commandBuffer->begin();
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdEndRenderPass(m_commandBuffer->handle());
@@ -2218,13 +2218,9 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
 
     VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
                                                                         nullptr, 1, &imageView};
-    VkRenderPassBeginInfo renderPassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                                 &renderPassAttachmentBeginInfo,
-                                                 renderPass,
-                                                 framebuffer,
-                                                 {{0, 0}, {attachmentWidth, attachmentHeight}},
-                                                 0,
-                                                 nullptr};
+    VkRenderPassBeginInfo renderPassBeginInfo =
+        LvlInitStruct<VkRenderPassBeginInfo>(&renderPassAttachmentBeginInfo, renderPass, framebuffer,
+                                             VkRect2D{{0, 0}, {attachmentWidth, attachmentHeight}}, 0u, nullptr);
 
     // RenderPass should change the image layout of both the swapchain image and the aliased image to PRESENT_SRC_KHR
     m_commandBuffer->begin();

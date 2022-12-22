@@ -102,18 +102,7 @@ TEST_F(VkLayerTest, InvalidSecondaryCommandBufferBarrier) {
 
     m_commandBuffer->begin();
 
-    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                  nullptr,
-                                  rp,
-                                  fb,
-                                  {{
-                                       0,
-                                       0,
-                                   },
-                                   {32, 32}},
-                                  0,
-                                  nullptr};
-
+    VkRenderPassBeginInfo rpbi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, rp, fb, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -5218,13 +5207,9 @@ TEST_F(VkLayerTest, BadRenderPassScopeSecondaryCmdBuffer) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &sec_cmdbuff_inside_rp.handle());
     m_errorMonitor->VerifyFound();
 
-    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                      nullptr,  // pNext
-                                      m_renderPass,
-                                      m_framebuffer,
-                                      {{0, 0}, {32, 32}},
-                                      static_cast<uint32_t>(m_renderPassClearValues.size()),
-                                      m_renderPassClearValues.data()};
+    VkRenderPassBeginInfo rp_bi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {32u, 32u}},
+                                             static_cast<uint32_t>(m_renderPassClearValues.size()), m_renderPassClearValues.data());
     vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096");
@@ -7498,8 +7483,8 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
     image_copy.extent = {1, 1, 1};
     uint32_t update_data[4] = {0, 0, 0, 0};
     VkRect2D render_area = {{0, 0}, {8, 8}};
-    VkRenderPassBeginInfo render_pass_begin = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, render_pass, framebuffer, render_area, 0, nullptr};
+    VkRenderPassBeginInfo render_pass_begin =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass, framebuffer, render_area, 0u, nullptr);
     VkClearAttachment clear_attachments[2] = {{VK_IMAGE_ASPECT_COLOR_BIT, 0, {m_clear_color}},
                                               {VK_IMAGE_ASPECT_COLOR_BIT, 1, {m_clear_color}}};
     VkClearRect clear_rect[2] = {{render_area, 0, 1}, {render_area, 0, 1}};
@@ -9280,14 +9265,9 @@ TEST_F(VkLayerTest, BadRenderPassContentsWhenCallingCmdExecuteCommandsWithBeginR
 
     m_commandBuffer->begin();
 
-    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                      nullptr,  // pNext
-                                      m_renderPass,
-                                      m_framebuffer,
-                                      {{0, 0}, {32, 32}},
-                                      static_cast<uint32_t>(m_renderPassClearValues.size()),
-                                      m_renderPassClearValues.data()};
-
+    VkRenderPassBeginInfo rp_bi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, m_framebuffer, VkRect2D{{0, 0}, {32u, 32u}},
+                                             static_cast<uint32_t>(m_renderPassClearValues.size()), m_renderPassClearValues.data());
     m_commandBuffer->BeginRenderPass(rp_bi);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdExecuteCommands-contents-06018");
@@ -9363,14 +9343,8 @@ TEST_F(VkLayerTest, BadExecuteCommandsSubpassIndices) {
     secondary.begin(&cmdbuff__bi);
     secondary.end();
 
-    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                      nullptr,  // pNext
-                                      render_pass.handle(),
-                                      framebuffer.handle(),
-                                      {{0, 0}, {32, 32}},
-                                      0,
-                                      nullptr};
-
+    const VkRenderPassBeginInfo rp_bi = LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass.handle(), framebuffer.handle(),
+                                                                             VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
@@ -9434,14 +9408,8 @@ TEST_F(VkLayerTest, IncompatibleRenderPassesInExecuteCommands) {
     secondary.begin(&cmdbuff__bi);
     secondary.end();
 
-    const VkRenderPassBeginInfo rp_bi{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                      nullptr,  // pNext
-                                      render_pass_1,
-                                      framebuffer,
-                                      {{0, 0}, {32, 32}},
-                                      0,
-                                      nullptr};
-
+    const VkRenderPassBeginInfo rp_bi =
+        LvlInitStruct<VkRenderPassBeginInfo>(nullptr, render_pass_1, framebuffer, VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(rp_bi, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
@@ -10345,13 +10313,8 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
     cmdbuff__bi_no_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 
     // Render pass begin info for no FSR attachment
-    const VkRenderPassBeginInfo rp_bi_no_fsr{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                             nullptr,  // pNext
-                                             rp_no_fsr.handle(),
-                                             framebuffer_no_fsr.handle(),
-                                             {{0, 0}, {32, 32}},
-                                             0,
-                                             nullptr};
+    const VkRenderPassBeginInfo rp_bi_no_fsr = LvlInitStruct<VkRenderPassBeginInfo>(
+        nullptr, rp_no_fsr.handle(), framebuffer_no_fsr.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
     // Inheritance info with FSR attachment
     const VkCommandBufferInheritanceInfo cmdbuff_ii_fsr = {
@@ -10368,13 +10331,8 @@ TEST_F(VkLayerTest, IncompatibleFragmentRateShadingAttachmentInExecuteCommands) 
     cmdbuff__bi_fsr.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 
     // Render pass begin info with FSR attachment
-    const VkRenderPassBeginInfo rp_bi_fsr{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                                          nullptr,  // pNext
-                                          rp_fsr_1.handle(),
-                                          framebuffer_fsr.handle(),
-                                          {{0, 0}, {32, 32}},
-                                          0,
-                                          nullptr};
+    const VkRenderPassBeginInfo rp_bi_fsr = LvlInitStruct<VkRenderPassBeginInfo>(
+        nullptr, rp_fsr_1.handle(), framebuffer_fsr.handle(), VkRect2D{{0, 0}, {32u, 32u}}, 0u, nullptr);
 
     // Test case where primary command buffer does not have an FSR attachment but
     // secondary command buffer does.
