@@ -21923,26 +21923,9 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout2EXT(VkDevice device, V
 
     if (imageState) {
         const VkImageAspectFlags aspectMask = pSubresource->imageSubresource.aspectMask;
-        const VkImageTiling imageTiling = imageState->createInfo.tiling;
         const VkFormat imageFormat = imageState->createInfo.format;
         const uint32_t imageMipLevels = imageState->createInfo.mipLevels;
         const uint32_t imageArrayLayers = imageState->createInfo.arrayLayers;
-
-        if (IsExtEnabled(device_extensions.vk_ext_image_drm_format_modifier)) {
-            if (imageTiling != VK_IMAGE_TILING_LINEAR && imageTiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-02270",
-                                 "vkGetImageSubresourceLayout2EXT: Image tiling is required to be VK_IMAGE_TILING_LINEAR or "
-                                 "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but image tiling is %s",
-                                 string_VkImageTiling(imageTiling));
-            }
-        } else {
-            if (imageTiling != VK_IMAGE_TILING_LINEAR) {
-                skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-image-00996",
-                                 "vkGetImageSubresourceLayout2EXT: Image tiling is required to be VK_IMAGE_TILING_LINEAR but image "
-                                 "tiling is image tiling is %s",
-                                 string_VkImageTiling(imageTiling));
-            }
-        }
 
         if (aspectMask == 0 || (aspectMask & (aspectMask - 1))) {  // 0 or Multiple bit set
             skip |= LogError(image, "VUID-vkGetImageSubresourceLayout2EXT-aspectMask-00997",

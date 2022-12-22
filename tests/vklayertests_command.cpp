@@ -587,7 +587,7 @@ TEST_F(VkLayerTest, InvalidPushConstants) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
 
     // Check for invalid stage flag
-    // Note that VU 00996 isn't reached due to parameter validation
+    // Note that VU 07789 isn't reached due to parameter validation
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
     vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout_obj.handle(), 0, 0, 16, dummy_values);
     m_errorMonitor->VerifyFound();

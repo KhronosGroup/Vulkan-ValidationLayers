@@ -8133,7 +8133,7 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         subres.mipLevel = 0;
         subres.arrayLayer = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-image-00996");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout-image-07789");
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }
@@ -16038,22 +16038,6 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
 
         return supported;
     };
-
-    // Image Tiling Mode
-    {
-        VkImageObj image(m_device);
-        if (create_compressed_image(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, image)) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageSubresourceLayout2EXT-image-00996");
-            VkImageSubresource2EXT subresource = LvlInitStruct<VkImageSubresource2EXT>();
-            subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
-
-            VkImageCompressionPropertiesEXT compressionProperties = LvlInitStruct<VkImageCompressionPropertiesEXT>();
-            VkSubresourceLayout2EXT layout = LvlInitStruct<VkSubresourceLayout2EXT>(&compressionProperties);
-
-            vkGetImageSubresourceLayout2EXT(m_device->handle(), image.handle(), &subresource, &layout);
-            m_errorMonitor->VerifyFound();
-        }
-    }
 
     // Exceed MipmapLevel
     {
