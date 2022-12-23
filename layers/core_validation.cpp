@@ -3168,6 +3168,138 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicState(const PIPELINE_STATE &pipe
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE_STATE &pipeline, const uint32_t pipe_index) const {
+    bool skip = false;
+    const VkPipelineFragmentShadingRateStateCreateInfoKHR *fragment_shading_rate_state =
+        LvlFindInChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
+    if (fragment_shading_rate_state && !pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
+        const char *struct_name = "VkPipelineFragmentShadingRateStateCreateInfoKHR";
+
+        if (fragment_shading_rate_state->fragmentSize.width == 0) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04494",
+                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: Fragment width of %u has been specified in %s.",
+                         pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
+        }
+
+        if (fragment_shading_rate_state->fragmentSize.height == 0) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495",
+                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: Fragment height of %u has been specified in %s.",
+                         pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
+        }
+
+        if (fragment_shading_rate_state->fragmentSize.width != 0 &&
+            !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.width)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04496",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Non-power-of-two fragment width of %u has been specified in %s.",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
+        }
+
+        if (fragment_shading_rate_state->fragmentSize.height != 0 &&
+            !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.height)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04497",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Non-power-of-two fragment height of %u has been specified in %s.",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
+        }
+
+        if (fragment_shading_rate_state->fragmentSize.width > 4) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04498",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Fragment width of %u specified in %s is too large.",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
+        }
+
+        if (fragment_shading_rate_state->fragmentSize.height > 4) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04499",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Fragment height of %u specified in %s is too large",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
+            fragment_shading_rate_state->fragmentSize.width != 1) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Pipeline fragment width of %u has been specified in %s, but "
+                             "pipelineFragmentShadingRate is not enabled",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
+            fragment_shading_rate_state->fragmentSize.height != 1) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Pipeline fragment height of %u has been specified in %s, but "
+                             "pipelineFragmentShadingRate is not enabled",
+                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
+            fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: First combiner operation of %s has been specified in %s, but "
+                             "primitiveFragmentShadingRate is not enabled",
+                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]),
+                             struct_name);
+        }
+
+        if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
+            fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Second combiner operation of %s has been specified in %s, but "
+                             "attachmentFragmentShadingRate is not enabled",
+                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]),
+                             struct_name);
+        }
+
+        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+            (fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+             fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: First combiner operation of %s has been specified in %s, but "
+                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
+                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]),
+                             struct_name);
+        }
+
+        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
+            (fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
+             fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: Second combiner operation of %s has been specified in %s, but "
+                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
+                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]),
+                             struct_name);
+        }
+
+        const auto combiner_ops = fragment_shading_rate_state->combinerOps;
+        if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
+            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
+                          combiner_ops[0]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567",
+                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
+                                 "], combinerOp[0] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
+                                 pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[0]));
+            }
+            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
+                          combiner_ops[1]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568",
+                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
+                                 "], combinerOp[1] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
+                                 pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[1]));
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                               const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
@@ -3394,6 +3526,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     skip |= ValidateGraphicsPipelineRasterizationState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, pipe_index);
+    skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelineShaderState(pipeline);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
@@ -3458,135 +3591,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     skip |= ValidatePipelineCacheControlFlags(pipeline.GetPipelineCreateFlags(), pipe_index, "vkCreateGraphicsPipelines",
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     skip |= ValidatePipelineProtectedAccessFlags(pipeline.GetPipelineCreateFlags(), pipe_index);
-
-    const VkPipelineFragmentShadingRateStateCreateInfoKHR *fragment_shading_rate_state =
-        LvlFindInChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline.PNext());
-
-    if (fragment_shading_rate_state && !pipeline.IsDynamic(VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR)) {
-        const char *struct_name = "VkPipelineFragmentShadingRateStateCreateInfoKHR";
-
-        if (fragment_shading_rate_state->fragmentSize.width == 0) {
-            skip |=
-                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04494",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: Fragment width of %u has been specified in %s.",
-                         pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
-        }
-
-        if (fragment_shading_rate_state->fragmentSize.height == 0) {
-            skip |=
-                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04495",
-                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32 "]: Fragment height of %u has been specified in %s.",
-                         pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
-        }
-
-        if (fragment_shading_rate_state->fragmentSize.width != 0 &&
-            !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.width)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04496",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Non-power-of-two fragment width of %u has been specified in %s.",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
-        }
-
-        if (fragment_shading_rate_state->fragmentSize.height != 0 &&
-            !IsPowerOfTwo(fragment_shading_rate_state->fragmentSize.height)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04497",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Non-power-of-two fragment height of %u has been specified in %s.",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
-        }
-
-        if (fragment_shading_rate_state->fragmentSize.width > 4) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04498",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Fragment width of %u specified in %s is too large.",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
-        }
-
-        if (fragment_shading_rate_state->fragmentSize.height > 4) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04499",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Fragment height of %u specified in %s is too large",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
-        }
-
-        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
-            fragment_shading_rate_state->fragmentSize.width != 1) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Pipeline fragment width of %u has been specified in %s, but "
-                             "pipelineFragmentShadingRate is not enabled",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.width, struct_name);
-        }
-
-        if (!enabled_features.fragment_shading_rate_features.pipelineFragmentShadingRate &&
-            fragment_shading_rate_state->fragmentSize.height != 1) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04500",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Pipeline fragment height of %u has been specified in %s, but "
-                             "pipelineFragmentShadingRate is not enabled",
-                             pipe_index, fragment_shading_rate_state->fragmentSize.height, struct_name);
-        }
-
-        if (!enabled_features.fragment_shading_rate_features.primitiveFragmentShadingRate &&
-            fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04501",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: First combiner operation of %s has been specified in %s, but "
-                             "primitiveFragmentShadingRate is not enabled",
-                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]),
-                             struct_name);
-        }
-
-        if (!enabled_features.fragment_shading_rate_features.attachmentFragmentShadingRate &&
-            fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-04502",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Second combiner operation of %s has been specified in %s, but "
-                             "attachmentFragmentShadingRate is not enabled",
-                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]),
-                             struct_name);
-        }
-
-        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
-            (fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
-             fragment_shading_rate_state->combinerOps[0] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: First combiner operation of %s has been specified in %s, but "
-                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
-                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[0]),
-                             struct_name);
-        }
-
-        if (!phys_dev_ext_props.fragment_shading_rate_props.fragmentShadingRateNonTrivialCombinerOps &&
-            (fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_KEEP_KHR &&
-             fragment_shading_rate_state->combinerOps[1] != VK_FRAGMENT_SHADING_RATE_COMBINER_OP_REPLACE_KHR)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-fragmentShadingRateNonTrivialCombinerOps-04506",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: Second combiner operation of %s has been specified in %s, but "
-                             "fragmentShadingRateNonTrivialCombinerOps is not supported",
-                             pipe_index, string_VkFragmentShadingRateCombinerOpKHR(fragment_shading_rate_state->combinerOps[1]),
-                             struct_name);
-        }
-
-        const auto combiner_ops = fragment_shading_rate_state->combinerOps;
-        if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
-            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
-                          combiner_ops[0]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06567",
-                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
-                                 "], combinerOp[0] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
-                                 pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[0]));
-            }
-            if (std::find(AllVkFragmentShadingRateCombinerOpKHREnums.begin(), AllVkFragmentShadingRateCombinerOpKHREnums.end(),
-                          combiner_ops[1]) == AllVkFragmentShadingRateCombinerOpKHREnums.end()) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicState-06568",
-                                 "vkCreateGraphicsPipelines(): in pCreateInfos[%" PRIu32
-                                 "], combinerOp[1] (%s) is not a valid VkFragmentShadingRateCombinerOpKHR value.",
-                                 pipe_index, string_VkFragmentShadingRateCombinerOpKHR(combiner_ops[1]));
-            }
-        }
-    }
 
     const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
     if (discard_rectangle_state) {
