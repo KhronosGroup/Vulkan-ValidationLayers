@@ -91,7 +91,7 @@ Clone and build the [MoltenVK](https://github.com/KhronosGroup/MoltenVK) reposit
 You will have to direct the loader from Vulkan-Loader to the MoltenVK ICD:
 
 ```bash
-export VK_ICD_FILENAMES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
+export VK_DRIVER_FILES=<path to MoltenVK repository>/Package/Latest/MoltenVK/macOS/MoltenVK_icd.json
 ```
 
 ## Running Tests on MockICD and Profiles layer
@@ -118,7 +118,7 @@ export VK_LAYER_PATH=$VK_LAYER_PATH:$VULKAN_SDK/etc/vulkan/explicit_layer.d/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VULKAN_SDK/lib/
 
 # Set MockICD to be driver
-export VK_ICD_FILENAMES=/path/to/Vulkan-Tools/build/icd/VkICD_mock_icd.json
+export VK_DRIVER_FILES=/path/to/Vulkan-Tools/build/icd/VkICD_mock_icd.json
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/Vulkan-Tools/build/icd/
 
 # Set Layers, the order here is VERY IMPORTANT otherwise the test will see the
