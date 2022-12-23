@@ -300,6 +300,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
             // being tracked by the command buffer. This is to try to avoid race conditions
             // caused by separate CMD_BUFFER_STATE and BASE_NODE::parent_nodes locking.
             if (object_bindings.erase(obj)) {
+                obj->RemoveParent(this);
                 found_invalid = true;
             }
             switch (obj->Type()) {
