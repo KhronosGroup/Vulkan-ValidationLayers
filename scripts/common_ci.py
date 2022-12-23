@@ -172,12 +172,12 @@ def RunVVLTests(args):
         raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
     lvt_env['VK_LAYER_PATH'] = layer_path
 
-    icd_filenames = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
-    if IsWindows(): icd_filenames = os.path.join(icd_filenames, args.configuration.capitalize())
-    icd_filenames = os.path.join(icd_filenames, 'VkICD_mock_icd.json')
-    if not os.path.isfile(icd_filenames):
-        raise Exception(f'VK_ICD_FILENAMES "{icd_filenames}" does not exist')
-    lvt_env['VK_ICD_FILENAMES'] = icd_filenames
+    vk_driver_files = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
+    if IsWindows(): vk_driver_files = os.path.join(vk_driver_files, args.configuration.capitalize())
+    vk_driver_files = os.path.join(vk_driver_files, 'VkICD_mock_icd.json')
+    if not os.path.isfile(vk_driver_files):
+        raise Exception(f'VK_DRIVER_FILES "{vk_driver_files}" does not exist')
+    lvt_env['VK_DRIVER_FILES'] = vk_driver_files
 
     RunShellCmd(lvt_cmd, env=lvt_env)
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
