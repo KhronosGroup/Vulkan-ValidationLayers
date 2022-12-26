@@ -3999,53 +3999,52 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
-        const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-        if (gpl_info && link_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            const uint32_t flags_count =
-                GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                                                  VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
-            if (flags_count >= 1 && flags_count <= 2) {
-                for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
-                    const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
-                    const auto lib_gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->PNext());
-                    const auto lib_rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(lib->PNext());
-                    if (!lib_gpl_info) {
-                        continue;
-                    }
-                    bool other_flag = false;
-                    const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
-                        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
-                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
-                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
-                    for (const auto flag : flags) {
-                        if ((lib_gpl_info->flags & flag) > 0 && (gpl_info->flags & flag) == 0) {
-                            other_flag = true;
-                            break;
-                        }
-                    }
-                    if (other_flag) {
-                        uint32_t view_mask = rendering_struct ? rendering_struct->viewMask : 0;
-                        uint32_t lib_view_mask = lib_rendering_struct ? lib_rendering_struct->viewMask : 0;
-                        if (view_mask != lib_view_mask) {
-                            skip |=
-                                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06626",
-                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                         "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
-                                         "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 "), but pLibraries[%" PRIu32
-                                         "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
-                                         "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 ")",
-                                         pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), view_mask,
-                                         i, string_VkGraphicsPipelineLibraryFlagsEXT(lib_gpl_info->flags).c_str(), lib_view_mask);
-                        }
-                    }
-                }
-            }
-        }
         if (link_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+            const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
             if (gpl_info) {
                 skip |= ValidatePipelineLibraryFlags(gpl_info->flags, *link_info, rendering_struct, pipe_index, -1,
                                                      "VUID-VkGraphicsPipelineCreateInfo-flags-06626");
+
+                const uint32_t flags_count =
+                    GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                                      VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                                      VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT));
+                if (flags_count >= 1 && flags_count <= 2) {
+                    for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
+                        const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
+                        const auto lib_gpl_info = LvlFindInChain<VkGraphicsPipelineLibraryCreateInfoEXT>(lib->PNext());
+                        const auto lib_rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(lib->PNext());
+                        if (!lib_gpl_info) {
+                            continue;
+                        }
+                        bool other_flag = false;
+                        const std::array<VkGraphicsPipelineLibraryFlagBitsEXT, 3> flags = {
+                            VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT,
+                            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT,
+                            VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT};
+                        for (const auto flag : flags) {
+                            if ((lib_gpl_info->flags & flag) > 0 && (gpl_info->flags & flag) == 0) {
+                                other_flag = true;
+                                break;
+                            }
+                        }
+                        if (other_flag) {
+                            uint32_t view_mask = rendering_struct ? rendering_struct->viewMask : 0;
+                            uint32_t lib_view_mask = lib_rendering_struct ? lib_rendering_struct->viewMask : 0;
+                            if (view_mask != lib_view_mask) {
+                                skip |= LogError(
+                                    device, "VUID-VkGraphicsPipelineCreateInfo-flags-06626",
+                                    "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                    "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                                    "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 "), but pLibraries[%" PRIu32
+                                    "] includes VkGraphicsPipelineLibraryCreateInfoEXT::flags (%s) and "
+                                    "VkPipelineRenderingCreateInfo::viewMask (%" PRIu32 ")",
+                                    pipe_index, string_VkGraphicsPipelineLibraryFlagsEXT(gpl_info->flags).c_str(), view_mask, i,
+                                    string_VkGraphicsPipelineLibraryFlagsEXT(lib_gpl_info->flags).c_str(), lib_view_mask);
+                            }
+                        }
+                    }
+                }
             }
             for (uint32_t i = 0; i < link_info->libraryCount; ++i) {
                 const auto lib = Get<PIPELINE_STATE>(link_info->pLibraries[i]);
