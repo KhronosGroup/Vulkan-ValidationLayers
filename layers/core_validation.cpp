@@ -403,7 +403,6 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_PRIMITIVE_RESTART_ENABLE_SET, cmd_type, vuid.primitive_restart_enable);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE_SET, cmd_type, vuid.vertex_input_binding_stride);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_VERTEX_INPUT_EXT_SET, cmd_type, vuid.vertex_input);
-    skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DISCARD_RECTANGLE_EXT_SET, cmd_type, vuid.dynamic_discard_rectangle);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_COLOR_WRITE_ENABLE_EXT_SET, cmd_type, vuid.dynamic_color_write_enable);
     skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_TESSELLATION_DOMAIN_ORIGIN_EXT_SET, cmd_type,
                                     vuid.dynamic_tessellation_domain_origin);
@@ -487,6 +486,21 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
             skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET, cmd_type, vuid.dynamic_state);
             skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_WRITE_MASK_SET, cmd_type, vuid.dynamic_state);
             skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_REFERENCE_SET, cmd_type, vuid.dynamic_state);
+        }
+    }
+
+    // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
+    const auto *discard_rectangle_state = LvlFindInChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(pipeline.PNext());
+    if (discard_rectangle_state) {
+        for (uint32_t i = 0; i < discard_rectangle_state->discardRectangleCount; i++) {
+            if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
+                skip |= LogError(objlist, vuid.dynamic_discard_rectangle,
+                                 "%s: vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
+                                 " for this command buffer.",
+                                 CommandTypeString(cmd_type), i);
+                break;
+            }
         }
     }
 
@@ -19506,7 +19520,7 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
         skip |=
             LogError(cb_state->commandBuffer(), "VUID-vkCmdSetDiscardRectangleEXT-firstDiscardRectangle-00585",
                      "vkCmdSetDiscardRectangleEXT(): firstDiscardRectangle (%" PRIu32 ") + discardRectangleCount (%" PRIu32
-                     ") is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ".",
+                     ") is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ").",
                      firstDiscardRectangle, discardRectangleCount, phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
     }
     return skip;

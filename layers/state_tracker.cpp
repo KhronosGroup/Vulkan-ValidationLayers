@@ -490,8 +490,8 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     if (buffer_state) {
     	WriteLockGuard guard(buffer_address_lock_);
-    	
-    	const VkBufferUsageFlags descriptor_buffer_usages =
+
+        const VkBufferUsageFlags descriptor_buffer_usages =
             VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
         if ((buffer_state->createInfo.usage & descriptor_buffer_usages) != 0) {
@@ -503,8 +503,8 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
             if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)
                 samplerDescriptorBufferAddressSpaceSize -= buffer_state->createInfo.size;
         }
-    	
-    	if (buffer_state->deviceAddress != 0) {
+
+        if (buffer_state->deviceAddress != 0) {
         	const auto address_range = buffer_state->DeviceAddressRange();
 
                 buffer_address_map_.erase_range_or_touch(address_range, [&buffer_state](auto &buffers) {
@@ -5042,6 +5042,9 @@ void ValidationStateTracker::PostCallRecordCmdSetDiscardRectangleEXT(VkCommandBu
                                                                      const VkRect2D *pDiscardRectangles) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETDISCARDRECTANGLEEXT, CB_DYNAMIC_DISCARD_RECTANGLE_EXT_SET);
+    for (uint32_t i = 0; i < discardRectangleCount; i++) {
+        cb_state->dynamic_state_value.discard_rectangles.set(firstDiscardRectangle + i);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,

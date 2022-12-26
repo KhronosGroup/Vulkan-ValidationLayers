@@ -11093,8 +11093,7 @@ TEST_F(VkLayerTest, CmdSetDiscardRectangleEXTRectangleCountOverflow) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkCmdSetDiscardRectangleEXT =
-        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+    auto vkCmdSetDiscardRectangleEXT = GetDeviceProcAddr<PFN_vkCmdSetDiscardRectangleEXT>("vkCmdSetDiscardRectangleEXT");
 
     VkRect2D discard_rectangles = {};
     discard_rectangles.offset.x = 1;
@@ -11674,11 +11673,12 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
 
-    const VkRect2D rect = {{0, 0}, {16, 16}};
+    auto vkCmdSetDiscardRectangleEXT =
+        (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
+
     auto discard_rect_ci = LvlInitStruct<VkPipelineDiscardRectangleStateCreateInfoEXT>();
     discard_rect_ci.discardRectangleMode = VK_DISCARD_RECTANGLE_MODE_INCLUSIVE_EXT;
-    discard_rect_ci.discardRectangleCount = 1;
-    discard_rect_ci.pDiscardRectangles = &rect;
+    discard_rect_ci.discardRectangleCount = 4;
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -11695,6 +11695,14 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07751");
+    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    // only fill in [0, 1, 3] index
+    VkRect2D discard_rectangles[2] = {{{0, 0}, {16, 16}}, {{0, 0}, {16, 16}}};
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 0, 2, discard_rectangles);
+    vkCmdSetDiscardRectangleEXT(m_commandBuffer->handle(), 3, 1, discard_rectangles);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07751");
     vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
