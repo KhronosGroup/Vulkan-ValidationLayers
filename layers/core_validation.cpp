@@ -3300,6 +3300,169 @@ bool CoreChecks::ValidateGraphicsPipelineFragmentShadingRateState(const PIPELINE
     return skip;
 }
 
+bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &pipeline, const uint32_t pipe_index) const {
+    bool skip = false;
+    const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
+    if (rendering_struct) {
+        const auto color_blend_state = pipeline.ColorBlendState();
+        const auto raster_state = pipeline.RasterizationState();
+        const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
+        if (has_rasterization) {
+            if (((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
+                 (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
+                !pipeline.DepthStencilState()) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "]: has fragment state and a depth format (%s) or stencil format (%s) and an invalid "
+                                 "pDepthStencilState structure",
+                                 pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
+                                 string_VkFormat(rendering_struct->stencilAttachmentFormat));
+            }
+
+            if ((rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
+                pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
+                                 ") and an invalid pColorBlendState structure",
+                                 pipe_index, rendering_struct->colorAttachmentCount);
+            }
+        }
+
+        if (rendering_struct->viewMask != 0) {
+            const uint32_t active_shaders = pipeline.active_shaders;
+            if (!enabled_features.core11.multiviewTessellationShader &&
+                (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
+                 active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                                 ") and "
+                                 "multiviewTessellationShader is not enabled, contains tesselation shaders",
+                                 pipe_index, rendering_struct->viewMask);
+            }
+
+            if (!enabled_features.core11.multiviewGeometryShader && (active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                                 ") and "
+                                 "multiviewGeometryShader is not enabled, contains geometry shader",
+                                 pipe_index, rendering_struct->viewMask);
+            }
+
+            if (!enabled_features.mesh_shader_features.multiviewMeshShader && (active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064",
+                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                 "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
+                                 ") and "
+                                 "multiviewMeshShader is not enabled, contains mesh shader",
+                                 pipe_index, rendering_struct->viewMask);
+            }
+
+            if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && raster_state) {
+                for (const auto &stage : pipeline.stage_state) {
+                    if (stage.writes_to_gl_layer) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
+                                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                         "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but "
+                                         "pMultisampleState is NULL.",
+                                         pipe_index);
+                    }
+                }
+            }
+        }
+
+        for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
+            const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
+            if (color_format != VK_FORMAT_UNDEFINED) {
+                VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
+                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
+                    (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
+                     (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
+                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
+                                     "]: pColorBlendState->blendEnable must be false ",
+                                     pipe_index);
+                }
+
+                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
+                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
+                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
+                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                         "]: color_format (%s) must be a format with potential format features that include "
+                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
+                                         pipe_index, string_VkFormat(color_format));
+                    }
+                } else {
+                    if ((format_features &
+                         (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                        skip |=
+                            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
+                                     "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                     "]: color_format (%s) must be a format with potential format features that include "
+                                     "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
+                                     pipe_index, string_VkFormat(color_format));
+                    }
+                }
+            }
+        }
+
+        if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
+            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
+                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                 pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat));
+            }
+        }
+
+        if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
+            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
+            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
+                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
+                                 pipe_index, string_VkFormat(rendering_struct->stencilAttachmentFormat));
+            }
+        }
+
+        if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+            (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
+            (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
+            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589",
+                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                             "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
+                             "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
+                             pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
+                             string_VkFormat(rendering_struct->stencilAttachmentFormat));
+        }
+
+        if (pipeline.IsRenderPassStateRequired()) {
+            if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-multiview-06577",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: multiview is not enabled but viewMask is (%u).",
+                                 pipe_index, rendering_struct->viewMask);
+            }
+
+            if (MostSignificantBit(rendering_struct->viewMask) >=
+                static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06578",
+                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
+                                 "]: Most significant bit in "
+                                 "VkPipelineRenderingCreateInfo->viewMask(%u) must be less maxMultiviewViewCount(%u)",
+                                 pipe_index, rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,
                                               const VkPipelineLibraryCreateInfoKHR &link_info,
                                               const VkPipelineRenderingCreateInfo *rendering_struct, uint32_t pipe_index,
@@ -3449,9 +3612,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     }
 
     const auto &rp_state = pipeline.RenderPassState();
-
-    const bool rp_state_required = pipeline.pre_raster_state || pipeline.fragment_shader_state || pipeline.fragment_output_state;
-    if (rp_state_required) {
+    if (pipeline.IsRenderPassStateRequired()) {
         if (!rp_state) {
             const char *vuid = nullptr;
             if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
@@ -3527,6 +3688,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     skip |= ValidateGraphicsPipelineMultisampleState(pipeline, subpass_desc, pipe_index);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, pipe_index);
+    skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, pipe_index);
     skip |= ValidateGraphicsPipelineShaderState(pipeline);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline);
 
@@ -3602,149 +3764,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 "] is not less than VkPhysicalDeviceDiscardRectanglePropertiesEXT::maxDiscardRectangles (%" PRIu32 ".",
                 discard_rectangle_state->discardRectangleCount, pipe_index,
                 phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles);
-        }
-    }
-
-    const auto color_blend_state = pipeline.ColorBlendState();
-    const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
-    if (rendering_struct) {
-        const auto raster_state = pipeline.RasterizationState();
-        const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
-        if (has_rasterization &&
-            ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
-             (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
-            !pipeline.DepthStencilState()) {
-            skip |= LogError(
-                device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
-                "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                "]: has fragment state and a depth format (%s) or stencil format (%s) and an invalid pDepthStencilState structure",
-                pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
-                string_VkFormat(rendering_struct->stencilAttachmentFormat));
-        }
-
-        if (has_rasterization && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
-            pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] has VkPipelineRenderingCreateInfoKHR::colorAttachmentCount (%" PRIu32
-                             ") and an invalid pColorBlendState structure",
-                             pipe_index, rendering_struct->colorAttachmentCount);
-        }
-
-        if ((rendering_struct->viewMask != 0) && !enabled_features.core11.multiviewTessellationShader &&
-            (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
-             active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
-                             ") and "
-                             "multiviewTessellationShader is not enabled, contains tesselation shaders",
-                             pipe_index, rendering_struct->viewMask);
-        }
-
-        if ((rendering_struct->viewMask != 0) && !enabled_features.core11.multiviewGeometryShader &&
-            (active_shaders & VK_SHADER_STAGE_GEOMETRY_BIT)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
-                             ") and "
-                             "multiviewGeometryShader is not enabled, contains geometry shader",
-                             pipe_index, rendering_struct->viewMask);
-        }
-
-        if ((rendering_struct->viewMask != 0) && !enabled_features.mesh_shader_features.multiviewMeshShader &&
-            (active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064",
-                             "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                             "] has VkPipelineRenderingCreateInfoKHR->viewMask(%" PRIu32
-                             ") and "
-                             "multiviewMeshShader is not enabled, contains mesh shader",
-                             pipe_index, rendering_struct->viewMask);
-        }
-
-        for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
-            const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
-            if (color_format != VK_FORMAT_UNDEFINED) {
-                VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
-                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
-                    (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
-                     (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062",
-                                     "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                     "]: pColorBlendState->blendEnable must be false ",
-                                     pipe_index);
-                }
-
-                if (!IsExtEnabled(device_extensions.vk_nv_linear_color_attachment)) {
-                    if ((format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) == 0) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06581",
-                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                         "]: color_format (%s) must be a format with potential format features that include "
-                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT",
-                                         pipe_index, string_VkFormat(color_format));
-                    }
-                } else {
-                    if ((format_features &
-                         (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582",
-                                         "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                         "]: color_format (%s) must be a format with potential format features that include "
-                                         "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV",
-                                         pipe_index, string_VkFormat(color_format));
-                    }
-                }
-            }
-        }
-
-        if (rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->depthAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06585",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: depthAttachmentFormat (%s) must be a format with potential format features that include "
-                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                                 pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat));
-            }
-        }
-
-        if (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) {
-            VkFormatFeatureFlags2 format_features = GetPotentialFormatFeatures(rendering_struct->stencilAttachmentFormat);
-            if ((format_features & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06586",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: stencilAttachmentFormat (%s) must be a format with potential format features that include "
-                                 "VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT",
-                                 pipe_index, string_VkFormat(rendering_struct->stencilAttachmentFormat));
-            }
-        }
-
-        if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) &&
-            (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED) &&
-            (rendering_struct->depthAttachmentFormat != rendering_struct->stencilAttachmentFormat)) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06589",
-                             "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                             "]: depthAttachmentFormat is not VK_FORMAT_UNDEFINED and stencilAttachmentFormat is not "
-                             "VK_FORMAT_UNDEFINED, but depthAttachmentFormat (%s) does not equal stencilAttachmentFormat (%s)",
-                             pipe_index, string_VkFormat(rendering_struct->depthAttachmentFormat),
-                             string_VkFormat(rendering_struct->stencilAttachmentFormat));
-        }
-
-        if (rp_state_required) {
-            if ((enabled_features.core11.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-multiview-06577",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: multiview is not enabled but viewMask is (%u).",
-                                 pipe_index, rendering_struct->viewMask);
-            }
-
-            if (MostSignificantBit(rendering_struct->viewMask) >=
-                static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06578",
-                                 "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
-                                 "]: Most significant bit in "
-                                 "VkPipelineRenderingCreateInfo->viewMask(%u) must be less maxMultiviewViewCount(%u)",
-                                 pipe_index, rendering_struct->viewMask, phys_dev_props_core11.maxMultiviewViewCount);
-            }
         }
     }
 
@@ -3959,6 +3978,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
             }
         }
 
+        const auto rendering_struct = LvlFindInChain<VkPipelineRenderingCreateInfo>(pipeline.PNext());
         if (gpl_info && link_info && pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
             const uint32_t flags_count =
                 GetBitSetCount(gpl_info->flags & (VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
@@ -4190,19 +4210,6 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                              "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                              "] is being created with fragment shader that uses samples, but pMultisampleState is not set.",
                              pipe_index);
-        }
-    }
-
-    if (pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE && pipeline.RasterizationState() &&
-        rendering_struct && rendering_struct->viewMask != 0) {
-        for (const auto &stage : pipeline.stage_state) {
-            if (stage.writes_to_gl_layer) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
-                                 "] is being created with fragment shader state and renderPass != VK_NULL_HANDLE, but "
-                                 "pMultisampleState is NULL.",
-                                 pipe_index);
-            }
         }
     }
 
