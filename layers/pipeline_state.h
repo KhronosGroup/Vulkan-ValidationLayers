@@ -311,6 +311,8 @@ class PIPELINE_STATE : public BASE_NODE {
         return rp_state;
     }
 
+    bool IsRenderPassStateRequired() const { return pre_raster_state || fragment_shader_state || fragment_output_state; }
+
     const std::shared_ptr<const PIPELINE_LAYOUT_STATE> PipelineLayoutState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (merged_graphics_layout) {
