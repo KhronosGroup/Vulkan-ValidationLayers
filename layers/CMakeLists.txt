@@ -154,6 +154,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     shader_validation.h
     sync_vuid_maps.cpp
     sync_vuid_maps.h
+    wsi_validation.cpp
     generated/spirv_validation_helper.cpp
     generated/spirv_grammar_helper.cpp
     generated/command_validation.cpp
