@@ -16,6 +16,8 @@
 
 #include "layer_validation_tests.h"
 
+#include <future>
+
 static VkValidationFeatureEnableEXT gpu_av_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
 static VkValidationFeatureDisableEXT gpu_av_disables[] = {
     VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
@@ -1001,6 +1003,31 @@ TEST_F(VkGpuAssistedLayerTest, DrawTimeShaderUniformBufferTooSmallNestedStruct) 
                          "Descriptor size is 8 and highest byte accessed was 19");
 }
 
+static bool QueueWaitIdleWithTimeout(std::chrono::nanoseconds wait_duration, VkQueue queue) {
+    auto err_future = std::async(
+        std::launch::async, [](VkQueue queue) { return vk::QueueWaitIdle(queue); }, queue);
+
+    switch (err_future.wait_for(wait_duration)) {
+        case std::future_status::ready:
+            if (const auto err = err_future.get(); err != VK_SUCCESS) {
+                ADD_FAILURE() << "vk::QueueWaitIdle failed with error " << string_VkResult(err) << '.';
+                return false;
+            }
+            return true;
+        case std::future_status::timeout:
+            ADD_FAILURE() << "vk::QueueWaitIdle timeout. Waited " << wait_duration.count() << " seconds.";
+            return false;
+        case std::future_status::deferred:
+            assert(false);  // no reason to land here
+            ADD_FAILURE() << "unexpected deferred function using lazy evaluation.";
+            return false;
+        default:
+            assert(false);  // no reason to land here
+            ADD_FAILURE() << "Unexpected error in QueueWaitIdleWithTimeout.";
+            return false;
+    }
+};
+
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -1147,8 +1174,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
     err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     ASSERT_VK_SUCCESS(err);
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+    ASSERT_TRUE(QueueWaitIdleWithTimeout(std::chrono::nanoseconds(kWaitTimeout), m_device->m_queue));
     m_errorMonitor->VerifyFound();
 
     // Run past the end
