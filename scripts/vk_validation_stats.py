@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The Khronos Group Inc.
-# Copyright (c) 2015-2022 Valve Corporation
-# Copyright (c) 2015-2022 LunarG, Inc.
-# Copyright (c) 2015-2022 Google Inc.
+# Copyright (c) 2015-2023 The Khronos Group Inc.
+# Copyright (c) 2015-2023 Valve Corporation
+# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/stateless_validation.h',
     'layers/synchronization_validation.cpp',
     'layers/sync_vuid_maps.cpp',
+    'layers/wsi_validation.cpp',
     'layers/generated/parameter_validation.cpp',
     'layers/generated/object_tracker.cpp',
     'layers/generated/spirv_validation_helper.cpp',

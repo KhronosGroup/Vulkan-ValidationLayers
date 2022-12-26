@@ -38,6 +38,7 @@
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
 #include "video_session_state.h"
+#include "sync_vuid_maps.h"
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
 struct DrawDispatchVuid {
@@ -222,6 +223,107 @@ class CORE_CMD_BUFFER_STATE : public CMD_BUFFER_STATE {
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
 
+struct TimelineMaxDiffCheck {
+    TimelineMaxDiffCheck(uint64_t value_, uint64_t max_diff_) : value(value_), max_diff(max_diff_) {}
+
+    // compute the differents between 2 timeline values, without rollover if the difference is greater than INT64_MAX
+    uint64_t AbsDiff(uint64_t a, uint64_t b) { return a > b ? a - b : b - a; }
+
+    bool operator()(const SEMAPHORE_STATE::SemOp& op, bool is_pending) { return AbsDiff(value, op.payload) > max_diff; }
+
+    uint64_t value;
+    uint64_t max_diff;
+};
+
+class CoreChecks;
+struct SemaphoreSubmitState {
+    const CoreChecks* core;
+    VkQueue queue;
+    VkQueueFlags queue_flags;
+    layer_data::unordered_set<VkSemaphore> signaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> unsignaled_semaphores;
+    layer_data::unordered_set<VkSemaphore> internal_semaphores;
+    layer_data::unordered_map<VkSemaphore, uint64_t> timeline_signals;
+    layer_data::unordered_map<VkSemaphore, uint64_t> timeline_waits;
+
+    SemaphoreSubmitState(const CoreChecks* core_, VkQueue q_, VkQueueFlags queue_flags_)
+        : core(core_), queue(q_), queue_flags(queue_flags_) {}
+
+    bool CannotWait(const SEMAPHORE_STATE& semaphore_state) const {
+        auto semaphore = semaphore_state.semaphore();
+        return unsignaled_semaphores.count(semaphore) || (!signaled_semaphores.count(semaphore) && !semaphore_state.CanBeWaited());
+    }
+    VkQueue AnotherQueueWaits(const SEMAPHORE_STATE& semaphore_state) const {
+        // spec (for 003871 but all submit functions have a similar VUID):
+        // "When a semaphore wait operation for a binary semaphore is **executed**,
+        // as defined by the semaphore member of any element of the pWaitSemaphoreInfos
+        // member of any element of pSubmits, there must be no other queues waiting on the same semaphore"
+        //
+        // For binary semaphores there can be only 1 wait per signal so we just need to check that the
+        // last operation isn't a wait. Prior waits will have been removed by prior signals by the time
+        // this wait executes.
+        auto last_op = semaphore_state.LastOp();
+        if (last_op && !last_op->CanBeWaited() && last_op->queue && last_op->queue->Queue() != queue) {
+            return last_op->queue->Queue();
+        }
+        return VK_NULL_HANDLE;
+    }
+
+    bool ValidateBinaryWait(const core_error::Location& loc, VkQueue queue, const SEMAPHORE_STATE& semaphore_state);
+    bool ValidateWaitSemaphore(const core_error::Location& loc, VkSemaphore semaphore, uint64_t value);
+    bool ValidateSignalSemaphore(const core_error::Location& loc, VkSemaphore semaphore, uint64_t value);
+
+    bool CannotSignal(const SEMAPHORE_STATE& semaphore_state, VkQueue& other_queue) const {
+        const auto semaphore = semaphore_state.semaphore();
+        if (signaled_semaphores.count(semaphore)) {
+            other_queue = queue;
+            return true;
+        }
+        if (!unsignaled_semaphores.count(semaphore)) {
+            const auto last_op = semaphore_state.LastOp();
+            if (last_op && !last_op->CanBeSignaled()) {
+                other_queue = last_op && last_op->queue ? last_op->queue->Queue() : VK_NULL_HANDLE;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool CheckSemaphoreValue(const SEMAPHORE_STATE& semaphore_state, std::string& where, uint64_t& bad_value,
+                             std::function<bool(const SEMAPHORE_STATE::SemOp&, bool is_pending)> compare_func) {
+        auto current_signal = timeline_signals.find(semaphore_state.semaphore());
+        // NOTE: for purposes of validation, duplicate operations in the same submission are not yet pending.
+        if (current_signal != timeline_signals.end()) {
+            SEMAPHORE_STATE::SemOp sig_op(SEMAPHORE_STATE::kSignal, nullptr, 0, current_signal->second);
+            if (compare_func(sig_op, false)) {
+                where = "current submit's signal";
+                bad_value = sig_op.payload;
+                return true;
+            }
+        }
+        auto current_wait = timeline_waits.find(semaphore_state.semaphore());
+        if (current_wait != timeline_waits.end()) {
+            SEMAPHORE_STATE::SemOp wait_op(SEMAPHORE_STATE::kWait, nullptr, 0, current_wait->second);
+            if (compare_func(wait_op, false)) {
+                where = "current submit's wait";
+                bad_value = wait_op.payload;
+                return true;
+            }
+        }
+        auto pending = semaphore_state.LastOp(compare_func);
+        if (pending) {
+            if (pending->payload == semaphore_state.Completed().payload) {
+                where = "current";
+            } else {
+                where = pending->IsSignal() ? "pending signal" : "pending wait";
+            }
+            bad_value = pending->payload;
+            return true;
+        }
+        return false;
+    }
+};
+
 class CoreChecks : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -368,7 +470,6 @@ class CoreChecks : public ValidationStateTracker {
     template <typename BufBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const BufBarrier& barrier,
                                       const BUFFER_STATE* state_data) const;
-    bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
     bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline) const;
@@ -524,12 +625,9 @@ class CoreChecks : public ValidationStateTracker {
                                                       const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info,
                                                       const char* attachment_type, const char* func_name) const;
 
-    template <typename T1>
-    bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const T1 object, const char* VUID) const;
-    template <typename T1>
-    bool ValidateDeviceMaskToZero(uint32_t deviceMask, const T1 object, const char* VUID) const;
-    template <typename T1>
-    bool ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE& cb_state, uint32_t deviceMask, const T1 object,
+    bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, const LogObjectList& objlist, const char* VUID) const;
+    bool ValidateDeviceMaskToZero(uint32_t deviceMask, const LogObjectList& objlist, const char* VUID) const;
+    bool ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE& cb_state, uint32_t deviceMask, const LogObjectList& objlist,
                                            const char* VUID) const;
     bool ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE& cb_state, uint32_t deviceMask, const char* VUID) const;
 

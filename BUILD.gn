@@ -186,6 +186,7 @@ core_validation_sources = [
   "layers/synchronization_validation.h",
   "layers/video_session_state.cpp",
   "layers/video_session_state.h",
+  "layers/wsi_validation.cpp",
 ]
 
 object_lifetimes_sources = [
