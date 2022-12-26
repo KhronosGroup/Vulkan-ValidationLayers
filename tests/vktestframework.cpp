@@ -133,14 +133,17 @@ static std::vector<std::string> GetVkEnvironmentVariable(const char *env_var) {
     std::string::size_type start = 0;
 
     std::string::size_type pos = str.find_first_of(delimiter, start);
+    std::string::size_type length = pos;
     while (pos != std::string::npos) {
-        items.emplace_back(str, start, pos);
+        // emplace uses std::substr which takes length from start
+        items.emplace_back(str, start, length);
 
         start = pos + 1;
 
         pos = str.find_first_of(delimiter, start);
-    }
 
+        length = pos - start;
+    }
     items.emplace_back(str, start);
 
     return items;
@@ -176,6 +179,7 @@ static void CheckEnvironmentVariables() {
     }
 
     const std::vector<std::string> vk_layer_paths = GetVkEnvironmentVariable("VK_LAYER_PATH");
+    bool found_json = false;
     for (const std::string &layer_path : vk_layer_paths) {
         const std::filesystem::path layer_dir(layer_path);
 
@@ -186,28 +190,27 @@ static void CheckEnvironmentVariables() {
         const std::string user_provided = "\n\nVK_LAYER_PATH = " + layer_path;
 
         if (!std::filesystem::exists(layer_dir)) {
-            std::cerr << "Invalid VK_LAYER_PATH! Directory doesn't exist!" << user_provided << std::endl;
+            std::cerr << "Invalid VK_LAYER_PATH! Directory " << layer_dir << " doesn't exist!" << user_provided << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
         if (!std::filesystem::is_directory(layer_dir)) {
-            std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH must be a directory!" << user_provided << std::endl;
+            std::cerr << "Invalid VK_LAYER_PATH! " << layer_dir << " must be a directory!" << user_provided << std::endl;
             std::exit(EXIT_FAILURE);
         }
 
-        bool found_json = false;
         for (auto const &dir_entry : std::filesystem::directory_iterator{layer_dir}) {
             if (dir_entry.path().filename() == "VkLayer_khronos_validation.json") {
                 found_json = true;
                 break;
             }
         }
+    }
 
-        if (!found_json) {
-            std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH directory must contain VkLayer_khronos_validation.json!"
-                      << user_provided << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
+    if (!found_json) {
+        std::cerr << "Invalid VK_LAYER_PATH! VK_LAYER_PATH directory must contain VkLayer_khronos_validation.json!"
+                  << GetEnvironment("VK_LAYER_PATH") << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 }
 
