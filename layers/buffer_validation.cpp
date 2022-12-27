@@ -5586,17 +5586,17 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
     subresource_range_error_codes.base_mip_err = "VUID-VkImageViewCreateInfo-subresourceRange-01478";
     subresource_range_error_codes.mip_count_err = "VUID-VkImageViewCreateInfo-subresourceRange-01718";
     subresource_range_error_codes.base_layer_err =
-        is_khr_maintenance1
-            ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-image-02724"
-                                 : (device_extensions.vk_ext_image_2d_view_of_3d ? "VUID-VkImageViewCreateInfo-image-06724"
-                                                                                 : "VUID-VkImageViewCreateInfo-image-01482"))
-            : "VUID-VkImageViewCreateInfo-subresourceRange-01480";
+        is_khr_maintenance1 ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-image-02724"
+                                                 : (IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)
+                                                        ? "VUID-VkImageViewCreateInfo-image-06724"
+                                                        : "VUID-VkImageViewCreateInfo-image-01482"))
+                            : "VUID-VkImageViewCreateInfo-subresourceRange-01480";
     subresource_range_error_codes.layer_count_err =
-        is_khr_maintenance1
-            ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
-                                 : (device_extensions.vk_ext_image_2d_view_of_3d ? "VUID-VkImageViewCreateInfo-subresourceRange-06725"
-                                                                                 : "VUID-VkImageViewCreateInfo-subresourceRange-01483"))
-            : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
+        is_khr_maintenance1 ? (is_3_d_to_2_d_map ? "VUID-VkImageViewCreateInfo-subresourceRange-02725"
+                                                 : (IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)
+                                                        ? "VUID-VkImageViewCreateInfo-subresourceRange-06725"
+                                                        : "VUID-VkImageViewCreateInfo-subresourceRange-01483"))
+                            : "VUID-VkImageViewCreateInfo-subresourceRange-01719";
 
     return ValidateImageSubresourceRange(image_state->createInfo.mipLevels, image_layer_count, subresourceRange,
                                          "vkCreateImageView", "pCreateInfo->subresourceRange", image_layer_count_var_name,
@@ -6429,7 +6429,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                 if (IsExtEnabled(device_extensions.vk_khr_maintenance1)) {
                     if (view_type != VK_IMAGE_VIEW_TYPE_3D) {
                         if ((view_type == VK_IMAGE_VIEW_TYPE_2D || view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-                            if (device_extensions.vk_ext_image_2d_view_of_3d) {
+                            if (IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)) {
                                 if (!(image_flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT)) {
                                     if (view_type == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
                                         skip |= LogError(
