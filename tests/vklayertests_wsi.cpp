@@ -1380,9 +1380,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     vk::AcquireNextImage2KHR(m_device->device(), &acquire_next_image_info, &imageIndex);
     m_errorMonitor->VerifyFound();
 
-    err = fence.wait(kWaitTimeout);
-    ASSERT_VK_SUCCESS(err);
-    fence.reset();
+    //NOTE: We cannot wait on fence in this test because all of the acquire calls fail.
 
     acquire_next_image_info.semaphore = semaphore2.handle();
     acquire_next_image_info.deviceMask = 0;
@@ -1408,9 +1406,6 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
     vk::QueueWaitIdle(m_device->m_queue);
-
-    err = fence.wait(kWaitTimeout);
-    ASSERT_VK_SUCCESS(err);
 }
 
 TEST_F(VkLayerTest, DisplayPlaneSurface) {
@@ -2396,3 +2391,118 @@ TEST_F(VkLayerTest, PhysicalDeviceSurfaceCapabilities) {
     m_errorMonitor->VerifyFound();
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+        //
+TEST_F(VkLayerTest, QueuePresentWaitingSameSemaphore) {
+    TEST_DESCRIPTION("Submit to queue with waitSemaphore that another queue is already waiting on.");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
+    }
+
+    if (m_device->graphics_queues().size() < 2) {
+        GTEST_SKIP() << "2 graphics queues are needed";
+    }
+
+    uint32_t image_index{0};
+    uint32_t image_count{0};
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> images(image_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+
+    vk_testing::Fence fence(*m_device);
+    vk_testing::Semaphore semaphore(*m_device);
+
+    auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
+    ASSERT_VK_SUCCESS(err);
+
+    err = fence.wait(kWaitTimeout);
+    ASSERT_VK_SUCCESS(err);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkQueue other = m_device->graphics_queues()[1]->handle();
+
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    auto wait_submit = LvlInitStruct<VkSubmitInfo>();
+    wait_submit.waitSemaphoreCount = 1;
+    wait_submit.pWaitSemaphores = &semaphore.handle();
+    wait_submit.pWaitDstStageMask = &stage_flags;
+
+    vk::QueueSubmit(m_device->m_queue, 1, &wait_submit, VK_NULL_HANDLE);
+
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    present.swapchainCount = 1;
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores = &semaphore.handle();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkQueuePresentKHR-pWaitSemaphores-01294");
+    vk::QueuePresentKHR(other, &present);
+    m_errorMonitor->VerifyFound();
+
+    vk::QueueWaitIdle(m_device->m_queue);
+    vk::QueueWaitIdle(other);
+}
+
+TEST_F(VkLayerTest, QueuePresentBinarySemaphoreNotSignaled) {
+    TEST_DESCRIPTION("Submit a present operation with a waiting binary semaphore not previously signaled.");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME);
+    // timeline semaphore determines which VUID used, even though it isn't needed for the test
+    AddOptionalExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    auto timeline_features = LvlInitStruct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
+    auto features2 = GetPhysicalDeviceFeatures2(timeline_features);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    if (!InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Cannot create surface or swapchain, skipping test";
+    }
+    uint32_t image_index{0};
+    uint32_t image_count{0};
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr);
+    std::vector<VkImage> images(image_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, images.data());
+
+    vk_testing::Fence fence(*m_device);
+    vk_testing::Semaphore semaphore(*m_device);
+
+    auto err = vk::AcquireNextImageKHR(device(), m_swapchain, kWaitTimeout, semaphore.handle(), fence.handle(), &image_index);
+    ASSERT_VK_SUCCESS(err);
+
+    err = fence.wait(kWaitTimeout);
+    ASSERT_VK_SUCCESS(err);
+    SetImageLayout(m_device, VK_IMAGE_ASPECT_COLOR_BIT, images[image_index], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &stage_flags;
+    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(err);
+
+    auto present = LvlInitStruct<VkPresentInfoKHR>();
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &image_index;
+    present.swapchainCount = 1;
+    present.waitSemaphoreCount = 1;
+    // the semaphore has already been waited on
+    present.pWaitSemaphores = &semaphore.handle();
+
+    // VUIDs reported change if the extension is enabled, even if the timelineSemaphore feature isn't supported.
+    const bool has_timeline_sem_ext = DeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    const char *expected_vuid =
+        has_timeline_sem_ext ? "VUID-vkQueuePresentKHR-pWaitSemaphores-03268" : "VUID-vkQueuePresentKHR-pWaitSemaphores-01295";
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, expected_vuid);
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyFound();
+
+    ASSERT_VK_SUCCESS(vk::QueueWaitIdle(m_device->m_queue));
+}
