@@ -5156,7 +5156,7 @@ struct SemaphoreSubmitState {
         return skip;
     }
 
-    bool ValidateWaitSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value, uint32_t device_Index) {
+    bool ValidateWaitSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value) {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
         bool skip = false;
@@ -5238,7 +5238,7 @@ struct SemaphoreSubmitState {
         return false;
     }
 
-    bool ValidateSignalSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value, uint32_t deviceIndex) {
+    bool ValidateSignalSemaphore(const core_error::Location &loc, VkSemaphore semaphore, uint64_t value) {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
         bool skip = false;
@@ -5314,7 +5314,6 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
     for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
         uint64_t value = 0;
-        uint32_t device_index = 0;
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
 
         if (submit.pWaitDstStageMask) {
@@ -5346,12 +5345,11 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
-        skip |= state.ValidateWaitSemaphore(outer_loc.dot(Field::pWaitSemaphores, i), semaphore, value, device_index);
+        skip |= state.ValidateWaitSemaphore(outer_loc.dot(Field::pWaitSemaphores, i), semaphore, value);
     }
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
-        uint32_t device_index = 0;
         auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
         if (!semaphore_state) {
             continue;
@@ -5375,7 +5373,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
-        skip |= state.ValidateSignalSemaphore(loc, semaphore, value, device_index);
+        skip |= state.ValidateSignalSemaphore(loc, semaphore, value);
     }
     return skip;
 }
@@ -5389,7 +5387,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         skip |= ValidatePipelineStage(LogObjectList(wait_info.semaphore), loc.dot(Field::stageMask), state.queue_flags,
                                       wait_info.stageMask);
         skip |= ValidateStageMaskHost(loc.dot(Field::stageMask), wait_info.stageMask);
-        skip |= state.ValidateWaitSemaphore(loc, wait_info.semaphore, wait_info.value, wait_info.deviceIndex);
+        skip |= state.ValidateWaitSemaphore(loc, wait_info.semaphore, wait_info.value);
 
         auto semaphore_state = Get<SEMAPHORE_STATE>(wait_info.semaphore);
         if (semaphore_state && semaphore_state->type == VK_SEMAPHORE_TYPE_TIMELINE) {
@@ -5411,7 +5409,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         skip |= ValidatePipelineStage(LogObjectList(sem_info.semaphore), loc.dot(Field::stageMask), state.queue_flags,
                                       sem_info.stageMask);
         skip |= ValidateStageMaskHost(loc.dot(Field::stageMask), sem_info.stageMask);
-        skip |= state.ValidateSignalSemaphore(loc, sem_info.semaphore, sem_info.value, sem_info.deviceIndex);
+        skip |= state.ValidateSignalSemaphore(loc, sem_info.semaphore, sem_info.value);
     }
     return skip;
 }
@@ -5422,7 +5420,6 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
     auto *timeline_semaphore_submit_info = LvlFindInChain<VkTimelineSemaphoreSubmitInfo>(submit.pNext);
     for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
         uint64_t value = 0;
-        uint32_t device_index = 0;
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
 
         const LogObjectList objlist(semaphore, state.queue);
@@ -5450,12 +5447,11 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pWaitSemaphoreValues[i];
         }
-        skip |= state.ValidateWaitSemaphore(outer_loc.dot(Field::pWaitSemaphores, i), semaphore, value, device_index);
+        skip |= state.ValidateWaitSemaphore(outer_loc.dot(Field::pWaitSemaphores, i), semaphore, value);
     }
     for (uint32_t i = 0; i < submit.signalSemaphoreCount; ++i) {
         VkSemaphore semaphore = submit.pSignalSemaphores[i];
         uint64_t value = 0;
-        uint32_t device_index = 0;
         auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
         if (!semaphore_state) {
             continue;
@@ -5479,7 +5475,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
             }
             value = timeline_semaphore_submit_info->pSignalSemaphoreValues[i];
         }
-        skip |= state.ValidateSignalSemaphore(loc, semaphore, value, device_index);
+        skip |= state.ValidateSignalSemaphore(loc, semaphore, value);
     }
     return skip;
 }
@@ -18538,20 +18534,20 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     bool skip = false;
     auto queue_state = Get<QUEUE_STATE>(queue);
 
+    SemaphoreSubmitState sem_submit_state(this, queue,
+                                          physical_device_state->queue_family_properties[queue_state->queueFamilyIndex].queueFlags);
+
+    Location outer_loc(Func::vkQueuePresentKHR, Struct::VkPresentInfoKHR);
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto semaphore_state = Get<SEMAPHORE_STATE>(pPresentInfo->pWaitSemaphores[i]);
         if (semaphore_state && semaphore_state->type != VK_SEMAPHORE_TYPE_BINARY) {
             skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
                              "vkQueuePresentKHR: pWaitSemaphores[%u] (%s) is not a VK_SEMAPHORE_TYPE_BINARY", i,
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
+            continue;
         }
-        if (semaphore_state && semaphore_state->Scope() == kSyncScopeInternal && !semaphore_state->CanBeWaited()) {
-            const LogObjectList objlist(queue, pPresentInfo->pWaitSemaphores[i]);
-            skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
-                             "vkQueuePresentKHR: Queue %s is waiting on pWaitSemaphores[%u] (%s) that has no way to be signaled.",
-                             report_data->FormatHandle(queue).c_str(), i,
-                             report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
-        }
+        skip |=
+            sem_submit_state.ValidateWaitSemaphore(outer_loc.dot(Field::pWaitSemaphores, i), pPresentInfo->pWaitSemaphores[i], 0);
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
