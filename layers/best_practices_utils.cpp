@@ -738,7 +738,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        if (!device_extensions.vk_ext_pageable_device_local_memory &&
+        if (!IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory) &&
             !LvlFindInChain<VkMemoryPriorityAllocateInfoEXT>(pAllocateInfo->pNext)) {
             skip |= LogPerformanceWarning(
                 device, kVUID_BestPractices_AllocateMemory_SetPriority,
@@ -3502,7 +3502,7 @@ bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBu
 bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorNVIDIA) && device_extensions.vk_ext_pageable_device_local_memory) {
+    if (VendorCheckEnabled(kBPVendorNVIDIA) && IsExtEnabled(device_extensions.vk_ext_pageable_device_local_memory)) {
         auto mem_info = std::static_pointer_cast<const bp_state::DeviceMemory>(Get<DEVICE_MEMORY_STATE>(memory));
         if (!mem_info->dynamic_priority) {
             skip |=

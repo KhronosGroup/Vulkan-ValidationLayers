@@ -1287,7 +1287,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         }
     }
 
-    if (device_extensions.vk_ext_primitives_generated_query) {
+    if (IsExtEnabled(device_extensions.vk_ext_primitives_generated_query)) {
         bool primitives_generated_query_with_rasterizer_discard =
             enabled_features.primitives_generated_query_features.primitivesGeneratedQueryWithRasterizerDiscard == VK_TRUE;
         bool primitives_generated_query_with_non_zero_streams =
