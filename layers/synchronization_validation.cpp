@@ -685,9 +685,13 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     // But if write hazard doesn't happen, read hazard is impossible to happen.
     if (interface_var.is_writable) {
         return stage_access->second.storage_write;
+    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
+               descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+               descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+        return stage_access->second.sampled_read;
+    } else {
+        return stage_access->second.storage_read;
     }
-    // TODO: sampled_read
-    return stage_access->second.storage_read;
 }
 
 bool IsImageLayoutDepthWritable(VkImageLayout image_layout) {
