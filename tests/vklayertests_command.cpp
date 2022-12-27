@@ -1436,7 +1436,7 @@ TEST_F(VkLayerTest, CopyImageLayerCountMismatch) {
     copyRegion.extent.height = 1;
     copyRegion.extent.depth = 1;
 
-    const char *vuid = (maintenance1 == true) ? "UNASSIGNED-VkImageCopy-extent" : "VUID-VkImageCopy-layerCount-00138";
+    const char *vuid = (maintenance1 == true) ? "VUID-vkCmdCopyImage-srcImage-07744" : "VUID-VkImageCopy-layerCount-00138";
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
     m_commandBuffer->CopyImage(src_image_obj.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image_obj.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copyRegion);
@@ -2836,7 +2836,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     // 2D src / 3D dst and depth not equal to src layerCount
     copy_region.extent = {4, 1, 2};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-01791");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkImageCopy-extent");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07744");
     m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2845,7 +2845,7 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     // 3D src / 2D dst and depth not equal to dst layerCount
     copy_region.extent = {4, 1, 2};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstImage-01792");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkImageCopy-extent");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-srcImage-07744");
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
