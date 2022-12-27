@@ -58,6 +58,7 @@ enum class Func {
     vkCreateRenderPass2,
     vkQueueBindSparse,
     vkSignalSemaphore,
+    vkQueuePresentKHR,
 };
 
 const std::string& String(Func func);
@@ -79,6 +80,7 @@ enum class Struct {
     VkSemaphoreSignalInfo,
     VkSemaphoreSubmitInfo,
     VkProtectedSubmitInfo,
+    VkPresentInfoKHR,
 };
 
 const std::string& String(Struct s);

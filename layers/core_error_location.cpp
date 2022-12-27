@@ -42,6 +42,7 @@ const std::string& String(Func func) {
         FUNC_ENTRY(vkCreateRenderPass2),
         FUNC_ENTRY(vkQueueBindSparse),
         FUNC_ENTRY(vkSignalSemaphore),
+        FUNC_ENTRY(vkQueuePresentKHR),
     };
     const auto entry = table.find(func);
     assert(entry != table.end());
@@ -66,6 +67,7 @@ const std::string& String(Struct structure) {
         STRUCT_ENTRY(VkSubpassDependency2),
         STRUCT_ENTRY(VkBindSparseInfo),
         STRUCT_ENTRY(VkSemaphoreSignalInfo),
+        STRUCT_ENTRY(VkPresentInfoKHR),
     };
     const auto entry = table.find(structure);
     assert(entry != table.end());
