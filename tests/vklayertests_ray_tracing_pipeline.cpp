@@ -901,9 +901,7 @@ TEST_F(VkLayerTest, RayTracingPipelineDeferredOp) {
     const auto vkGetDeferredOperationResultKHR =
         GetInstanceProcAddr<PFN_vkGetDeferredOperationResultKHR>("vkGetDeferredOperationResultKHR");
 
-    PFN_vkDestroyDeferredOperationKHR vkDestroyDeferredOperationKHR =
-        reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(vk::GetInstanceProcAddr(instance(), "vkDestroyDeferredOperationKHR"));
-    ASSERT_TRUE(vkDestroyDeferredOperationKHR != nullptr);
+    auto vkDestroyDeferredOperationKHR = GetInstanceProcAddr<PFN_vkDestroyDeferredOperationKHR>("vkDestroyDeferredOperationKHR");
 
     const VkPipelineLayoutObj pipeline_layout(m_device, {});
 

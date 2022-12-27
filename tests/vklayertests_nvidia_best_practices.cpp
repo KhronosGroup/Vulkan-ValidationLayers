@@ -313,9 +313,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
     vk_testing::Buffer acceleration_structure_buffer(test_device, acceleration_structure_buffer_ci);
     vk_testing::Buffer scratch_buffer(test_device, scratch_buffer_ci);
 
-    auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
-    ASSERT_TRUE(vkGetBufferDeviceAddressKHR != nullptr);
+    auto vkGetBufferDeviceAddressKHR = GetDeviceProcAddr<PFN_vkGetBufferDeviceAddress>("vkGetBufferDeviceAddressKHR");
 
     VkBufferDeviceAddressInfo scratch_buffer_device_address_info = LvlInitStruct<VkBufferDeviceAddressInfo>();
     scratch_buffer_device_address_info.buffer = scratch_buffer.handle();
@@ -363,9 +361,8 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
     VkAccelerationStructureBuildRangeInfoKHR *p_build_range_info = &build_range_info;
 
-    auto vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
-        vk::GetDeviceProcAddr(test_device.handle(), "vkCmdBuildAccelerationStructuresKHR"));
-    ASSERT_NE(vkCmdBuildAccelerationStructuresKHR, nullptr);
+    auto vkCmdBuildAccelerationStructuresKHR =
+        GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresKHR>("vkCmdBuildAccelerationStructuresKHR");
 
     for (uint32_t queue_family_index : queue_family_indices) {
         VkCommandPoolCreateInfo command_pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
@@ -529,8 +526,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindMemory_NoPriority) {
         m_errorMonitor->VerifyFound();
     }
 
-    auto vkSetDeviceMemoryPriorityEXT = reinterpret_cast<PFN_vkSetDeviceMemoryPriorityEXT>(
-        vk::GetDeviceProcAddr(test_device.handle(), "vkSetDeviceMemoryPriorityEXT"));
+    auto vkSetDeviceMemoryPriorityEXT = GetDeviceProcAddr<PFN_vkSetDeviceMemoryPriorityEXT>("vkSetDeviceMemoryPriorityEXT");
     vkSetDeviceMemoryPriorityEXT(test_device.handle(), memory.handle(), 0.5f);
 
     {

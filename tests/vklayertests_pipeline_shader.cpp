@@ -1770,24 +1770,23 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     m_errorMonitor->VerifyFound();
 
     if (khx_dg_ext_available) {
-        PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
-            (PFN_vkCmdDispatchBaseKHR)vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
+        auto vkCmdDispatchBaseKHR = GetInstanceProcAddr<PFN_vkCmdDispatchBaseKHR>("vkCmdDispatchBaseKHR");
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00427");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), 1, 1, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00421");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupX-00422");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-baseGroupZ-00423");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
@@ -1799,15 +1798,15 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
         z_count_limit -= z_base;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountX-00424");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountY-00425");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDispatchBase-groupCountZ-00426");
-        fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
+        vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
         printf("KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
@@ -2038,9 +2037,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatReadForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-            (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                 "vkGetPhysicalDeviceFormatProperties2KHR");
+    auto vkGetPhysicalDeviceFormatProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceFormatProperties2KHR>("vkGetPhysicalDeviceFormatProperties2KHR");
 
     struct {
         VkFormat format;
@@ -2206,9 +2204,8 @@ TEST_F(VkLayerTest, MissingStorageImageFormatWriteForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                             "vkGetPhysicalDeviceFormatProperties2KHR");
+    auto vkGetPhysicalDeviceFormatProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceFormatProperties2KHR>("vkGetPhysicalDeviceFormatProperties2KHR");
 
     struct {
         VkFormat format;
@@ -2737,9 +2734,8 @@ TEST_F(VkLayerTest, MissingSampledImageDepthComparisonForFormat) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceFormatProperties2KHR vkGetPhysicalDeviceFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                             "vkGetPhysicalDeviceFormatProperties2KHR");
+    auto vkGetPhysicalDeviceFormatProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceFormatProperties2KHR>("vkGetPhysicalDeviceFormatProperties2KHR");
 
     VkFormat format = VK_FORMAT_UNDEFINED;
     for (uint32_t fmt = VK_FORMAT_R4G4_UNORM_PACK8; fmt < VK_FORMAT_D16_UNORM; fmt++) {
@@ -4064,7 +4060,7 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
         if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
             // Attempt to artificially lower maximum offset
             PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-                (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+                GetInstanceProcAddr<PFN_vkSetPhysicalDeviceLimitsEXT, false>("vkSetPhysicalDeviceLimitsEXT");
             if (!fpvkSetPhysicalDeviceLimitsEXT) {
                 GTEST_SKIP() << "All offsets are valid & device_profile_api not found";
             }
@@ -6854,8 +6850,8 @@ TEST_F(VkLayerTest, FramebufferMixedSamplesCoverageReduction) {
     uint32_t combination_count = 0;
     std::vector<VkFramebufferMixedSamplesCombinationNV> combinations;
     auto vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV =
-        reinterpret_cast<PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV"));
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV>(
+            "vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV");
 
     ASSERT_NO_FATAL_FAILURE(vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(gpu(), &combination_count, nullptr));
     if (combination_count < 1) {
@@ -8831,9 +8827,8 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRatePipelineCombinerOpsLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
@@ -9366,9 +9361,8 @@ TEST_F(VkLayerTest, ShaderFloatControl) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
 
     auto shader_float_control = LvlInitStruct<VkPhysicalDeviceFloatControlsProperties>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&shader_float_control);
@@ -12217,9 +12211,8 @@ TEST_F(VkLayerTest, ColorBlendAdvanced) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-        vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
 
     auto blend_operation_advanced_props = LvlInitStruct<VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT>();
     auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&blend_operation_advanced_props);
@@ -12274,10 +12267,8 @@ TEST_F(VkLayerTest, ValidateVariableSampleLocations) {
         GTEST_SKIP() << "VkPhysicalDeviceSampleLocationsPropertiesEXT::variableSampleLocations is supported, skipping.";
     }
 
-    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT vkGetPhysicalDeviceMultisamplePropertiesEXT =
-        (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT)vk::GetInstanceProcAddr(instance(),
-                                                                                 "vkGetPhysicalDeviceMultisamplePropertiesEXT");
-    assert(vkGetPhysicalDeviceMultisamplePropertiesEXT != nullptr);
+    auto vkGetPhysicalDeviceMultisamplePropertiesEXT =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT>("vkGetPhysicalDeviceMultisamplePropertiesEXT");
 
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -13563,9 +13554,8 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props =
         LvlInitStruct<VkPhysicalDeviceConservativeRasterizationPropertiesEXT>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&conservative_rasterization_props);
@@ -13673,9 +13663,8 @@ TEST_F(VkLayerTest, TestRuntimeSpirvTransformFeedback) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props =
         LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
     VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&transform_feedback_props);
@@ -14427,9 +14416,7 @@ TEST_F(VkLayerTest, ComputeImageLayout) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
+    auto vkCmdDispatchBaseKHR = GetInstanceProcAddr<PFN_vkCmdDispatchBaseKHR>("vkCmdDispatchBaseKHR");
 
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1) in;
@@ -14495,10 +14482,6 @@ TEST_F(VkLayerTest, ComputeImageLayout_1_1) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-
-    auto vkCmdDispatchBaseKHR =
-        reinterpret_cast<PFN_vkCmdDispatchBaseKHR>(vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR"));
-    ASSERT_TRUE(vkCmdDispatchBaseKHR != nullptr);
 
     const char *cs = R"glsl(#version 450
     layout(local_size_x=1) in;

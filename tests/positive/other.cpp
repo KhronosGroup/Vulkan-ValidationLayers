@@ -375,14 +375,14 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     VkPhysicalDeviceFeatures2 pd_features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&host_query_reset_features);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
-    auto fpvkResetQueryPoolEXT = (PFN_vkResetQueryPoolEXT)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPoolEXT");
+    auto vkResetQueryPoolEXT = GetDeviceProcAddr<PFN_vkResetQueryPoolEXT>("vkResetQueryPoolEXT");
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = LvlInitStruct<VkQueryPoolCreateInfo>();
     query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
-    fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
+    vkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 

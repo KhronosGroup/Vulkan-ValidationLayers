@@ -5484,8 +5484,8 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
     // Set separate depth stencil feature bit
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto vkGetPhysicalDeviceFeatures2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceFeatures2KHR>("vkGetPhysicalDeviceFeatures2KHR");
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&separate_depth_stencil_layouts_features);
     if (vkGetPhysicalDeviceFeatures2KHR) {
@@ -10333,10 +10333,8 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
 
-    PFN_vkGetPhysicalDeviceImageFormatProperties2KHR vkGetPhysicalDeviceImageFormatProperties2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(instance(),
-                                                                                  "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceImageFormatProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>("vkGetPhysicalDeviceImageFormatProperties2KHR");
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.flags = 0;
@@ -11621,9 +11619,8 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
         GTEST_SKIP() << "fragmentDensityMapDynamic not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceFragmentDensityMap2PropertiesEXT density_map2_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&density_map2_properties);
@@ -11948,9 +11945,8 @@ TEST_F(VkLayerTest, CustomBorderColor) {
     vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     m_errorMonitor->VerifyFound();
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_properties =
         LvlInitStruct<VkPhysicalDeviceCustomBorderColorPropertiesEXT>();
     auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&custom_properties);
@@ -13841,9 +13837,8 @@ TEST_F(VkLayerTest, ImageFormatInfoDrmFormatModifier) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    auto vkGetPhysicalDeviceImageFormatProperties2KHR = (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(
-        instance(), "vkGetPhysicalDeviceImageFormatProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceImageFormatProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceImageFormatProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceImageFormatProperties2KHR>("vkGetPhysicalDeviceImageFormatProperties2KHR");
 
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT image_drm_format_modifier =
         LvlInitStruct<VkPhysicalDeviceImageDrmFormatModifierInfoEXT>();
@@ -15004,8 +14999,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsSwapchain) {
     }
 
     PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
+        GetDeviceProcAddr<PFN_vkGetDeviceImageMemoryRequirementsKHR>("vkGetDeviceImageMemoryRequirementsKHR");
 
     auto image_swapchain_create_info = LvlInitStruct<VkImageSwapchainCreateInfoKHR>();
     image_swapchain_create_info.swapchain = m_swapchain;
@@ -15046,9 +15040,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDrmFormatModifier) {
     }
 
     PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
+        GetDeviceProcAddr<PFN_vkGetDeviceImageMemoryRequirementsKHR>("vkGetDeviceImageMemoryRequirementsKHR");
 
     VkSubresourceLayout planeLayout = {0, 0, 0, 0, 0};
     auto drm_format_modifier_create_info = LvlInitStruct<VkImageDrmFormatModifierExplicitCreateInfoEXT>();
@@ -15097,9 +15089,7 @@ TEST_F(VkLayerTest, DeviceImageMemoryRequirementsDisjoint) {
     }
 
     PFN_vkGetDeviceImageMemoryRequirementsKHR vkGetDeviceImageMemoryRequirementsKHR =
-        reinterpret_cast<PFN_vkGetDeviceImageMemoryRequirementsKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetDeviceImageMemoryRequirementsKHR"));
-    assert(vkGetDeviceImageMemoryRequirementsKHR != nullptr);
+        GetDeviceProcAddr<PFN_vkGetDeviceImageMemoryRequirementsKHR>("vkGetDeviceImageMemoryRequirementsKHR");
 
     auto image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -15992,8 +15982,7 @@ TEST_F(VkLayerTest, InvalidImageCompressionControl) {
     }
 
     auto vkGetImageSubresourceLayout2EXT =
-        reinterpret_cast<PFN_vkGetImageSubresourceLayout2EXT>(vk::GetInstanceProcAddr(instance(), "vkGetImageSubresourceLayout2EXT"));
-    ASSERT_TRUE(vkGetImageSubresourceLayout2EXT != nullptr);
+        GetDeviceProcAddr<PFN_vkGetImageSubresourceLayout2EXT>("vkGetImageSubresourceLayout2EXT");
 
     // A bit set flag bit
     ASSERT_NO_FATAL_FAILURE(InitState());

@@ -998,9 +998,8 @@ VkPhysicalDeviceFeatures2 VkLayerTest::GetPhysicalDeviceFeatures2(VkPhysicalDevi
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
     } else {
-        auto vkGetPhysicalDeviceFeatures2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2KHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR"));
-        assert(vkGetPhysicalDeviceFeatures2KHR);
+        auto vkGetPhysicalDeviceFeatures2KHR =
+            GetInstanceProcAddr<PFN_vkGetPhysicalDeviceFeatures2KHR>("vkGetPhysicalDeviceFeatures2KHR");
         vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
     }
     return features2;
@@ -1011,9 +1010,8 @@ VkPhysicalDeviceProperties2 VkLayerTest::GetPhysicalDeviceProperties2(VkPhysical
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vk::GetPhysicalDeviceProperties2(gpu(), &props2);
     } else {
-        auto vkGetPhysicalDeviceProperties2KHR = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2KHR>(
-            vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR"));
-        assert(vkGetPhysicalDeviceProperties2KHR);
+        auto vkGetPhysicalDeviceProperties2KHR =
+            GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
         vkGetPhysicalDeviceProperties2KHR(gpu(), &props2);
     }
     return props2;
@@ -1040,9 +1038,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
     // Load required functions
     fpvkSetPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(
-        instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
+        GetInstanceProcAddr<PFN_vkSetPhysicalDeviceFormatPropertiesEXT, false>("vkSetPhysicalDeviceFormatPropertiesEXT");
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT =
+        GetInstanceProcAddr<PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT, false>(
+            "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
         printf(
@@ -1064,10 +1063,10 @@ bool VkLayerTest::LoadDeviceProfileLayer(
 
     // Load required functions
     fpvkSetPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkSetPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT");
+        GetInstanceProcAddr<PFN_vkSetPhysicalDeviceFormatProperties2EXT, false>("vkSetPhysicalDeviceFormatProperties2EXT");
     fpvkGetOriginalPhysicalDeviceFormatProperties2EXT =
-        (PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(
-            instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
+        GetInstanceProcAddr<PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT, false>(
+            "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
 
     if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
         printf(
@@ -1087,10 +1086,9 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceLimitsEXT &fpvkS
     }
 
     // Load required functions
-    fpvkSetPhysicalDeviceLimitsEXT =
-        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+    fpvkSetPhysicalDeviceLimitsEXT = GetInstanceProcAddr<PFN_vkSetPhysicalDeviceLimitsEXT, false>("vkSetPhysicalDeviceLimitsEXT");
     fpvkGetOriginalPhysicalDeviceLimitsEXT =
-        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+        GetInstanceProcAddr<PFN_vkGetOriginalPhysicalDeviceLimitsEXT, false>("vkGetOriginalPhysicalDeviceLimitsEXT");
 
     if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
         printf(
@@ -1111,9 +1109,9 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_vkSetPhysicalDeviceFeaturesEXT &fpv
 
     // Load required functions
     fpvkSetPhysicalDeviceFeaturesEXT =
-        (PFN_vkSetPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFeaturesEXT");
+        GetInstanceProcAddr<PFN_vkSetPhysicalDeviceFeaturesEXT, false>("vkSetPhysicalDeviceFeaturesEXT");
     fpvkGetOriginalPhysicalDeviceFeaturesEXT =
-        (PFN_vkGetOriginalPhysicalDeviceFeaturesEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceFeaturesEXT");
+        GetInstanceProcAddr<PFN_vkGetOriginalPhysicalDeviceFeaturesEXT, false>("vkGetOriginalPhysicalDeviceFeaturesEXT");
 
     if (!(fpvkSetPhysicalDeviceFeaturesEXT) || !(fpvkGetOriginalPhysicalDeviceFeaturesEXT)) {
         printf(
@@ -1133,7 +1131,7 @@ bool VkLayerTest::LoadDeviceProfileLayer(PFN_VkSetPhysicalDeviceProperties2EXT &
 
     // Load required functions
     fpvkSetPhysicalDeviceProperties2EXT =
-        (PFN_VkSetPhysicalDeviceProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceProperties2EXT");
+        GetInstanceProcAddr<PFN_VkSetPhysicalDeviceProperties2EXT, false>("vkSetPhysicalDeviceProperties2EXT");
 
     if (!fpvkSetPhysicalDeviceProperties2EXT) {
         printf(
@@ -2546,8 +2544,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
 
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPropertiesNV>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);

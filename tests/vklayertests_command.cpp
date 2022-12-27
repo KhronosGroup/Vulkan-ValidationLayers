@@ -6342,7 +6342,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
     }
 
     PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
-        (PFN_vkCmdDrawMeshTasksIndirectNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectNV");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectNV>("vkCmdDrawMeshTasksIndirectNV");
 
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.size = sizeof(uint32_t);
@@ -7296,9 +7296,8 @@ TEST_F(VkLayerTest, InvalidMixingProtectedResources) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
 
     auto protected_memory_features = LvlInitStruct<VkPhysicalDeviceProtectedMemoryFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(protected_memory_features);
@@ -8225,9 +8224,8 @@ TEST_F(VkLayerTest, VerifyMaxMultiviewInstanceIndex) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     auto multiview_props = LvlInitStruct<VkPhysicalDeviceMultiviewProperties>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&multiview_props);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
@@ -8449,9 +8447,8 @@ TEST_F(VkLayerTest, InvalidSetFragmentShadingRateCombinerOpsLimit) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto vkGetPhysicalDeviceProperties2KHR =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsr_properties =
         LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
     VkPhysicalDeviceProperties2KHR properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&fsr_properties);
@@ -8858,7 +8855,7 @@ TEST_F(VkLayerTest, TestEndCommandBufferWithConditionalRendering) {
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkCmdBeginConditionalRenderingEXT vkCmdBeginConditionalRenderingEXT =
-        (PFN_vkCmdBeginConditionalRenderingEXT)vk::GetInstanceProcAddr(instance(), "vkCmdBeginConditionalRenderingEXT");
+        GetDeviceProcAddr<PFN_vkCmdBeginConditionalRenderingEXT>("vkCmdBeginConditionalRenderingEXT");
 
     auto buffer_ci =
         vk_testing::Buffer::create_info(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT);
@@ -10505,12 +10502,11 @@ TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
     VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = LvlInitStruct<VkPhysicalDeviceMeshShaderPropertiesEXT>();
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
-    PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT =
-        (PFN_vkCmdDrawMeshTasksEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksEXT");
+    PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT = GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksEXT>("vkCmdDrawMeshTasksEXT");
     PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectEXT");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectEXT>("vkCmdDrawMeshTasksIndirectEXT");
     PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountEXT");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectCountEXT>("vkCmdDrawMeshTasksIndirectCountEXT");
 
     // #version 450
     // #extension GL_EXT_mesh_shader : enable
@@ -10674,9 +10670,9 @@ TEST_F(VkLayerTest, MeshShaderEXTMultiDrawIndirect) {
     GetPhysicalDeviceProperties2(mesh_shader_properties);
 
     PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectEXT");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectEXT>("vkCmdDrawMeshTasksIndirectEXT");
     PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT =
-        (PFN_vkCmdDrawMeshTasksIndirectCountEXT)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountEXT");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectCountEXT>("vkCmdDrawMeshTasksIndirectCountEXT");
 
     // #version 450
     // #extension GL_EXT_mesh_shader : require
@@ -10816,12 +10812,11 @@ TEST_F(VkLayerTest, MeshShaderNVDrawCmds) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
-        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
+    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV = GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksNV>("vkCmdDrawMeshTasksNV");
     PFN_vkCmdDrawMeshTasksIndirectNV vkCmdDrawMeshTasksIndirectNV =
-        (PFN_vkCmdDrawMeshTasksIndirectNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectNV");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectNV>("vkCmdDrawMeshTasksIndirectNV");
     PFN_vkCmdDrawMeshTasksIndirectCountNV vkCmdDrawMeshTasksIndirectCountNV =
-        (PFN_vkCmdDrawMeshTasksIndirectCountNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksIndirectCountNV");
+        GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksIndirectCountNV>("vkCmdDrawMeshTasksIndirectCountNV");
 
     static const char mesh_src[] = R"glsl(
         #version 450

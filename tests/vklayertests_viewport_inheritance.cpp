@@ -734,12 +734,8 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     vk::CmdSetScissor(set_state_fixed_count_cmd, 0, 2, test_data.kScissorArray);
     vk::EndCommandBuffer(set_state_fixed_count_cmd);
 
-    auto vkCmdSetViewportWithCountEXT =
-        PFN_vkCmdSetViewportWithCountEXT(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetViewportWithCountEXT"));
-    assert(vkCmdSetViewportWithCountEXT);
-    auto vkCmdSetScissorWithCountEXT =
-        PFN_vkCmdSetScissorWithCountEXT(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdSetScissorWithCountEXT"));
-    assert(vkCmdSetScissorWithCountEXT);
+    auto vkCmdSetViewportWithCountEXT = GetDeviceProcAddr<PFN_vkCmdSetViewportWithCountEXT>("vkCmdSetViewportWithCountEXT");
+    auto vkCmdSetScissorWithCountEXT = GetDeviceProcAddr<PFN_vkCmdSetScissorWithCountEXT>("vkCmdSetScissorWithCountEXT");
 
     VkCommandBuffer set_state_with_count_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
     vkCmdSetViewportWithCountEXT(set_state_with_count_cmd, 2, test_data.kViewportArray);

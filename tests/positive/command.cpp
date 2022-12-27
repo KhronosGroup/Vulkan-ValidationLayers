@@ -542,12 +542,9 @@ TEST_F(VkPositiveLayerTest, DrawIndirectCountWithoutFeature) {
         GTEST_SKIP() << "Tests requires Vulkan 1.1 exactly";
     }
 
-    auto vkCmdDrawIndirectCountKHR =
-        reinterpret_cast<PFN_vkCmdDrawIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndirectCountKHR"));
-    ASSERT_TRUE(vkCmdDrawIndirectCountKHR != nullptr);
+    auto vkCmdDrawIndirectCountKHR = GetDeviceProcAddr<PFN_vkCmdDrawIndirectCountKHR>("vkCmdDrawIndirectCountKHR");
     auto vkCmdDrawIndexedIndirectCountKHR =
-        reinterpret_cast<PFN_vkCmdDrawIndexedIndirectCountKHR>(vk::GetDeviceProcAddr(device(), "vkCmdDrawIndexedIndirectCountKHR"));
-    ASSERT_TRUE(vkCmdDrawIndexedIndirectCountKHR != nullptr);
+        GetDeviceProcAddr<PFN_vkCmdDrawIndexedIndirectCountKHR>("vkCmdDrawIndexedIndirectCountKHR");
 
     VkBufferObj indirect_buffer;
     indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -1206,8 +1203,7 @@ TEST_F(VkPositiveLayerTest, WriteTimestampNoneAndAll) {
         GTEST_SKIP() << "Device graphic queue has timestampValidBits of 0, skipping.\n";
     }
 
-    auto vkCmdWriteTimestamp2KHR =
-        reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(vk::GetDeviceProcAddr(m_device->device(), "vkCmdWriteTimestamp2KHR"));
+    auto vkCmdWriteTimestamp2KHR = GetDeviceProcAddr<PFN_vkCmdWriteTimestamp2KHR>("vkCmdWriteTimestamp2KHR");
 
     vk_testing::QueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci = LvlInitStruct<VkQueryPoolCreateInfo>();

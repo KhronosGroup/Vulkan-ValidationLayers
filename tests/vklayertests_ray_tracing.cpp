@@ -274,9 +274,8 @@ TEST_F(VkLayerTest, RayTracingCopyUnboundAccelerationStructure) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
-    assert(vkCmdCopyAccelerationStructureKHR != nullptr);
+    auto vkCmdCopyAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCmdCopyAccelerationStructureKHR>("vkCmdCopyAccelerationStructureKHR");
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -336,12 +335,9 @@ TEST_F(VkLayerTest, RayTracingCmdCopyUnboundAccelerationStructure) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto vkCmdCopyAccelerationStructureKHR = reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
-        vk::GetDeviceProcAddr(device(), "vkCmdCopyAccelerationStructureKHR"));
-    assert(vkCmdCopyAccelerationStructureKHR != nullptr);
-    auto vkCopyAccelerationStructureKHR =
-        reinterpret_cast<PFN_vkCopyAccelerationStructureKHR>(vk::GetDeviceProcAddr(device(), "vkCopyAccelerationStructureKHR"));
-    assert(vkCopyAccelerationStructureKHR != nullptr);
+    auto vkCmdCopyAccelerationStructureKHR =
+        GetDeviceProcAddr<PFN_vkCmdCopyAccelerationStructureKHR>("vkCmdCopyAccelerationStructureKHR");
+    auto vkCopyAccelerationStructureKHR = GetDeviceProcAddr<PFN_vkCopyAccelerationStructureKHR>("vkCopyAccelerationStructureKHR");
 
     auto buffer_ci = LvlInitStruct<VkBufferCreateInfo>();
     buffer_ci.size = 4096;
@@ -832,9 +828,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
         VkShaderObj rgen_shader(this, empty_shader, VK_SHADER_STAGE_RAYGEN_BIT_KHR, SPV_ENV_VULKAN_1_2);
         VkShaderObj chit_shader(this, empty_shader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
 
-        auto vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-            vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesKHR"));
-        ASSERT_TRUE(vkCreateRayTracingPipelinesKHR != nullptr);
+        auto vkCreateRayTracingPipelinesKHR =
+            GetDeviceProcAddr<PFN_vkCreateRayTracingPipelinesKHR>("vkCreateRayTracingPipelinesKHR");
 
         const VkPipelineLayoutObj pipeline_layout(m_device, {});
 
@@ -880,7 +875,6 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
 
     const auto vkGetPhysicalDeviceProperties2KHR =
         GetInstanceProcAddr<PFN_vkGetPhysicalDeviceProperties2KHR>("vkGetPhysicalDeviceProperties2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);

@@ -407,9 +407,7 @@ TEST_F(VkDebugPrintfTest, MeshTaskShadersPrintf) {
     VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
-    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
-        (PFN_vkCmdDrawMeshTasksNV)vk::GetInstanceProcAddr(instance(), "vkCmdDrawMeshTasksNV");
-    ASSERT_TRUE(vkCmdDrawMeshTasksNV != nullptr);
+    PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV = GetDeviceProcAddr<PFN_vkCmdDrawMeshTasksNV>("vkCmdDrawMeshTasksNV");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);

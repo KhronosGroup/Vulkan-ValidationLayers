@@ -369,9 +369,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
     // Find address of extension call and make the call
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    assert(vkCmdPushDescriptorSetKHR != nullptr);
+    auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
 
     m_commandBuffer->begin();
 
@@ -444,9 +442,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
     descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, sizeof(bo_data));
     descriptor_set.UpdateDescriptorSets();
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    assert(vkCmdPushDescriptorSetKHR != nullptr);
+    auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
 
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -602,9 +598,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
 
     VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), 0, VK_WHOLE_SIZE};
 
-    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
-    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
+    auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
 
     const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                        nullptr};
@@ -873,8 +867,7 @@ TEST_F(VkPositiveLayerTest, PushingDescriptorSetWithImmutableSampler) {
     image.InitNoLayout(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
-    auto vkCmdPushDescriptorSetKHR =
-        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    auto vkCmdPushDescriptorSetKHR = GetDeviceProcAddr<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
 
     std::vector<VkDescriptorSetLayoutBinding> ds_bindings = {
         {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, &sampler_handle}};
@@ -921,9 +914,7 @@ TEST_F(VkPositiveLayerTest, BindVertexBuffers2EXTNullDescriptors) {
         GTEST_SKIP() << "nullDescriptor feature not supported";
     }
 
-    PFN_vkCmdBindVertexBuffers2EXT vkCmdBindVertexBuffers2EXT =
-        (PFN_vkCmdBindVertexBuffers2EXT)vk::GetInstanceProcAddr(instance(), "vkCmdBindVertexBuffers2EXT");
-    ASSERT_TRUE(vkCmdBindVertexBuffers2EXT != nullptr);
+    auto vkCmdBindVertexBuffers2EXT = GetInstanceProcAddr<PFN_vkCmdBindVertexBuffers2EXT>("vkCmdBindVertexBuffers2EXT");
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));

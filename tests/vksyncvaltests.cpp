@@ -3960,9 +3960,7 @@ TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
     m_commandBuffer->end();
 
     if (copy_commands_2) {
-        auto vkCmdCopyImage2KHR =
-            reinterpret_cast<PFN_vkCmdCopyImage2KHR>(vk::GetInstanceProcAddr(instance(), "vkCmdCopyImage2KHR"));
-        assert(vkCmdCopyImage2KHR != nullptr);
+        auto vkCmdCopyImage2KHR = GetInstanceProcAddr<PFN_vkCmdCopyImage2KHR>("vkCmdCopyImage2KHR");
 
         m_commandBuffer->reset();
 
