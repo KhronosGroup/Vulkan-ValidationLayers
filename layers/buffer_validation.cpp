@@ -3194,7 +3194,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                 uint32_t src_slices = (src_is_3d ? src_copy_extent.depth : region.srcSubresource.layerCount);
                 uint32_t dst_slices = (dst_is_3d ? dst_copy_extent.depth : region.dstSubresource.layerCount);
                 if (src_slices != dst_slices) {
-                    skip |= LogError(command_buffer, kVUID_Core_ImageCopy_Extent,
+                    vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-07744" : "VUID-vkCmdCopyImage-srcImage-07744";
+                    skip |= LogError(command_buffer, vuid,
                                      "%s: number of depth slices in source (%" PRIu32 ") and destination (%" PRIu32
                                      ") subresources for pRegions[%" PRIu32
                                      "] "
