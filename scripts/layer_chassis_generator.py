@@ -207,6 +207,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkDestroyDebugUtilsMessengerEXT' : 'layer_destroy_callback(layer_data->report_data, messenger, pAllocator);',
         }
 
+    # Avoid using auto in generated code. Intellisense has been known to have issues with large files.
     precallvalidate_loop = "for (ValidationObject* intercept : layer_data->object_dispatch) {"
     precallrecord_loop = precallvalidate_loop
     postcallrecord_loop = "for (ValidationObject* intercept : layer_data->object_dispatch) {"
