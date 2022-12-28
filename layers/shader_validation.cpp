@@ -396,8 +396,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
 
             if (ret == PC_Byte_Not_Set) {
                 const auto loc_descr = push_constants->GetLocationDesc(issue_index);
-                LogObjectList objlist(module_state.vk_shader_module());
-                objlist.add(pipeline_layout->layout());
+                const LogObjectList objlist(module_state.vk_shader_module(), pipeline_layout->layout());
                 skip |= LogError(objlist, vuid, "Push constant buffer:%s in %s is out of range in %s.", loc_descr.c_str(),
                                  string_VkShaderStageFlags(pStage->stage).c_str(),
                                  report_data->FormatHandle(pipeline_layout->layout()).c_str());
@@ -407,8 +406,7 @@ bool CoreChecks::ValidatePushConstantUsage(const PIPELINE_STATE &pipeline, const
     }
 
     if (!found_stage) {
-        LogObjectList objlist(module_state.vk_shader_module());
-        objlist.add(pipeline_layout->layout());
+        const LogObjectList objlist(module_state.vk_shader_module(), pipeline_layout->layout());
         skip |= LogError(
             objlist, vuid, "Push constant is used in %s of %s. But %s doesn't set %s.",
             string_VkShaderStageFlags(pStage->stage).c_str(), report_data->FormatHandle(module_state.vk_shader_module()).c_str(),
@@ -1474,8 +1472,7 @@ bool CoreChecks::ValidateShaderResolveQCOM(const SHADER_MODULE_STATE &module_sta
                         const auto &rp_state = pipeline.RenderPassState();
                         auto subpass_flags = (!rp_state) ? 0 : rp_state->createInfo.pSubpasses[pipeline.Subpass()].flags;
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM) != 0) {
-                            LogObjectList objlist(module_state.vk_shader_module());
-                            objlist.add(rp_state->renderPass());
+                            const LogObjectList objlist(module_state.vk_shader_module(), rp_state->renderPass());
                             skip |=
                                 LogError(objlist, "VUID-RuntimeSpirv-SampleRateShading-06378",
                                          "Invalid Pipeline CreateInfo State: fragment shader enables SampleRateShading capability "
@@ -3121,28 +3118,24 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             TypeToDescriptorTypeSet(module_state, use.second.type_id, required_descriptor_count, is_khr);
 
         if (!binding) {
-            LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline.PipelineLayoutState()->layout());
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader uses descriptor slot (expected `%s`) but not declared in pipeline layout",
                              use.first.set, use.first.binding, string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
-            LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline.PipelineLayoutState()->layout());
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader uses descriptor slot but descriptor not accessible from stage %s",
                              use.first.set, use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
-            LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline.PipelineLayoutState()->layout());
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u type mismatch on descriptor slot, uses type %s but expected %s", use.first.set,
                              use.first.binding, string_VkDescriptorType(binding->descriptorType),
                              string_descriptorTypes(descriptor_types).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
-            LogObjectList objlist(module_state.vk_shader_module());
-            objlist.add(pipeline.PipelineLayoutState()->layout());
+            const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
                              "Set %u Binding %u in shader expects at least %u descriptors, but only %u provided", use.first.set,
                              use.first.binding, required_descriptor_count, binding->descriptorCount);
@@ -3164,14 +3157,12 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
                     : VK_ATTACHMENT_UNUSED;
 
                 if (index == VK_ATTACHMENT_UNUSED) {
-                    LogObjectList objlist(module_state.vk_shader_module());
-                    objlist.add(pipeline.PipelineLayoutState()->layout());
+                    const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
                     skip |= LogError(objlist, kVUID_Core_Shader_MissingInputAttachment,
                                      "Shader consumes input attachment index %d but not provided in subpass", use.first);
                 } else if (!(GetFormatType(rpci->pAttachments[index].format) &
                              module_state.GetFundamentalType(use.second.type_id))) {
-                    LogObjectList objlist(module_state.vk_shader_module());
-                    objlist.add(pipeline.PipelineLayoutState()->layout());
+                    const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
                     skip |= LogError(objlist, kVUID_Core_Shader_InputAttachmentTypeMismatch,
                                      "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
                                      string_VkFormat(rpci->pAttachments[index].format),

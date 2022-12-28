@@ -424,10 +424,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     const char *function_name = use_rp2 ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
 
     if (!image_state) {
-        LogObjectList objlist(image);
-        objlist.add(renderpass);
-        objlist.add(framebuffer);
-        objlist.add(image_view);
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
         skip |=
             LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                      "%s: RenderPass %s uses %s where pAttachments[%" PRIu32 "] = %s, which refers to an invalid image",
@@ -445,10 +442,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
-        LogObjectList objlist(image);
-        objlist.add(renderpass);
-        objlist.add(framebuffer);
-        objlist.add(image_view);
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
@@ -462,10 +456,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
         !(image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
-        LogObjectList objlist(image);
-        objlist.add(renderpass);
-        objlist.add(framebuffer);
-        objlist.add(image_view);
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
@@ -478,10 +469,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
-        LogObjectList objlist(image);
-        objlist.add(renderpass);
-        objlist.add(framebuffer);
-        objlist.add(image_view);
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
@@ -494,10 +482,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
-        LogObjectList objlist(image);
-        objlist.add(renderpass);
-        objlist.add(framebuffer);
-        objlist.add(image_view);
+        const LogObjectList objlist(image, renderpass, framebuffer, image_view);
         skip |= LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
                          " in %s"
@@ -512,10 +497,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         if (((image_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0) ||
             ((image_usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07002" : "VUID-vkCmdBeginRenderPass-initialLayout-07000";
-            LogObjectList objlist(image);
-            objlist.add(renderpass);
-            objlist.add(framebuffer);
-            objlist.add(image_view);
+            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
             skip |=
                 LogError(objlist, vuid,
                          "%s: Layout/usage mismatch for attachment %" PRIu32
@@ -530,10 +512,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         }
         if (!(image_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07003" : "VUID-vkCmdBeginRenderPass-initialLayout-07001";
-            LogObjectList objlist(image);
-            objlist.add(renderpass);
-            objlist.add(framebuffer);
-            objlist.add(image_view);
+            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
             skip |= LogError(objlist, vuid,
                              "%s: Layout/usage mismatch for attachment %" PRIu32
                              " in %s"
@@ -552,10 +531,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-            LogObjectList objlist(image);
-            objlist.add(renderpass);
-            objlist.add(framebuffer);
-            objlist.add(image_view);
+            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
             skip |= LogError(objlist, vuid,
                              "%s: Layout/usage mismatch for attachment %" PRIu32
                              " in %s"
@@ -570,10 +546,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            LogObjectList objlist(image);
-            objlist.add(renderpass);
-            objlist.add(framebuffer);
-            objlist.add(image_view);
+            const LogObjectList objlist(image, renderpass, framebuffer, image_view);
             skip |= LogError(objlist, "VUID-vkCmdBeginRenderPass-initialLayout-00896",
                              "%s: Layout/usage mismatch for attachment %" PRIu32
                              " in %s"
@@ -617,9 +590,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         auto view_state = Get<IMAGE_VIEW_STATE>(image_view);
 
         if (!view_state) {
-            LogObjectList objlist(pRenderPassBegin->renderPass);
-            objlist.add(framebuffer_state->framebuffer());
-            objlist.add(image_view);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state->framebuffer(), image_view);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                              "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
                              report_data->FormatHandle(framebuffer_state->framebuffer()).c_str(), i,
@@ -631,10 +602,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
         const auto *image_state = view_state->image_state.get();
 
         if (!image_state) {
-            LogObjectList objlist(pRenderPassBegin->renderPass);
-            objlist.add(framebuffer_state->framebuffer());
-            objlist.add(image_view);
-            objlist.add(image);
+            const LogObjectList objlist(pRenderPassBegin->renderPass, framebuffer_state->framebuffer(), image_view, image);
             skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                              "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
                              report_data->FormatHandle(framebuffer_state->framebuffer()).c_str(), i,
@@ -1274,8 +1242,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_
                          string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
     } else {
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
-            LogObjectList objlist(rp_handle);
-            objlist.add(img_bar_image);
+            const LogObjectList objlist(rp_handle, img_bar_image);
             auto layout_loc = loc.dot(Field::oldLayout);
             const auto &vuid = GetImageBarrierVUID(layout_loc, ImageError::kRenderPassLayoutChange);
             skip |= LogError(objlist, vuid,
@@ -1359,9 +1326,7 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
     auto inserted = scoreboard->emplace(barrier, &cb_state);
     if (!inserted.second && inserted.first->second != &cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(barrier.handle);
-        objlist.add(inserted.first->second->commandBuffer());
+        const LogObjectList objlist(cb_state.commandBuffer(), barrier.handle, inserted.first->second->commandBuffer());
         skip = LogWarning(objlist, TransferBarrier::ErrMsgDuplicateQFOInSubmit(),
                           "%s: %s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                           " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier submitted in this batch from %s.",
@@ -4151,9 +4116,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
             if ((VK_IMAGE_TYPE_3D == src_image_type) || (VK_IMAGE_TYPE_3D == dst_image_type)) {
                 if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04446" : "VUID-vkCmdResolveImage-srcImage-04446";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32
@@ -4162,9 +4125,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                                      func_name, i);
                 }
                 if ((0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-04447" : "VUID-vkCmdResolveImage-srcImage-04447";
                     skip |= LogError(objlist, vuid,
                                      "%s: pRegions[%" PRIu32
@@ -4176,8 +4137,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
             if (VK_IMAGE_TYPE_1D == src_image_type) {
                 if ((region.srcOffset.y != 0) || (region.extent.height != 1)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00271" : "VUID-vkCmdResolveImage-srcImage-00271";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) is 1D but pRegions[%" PRIu32
@@ -4189,8 +4149,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
             if ((VK_IMAGE_TYPE_1D == src_image_type) || (VK_IMAGE_TYPE_2D == src_image_type)) {
                 if ((region.srcOffset.z != 0) || (region.extent.depth != 1)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImage-00273" : "VUID-vkCmdResolveImage-srcImage-00273";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) is 2D but pRegions[%" PRIu32
@@ -4203,8 +4162,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
 
             if (VK_IMAGE_TYPE_1D == dst_image_type) {
                 if ((region.dstOffset.y != 0) || (region.extent.height != 1)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00276" : "VUID-vkCmdResolveImage-dstImage-00276";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) is 1D but pRegions[%" PRIu32
@@ -4216,8 +4174,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             }
             if ((VK_IMAGE_TYPE_1D == dst_image_type) || (VK_IMAGE_TYPE_2D == dst_image_type)) {
                 if ((region.dstOffset.z != 0) || (region.extent.depth != 1)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImage-00278" : "VUID-vkCmdResolveImage-dstImage-00278";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) is 2D but pRegions[%" PRIu32
@@ -4235,8 +4192,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             if (src_subresource.mipLevel < src_image_state->createInfo.mipLevels) {
                 uint32_t extent_check = ExceedsBounds(&(region.srcOffset), &(region.extent), &subresource_extent);
                 if ((extent_check & kXBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00269" : "VUID-vkCmdResolveImage-srcOffset-00269";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] x-dimension offset [%1d] + extent [%" PRIu32
@@ -4247,8 +4203,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 }
 
                 if ((extent_check & kYBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00270" : "VUID-vkCmdResolveImage-srcOffset-00270";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] y-dimension offset [%1d] + extent [%" PRIu32
@@ -4259,8 +4214,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 }
 
                 if ((extent_check & kZBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(src_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), src_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-srcOffset-00272" : "VUID-vkCmdResolveImage-srcOffset-00272";
                     skip |= LogError(objlist, vuid,
                                      "%s: srcImage (%s) pRegions[%" PRIu32 "] z-dimension offset [%1d] + extent [%" PRIu32
@@ -4278,8 +4232,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
             if (dst_subresource.mipLevel < dst_image_state->createInfo.mipLevels) {
                 uint32_t extent_check = ExceedsBounds(&(region.dstOffset), &(region.extent), &subresource_extent);
                 if ((extent_check & kXBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00274" : "VUID-vkCmdResolveImage-dstOffset-00274";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] x-dimension offset [%1d] + extent [%" PRIu32
@@ -4290,8 +4243,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 }
 
                 if ((extent_check & kYBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00275" : "VUID-vkCmdResolveImage-dstOffset-00275";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] y-dimension offset [%1d] + extent [%" PRIu32
@@ -4302,8 +4254,7 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
                 }
 
                 if ((extent_check & kZBit) != 0) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(dst_image_state->image());
+                    const LogObjectList objlist(cb_state.commandBuffer(), dst_image_state->image());
                     vuid = is_2 ? "VUID-VkResolveImageInfo2-dstOffset-00277" : "VUID-vkCmdResolveImage-dstOffset-00277";
                     skip |= LogError(objlist, vuid,
                                      "%s: dstImage (%s) pRegions[%" PRIu32 "] z-dimension offset [%1d] + extent [%" PRIu32
@@ -7059,24 +7010,21 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         // Make sure not a empty region
         if (region.imageExtent.width == 0) {
             vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06659" : "VUID-VkBufferImageCopy-imageExtent-06659";
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(image_state->image());
+            const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
             skip |=
                 LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.width must not be zero as empty copies are not allowed.",
                          function, i);
         }
         if (region.imageExtent.height == 0) {
             vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06660" : "VUID-VkBufferImageCopy-imageExtent-06660";
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(image_state->image());
+            const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
             skip |=
                 LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.height must not be zero as empty copies are not allowed.",
                          function, i);
         }
         if (region.imageExtent.depth == 0) {
             vuid = is_2 ? "VUID-VkBufferImageCopy2-imageExtent-06661" : "VUID-VkBufferImageCopy-imageExtent-06661";
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(image_state->image());
+            const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
             skip |=
                 LogError(objlist, vuid, "%s: pRegion[%" PRIu32 "] extent.depth must not be zero as empty copies are not allowed.",
                          function, i);
@@ -7267,9 +7215,7 @@ bool CoreChecks::ValidateBufferImageCopyData(const CMD_BUFFER_STATE &cb_state, u
         const uint32_t queue_family_index = command_pool->queueFamilyIndex;
         const VkQueueFlags queue_flags = physical_device_state->queue_family_properties[queue_family_index].queueFlags;
         if (((queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT)) == 0) && (SafeModulo(bufferOffset, 4) != 0)) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(command_pool->commandPool());
-            objlist.add(image_state->image());
+            const LogObjectList objlist(cb_state.commandBuffer(), command_pool->commandPool(), image_state->image());
             skip |= LogError(objlist, GetBufferImageCopyCommandVUID("04052", image_to_buffer, is_2),
                              "%s: pRegion[%d] bufferOffset 0x%" PRIxLEAST64
                              " must be a multiple 4 because the command buffer %s was allocated from the command pool %s "
@@ -7607,9 +7553,7 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         const VkImageAspectFlags region_aspect_mask = region.imageSubresource.aspectMask;
         if (((queue_flags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
             ((region_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0)) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(command_pool->commandPool());
-            objlist.add(dst_image_state->image());
+            const LogObjectList objlist(cb_state.commandBuffer(), command_pool->commandPool(), dst_image_state->image());
             vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-07739" : "VUID-vkCmdCopyBufferToImage-commandBuffer-07739";
             skip |= LogError(objlist, vuid,
                              "%s(): pRegion[%d] subresource aspectMask 0x%x specifies VK_IMAGE_ASPECT_DEPTH_BIT or "
@@ -7860,8 +7804,7 @@ bool CoreChecks::ValidateProtectedImage(const CMD_BUFFER_STATE &cb_state, const 
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state->unprotected == false)) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(image_state->image());
+        const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while image %s is a protected image.%s", cmd_name,
                          report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
                          report_data->FormatHandle(image_state->image()).c_str(), more_message);
@@ -7876,8 +7819,7 @@ bool CoreChecks::ValidateUnprotectedImage(const CMD_BUFFER_STATE &cb_state, cons
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state->unprotected == true)) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(image_state->image());
+        const LogObjectList objlist(cb_state.commandBuffer(), image_state->image());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while image %s is an unprotected image.%s", cmd_name,
                          report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
                          report_data->FormatHandle(image_state->image()).c_str(), more_message);
@@ -7892,8 +7834,7 @@ bool CoreChecks::ValidateProtectedBuffer(const CMD_BUFFER_STATE &cb_state, const
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state->unprotected == false)) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(buffer_state->buffer());
+        const LogObjectList objlist(cb_state.commandBuffer(), buffer_state->buffer());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is unprotected while buffer %s is a protected buffer.%s", cmd_name,
                          report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
                          report_data->FormatHandle(buffer_state->buffer()).c_str(), more_message);
@@ -7908,8 +7849,7 @@ bool CoreChecks::ValidateUnprotectedBuffer(const CMD_BUFFER_STATE &cb_state, con
 
     // if driver supports protectedNoFault the operation is valid, just has undefined values
     if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state->unprotected == true)) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(buffer_state->buffer());
+        const LogObjectList objlist(cb_state.commandBuffer(), buffer_state->buffer());
         skip |= LogError(objlist, vuid, "%s: command buffer %s is protected while buffer %s is an unprotected buffer.%s", cmd_name,
                          report_data->FormatHandle(cb_state.commandBuffer()).c_str(),
                          report_data->FormatHandle(buffer_state->buffer()).c_str(), more_message);

@@ -4024,7 +4024,7 @@ class ValidationObject {
         }
 
         // Debug Logging Helpers
-        bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
@@ -4038,7 +4038,7 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            return LogMsgLocked(report_data, kErrorBit, objects, vuid_text, str);
+            return LogMsgLocked(report_data, kErrorBit, objlist, vuid_text, str);
         }
 
         template <typename HANDLE_T>
@@ -4056,12 +4056,12 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kErrorBit, single_object, vuid_text, str);
+            const LogObjectList objlist(src_object);
+            return LogMsgLocked(report_data, kErrorBit, objlist, vuid_text, str);
 
         }
 
-        bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
@@ -4075,7 +4075,7 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            return LogMsgLocked(report_data, kWarningBit, objects, vuid_text, str);
+            return LogMsgLocked(report_data, kWarningBit, objlist, vuid_text, str);
         }
 
         template <typename HANDLE_T>
@@ -4093,11 +4093,11 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kWarningBit, single_object, vuid_text, str);
+            const LogObjectList objlist(src_object);
+            return LogMsgLocked(report_data, kWarningBit, objlist, vuid_text, str);
         }
 
-        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
@@ -4111,7 +4111,7 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, objects, vuid_text, str);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, objlist, vuid_text, str);
         }
 
         template <typename HANDLE_T>
@@ -4129,11 +4129,11 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, single_object, vuid_text, str);
+            const LogObjectList objlist(src_object);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, objlist, vuid_text, str);
         }
 
-        bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
@@ -4147,7 +4147,7 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            return LogMsgLocked(report_data, kInformationBit, objects, vuid_text, str);
+            return LogMsgLocked(report_data, kInformationBit, objlist, vuid_text, str);
         }
 
         template <typename HANDLE_T>
@@ -4165,8 +4165,8 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
+            const LogObjectList objlist(src_object);
+            return LogMsgLocked(report_data, kInformationBit, objlist, vuid_text, str);
         }
 
         // Handle Wrapping Data

@@ -291,7 +291,7 @@ void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes
         // Save all of the vulkan handles between the command buffer and the now invalid node
         LogObjectList log_list;
         for (auto &obj : invalid_nodes) {
-            log_list.object_list.emplace_back(obj->Handle());
+            log_list.add(obj->Handle());
         }
 
         bool found_invalid = false;
