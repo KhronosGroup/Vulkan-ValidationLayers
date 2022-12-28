@@ -1146,19 +1146,15 @@ TEST_F(VkLayerTest, CreatePipelineLayoutExcessPerStageDescriptors) {
 TEST_F(VkLayerTest, CreatePipelineLayoutExcessDescriptorsOverall) {
     TEST_DESCRIPTION("Attempt to create a pipeline layout where total descriptors exceed limits");
 
-    bool descriptor_indexing = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    if (descriptor_indexing) {
-        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    }
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    descriptor_indexing = descriptor_indexing && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-    descriptor_indexing =
-        descriptor_indexing && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    if (descriptor_indexing) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    const bool descriptor_indexing = IsExtensionsEnabled(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     uint32_t max_uniform_buffers = m_device->phy().properties().limits.maxPerStageDescriptorUniformBuffers;
     uint32_t max_storage_buffers = m_device->phy().properties().limits.maxPerStageDescriptorStorageBuffers;
@@ -1679,17 +1675,17 @@ TEST_F(VkLayerTest, InvalidPipeline) {
 TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
 
-    // Enable KHX device group extensions, if available
     if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     }
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool khx_dg_ext_available = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
-        khx_dg_ext_available = true;
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
+    const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     uint32_t x_count_limit = m_device->props.limits.maxComputeWorkGroupCount[0];
     uint32_t y_count_limit = m_device->props.limits.maxComputeWorkGroupCount[1];
@@ -1769,7 +1765,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
     vk::CmdDispatch(m_commandBuffer->handle(), x_count_limit, y_count_limit, z_count_limit + 1);
     m_errorMonitor->VerifyFound();
 
-    if (khx_dg_ext_available) {
+    if (device_group_creation) {
         PFN_vkCmdDispatchBaseKHR fp_vkCmdDispatchBaseKHR =
             (PFN_vkCmdDispatchBaseKHR)vk::GetInstanceProcAddr(instance(), "vkCmdDispatchBaseKHR");
 
@@ -1810,7 +1806,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
         fp_vkCmdDispatchBaseKHR(m_commandBuffer->handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
-        printf("KHX_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
+        printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
     }
 }
 
@@ -13559,7 +13555,6 @@ TEST_F(VkLayerTest, TestPipelineRasterizationConservativeStateCreateInfo) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    m_device_extension_names.push_back(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

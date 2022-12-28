@@ -622,12 +622,9 @@ TEST_F(VkLayerTest, RequiredParameter) {
 
 TEST_F(VkLayerTest, SpecLinks) {
     TEST_DESCRIPTION("Test that spec links in a typical error message are well-formed");
-    ASSERT_NO_FATAL_FAILURE(InitFramework());
-
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(Init());
 
 #ifdef ANNOTATED_SPEC_LINK
     bool test_annotated_spec_link = true;
@@ -650,10 +647,10 @@ TEST_F(VkLayerTest, SpecLinks) {
     m_errorMonitor->VerifyFound();
 
     // Now generate a 'default' message and check the link
-    bool ycbcr_support = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
-                          (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    bool ycbcr_support =
+        (IsExtensionsEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
     bool maintenance2_support =
-        (DeviceExtensionEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+        (IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
 
     if (!((m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
           (ycbcr_support ^ maintenance2_support))) {
@@ -7642,15 +7639,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_2);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "%s At least Vulkan version 1.1 is required, skipping test.";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
@@ -7755,17 +7750,16 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
-    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    bool vulkan_13 = (DeviceValidationVersion() >= VK_API_VERSION_1_3);
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state_features);
@@ -8114,15 +8108,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabledNoMultiview) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required, skipping test.";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicStateFeaturesEXT>();
@@ -8651,15 +8643,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
@@ -8703,15 +8693,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
@@ -8754,17 +8742,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2Enabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state2_features);
     if (!extended_dynamic_state2_features.extendedDynamicState2) {
@@ -8828,15 +8813,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2PatchControlPointsEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 PatchControlPoints VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
@@ -8902,15 +8885,13 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState2LogicOpEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_extended_dynamic_state2 LogicOp VUs");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto extended_dynamic_state2_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState2FeaturesEXT>();
@@ -8981,12 +8962,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     // TODO Issue 4867 - MockICD doesn't return proper values
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME " is not supported.";
-        return;
     }
 
     auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
@@ -9464,12 +9439,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     if (IsPlatform(kMockICD)) {
         GTEST_SKIP() << "Test not supported by MockICD";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME " is not supported.";
-        return;
-    }
 
     auto line_rasterization_feature = LvlInitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
     auto provoking_vertex_features = LvlInitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>(&line_rasterization_feature);
@@ -9917,15 +9886,13 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDisabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when disabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -9961,15 +9928,13 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateEnabled) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto vertex_input_dynamic_state_features = LvlInitStruct<VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT>();
@@ -10170,20 +10135,14 @@ TEST_F(VkLayerTest, ValidateVertexInputDynamicStateDivisor) {
     TEST_DESCRIPTION("Validate VK_EXT_vertex_input_dynamic_state VUs when VK_EXT_vertex_attribute_divisor is enabled");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME " is not supported.";
-    }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Extension " VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME " is not supported.";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
     auto vertex_attribute_divisor_features = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
@@ -10292,18 +10251,17 @@ TEST_F(VkLayerTest, WriteTimeStampInvalidQuery) {
     TEST_DESCRIPTION("Test for invalid query slot in query pool.");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    bool sync2 = false;
+    bool sync2 = IsExtensionsEnabled(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2 = LvlInitStruct<VkPhysicalDeviceSynchronization2FeaturesKHR>();
     synchronization2.synchronization2 = VK_TRUE;
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>();
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    if (sync2) {
         features2.pNext = &synchronization2;
-        sync2 = true;
     }
     InitState(nullptr, &features2);
     sync2 &= (synchronization2.synchronization2 == VK_TRUE);
