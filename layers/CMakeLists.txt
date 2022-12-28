@@ -239,7 +239,7 @@ if (VVL_ENABLE_ASAN)
 endif()
 
 if(WIN32)
-    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def")
+    set_target_properties(VkLayer_khronos_validation PROPERTIES LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def\"")
 elseif(APPLE)
     set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
 else()
