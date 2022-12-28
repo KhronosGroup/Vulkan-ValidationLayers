@@ -285,47 +285,44 @@ void CMD_BUFFER_STATE::Destroy() {
 }
 
 void CMD_BUFFER_STATE::NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) {
-    {
-        auto guard = WriteLock();
-        assert(!invalid_nodes.empty());
-        // Save all of the vulkan handles between the command buffer and the now invalid node
-        LogObjectList log_list;
-        for (auto &obj : invalid_nodes) {
-            log_list.add(obj->Handle());
-        }
+    assert(!invalid_nodes.empty());
+    // Save all of the vulkan handles between the command buffer and the now invalid node
+    LogObjectList log_list;
+    for (auto &obj : invalid_nodes) {
+        log_list.add(obj->Handle());
+    }
 
-        bool found_invalid = false;
-        for (auto &obj : invalid_nodes) {
-            // Only record a broken binding if one of the nodes in the invalid chain is still
-            // being tracked by the command buffer. This is to try to avoid race conditions
-            // caused by separate CMD_BUFFER_STATE and BASE_NODE::parent_nodes locking.
-            if (object_bindings.erase(obj)) {
-                obj->RemoveParent(this);
-                found_invalid = true;
-            }
-            switch (obj->Type()) {
-                case kVulkanObjectTypeCommandBuffer:
-                    if (unlink) {
-                        linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
-                    }
-                    break;
-                case kVulkanObjectTypeImage:
-                    if (unlink) {
-                        image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
-                    }
-                    break;
-                default:
-                    break;
-            }
+    bool found_invalid = false;
+    for (auto &obj : invalid_nodes) {
+        // Only record a broken binding if one of the nodes in the invalid chain is still
+        // being tracked by the command buffer. This is to try to avoid race conditions
+        // caused by separate CMD_BUFFER_STATE and BASE_NODE::parent_nodes locking.
+        if (object_bindings.erase(obj)) {
+            obj->RemoveParent(this);
+            found_invalid = true;
         }
-        if (found_invalid) {
-            if (state == CB_RECORDING) {
-                state = CB_INVALID_INCOMPLETE;
-            } else if (state == CB_RECORDED) {
-                state = CB_INVALID_COMPLETE;
-            }
-            broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
+        switch (obj->Type()) {
+            case kVulkanObjectTypeCommandBuffer:
+                if (unlink) {
+                    linkedCommandBuffers.erase(static_cast<CMD_BUFFER_STATE *>(obj.get()));
+                }
+                break;
+            case kVulkanObjectTypeImage:
+                if (unlink) {
+                    image_layout_map.erase(static_cast<IMAGE_STATE *>(obj.get()));
+                }
+                break;
+            default:
+                break;
         }
+    }
+    if (found_invalid) {
+        if (state == CB_RECORDING) {
+            state = CB_INVALID_INCOMPLETE;
+        } else if (state == CB_RECORDED) {
+            state = CB_INVALID_COMPLETE;
+        }
+        broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
     }
     BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);
 }
