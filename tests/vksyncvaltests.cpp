@@ -29,12 +29,10 @@
 #include "layer_validation_tests.h"
 
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
+    AddOptionalExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_BUFFER_MARKER_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    bool has_amd_buffer_maker = DeviceExtensionEnabled(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
+    bool has_amd_buffer_maker = IsExtensionsEnabled(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
 
     VkBufferObj buffer_a;
     VkBufferObj buffer_b;
@@ -225,13 +223,11 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
 
 TEST_F(VkSyncValTest, Sync2BufferCopyHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Synchronization2 not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
@@ -509,13 +505,11 @@ TEST_F(VkSyncValTest, SyncCopyOptimalImageHazards) {
 
 TEST_F(VkSyncValTest, Sync2CopyOptimalImageHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "Synchronization2 not supported";
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
@@ -1200,16 +1194,16 @@ TEST_F(VkSyncValTest, SyncCmdDispatchDrawHazards) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
+    AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    const bool has_khr_indirect = IsExtensionsEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     VkPhysicalDeviceVulkan12Features features12 = LvlInitStruct<VkPhysicalDeviceVulkan12Features>();
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+    if (has_khr_indirect) {
         if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
             features12.drawIndirectCount = VK_TRUE;
         }
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features12, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    bool has_khr_indirect = DeviceExtensionEnabled(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -1971,15 +1965,11 @@ TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
 
 
 TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
+    AddOptionalExtensions(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    bool do_none_load_op_test = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
-        do_none_load_op_test = true;
-    }
-
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    const bool load_store_op_none = IsExtensionsEnabled(VK_EXT_LOAD_STORE_OP_NONE_EXTENSION_NAME);
 
     VkImageUsageFlags usage_color = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageUsageFlags usage_input = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
@@ -2056,7 +2046,7 @@ TEST_F(VkSyncValTest, RenderPassLoadHazardVsInitialLayout) {
     m_errorMonitor->VerifyFound();
 
     vk_testing::RenderPass rp_no_load_store;
-    if (do_none_load_op_test) {
+    if (load_store_op_none) {
         attachmentDescriptions[0].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
         attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE_EXT;
         attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
@@ -3900,13 +3890,10 @@ TEST_F(VkSyncValTest, TestInvalidExternalSubpassDependency) {
 TEST_F(VkSyncValTest, TestCopyingToCompressedImage) {
     TEST_DESCRIPTION("Copy from uncompressed to compressed image with and without overlap.");
 
+    AddOptionalExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
-    bool copy_commands_2 = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        copy_commands_2 = true;
-    }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    const bool copy_commands_2 = IsExtensionsEnabled(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
 
     VkFormatProperties format_properties;
     VkFormat mp_format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;

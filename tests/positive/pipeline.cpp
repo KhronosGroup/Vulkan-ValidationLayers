@@ -4107,12 +4107,10 @@ TEST_F(VkPositiveLayerTest, CopyImageSubresource) {
 }
 
 TEST_F(VkPositiveLayerTest, ImageDescriptorSubresourceLayout) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool maint2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maint2_support) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    } else {
-        printf("Relaxed layout matching subtest requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n");
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 

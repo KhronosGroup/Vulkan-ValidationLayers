@@ -955,6 +955,8 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    AddOptionalExtensions(ext_mem_extension_name);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
@@ -978,22 +980,10 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     // Check if dedicated allocation is required
     bool dedicated_allocation =
         ebp.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT_KHR;
-    if (dedicated_allocation) {
-        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-            m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-            m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-        } else {
-            GTEST_SKIP() << "Dedicated allocation extension not supported";
-        }
+    if (dedicated_allocation && !IsExtensionsEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
+        GTEST_SKIP() << "Dedicated allocation extension not supported";
     }
 
-    // Check for external memory device extensions
-    if (DeviceExtensionSupported(gpu(), nullptr, ext_mem_extension_name)) {
-        m_device_extension_names.push_back(ext_mem_extension_name);
-        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-    } else {
-        GTEST_SKIP() << "External memory extension not supported";
-    }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkMemoryPropertyFlags mem_flags = 0;

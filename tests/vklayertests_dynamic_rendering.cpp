@@ -1274,6 +1274,8 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddOptionalExtensions(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
 
@@ -1291,18 +1293,8 @@ TEST_F(VkLayerTest, DynamicRenderingWithMismatchingMixedAttachmentSamples) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
     }
 
-    bool amd_samples = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
-        amd_samples = true;
-    }
-
-    bool nv_samples = false;
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
-        nv_samples = true;
-    }
-
+    const bool amd_samples = IsExtensionsEnabled(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
+    const bool nv_samples = IsExtensionsEnabled(VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME);
     if (!amd_samples && !nv_samples) {
         GTEST_SKIP() << "Test requires either VK_AMD_mixed_attachment_samples or VK_NV_framebuffer_mixed_samples";
     }

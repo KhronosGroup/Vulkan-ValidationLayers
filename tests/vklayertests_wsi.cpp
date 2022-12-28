@@ -552,7 +552,6 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddSurfaceExtension();
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
@@ -824,7 +823,6 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain via vkAcquireNextImage2KHR.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     AddSurfaceExtension();
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
@@ -1989,6 +1987,9 @@ TEST_F(VkLayerTest, GetSwapchainImagesCountButNotImages) {
 
 TEST_F(VkLayerTest, TestSurfaceSupportByPhysicalDevice) {
     TEST_DESCRIPTION("Test if physical device supports surface.");
+    AddOptionalExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    AddOptionalExtensions(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);

@@ -1487,7 +1487,6 @@ TEST_F(VkLayerTest, RenderPassCreateFragmentDensityMapReferenceToInvalidAttachme
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
-    m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fdm_features = LvlInitStruct<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>();
     VkPhysicalDeviceFeatures2 features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>(&fdm_features);
     fdm_features.fragmentDensityMap = true;

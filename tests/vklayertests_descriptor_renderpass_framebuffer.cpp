@@ -1561,17 +1561,15 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
 TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    const bool multiview_supported =
+        IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1);
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    bool multiviewSupported = rp2_supported;
 
-    if (!rp2_supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        multiviewSupported = true;
-    }
     auto multiview_features = LvlInitStruct<VkPhysicalDeviceMultiviewFeatures>();
     auto features2 = GetPhysicalDeviceFeatures2(multiview_features);
     if (multiview_features.multiview == VK_FALSE) {
@@ -1580,10 +1578,6 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     // Add a device features struct enabling NO features
     features2.features = {};
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-
-    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
-        multiviewSupported = true;
-    }
 
     // Create two dummy subpasses
     VkSubpassDescription subpasses[] = {
@@ -1713,7 +1707,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-pDependencies-06867",
                          "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
 
-    if (multiviewSupported) {
+    if (multiview_supported) {
         // VIEW_LOCAL_BIT but multiview is not enabled
         dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
@@ -3036,7 +3030,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     AddOptionalExtensions(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_FRAGMENT_DENSITY_MAP_2_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
@@ -3060,13 +3054,8 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const bool rp2_supported = IsExtensionsEnabled(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
-    bool multiviewSupported = rp2_supported || (DeviceValidationVersion() >= VK_API_VERSION_1_1);
-
-    if (!multiviewSupported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
-        multiviewSupported = true;
-    }
+    const bool multiview_supported =
+        IsExtensionsEnabled(VK_KHR_MULTIVIEW_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1);
 
     // Create a renderPass with a single color attachment
     VkAttachmentReference attach = {};
@@ -3349,7 +3338,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         m_errorMonitor->VerifyFound();
     }
 
-    if (!multiviewSupported) {
+    if (!multiview_supported) {
         printf("VK_KHR_Multiview Extension not supported, skipping tests\n");
     } else {
         // Test multiview renderpass with more than 1 layer
@@ -4475,13 +4464,9 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
 TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
     TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch within/without a command buffer");
 
+    AddOptionalExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    bool maint2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    if (maint2_support) {
-        m_device_extension_names.push_back(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    } else {
-        printf("Relaxed layout matching subtest requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n");
-    }
+    const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
@@ -4620,7 +4605,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
 
     // Create depth stencil image and views
     const VkFormat format_ds = m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
-    bool ds_test_support = maint2_support && (format_ds != VK_FORMAT_UNDEFINED);
+    bool ds_test_support = maintenance2 && (format_ds != VK_FORMAT_UNDEFINED);
     VkImageObj image_ds(m_device);
     vk_testing::ImageView stencil_view;
     vk_testing::ImageView depth_view;
