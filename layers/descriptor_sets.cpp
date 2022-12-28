@@ -551,7 +551,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
     }
     if (update->descriptorCount) {
         some_update_ = true;
-        change_count_++;
+        ++change_count_;
     }
 
     if (!IsPushDescriptor() && !(orig_binding.binding_flags & (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
@@ -571,7 +571,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
         if (src_iter.updated()) {
             dst.CopyUpdate(this, state_data_, &src, src_iter.CurrentBinding().IsBindless());
             some_update_ = true;
-            change_count_++;
+            ++change_count_;
             dst_iter.updated(true);
         } else {
             dst_iter.updated(false);

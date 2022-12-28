@@ -793,13 +793,6 @@ TODO: The following variables need to be made const:
     // For a given dynamic offset index in the set, map to associated index of the descriptors in the set
     std::vector<size_t> dynamic_offset_idx_to_descriptor_list_;
 
-TODO: needs to be made atomic
-
-
-```
-    uint64_t change_count_;
-```
-
 TODO: only used by push descriptors and effectively guarded by CMD_BUFFER_STATE locking
 
 ````

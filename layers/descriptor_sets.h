@@ -1046,7 +1046,7 @@ class DescriptorSet : public BASE_NODE {
 
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
-    bool some_update_;  // has any part of the set ever been updated?
+    std::atomic<bool> some_update_;  // has any part of the set ever been updated?
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> layout_;
     // NOTE: the the backing store for the bindings must be declared *before* it so it will be destructed *after* it
@@ -1055,7 +1055,7 @@ class DescriptorSet : public BASE_NODE {
     std::vector<BindingPtr> bindings_;
     const StateTracker *state_data_;
     uint32_t variable_count_;
-    uint64_t change_count_;
+    std::atomic<uint64_t> change_count_;
 
     // For a given dynamic offset index in the set, map to associated index of the descriptors in the set
     std::vector<std::pair<uint32_t, uint32_t>> dynamic_offset_idx_to_descriptor_list_;
