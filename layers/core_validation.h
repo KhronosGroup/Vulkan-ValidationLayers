@@ -327,11 +327,11 @@ class CoreChecks : public ValidationStateTracker {
                                     const VkRenderPassBeginInfo* pRenderPassBegin, CMD_TYPE cmd_type) const;
     bool ValidateDependencies(FRAMEBUFFER_STATE const* framebuffer, RENDER_PASS_STATE const* renderPass) const;
     template <typename Barrier>
-    bool ValidateBufferBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateBufferBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                const Barrier& barrier) const;
 
     template <typename Barrier>
-    bool ValidateImageBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateImageBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                               const Barrier& barrier) const;
 
     bool ValidateBarriers(const Location& loc, const CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
@@ -339,23 +339,23 @@ class CoreChecks : public ValidationStateTracker {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
 
-    bool ValidatePipelineStageFeatureEnables(const LogObjectList& objects, const Location& loc,
+    bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& loc,
                                              VkPipelineStageFlags2KHR stage_mask) const;
-    bool ValidatePipelineStage(const LogObjectList& objects, const Location& loc, VkQueueFlags queue_flags,
+    bool ValidatePipelineStage(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                                VkPipelineStageFlags2KHR stage_mask) const;
-    bool ValidateAccessMask(const LogObjectList& objects, const Location& loc, VkQueueFlags queue_flags,
+    bool ValidateAccessMask(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                             VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     template <typename Barrier>
-    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                const Barrier& barrier, VkPipelineStageFlags src_stage_mask,
                                VkPipelineStageFlags dst_stage_mask) const;
     template <typename Barrier>
-    bool ValidateMemoryBarrier(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                const Barrier& barrier) const;
 
-    bool ValidateSubpassDependency(const LogObjectList& objects, const Location& loc, const VkSubpassDependency2& barrier) const;
+    bool ValidateSubpassDependency(const LogObjectList& objlist, const Location& loc, const VkSubpassDependency2& barrier) const;
 
-    bool ValidateDependencyInfo(const LogObjectList& objects, const Location& loc, const CMD_BUFFER_STATE* cb_state,
+    bool ValidateDependencyInfo(const LogObjectList& objlist, const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                 const VkDependencyInfoKHR* dep_info) const;
     template <typename ImgBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const ImgBarrier& barrier,
@@ -457,7 +457,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateRenderPassPipelineBarriers(const Location& loc, const CMD_BUFFER_STATE* cb_state,
                                             const VkDependencyInfoKHR* dep_info) const;
 
-    bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objects, const Location& loc, VkQueueFlags queue_flags,
+    bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& loc, VkQueueFlags queue_flags,
                                                     VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                  const void* pData) const;

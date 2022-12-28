@@ -157,8 +157,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
         if (!image_state->bind_swapchain) {
-            LogObjectList objlist(image_state->image());
-            objlist.add(image_state->create_from_swapchain);
+            const LogObjectList objlist(image_state->image(), image_state->create_from_swapchain);
             result |= LogError(
                 objlist, location.Vuid(),
                 "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
@@ -166,9 +165,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                 location.FuncName(), report_data->FormatHandle(image_state->image()).c_str(),
                 report_data->FormatHandle(image_state->create_from_swapchain).c_str());
         } else if (image_state->create_from_swapchain != image_state->bind_swapchain->swapchain()) {
-            LogObjectList objlist(image_state->image());
-            objlist.add(image_state->create_from_swapchain);
-            objlist.add(image_state->bind_swapchain->Handle());
+            const LogObjectList objlist(image_state->image(), image_state->create_from_swapchain,
+                                        image_state->bind_swapchain->Handle());
             result |=
                 LogError(objlist, location.Vuid(),
                          "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
@@ -272,8 +270,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_b
                 assert(false);
             }
 
-            LogObjectList objlist(mem);
-            objlist.add(typed_handle);
+            const LogObjectList objlist(mem, typed_handle);
             skip |= LogError(objlist, error_code,
                              "In %s, attempting to bind %s to %s which was created with sparse memory flags "
                              "(VK_%s_CREATE_SPARSE_*_BIT).",
@@ -302,9 +299,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const BINDABLE &mem_b
                     assert(false);
                 }
 
-                LogObjectList objlist(mem);
-                objlist.add(typed_handle);
-                objlist.add(prev_binding->mem());
+                const LogObjectList objlist(mem, typed_handle, prev_binding->mem());
                 skip |= LogError(objlist, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.",
                                  apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                                  report_data->FormatHandle(prev_binding->mem()).c_str());
@@ -353,10 +348,9 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
                         "%s: %s is VK_QUEUE_FAMILY_IGNORED, but it is required to provide a valid queue family index value.",
                         cmd_name, parameter_name.c_str());
                 } else if (queue_families[i] >= physical_device_state->queue_family_known_count) {
-                    LogObjectList obj_list(physical_device);
-                    obj_list.add(device);
+                    const LogObjectList objlist(physical_device, device);
                     skip |=
-                        LogError(obj_list, vuid,
+                        LogError(objlist, vuid,
                                  "%s: %s (= %" PRIu32
                                  ") is not one of the queue families supported by the parent PhysicalDevice %s of this device %s.",
                                  cmd_name, parameter_name.c_str(), queue_families[i],
@@ -496,8 +490,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     invalid_status &= ~cb_state.static_status;
 
     if (invalid_status.any()) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(pipeline.pipeline());
+        const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline());
         skip |= LogError(objlist, vuid.dynamic_state_setting_commands,
                          "%s: %s doesn't set up %s, but it calls the related dynamic state setting commands",
                          CommandTypeString(cmd_type), report_data->FormatHandle(pipeline.pipeline()).c_str(),
@@ -678,8 +671,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
 bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                              const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                              const char *msg, const char *caller, const char *error_code) const {
-    LogObjectList objlist(rp1_state->renderPass());
-    objlist.add(rp2_state->renderPass());
+    const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
     return LogError(objlist, error_code,
                     "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
                     "compatible with %u: %s.",
@@ -894,8 +886,7 @@ bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const
 bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                         const RENDER_PASS_STATE *rp2_state, const char *msg, const char *caller,
                                         const char *error_code) const {
-    LogObjectList objlist(rp1_state->renderPass());
-    objlist.add(rp2_state->renderPass());
+    const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
                     report_data->FormatHandle(rp1_state->renderPass()).c_str(), type2_string,
                     report_data->FormatHandle(rp2_state->renderPass()).c_str(), msg);
@@ -904,8 +895,7 @@ bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_P
 bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
                                              const RENDER_PASS_STATE &rp2_state, const char *msg, const char *caller,
                                              const char *error_code) const {
-    LogObjectList objlist(rp1_state.renderPass());
-    objlist.add(rp2_state.renderPass());
+    const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
                     report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
                     report_data->FormatHandle(rp2_state.renderPass()).c_str(), msg);
@@ -921,8 +911,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
 
     // createInfo flags must be identical for the renderpasses to be compatible.
     if (rp1_state->createInfo.flags != rp2_state->createInfo.flags) {
-        LogObjectList objlist(rp1_state->renderPass());
-        objlist.add(rp2_state->renderPass());
+        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
         skip |=
             LogError(objlist, error_code,
                      "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
@@ -932,8 +921,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     }
 
     if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
-        LogObjectList objlist(rp1_state->renderPass());
-        objlist.add(rp2_state->renderPass());
+        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a subpassCount of %u and %s w/ "
                          "%s with a subpassCount of %u.",
@@ -947,8 +935,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     }
 
     if (rp1_state->createInfo.dependencyCount != rp2_state->createInfo.dependencyCount) {
-        LogObjectList objlist(rp1_state->renderPass());
-        objlist.add(rp2_state->renderPass());
+        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a dependencyCount of %" PRIu32
                          " and %s w/ %s with a dependencyCount of %" PRIu32 ".",
@@ -961,8 +948,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
         }
     }
     if (rp1_state->createInfo.correlatedViewMaskCount != rp2_state->createInfo.correlatedViewMaskCount) {
-        LogObjectList objlist(rp1_state->renderPass());
-        objlist.add(rp2_state->renderPass());
+        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a correlatedViewMaskCount of %" PRIu32
                          " and %s w/ %s with a correlatedViewMaskCount of %" PRIu32 ".",
@@ -972,8 +958,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     } else {
         for (uint32_t i = 0; i < rp1_state->createInfo.correlatedViewMaskCount; ++i) {
             if (rp1_state->createInfo.pCorrelatedViewMasks[i] != rp2_state->createInfo.pCorrelatedViewMasks[i]) {
-                LogObjectList objlist(rp1_state->renderPass());
-                objlist.add(rp2_state->renderPass());
+                const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
                 skip |= LogError(objlist, error_code,
                                  "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32
                                  "] of %" PRIu32 " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
@@ -1067,9 +1052,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         if (rp_state) {
             const auto rendering_view_mask = cb_state.activeRenderPass->GetDynamicRenderingViewMask();
             if (rp_state->renderPass() != VK_NULL_HANDLE) {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(pipeline.pipeline());
-                objlist.add(rp_state->renderPass());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), rp_state->renderPass());
                 skip |= LogError(objlist, vuid.dynamic_rendering_06198,
                                  "%s: Currently bound pipeline %s must have been created with a "
                                  "VkGraphicsPipelineCreateInfo::renderPass equal to VK_NULL_HANDLE",
@@ -1079,9 +1062,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto pipline_rendering_ci = rp_state->dynamic_rendering_pipeline_create_info;
 
             if (pipline_rendering_ci.viewMask != rendering_view_mask) {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(pipeline.pipeline());
-                objlist.add(cb_state.activeRenderPass->renderPass());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
                 skip |= LogError(objlist, vuid.dynamic_rendering_view_mask,
                                  "%s: Currently bound pipeline %s viewMask ([%" PRIu32
                                  ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
@@ -1092,9 +1073,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto color_attachment_count = pipline_rendering_ci.colorAttachmentCount;
             const auto rendering_color_attachment_count = cb_state.activeRenderPass->GetDynamicRenderingColorAttachmentCount();
             if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(pipeline.pipeline());
-                objlist.add(cb_state.activeRenderPass->renderPass());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
                 skip |= LogError(objlist, vuid.dynamic_rendering_color_count,
                                  "%s: Currently bound pipeline %s VkPipelineRenderingCreateInfo::colorAttachmentCount ([%" PRIu32
                                  ") must be equal to VkRenderingInfo::colorAttachmentCount ([%" PRIu32 ")",
@@ -1109,9 +1088,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
                 if ((pipline_rendering_ci.colorAttachmentCount > i) &&
                     view_state->create_info.format != pipline_rendering_ci.pColorAttachmentFormats[i]) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_color_formats,
                                      "%s: VkRenderingInfo::pColorAttachments[%" PRIu32
                                      "].imageView format (%s) must match corresponding format in "
@@ -1124,9 +1102,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                 if (view_state->create_info.format != pipline_rendering_ci.depthAttachmentFormat) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_depth_format,
                                      "%s: VkRenderingInfo::pDepthAttachment->imageView format (%s) must match corresponding format "
                                      "in VkPipelineRenderingCreateInfo::depthAttachmentFormat (%s)",
@@ -1138,9 +1115,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                 if (view_state->create_info.format != pipline_rendering_ci.stencilAttachmentFormat) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_stencil_format,
                                      "%s: VkRenderingInfo::pStencilAttachment->imageView format (%s) must match corresponding "
                                      "format in VkPipelineRenderingCreateInfo::stencilAttachmentFormat (%s)",
@@ -1154,9 +1130,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_fragment_shading_rate_attachment_info &&
                 (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_fsr,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
@@ -1169,9 +1144,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if (rendering_fragment_shading_rate_density_map &&
                 (rendering_fragment_shading_rate_density_map->imageView != VK_NULL_HANDLE)) {
                 if (!(pipeline_flags & VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT)) {
-                    LogObjectList objlist(cb_state.commandBuffer());
-                    objlist.add(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(cb_state.commandBuffer(), pipeline.pipeline(),
+                                                cb_state.activeRenderPass->renderPass());
                     skip |= LogError(objlist, vuid.dynamic_rendering_fdm,
                                      "%s: Currently bound graphics pipeline %s must have been created with "
                                      "VK_PIPELINE_RASTERIZATION_STATE_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT",
@@ -1396,8 +1370,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const VkDeviceSize vtx_attrib_req_alignment = pipeline.vertex_input_state->vertex_attribute_alignments[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
-                    LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer());
-                    objlist.add(state.pipeline_state->pipeline());
+                    const LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer_state->buffer(),
+                                                state.pipeline_state->pipeline());
                     skip |= LogError(objlist, vuid.vertex_binding_attribute,
                                      "%s: Format %s has an alignment of %" PRIu64 " but the alignment of attribAddress (%" PRIu64
                                      ") is not aligned in pVertexAttributeDescriptions[%zu]"
@@ -1408,8 +1382,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                      vertex_buffer_stride, attribute_offset);
                 }
             } else {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(state.pipeline_state->pipeline());
+                const LogObjectList objlist(cb_state.commandBuffer(), state.pipeline_state->pipeline());
                 skip |= LogError(objlist, vuid.vertex_binding_attribute,
                                  "%s: binding #%" PRIu32
                                  " in pVertexAttributeDescriptions[%zu]"
@@ -1467,8 +1440,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                       IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
                       enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
                     ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
-                    LogObjectList objlist(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
+                    const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
                                                   ? vuid.msrtss_rasterization_samples
                                                   : vuid.rasterization_samples;
@@ -1546,9 +1518,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
 
                 if (depth_write_enable == VK_TRUE && IsImageLayoutDepthReadOnly(ds_attachment->layout)) {
-                    LogObjectList objlist(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
-                    objlist.add(cb_state.commandBuffer());
+                    const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
+                                                cb_state.commandBuffer());
                     skip |= LogError(objlist, vuid.depth_read_only,
                                      "%s: depthWriteEnable is VK_TRUE, while the layout (%s) of "
                                      "the depth aspect of the depth/stencil attachment in the render pass is read only.",
@@ -1562,9 +1533,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 const bool write_mask_enabled = (front.writeMask != 0) && (back.writeMask != 0);
 
                 if (IsImageLayoutStencilReadOnly(ds_attachment->layout) && !all_keep_op && write_mask_enabled) {
-                    LogObjectList objlist(pipeline.pipeline());
-                    objlist.add(cb_state.activeRenderPass->renderPass());
-                    objlist.add(cb_state.commandBuffer());
+                    const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass(),
+                                                cb_state.commandBuffer());
                     skip |= LogError(objlist, vuid.stencil_read_only,
                                      "%s: The layout (%s) of the stencil aspect of the depth/stencil attachment in the render pass "
                                      "is read only but not all stencil ops are VK_STENCIL_OP_KEEP.\n"
@@ -1635,8 +1605,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
     for (const auto &ds : last_bound.per_set) {
         if (pipeline.descriptor_buffer_mode) {
             if (ds.bound_descriptor_set && !ds.bound_descriptor_set->IsPushDescriptor()) {
-                LogObjectList obj_list(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
-                result |= LogError(pipeline.pipeline(), vuid.descriptor_buffer_set_offset_missing,
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds.bound_descriptor_set->Handle());
+                result |= LogError(objlist, vuid.descriptor_buffer_set_offset_missing,
                                    "%s: pipeline bound to %s requires a descriptor buffer but has a bound descriptor set (%s)",
                                    function, string_VkPipelineBindPoint(bind_point),
                                    report_data->FormatHandle(ds.bound_descriptor_set->Handle()).c_str());
@@ -1645,8 +1615,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
         } else {
             if (ds.bound_descriptor_buffer.has_value()) {
-                LogObjectList obj_list(cb_state.Handle(), pipeline.Handle());
-                result |= LogError(obj_list, vuid.descriptor_buffer_bit_not_set,
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                result |= LogError(objlist, vuid.descriptor_buffer_bit_not_set,
                                    "%s: pipeline bound to %s requires a descriptor set but has a bound descriptor buffer"
                                    " (index=%" PRIu32 " offset=%" PRIu64 ")",
                                    function, string_VkPipelineBindPoint(bind_point), ds.bound_descriptor_buffer->index,
@@ -1727,8 +1697,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                 } else if (!VerifySetLayoutCompatibility(*set_info.bound_descriptor_set, *pipeline_layout, set_index, error_string)) {
                     // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
                     VkDescriptorSet set_handle = set_info.bound_descriptor_set->GetSet();
-                    LogObjectList objlist(set_handle);
-                    objlist.add(pipeline_layout->layout());
+                    const LogObjectList objlist(set_handle, pipeline_layout->layout());
                     result |= LogError(objlist, vuid.compatible_pipeline,
                                        "%s(): %s bound as set #%u is not compatible with overlapping %s due to: %s", function,
                                        report_data->FormatHandle(set_handle).c_str(), set_index,
@@ -1800,9 +1769,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
 
             // Edge case where if the shader is using push constants statically and there never was a vkCmdPushConstants
             if (!cb_state.push_constant_data_ranges && !enabled_features.core13.maintenance4) {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(pipeline_layout->layout());
-                objlist.add(pipeline.pipeline());
+                const LogObjectList objlist(cb_state.commandBuffer(), pipeline_layout->layout(), pipeline.pipeline());
                 result |= LogError(objlist, vuid.push_constants_set,
                                    "%s(): Shader in %s uses push-constant statically but vkCmdPushConstants was not called yet for "
                                    "pipeline layout %s.",
@@ -3895,9 +3862,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     const bool lib_has_retain_link_time_opt =
                         (lib->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
                     if (has_link_time_opt && !lib_has_retain_link_time_opt) {
-                        LogObjectList objs(device);
-                        objs.add(lib->Handle());
-                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-flags-06609",
+                        const LogObjectList objlist(device, lib->Handle());
+                        skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-flags-06609",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] has VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT set, but "
                                          "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
@@ -3906,9 +3872,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     }
 
                     if (has_retain_link_time_opt && !lib_has_retain_link_time_opt) {
-                        LogObjectList objs(device);
-                        objs.add(lib->Handle());
-                        skip |= LogError(objs, "VUID-VkGraphicsPipelineCreateInfo-flags-06610",
+                        const LogObjectList objlist(device, lib->Handle());
+                        skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-flags-06610",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] has VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT set, but "
                                          "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT is not set for the %s "
@@ -3917,8 +3882,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     }
                     if ((lib->uses_shader_module_id) &&
                         !(pipeline.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
-                        LogObjectList objs(device);
-                        skip |= LogError(objs, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855",
+                        const LogObjectList objlist(device);
+                        skip |= LogError(objlist, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855",
                                          "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                          "] does not have the VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT set, but "
                                          "the %s "
@@ -3939,9 +3904,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                     for (const auto &check_info : check_infos) {
                         if ((pipeline.GetPipelineCreateFlags() & check_info.bit)) {
                             if (!(lib->GetPipelineCreateFlags() & check_info.bit)) {
-                                LogObjectList objs(device);
-                                objs.add(lib->Handle());
-                                skip |= LogError(objs, check_info.first_vuid.c_str(),
+                                const LogObjectList objlist(device, lib->Handle());
+                                skip |= LogError(objlist, check_info.first_vuid.c_str(),
                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                                  "] has the %s bit set, but "
                                                  "the pLibraries[%" PRIu32
@@ -3950,9 +3914,8 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                             }
                         } else {
                             if ((lib->GetPipelineCreateFlags() & check_info.bit)) {
-                                LogObjectList objs(device);
-                                objs.add(lib->Handle());
-                                skip |= LogError(objs, check_info.second_vuid.c_str(),
+                                const LogObjectList objlist(device, lib->Handle());
+                                skip |= LogError(objlist, check_info.second_vuid.c_str(),
                                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
                                                  "] does not have the %s bit set, but "
                                                  "the pLibraries[%" PRIu32
@@ -4921,8 +4884,7 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE &cb_state, const V
     }
 
     if (!found) {
-        LogObjectList objlist(cb_state.commandBuffer());
-        objlist.add(object);
+        const LogObjectList objlist(cb_state.commandBuffer(), object);
         skip = LogError(objlist, "VUID-vkQueueSubmit-pSubmits-04626",
                         "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
                         "this queue family %d.",
@@ -4943,8 +4905,7 @@ bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const CMD_BUFFE
 
     if (pool && queue_state) {
         if (pool->queueFamilyIndex != queue_state->queueFamilyIndex) {
-            LogObjectList objlist(cb_state.commandBuffer());
-            objlist.add(queue);
+            const LogObjectList objlist(cb_state.commandBuffer(), queue);
             const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
             skip |= LogError(objlist, vuid,
                              "%s Primary %s created in queue family %d is being submitted on %s "
@@ -5001,14 +4962,12 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     } else {
         for (const auto *sub_cb : cb_state.linkedCommandBuffers) {
             skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards);
-            LogObjectList objlist(device);
-            objlist.add(cb_state.commandBuffer());
-            objlist.add(sub_cb->commandBuffer());
-            objlist.add(sub_cb->primaryCommandBuffer);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primaryCommandBuffer != cb_state.commandBuffer()) &&
                 !(sub_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdNotSimultaneous);
+                const LogObjectList objlist(device, cb_state.commandBuffer(), sub_cb->commandBuffer(),
+                                            sub_cb->primaryCommandBuffer);
                 skip |= LogError(objlist, vuid,
                                  "%s %s was submitted with secondary %s but that buffer has subsequently been bound to "
                                  "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
@@ -5021,6 +4980,8 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
                 const char *const finished_cb_vuid = (loc.function == Func::vkQueueSubmit)
                                                          ? "VUID-vkQueueSubmit-pCommandBuffers-00072"
                                                          : "VUID-vkQueueSubmit2-commandBuffer-03876";
+                const LogObjectList objlist(device, cb_state.commandBuffer(), sub_cb->commandBuffer(),
+                                            sub_cb->primaryCommandBuffer);
                 skip |= LogError(objlist, finished_cb_vuid,
                                  "%s: Secondary command buffer %s is not in a valid (pending or executable) state.",
                                  loc.StringFunc().c_str(), report_data->FormatHandle(sub_cb->commandBuffer()).c_str());
@@ -5171,9 +5132,7 @@ struct SemaphoreSubmitState {
             VkQueue other_queue = AnotherQueueWaits(semaphore_state);
             if (other_queue) {
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kOtherQueueWaiting);
-                LogObjectList objlist(semaphore);
-                objlist.add(queue);
-                objlist.add(other_queue);
+                const LogObjectList objlist(semaphore, queue, other_queue);
                 skip |= core->LogError(objlist, vuid, "%s Queue %s is already waiting on semaphore (%s).",
                                         loc.Message().c_str(), core->report_data->FormatHandle(other_queue).c_str(),
                                         core->report_data->FormatHandle(semaphore).c_str());
@@ -5182,8 +5141,7 @@ struct SemaphoreSubmitState {
                                     ? SubmitError::kBinaryCannotBeSignalled
                                     : SubmitError::kOldBinaryCannotBeSignalled;
                 const auto &vuid = GetQueueSubmitVUID(loc, error);
-                LogObjectList objlist(semaphore);
-                objlist.add(queue);
+                const LogObjectList objlist(semaphore, queue);
                 skip |= core->LogError(
                     objlist, semaphore_state.Scope() == kSyncScopeInternal ? vuid : kVUID_Core_DrawState_QueueForwardProgress,
                     "%s Queue %s is waiting on semaphore (%s) that has no way to be signaled.", loc.Message().c_str(),
@@ -5284,8 +5242,7 @@ struct SemaphoreSubmitState {
         using sync_vuid_maps::GetQueueSubmitVUID;
         using sync_vuid_maps::SubmitError;
         bool skip = false;
-        LogObjectList objlist(semaphore);
-        objlist.add(queue);
+        LogObjectList objlist(semaphore, queue);
 
         auto semaphore_state = core->Get<SEMAPHORE_STATE>(semaphore);
         if (!semaphore_state) {
@@ -5361,8 +5318,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
 
         if (submit.pWaitDstStageMask) {
-            LogObjectList objlist(semaphore);
-            objlist.add(state.queue);
+            const LogObjectList objlist(semaphore, state.queue);
             auto loc = outer_loc.dot(Field::pWaitDstStageMask, i);
             skip |= ValidatePipelineStage(objlist, loc, state.queue_flags, submit.pWaitDstStageMask[i]);
             skip |= ValidateStageMaskHost(loc, submit.pWaitDstStageMask[i]);
@@ -5441,8 +5397,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
                 const auto &sig_info = submit.pSignalSemaphoreInfos[sig_index];
                 if (wait_info.semaphore == sig_info.semaphore && wait_info.value >= sig_info.value) {
                     Location sig_loc = outer_loc.dot(Field::pSignalSemaphoreInfos, sig_index);
-                    LogObjectList objlist(wait_info.semaphore);
-                    objlist.add(state.queue);
+                    const LogObjectList objlist(wait_info.semaphore, state.queue);
                     skip |= LogError(wait_info.semaphore, "VUID-VkSubmitInfo2-semaphore-03881",
                                      "%s has value (%" PRIu64 ") but %s has value (%" PRIu64 ")", loc.Message().c_str(),
                                      wait_info.value, sig_loc.Message().c_str(), sig_info.value);
@@ -5470,8 +5425,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(SemaphoreSubmitState &state, const 
         uint32_t device_index = 0;
         VkSemaphore semaphore = submit.pWaitSemaphores[i];
 
-        LogObjectList objlist(semaphore);
-        objlist.add(state.queue);
+        const LogObjectList objlist(semaphore, state.queue);
         // NOTE: there are no stage masks in bind sparse submissions
         auto semaphore_state = Get<SEMAPHORE_STATE>(semaphore);
         if (!semaphore_state) {
@@ -5701,8 +5655,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
                 if (cb_state) {
                     if ((cb_state->unprotected == true) && (protected_submit == true)) {
-                        LogObjectList objlist(cb_state->commandBuffer());
-                        objlist.add(queue);
+                        const LogObjectList objlist(cb_state->commandBuffer(), queue);
                         skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04148",
                                          "vkQueueSubmit(): command buffer %s is unprotected while queue %s pSubmits[%u] has "
                                          "VkProtectedSubmitInfo:protectedSubmit set to VK_TRUE",
@@ -5710,8 +5663,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                                          report_data->FormatHandle(queue).c_str(), submit_idx);
                     }
                     if ((cb_state->unprotected == false) && (protected_submit == false)) {
-                        LogObjectList objlist(cb_state->commandBuffer());
-                        objlist.add(queue);
+                        const LogObjectList objlist(cb_state->commandBuffer(), queue);
                         skip |= LogError(objlist, "VUID-VkSubmitInfo-pNext-04120",
                                          "vkQueueSubmit(): command buffer %s is protected while queue %s pSubmits[%u] has "
                                          "VkProtectedSubmitInfo:protectedSubmit set to VK_FALSE",
@@ -5776,8 +5728,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
             if (cb_state != nullptr) {
                 // Make sure command buffers are all protected or unprotected
                 if ((cb_state->unprotected == true) && (protected_submit == true)) {
-                    LogObjectList objlist(cb_state->commandBuffer());
-                    objlist.add(queue);
+                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03886",
                                      "%s: command buffer %s is unprotected while queue %s pSubmits[%u] has "
                                      "VK_SUBMIT_PROTECTED_BIT_KHR set",
@@ -5785,8 +5736,7 @@ bool CoreChecks::ValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const
                                      report_data->FormatHandle(queue).c_str(), submit_idx);
                 }
                 if ((cb_state->unprotected == false) && (protected_submit == false)) {
-                    LogObjectList objlist(cb_state->commandBuffer());
-                    objlist.add(queue);
+                    const LogObjectList objlist(cb_state->commandBuffer(), queue);
                     skip |= LogError(objlist, "VUID-VkSubmitInfo2-flags-03887",
                                      "%s: command buffer %s is protected while queue %s pSubmitInfos[%u] has "
                                      "VK_SUBMIT_PROTECTED_BIT_KHR not set", func_name,
@@ -5962,9 +5912,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
     if (mem_info->IsDedicatedImage()) {
         auto image_state = Get<IMAGE_STATE>(mem_info->dedicated->handle.Cast<VkImage>());
         if ((nullptr == image_state) || (0 == (image_state->CountDeviceMemory(mem_info->mem())))) {
-            LogObjectList objlist(device);
-            objlist.add(pInfo->memory);
-            objlist.add(mem_info->dedicated->handle);
+            const LogObjectList objlist(device, pInfo->memory, mem_info->dedicated->handle);
             skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
@@ -6256,8 +6204,7 @@ bool CoreChecks::ValidateBufferImportedHandleANDROID(const char *func_name, VkEx
     if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindBufferMemory()") == 0) ? "VUID-vkBindBufferMemory-memory-02986"
                                                                             : "VUID-VkBindBufferMemoryInfo-memory-02986";
-        LogObjectList objlist(buffer);
-        objlist.add(memory);
+        const LogObjectList objlist(buffer, memory);
         skip |= LogError(objlist, vuid,
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkBuffer (%s) "
@@ -6274,8 +6221,7 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
     if ((handleType & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) == 0) {
         const char *vuid = (strcmp(func_name, "vkBindImageMemory()") == 0) ? "VUID-vkBindImageMemory-memory-02990"
                                                                            : "VUID-VkBindImageMemoryInfo-memory-02990";
-        LogObjectList objlist(image);
-        objlist.add(memory);
+        const LogObjectList objlist(image, memory);
         skip |= LogError(objlist, vuid,
                          "%s: The VkDeviceMemory (%s) was created with an AHB import operation which is not set "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID in the VkImage (%s) "
@@ -6916,8 +6862,7 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             assert(false);
         }
 
-        LogObjectList objlist(mem_info->mem());
-        objlist.add(typed_handle);
+        LogObjectList objlist(mem_info->mem(), typed_handle);
         skip = LogError(objlist, error_code,
                         "In %s, attempting to bind %s to %s, memoryOffset=0x%" PRIxLEAST64
                         " must be less than the memory allocation size 0x%" PRIxLEAST64 ".",
@@ -7004,9 +6949,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                 ((mem_info->dedicated->handle.Cast<VkBuffer>() != buffer) || (memoryOffset != 0))) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01508" : "VUID-vkBindBufferMemory-memory-01508";
-                LogObjectList objlist(buffer);
-                objlist.add(mem);
-                objlist.add(mem_info->dedicated->handle);
+                const LogObjectList objlist(buffer, mem, mem_info->dedicated->handle);
                 skip |= LogError(objlist, vuid,
                                  "%s: for dedicated %s, VkMemoryDedicatedAllocateInfo::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
@@ -7042,8 +6985,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                 ((mem_info->export_handle_type_flags & buffer_state->external_memory_handle) == 0)) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-02726" : "VUID-vkBindBufferMemory-memory-02726";
-                LogObjectList objlist(buffer);
-                objlist.add(mem);
+                const LogObjectList objlist(buffer, mem);
                 skip |= LogError(objlist, vuid,
                                  "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least one "
                                  "handle from VkBuffer (%s) handleType %s.",
@@ -7071,8 +7013,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                         vuid = "VUID-vkBindBufferMemory-memory-02727";
                     }
-                    LogObjectList objlist(buffer);
-                    objlist.add(mem);
+                    const LogObjectList objlist(buffer, mem);
                     skip |= LogError(objlist, vuid,
                                      "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s which "
                                      "is not set in the VkBuffer (%s) VkExternalMemoryBufferCreateInfo::handleType (%s)",
@@ -7087,8 +7028,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             if ((buffer_state->unprotected == false) && (mem_info->unprotected == true)) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01898" : "VUID-vkBindBufferMemory-None-01898";
-                LogObjectList objlist(buffer);
-                objlist.add(mem);
+                const LogObjectList objlist(buffer, mem);
                 skip |= LogError(objlist, vuid,
                                  "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkBuffer (%s) was set "
                                  "to use protected memory.",
@@ -7096,8 +7036,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             } else if ((buffer_state->unprotected == true) && (mem_info->unprotected == false)) {
                 const char *vuid =
                     bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-01899" : "VUID-vkBindBufferMemory-None-01899";
-                LogObjectList objlist(buffer);
-                objlist.add(mem);
+                const LogObjectList objlist(buffer, mem);
                 skip |= LogError(objlist, vuid,
                                  "%s: The VkDeviceMemory (%s) was created with protected memory but the VkBuffer (%s) was not set "
                                  "to use protected memory.",
@@ -9995,8 +9934,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         VkCommandPool cmd_pool = cb_state->createInfo.commandPool;
         const auto *pool = cb_state->command_pool;
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
-            LogObjectList objlist(commandBuffer);
-            objlist.add(cmd_pool);
+            const LogObjectList objlist(commandBuffer, cmd_pool);
             skip |= LogError(objlist, "VUID-vkBeginCommandBuffer-commandBuffer-00050",
                              "Call to vkBeginCommandBuffer() on %s attempts to implicitly reset cmdBuffer created from "
                              "%s that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
@@ -10056,8 +9994,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     const auto *pool = cb_state->command_pool;
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pool->createFlags)) {
-        LogObjectList objlist(commandBuffer);
-        objlist.add(cmd_pool);
+        const LogObjectList objlist(commandBuffer, cmd_pool);
         skip |= LogError(objlist, "VUID-vkResetCommandBuffer-commandBuffer-00046",
                          "vkResetCommandBuffer(): Attempt to reset %s created from %s that does NOT have the "
                          "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
@@ -10552,16 +10489,16 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
 
             if (pInfos[info_index].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR) {
                 if (pInfos[info_index].srcAccelerationStructure == VK_NULL_HANDLE) {
-                    LogObjectList objs(device, commandBuffer);
-                    skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630",
+                    const LogObjectList objlist(device, commandBuffer);
+                    skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-04630",
                                      "vkCmdBuildAccelerationStructuresKHR(): pInfos[%" PRIu32
                                      "].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR but pInfos[%" PRIu32
                                      "].srcAccelerationStructure=VK_NULL_HANDLE.",
                                      info_index, info_index);
                 } else if (src_as_state == nullptr || !src_as_state->built ||
                            !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
-                    LogObjectList objs(device, commandBuffer);
-                    skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
+                    const LogObjectList objlist(device, commandBuffer);
+                    skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03667",
                                      "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
                                      "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its srcAccelerationStructure member must "
                                      "have been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set in "
@@ -10569,8 +10506,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 }
                 if (src_as_state != nullptr) {
                     if (!src_as_state->buffer_state) {
-                        LogObjectList objs(device, commandBuffer, src_as_state->Handle());
-                        skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708",
+                        const LogObjectList objlist(device, commandBuffer, src_as_state->Handle());
+                        skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708",
                                          "vkCmdBuildAccelerationStructuresKHR(): pInfos[%" PRIu32
                                          "].mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR but the buffer associated with "
                                          "pInfos[%" PRIu32 "].srcAccelerationStructure is not valid.",
@@ -10581,25 +10518,25 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                                                           "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03708");
                     }
                     if (pInfos[info_index].geometryCount != src_as_state->build_info_khr.geometryCount) {
-                        LogObjectList objs(device, commandBuffer);
-                        skip |= LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03758",
+                        const LogObjectList objlist(device, commandBuffer);
+                        skip |= LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03758",
                                          "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is "
                                          "VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR,"
                                          " its geometryCount member must have the same value which was specified when "
                                          "srcAccelerationStructure was last built.");
                     }
                     if (pInfos[info_index].flags != src_as_state->build_info_khr.flags) {
-                        LogObjectList objs(device, commandBuffer);
+                        const LogObjectList objlist(device, commandBuffer);
                         skip |= LogError(
-                            objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759",
+                            objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03759",
                             "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
                             " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its flags member must have the same value which"
                             " was specified when srcAccelerationStructure was last built.");
                     }
                     if (pInfos[info_index].type != src_as_state->build_info_khr.type) {
-                        LogObjectList objs(device, commandBuffer);
+                        const LogObjectList objlist(device, commandBuffer);
                         skip |= LogError(
-                            objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03760",
+                            objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03760",
                             "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its mode member is"
                             " VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, its type member must have the same value which"
                             " was specified when srcAccelerationStructure was last built.");
@@ -10610,9 +10547,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 if (!dst_as_state ||
                     (dst_as_state && dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
                      dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR)) {
-                    LogObjectList objs(device, commandBuffer);
+                    const LogObjectList objlist(device, commandBuffer);
                     skip |=
-                        LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03700",
+                        LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03700",
                                  "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its type member is "
                                  "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, its dstAccelerationStructure member must have "
                                  "been created with a value of VkAccelerationStructureCreateInfoKHR::type equal to either "
@@ -10623,9 +10560,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 if (!dst_as_state ||
                     (dst_as_state && dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                      dst_as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR)) {
-                    LogObjectList objs(device, commandBuffer);
+                    const LogObjectList objlist(device, commandBuffer);
                     skip |=
-                        LogError(objs, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03699",
+                        LogError(objlist, "VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03699",
                                  "vkCmdBuildAccelerationStructuresKHR(): For each element of pInfos, if its type member is "
                                  "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, its dstAccelerationStructure member must have been "
                                  "created with a value of VkAccelerationStructureCreateInfoKHR::type equal to either "
@@ -11114,8 +11051,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
         const auto &qfp = physical_device_state->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
             const std::string &error = bind_errors.at(bind_point);
-            LogObjectList objlist(cb_state->commandBuffer());
-            objlist.add(cb_state->createInfo.commandPool);
+            const LogObjectList objlist(cb_state->commandBuffer(), cb_state->createInfo.commandPool);
             skip |= LogError(objlist, error, "%s: %s was allocated from %s that does not support bindpoint %s.", func_name,
                              report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                              report_data->FormatHandle(cb_state->createInfo.commandPool).c_str(),
@@ -11275,16 +11211,15 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     bool skip = false;
     skip |= ValidateExtendedDynamicState(*cb_state, CMD_SETEVENT, VK_TRUE, nullptr, nullptr);
     Location loc(Func::vkCmdSetEvent, Field::stageMask);
-    LogObjectList objects(commandBuffer);
-    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
+    const LogObjectList objlist(commandBuffer);
+    skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
 
 bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
                                       CMD_TYPE cmd_type) const {
-    LogObjectList objects(commandBuffer);
-    objects.add(event);
+    const LogObjectList objlist(commandBuffer, event);
 
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     bool skip = false;
@@ -11292,11 +11227,11 @@ bool CoreChecks::ValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent eve
                                          "VUID-vkCmdSetEvent2-synchronization2-03824", "synchronization2");
     Location loc(Func::vkCmdSetEvent2, Field::pDependencyInfo);
     if (pDependencyInfo->dependencyFlags != 0) {
-        skip |= LogError(objects, "VUID-vkCmdSetEvent2-dependencyFlags-03825", "%s (%s) must be 0",
+        skip |= LogError(objlist, "VUID-vkCmdSetEvent2-dependencyFlags-03825", "%s (%s) must be 0",
                          loc.dot(Field::dependencyFlags).Message().c_str(),
                          string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
-    skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), pDependencyInfo);
+    skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), pDependencyInfo);
     return skip;
 }
 
@@ -11313,12 +11248,12 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    LogObjectList objects(commandBuffer);
+    const LogObjectList objlist(commandBuffer);
     Location loc(Func::vkCmdResetEvent, Field::stageMask);
 
     bool skip = false;
     skip |= ValidateCmd(*cb_state, CMD_RESETEVENT);
-    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
+    skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
@@ -11327,7 +11262,7 @@ bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent e
                                         CMD_TYPE cmd_type) const {
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    LogObjectList objects(commandBuffer);
+    const LogObjectList objlist(commandBuffer);
     Location loc(Func::vkCmdResetEvent2, Field::stageMask);
 
     bool skip = false;
@@ -11336,7 +11271,7 @@ bool CoreChecks::ValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent e
                          "vkCmdResetEvent2KHR(): Synchronization2 feature is not enabled");
     }
     skip |= ValidateCmd(*cb_state, cmd_type);
-    skip |= ValidatePipelineStage(objects, loc, cb_state->GetQueueFlags(), stageMask);
+    skip |= ValidatePipelineStage(objlist, loc, cb_state->GetQueueFlags(), stageMask);
     skip |= ValidateStageMaskHost(loc, stageMask);
     return skip;
 }
@@ -11601,7 +11536,7 @@ bool CoreChecks::ValidateRenderPassPipelineBarriers(const Location &outer_loc, c
     return skip;
 }
 
-bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList &objects, const Location &loc,
+bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList &objlist, const Location &loc,
                                                             VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     // these are always allowed.
@@ -11621,7 +11556,7 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
     for (const auto &entry : metaFlags) {
         if (((entry.first & stage_mask) != 0) && ((entry.second & queue_flags) == 0)) {
             const auto& vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, entry.first);
-            skip |= LogError(objects, vuid,
+            skip |= LogError(objlist, vuid,
                              "%s flag %s is not compatible with the queue family properties (%s) of this command buffer.",
                              loc.Message().c_str(), sync_utils::StringPipelineStageFlags(entry.first).c_str(),
                              string_VkQueueFlags(queue_flags).c_str());
@@ -11642,21 +11577,21 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
         if (bit) {
             const auto& vuid = sync_vuid_maps::GetStageQueueCapVUID(loc, bit);
             skip |= LogError(
-                objects, vuid, "%s flag %s is not compatible with the queue family properties (%s) of this command buffer.",
+                objlist, vuid, "%s flag %s is not compatible with the queue family properties (%s) of this command buffer.",
                 loc.Message().c_str(), sync_utils::StringPipelineStageFlags(bit).c_str(), string_VkQueueFlags(queue_flags).c_str());
         }
     }
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objects, const Location &loc,
+bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlist, const Location &loc,
                                                      VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     if (!enabled_features.core13.synchronization2 && stage_mask == 0) {
         const auto& vuid = sync_vuid_maps::GetBadFeatureVUID(loc, 0);
         std::stringstream msg;
         msg << loc.Message() << " must not be 0 unless synchronization2 is enabled.";
-        skip |= LogError(objects, vuid, "%s", msg.str().c_str());
+        skip |= LogError(objlist, vuid, "%s", msg.str().c_str());
     }
 
     auto disabled_stages = sync_utils::DisabledPipelineStages(enabled_features);
@@ -11672,21 +11607,21 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &object
             msg << loc.Message() << " includes " << sync_utils::StringPipelineStageFlags(bit) << " when the device does not have "
                 << sync_vuid_maps::kFeatureNameMap.at(bit) << " feature enabled.";
 
-            skip |= LogError(objects, vuid, "%s", msg.str().c_str());
+            skip |= LogError(objlist, vuid, "%s", msg.str().c_str());
         }
     }
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineStage(const LogObjectList &objects, const Location &loc, VkQueueFlags queue_flags,
+bool CoreChecks::ValidatePipelineStage(const LogObjectList &objlist, const Location &loc, VkQueueFlags queue_flags,
                                        VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
-    skip |= ValidateStageMasksAgainstQueueCapabilities(objects, loc, queue_flags, stage_mask);
-    skip |= ValidatePipelineStageFeatureEnables(objects, loc, stage_mask);
+    skip |= ValidateStageMasksAgainstQueueCapabilities(objlist, loc, queue_flags, stage_mask);
+    skip |= ValidatePipelineStageFeatureEnables(objlist, loc, stage_mask);
     return skip;
 }
 
-bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const Location &loc, VkQueueFlags queue_flags,
+bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location &loc, VkQueueFlags queue_flags,
                                     VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const {
     bool skip = false;
     // Early out if all commands set
@@ -11709,7 +11644,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objects, const Location
             std::stringstream msg;
             msg << loc.Message() << " bit " << sync_utils::StringAccessFlags(bit) << " is not supported by stage mask ("
                 << sync_utils::StringPipelineStageFlags(stage_mask) << ").";
-            skip |= LogError(objects, vuid, "%s", msg.str().c_str());
+            skip |= LogError(objlist, vuid, "%s", msg.str().c_str());
         }
     }
     return skip;
@@ -11762,11 +11697,11 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     assert(cb_state);
 
     auto queue_flags = cb_state->GetQueueFlags();
-    LogObjectList objects(commandBuffer);
+    const LogObjectList objlist(commandBuffer);
     Location loc(Func::vkCmdWaitEvents);
 
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
+    skip |= ValidatePipelineStage(objlist, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
+    skip |= ValidatePipelineStage(objlist, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
 
     skip |= ValidateCmd(*cb_state, CMD_WAITEVENTS);
     skip |= ValidateBarriers(loc.dot(Field::pDependencyInfo), cb_state.get(), srcStageMask, dstStageMask, memoryBarrierCount,
@@ -11803,15 +11738,14 @@ bool CoreChecks::ValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t 
                          "%s(): Synchronization2 feature is not enabled", func_name);
     }
     for (uint32_t i = 0; (i < eventCount) && !skip; i++) {
-        LogObjectList objects(commandBuffer);
-        objects.add(pEvents[i]);
+        const LogObjectList objlist(commandBuffer, pEvents[i]);
         Location loc(Func::vkCmdWaitEvents2, Field::pDependencyInfos, i);
         if (pDependencyInfos[i].dependencyFlags != 0) {
-            skip |= LogError(objects, "VUID-vkCmdWaitEvents2-dependencyFlags-03844", "%s (%s) must be 0.",
+            skip |= LogError(objlist, "VUID-vkCmdWaitEvents2-dependencyFlags-03844", "%s (%s) must be 0.",
                              loc.dot(Field::dependencyFlags).Message().c_str(),
                              string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
-        skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), &pDependencyInfos[i]);
+        skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), &pDependencyInfos[i]);
     }
     skip |= ValidateCmd(*cb_state, cmd_type);
     return skip;
@@ -11913,12 +11847,12 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    LogObjectList objects(commandBuffer);
+    const LogObjectList objlist(commandBuffer);
     auto queue_flags = cb_state->GetQueueFlags();
     Location loc(Func::vkCmdPipelineBarrier);
 
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
-    skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
+    skip |= ValidatePipelineStage(objlist, loc.dot(Field::srcStageMask), queue_flags, srcStageMask);
+    skip |= ValidatePipelineStage(objlist, loc.dot(Field::dstStageMask), queue_flags, dstStageMask);
     skip |= ValidateCmd(*cb_state, CMD_PIPELINEBARRIER);
     if (cb_state->activeRenderPass && !cb_state->activeRenderPass->UsesDynamicRendering()) {
         skip |= ValidateRenderPassPipelineBarriers(loc, cb_state.get(), srcStageMask, dstStageMask, dependencyFlags,
@@ -11927,7 +11861,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
         if (dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-            skip = LogError(objects, "VUID-vkCmdPipelineBarrier-dependencyFlags-01186",
+            skip = LogError(objlist, "VUID-vkCmdPipelineBarrier-dependencyFlags-01186",
                             "%s VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance",
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
@@ -11946,7 +11880,7 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
     bool skip = false;
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
-    LogObjectList objects(commandBuffer);
+    const LogObjectList objlist(commandBuffer);
     const char *func_name = CommandTypeString(cmd_type);
 
     Location loc(Func::vkCmdPipelineBarrier2, Field::pDependencyInfo);
@@ -11960,7 +11894,7 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
         if (skip) return true;  // Early return to avoid redundant errors from below calls
     } else {
         if (pDependencyInfo->dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) {
-            skip = LogError(objects, "VUID-vkCmdPipelineBarrier2-dependencyFlags-01186",
+            skip = LogError(objlist, "VUID-vkCmdPipelineBarrier2-dependencyFlags-01186",
                             "%s VK_DEPENDENCY_VIEW_LOCAL_BIT must not be set outside of a render pass instance",
                             loc.dot(Field::dependencyFlags).Message().c_str());
         }
@@ -11969,7 +11903,7 @@ bool CoreChecks::ValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, cons
         skip |= LogError(commandBuffer, "VUID-vkCmdPipelineBarrier2-None-06191",
                          "vkCmdPipelineBarrier(): a dynamic render pass instance is active.");
     }
-    skip |= ValidateDependencyInfo(objects, loc, cb_state.get(), pDependencyInfo);
+    skip |= ValidateDependencyInfo(objlist, loc, cb_state.get(), pDependencyInfo);
     return skip;
 }
 
@@ -12034,10 +11968,8 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE &cb_state, const Quer
         for (const auto &a_query : cb_state.activeQueries) {
             auto active_query_pool_state = Get<QUERY_POOL_STATE>(a_query.pool);
             if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType && a_query.index == index) {
-                LogObjectList obj_list(cb_state.commandBuffer());
-                obj_list.add(query_obj.pool);
-                obj_list.add(a_query.pool);
-                skip |= LogError(obj_list, vuids->vuid_dup_query_type,
+                const LogObjectList objlist(cb_state.commandBuffer(), query_obj.pool, a_query.pool);
+                skip |= LogError(objlist, vuids->vuid_dup_query_type,
                                  "%s: Within the same command buffer %s, query %d from pool %s has same queryType as active query "
                                  "%d from pool %s.",
                                  cmd_name, report_data->FormatHandle(cb_state.commandBuffer()).c_str(), query_obj.index,
@@ -13154,8 +13086,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             auto image_state = Get<IMAGE_STATE>(ivci.image);
                             if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                                 if (FormatIsDepthOrStencil(ivci.format)) {
-                                    LogObjectList objlist(device);
-                                    objlist.add(ivci.image);
+                                    const LogObjectList objlist(device, ivci.image);
                                     skip |= LogError(
                                         objlist, "VUID-VkFramebufferCreateInfo-pAttachments-00891",
                                         "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has an image view type of "
@@ -13168,8 +13099,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             }
                         }
                         if (ivci.viewType == VK_IMAGE_VIEW_TYPE_3D) {
-                            LogObjectList objlist(device);
-                            objlist.add(image_views[i]);
+                            const LogObjectList objlist(device, image_views[i]);
                             skip |= LogError(objlist, "VUID-VkFramebufferCreateInfo-flags-04113",
                                              "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has an image view type "
                                              "of VK_IMAGE_VIEW_TYPE_3D",
@@ -14776,14 +14706,14 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         }
     }
 
-    LogObjectList objects(device);
+    const LogObjectList objlist(device);
 
     auto func_name = use_rp2 ? Func::vkCreateRenderPass2 : Func::vkCreateRenderPass;
     auto structure = use_rp2 ? Struct::VkSubpassDependency2 : Struct::VkSubpassDependency;
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         auto const &dependency = pCreateInfo->pDependencies[i];
         Location loc(func_name, structure, Field::pDependencies, i);
-        skip |= ValidateSubpassDependency(objects, loc, dependency);
+        skip |= ValidateSubpassDependency(objlist, loc, dependency);
     }
     return skip;
 }
@@ -16116,10 +16046,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
     VkFramebuffer secondary_fb = sub_cb_state.beginInfo.pInheritanceInfo->framebuffer;
     if (secondary_fb != VK_NULL_HANDLE) {
         if (primary_fb != secondary_fb) {
-            LogObjectList objlist(primaryBuffer);
-            objlist.add(secondaryBuffer);
-            objlist.add(secondary_fb);
-            objlist.add(primary_fb);
+            const LogObjectList objlist(primaryBuffer, secondaryBuffer, secondary_fb, primary_fb);
             skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099",
                              "vkCmdExecuteCommands() called w/ invalid secondary %s which has a %s"
                              " that is not the same as the primary command buffer's current active %s.",
@@ -16128,9 +16055,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
         }
         auto fb = Get<FRAMEBUFFER_STATE>(secondary_fb);
         if (!fb) {
-            LogObjectList objlist(primaryBuffer);
-            objlist.add(secondaryBuffer);
-            objlist.add(secondary_fb);
+            const LogObjectList objlist(primaryBuffer, secondaryBuffer, secondary_fb);
             skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                              "vkCmdExecuteCommands() called w/ invalid %s which has invalid %s.",
                              report_data->FormatHandle(secondaryBuffer).c_str(), report_data->FormatHandle(secondary_fb).c_str());
@@ -16152,8 +16077,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
                     sub_cb_state.beginInfo.pInheritanceInfo) {
                     VkQueryPipelineStatisticFlags cmd_buf_statistics = sub_cb_state.beginInfo.pInheritanceInfo->pipelineStatistics;
                     if ((cmd_buf_statistics & query_pool_state->createInfo.pipelineStatistics) != cmd_buf_statistics) {
-                        LogObjectList objlist(cb_state.commandBuffer());
-                        objlist.add(query_object.pool);
+                        const LogObjectList objlist(cb_state.commandBuffer(), query_object.pool);
                         skip |= LogError(
                             objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
@@ -16168,8 +16092,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
         for (const auto &query_object : sub_cb_state.startedQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
             if (query_pool_state && active_types.count(query_pool_state->createInfo.queryType)) {
-                LogObjectList objlist(cb_state.commandBuffer());
-                objlist.add(query_object.pool);
+                const LogObjectList objlist(cb_state.commandBuffer(), query_object.pool);
                 skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                                  "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                                  " of type %d but a query of that type has been started on secondary %s.",
@@ -16182,8 +16105,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_
     const auto primary_pool = cb_state.command_pool;
     const auto secondary_pool = sub_cb_state.command_pool;
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
-        LogObjectList objlist(sub_cb_state.commandBuffer());
-        objlist.add(cb_state.commandBuffer());
+        const LogObjectList objlist(sub_cb_state.commandBuffer(), cb_state.commandBuffer());
         skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00094",
                          "vkCmdExecuteCommands(): Primary %s created in queue family %d has secondary "
                          "%s created in queue family %d.",
@@ -16497,8 +16419,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 const VkRenderPass inheritance_render_pass = sub_cb_state->beginInfo.pInheritanceInfo->renderPass;
                 auto secondary_rp_state = Get<RENDER_PASS_STATE>(inheritance_render_pass);
                 if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-                    LogObjectList objlist(pCommandBuffers[i]);
-                    objlist.add(cb_state->activeRenderPass->renderPass());
+                    const LogObjectList objlist(pCommandBuffers[i], cb_state->activeRenderPass->renderPass());
                     skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096",
                                      "vkCmdExecuteCommands(): Secondary %s is executed within a %s "
                                      "instance scope, but the Secondary Command Buffer does not have the "
@@ -16546,8 +16467,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 }
 
                 if (!cb_state->activeRenderPass->UsesDynamicRendering() && (cb_state->activeSubpass != inheritance_subpass)) {
-                    LogObjectList objlist(pCommandBuffers[i]);
-                    objlist.add(cb_state->activeRenderPass->renderPass());
+                    const LogObjectList objlist(pCommandBuffers[i], cb_state->activeRenderPass->renderPass());
                     skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-06019",
                                      "vkCmdExecuteCommands(): Secondary %s is executed within a %s "
                                      "instance scope begun by vkCmdBeginRenderPass(), but "
@@ -16806,8 +16726,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state->linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(sub_cb_state.get()))) {
-                LogObjectList objlist(cb_state->commandBuffer());
-                objlist.add(sub_cb_state->commandBuffer());
+                const LogObjectList objlist(cb_state->commandBuffer(), sub_cb_state->commandBuffer());
                 skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
                                  "vkCmdExecuteCommands(): Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT "
                                  "set if previously executed in %s",
@@ -16825,8 +16744,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
-                LogObjectList objlist(pCommandBuffers[i]);
-                objlist.add(cb_state->commandBuffer());
+                const LogObjectList objlist(pCommandBuffers[i], cb_state->commandBuffer());
                 skip |= LogWarning(objlist, kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
                                    "vkCmdExecuteCommands(): Secondary %s does not have "
                                    "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
@@ -16896,16 +16814,14 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
         // All commands buffers involved must be protected or unprotected
         if ((cb_state->unprotected == false) && (sub_cb_state->unprotected == true)) {
-            LogObjectList objlist(cb_state->commandBuffer());
-            objlist.add(sub_cb_state->commandBuffer());
+            const LogObjectList objlist(cb_state->commandBuffer(), sub_cb_state->commandBuffer());
             skip |= LogError(
                 objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01820",
                 "vkCmdExecuteCommands(): command buffer %s is protected while secondary command buffer %s is a unprotected",
                 report_data->FormatHandle(cb_state->commandBuffer()).c_str(),
                 report_data->FormatHandle(sub_cb_state->commandBuffer()).c_str());
         } else if ((cb_state->unprotected == true) && (sub_cb_state->unprotected == false)) {
-            LogObjectList objlist(cb_state->commandBuffer());
-            objlist.add(sub_cb_state->commandBuffer());
+            const LogObjectList objlist(cb_state->commandBuffer(), sub_cb_state->commandBuffer());
             skip |= LogError(
                 objlist, "VUID-vkCmdExecuteCommands-commandBuffer-01821",
                 "vkCmdExecuteCommands(): command buffer %s is unprotected while secondary command buffer %s is a protected",
@@ -17280,9 +17196,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             } else {
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-02629";
                             }
-                            LogObjectList objlist(bind_info.image);
-                            objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated->handle);
+                            const LogObjectList objlist(bind_info.image, bind_info.memory, mem_info->dedicated->handle);
                             skip |= LogError(
                                 objlist, validation_error,
                                 "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must compatible "
@@ -17299,9 +17213,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             } else {
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-01509";
                             }
-                            LogObjectList objlist(bind_info.image);
-                            objlist.add(bind_info.memory);
-                            objlist.add(mem_info->dedicated->handle);
+                            const LogObjectList objlist(bind_info.image, bind_info.memory, mem_info->dedicated->handle);
                             skip |=
                                 LogError(objlist, validation_error,
                                          "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfo:: %s must be equal "
@@ -17331,8 +17243,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     ((mem_info->export_handle_type_flags & image_state->external_memory_handle) == 0)) {
                     const char *vuid =
                         bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-memory-02728" : "VUID-vkBindImageMemory-memory-02728";
-                    LogObjectList objlist(bind_info.image);
-                    objlist.add(bind_info.memory);
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(objlist, vuid,
                                      "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least "
                                      "one handle from VkImage (%s) handleType %s.",
@@ -17362,8 +17273,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                    !IsExtEnabled(device_extensions.vk_android_external_memory_android_hardware_buffer)) {
                             vuid = "VUID-vkBindImageMemory-memory-02729";
                         }
-                        LogObjectList objlist(bind_info.image);
-                        objlist.add(bind_info.memory);
+                        const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(objlist, vuid,
                                          "%s: The VkDeviceMemory (%s) was created with an import operation with handleType of %s "
                                          "which is not set in the VkImage (%s) VkExternalMemoryImageCreateInfo::handleType (%s)",
@@ -17378,8 +17288,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 if ((image_state->unprotected == false) && (mem_info->unprotected == true)) {
                     const char *vuid =
                         bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-None-01901" : "VUID-vkBindImageMemory-None-01901";
-                    LogObjectList objlist(bind_info.image);
-                    objlist.add(bind_info.memory);
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(objlist, vuid,
                                      "%s: The VkDeviceMemory (%s) was not created with protected memory but the VkImage (%s) was "
                                      "set to use protected memory.",
@@ -17388,8 +17297,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                 } else if ((image_state->unprotected == true) && (mem_info->unprotected == false)) {
                     const char *vuid =
                         bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-None-01902" : "VUID-vkBindImageMemory-None-01902";
-                    LogObjectList objlist(bind_info.image);
-                    objlist.add(bind_info.memory);
+                    const LogObjectList objlist(bind_info.image, bind_info.memory);
                     skip |= LogError(objlist, vuid,
                                      "%s: The VkDeviceMemory (%s) was created with protected memory but the VkImage (%s) was not "
                                      "set to use protected memory.",
@@ -17405,9 +17313,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                      error_prefix, report_data->FormatHandle(bind_info.memory).c_str());
                 }
                 if (image_state->create_from_swapchain != swapchain_info->swapchain) {
-                    LogObjectList objlist(image_state->image());
-                    objlist.add(image_state->create_from_swapchain);
-                    objlist.add(swapchain_info->swapchain);
+                    const LogObjectList objlist(image_state->image(), image_state->create_from_swapchain,
+                                                swapchain_info->swapchain);
                     skip |= LogError(
                         objlist, kVUID_Core_BindImageMemory_Swapchain,
                         "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
@@ -18170,10 +18077,9 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         });
 
         if (!is_supported) {
-            LogObjectList objs(device);
-            objs.add(surface_state->Handle());
-            if (LogError(objs, "VUID-VkSwapchainCreateInfoKHR-surface-01270",
-                    "%s: pCreateInfo->surface is not supported for presentation by this device.", func_name)) {
+            const LogObjectList objlist(device, surface_state->Handle());
+            if (LogError(objlist, "VUID-VkSwapchainCreateInfoKHR-surface-01270",
+                         "%s: pCreateInfo->surface is not supported for presentation by this device.", func_name)) {
                 return true;
             }
         }
@@ -18640,8 +18546,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (semaphore_state && semaphore_state->Scope() == kSyncScopeInternal && !semaphore_state->CanBeWaited()) {
-            LogObjectList objlist(queue);
-            objlist.add(pPresentInfo->pWaitSemaphores[i]);
+            const LogObjectList objlist(queue, pPresentInfo->pWaitSemaphores[i]);
             skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
                              "vkQueuePresentKHR: Queue %s is waiting on pWaitSemaphores[%u] (%s) that has no way to be signaled.",
                              report_data->FormatHandle(queue).c_str(), i,
@@ -19155,10 +19060,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         }
         auto template_layout = Get<PIPELINE_LAYOUT_STATE>(template_ci.pipelineLayout);
         if (!IsPipelineLayoutSetCompat(set, layout_data.get(), template_layout.get())) {
-            LogObjectList objlist(cb_state->commandBuffer());
-            objlist.add(descriptorUpdateTemplate);
-            objlist.add(template_ci.pipelineLayout);
-            objlist.add(layout);
+            const LogObjectList objlist(cb_state->commandBuffer(), descriptorUpdateTemplate, template_ci.pipelineLayout, layout);
             skip |= LogError(objlist, kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched,
                              "%s: descriptorUpdateTemplate %s created with %s is incompatible with command parameter "
                              "%s for set %" PRIu32,
