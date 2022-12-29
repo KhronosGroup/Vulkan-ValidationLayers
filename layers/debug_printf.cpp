@@ -719,8 +719,19 @@ debug_printf_state::CommandBuffer::CommandBuffer(DebugPrintf *dp, VkCommandBuffe
                                                  const VkCommandBufferAllocateInfo *pCreateInfo, const COMMAND_POOL_STATE *pool)
     : gpu_utils_state::CommandBuffer(dp, cb, pCreateInfo, pool) {}
 
+debug_printf_state::CommandBuffer::~CommandBuffer() { Destroy(); }
+
+void debug_printf_state::CommandBuffer::Destroy() {
+    ResetCBState();
+    CMD_BUFFER_STATE::Destroy();
+}
+
 void debug_printf_state::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();
+    ResetCBState();
+}
+
+void debug_printf_state::CommandBuffer::ResetCBState() {
     auto debug_printf = static_cast<DebugPrintf *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
     if (debug_printf->aborted) {

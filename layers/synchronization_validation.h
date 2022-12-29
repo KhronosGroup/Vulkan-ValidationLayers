@@ -1578,15 +1578,19 @@ class CommandBufferAccessContext : public CommandExecutionContext {
 namespace syncval_state {
 class CommandBuffer : public CMD_BUFFER_STATE {
   public:
+    CommandBufferAccessContext access_context;
+
     CommandBuffer(SyncValidator *dev, VkCommandBuffer cb, const VkCommandBufferAllocateInfo *pCreateInfo,
                   const COMMAND_POOL_STATE *pool);
-    ~CommandBuffer() { Destroy(); }
+    ~CommandBuffer();
+
+    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 
     void Destroy() override;
     void Reset() override;
-    void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
 
-    CommandBufferAccessContext access_context;
+  private:
+    void ResetCBState();
 };
 }  // namespace syncval_state
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, CMD_BUFFER_STATE);

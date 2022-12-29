@@ -64,11 +64,16 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
 
     CommandBuffer(DebugPrintf* dp, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* create_info,
                   const COMMAND_POOL_STATE* pool);
+    ~CommandBuffer();
 
     bool NeedsProcessing() const final { return !buffer_infos.empty(); }
-
     void Process(VkQueue queue) final;
+
+    void Destroy() final;
     void Reset() final;
+
+  private:
+    void ResetCBState();
 };
 };  // namespace debug_printf_state
 
