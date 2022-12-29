@@ -2265,8 +2265,19 @@ gpuav_state::CommandBuffer::CommandBuffer(GpuAssisted *ga, VkCommandBuffer cb, c
                                           const COMMAND_POOL_STATE *pool)
     : gpu_utils_state::CommandBuffer(ga, cb, pCreateInfo, pool) {}
 
+gpuav_state::CommandBuffer::~CommandBuffer() { Destroy(); }
+
+void gpuav_state::CommandBuffer::Destroy() {
+    ResetCBState();
+    CMD_BUFFER_STATE::Destroy();
+}
+
 void gpuav_state::CommandBuffer::Reset() {
     CMD_BUFFER_STATE::Reset();
+    ResetCBState();
+}
+
+void gpuav_state::CommandBuffer::ResetCBState() {
     auto gpuav = static_cast<GpuAssisted *>(dev_data);
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (auto &buffer_info : per_draw_buffer_list) {

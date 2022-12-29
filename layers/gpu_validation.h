@@ -158,13 +158,16 @@ class CommandBuffer : public gpu_utils_state::CommandBuffer {
 
     CommandBuffer(GpuAssisted* ga, VkCommandBuffer cb, const VkCommandBufferAllocateInfo* pCreateInfo,
                   const COMMAND_POOL_STATE* pool);
+    ~CommandBuffer();
 
     bool NeedsProcessing() const final { return !per_draw_buffer_list.empty() || has_build_as_cmd; }
-
     void Process(VkQueue queue) final;
+
+    void Destroy() final;
     void Reset() final;
 
   private:
+    void ResetCBState();
     void ProcessAccelerationStructure(VkQueue queue);
 };
 };  // namespace gpuav_state

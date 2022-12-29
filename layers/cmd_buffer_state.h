@@ -538,6 +538,9 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         pipeline_bound = true;
     }
 
+  private:
+    void ResetCBState();
+
   protected:
     void NotifyInvalidate(const BASE_NODE::NodeList &invalid_nodes, bool unlink) override;
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);

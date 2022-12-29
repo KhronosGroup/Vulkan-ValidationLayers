@@ -84,7 +84,7 @@ CMD_BUFFER_STATE::CMD_BUFFER_STATE(ValidationStateTracker *dev, VkCommandBuffer 
       dev_data(dev),
       unprotected(pool->unprotected),
       lastBound({*this, *this, *this}) {
-    Reset();
+    ResetCBState();
 }
 
 // Get the image viewstate for a given framebuffer attachment
@@ -115,8 +115,8 @@ void CMD_BUFFER_STATE::RemoveChild(std::shared_ptr<BASE_NODE> &child_node) {
 }
 
 // Reset the command buffer state
-//  Maintain the createInfo and set state to CB_NEW, but clear all other state
-void CMD_BUFFER_STATE::Reset() {
+// Maintain the createInfo and set state to CB_NEW, but clear all other state
+void CMD_BUFFER_STATE::ResetCBState() {
     // Remove object bindings
     for (const auto &obj : object_bindings) {
         obj->RemoveParent(this);
@@ -177,11 +177,7 @@ void CMD_BUFFER_STATE::Reset() {
     current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
     vertex_buffer_used = false;
     primaryCommandBuffer = VK_NULL_HANDLE;
-
     linkedCommandBuffers.clear();
-    // Remove reverse command buffer links.
-    Invalidate(true);
-
     queue_submit_functions.clear();
     queue_submit_functions_after_render_pass.clear();
     cmd_execute_commands_functions.clear();
@@ -208,6 +204,12 @@ void CMD_BUFFER_STATE::Reset() {
 
     // Clean up the label data
     ResetCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
+}
+
+void CMD_BUFFER_STATE::Reset() {
+    ResetCBState();
+    // Remove reverse command buffer links.
+    Invalidate(true);
 }
 
 // Track which resources are in-flight by atomically incrementing their "in_use" count
@@ -279,7 +281,7 @@ void CMD_BUFFER_STATE::Destroy() {
     EraseCmdDebugUtilsLabel(dev_data->report_data, commandBuffer());
     {
         auto guard = WriteLock();
-        Reset();
+        ResetCBState();
     }
     BASE_NODE::Destroy();
 }
