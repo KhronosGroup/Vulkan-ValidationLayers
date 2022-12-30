@@ -1053,16 +1053,23 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
 // Split the single string into a vector of strings, one for each line, for easier processing.
 void ReadOpSource(const SHADER_MODULE_STATE &module_state, const uint32_t reported_file_id,
                   std::vector<std::string> &opsource_lines) {
-    for (auto insn : module_state) {
-        if ((insn.opcode() == spv::OpSource) && (insn.len() >= 5) && (insn.word(3) == reported_file_id)) {
+    const std::vector<Instruction> &instructions = module_state.GetInstructions();
+    for (size_t i = 0; i < instructions.size(); i++) {
+        const Instruction &insn = instructions[i];
+        if ((insn.Opcode() == spv::OpSource) && (insn.Length() >= 5) && (insn.Word(3) == reported_file_id)) {
             std::istringstream in_stream;
             std::string cur_line;
-            in_stream.str((char *)&insn.word(4));
+            in_stream.str(insn.GetAsString(4));
             while (std::getline(in_stream, cur_line)) {
                 opsource_lines.push_back(cur_line);
             }
-            while ((++insn).opcode() == spv::OpSourceContinued) {
-                in_stream.str((char *)&insn.word(1));
+
+            for (size_t k = i + 1; k < instructions.size(); k++) {
+                const Instruction &continue_insn = instructions[k];
+                if (continue_insn.Opcode() != spv::OpSourceContinued) {
+                    break;
+                }
+                in_stream.str(continue_insn.GetAsString(1));
                 while (std::getline(in_stream, cur_line)) {
                     opsource_lines.push_back(cur_line);
                 }
@@ -1155,24 +1162,25 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
     SHADER_MODULE_STATE module_state(pgm);
+    if (module_state.words_.empty()) {
+        return;
+    }
     // Find the OpLine just before the failing instruction indicated by the debug info.
     // SPIR-V can only be iterated in the forward direction due to its opcode/length encoding.
     uint32_t instruction_index = 0;
     uint32_t reported_file_id = 0;
     uint32_t reported_line_number = 0;
     uint32_t reported_column_number = 0;
-    if (module_state.words_.size() > 0) {
-        for (const auto &insn : module_state) {
-            if (insn.opcode() == spv::OpLine) {
-                reported_file_id = insn.word(1);
-                reported_line_number = insn.word(2);
-                reported_column_number = insn.word(3);
-            }
-            if (instruction_index == debug_record[kInstCommonOutInstructionIdx]) {
-                break;
-            }
-            instruction_index++;
+    for (const Instruction &insn : module_state.GetInstructions()) {
+        if (insn.Opcode() == spv::OpLine) {
+            reported_file_id = insn.Word(1);
+            reported_line_number = insn.Word(2);
+            reported_column_number = insn.Word(3);
         }
+        if (instruction_index == debug_record[kInstCommonOutInstructionIdx]) {
+            break;
+        }
+        instruction_index++;
     }
     // Create message with file information obtained from the OpString pointed to by the discovered OpLine.
     std::string reported_filename;
@@ -1187,10 +1195,13 @@ void UtilGenerateSourceMessages(const std::vector<uint32_t> &pgm, const uint32_t
         } else {
             prefix = "Shader validation error occurred ";
         }
-        for (const auto &insn : module_state) {
-            if ((insn.opcode() == spv::OpString) && (insn.len() >= 3) && (insn.word(1) == reported_file_id)) {
+        for (const Instruction &insn : module_state.GetInstructions()) {
+            if (insn.Opcode() == spv::OpFunction) {
+                break;  // Debug Info is always before first function
+            }
+            if ((insn.Opcode() == spv::OpString) && (insn.Length() >= 3) && (insn.Word(1) == reported_file_id)) {
                 found_opstring = true;
-                reported_filename = (char *)&insn.word(2);
+                reported_filename = insn.GetAsString(2);
                 if (reported_filename.empty()) {
                     filename_stream << prefix << "at line " << reported_line_number;
                 } else {

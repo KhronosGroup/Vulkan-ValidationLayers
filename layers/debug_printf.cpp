@@ -241,14 +241,17 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string &form
 std::string DebugPrintf::FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
     SHADER_MODULE_STATE module_state(pgm);
-    if (module_state.words_.size() > 0) {
-        for (const auto &insn : module_state) {
-            if (insn.opcode() == spv::OpString) {
-                uint32_t offset = insn.offset();
-                if (pgm[offset + 1] == string_id) {
-                    format_string = reinterpret_cast<char *>(&pgm[offset + 2]);
-                    break;
-                }
+    if (module_state.words_.empty()) {
+        return {};
+    }
+    for (const Instruction &insn : module_state.GetInstructions()) {
+        if (insn.Opcode() == spv::OpFunction) {
+            break;  // Debug Info is always before first function
+        }
+        if (insn.Opcode() == spv::OpString) {
+            if (insn.Word(1) == string_id) {
+                format_string = insn.GetAsString(2);
+                break;
             }
         }
     }
