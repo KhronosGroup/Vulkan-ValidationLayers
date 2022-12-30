@@ -3564,7 +3564,7 @@ void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer com
                                                              const VkCommandBuffer *pCommandBuffers) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
 
-    cb_state->ExecuteCommands(commandBuffersCount, pCommandBuffers);
+    cb_state->ExecuteCommands({pCommandBuffers, commandBuffersCount});
 }
 
 void ValidationStateTracker::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,

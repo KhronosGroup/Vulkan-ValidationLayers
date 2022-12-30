@@ -738,10 +738,9 @@ void CMD_BUFFER_STATE::End(VkResult result) {
     }
 }
 
-void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers) {
+void CMD_BUFFER_STATE::ExecuteCommands(layer_data::span<const VkCommandBuffer> secondary_command_buffers) {
     RecordCmd(CMD_EXECUTECOMMANDS);
-    for (uint32_t i = 0; i < commandBuffersCount; i++) {
-        auto sub_command_buffer = pCommandBuffers[i];
+    for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto sub_cb_state = dev_data->GetWrite<CMD_BUFFER_STATE>(sub_command_buffer);
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -772,9 +771,9 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
         // Add a query update that runs all the query updates that happen in the sub command buffer.
         // This avoids locking ambiguity because primary command buffers are locked when these
         // callbacks run, but secondary command buffers are not.
-        queryUpdates.push_back([sub_command_buffer](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
-                                                    VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                    QueryMap *localQueryToStateMap) {
+        queryUpdates.emplace_back([sub_command_buffer](CMD_BUFFER_STATE &cb_state_arg, bool do_validate,
+                                                       VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                       QueryMap *localQueryToStateMap) {
             bool skip = false;
             auto sub_cb_state_arg = cb_state_arg.dev_data->GetWrite<CMD_BUFFER_STATE>(sub_command_buffer);
             for (auto &function : sub_cb_state_arg->queryUpdates) {
@@ -791,24 +790,16 @@ void CMD_BUFFER_STATE::ExecuteCommands(uint32_t commandBuffersCount, const VkCom
 
         // State is trashed after executing secondary command buffers.
         // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-        trashedViewportMask = ~uint32_t(0);
-        trashedScissorMask = ~uint32_t(0);
+        trashedViewportMask = layer_data::MaxTypeValue<uint32_t>();
+        trashedScissorMask = layer_data::MaxTypeValue<uint32_t>();
         trashedViewportCount = true;
         trashedScissorCount = true;
 
         // Pass along if any commands are used in the secondary command buffer
-        if (sub_cb_state->has_draw_cmd) {
-            has_draw_cmd = true;
-        }
-        if (sub_cb_state->has_dispatch_cmd) {
-            has_dispatch_cmd = true;
-        }
-        if (sub_cb_state->has_trace_rays_cmd) {
-            has_trace_rays_cmd = true;
-        }
-        if (sub_cb_state->has_build_as_cmd) {
-            has_build_as_cmd = true;
-        }
+        has_draw_cmd |= sub_cb_state->has_draw_cmd;
+        has_dispatch_cmd |= sub_cb_state->has_dispatch_cmd;
+        has_trace_rays_cmd |= sub_cb_state->has_trace_rays_cmd;
+        has_build_as_cmd |= sub_cb_state->has_build_as_cmd;
     }
 }
 

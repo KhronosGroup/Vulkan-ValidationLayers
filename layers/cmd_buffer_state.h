@@ -442,7 +442,7 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
 
     void BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *pRenderingInfo);
 
-    void ExecuteCommands(uint32_t commandBuffersCount, const VkCommandBuffer *pCommandBuffers);
+    void ExecuteCommands(layer_data::span<const VkCommandBuffer> secondary_command_buffers);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const PIPELINE_LAYOUT_STATE &pipeline_layout,
                                        uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
