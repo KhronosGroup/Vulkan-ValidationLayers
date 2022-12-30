@@ -33,56 +33,6 @@
 
 class PIPELINE_STATE;
 
-// A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
-// without the caller needing to care too much about the physical SPIRV module layout.
-//
-// For more information of the physical module layout to help understand this struct:
-// https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/parsing_instructions.md
-struct spirv_inst_iter {
-    std::vector<uint32_t>::const_iterator zero;
-    std::vector<uint32_t>::const_iterator it;
-
-    uint32_t len() const {
-        auto result = *it >> 16;
-        assert(result > 0);
-        return result;
-    }
-
-    uint32_t opcode() const { return *it & 0x0ffffu; }
-
-    uint32_t const &word(uint32_t n) const {
-        assert(n < len());
-        return it[n];
-    }
-
-    uint32_t offset() const { return (uint32_t)(it - zero); }
-
-    spirv_inst_iter() {}
-
-    spirv_inst_iter(std::vector<uint32_t>::const_iterator zero, std::vector<uint32_t>::const_iterator it) : zero(zero), it(it) {}
-
-    bool operator==(spirv_inst_iter const &other) const { return it == other.it; }
-
-    bool operator!=(spirv_inst_iter const &other) const { return it != other.it; }
-
-    bool operator!=(std::vector<uint32_t>::const_iterator other) const { return it != other; }
-
-    spirv_inst_iter operator++(int) {  // x++
-        spirv_inst_iter ii = *this;
-        it += len();
-        return ii;
-    }
-
-    spirv_inst_iter operator++() {  // ++x;
-        it += len();
-        return *this;
-    }
-
-    // The iterator and the value are the same thing.
-    spirv_inst_iter &operator*() { return *this; }
-    spirv_inst_iter const &operator*() const { return *this; }
-};
-
 // Information about a OpVariable used as an interface in the shader
 struct InterfaceVariable {
     uint32_t id;
@@ -358,10 +308,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         if (it != static_data_.decorations.end()) return it->second;
         return DecorationSet();
     }
-
-    // Expose begin() / end() to enable range-based for
-    spirv_inst_iter begin() const { return spirv_inst_iter(words_.begin(), words_.begin() + 5); }  // First insn
-    spirv_inst_iter end() const { return spirv_inst_iter(words_.begin(), words_.end()); }          // Just past last insn
 
     // Used to get human readable strings for error messages
     void DescribeTypeInner(std::ostringstream &ss, uint32_t type) const;
