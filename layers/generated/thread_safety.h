@@ -279,7 +279,7 @@ public:
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    ReadLockGuard ReadLock() override;
+    ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
     vl_concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;

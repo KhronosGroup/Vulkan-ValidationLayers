@@ -232,7 +232,7 @@ class CoreChecks : public ValidationStateTracker {
 
     CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
 
-    ReadLockGuard ReadLock() override;
+    ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
     struct SimpleErrorLocation {

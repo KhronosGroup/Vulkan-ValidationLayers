@@ -99,7 +99,7 @@ using std::stringstream;
 using std::unique_ptr;
 using std::vector;
 
-ReadLockGuard CoreChecks::ReadLock() {
+ReadLockGuard CoreChecks::ReadLock() const {
     if (fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {

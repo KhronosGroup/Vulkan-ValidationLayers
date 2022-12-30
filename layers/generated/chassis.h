@@ -3971,8 +3971,8 @@ class ValidationObject {
 
         void InitObjectDispatchVectors();
 
-        std::shared_mutex validation_object_mutex;
-        virtual ReadLockGuard ReadLock() {
+        mutable std::shared_mutex validation_object_mutex;
+        virtual ReadLockGuard ReadLock() const {
             return ReadLockGuard(validation_object_mutex);
         }
         virtual WriteLockGuard WriteLock() {

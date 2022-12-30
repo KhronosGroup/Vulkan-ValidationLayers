@@ -26,7 +26,7 @@
 #include "thread_safety.h"
 
 
-ReadLockGuard ThreadSafety::ReadLock() {
+ReadLockGuard ThreadSafety::ReadLock() const {
     return ReadLockGuard(validation_object_mutex, std::defer_lock);
 }
 

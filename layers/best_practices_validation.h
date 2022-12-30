@@ -379,7 +379,7 @@ class BestPractices : public ValidationStateTracker {
 
     BestPractices() { container_type = LayerObjectTypeBestPractices; }
 
-    ReadLockGuard ReadLock() override;
+    ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
     std::string GetAPIVersionName(uint32_t version) const;

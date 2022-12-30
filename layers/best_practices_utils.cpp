@@ -65,7 +65,7 @@ static constexpr std::array<VkFormat, 12> kCustomClearColorCompressedFormatsNVID
     VK_FORMAT_R16G16B16A16_SFLOAT,      VK_FORMAT_R32G32B32A32_SFLOAT,      VK_FORMAT_B10G11R11_UFLOAT_PACK32,
 };
 
-ReadLockGuard BestPractices::ReadLock() {
+ReadLockGuard BestPractices::ReadLock() const {
     if (fine_grained_locking) {
         return ReadLockGuard(validation_object_mutex, std::defer_lock);
     } else {

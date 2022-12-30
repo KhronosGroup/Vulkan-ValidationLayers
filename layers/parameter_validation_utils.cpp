@@ -85,7 +85,7 @@ ImportOperationsInfo GetNumberOfImportInfo(const VkMemoryAllocateInfo *pAllocate
 }
 }  // namespace
 
-ReadLockGuard StatelessValidation::ReadLock() { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
+ReadLockGuard StatelessValidation::ReadLock() const { return ReadLockGuard(validation_object_mutex, std::defer_lock); }
 WriteLockGuard StatelessValidation::WriteLock() { return WriteLockGuard(validation_object_mutex, std::defer_lock); }
 
 static layer_data::unordered_map<VkCommandBuffer, VkCommandPool> secondary_cb_map{};

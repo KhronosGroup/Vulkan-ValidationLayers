@@ -58,7 +58,7 @@ class StatelessValidation : public ValidationObject {
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    ReadLockGuard ReadLock() override;
+    ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
