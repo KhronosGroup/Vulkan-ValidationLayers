@@ -238,7 +238,7 @@ std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string &form
     return parsed_strings;
 }
 
-std::string DebugPrintf::FindFormatString(std::vector<uint32_t> pgm, uint32_t string_id) {
+std::string DebugPrintf::FindFormatString(layer_data::span<const uint32_t> pgm, uint32_t string_id) {
     std::string format_string;
     SHADER_MODULE_STATE module_state(pgm);
     if (module_state.words_.empty()) {
@@ -313,7 +313,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
-        std::vector<uint32_t> pgm;
+        layer_data::span<const uint32_t> pgm;
 
         DPFOutputRecord *debug_record = reinterpret_cast<DPFOutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
@@ -325,7 +325,7 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
             pgm = it->second.pgm;
         }
         // Search through the shader source for the printf format string for this invocation
-        auto format_string = FindFormatString(pgm, debug_record->format_string_id);
+        const auto format_string = FindFormatString(pgm, debug_record->format_string_id);
         // Break the format string into strings with 1 or 0 value
         auto format_substrings = ParseFormatString(format_string);
         void *values = static_cast<void *>(&debug_record->values);
