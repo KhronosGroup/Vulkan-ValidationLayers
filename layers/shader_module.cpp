@@ -1636,74 +1636,67 @@ std::vector<std::pair<uint32_t, InterfaceVariable>> SHADER_MODULE_STATE::Collect
 
 uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
+    uint32_t component_count = 0;
     if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
-        return 1;
+        component_count = 1;
     } else if (opcode == spv::OpTypeVector) {
-        const uint32_t component_count = insn->Word(3);
-        return component_count;
+        component_count = insn->Word(3);
     } else if (opcode == spv::OpTypeMatrix) {
         const Instruction* column_type = FindDef(insn->Word(2));
-        const uint32_t vector_length = GetNumComponentsInBaseType(column_type);
         // Because we are calculating components for a single location we do not care about column count
-        return vector_length;
+        component_count = GetNumComponentsInBaseType(column_type);  // vector length
     } else if (opcode == spv::OpTypeArray) {
         const Instruction* element_type = FindDef(insn->Word(2));
-        const uint32_t element_length = GetNumComponentsInBaseType(element_type);
-        return element_length;
+        component_count = GetNumComponentsInBaseType(element_type);  // element length
     } else if (opcode == spv::OpTypeStruct) {
-        uint32_t total_size = 0;
         for (uint32_t i = 2; i < insn->Length(); ++i) {
-            total_size += GetNumComponentsInBaseType(FindDef(insn->Word(i)));
+            component_count += GetNumComponentsInBaseType(FindDef(insn->Word(i)));
         }
-        return total_size;
     } else if (opcode == spv::OpTypePointer) {
         const Instruction* type = FindDef(insn->Word(3));
-        return GetNumComponentsInBaseType(type);
+        component_count = GetNumComponentsInBaseType(type);
     }
-    return 0;
+    return component_count;
 }
 
+// Returns the total size in 'bits' of any OpType*
 uint32_t SHADER_MODULE_STATE::GetTypeBitsSize(const Instruction* insn) const {
     const uint32_t opcode = insn->Opcode();
-    if (opcode == spv::OpTypeFloat || opcode == spv::OpTypeInt) {
-        return insn->Word(2);
-    } else if (opcode == spv::OpTypeVector) {
+    uint32_t bit_size = 0;
+    if (opcode == spv::OpTypeVector) {
         const Instruction* component_type = FindDef(insn->Word(2));
         uint32_t scalar_width = GetTypeBitsSize(component_type);
         uint32_t component_count = insn->Word(3);
-        return scalar_width * component_count;
+        bit_size = scalar_width * component_count;
     } else if (opcode == spv::OpTypeMatrix) {
         const Instruction* column_type = FindDef(insn->Word(2));
         uint32_t vector_width = GetTypeBitsSize(column_type);
         uint32_t column_count = insn->Word(3);
-        return vector_width * column_count;
+        bit_size = vector_width * column_count;
     } else if (opcode == spv::OpTypeArray) {
         const Instruction* element_type = FindDef(insn->Word(2));
         uint32_t element_width = GetTypeBitsSize(element_type);
         const Instruction* length_type = FindDef(insn->Word(3));
         uint32_t length = length_type->GetConstantValue();
-        return element_width * length;
+        bit_size = element_width * length;
     } else if (opcode == spv::OpTypeStruct) {
-        uint32_t total_size = 0;
         for (uint32_t i = 2; i < insn->Length(); ++i) {
-            total_size += GetTypeBitsSize(FindDef(insn->Word(i)));
+            bit_size += GetTypeBitsSize(FindDef(insn->Word(i)));
         }
-        return total_size;
     } else if (opcode == spv::OpTypePointer) {
         const Instruction* type = FindDef(insn->Word(3));
-        return GetTypeBitsSize(type);
+        bit_size = GetTypeBitsSize(type);
     } else if (opcode == spv::OpVariable) {
         const Instruction* type = FindDef(insn->Word(1));
-        return GetTypeBitsSize(type);
-    } else if (opcode == spv::OpTypeBool) {
-        // The Spec states:
-        // "Boolean values considered as 32-bit integer values for the purpose of this calculation"
-        // when getting the size for the limits
-        return 32;
+        bit_size = GetTypeBitsSize(type);
+    } else {
+        bit_size = insn->GetBitWidth();
     }
-    return 0;
+
+    return bit_size;
 }
 
+// Returns the total size in 'bytes' of any OpType*
 uint32_t SHADER_MODULE_STATE::GetTypeBytesSize(const Instruction* insn) const { return GetTypeBitsSize(insn) / 8; }
 
 // Returns the base type (float, int or unsigned int) or struct (can have multiple different base types inside)

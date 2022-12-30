@@ -76,6 +76,31 @@ uint32_t Instruction::GetConstantValue() const {
     return Word(3);
 }
 
+// The idea of this function is to not have to constantly lookup which operand for the width
+// inst.Word(2) -> inst.GetBitWidth()
+uint32_t Instruction::GetBitWidth() const {
+    const uint32_t opcode = Opcode();
+    uint32_t bit_width = 0;
+    switch (opcode) {
+        case spv::Op::OpTypeFloat:
+        case spv::Op::OpTypeInt:
+            bit_width = Word(2);
+            break;
+        case spv::Op::OpTypeBool:
+            // The Spec states:
+            // "Boolean values considered as 32-bit integer values for the purpose of this calculation"
+            // when getting the size for the limits
+            bit_width = 32;
+            break;
+        default:
+            // Most likely the caller is not checking for this being a matrix/array/struct/etc
+            // This class only knows a single instruction's information
+            assert(0);
+            break;
+    }
+    return bit_width;
+}
+
 AtomicInstructionInfo Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const {
     AtomicInstructionInfo info;
 
@@ -90,9 +115,7 @@ AtomicInstructionInfo Instruction::GetAtomicInfo(const SHADER_MODULE_STATE& modu
     const Instruction* data_type = module_state.FindDef(pointer->Word(3));
     info.type = data_type->Opcode();
 
-    // TODO - Should have a proper GetBitWidth like spirv-val does
-    assert(data_type->Opcode() == spv::OpTypeFloat || data_type->Opcode() == spv::OpTypeInt);
-    info.bit_width = data_type->Word(2);
+    info.bit_width = data_type->GetBitWidth();
 
     return info;
 }

@@ -68,6 +68,7 @@ class Instruction {
     }
 
     uint32_t GetConstantValue() const;
+    uint32_t GetBitWidth() const;
     AtomicInstructionInfo GetAtomicInfo(const SHADER_MODULE_STATE& module_state) const;
     spv::BuiltIn GetBuiltIn() const;
 
