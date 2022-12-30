@@ -37,19 +37,6 @@ cmake -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 cmake --build . --config Debug
 ```
-### CCACHE
-
-There are 2 methods to enable CCACHE:
-
-```bash
-# 1) Set environment variables
-# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_LANG_COMPILER_LAUNCHER.html)
-export CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache
-export CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
-
-# 2) Pass in cache variables`
-cmake ... -D CMAKE_CXX_COMPILER_LAUNCHER=/usr/bin/ccache -D CMAKE_C_COMPILER_LAUNCHER=/usr/bin/ccache
-```
 
 ## Generated source code
 
