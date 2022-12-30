@@ -213,7 +213,7 @@ if (NOT BUILD_LAYERS)
     return()
 endif()
 
-add_library(VkLayer_khronos_validation MODULE)
+add_library(VkLayer_khronos_validation SHARED)
 
 target_sources(VkLayer_khronos_validation PRIVATE
     ${CHASSIS_LIBRARY_FILES}
