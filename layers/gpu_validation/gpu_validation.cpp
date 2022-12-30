@@ -1149,7 +1149,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     std::string vuid_msg;
     VkShaderModule shader_module_handle = VK_NULL_HANDLE;
     VkPipeline pipeline_handle = VK_NULL_HANDLE;
-    std::vector<uint32_t> pgm;
+    layer_data::span<const uint32_t> pgm;
     // The first record starts at this offset after the total_words.
     const uint32_t *debug_record = &debug_output_buffer[kDebugOutputDataOffset];
     // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned

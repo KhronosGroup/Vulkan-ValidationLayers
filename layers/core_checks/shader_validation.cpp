@@ -2982,7 +2982,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
             // The new optimized SPIR-V will NOT match the original SHADER_MODULE_STATE object parsing, so a new SHADER_MODULE_STATE
             // object is needed. This an issue due to each pipeline being able to reuse the same shader module but with different
             // spec constant values.
-            SHADER_MODULE_STATE spec_mod(specialized_spirv);
+            SHADER_MODULE_STATE spec_mod(layer_data::make_span<const uint32_t>(specialized_spirv.data(), specialized_spirv.size()));
 
             // According to https://github.com/KhronosGroup/Vulkan-Docs/issues/1671 anything labeled as "static use" (such as if an
             // input is used or not) don't have to be checked post spec constants freezing since the device compiler is not

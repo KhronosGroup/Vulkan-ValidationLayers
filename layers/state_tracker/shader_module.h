@@ -272,16 +272,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
-    SHADER_MODULE_STATE(const uint32_t *code, std::size_t count, spv_target_env env = SPV_ENV_VULKAN_1_0)
+    explicit SHADER_MODULE_STATE(layer_data::span<const uint32_t> code, spv_target_env env = SPV_ENV_VULKAN_1_0)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
-          words_(code, code + (count / sizeof(uint32_t))),
+          words_(code.begin(), code.end()),
           static_data_(*this) {
         PreprocessShaderBinary(env);
     }
-
-    template <typename SpirvContainer>
-    SHADER_MODULE_STATE(const SpirvContainer &spirv)
-        : SHADER_MODULE_STATE(spirv.data(), spirv.size() * sizeof(typename SpirvContainer::value_type)) {}
 
     SHADER_MODULE_STATE(const VkShaderModuleCreateInfo &create_info, VkShaderModule shaderModule, spv_target_env env,
                         uint32_t unique_shader_id)
