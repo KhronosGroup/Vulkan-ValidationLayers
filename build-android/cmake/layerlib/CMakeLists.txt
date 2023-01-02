@@ -50,6 +50,7 @@ include_directories(${SRC_DIR}/include
 add_library(layer_utils STATIC
         ${SRC_DIR}/layers/vk_layer_config.cpp
         ${SRC_DIR}/layers/vk_layer_extension_utils.cpp
+        ${SRC_DIR}/layers/vk_layer_logging.cpp
         ${SRC_DIR}/layers/vk_layer_utils.cpp
         ${SRC_DIR}/layers/generated/vk_format_utils.cpp)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_clone}")

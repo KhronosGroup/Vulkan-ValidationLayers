@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2022 Valve Corporation
-# Copyright (c) 2015-2022 LunarG, Inc.
-# Copyright (c) 2015-2022 Google Inc.
+# Copyright (c) 2015-2023 Valve Corporation
+# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -201,10 +201,10 @@ class LayerChassisOutputGenerator(OutputGenerator):
 
     post_dispatch_debug_utils_functions = {
         'vkQueueEndDebugUtilsLabelEXT' : 'EndQueueDebugUtilsLabel(layer_data->report_data, queue);',
-        'vkCreateDebugReportCallbackEXT' : 'layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);',
-        'vkDestroyDebugReportCallbackEXT' : 'layer_destroy_callback(layer_data->report_data, callback, pAllocator);',
-        'vkCreateDebugUtilsMessengerEXT' : 'layer_create_messenger_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pMessenger);',
-        'vkDestroyDebugUtilsMessengerEXT' : 'layer_destroy_callback(layer_data->report_data, messenger, pAllocator);',
+        'vkCreateDebugReportCallbackEXT' : 'LayerCreateReportCallback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);',
+        'vkDestroyDebugReportCallbackEXT' : 'LayerDestroyCallback(layer_data->report_data, callback, pAllocator);',
+        'vkCreateDebugUtilsMessengerEXT' : 'LayerCreateMessengerCallback(layer_data->report_data, false, pCreateInfo, pAllocator, pMessenger);',
+        'vkDestroyDebugUtilsMessengerEXT' : 'LayerDestroyCallback(layer_data->report_data, messenger, pAllocator);',
         }
 
     # Avoid using auto in generated code. Intellisense has been known to have issues with large files.
@@ -447,148 +447,35 @@ class ValidationObject {
 
         // Debug Logging Helpers
         bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
             va_list argptr;
             va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
+            const bool result = LogMsg(report_data, kErrorBit, objlist, vuid_text, format, argptr);
             va_end(argptr);
-            return LogMsgLocked(report_data, kErrorBit, objlist, vuid_text, str);
-        }
-
-        template <typename HANDLE_T>
-        bool DECORATE_PRINTF(4, 5) LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            const LogObjectList objlist(src_object);
-            return LogMsgLocked(report_data, kErrorBit, objlist, vuid_text, str);
-
+            return result;
         }
 
         bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
             va_list argptr;
             va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
+            const bool result = LogMsg(report_data, kWarningBit, objlist, vuid_text, format, argptr);
             va_end(argptr);
-            return LogMsgLocked(report_data, kWarningBit, objlist, vuid_text, str);
-        }
-
-        template <typename HANDLE_T>
-        bool DECORATE_PRINTF(4, 5) LogWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            const LogObjectList objlist(src_object);
-            return LogMsgLocked(report_data, kWarningBit, objlist, vuid_text, str);
+            return result;
         }
 
         bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
-                return false;
-            }
             va_list argptr;
             va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
+            const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, vuid_text, format, argptr);
             va_end(argptr);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, objlist, vuid_text, str);
-        }
-
-        template <typename HANDLE_T>
-        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            const LogObjectList objlist(src_object);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, objlist, vuid_text, str);
+            return result;
         }
 
         bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
             va_list argptr;
             va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
+            const bool result = LogMsg(report_data, kInformationBit, objlist, vuid_text, format, argptr);
             va_end(argptr);
-            return LogMsgLocked(report_data, kInformationBit, objlist, vuid_text, str);
-        }
-
-        template <typename HANDLE_T>
-        bool DECORATE_PRINTF(4, 5) LogInfo(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!LogMsgEnabled(report_data, vuid_text, VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
-                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            const LogObjectList objlist(src_object);
-            return LogMsgLocked(report_data, kInformationBit, objlist, vuid_text, str);
+            return result;
         }
 
         // Handle Wrapping Data
@@ -653,10 +540,10 @@ class ValidationObject {
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1055,7 +942,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     DeactivateInstanceDebugCallbacks(layer_data->report_data);
     FreePnextChain(layer_data->report_data->instance_pnext_chain);
 
-    layer_debug_utils_destroy_instance(layer_data->report_data);
+    LayerDebugUtilsDestroyInstance(layer_data->report_data);
 
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;

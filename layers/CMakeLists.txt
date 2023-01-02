@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2022 Valve Corporation
-# Copyright (c) 2014-2022 LunarG, Inc.
+# Copyright (c) 2014-2023 Valve Corporation
+# Copyright (c) 2014-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_extension_utils.h
         vk_layer_extension_utils.cpp
         vk_layer_logging.h
+        vk_layer_logging.cpp
         vk_layer_utils.h
         vk_layer_utils.cpp
         xxhash.h

@@ -19,6 +19,7 @@
 
 #include "base_node.h"
 #include "hash_util.h"
+#include "vk_safe_struct.h"
 #include <memory>
 #include <mutex>
 #include <vector>

@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,7 @@
  */
 #pragma once
 #include "base_node.h"
+#include "vk_safe_struct.h"
 
 class IMAGE_VIEW_STATE;
 

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
+#include "vk_enum_string_helper.h"
 
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     AddOptionalExtensions(VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
