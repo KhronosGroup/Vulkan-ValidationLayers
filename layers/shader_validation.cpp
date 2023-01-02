@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -231,6 +231,45 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     if (alpha_to_coverage_enabled && !location_zero_has_alpha) {
         skip |= LogError(module_state.vk_shader_module(), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,
                          "fragment shader doesn't declare alpha output at location 0 even though alpha to coverage is enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint,
+                                               const PIPELINE_STATE &pipeline) const {
+    bool skip = false;
+
+    const auto &rp_state = pipeline.RenderPassState();
+    if (rp_state && !rp_state->UsesDynamicRendering()) {
+        auto rpci = rp_state->createInfo.ptr();
+        const uint32_t subpass = pipeline.Subpass();
+        auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(entrypoint);
+        for (const auto &use : input_attachment_uses) {
+            auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
+            const uint32_t index = use.first;
+
+            // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
+            if (!input_attachments) {
+                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                                 "Shader consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
+                                 "].pInputAttachments is null",
+                                 index, subpass);
+            } else if (index >= rpci->pSubpasses[subpass].inputAttachmentCount) {
+                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                                 "Shader consumes input attachment index %" PRIu32
+                                 " but that is greater than the pSubpasses[%" PRIu32 "].inputAttachmentCount (%" PRIu32 ")",
+                                 index, subpass, rpci->pSubpasses[subpass].inputAttachmentCount);
+            } else if (input_attachments[index].attachment == VK_ATTACHMENT_UNUSED) {
+                const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
+                skip |= LogError(objlist, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06038",
+                                 "Shader consumes input attachment index %" PRIu32 " but pSubpasses[%" PRIu32
+                                 "].pInputAttachments[%" PRIu32 "].attachment is VK_ATTACHMENT_UNUSED",
+                                 index, subpass, index);
+            }
+        }
     }
 
     return skip;
@@ -3144,34 +3183,8 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
 
     // Validate use of input attachments against subpass structure
     if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
-        auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(entrypoint);
-
-        const auto &rp_state = pipeline.RenderPassState();
-        if (rp_state && !rp_state->UsesDynamicRendering()) {
-            auto rpci = rp_state->createInfo.ptr();
-            auto subpass = pipeline.Subpass();
-            for (const auto &use : input_attachment_uses) {
-                auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
-                auto index = (input_attachments && use.first < rpci->pSubpasses[subpass].inputAttachmentCount)
-                    ? input_attachments[use.first].attachment
-                    : VK_ATTACHMENT_UNUSED;
-
-                if (index == VK_ATTACHMENT_UNUSED) {
-                    const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-                    skip |= LogError(objlist, kVUID_Core_Shader_MissingInputAttachment,
-                                     "Shader consumes input attachment index %d but not provided in subpass", use.first);
-                } else if (!(GetFormatType(rpci->pAttachments[index].format) &
-                             module_state.GetFundamentalType(use.second.type_id))) {
-                    const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-                    skip |= LogError(objlist, kVUID_Core_Shader_InputAttachmentTypeMismatch,
-                                     "Subpass input attachment %u format of %s does not match type used in shader `%s`", use.first,
-                                     string_VkFormat(rpci->pAttachments[index].format),
-                                     module_state.DescribeType(use.second.type_id).c_str());
-                }
-            }
-        }
-    }
-    if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+        skip |= ValidateShaderInputAttachment(module_state, entrypoint, pipeline);
+    } else if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         skip |= ValidateComputeWorkGroupSizes(module_state, entrypoint, stage_state, local_size_x, local_size_y, local_size_z);
         skip |= ValidateComputeSharedMemory(module_state, total_shared_size);
     } else if (pStage->stage == VK_SHADER_STAGE_TASK_BIT_EXT || pStage->stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
