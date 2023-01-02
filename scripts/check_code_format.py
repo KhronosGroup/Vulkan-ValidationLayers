@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (c) 2020-2022 Valve Corporation
-# Copyright (c) 2020-2022 LunarG, Inc.
+# Copyright (c) 2020-2023 Valve Corporation
+# Copyright (c) 2020-2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,14 +83,40 @@ def VerifyClangFormatSource(target_refspec, target_files):
 def VerifyCopyrights(target_refspec, target_files):
     CPrint('', "\nChecking PR source files for correct copyright information:")
     retval = 0
-    current_year = str(date.today().year)
+    is_lunarg_author = False
+    authors = check_output(['git', 'log', '--format=%ae', target_refspec])
+    for author in authors.split(b'\n'):
+        if author.endswith(b'@lunarg.com'):
+            is_lunarg_author = True
+            break
+
+    if not is_lunarg_author:
+        CPrint('SUCCESS_MSG', "\nNone of the commits have a LunarG author, so copyright check skipped.\n\n")
+        return 0
+
+    # Handle year changes by respecting when the author wrote the code, rather
+    # the day the script runs. This isn't exactly right yet, because really
+    # we should evaluate it commit's files against that commit's date.
+    commit_year = None
+    # get all the author dates in YYYY-MM-DD format
+    commit_dates = check_output(['git', 'log', '--format=%as', target_refspec])
+    for cd in commit_dates.split(b'\n'):
+        if len(cd) == 0:
+            continue
+        year = cd.split(b'-')[0]
+        if not commit_year or int(commit_year) < int(year):
+            commit_year = year.decode('utf-8')
     for file in target_files:
         if file is None or not os.path.isfile(file):
             continue
-        copyright_match = re.search('Copyright (.)*LunarG', open(file, encoding="utf-8", errors='ignore').read(1024))
-        if copyright_match and current_year not in copyright_match.group(0):
-            CPrint('ERR_MSG', '\n' + file + " has an out-of-date copyright notice.")
-            retval = 1;
+        # Capture the last year on the line as a separate match. It should be the highest (or only year of the range)
+        copyright_match = re.search('Copyright .*(\d{4}) LunarG', open(file, encoding="utf-8", errors='ignore').read(1024))
+        if copyright_match:
+            copyright_year = copyright_match.group(1)
+            if int(commit_year) > int(copyright_year):
+                msg = 'Change written in {} but copyright ends in {}.'.format(commit_year, copyright_year)
+                CPrint('ERR_MSG', '\n' + file + ' has an out-of-date LunarG copyright notice. ' + msg)
+                retval = 1;
     if retval == 0:
         CPrint('SUCCESS_MSG', "\nThe modified source files have correct copyright dates.\n\n")
     return retval
