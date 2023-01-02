@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019-2022 Valve Corporation
- * Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2023 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2023 LunarG, Inc.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +25,8 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstring>
 #include <functional>
-#include <stdbool.h>
 #include <string>
 #include <vector>
 #include <bitset>

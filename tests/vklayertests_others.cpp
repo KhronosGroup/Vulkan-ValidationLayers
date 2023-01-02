@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -375,7 +375,10 @@ TEST_F(VkLayerTest, DuplicateMessageLimit) {
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkPhysicalDeviceProperties2-pNext-pNext");
+    // VUID-VkPhysicalDeviceProperties2-pNext-pNext produces a massive ~3600 character log message, which hits a
+    // complex string buffer reallocation path inside of the logging code. Make sure it successfully prints out
+    // the very end of the message.
+    m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "is undefined and may not work correctly with validation enabled");
     vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 

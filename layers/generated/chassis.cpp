@@ -2,10 +2,10 @@
 // This file is ***GENERATED***.  Do Not Edit.
 // See layer_chassis_generator.py for modifications.
 
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -402,7 +402,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     DeactivateInstanceDebugCallbacks(layer_data->report_data);
     FreePnextChain(layer_data->report_data->instance_pnext_chain);
 
-    layer_debug_utils_destroy_instance(layer_data->report_data);
+    LayerDebugUtilsDestroyInstance(layer_data->report_data);
 
     for (auto item = layer_data->object_dispatch.begin(); item != layer_data->object_dispatch.end(); item++) {
         delete *item;
@@ -8781,7 +8781,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugReportCallbackEXT(
         intercept->PreCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     }
     VkResult result = DispatchCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
-    layer_create_report_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
+    LayerCreateReportCallback(layer_data->report_data, false, pCreateInfo, pAllocator, pCallback);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback, result);
@@ -8805,7 +8805,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugReportCallbackEXT(
         intercept->PreCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
     }
     DispatchDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    layer_destroy_callback(layer_data->report_data, callback, pAllocator);
+    LayerDestroyCallback(layer_data->report_data, callback, pAllocator);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugReportCallbackEXT(instance, callback, pAllocator);
@@ -10085,7 +10085,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDebugUtilsMessengerEXT(
         intercept->PreCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
     }
     VkResult result = DispatchCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
-    layer_create_messenger_callback(layer_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
+    LayerCreateMessengerCallback(layer_data->report_data, false, pCreateInfo, pAllocator, pMessenger);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger, result);
@@ -10109,7 +10109,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT(
         intercept->PreCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
     }
     DispatchDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-    layer_destroy_callback(layer_data->report_data, messenger, pAllocator);
+    LayerDestroyCallback(layer_data->report_data, messenger, pAllocator);
     for (ValidationObject* intercept : layer_data->object_dispatch) {
         auto lock = intercept->WriteLock();
         intercept->PostCallRecordDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);

@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2022 Valve Corporation
-# Copyright (c) 2014-2022 LunarG, Inc.
+# Copyright (c) 2014-2023 Valve Corporation
+# Copyright (c) 2014-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -265,8 +265,10 @@ endif()
 add_library(VkLayer_utils
             STATIC
             layers/vk_layer_config.cpp
+            layers/vk_layer_logging.cpp
             layers/vk_layer_extension_utils.cpp
             layers/vk_layer_utils.cpp
+            layers/xxhash.c
             layers/generated/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 if (VVL_ENABLE_ASAN)

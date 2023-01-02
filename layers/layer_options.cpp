@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2022 The Khronos Group Inc.
- * Copyright (c) 2020-2022 Valve Corporation
- * Copyright (c) 2020-2022 LunarG, Inc.
+/* Copyright (c) 2020-2023 The Khronos Group Inc.
+ * Copyright (c) 2020-2023 Valve Corporation
+ * Copyright (c) 2020-2023 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
  */
 
 #include "layer_options.h"
+#include "xxhash.h"
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
