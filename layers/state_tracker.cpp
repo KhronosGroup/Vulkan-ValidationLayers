@@ -4213,7 +4213,6 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                 LvlFindInChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
         
             if (compatible_modes && compatible_modes->pPresentModes) {
-                
                 surface_state->SetCompatibleModes(
                     physicalDevice, surface_present_mode->presentMode,
                     std::vector<VkPresentModeKHR>(compatible_modes->pPresentModes,
