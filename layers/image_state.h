@@ -400,8 +400,6 @@ class SURFACE_STATE : public BASE_NODE {
     mutable layer_data::unordered_map<GpuQueue, bool> gpu_queue_support_;
     mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
     mutable layer_data::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
-    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkPresentModeKHR>> present_modes_;
     mutable layer_data::unordered_map<VkPhysicalDevice,
-        layer_data::unordered_map<VkPresentModeKHR, std::shared_ptr<PresentModeState>>> maint1_present_modes_;
-
+        layer_data::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>> present_modes_data_;
 };
