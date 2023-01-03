@@ -19,8 +19,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(VVL LANGUAGES CXX C)
 
-option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
-
 option(BUILD_TESTS "Build the tests" OFF)
 
 add_definitions(-DVK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
@@ -177,6 +175,12 @@ if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
 endif()
 
+option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
+if (VVL_ENABLE_ASAN)
+    add_compile_options(-fsanitize=address)
+    add_link_options(-fsanitize=address)
+endif()
+
 # Platform-specific compiler switches
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     add_compile_options(-Wconversion
@@ -215,6 +219,10 @@ elseif(MSVC)
     add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
+
+    # PDBs aren't generated on Release builds by default.
+    add_compile_options("$<$<CONFIG:Release>:/Zi>")
+    add_link_options("$<$<CONFIG:Release>:/DEBUG:FULL>")
 
     # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
@@ -271,11 +279,6 @@ add_library(VkLayer_utils
             layers/xxhash.c
             layers/generated/vk_format_utils.cpp)
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
-if (VVL_ENABLE_ASAN)
-    target_compile_options(VkLayer_utils PRIVATE -fsanitize=address)
-    # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(VkLayer_utils PRIVATE "-fsanitize=address")
-endif()
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/layers

@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2016-2022 Valve Corporation
-# Copyright (c) 2016-2022 LunarG, Inc.
+# Copyright (c) 2016-2023 Valve Corporation
+# Copyright (c) 2016-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ add_library(VkLayer_device_profile_api MODULE
 target_link_libraries(VkLayer_device_profile_api PRIVATE VkLayer_utils)
 
 if (WIN32)
-    set_target_properties(VkLayer_device_profile_api PROPERTIES LINK_FLAGS "/DEF:\"${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_device_profile_api.def\"")
+    target_link_options(VkLayer_device_profile_api PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_device_profile_api.def)
 elseif(APPLE)
     set_target_properties(VkLayer_device_profile_api PROPERTIES SUFFIX ".dylib")
 else()
-    set_target_properties(VkLayer_device_profile_api PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map,-Bsymbolic")
+    target_link_options(VkLayer_device_profile_api PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_device_profile_api.map,-Bsymbolic)
 endif()
 
 target_include_directories(VkLayer_device_profile_api PRIVATE
