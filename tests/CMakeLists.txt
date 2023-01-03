@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2022 Valve Corporation
-# Copyright (c) 2014-2022 LunarG, Inc.
+# Copyright (c) 2014-2023 Valve Corporation
+# Copyright (c) 2014-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -105,15 +105,9 @@ target_include_directories(vk_layer_validation_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/layers/generated
 )
 
-if (VVL_ENABLE_ASAN)
-    target_compile_options(vk_layer_validation_tests  PRIVATE -fsanitize=address)
-    # NOTE: Use target_link_options when cmake 3.13 is available on CI
-    target_link_libraries(vk_layer_validation_tests  PRIVATE "-fsanitize=address")
-endif()
-
 if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
     # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
-    set_target_properties(vk_layer_validation_tests PROPERTIES LINK_FLAGS /LARGEADDRESSAWARE)
+    target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
 endif()
 
 if (NOT MSVC)
