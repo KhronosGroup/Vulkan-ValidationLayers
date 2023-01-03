@@ -12,7 +12,7 @@
 
 ## Requirements
 
-1. CMake >= 3.10.2
+1. CMake >= 3.17.2
 2. C++ >= c++17 compiler. See platform-specific sections below for supported compiler versions.
 3. Python >= 3.7 (3.6 may work, 3.5 and earlier is not supported)
 
@@ -194,7 +194,7 @@ cmake -S . -B build/ --preset dev
     - [2015-2019](https://www.visualstudio.com/vs/older-downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- [CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-win64-x64.zip) is the minimum CMake version supported.  [CMake 3.19.3](https://cmake.org/files/v3.19/cmake-3.19.3-win64-x64.zip) is recommended.
+- [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is the minimum CMake version supported.  [CMake 3.19.3](https://cmake.org/files/v3.19/cmake-3.19.3-win64-x64.zip) is recommended.
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -247,7 +247,7 @@ that the minimum officially supported C++17 compiler version is GCC 7.3.0,
 although earlier versions may work. It should be straightforward to adapt this
 repository to other Linux distributions.
 
-[CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz) is recommended.
+[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.tar.gz) is recommended.
 
 ```bash
 sudo apt-get install git build-essential libx11-xcb-dev \
@@ -424,7 +424,7 @@ Tested on OSX version 10.12
 
 NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building VVL and it's dependencies.
 
-[CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz) is recommended.
+[CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-Darwin-x86_64.tar.gz) is recommended.
 
 Setup Homebrew and components
 
