@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2022 The Khronos Group Inc.
+/* Copyright (c) 2021-2023 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,10 @@
 void DecorationSet::Add(uint32_t decoration, uint32_t value) {
     switch (decoration) {
         case spv::DecorationLocation:
-            flags |= location_bit;
             location = value;
             break;
         case spv::DecorationPatch:
             flags |= patch_bit;
-            break;
-        case spv::DecorationRelaxedPrecision:
-            flags |= relaxed_precision_bit;
             break;
         case spv::DecorationBlock:
             flags |= block_bit;
@@ -45,19 +41,15 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
             flags |= buffer_block_bit;
             break;
         case spv::DecorationComponent:
-            flags |= component_bit;
             component = value;
             break;
         case spv::DecorationInputAttachmentIndex:
-            flags |= input_attachment_index_bit;
             input_attachment_index = value;
             break;
         case spv::DecorationDescriptorSet:
-            flags |= descriptor_set_bit;
             descriptor_set = value;
             break;
         case spv::DecorationBinding:
-            flags |= binding_bit;
             binding = value;
             break;
         case spv::DecorationNonWritable:
@@ -1462,7 +1454,6 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
     }
 
     layer_data::unordered_map<uint32_t, uint32_t> member_components;
-    layer_data::unordered_map<uint32_t, uint32_t> member_relaxed_precision;
     layer_data::unordered_map<uint32_t, uint32_t> member_patch;
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
@@ -1474,10 +1465,6 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
             if (decoration == spv::DecorationComponent) {
                 uint32_t component = insn->Word(4);
                 member_components[member_index] = component;
-            }
-
-            if (decoration == spv::DecorationRelaxedPrecision) {
-                member_relaxed_precision[member_index] = 1;
             }
 
             if (decoration == spv::DecorationPatch) {
@@ -1499,7 +1486,6 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
                 uint32_t num_locations = GetLocationsConsumedByType(member_type_id, false);
                 auto component_it = member_components.find(member_index);
                 uint32_t component = component_it == member_components.end() ? 0 : component_it->second;
-                const bool is_relaxed_precision = member_relaxed_precision.find(member_index) != member_relaxed_precision.end();
                 const bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
 
                 for (uint32_t offset = 0; offset < num_locations; offset++) {
@@ -1509,8 +1495,6 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
                     interface_var.type_id = member_type_id;
                     interface_var.offset = offset;
                     interface_var.is_patch = member_is_patch;
-                    interface_var.is_block_member = true;
-                    interface_var.is_relaxed_precision = is_relaxed_precision;
                     (*out)[std::make_pair(location + offset, component)] = interface_var;
                 }
             }
@@ -1540,7 +1524,6 @@ std::map<location_t, InterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByL
             const uint32_t component = decoration_set.component;
             const uint32_t location = decoration_set.location;
             const bool is_patch = (flags & DecorationSet::patch_bit) != 0;
-            const bool is_relaxed_precision = (flags & DecorationSet::relaxed_precision_bit) != 0;
             const bool is_per_vertex = (flags & DecorationSet::per_vertex_bit) != 0;
             if (builtin != DecorationSet::kInvalidValue) {
                 continue;
@@ -1553,7 +1536,6 @@ std::map<location_t, InterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByL
                     InterfaceVariable interface_var(insn);
                     interface_var.offset = offset;
                     interface_var.is_patch = is_patch;
-                    interface_var.is_relaxed_precision = is_relaxed_precision;
                     out[std::make_pair(location + offset, component)] = interface_var;
                 }
             }
