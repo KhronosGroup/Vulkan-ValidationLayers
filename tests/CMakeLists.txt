@@ -22,9 +22,6 @@ find_package(GTest REQUIRED CONFIG)
 # glslang is required for testing framework
 find_package(glslang CONFIG REQUIRED)
 
-# Needed to make structure definitions match with glslang libraries
-add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
-
 if(MSVC_IDE)
     file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 endif()
