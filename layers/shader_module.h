@@ -33,46 +33,7 @@
 
 class PIPELINE_STATE;
 
-// Information about a OpVariable used as an interface in the shader
-struct InterfaceVariable {
-    uint32_t id;
-    uint32_t type_id;
-
-    uint32_t offset;
-
-    // List of samplers that sample a given image. The index of array is index of image.
-    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
-
-    // For storage images - list of < OpImageWrite : Texel component length >
-    std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
-
-    bool is_patch{false};
-    bool is_readable{false};
-    bool is_writable{false};
-    bool is_atomic_operation{false};
-    bool is_sampler_sampled{false};
-    bool is_sampler_implicitLod_dref_proj{false};
-    bool is_sampler_bias_offset{false};
-    bool is_read_without_format{false};   // For storage images
-    bool is_write_without_format{false};  // For storage images
-    bool is_dref_operation{false};
-
-    InterfaceVariable() : id(0), type_id(0), offset(0) {}
-
-    InterfaceVariable(const Instruction *insn) : id(insn->Word(2)), type_id(insn->Word(1)), offset(0) {}
-};
-
-std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
-
-enum FORMAT_TYPE {
-    FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
-    FORMAT_TYPE_SINT = 2,
-    FORMAT_TYPE_UINT = 4,
-};
-
-// <Location, Component>
-typedef std::pair<uint32_t, uint32_t> location_t;
-
+// Used to keep track of all decorations applied to any instruction
 struct DecorationSet {
     enum FlagBit {
         patch_bit = 1 << 0,
@@ -98,7 +59,7 @@ struct DecorationSet {
     uint32_t input_attachment_index = 0;
 
     // For descriptors
-    uint32_t descriptor_set = 0;
+    uint32_t set = 0;
     uint32_t binding = 0;
 
     uint32_t builtin = kInvalidValue;
@@ -106,6 +67,53 @@ struct DecorationSet {
     void Add(uint32_t decoration, uint32_t value);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
+
+// Information about a OpVariable used as an interface in the shader
+struct InterfaceVariable {
+    uint32_t id;
+    uint32_t type_id;
+    spv::StorageClass storage_class;
+
+    // if a block with multiple location, track which offset to only check the first
+    uint32_t offset;
+
+    DecorationSet decorations;
+    bool descriptor{false};  // if interfacing with descriptors
+    VkShaderStageFlagBits stage;
+
+    // List of samplers that sample a given image. The index of array is index of image.
+    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
+
+    // For storage images - list of < OpImageWrite : Texel component length >
+    std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
+
+    bool is_patch{false};
+    bool is_readable{false};
+    bool is_writable{false};
+    bool is_atomic_operation{false};
+    bool is_sampler_sampled{false};
+    bool is_sampler_implicitLod_dref_proj{false};
+    bool is_sampler_bias_offset{false};
+    bool is_read_without_format{false};   // For storage images
+    bool is_write_without_format{false};  // For storage images
+    bool is_dref_operation{false};
+
+    InterfaceVariable() : id(0), type_id(0), storage_class(spv::StorageClassMax), offset(0) {}
+
+    InterfaceVariable(const Instruction *insn)
+        : id(insn->Word(2)), type_id(insn->Word(1)), storage_class(static_cast<spv::StorageClass>(insn->Word(3))), offset(0) {}
+};
+
+std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
+
+enum FORMAT_TYPE {
+    FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
+    FORMAT_TYPE_SINT = 2,
+    FORMAT_TYPE_UINT = 4,
+};
+
+// <Location, Component>
+typedef std::pair<uint32_t, uint32_t> location_t;
 
 struct SHADER_MODULE_STATE : public BASE_NODE {
     // Contains all the details for a OpTypeStruct
@@ -175,6 +183,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // All ids that can be accessed from the entry point
         layer_data::unordered_set<uint32_t> accessible_ids;
 
+        std::vector<InterfaceVariable> interface_variables;  // currently only for descriptors
         layer_data::unordered_set<uint32_t> attachment_indexes;
 
         StructInfo push_constant_used_in_shader;
@@ -296,6 +305,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         }
         return nullptr;
     }
+    const std::vector<InterfaceVariable> *GetInterfaceVariable(const Instruction &entrypoint) const {
+        for (const auto &entry_point : static_data_.entry_points) {
+            if (entry_point.entrypoint_insn == entrypoint) {
+                return &entry_point.interface_variables;
+            }
+        }
+        return nullptr;
+    }
 
     const layer_data::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
@@ -346,9 +363,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
 
     // State tracking helpers for collecting interface information
-    void FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable &interface_var) const;
-    std::vector<std::pair<DescriptorSlot, InterfaceVariable>> CollectInterfaceByDescriptorSlot(
-        std::optional<Instruction> entrypoint) const;
+    void FindVariableDescriptorType(InterfaceVariable &interface_var) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable> *out, bool is_array_of_verts, bool is_patch,
                                       const Instruction *variable_insn) const;

@@ -2174,13 +2174,13 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
 
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
-static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout,
-                                                                DescriptorSlot slot) {
+static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout, uint32_t set,
+                                                                uint32_t binding) {
     if (!pipelineLayout) return nullptr;
 
-    if (slot.set >= pipelineLayout->set_layouts.size()) return nullptr;
+    if (set >= pipelineLayout->set_layouts.size()) return nullptr;
 
-    return pipelineLayout->set_layouts[slot.set]->GetDescriptorSetLayoutBindingPtrFromBinding(slot.binding);
+    return pipelineLayout->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
 }
 
 bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
@@ -3145,39 +3145,47 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     // Validate Push Constants use
     skip |= ValidatePushConstantUsage(pipeline, module_state, pStage, vuid_layout_mismatch);
 
-    // Validate descriptor use
-    for (const auto &use : stage_state.descriptor_uses) {
+    // Validate descriptor use (can dereference because entrypoint is validated by here)
+    for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
+        if (!variable.descriptor) {
+            continue;
+        }
         // Verify given pipelineLayout has requested setLayout with requested binding
         // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();
-        const auto &binding = GetDescriptorBinding(pipeline.PipelineLayoutState().get(), use.first);
+        const auto &binding =
+            GetDescriptorBinding(pipeline.PipelineLayoutState().get(), variable.decorations.set, variable.decorations.binding);
         unsigned required_descriptor_count;
         const bool is_khr = binding && binding->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         std::set<uint32_t> descriptor_types =
-            TypeToDescriptorTypeSet(module_state, use.second.type_id, required_descriptor_count, is_khr);
+            TypeToDescriptorTypeSet(module_state, variable.type_id, required_descriptor_count, is_khr);
 
         if (!binding) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
-            skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Set %u Binding %u in shader uses descriptor slot (expected `%s`) but not declared in pipeline layout",
-                             use.first.set, use.first.binding, string_descriptorTypes(descriptor_types).c_str());
+            skip |= LogError(
+                objlist, vuid_layout_mismatch,
+                "Set %u Binding %u in shader (%s) uses descriptor slot (expected `%s`) but not declared in pipeline layout",
+                variable.decorations.set, variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                string_descriptorTypes(descriptor_types).c_str());
         } else if (~binding->stageFlags & pStage->stage) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Set %u Binding %u in shader uses descriptor slot but descriptor not accessible from stage %s",
-                             use.first.set, use.first.binding, string_VkShaderStageFlagBits(pStage->stage));
+                             "Set %u Binding %u in shader (%s) uses descriptor slot but descriptor not accessible from stage %s",
+                             variable.decorations.set, variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                             string_VkShaderStageFlagBits(pStage->stage));
         } else if ((binding->descriptorType != VK_DESCRIPTOR_TYPE_MUTABLE_EXT) &&
                    (descriptor_types.find(binding->descriptorType) == descriptor_types.end())) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Set %u Binding %u type mismatch on descriptor slot, uses type %s but expected %s", use.first.set,
-                             use.first.binding, string_VkDescriptorType(binding->descriptorType),
-                             string_descriptorTypes(descriptor_types).c_str());
+                             "Set %u Binding %u type mismatch on descriptor slot in shader (%s), uses type %s but expected %s",
+                             variable.decorations.set, variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                             string_VkDescriptorType(binding->descriptorType), string_descriptorTypes(descriptor_types).c_str());
         } else if (binding->descriptorCount < required_descriptor_count) {
             const LogObjectList objlist(module_state.vk_shader_module(), pipeline.PipelineLayoutState()->layout());
             skip |= LogError(objlist, vuid_layout_mismatch,
-                             "Set %u Binding %u in shader expects at least %u descriptors, but only %u provided", use.first.set,
-                             use.first.binding, required_descriptor_count, binding->descriptorCount);
+                             "Set %u Binding %u in shader (%s) expects at least %u descriptors, but only %u provided",
+                             variable.decorations.set, variable.decorations.binding, string_VkShaderStageFlagBits(variable.stage),
+                             required_descriptor_count, binding->descriptorCount);
         }
     }
 

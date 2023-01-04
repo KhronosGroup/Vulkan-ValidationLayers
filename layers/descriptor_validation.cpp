@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1082,11 +1082,13 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 assert(set_index != std::numeric_limits<uint32_t>::max());
                 const auto pipeline = context.cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 for (const auto &stage : pipeline->stage_state) {
-                    for (const auto &descriptor : stage.descriptor_uses) {
-                        if (descriptor.first.set == set_index && descriptor.first.binding == binding) {
-                            descriptor_writable |= descriptor.second.is_writable;
-                            descriptor_readable |=
-                                descriptor.second.is_readable | descriptor.second.is_sampler_implicitLod_dref_proj;
+                    if (!stage.descriptor_variables) {
+                        continue;
+                    }
+                    for (const InterfaceVariable &variable : *stage.descriptor_variables) {
+                        if (variable.decorations.set == set_index && variable.decorations.binding == binding) {
+                            descriptor_writable |= variable.is_writable;
+                            descriptor_readable |= variable.is_readable | variable.is_sampler_implicitLod_dref_proj;
                             break;
                         }
                     }

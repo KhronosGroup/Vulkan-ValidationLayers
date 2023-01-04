@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -106,10 +106,7 @@ struct PipelineStageState {
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
-    // Used to map each descriptor binding to the OpVariable decorated with it
-    // <(set, binding), OpVariable>
-    using DescriptorUse = std::pair<DescriptorSlot, InterfaceVariable>;
-    std::vector<DescriptorUse> descriptor_uses;
+    const std::vector<InterfaceVariable> *descriptor_variables;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;

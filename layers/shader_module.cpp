@@ -47,7 +47,7 @@ void DecorationSet::Add(uint32_t decoration, uint32_t value) {
             input_attachment_index = value;
             break;
         case spv::DecorationDescriptorSet:
-            descriptor_set = value;
+            set = value;
             break;
         case spv::DecorationBinding:
             binding = value;
@@ -241,6 +241,25 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
                         }
                     }
                 }
+            }
+        }
+
+        for (const auto& id : accessible_ids) {
+            const Instruction* insn = module_state.FindDef(id);
+            if (insn->Opcode() != spv::OpVariable) {
+                continue;
+            }
+            const uint32_t storage_class = insn->StorageClass();
+            // These are the only storage classes that interface with a descriptor
+            // see vkspec.html#interfaces-resources-descset
+            if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
+                storage_class == spv::StorageClassStorageBuffer) {
+                InterfaceVariable interface_var(insn);
+                interface_var.descriptor = true;
+                interface_var.decorations = module_state.GetDecorationSet(interface_var.id);
+                interface_var.stage = stage;
+                module_state.FindVariableDescriptorType(interface_var);
+                interface_variables.emplace_back(interface_var);
             }
         }
     }
@@ -1206,7 +1225,7 @@ static uint32_t CheckObjectIDFromOpLoad(
 
 // Takes a OpVariable and looks at the the descriptor type it uses. This will find things such as if the variable is writable, image
 // atomic operation, matching images to samplers, etc
-void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, InterfaceVariable& interface_var) const {
+void SHADER_MODULE_STATE::FindVariableDescriptorType(InterfaceVariable& interface_var) const {
     const Instruction* type = FindDef(interface_var.type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
@@ -1334,7 +1353,7 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
                         }
 
                         interface_var.samplers_used_by_image[image_index].emplace(
-                            SamplerUsedByImage{DescriptorSlot{sampler_dec.descriptor_set, sampler_dec.binding}, sampler_index});
+                            SamplerUsedByImage{DescriptorSlot{sampler_dec.set, sampler_dec.binding}, sampler_index});
                     }
                 }
             }
@@ -1343,6 +1362,7 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
 
         case spv::OpTypeStruct: {
             layer_data::unordered_set<uint32_t> nonwritable_members;
+            bool is_storage_buffer = interface_var.storage_class == spv::StorageClassStorageBuffer;
             if (GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit)) {
                 is_storage_buffer = true;
             }
@@ -1377,37 +1397,6 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
             }
         }
     }
-}
-
-std::vector<std::pair<DescriptorSlot, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByDescriptorSlot(
-    std::optional<Instruction> entrypoint) const {
-    std::vector<std::pair<DescriptorSlot, InterfaceVariable>> out;
-    if (!entrypoint) {
-        return out;
-    }
-
-    const auto* accessible_ids = GetAccessibleIds(*entrypoint);
-    if (accessible_ids) {
-        for (const auto& id : *accessible_ids) {
-            const Instruction* insn = FindDef(id);
-            if (insn->Opcode() != spv::OpVariable) {
-                continue;
-            }
-            const uint32_t storage_class = insn->StorageClass();
-            // These are the only storage classes that interface with a descriptor
-            // see vkspec.html#interfaces-resources-descset
-            if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
-                storage_class == spv::StorageClassStorageBuffer) {
-                InterfaceVariable interface_var(insn);
-                FindVariableDescriptorType(storage_class == spv::StorageClassStorageBuffer, interface_var);
-
-                auto decoration_set = GetDecorationSet(insn->Word(2));
-                out.emplace_back(DescriptorSlot{decoration_set.descriptor_set, decoration_set.binding}, interface_var);
-            }
-        }
-    }
-
-    return out;
 }
 
 layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLocationinFS(const Instruction& entrypoint) const {
