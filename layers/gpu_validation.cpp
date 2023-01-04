@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2022 The Khronos Group Inc.
- * Copyright (c) 2018-2022 Valve Corporation
- * Copyright (c) 2018-2022 LunarG, Inc.
+/* Copyright (c) 2018-2023 The Khronos Group Inc.
+ * Copyright (c) 2018-2023 Valve Corporation
+ * Copyright (c) 2018-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include "buffer_state.h"
 #include "cmd_buffer_state.h"
 #include "render_pass_state.h"
+#include "vk_layer_config.h"
 // Generated shaders
 #include "gpu_shaders/gpu_shaders_constants.h"
 #include "gpu_pre_draw_vert.h"
@@ -110,6 +111,7 @@ void GpuAssisted::CreateDevice(const VkDeviceCreateInfo *pCreateInfo) {
     validate_draw_indirect = GpuGetOption("khronos_validation.validate_draw_indirect", true);
     validate_dispatch_indirect = GpuGetOption("khronos_validation.validate_dispatch_indirect", true);
     warn_on_robust_oob = GpuGetOption("khronos_validation.warn_on_robust_oob", true);
+    validate_instrumented_shaders = (GetEnvironment("VK_LAYER_GPUAV_VALIDATE_INSTRUMENTED_SHADERS").size() > 0);
 
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
@@ -895,6 +897,20 @@ void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass r
     ValidationStateTracker::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator);
 }
 
+bool GpuValidateShader(const layer_data::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout, std::string &error) {
+    // Use SPIRV-Tools validator to try and catch any issues with the module
+    spv_target_env spirv_environment = SPV_ENV_VULKAN_1_1;
+    spv_context ctx = spvContextCreate(spirv_environment);
+    spv_const_binary_t binary{input.data(), input.size()};
+    spv_diagnostic diag = nullptr;
+    spv_validator_options options = spvValidatorOptionsCreate();
+    spvValidatorOptionsSetRelaxBlockLayout(options, SetRelaxBlockLayout);
+    spvValidatorOptionsSetScalarBlockLayout(options, SetScalerBlockLayout);
+    spv_result_t result = spvValidateWithOptions(ctx, options, &binary, &diag);
+    if (result != SPV_SUCCESS && diag) error = diag->error;
+    return (result == SPV_SUCCESS);
+}
+
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuAssisted::InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
                                    uint32_t *unique_shader_id) {
@@ -941,9 +957,17 @@ bool GpuAssisted::InstrumentShader(const layer_data::span<const uint32_t> &input
         shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
     }
-    const bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
+    bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm, opt_options);
+    std::string instrumented_error;
     if (!pass) {
         ReportSetupProblem(device, "Failure to instrument shader.  Proceeding with non-instrumented shader.");
+    } else if (validate_instrumented_shaders &&
+               (!GpuValidateShader(new_pgm, device_extensions.vk_khr_relaxed_block_layout,
+                                   device_extensions.vk_ext_scalar_block_layout, instrumented_error))) {
+        std::ostringstream strm;
+        strm << "Instrumented shader is invalid, error = " << instrumented_error << " Proceeding with non instrumented shader.";
+        ReportSetupProblem(device, strm.str().c_str());
+        pass = false;
     }
     *unique_shader_id = unique_shader_module_id++;
     return pass;

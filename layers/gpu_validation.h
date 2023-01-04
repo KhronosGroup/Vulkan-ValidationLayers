@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2022 The Khronos Group Inc.
- * Copyright (c) 2018-2022 Valve Corporation
- * Copyright (c) 2018-2022 LunarG, Inc.
+/* Copyright (c) 2018-2023 The Khronos Group Inc.
+ * Copyright (c) 2018-2023 Valve Corporation
+ * Copyright (c) 2018-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -314,6 +314,7 @@ class GpuAssisted : public GpuAssistedBase {
     bool validate_draw_indirect;
     bool validate_dispatch_indirect;
     bool warn_on_robust_oob;
+    bool validate_instrumented_shaders;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
     GpuAssistedPreDrawValidationState pre_draw_validation_state;
     GpuAssistedPreDispatchValidationState pre_dispatch_validation_state;
