@@ -1,4 +1,4 @@
-/* Copyright (c) 2021-2022 The Khronos Group Inc.
+/* Copyright (c) 2021-2023 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,8 +47,6 @@ struct InterfaceVariable {
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
 
     bool is_patch{false};
-    bool is_block_member{false};
-    bool is_relaxed_precision{false};
     bool is_readable{false};
     bool is_writable{false};
     bool is_atomic_operation{false};
@@ -77,21 +75,15 @@ typedef std::pair<uint32_t, uint32_t> location_t;
 
 struct DecorationSet {
     enum {
-        location_bit = 1 << 0,
-        patch_bit = 1 << 1,
-        relaxed_precision_bit = 1 << 2,
-        block_bit = 1 << 3,
-        buffer_block_bit = 1 << 4,
-        component_bit = 1 << 5,
-        input_attachment_index_bit = 1 << 6,
-        descriptor_set_bit = 1 << 7,
-        binding_bit = 1 << 8,
-        nonwritable_bit = 1 << 9,
-        builtin_bit = 1 << 10,
-        nonreadable_bit = 1 << 11,
-        per_vertex_bit = 1 << 12,
-        passthrough_bit = 1 << 13,
-        aliased_bit = 1 << 14,
+        patch_bit = 1 << 0,
+        block_bit = 1 << 1,
+        buffer_block_bit = 1 << 2,
+        nonwritable_bit = 1 << 3,
+        builtin_bit = 1 << 4,
+        nonreadable_bit = 1 << 5,
+        per_vertex_bit = 1 << 6,
+        passthrough_bit = 1 << 7,
+        aliased_bit = 1 << 8,
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
