@@ -736,6 +736,7 @@ int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const InterfaceVari
     }
 }
 
+// Returns the number of Location slots used for a given ID reference to a OpType*
 uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const {
     const Instruction* insn = FindDef(type);
 
@@ -769,6 +770,7 @@ uint32_t SHADER_MODULE_STATE::GetLocationsConsumedByType(uint32_t type, bool str
     }
 }
 
+// Returns the number of Components slots used for a given ID reference to a OpType*
 uint32_t SHADER_MODULE_STATE::GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const {
     const Instruction* insn = FindDef(type);
 
@@ -1362,10 +1364,8 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(InterfaceVariable& interfac
 
         case spv::OpTypeStruct: {
             layer_data::unordered_set<uint32_t> nonwritable_members;
-            bool is_storage_buffer = interface_var.storage_class == spv::StorageClassStorageBuffer;
-            if (GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit)) {
-                is_storage_buffer = true;
-            }
+            const bool is_storage_buffer = (interface_var.storage_class == spv::StorageClassStorageBuffer) ||
+                                           (GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit));
             for (const Instruction* insn : static_data_.member_decoration_inst) {
                 if (insn->Word(1) == type->Word(1) && insn->Word(3) == spv::DecorationNonWritable) {
                     nonwritable_members.insert(insn->Word(2));
@@ -1454,8 +1454,8 @@ layer_data::unordered_set<uint32_t> SHADER_MODULE_STATE::CollectWritableOutputLo
 bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable>* out, bool is_array_of_verts,
                                                        bool is_patch, const Instruction* variable_insn) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
-    const Instruction* type = GetStructType(FindDef(variable_insn->Word(1)), is_array_of_verts && !is_patch);
-    if (!type || !(GetDecorationSet(type->Word(1)).Has(DecorationSet::block_bit))) {
+    const Instruction* struct_type = GetStructType(FindDef(variable_insn->Word(1)), is_array_of_verts && !is_patch);
+    if (!struct_type || !(GetDecorationSet(struct_type->Word(1)).Has(DecorationSet::block_bit))) {
         // This isn't an interface block.
         return false;
     }
@@ -1465,13 +1465,12 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
 
     // Walk all the OpMemberDecorate for type's result id -- first pass, collect components.
     for (const Instruction* insn : static_data_.member_decoration_inst) {
-        if (insn->Word(1) == type->Word(1)) {
-            uint32_t member_index = insn->Word(2);
-            uint32_t decoration = insn->Word(3);
+        if (insn->Word(1) == struct_type->Word(1)) {
+            const uint32_t member_index = insn->Word(2);
+            const uint32_t decoration = insn->Word(3);
 
             if (decoration == spv::DecorationComponent) {
-                uint32_t component = insn->Word(4);
-                member_components[member_index] = component;
+                member_components[member_index] = insn->Word(4);
             }
 
             if (decoration == spv::DecorationPatch) {
@@ -1484,15 +1483,15 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
 
     // Second pass -- produce the output, from Location decorations
     for (const Instruction* insn : static_data_.member_decoration_inst) {
-        if (insn->Word(1) == type->Word(1)) {
-            uint32_t member_index = insn->Word(2);
-            uint32_t member_type_id = type->Word(2 + member_index);
+        if (insn->Word(1) == struct_type->Word(1)) {
+            const uint32_t member_index = insn->Word(2);
+            const uint32_t member_type_id = struct_type->Word(2 + member_index);
 
             if (insn->Word(3) == spv::DecorationLocation) {
-                uint32_t location = insn->Word(4);
-                uint32_t num_locations = GetLocationsConsumedByType(member_type_id, false);
-                auto component_it = member_components.find(member_index);
-                uint32_t component = component_it == member_components.end() ? 0 : component_it->second;
+                const uint32_t location = insn->Word(4);
+                const uint32_t num_locations = GetLocationsConsumedByType(member_type_id, false);
+                const auto component_it = member_components.find(member_index);
+                const uint32_t component = component_it == member_components.end() ? 0 : component_it->second;
                 const bool member_is_patch = is_patch || member_patch.count(member_index) > 0;
 
                 for (uint32_t offset = 0; offset < num_locations; offset++) {

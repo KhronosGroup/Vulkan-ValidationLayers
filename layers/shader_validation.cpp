@@ -837,32 +837,35 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                 }
                 break;
             }
-            case spv::OpExecutionMode:
-            case spv::OpExecutionModeId:
-                if (insn.Word(1) == entrypoint.Word(2)) {
-                    switch (insn.Word(2)) {
-                        default:
-                            break;
-                        case spv::ExecutionModeOutputVertices:
-                            num_vertices = insn.Word(3);
-                            break;
-                        case spv::ExecutionModeIsolines:
-                            is_iso_lines = true;
-                            break;
-                        case spv::ExecutionModePointMode:
-                            is_point_mode = true;
-                            break;
-                        case spv::ExecutionModeOutputPrimitivesEXT:  // alias ExecutionModeOutputPrimitivesNV
-                            num_primitives = insn.Word(3);
-                            break;
-                        case spv::ExecutionModeXfb:
-                            is_xfb_execution_mode = true;
-                            break;
-                    }
-                }
-                break;
             default:
                 break;
+        }
+    }
+
+    const uint32_t entrypoint_id = entrypoint.Word(2);
+    const auto &execution_mode_inst = module_state.GetExecutionModeInstructions();
+    auto it = execution_mode_inst.find(entrypoint_id);
+    if (it != execution_mode_inst.end()) {
+        for (const Instruction *insn : it->second) {
+            switch (insn->Word(2)) {
+                case spv::ExecutionModeOutputVertices:
+                    num_vertices = insn->Word(3);
+                    break;
+                case spv::ExecutionModeIsolines:
+                    is_iso_lines = true;
+                    break;
+                case spv::ExecutionModePointMode:
+                    is_point_mode = true;
+                    break;
+                case spv::ExecutionModeOutputPrimitivesEXT:  // alias ExecutionModeOutputPrimitivesNV
+                    num_primitives = insn->Word(3);
+                    break;
+                case spv::ExecutionModeXfb:
+                    is_xfb_execution_mode = true;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -879,47 +882,41 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
         (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
          pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT);
 
-    uint32_t num_comp_in = 0, num_comp_out = 0;
-    int max_comp_in = 0, max_comp_out = 0;
+    uint32_t num_comp_in = 0;
+    uint32_t num_comp_out = 0;
+    uint32_t max_comp_in = 0;
+    uint32_t max_comp_out = 0;
 
     auto inputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassInput, strip_input_array_level);
     auto outputs = module_state.CollectInterfaceByLocation(entrypoint, spv::StorageClassOutput, strip_output_array_level);
 
     // Find max component location used for input variables.
     for (auto &var : inputs) {
-        int location = var.first.first;
-        int component = var.first.second;
+        const uint32_t location = var.first.first;
+        const uint32_t component = var.first.second;
         InterfaceVariable &interface_var = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (interface_var.offset != 0) {
+        if (interface_var.offset != 0 || interface_var.is_patch) {
             continue;
         }
 
-        if (interface_var.is_patch) {
-            continue;
-        }
-
-        int num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_input_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_input_array_level);
         max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
     // Find max component location used for output variables.
     for (auto &var : outputs) {
-        int location = var.first.first;
-        int component = var.first.second;
+        const uint32_t location = var.first.first;
+        const uint32_t component = var.first.second;
         InterfaceVariable &interface_var = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (interface_var.offset != 0) {
+        if (interface_var.offset != 0 || interface_var.is_patch) {
             continue;
         }
 
-        if (interface_var.is_patch) {
-            continue;
-        }
-
-        int num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_output_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_output_array_level);
         max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
@@ -949,7 +946,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  "components by %u components",
                                  limits.maxVertexOutputComponents, num_comp_out - limits.maxVertexOutputComponents);
             }
-            if (max_comp_out > static_cast<int>(limits.maxVertexOutputComponents)) {
+            if (max_comp_out > limits.maxVertexOutputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Vertex shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%u)",
@@ -966,7 +963,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  limits.maxTessellationControlPerVertexInputComponents,
                                  num_comp_in - limits.maxTessellationControlPerVertexInputComponents);
             }
-            if (max_comp_in > static_cast<int>(limits.maxTessellationControlPerVertexInputComponents)) {
+            if (max_comp_in > limits.maxTessellationControlPerVertexInputComponents) {
                 skip |=
                     LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation control shader input variable uses location that "
@@ -981,7 +978,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  limits.maxTessellationControlPerVertexOutputComponents,
                                  num_comp_out - limits.maxTessellationControlPerVertexOutputComponents);
             }
-            if (max_comp_out > static_cast<int>(limits.maxTessellationControlPerVertexOutputComponents)) {
+            if (max_comp_out > limits.maxTessellationControlPerVertexOutputComponents) {
                 skip |=
                     LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation control shader output variable uses location that "
@@ -999,7 +996,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  limits.maxTessellationEvaluationInputComponents,
                                  num_comp_in - limits.maxTessellationEvaluationInputComponents);
             }
-            if (max_comp_in > static_cast<int>(limits.maxTessellationEvaluationInputComponents)) {
+            if (max_comp_in > limits.maxTessellationEvaluationInputComponents) {
                 skip |=
                     LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader input variable uses location that "
@@ -1014,7 +1011,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  limits.maxTessellationEvaluationOutputComponents,
                                  num_comp_out - limits.maxTessellationEvaluationOutputComponents);
             }
-            if (max_comp_out > static_cast<int>(limits.maxTessellationEvaluationOutputComponents)) {
+            if (max_comp_out > limits.maxTessellationEvaluationOutputComponents) {
                 skip |=
                     LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                              "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
@@ -1044,7 +1041,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  "components by %u components",
                                  limits.maxGeometryInputComponents, num_comp_in - limits.maxGeometryInputComponents);
             }
-            if (max_comp_in > static_cast<int>(limits.maxGeometryInputComponents)) {
+            if (max_comp_in > limits.maxGeometryInputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%u)",
@@ -1057,7 +1054,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  "components by %u components",
                                  limits.maxGeometryOutputComponents, num_comp_out - limits.maxGeometryOutputComponents);
             }
-            if (max_comp_out > static_cast<int>(limits.maxGeometryOutputComponents)) {
+            if (max_comp_out > limits.maxGeometryOutputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Geometry shader output variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%u)",
@@ -1081,7 +1078,7 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
                                  "components by %u components",
                                  limits.maxFragmentInputComponents, num_comp_in - limits.maxFragmentInputComponents);
             }
-            if (max_comp_in > static_cast<int>(limits.maxFragmentInputComponents)) {
+            if (max_comp_in > limits.maxFragmentInputComponents) {
                 skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-Location-06272",
                                  "Invalid Pipeline CreateInfo State: Fragment shader input variable uses location that "
                                  "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%u)",
@@ -2266,22 +2263,22 @@ bool CoreChecks::ValidatePointSizeShaderState(const PIPELINE_STATE &pipeline, co
 
 bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline, const SHADER_MODULE_STATE &module_state,
                                                   const Instruction &entrypoint, VkShaderStageFlagBits stage) const {
-    bool primitiverate_written = false;
-    bool viewportindex_written = false;
-    bool viewportmask_written = false;
+    bool primitive_rate_written = false;
+    bool viewport_index_written = false;
+    bool viewport_mask_written = false;
     bool skip = false;
 
     // Check if the primitive shading rate is written
     for (const Instruction *insn : module_state.GetBuiltinDecorationList()) {
         spv::BuiltIn builtin = insn->GetBuiltIn();
         if (builtin == spv::BuiltInPrimitiveShadingRateKHR) {
-            primitiverate_written = module_state.IsBuiltInWritten(insn, entrypoint);
+            primitive_rate_written = module_state.IsBuiltInWritten(insn, entrypoint);
         } else if (builtin == spv::BuiltInViewportIndex) {
-            viewportindex_written = module_state.IsBuiltInWritten(insn, entrypoint);
+            viewport_index_written = module_state.IsBuiltInWritten(insn, entrypoint);
         } else if (builtin == spv::BuiltInViewportMaskNV) {
-            viewportmask_written = module_state.IsBuiltInWritten(insn, entrypoint);
+            viewport_mask_written = module_state.IsBuiltInWritten(insn, entrypoint);
         }
-        if (primitiverate_written && viewportindex_written && viewportmask_written) {
+        if (primitive_rate_written && viewport_index_written && viewport_mask_written) {
             break;
         }
     }
@@ -2290,7 +2287,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
     if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
         (pipeline.GetPipelineType() == VK_PIPELINE_BIND_POINT_GRAPHICS) && viewport_state) {
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT) && viewport_state->viewportCount > 1 &&
-            primitiverate_written) {
+            primitive_rate_written) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04503",
                              "vkCreateGraphicsPipelines: %s shader statically writes to PrimitiveShadingRateKHR built-in, but "
@@ -2299,7 +2296,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
                              string_VkShaderStageFlagBits(stage));
         }
 
-        if (primitiverate_written && viewportindex_written) {
+        if (primitive_rate_written && viewport_index_written) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04504",
                              "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
@@ -2308,7 +2305,7 @@ bool CoreChecks::ValidatePrimitiveRateShaderState(const PIPELINE_STATE &pipeline
                              string_VkShaderStageFlagBits(stage));
         }
 
-        if (primitiverate_written && viewportmask_written) {
+        if (primitive_rate_written && viewport_mask_written) {
             skip |= LogError(module_state.vk_shader_module(),
                              "VUID-VkGraphicsPipelineCreateInfo-primitiveFragmentShadingRateWithMultipleViewports-04505",
                              "vkCreateGraphicsPipelines: %s shader statically writes to both PrimitiveShadingRateKHR and "
