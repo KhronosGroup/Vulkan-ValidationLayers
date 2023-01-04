@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -670,24 +670,24 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
     return skip;
 }
 
-bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
-                                             const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
+                                             const RENDER_PASS_STATE &rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                              const char *msg, const char *caller, const char *error_code) const {
-    const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code,
                     "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
                     "compatible with %u: %s.",
-                    caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(), type2_string,
-                    report_data->FormatHandle(rp2_state->renderPass()).c_str(), primary_attach, secondary_attach, msg);
+                    caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
+                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), primary_attach, secondary_attach, msg);
 }
 
-bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
-                                                 const char *type2_string, const RENDER_PASS_STATE *rp2_state,
+bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
+                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state,
                                                  uint32_t primary_attach, uint32_t secondary_attach, const char *caller,
                                                  const char *error_code) const {
     bool skip = false;
-    const auto &primary_pass_ci = rp1_state->createInfo;
-    const auto &secondary_pass_ci = rp2_state->createInfo;
+    const auto &primary_pass_ci = rp1_state.createInfo;
+    const auto &secondary_pass_ci = rp2_state.createInfo;
     if (primary_pass_ci.attachmentCount <= primary_attach) {
         primary_attach = VK_ATTACHMENT_UNUSED;
     }
@@ -723,12 +723,12 @@ bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const
     return skip;
 }
 
-bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
-                                              const char *type2_string, const RENDER_PASS_STATE *rp2_state, const int subpass,
+bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
+                                              const char *type2_string, const RENDER_PASS_STATE &rp2_state, const int subpass,
                                               const char *caller, const char *error_code) const {
     bool skip = false;
-    const auto &primary_desc = rp1_state->createInfo.pSubpasses[subpass];
-    const auto &secondary_desc = rp2_state->createInfo.pSubpasses[subpass];
+    const auto &primary_desc = rp1_state.createInfo.pSubpasses[subpass];
+    const auto &secondary_desc = rp2_state.createInfo.pSubpasses[subpass];
     uint32_t max_input_attachment_count = std::max(primary_desc.inputAttachmentCount, secondary_desc.inputAttachmentCount);
     for (uint32_t i = 0; i < max_input_attachment_count; ++i) {
         uint32_t primary_input_attach = VK_ATTACHMENT_UNUSED, secondary_input_attach = VK_ATTACHMENT_UNUSED;
@@ -752,7 +752,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
         }
         skip |= ValidateAttachmentCompatibility(type1_string, rp1_state, type2_string, rp2_state, primary_color_attach,
                                                 secondary_color_attach, caller, error_code);
-        if (rp1_state->createInfo.subpassCount > 1) {
+        if (rp1_state.createInfo.subpassCount > 1) {
             uint32_t primary_resolve_attach = VK_ATTACHMENT_UNUSED, secondary_resolve_attach = VK_ATTACHMENT_UNUSED;
             if (i < primary_desc.colorAttachmentCount && primary_desc.pResolveAttachments) {
                 primary_resolve_attach = primary_desc.pResolveAttachments[i].attachment;
@@ -885,13 +885,13 @@ bool CoreChecks::ValidateDependencyCompatibility(const char *type1_string, const
     return skip;
 }
 
-bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
-                                        const RENDER_PASS_STATE *rp2_state, const char *msg, const char *caller,
+bool CoreChecks::LogInvalidPnextMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
+                                        const RENDER_PASS_STATE &rp2_state, const char *msg, const char *caller,
                                         const char *error_code) const {
-    const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
     return LogError(objlist, error_code, "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s: %s", caller, type1_string,
-                    report_data->FormatHandle(rp1_state->renderPass()).c_str(), type2_string,
-                    report_data->FormatHandle(rp2_state->renderPass()).c_str(), msg);
+                    report_data->FormatHandle(rp1_state.renderPass()).c_str(), type2_string,
+                    report_data->FormatHandle(rp2_state.renderPass()).c_str(), msg);
 }
 
 bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,
@@ -906,75 +906,75 @@ bool CoreChecks::LogInvalidDependencyMessage(const char *type1_string, const REN
 // Verify that given renderPass CreateInfo for primary and secondary command buffers are compatible.
 //  This function deals directly with the CreateInfo, there are overloaded versions below that can take the renderPass handle and
 //  will then feed into this function
-bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
-                                                 const char *type2_string, const RENDER_PASS_STATE *rp2_state, const char *caller,
+bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const RENDER_PASS_STATE &rp1_state,
+                                                 const char *type2_string, const RENDER_PASS_STATE &rp2_state, const char *caller,
                                                  const char *error_code) const {
     bool skip = false;
 
     // createInfo flags must be identical for the renderpasses to be compatible.
-    if (rp1_state->createInfo.flags != rp2_state->createInfo.flags) {
-        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    if (rp1_state.createInfo.flags != rp2_state.createInfo.flags) {
+        const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
         skip |=
             LogError(objlist, error_code,
                      "%s: RenderPasses incompatible between %s w/ %s with flags of %u and %s w/ "
                      "%s with a flags of %u.",
-                     caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(), rp1_state->createInfo.flags,
-                     type2_string, report_data->FormatHandle(rp2_state->renderPass()).c_str(), rp2_state->createInfo.flags);
+                     caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), rp1_state.createInfo.flags,
+                     type2_string, report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.flags);
     }
 
-    if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
-        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    if (rp1_state.createInfo.subpassCount != rp2_state.createInfo.subpassCount) {
+        const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a subpassCount of %u and %s w/ "
                          "%s with a subpassCount of %u.",
-                         caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(),
-                         rp1_state->createInfo.subpassCount, type2_string, report_data->FormatHandle(rp2_state->renderPass()).c_str(),
-                         rp2_state->createInfo.subpassCount);
+                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
+                         rp1_state.createInfo.subpassCount, type2_string, report_data->FormatHandle(rp2_state.renderPass()).c_str(),
+                         rp2_state.createInfo.subpassCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state->createInfo.subpassCount; ++i) {
+        for (uint32_t i = 0; i < rp1_state.createInfo.subpassCount; ++i) {
             skip |= ValidateSubpassCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
         }
     }
 
-    if (rp1_state->createInfo.dependencyCount != rp2_state->createInfo.dependencyCount) {
-        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    if (rp1_state.createInfo.dependencyCount != rp2_state.createInfo.dependencyCount) {
+        const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a dependencyCount of %" PRIu32
                          " and %s w/ %s with a dependencyCount of %" PRIu32 ".",
-                         caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(),
-                         rp1_state->createInfo.dependencyCount, type2_string,
-                         report_data->FormatHandle(rp2_state->renderPass()).c_str(), rp2_state->createInfo.dependencyCount);
+                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
+                         rp1_state.createInfo.dependencyCount, type2_string,
+                         report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.dependencyCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state->createInfo.dependencyCount; ++i) {
-            skip |= ValidateDependencyCompatibility(type1_string, *rp1_state, type2_string, *rp2_state, i, caller, error_code);
+        for (uint32_t i = 0; i < rp1_state.createInfo.dependencyCount; ++i) {
+            skip |= ValidateDependencyCompatibility(type1_string, rp1_state, type2_string, rp2_state, i, caller, error_code);
         }
     }
-    if (rp1_state->createInfo.correlatedViewMaskCount != rp2_state->createInfo.correlatedViewMaskCount) {
-        const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+    if (rp1_state.createInfo.correlatedViewMaskCount != rp2_state.createInfo.correlatedViewMaskCount) {
+        const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
         skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a correlatedViewMaskCount of %" PRIu32
                          " and %s w/ %s with a correlatedViewMaskCount of %" PRIu32 ".",
-                         caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(),
-                         rp1_state->createInfo.correlatedViewMaskCount, type2_string,
-                         report_data->FormatHandle(rp2_state->renderPass()).c_str(), rp2_state->createInfo.correlatedViewMaskCount);
+                         caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(),
+                         rp1_state.createInfo.correlatedViewMaskCount, type2_string,
+                         report_data->FormatHandle(rp2_state.renderPass()).c_str(), rp2_state.createInfo.correlatedViewMaskCount);
     } else {
-        for (uint32_t i = 0; i < rp1_state->createInfo.correlatedViewMaskCount; ++i) {
-            if (rp1_state->createInfo.pCorrelatedViewMasks[i] != rp2_state->createInfo.pCorrelatedViewMasks[i]) {
-                const LogObjectList objlist(rp1_state->renderPass(), rp2_state->renderPass());
+        for (uint32_t i = 0; i < rp1_state.createInfo.correlatedViewMaskCount; ++i) {
+            if (rp1_state.createInfo.pCorrelatedViewMasks[i] != rp2_state.createInfo.pCorrelatedViewMasks[i]) {
+                const LogObjectList objlist(rp1_state.renderPass(), rp2_state.renderPass());
                 skip |= LogError(objlist, error_code,
                                  "%s: RenderPasses incompatible between %s w/ %s with a pCorrelatedViewMasks[%" PRIu32
                                  "] of %" PRIu32 " and %s w/ %s with a pCorrelatedViewMasks[%" PRIu32 "] of %" PRIu32 ".",
-                                 caller, type1_string, report_data->FormatHandle(rp1_state->renderPass()).c_str(), i,
-                                 rp1_state->createInfo.pCorrelatedViewMasks[i], type2_string,
-                                 report_data->FormatHandle(rp2_state->renderPass()).c_str(), i,
-                                 rp1_state->createInfo.pCorrelatedViewMasks[i]);
+                                 caller, type1_string, report_data->FormatHandle(rp1_state.renderPass()).c_str(), i,
+                                 rp1_state.createInfo.pCorrelatedViewMasks[i], type2_string,
+                                 report_data->FormatHandle(rp2_state.renderPass()).c_str(), i,
+                                 rp1_state.createInfo.pCorrelatedViewMasks[i]);
             }
         }
     }
 
     // Find an entry of the Fragment Density Map type in the pNext chain, if it exists
-    const auto fdm1 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp1_state->createInfo.pNext);
-    const auto fdm2 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp2_state->createInfo.pNext);
+    const auto fdm1 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp1_state.createInfo.pNext);
+    const auto fdm2 = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rp2_state.createInfo.pNext);
 
     // Both renderpasses must agree on usage of a Fragment Density Map type
     if (fdm1 && fdm2) {
@@ -1466,8 +1466,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
         if (cb_state.activeRenderPass->renderPass() != rp_state->renderPass()) {
             // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
-            skip |= ValidateRenderPassCompatibility("active render pass", cb_state.activeRenderPass.get(), "pipeline state object",
-                                                    rp_state.get(), caller, vuid.render_pass_compatible);
+            skip |= ValidateRenderPassCompatibility("active render pass", *cb_state.activeRenderPass.get(), "pipeline state object",
+                                                    *rp_state.get(), caller, vuid.render_pass_compatible);
         }
         const auto subpass = pipeline.Subpass();
         if (subpass != cb_state.activeSubpass) {
@@ -10470,8 +10470,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     if (framebuffer->createInfo.renderPass != info->renderPass) {
                         auto render_pass = Get<RENDER_PASS_STATE>(info->renderPass);
                         // renderPass that framebuffer was created with must be compatible with local renderPass
-                        skip |= ValidateRenderPassCompatibility("framebuffer", framebuffer->rp_state.get(), "command buffer",
-                                                                render_pass.get(), "vkBeginCommandBuffer()",
+                        skip |= ValidateRenderPassCompatibility("framebuffer", *framebuffer->rp_state.get(), "command buffer",
+                                                                *render_pass.get(), "vkBeginCommandBuffer()",
                                                                 "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
                 }
@@ -16438,7 +16438,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             skip |= VerifyRenderAreaBounds(pRenderPassBegin, function_name);
             skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, *cb_state, pRenderPassBegin, fb_state.get());
             if (fb_state->rp_state->renderPass() != rp_state->renderPass()) {
-                skip |= ValidateRenderPassCompatibility("render pass", rp_state.get(), "framebuffer", fb_state->rp_state.get(),
+                skip |= ValidateRenderPassCompatibility("render pass", *rp_state.get(), "framebuffer", *fb_state->rp_state.get(),
                                                         function_name, "VUID-VkRenderPassBeginInfo-renderPass-00904");
             }
 
@@ -17216,8 +17216,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     // Make sure render pass is compatible with parent command buffer pass if has continue
                     if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
                         skip |= ValidateRenderPassCompatibility(
-                            "primary command buffer", cb_state->activeRenderPass.get(), "secondary command buffer",
-                            secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
+                            "primary command buffer", *cb_state->activeRenderPass.get(), "secondary command buffer",
+                            *secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pBeginInfo-06020");
                     }
                     //  If framebuffer for secondary CB is not NULL, then it must match active FB from primaryCB
                     skip |=
@@ -17232,9 +17232,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
                 if (!IsExtEnabled(device_extensions.vk_khr_dynamic_rendering)) {
                     if (cb_state->activeRenderPass->renderPass() != secondary_rp_state->renderPass()) {
-                        skip |= ValidateRenderPassCompatibility(
-                            "primary command buffer", cb_state->activeRenderPass.get(), "secondary command buffer",
-                            secondary_rp_state.get(), "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
+                        skip |= ValidateRenderPassCompatibility("primary command buffer", *cb_state->activeRenderPass.get(),
+                                                                "secondary command buffer", *secondary_rp_state.get(),
+                                                                "vkCmdExecuteCommands()",
+                                                                "VUID-vkCmdExecuteCommands-pInheritanceInfo-00098");
                     }
                     if (inheritance_subpass != cb_state->activeSubpass) {
                         skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pCommandBuffers-00097",
