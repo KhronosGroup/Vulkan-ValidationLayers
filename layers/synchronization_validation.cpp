@@ -1,6 +1,6 @@
-/* Copyright (c) 2019-2022 The Khronos Group Inc.
- * Copyright (c) 2019-2022 Valve Corporation
- * Copyright (c) 2019-2022 LunarG, Inc.
+/* Copyright (c) 2019-2023 The Khronos Group Inc.
+ * Copyright (c) 2019-2023 Valve Corporation
+ * Copyright (c) 2019-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2139,14 +2139,16 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         const auto raster_state = pipe->RasterizationState();
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
             continue;
+        } else if (!stage_state.descriptor_variables) {
+            continue;
         }
-        for (const auto &set_binding : stage_state.descriptor_uses) {
-            const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
+        for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
+            const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
-            auto binding = descriptor_set->GetBinding(set_binding.first.binding);
+            auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.stage_flag);
 
             for (uint32_t index = 0; index < binding->count; index++) {
                 const auto *descriptor = binding->GetDescriptor(index);
@@ -2193,7 +2195,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                 string_VkDescriptorType(descriptor_type), string_VkImageLayout(image_layout),
-                                set_binding.first.binding, index, FormatHazard(hazard).c_str());
+                                variable.decorations.binding, index, FormatHazard(hazard).c_str());
                         }
                         break;
                     }
@@ -2215,7 +2217,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
+                                string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
                         break;
@@ -2238,7 +2240,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                                 sync_state_->report_data->FormatHandle(cb_state_->commandBuffer()).c_str(),
                                 sync_state_->report_data->FormatHandle(pipe->pipeline()).c_str(),
                                 sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
-                                string_VkDescriptorType(descriptor_type), set_binding.first.binding, index,
+                                string_VkDescriptorType(descriptor_type), variable.decorations.binding, index,
                                 FormatHazard(hazard).c_str());
                         }
                         break;
@@ -2271,14 +2273,16 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         const auto raster_state = pipe->RasterizationState();
         if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && raster_state && raster_state->rasterizerDiscardEnable) {
             continue;
+        } else if (!stage_state.descriptor_variables) {
+            continue;
         }
-        for (const auto &set_binding : stage_state.descriptor_uses) {
-            const auto *descriptor_set = (*per_sets)[set_binding.first.set].bound_descriptor_set.get();
+        for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
+            const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
-            auto binding = descriptor_set->GetBinding(set_binding.first.binding);
+            auto binding = descriptor_set->GetBinding(variable.decorations.binding);
             const auto descriptor_type = binding->type;
             SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, variable, stage_state.stage_flag);
 
             for (uint32_t i = 0; i < binding->count; i++) {
                 const auto *descriptor = binding->GetDescriptor(i);

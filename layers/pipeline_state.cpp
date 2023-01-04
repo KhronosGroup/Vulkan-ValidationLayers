@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,16 +32,6 @@
 #include "shader_module.h"
 #include "enum_flag_bits.h"
 
-static bool HasWriteableDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
-    return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
-                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_writable; });
-}
-
-static bool HasAtomicDescriptor(const std::vector<PipelineStageState::DescriptorUse> &descriptor_uses) {
-    return std::any_of(descriptor_uses.begin(), descriptor_uses.end(),
-                       [](const PipelineStageState::DescriptorUse &use) { return use.second.is_atomic_operation; });
-}
-
 static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, std::optional<Instruction> entrypoint,
                                       const SHADER_MODULE_STATE *module_state) {
     bool primitiverate_written = false;
@@ -65,12 +55,20 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       create_info(stage),
       stage_flag(stage->stage),
       entrypoint(module_state->FindEntrypoint(stage->pName, stage->stage)),
-      descriptor_uses(module_state->CollectInterfaceByDescriptorSlot(entrypoint)),
-      has_writable_descriptor(HasWriteableDescriptor(descriptor_uses)),
-      has_atomic_descriptor(HasAtomicDescriptor(descriptor_uses)),
-      wrote_primitive_shading_rate(WrotePrimitiveShadingRate(stage_flag, entrypoint, module_state.get())),
       writes_to_gl_layer(module_state->WritesToGlLayer()),
-      has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {}
+      has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {
+    if (entrypoint) {
+        descriptor_variables = module_state->GetInterfaceVariable(*entrypoint);
+        if (descriptor_variables) {
+            has_writable_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
+                                                  [](const InterfaceVariable &variable) { return variable.is_writable; });
+
+            has_atomic_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
+                                                [](const InterfaceVariable &variable) { return variable.is_atomic_operation; });
+        }
+        wrote_primitive_shading_rate = WrotePrimitiveShadingRate(stage_flag, *entrypoint, module_state.get());
+    }
+}
 
 // static
 PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationStateTracker &state_data,
@@ -156,38 +154,38 @@ PIPELINE_STATE::StageStateVec PIPELINE_STATE::GetStageStates(const ValidationSta
 PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec &stage_states) {
     PIPELINE_STATE::ActiveSlotMap active_slots;
     for (const auto &stage : stage_states) {
-        if (!stage.entrypoint) {
+        if (!stage.entrypoint || !stage.descriptor_variables) {
             continue;
         }
         // Capture descriptor uses for the pipeline
-        for (const auto &use : stage.descriptor_uses) {
+        for (const InterfaceVariable &variable : *stage.descriptor_variables) {
             // While validating shaders capture which slots are used by the pipeline
-            auto &entry = active_slots[use.first.set][use.first.binding];
-            entry.is_writable |= use.second.is_writable;
+            auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
+            entry.is_writable |= variable.is_writable;
 
             auto &reqs = entry.reqs;
-            reqs |= stage.module_state->DescriptorTypeToReqs(use.second.type_id);
-            if (use.second.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
-            if (use.second.is_sampler_sampled) reqs |= DESCRIPTOR_REQ_SAMPLER_SAMPLED;
-            if (use.second.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
-            if (use.second.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
-            if (use.second.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
-            if (use.second.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
-            if (use.second.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
+            reqs |= stage.module_state->DescriptorTypeToReqs(variable.type_id);
+            if (variable.is_atomic_operation) reqs |= DESCRIPTOR_REQ_VIEW_ATOMIC_OPERATION;
+            if (variable.is_sampler_sampled) reqs |= DESCRIPTOR_REQ_SAMPLER_SAMPLED;
+            if (variable.is_sampler_implicitLod_dref_proj) reqs |= DESCRIPTOR_REQ_SAMPLER_IMPLICITLOD_DREF_PROJ;
+            if (variable.is_sampler_bias_offset) reqs |= DESCRIPTOR_REQ_SAMPLER_BIAS_OFFSET;
+            if (variable.is_read_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_READ_WITHOUT_FORMAT;
+            if (variable.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
+            if (variable.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
 
-            if (use.second.samplers_used_by_image.size()) {
-                if (use.second.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
-                    entry.samplers_used_by_image.resize(use.second.samplers_used_by_image.size());
+            if (variable.samplers_used_by_image.size()) {
+                if (variable.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
+                    entry.samplers_used_by_image.resize(variable.samplers_used_by_image.size());
                 }
                 uint32_t image_index = 0;
-                for (const auto &samplers : use.second.samplers_used_by_image) {
+                for (const auto &samplers : variable.samplers_used_by_image) {
                     for (const auto &sampler : samplers) {
                         entry.samplers_used_by_image[image_index].emplace(sampler);
                     }
                     ++image_index;
                 }
             }
-            entry.write_without_formats_component_count_list = use.second.write_without_formats_component_count_list;
+            entry.write_without_formats_component_count_list = variable.write_without_formats_component_count_list;
         }
     }
     return active_slots;

@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -1370,7 +1370,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto descriptor_uses = module_state->CollectInterfaceByDescriptorSlot(entrypoint_optional);
+    auto interface_variables = module_state->GetInterfaceVariable(entrypoint);
 
     unsigned dimensions = 0;
     if (x > 1) dimensions++;
@@ -1383,8 +1383,8 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     // There are some false positives here. We could simply have a shader that does this within a 1D grid,
     // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
     bool accesses_2d = false;
-    for (const auto& usage : descriptor_uses) {
-        auto dim = module_state->GetShaderResourceDimensionality(usage.second);
+    for (const InterfaceVariable& variable : *interface_variables) {
+        auto dim = module_state->GetShaderResourceDimensionality(variable);
         if (dim < 0) continue;
         auto spvdim = spv::Dim(dim);
         if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;

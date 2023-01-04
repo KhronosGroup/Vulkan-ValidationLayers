@@ -106,10 +106,7 @@ struct PipelineStageState {
     const safe_VkPipelineShaderStageCreateInfo *create_info;
     VkShaderStageFlagBits stage_flag;
     std::optional<Instruction> entrypoint;
-    // Used to map each descriptor binding to the OpVariable decorated with it
-    // <(set, binding), OpVariable>
-    using DescriptorUse = std::pair<DescriptorSlot, InterfaceVariable>;
-    std::vector<DescriptorUse> descriptor_uses;
+    const std::vector<InterfaceVariable> *descriptor_variables;
     bool has_writable_descriptor;
     bool has_atomic_descriptor;
     bool wrote_primitive_shading_rate;
