@@ -175,6 +175,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // All ids that can be accessed from the entry point
         layer_data::unordered_set<uint32_t> accessible_ids;
 
+        layer_data::unordered_set<uint32_t> attachment_indexes;
+
         StructInfo push_constant_used_in_shader;
 
         EntryPoint(const SHADER_MODULE_STATE &module_state, const Instruction &entrypoint);
@@ -286,6 +288,14 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         }
         return nullptr;
     }
+    const layer_data::unordered_set<uint32_t> *GetAttachmentIndexes(const Instruction &entrypoint) const {
+        for (const auto &entry_point : static_data_.entry_points) {
+            if (entry_point.entrypoint_insn == entrypoint) {
+                return &entry_point.attachment_indexes;
+            }
+        }
+        return nullptr;
+    }
 
     const layer_data::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
@@ -345,7 +355,6 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     std::map<location_t, InterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
                                                                        bool is_array_of_verts) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
-    std::vector<std::pair<uint32_t, InterfaceVariable>> CollectInterfaceByInputAttachmentIndex(const Instruction &entrypoint) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
     uint32_t GetTypeBitsSize(const Instruction *insn) const;

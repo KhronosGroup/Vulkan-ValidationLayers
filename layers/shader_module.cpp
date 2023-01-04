@@ -225,6 +225,24 @@ SHADER_MODULE_STATE::EntryPoint::EntryPoint(const SHADER_MODULE_STATE& module_st
                     break;
             }
         }
+
+        // Now that the accessible_ids list is known, fill in any information that can be statically known per EntryPoint
+        for (const Instruction* insn : module_state.GetDecorationInstructions()) {
+            if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
+                const uint32_t attachment_index = insn->Word(3);
+                const uint32_t id = insn->Word(1);
+
+                if (accessible_ids.count(id)) {
+                    const Instruction* def = module_state.FindDef(id);
+                    if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
+                        const uint32_t num_locations = module_state.GetLocationsConsumedByType(def->Word(1), false);
+                        for (uint32_t offset = 0; offset < num_locations; offset++) {
+                            attachment_indexes.insert(attachment_index + offset);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1582,37 +1600,6 @@ std::vector<uint32_t> SHADER_MODULE_STATE::CollectBuiltinBlockMembers(const Inst
     }
 
     return builtin_block_members;
-}
-
-std::vector<std::pair<uint32_t, InterfaceVariable>> SHADER_MODULE_STATE::CollectInterfaceByInputAttachmentIndex(
-    const Instruction& entrypoint) const {
-    std::vector<std::pair<uint32_t, InterfaceVariable>> out;
-
-    const auto* accessible_ids = GetAccessibleIds(entrypoint);
-    if (accessible_ids) {
-        for (const Instruction* insn : GetDecorationInstructions()) {
-            if (insn->Word(2) == spv::DecorationInputAttachmentIndex) {
-                auto attachment_index = insn->Word(3);
-                auto id = insn->Word(1);
-
-                if (accessible_ids->count(id)) {
-                    const Instruction* def = FindDef(id);
-                    if (def->Opcode() == spv::OpVariable && def->StorageClass() == spv::StorageClassUniformConstant) {
-                        auto num_locations = GetLocationsConsumedByType(def->Word(1), false);
-                        for (uint32_t offset = 0; offset < num_locations; offset++) {
-                            InterfaceVariable interface_var = {};
-                            interface_var.id = id;
-                            interface_var.type_id = def->Word(1);
-                            interface_var.offset = offset;
-                            out.emplace_back(attachment_index + offset, interface_var);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return out;
 }
 
 uint32_t SHADER_MODULE_STATE::GetNumComponentsInBaseType(const Instruction* insn) const {

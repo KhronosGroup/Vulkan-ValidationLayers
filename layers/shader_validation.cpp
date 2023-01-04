@@ -244,10 +244,12 @@ bool CoreChecks::ValidateShaderInputAttachment(const SHADER_MODULE_STATE &module
     if (rp_state && !rp_state->UsesDynamicRendering()) {
         auto rpci = rp_state->createInfo.ptr();
         const uint32_t subpass = pipeline.Subpass();
-        auto input_attachment_uses = module_state.CollectInterfaceByInputAttachmentIndex(entrypoint);
-        for (const auto &use : input_attachment_uses) {
+        auto attachment_indexes = module_state.GetAttachmentIndexes(entrypoint);
+        if (!attachment_indexes) {
+            return skip;
+        }
+        for (const uint32_t index : *attachment_indexes) {
             auto input_attachments = rpci->pSubpasses[subpass].pInputAttachments;
-            const uint32_t index = use.first;
 
             // Same error, but provide more useful message 'how' VK_ATTACHMENT_UNUSED is derived
             if (!input_attachments) {
