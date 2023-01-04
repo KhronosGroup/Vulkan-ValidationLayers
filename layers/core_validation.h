@@ -272,11 +272,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCBDynamicStatus(const CMD_BUFFER_STATE& cb_state, CBDynamicStatus status, CMD_TYPE cmd_type,
                                  const char* msg_code) const;
     bool ValidateDrawDynamicState(const CMD_BUFFER_STATE& cb_state, const PIPELINE_STATE& pipeline, CMD_TYPE cmd_type) const;
-    bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
-                                     const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+    bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                     const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
-    bool LogInvalidPnextMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
-                                const RENDER_PASS_STATE* rp2_state, const char* msg, const char* caller,
+    bool LogInvalidPnextMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                const RENDER_PASS_STATE& rp2_state, const char* msg, const char* caller,
                                 const char* error_code) const;
     bool LogInvalidDependencyMessage(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE& rp2_state, const char* msg, const char* caller,
@@ -284,17 +284,17 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateStageMaskHost(const Location& loc, VkPipelineStageFlags2KHR stageMask) const;
     bool ValidateMapMemRange(const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize offset, VkDeviceSize size) const;
     bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2* pCreateInfo) const;
-    bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
-                                         const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
+    bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                         const RENDER_PASS_STATE& rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                          const char* caller, const char* error_code) const;
-    bool ValidateSubpassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
-                                      const RENDER_PASS_STATE* rp2_state, const int subpass, const char* caller,
+    bool ValidateSubpassCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                      const RENDER_PASS_STATE& rp2_state, const int subpass, const char* caller,
                                       const char* error_code) const;
     bool ValidateDependencyCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE& rp2_state, const uint32_t dependency, const char* caller,
                                          const char* error_code) const;
-    bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
-                                         const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code) const;
+    bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE& rp1_state, const char* type2_string,
+                                         const RENDER_PASS_STATE& rp2_state, const char* caller, const char* error_code) const;
     bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE& cb_state, const char* call_source) const;
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* err_code,
                                   const char* cmd_name, const char* queue_family_var_name) const;
