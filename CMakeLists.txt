@@ -265,31 +265,6 @@ if(BUILD_LAYERS OR BUILD_TESTS)
     endif()
 endif()
 
-# VkLayer_utils library ----------------------------------------------------------------------------------------------------------
-# For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
-# modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
-# files directly in layers.
-
-add_library(VkLayer_utils
-            STATIC
-            layers/vk_layer_config.cpp
-            layers/vk_layer_logging.cpp
-            layers/vk_layer_extension_utils.cpp
-            layers/vk_layer_utils.cpp
-            layers/xxhash.c
-            layers/generated/vk_format_utils.cpp)
-target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
-set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
-target_include_directories(VkLayer_utils PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/layers
-    ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
-)
-
-if (USE_ROBIN_HOOD_HASHING)
-    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
-    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
-endif()
-
 # uninstall target ---------------------------------------------------------------------------------------------------------------
 if(NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
