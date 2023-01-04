@@ -35,7 +35,7 @@ python3 ../scripts/update_deps.py --dir ../external --arch x64 --config debug
 cmake -G Ninja -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 # Windows
-python3 ..\scripts\update_deps.py --dir ..\external --arch x64 --config debug
+python ..\scripts\update_deps.py --dir ..\external --arch x64 --config debug
 cmake -A x64 -C ..\external\helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 cmake --build . --config Debug
