@@ -23,36 +23,56 @@
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
 add_definitions(-DXXH_NO_LONG_LONG)
 
-# Configure installation of source files that are dependencies of other repos.
+add_library(VkLayer_utils STATIC)
+target_sources(VkLayer_utils PRIVATE
+    cast_utils.h
+    hash_util.h
+    hash_vk_types.h
+    vk_layer_config.h
+    vk_layer_config.cpp
+    vk_layer_data.h
+    vk_layer_extension_utils.h
+    vk_layer_extension_utils.cpp
+    vk_layer_logging.h
+    vk_layer_logging.cpp
+    vk_layer_utils.h
+    vk_layer_utils.cpp
+    xxhash.h
+    xxhash.c
+    generated/vk_format_utils.h
+    generated/vk_format_utils.cpp
+    generated/vk_validation_error_messages.h
+    generated/vk_layer_dispatch_table.h
+    generated/vk_dispatch_table_helper.h
+    generated/vk_safe_struct.h
+    generated/vk_safe_struct.cpp
+    # NOTE: This header file is installed by the LunarG SDK and treated as part of VulkanHeaders
+    # IE: This header file is also a deliverable of VVL.
+    generated/vk_enum_string_helper.h
+    generated/vk_object_types.h
+    generated/vk_extension_helper.h
+    generated/vk_typemap_helper.h
+)
+target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
+set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(VkLayer_utils PUBLIC
+    .
+    generated
+)
+
+if (USE_ROBIN_HOOD_HASHING)
+    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
+    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
+endif()
+
+# Currently repos like LunarG/VulkanTools require source code from VVL
+# This results in VkLayer_utils needing to be installed. Ideally this is
+# cleaned up in the future since this is a result of history involving the mono-repo.
 if(BUILD_LAYER_SUPPORT_FILES)
-    set(LAYER_UTIL_FILES
-        cast_utils.h
-        hash_util.h
-        hash_vk_types.h
-        vk_layer_config.h
-        vk_layer_config.cpp
-        vk_layer_data.h
-        vk_layer_extension_utils.h
-        vk_layer_extension_utils.cpp
-        vk_layer_logging.h
-        vk_layer_logging.cpp
-        vk_layer_utils.h
-        vk_layer_utils.cpp
-        xxhash.h
-        xxhash.c
-        generated/vk_format_utils.h
-        generated/vk_format_utils.cpp
-        generated/vk_validation_error_messages.h
-        generated/vk_layer_dispatch_table.h
-        generated/vk_dispatch_table_helper.h
-        generated/vk_safe_struct.h
-        generated/vk_safe_struct.cpp
-        generated/vk_enum_string_helper.h
-        generated/vk_object_types.h
-        generated/vk_extension_helper.h
-        generated/vk_typemap_helper.h)
+    # NOTE: We need to install header/source files for Android
+    get_target_property(LAYER_UTIL_FILES VkLayer_utils SOURCES)
     install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/vulkan)
-    install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(TARGETS VkLayer_utils)
 endif()
 
 if(MSVC)
