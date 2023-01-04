@@ -1325,7 +1325,7 @@ void SHADER_MODULE_STATE::FindVariableDescriptorType(bool is_storage_buffer, Int
 
         case spv::OpTypeStruct: {
             layer_data::unordered_set<uint32_t> nonwritable_members;
-            if (GetDecorationSet(type->Word(1)).flags & DecorationSet::buffer_block_bit) {
+            if (GetDecorationSet(type->Word(1)).Has(DecorationSet::buffer_block_bit)) {
                 is_storage_buffer = true;
             }
             for (const Instruction* insn : static_data_.member_decoration_inst) {
@@ -1448,7 +1448,7 @@ bool SHADER_MODULE_STATE::CollectInterfaceBlockMembers(std::map<location_t, Inte
                                                        bool is_patch, const Instruction* variable_insn) const {
     // Walk down the type_id presented, trying to determine whether it's actually an interface block.
     const Instruction* type = GetStructType(FindDef(variable_insn->Word(1)), is_array_of_verts && !is_patch);
-    if (!type || !(GetDecorationSet(type->Word(1)).flags & DecorationSet::block_bit)) {
+    if (!type || !(GetDecorationSet(type->Word(1)).Has(DecorationSet::block_bit))) {
         // This isn't an interface block.
         return false;
     }
@@ -1516,15 +1516,14 @@ std::map<location_t, InterfaceVariable> SHADER_MODULE_STATE::CollectInterfaceByL
         assert(insn->Opcode() == spv::OpVariable);
 
         const auto decoration_set = GetDecorationSet(iid);
-        const uint32_t flags = decoration_set.flags;
         const bool passthrough = sinterface == spv::StorageClassOutput && insn->Word(3) == spv::StorageClassInput &&
-                                 (flags & DecorationSet::passthrough_bit) != 0;
+                                 (decoration_set.Has(DecorationSet::passthrough_bit));
         if (insn->Word(3) == static_cast<uint32_t>(sinterface) || passthrough) {
             const uint32_t builtin = decoration_set.builtin;
             const uint32_t component = decoration_set.component;
             const uint32_t location = decoration_set.location;
-            const bool is_patch = (flags & DecorationSet::patch_bit) != 0;
-            const bool is_per_vertex = (flags & DecorationSet::per_vertex_bit) != 0;
+            const bool is_patch = decoration_set.Has(DecorationSet::patch_bit);
+            const bool is_per_vertex = decoration_set.Has(DecorationSet::per_vertex_bit);
             if (builtin != DecorationSet::kInvalidValue) {
                 continue;
             } else if (!CollectInterfaceBlockMembers(&out, is_array_of_verts, is_patch, insn) ||
