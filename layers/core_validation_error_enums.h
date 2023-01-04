@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,6 +83,8 @@
 [[maybe_unused]] static const char *kVUID_Core_BufferMemoryBarrier2_SharingModeExclusiveSameFamily = "UNASSIGNED-CoreValidation-VkBufferMemoryBarrier2KHR-sharing-mode-exclusive-same-family";
 
 [[maybe_unused]] static const char *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
+
+[[maybe_unused]] static const char *kVUID_Core_DeviceAddress_NoAssociatedBuffer = "UNASSIGNED-CoreValidation-VkDeviceAddress-NoAssociatedBuffer";
 
 // clang-format on
 

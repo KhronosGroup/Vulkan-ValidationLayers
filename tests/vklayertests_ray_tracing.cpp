@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -953,10 +953,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-03680");
         vkCmdTraceRaysKHR(m_commandBuffer->handle(), &invalid_stride, &stridebufregion, &stridebufregion, &stridebufregion, 100,
                           100, 1);
-        m_errorMonitor->VerifyFound();
     }
 
     // buffer is missing flag VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
@@ -984,7 +982,6 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03683");
         vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &invalid_stride, &stridebufregion, &stridebufregion, 100,
                           100, 1);
         m_errorMonitor->VerifyFound();
@@ -993,19 +990,15 @@ TEST_F(VkLayerTest, RayTracingValidateCmdTraceRaysKHR) {
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03687");
         vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &invalid_stride, &stridebufregion, 100,
                           100, 1);
-        m_errorMonitor->VerifyFound();
     }
     // pCallableShaderBindingTable->deviceAddress == 0
     {
         VkStridedDeviceAddressRegionKHR invalid_stride = stridebufregion;
         invalid_stride.deviceAddress = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03691");
         vkCmdTraceRaysKHR(m_commandBuffer->handle(), &stridebufregion, &stridebufregion, &stridebufregion, &invalid_stride, 100,
                           100, 1);
-        m_errorMonitor->VerifyFound();
     }
 
     m_commandBuffer->end();

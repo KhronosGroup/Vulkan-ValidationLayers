@@ -1,8 +1,8 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
- * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
+ * Modifications Copyright (C) 2020-2023 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2233,11 +2233,15 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                                                       const char *binding_table_name) const {
     bool skip = false;
 
+    if (binding_table.deviceAddress == 0) {
+        return skip;
+    }
+
     const auto buffer_states = GetBuffersByAddress(binding_table.deviceAddress);
     if (buffer_states.empty()) {
-        // We can get here if for instance deviceAddress is 0
-        skip |= LogError(device, vuid_single_device_memory, "%s: no buffer is associated with %s->deviceAddress (0x%" PRIx64 ").",
-                         rt_func_name, binding_table_name, binding_table.deviceAddress);
+        skip |= LogError(device, kVUID_Core_DeviceAddress_NoAssociatedBuffer,
+                         "%s: no buffer is associated with %s->deviceAddress (0x%" PRIx64 ").", rt_func_name, binding_table_name,
+                         binding_table.deviceAddress);
     } else {
         // Try to find a buffer satisfying all VUIDs
         const bool no_valid_buffer_found = std::none_of(
