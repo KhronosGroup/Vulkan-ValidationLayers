@@ -74,7 +74,7 @@ enum FORMAT_TYPE {
 typedef std::pair<uint32_t, uint32_t> location_t;
 
 struct DecorationSet {
-    enum {
+    enum FlagBit {
         patch_bit = 1 << 0,
         block_bit = 1 << 1,
         buffer_block_bit = 1 << 2,
@@ -87,16 +87,24 @@ struct DecorationSet {
     };
     static constexpr uint32_t kInvalidValue = std::numeric_limits<uint32_t>::max();
 
+    // bits to know if things have been set or not by a Decoration
     uint32_t flags = 0;
+
+    // When being used as an User-defined Variable (input, output, rtx)
     uint32_t location = kInvalidValue;
     uint32_t component = 0;
+
+    // For input attachments
     uint32_t input_attachment_index = 0;
+
+    // For descriptors
     uint32_t descriptor_set = 0;
     uint32_t binding = 0;
+
     uint32_t builtin = kInvalidValue;
-    uint32_t spec_const_id = kInvalidValue;
 
     void Add(uint32_t decoration, uint32_t value);
+    bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
 struct SHADER_MODULE_STATE : public BASE_NODE {

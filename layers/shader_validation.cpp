@@ -469,7 +469,7 @@ bool CoreChecks::ValidateBuiltinLimits(const SHADER_MODULE_STATE &module_state, 
         const DecorationSet decorations = module_state.GetDecorationSet(insn->Word(2));
 
         // Currently don't need to search in structs
-        if (((decorations.flags & DecorationSet::builtin_bit) != 0) && (decorations.builtin == spv::BuiltInSampleMask)) {
+        if (decorations.Has(DecorationSet::builtin_bit) && (decorations.builtin == spv::BuiltInSampleMask)) {
             const Instruction *type_pointer = module_state.FindDef(insn->Word(1));
             assert(type_pointer->Opcode() == spv::OpTypePointer);
 
@@ -1164,18 +1164,16 @@ bool CoreChecks::ValidateShaderStorageImageFormatsVariables(const SHADER_MODULE_
         }
 
         const uint32_t var_id = insn->Word(2);
-        DecorationSet img_decorations = module_state.GetDecorationSet(var_id);
+        DecorationSet decorations = module_state.GetDecorationSet(var_id);
 
-        if (!enabled_features.core.shaderStorageImageReadWithoutFormat &&
-            !(img_decorations.flags & DecorationSet::nonreadable_bit)) {
+        if (!enabled_features.core.shaderStorageImageReadWithoutFormat && !decorations.Has(DecorationSet::nonreadable_bit)) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06270",
                              "shaderStorageImageReadWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith Unknown "
                              "format and is not decorated with NonReadable",
                              module_state.FindDef(var_id)->Describe().c_str(), type_def->Describe().c_str());
         }
 
-        if (!enabled_features.core.shaderStorageImageWriteWithoutFormat &&
-            !(img_decorations.flags & DecorationSet::nonwritable_bit)) {
+        if (!enabled_features.core.shaderStorageImageWriteWithoutFormat && !decorations.Has(DecorationSet::nonwritable_bit)) {
             skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-OpTypeImage-06269",
                              "shaderStorageImageWriteWithoutFormat is not supported but\n%s\nhas an Image\n%s\nwith "
                              "Unknown format and is not decorated with NonWritable",
@@ -2439,7 +2437,7 @@ bool CoreChecks::ValidateComputeSharedMemory(const SHADER_MODULE_STATE &module_s
         for (const Instruction *insn : module_state.GetVariableInstructions()) {
             // StorageClass Workgroup is shared memory
             if (insn->StorageClass() == spv::StorageClassWorkgroup) {
-                if (module_state.GetDecorationSet(insn->Word(2)).flags & DecorationSet::aliased_bit) {
+                if (module_state.GetDecorationSet(insn->Word(2)).Has(DecorationSet::aliased_bit)) {
                     find_max_block = true;
                 }
 
