@@ -1371,31 +1371,32 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
     }
 
     auto interface_variables = module_state->GetInterfaceVariable(entrypoint);
+    if (interface_variables) {
+        unsigned dimensions = 0;
+        if (x > 1) dimensions++;
+        if (y > 1) dimensions++;
+        if (z > 1) dimensions++;
+        // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
+        dimensions = std::max(dimensions, 1u);
 
-    unsigned dimensions = 0;
-    if (x > 1) dimensions++;
-    if (y > 1) dimensions++;
-    if (z > 1) dimensions++;
-    // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
-    dimensions = std::max(dimensions, 1u);
+        // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
+        // There are some false positives here. We could simply have a shader that does this within a 1D grid,
+        // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
+        bool accesses_2d = false;
+        for (const InterfaceVariable& variable : *interface_variables) {
+            auto dim = module_state->GetShaderResourceDimensionality(variable);
+            if (dim < 0) continue;
+            auto spvdim = spv::Dim(dim);
+            if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
+        }
 
-    // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
-    // There are some false positives here. We could simply have a shader that does this within a 1D grid,
-    // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
-    bool accesses_2d = false;
-    for (const InterfaceVariable& variable : *interface_variables) {
-        auto dim = module_state->GetShaderResourceDimensionality(variable);
-        if (dim < 0) continue;
-        auto spvdim = spv::Dim(dim);
-        if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
-    }
-
-    if (accesses_2d && dimensions < 2) {
-        LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality,
-                              "%s vkCreateComputePipelines(): compute shader has work group dimensions (%u, %u, %u), which "
-                              "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
-                              "exhibiting poor spatial locality with respect to one or more shader resources.",
-                              VendorSpecificTag(kBPVendorArm), x, y, z);
+        if (accesses_2d && dimensions < 2) {
+            LogPerformanceWarning(device, kVUID_BestPractices_CreateComputePipelines_ComputeSpatialLocality,
+                                  "%s vkCreateComputePipelines(): compute shader has work group dimensions (%u, %u, %u), which "
+                                  "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
+                                  "exhibiting poor spatial locality with respect to one or more shader resources.",
+                                  VendorSpecificTag(kBPVendorArm), x, y, z);
+        }
     }
 
     return skip;

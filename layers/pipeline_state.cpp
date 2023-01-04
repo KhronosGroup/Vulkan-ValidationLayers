@@ -32,21 +32,21 @@
 #include "shader_module.h"
 #include "enum_flag_bits.h"
 
-static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, std::optional<Instruction> entrypoint,
+static bool WrotePrimitiveShadingRate(VkShaderStageFlagBits stage_flag, const Instruction &entrypoint,
                                       const SHADER_MODULE_STATE *module_state) {
-    bool primitiverate_written = false;
-    if (entrypoint && (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
-                       stage_flag == VK_SHADER_STAGE_MESH_BIT_NV)) {
+    bool primitive_rate_written = false;
+    if (stage_flag == VK_SHADER_STAGE_VERTEX_BIT || stage_flag == VK_SHADER_STAGE_GEOMETRY_BIT ||
+        stage_flag == VK_SHADER_STAGE_MESH_BIT_NV) {
         for (const Instruction *inst : module_state->GetBuiltinDecorationList()) {
             if (inst->GetBuiltIn() == spv::BuiltInPrimitiveShadingRateKHR) {
-                primitiverate_written = module_state->IsBuiltInWritten(inst, *entrypoint);
+                primitive_rate_written = module_state->IsBuiltInWritten(inst, entrypoint);
             }
-            if (primitiverate_written) {
+            if (primitive_rate_written) {
                 break;
             }
         }
     }
-    return primitiverate_written;
+    return primitive_rate_written;
 }
 
 PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInfo *stage,
@@ -173,7 +173,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
             if (variable.is_write_without_format) reqs |= DESCRIPTOR_REQ_IMAGE_WRITE_WITHOUT_FORMAT;
             if (variable.is_dref_operation) reqs |= DESCRIPTOR_REQ_IMAGE_DREF;
 
-            if (variable.samplers_used_by_image.size()) {
+            if (!variable.samplers_used_by_image.empty()) {
                 if (variable.samplers_used_by_image.size() > entry.samplers_used_by_image.size()) {
                     entry.samplers_used_by_image.resize(variable.samplers_used_by_image.size());
                 }
