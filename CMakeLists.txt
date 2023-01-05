@@ -246,8 +246,6 @@ endif()
 if(BUILD_LAYERS OR BUILD_TESTS)
     find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
 
-    include(VVLGenerateSourceCode)
-
     find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
 
     find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
