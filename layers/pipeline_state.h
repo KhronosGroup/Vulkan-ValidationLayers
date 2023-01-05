@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -353,6 +353,15 @@ class PIPELINE_STATE : public BASE_NODE {
             return fragment_output_state->ms_state.get();
         }
         return nullptr;
+    }
+
+    // For given pipeline, return number of MSAA samples, or one if MSAA disabled
+    VkSampleCountFlagBits GetNumSamples() const {
+        const auto ms_state = MultisampleState();
+        if (ms_state) {
+            return ms_state->rasterizationSamples;
+        }
+        return VK_SAMPLE_COUNT_1_BIT;
     }
 
     const safe_VkPipelineRasterizationStateCreateInfo *RasterizationState() const {

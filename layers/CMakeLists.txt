@@ -129,6 +129,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     pipeline_state.cpp
     pipeline_layout_state.cpp
     pipeline_sub_state.cpp
+    pipeline_validation.cpp
     queue_state.h
     queue_state.cpp
     query_state.h
