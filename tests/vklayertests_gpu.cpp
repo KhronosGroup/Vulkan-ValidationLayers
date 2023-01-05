@@ -1024,6 +1024,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     if (IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
         GTEST_SKIP() << "This test should not be run on the AMD proprietary driver.";
     }
+    VkResult err;
     const bool mesh_shader_supported = IsExtensionsEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
 
     auto mesh_shader_features = LvlInitStruct<VkPhysicalDeviceMeshShaderFeaturesNV>();
@@ -1043,137 +1044,181 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
 
     // Make a uniform buffer to be passed to the shader that contains the pointer and write count
     uint32_t qfi = 0;
-    VkBufferCreateInfo bci = LvlInitStruct<VkBufferCreateInfo>();
+    auto bci = LvlInitStruct<VkBufferCreateInfo>();
     bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     bci.size = 12;  // 64 bit pointer + int
     bci.queueFamilyIndexCount = 1;
     bci.pQueueFamilyIndices = &qfi;
-    VkBufferObj buffer0;
+    vk_testing::Buffer buffer0;
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     buffer0.init(*m_device, bci, mem_props);
 
     // Make another buffer to write to
     bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    VkBuffer buffer1;
-    vk::CreateBuffer(device(), &bci, NULL, &buffer1);
-    VkMemoryRequirements buffer_mem_reqs = {};
-    vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
-    VkMemoryAllocateInfo buffer_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>();
-    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
-    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
-    VkMemoryAllocateFlagsInfo alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-    buffer_alloc_info.pNext = &alloc_flags;
-    VkDeviceMemory buffer_mem;
-    VkResult err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
-    ASSERT_VK_SUCCESS(err);
-    vk::BindBufferMemory(m_device->device(), buffer1, buffer_mem, 0);
+    vk_testing::Buffer buffer1(*m_device, bci, mem_props, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
 
     // Get device address of buffer to write to
-    VkBufferDeviceAddressInfoKHR bda_info = LvlInitStruct<VkBufferDeviceAddressInfoKHR>();
-    bda_info.buffer = buffer1;
-    auto vkGetBufferDeviceAddressKHR =
-        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
-    ASSERT_TRUE(vkGetBufferDeviceAddressKHR != nullptr);
-    auto pBuffer = vkGetBufferDeviceAddressKHR(m_device->device(), &bda_info);
-
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-
-    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
-    VkDescriptorBufferInfo buffer_test_buffer_info[2] = {};
-    buffer_test_buffer_info[0].buffer = buffer0.handle();
-    buffer_test_buffer_info[0].offset = 0;
-    buffer_test_buffer_info[0].range = sizeof(uint32_t);
-
-    VkWriteDescriptorSet descriptor_writes[1] = {};
-    descriptor_writes[0] = LvlInitStruct<VkWriteDescriptorSet>();
-    descriptor_writes[0].dstSet = descriptor_set.set_;
-    descriptor_writes[0].dstBinding = 0;
-    descriptor_writes[0].descriptorCount = 1;
-    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptor_writes[0].pBufferInfo = buffer_test_buffer_info;
-    vk::UpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
-
-    char const *shader_source =
-        "#version 450\n"
-        "#extension GL_EXT_buffer_reference : enable\n "
-        "layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;\n"
-        "layout(set = 0, binding = 0) uniform ufoo {\n"
-        "    bufStruct data;\n"
-        "    int nWrites;\n"
-        "} u_info;\n"
-        "layout(buffer_reference, std140) buffer bufStruct {\n"
-        "    int a[4];\n"
-        "};\n"
-        "void main() {\n"
-        "    for (int i=0; i < u_info.nWrites; ++i) {\n"
-        "        u_info.data.a[i] = 0xdeadca71;\n"
-        "    }\n"
-        "}\n";
-    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
+    auto pBuffer = buffer1.address();
 
     VkViewport viewport = m_viewports[0];
     VkRect2D scissors = m_scissors[0];
 
-    VkSubmitInfo submit_info = LvlInitStruct<VkSubmitInfo>();
+    auto submit_info = LvlInitStruct<VkSubmitInfo>();
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
-    VkPipelineObj pipe(m_device);
-    pipe.AddShader(&vs);
-    pipe.AddDefaultColorAttachment();
-    err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-    ASSERT_VK_SUCCESS(err);
-
-    VkCommandBufferBeginInfo begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
-    VkCommandBufferInheritanceInfo hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
+    auto begin_info = LvlInitStruct<VkCommandBufferBeginInfo>();
+    auto hinfo = LvlInitStruct<VkCommandBufferInheritanceInfo>();
     begin_info.pInheritanceInfo = &hinfo;
 
-    m_commandBuffer->begin(&begin_info);
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
-    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
-    vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
-    vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(m_commandBuffer->handle());
-    m_commandBuffer->end();
+    struct TestCase {
+        std::string name;
+        std::string error;
+        VkDeviceAddress push_constants[2] = {};
+    };
+    std::array<TestCase, 3> testcases{{{"starting address too low", "access out of bounds", {pBuffer - 16, 4}},
+                                       {"run past the end", "access out of bounds", {pBuffer, 5}},
+                                       {"positive", "", {pBuffer, 4}}}};
 
-    // Starting address too low
-    VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
-    data[0] = pBuffer - 16;
-    data[1] = 4;
-    buffer0.memory().unmap();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyFound();
+    // push constant version
+    {
+        VkPushConstantRange push_constant_ranges = {};
+        push_constant_ranges.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constant_ranges.offset = 0;
+        push_constant_ranges.size = 2 * sizeof(VkDeviceAddress);
 
-    // Run past the end
-    data = (VkDeviceAddress *)buffer0.memory().map();
-    data[0] = pBuffer;
-    data[1] = 5;
-    buffer0.memory().unmap();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->VerifyFound();
+        auto plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        plci.pushConstantRangeCount = 1;
+        plci.pPushConstantRanges = &push_constant_ranges;
+        plci.setLayoutCount = 0;
+        plci.pSetLayouts = nullptr;
 
-    // Positive test - stay inside buffer
-    data = (VkDeviceAddress *)buffer0.memory().map();
-    data[0] = pBuffer;
-    data[1] = 4;
-    buffer0.memory().unmap();
-    err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::QueueWaitIdle(m_device->m_queue);
-    ASSERT_VK_SUCCESS(err);
+        vk_testing::PipelineLayout pipeline_layout(*m_device, plci);
+
+        char const *shader_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+            layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+            layout(push_constant) uniform ufoo {
+                bufStruct data;
+                int nWrites;
+            } u_info;
+            layout(buffer_reference, std140) buffer bufStruct {
+                int a[4];
+            };
+            void main() {
+                for (int i=0; i < u_info.nWrites; ++i) {
+                    u_info.data.a[i] = 0xdeadca71;
+                }
+            }
+        )glsl";
+        VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddDefaultColorAttachment();
+        err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        ASSERT_VK_SUCCESS(err);
+
+        for (const auto &test : testcases) {
+            m_commandBuffer->begin(&begin_info);
+            m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+            vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+            vk::CmdPushConstants(m_commandBuffer->handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                 sizeof(test.push_constants), test.push_constants);
+            vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+            vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+            vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+            vk::CmdEndRenderPass(m_commandBuffer->handle());
+            m_commandBuffer->end();
+
+            if (!test.error.empty()) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
+            }
+            err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            ASSERT_VK_SUCCESS(err);
+            err = vk::QueueWaitIdle(m_device->m_queue);
+            ASSERT_VK_SUCCESS(err);
+            if (!test.error.empty()) {
+                m_errorMonitor->VerifyFound();
+            }
+            m_commandBuffer->reset();
+        }
+    }
+    // descriptor set version
+    {
+        OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+        const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+        VkDescriptorBufferInfo buffer_test_buffer_info = {};
+        buffer_test_buffer_info.buffer = buffer0.handle();
+        buffer_test_buffer_info.offset = 0;
+        buffer_test_buffer_info.range = sizeof(uint32_t);
+
+        auto descriptor_write = LvlInitStruct<VkWriteDescriptorSet>();
+        descriptor_write.dstSet = descriptor_set.set_;
+        descriptor_write.dstBinding = 0;
+        descriptor_write.descriptorCount = 1;
+        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write.pBufferInfo = &buffer_test_buffer_info;
+        vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+
+        char const *shader_source = R"glsl(
+            #version 450
+            #extension GL_EXT_buffer_reference : enable
+            layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+            layout(set = 0, binding = 0) uniform ufoo {
+                bufStruct data;
+                int nWrites;
+            } u_info;
+            layout(buffer_reference, std140) buffer bufStruct {
+                int a[4];
+            };
+            void main() {
+                for (int i=0; i < u_info.nWrites; ++i) {
+                    u_info.data.a[i] = 0xdeadca71;
+                }
+            }
+        )glsl";
+        VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main", true);
+
+        VkPipelineObj pipe(m_device);
+        pipe.AddShader(&vs);
+        pipe.AddDefaultColorAttachment();
+        auto err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        ASSERT_VK_SUCCESS(err);
+
+        m_commandBuffer->begin(&begin_info);
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+        vk::CmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+        vk::CmdEndRenderPass(m_commandBuffer->handle());
+        m_commandBuffer->end();
+
+        for (const auto &test : testcases) {
+            auto *data = static_cast<VkDeviceAddress *>(buffer0.memory().map());
+            data[0] = test.push_constants[0];
+            data[1] = test.push_constants[1];
+            buffer0.memory().unmap();
+
+            if (!test.error.empty()) {
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
+            }
+            err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            ASSERT_VK_SUCCESS(err);
+            err = vk::QueueWaitIdle(m_device->m_queue);
+            ASSERT_VK_SUCCESS(err);
+            if (!test.error.empty()) {
+                m_errorMonitor->VerifyFound();
+            }
+        }
+    }
 
     if (mesh_shader_supported) {
         PFN_vkCmdDrawMeshTasksNV vkCmdDrawMeshTasksNV =
@@ -1184,55 +1229,52 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = 2 * sizeof(VkDeviceAddress);
 
-        VkPipelineLayout mesh_pipeline_layout;
-        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo[1] = {};
-        pipelineLayoutCreateInfo[0] = LvlInitStruct<VkPipelineLayoutCreateInfo>();
-        pipelineLayoutCreateInfo[0].pushConstantRangeCount = push_constant_range_count;
-        pipelineLayoutCreateInfo[0].pPushConstantRanges = push_constant_ranges;
-        pipelineLayoutCreateInfo[0].setLayoutCount = 0;
-        pipelineLayoutCreateInfo[0].pSetLayouts = nullptr;
-        vk::CreatePipelineLayout(m_device->handle(), pipelineLayoutCreateInfo, NULL, &mesh_pipeline_layout);
+        auto plci = LvlInitStruct<VkPipelineLayoutCreateInfo>();
+        plci.pushConstantRangeCount = push_constant_range_count;
+        plci.pPushConstantRanges = push_constant_ranges;
+        plci.setLayoutCount = 0;
+        plci.pSetLayouts = nullptr;
+        vk_testing::PipelineLayout mesh_pipeline_layout(*m_device, plci);
 
-        char const *mesh_shader_source =
-            "#version 460\n"
-            "#extension GL_NV_mesh_shader : require\n"
-            "#extension GL_EXT_buffer_reference : enable\n"
-            "layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;\n"
-            "layout(push_constant) uniform ufoo {\n"
-            "    bufStruct data;\n"
-            "    int nWrites;\n"
-            "} u_info;\n"
-            "layout(buffer_reference, std140) buffer bufStruct {\n"
-            "    int a[4];\n"
-            "};\n"
+        char const *mesh_shader_source = R"glsl(
+            #version 460
+            #extension GL_NV_mesh_shader : require
+            #extension GL_EXT_buffer_reference : enable
+            layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;
+            layout(push_constant) uniform ufoo {
+                bufStruct data;
+                int nWrites;
+            } u_info;
+            layout(buffer_reference, std140) buffer bufStruct {
+                int a[4];
+            };
 
-            "layout(local_size_x = 32) in;\n"
-            "layout(max_vertices = 64, max_primitives = 126) out;\n"
-            "layout(triangles) out;\n"
+            layout(local_size_x = 32) in;
+            layout(max_vertices = 64, max_primitives = 126) out;
+            layout(triangles) out;
 
-            "uint invocationID = gl_LocalInvocationID.x;\n"
-            "void main() {\n"
-            "    if (invocationID == 0) {\n"
-            "        for (int i=0; i < u_info.nWrites; ++i) {\n"
-            "            u_info.data.a[i] = 0xdeadca71;\n"
-            "        }\n"
-            "    }\n"
-            "}\n";
+            uint invocationID = gl_LocalInvocationID.x;
+            void main() {
+                if (invocationID == 0) {
+                    for (int i=0; i < u_info.nWrites; ++i) {
+                        u_info.data.a[i] = 0xdeadca71;
+                    }
+                }
+            }
+        )glsl";
         VkShaderObj ms(this, mesh_shader_source, VK_SHADER_STAGE_MESH_BIT_NV, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "main",
                        true);
         VkPipelineObj mesh_pipe(m_device);
         mesh_pipe.AddShader(&ms);
         mesh_pipe.AddDefaultColorAttachment();
-        err = mesh_pipe.CreateVKPipeline(mesh_pipeline_layout, renderPass());
+        err = mesh_pipe.CreateVKPipeline(mesh_pipeline_layout.handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.handle());
-        VkDeviceAddress pushConstants[2] = {};
-        pushConstants[0] = pBuffer;
-        pushConstants[1] = 5;
-        vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout, VK_SHADER_STAGE_MESH_BIT_NV, 0, sizeof(pushConstants),
-                             pushConstants);
+        VkDeviceAddress push_constants[2] = {pBuffer, 5};
+        vk::CmdPushConstants(m_commandBuffer->handle(), mesh_pipeline_layout.handle(), VK_SHADER_STAGE_MESH_BIT_NV, 0,
+                             sizeof(push_constants), push_constants);
         vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
         vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
         vkCmdDrawMeshTasksNV(m_commandBuffer->handle(), 1, 0);
@@ -1245,11 +1287,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         err = vk::QueueWaitIdle(m_device->m_queue);
         ASSERT_VK_SUCCESS(err);
         m_errorMonitor->VerifyFound();
-        vk::DestroyPipelineLayout(m_device->handle(), mesh_pipeline_layout, nullptr);
     }
-
-    vk::DestroyBuffer(m_device->handle(), buffer1, NULL);
-    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuDrawIndirectCountDeviceLimit) {
