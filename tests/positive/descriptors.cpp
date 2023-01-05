@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015-2022 The Khronos Group Inc.
  * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2015-2022 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1321,4 +1321,16 @@ TEST_F(VkPositiveLayerTest, MultipleThreadsUsingHostOnlyDescriptorSet) {
 
     std::array<std::thread, 2> threads = {std::thread(testing_thread1), std::thread(testing_thread2)};
     for (auto &t : threads) t.join();
+}
+
+TEST_F(VkPositiveLayerTest, BindingEmptyDescriptorSets) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    OneOffDescriptorSet empty_ds(m_device, {});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&empty_ds.layout_});
+
+    m_commandBuffer->begin();
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &empty_ds.set_, 0, nullptr);
+    m_commandBuffer->end();
 }
