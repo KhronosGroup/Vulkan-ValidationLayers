@@ -18366,7 +18366,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                               "VUID-vkCmdDecodeVideoKHR-pPictureResource-07255", &hit_error);
                 }
             } else {
-                skip |= LogError(commandBuffer, "VUID-VkVideoDecodeInfoKHR-pSetupReferenceSlot-07172",
+                skip |= LogError(commandBuffer, "VUID-VkVideoDecodeInfoKHR-pPictureResource-07172",
                                  "vkCmdDecodeVideoKHR(): pDecodeInfo->pReferenceSlots[%u].pPictureResource "
                                  "must not be NULL",
                                  i);
