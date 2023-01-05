@@ -25,7 +25,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "34d04647d384e0aed037e7a2662a655fc39841bb"
+            "commit": "d13b52222c39a7e9a401b44646f0ca3a640fbd47"
         },
         {
             "name": "SPIRV-Tools",
@@ -36,7 +36,7 @@
             "cmake_options": [
                 "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers"
             ],
-            "commit": "d87f61605b3647fbceae9aaa922fce0031afdc63"
+            "commit": "ba4c9fe53464ca29ee3501ca46cc9a9cd693bbe2"
         },
         {
             "name": "robin-hood-hashing",
