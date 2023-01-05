@@ -15,6 +15,39 @@
 # limitations under the License.
 # ~~~
 
+find_package(PythonInterp 3 QUIET)
+
+if (PYTHONINTERP_FOUND)
+    # Vulkan::Registry is treated as a header only library,
+    # in order to grab the registry directory we grab the include directory.
+    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
+    if (NOT EXISTS "${VulkanRegistry_DIR}/vk.xml")
+        message(FATAL_ERROR "Unable to find vk.xml")
+    endif()
+
+    # Get the include directory of the SPIRV-Headers
+    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
+
+    set(spirv_unified_include_dir "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/")
+    if (NOT IS_DIRECTORY ${spirv_unified_include_dir})
+        message(FATAL_ERROR "Unable to find spirv/unified1")
+    endif()
+
+    set(generate_source_py "${VVL_SOURCE_DIR}/scripts/generate_source.py")
+    if (NOT EXISTS ${generate_source_py})
+        message(FATAL_ERROR "Unable to find generate_source.py!")
+    endif()
+
+    add_custom_target(VulkanVL_generated_source
+        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VulkanRegistry_DIR} ${spirv_unified_include_dir} --incremental
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
+    )
+
+    set_target_properties(VulkanVL_generated_source PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+else()
+    message(NOTICE "VulkanVL_generated_source target requires python 3")
+endif()
+
 # XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
 # We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
 #
