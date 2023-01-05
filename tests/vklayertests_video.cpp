@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 The Khronos Group Inc.
- * Copyright (c) 2022 RasterGrid Kft.
+ * Copyright (c) 2022-2023 The Khronos Group Inc.
+ * Copyright (c) 2022-2023 RasterGrid Kft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2537,7 +2537,7 @@ TEST_F(VkVideoLayerTest, DecodeInvalidResourceLayer) {
 
     // Invalid baseArrayLayer in VkVideoDecodeInfoKHR::pReferenceSlots
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07151");
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07256");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-slotIndex-07256");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoPictureResourceInfoKHR-baseArrayLayer-07175");
     cb.DecodeVideo(context.DecodeFrame().AddReferenceFrame(0, &dpb_res));
     m_errorMonitor->VerifyFound();
@@ -2975,7 +2975,7 @@ TEST_F(VkVideoLayerTest, DecodeReferenceResourceNull) {
     cb.begin();
     cb.BeginVideoCoding(context.Begin().AddResource(0, 0));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoDecodeInfoKHR-pSetupReferenceSlot-07172");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkVideoDecodeInfoKHR-pPictureResource-07172");
     cb.DecodeVideo(context.DecodeFrame().AddReferenceFrame(0, nullptr));
     m_errorMonitor->VerifyFound();
 
