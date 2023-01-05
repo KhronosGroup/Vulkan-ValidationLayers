@@ -2256,8 +2256,10 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                 if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
                     return false;
                 }
-                if (const auto mem_state = buffer_state->MemState(); !mem_state || mem_state->Destroyed()) {
-                    return false;
+                if (!buffer_state->sparse) {
+                    if (const auto mem_state = buffer_state->MemState(); !mem_state || mem_state->Destroyed()) {
+                        return false;
+                    }
                 }
                 if (binding_table.size != 0) {
                     const auto device_address_range = buffer_state->DeviceAddressRange();
