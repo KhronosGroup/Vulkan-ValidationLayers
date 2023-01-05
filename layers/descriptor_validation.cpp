@@ -166,13 +166,7 @@ bool CoreChecks::VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorS
     if (descriptor_set.IsPushDescriptor()) return true;
     const auto *layout_node = pipeline_layout.set_layouts[layoutIndex].get();
     if (layout_node) {
-        if ((descriptor_set.GetBindingCount() > 0) && (layout_node->GetBindingCount() > 0)) {
-            return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), errorMsg);
-        } else {
-            // Only a null DSL can be used to "skip" a descriptor set a bind time, not an empty one.
-            errorMsg = "Descriptor set " + report_data->FormatHandle(descriptor_set.Handle()) + " is empty (has no bindings). Use VK_NULL_HANDLE to indicate this set is unused if using VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.";
-            return false;
-        }
+        return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), errorMsg);
     } else {
         // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
         // here.
