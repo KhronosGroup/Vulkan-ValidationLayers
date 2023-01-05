@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The Khronos Group Inc.
-# Copyright (c) 2015-2022 Valve Corporation
-# Copyright (c) 2015-2022 LunarG, Inc.
-# Copyright (c) 2015-2022 Google Inc.
+# Copyright (c) 2015-2023 The Khronos Group Inc.
+# Copyright (c) 2015-2023 Valve Corporation
+# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/drawdispatch.cpp',
     'layers/gpu_vuids.h',
     'layers/parameter_validation_utils.cpp',
+    'layers/pipeline_validation.cpp',
     'layers/object_tracker_utils.cpp',
     'layers/shader_module.cpp',
     'layers/shader_validation.cpp',
