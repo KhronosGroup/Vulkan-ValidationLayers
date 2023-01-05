@@ -17,6 +17,8 @@
 cmake_minimum_required(VERSION 3.17.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# Test 1
+
 project(VVL LANGUAGES CXX C)
 
 option(BUILD_TESTS "Build the tests" OFF)
