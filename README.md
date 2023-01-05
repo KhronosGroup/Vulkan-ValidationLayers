@@ -22,9 +22,8 @@ to assist development by enabling developers to verify their applications correc
 This repository contains both the [*Validation Layers*](layers/) source as well as [*Tests*](tests/) for them.
 
 ## Contact Information
-* [Mark Lobodzinski](mailto:mark@lunarg.com)
-* [Nate Cesario](mailto:nathaniel@lunarg.com)
-* Can also be found on the [Khronos Slack](https://khr.io/slack)
+* @KhronosGroup/VVL-CODEOWNERS
+* VVL-CODEOWNERS members can also be found on the [Khronos Slack](https://khr.io/slack)
 
 ## Info
 * [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
