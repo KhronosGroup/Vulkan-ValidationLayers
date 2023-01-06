@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -607,6 +607,8 @@ void CMD_BUFFER_STATE::BeginRendering(CMD_TYPE cmd_type, const VkRenderingInfo *
     }
 
     activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR) ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : VK_SUBPASS_CONTENTS_INLINE);
+
+    // Handle flags for dynamic rendering
     if (!hasRenderPassInstance && pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {
         resumesRenderPassInstance = true;
     }
@@ -1003,6 +1005,15 @@ void CMD_BUFFER_STATE::ExecuteCommands(layer_data::span<const VkCommandBuffer> s
         has_dispatch_cmd |= sub_cb_state->has_dispatch_cmd;
         has_trace_rays_cmd |= sub_cb_state->has_trace_rays_cmd;
         has_build_as_cmd |= sub_cb_state->has_build_as_cmd;
+
+        // Handle secondary command buffer updates for dynamic rendering
+        if (!hasRenderPassInstance) {
+            resumesRenderPassInstance = sub_cb_state->resumesRenderPassInstance;
+        }
+        if (!sub_cb_state->activeRenderPass) {
+            suspendsRenderPassInstance = sub_cb_state->suspendsRenderPassInstance;
+            hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
+        }
     }
 }
 
