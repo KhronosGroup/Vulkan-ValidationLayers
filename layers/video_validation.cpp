@@ -141,23 +141,18 @@ bool CoreChecks::ValidateVideoProfileInfo(const VkVideoProfileInfoKHR *profile, 
 
     const char *profile_pnext_msg = "%s(): missing %s from the pNext chain of %s";
 
-    const int num_bits = sizeof(VkFlags) * CHAR_BIT;
-
-    std::bitset<num_bits> chroma_subsampling_bits(profile->chromaSubsampling);
-    if (chroma_subsampling_bits.count() != 1) {
+    if (GetBitSetCount(profile->chromaSubsampling) != 1) {
         skip |= LogError(object, "VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013",
                          "%s(): chromaSubsampling in %s must have a single bit set", api_name, where);
     }
 
-    std::bitset<num_bits> luma_bit_depth_bits(profile->lumaBitDepth);
-    if (luma_bit_depth_bits.count() != 1) {
+    if (GetBitSetCount(profile->lumaBitDepth) != 1) {
         skip |= LogError(object, "VUID-VkVideoProfileInfoKHR-lumaBitDepth-07014",
                          "%s(): lumaBitDepth in %s must have a single bit set", api_name, where);
     }
 
     if (profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR) {
-        std::bitset<num_bits> chroma_bit_depth_bits(profile->chromaBitDepth);
-        if (chroma_bit_depth_bits.count() != 1) {
+        if (GetBitSetCount(profile->chromaBitDepth) != 1) {
             skip |= LogError(object, "VUID-VkVideoProfileInfoKHR-chromaSubsampling-07015",
                              "%s(): chromaBitDepth in %s must have a single bit set", api_name, where);
         }
