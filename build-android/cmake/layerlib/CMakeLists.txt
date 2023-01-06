@@ -105,6 +105,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${COMMON_DIR}/include/thread_safety.cpp
         ${SRC_DIR}/layers/image_layout_map.cpp
         ${SRC_DIR}/layers/subresource_adapter.cpp
+        ${SRC_DIR}/layers/ray_tracing_validation.cpp
         ${SRC_DIR}/layers/wsi_validation.cpp
         ${SRC_DIR}/layers/xxhash.c)
 target_include_directories(VkLayer_khronos_validation PRIVATE
