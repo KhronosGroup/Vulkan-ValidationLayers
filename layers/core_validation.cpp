@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -6300,6 +6300,8 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
             auto cb_state = GetRead<CMD_BUFFER_STATE>(submit.pCommandBuffers[i]);
             if (cb_state) {
                 skip |= cb_submit_state.Validate(loc.dot(Field::pCommandBuffers, i), *cb_state, perf_pass);
+
+                // Validate flags for dynamic rendering
                 if (suspended_render_pass_instance && cb_state->hasRenderPassInstance && !cb_state->resumesRenderPassInstance) {
                     skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06016",
                                      "pSubmits[%" PRIu32 "] has a suspended render pass instance, but pCommandBuffers[%" PRIu32
@@ -6320,6 +6322,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
                 }
             }
         }
+        // Renderpass should not be in suspended state after the final cmdbuf
         if (suspended_render_pass_instance) {
             skip |= LogError(queue, "VUID-VkSubmitInfo-pCommandBuffers-06014",
                              "pSubmits[%" PRIu32 "] has a suspended render pass instance that was not resumed.", submit_idx);
