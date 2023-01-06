@@ -171,6 +171,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     render_pass_state.cpp
     video_session_state.h
     video_session_state.cpp
+    video_validation.cpp
     sampler_state.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp
