@@ -66,6 +66,11 @@ struct LogObjectList {
         (..., add(objects));
     }
 
+    [[nodiscard]] auto size() const { return object_list.size(); }
+    [[nodiscard]] auto empty() const { return object_list.empty(); }
+    [[nodiscard]] auto begin() const { return object_list.begin(); }
+    [[nodiscard]] auto end() const { return object_list.end(); }
+
     LogObjectList(){};
 };
 

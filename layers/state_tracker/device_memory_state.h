@@ -351,6 +351,12 @@ class BINDABLE : public BASE_NODE {
 
         return !HasFullRangeBound();
     }
+
+    bool IsMemoryBound() const {
+        const auto mem_state = MemState();
+        return mem_state && !mem_state->Destroyed();
+    }
+
     void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
         need_to_recache_invalid_memory_ = true;
         BASE_NODE::NotifyInvalidate(invalid_nodes, unlink);

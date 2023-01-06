@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
+/* Copyright (c) 2015-2017, 2019-2023 The Khronos Group Inc.
  * Copyright (c) 2015-2017, 2019-2023 Valve Corporation
  * Copyright (c) 2015-2017, 2019-2023 LunarG, Inc.
  *
@@ -134,6 +134,14 @@ class small_vector {
     static_assert(N <= kMaxCapacity, "size must be less than size_type::max");
 
     small_vector() : size_(0), capacity_(N) { DebugUpdateWorkingStore(); }
+
+    small_vector(std::initializer_list<T> list) : size_(0), capacity_(N) {
+        DebugUpdateWorkingStore();
+        reserve(list.size());
+        for (auto &obj : list) {
+            emplace_back(std::move(obj));
+        }
+    }
 
     small_vector(const small_vector &other) : size_(0), capacity_(N) {
         reserve(other.size_);
@@ -328,12 +336,17 @@ class small_vector {
         // No shrink here.
     }
 
-    void clear() {
-        auto working_store = GetWorkingStore();
-        for (size_type i = 0; i < size_; i++) {
-            working_store[i].~value_type();
-        }
-        size_ = 0;
+    void clear() { resize(0); }
+
+    void resize(size_type count, bool move_to_small_store = true) {
+        struct ValueInitTag {  // tag to request value-initialization
+            explicit ValueInitTag() = default;
+        };
+        Resize(count, ValueInitTag{}, move_to_small_store);
+    }
+
+    void resize(size_type count, const value_type &value, bool move_to_small_store = true) {
+        Resize(count, value, move_to_small_store);
     }
 
     inline iterator begin() { return GetWorkingStore(); }
@@ -344,6 +357,9 @@ class small_vector {
     inline const_iterator cend() const { return GetWorkingStore() + size_; }
     inline const_iterator end() const { return GetWorkingStore() + size_; }
     inline size_type size() const { return size_; }
+
+    inline pointer data() { return GetWorkingStore(); }
+    inline const_pointer data() const { return GetWorkingStore(); }
 
   protected:
     inline const_pointer GetWorkingStore() const {
@@ -380,6 +396,40 @@ class small_vector {
     void DebugUpdateWorkingStore() { _dbg_working_store = GetWorkingStore(); }
     value_type *_dbg_working_store;
 #endif
+
+  private:
+    template <typename T2>
+    void Resize(size_type new_size, const T2 &value, bool move_to_small_store) {
+        if (new_size < size_) {
+            auto working_store = GetWorkingStore();
+            for (size_type i = new_size; i < size_; i++) {
+                working_store[i].~value_type();
+            }
+            if (new_size <= kSmallCapacity && large_store_ && move_to_small_store) {
+                for (size_type i = 0; i < new_size; i++) {
+                    new (small_store_ + i) value_type(std::move(working_store[i]));
+                }
+                large_store_ = nullptr;
+                DebugUpdateWorkingStore();
+            }
+            size_ = new_size;
+        } else if (new_size > size_) {
+            reserve(new_size);
+            // if T2 != T and T is not DefaultInsertable, new values will be undefined
+            if constexpr (std::is_same_v<T2, T> || std::is_default_constructible_v<T>) {
+                for (size_type i = size_; i < new_size; ++i) {
+                    if constexpr (std::is_same_v<T2, T>) {
+                        emplace_back(value_type(value));
+                    } else if constexpr (std::is_default_constructible_v<T>) {
+                        emplace_back(value_type());
+                    }
+                }
+                assert(size() == new_size);
+            } else {
+                size_ = new_size;
+            }
+        }
+    }
 };
 
 // This is a wrapper around unordered_map that optimizes for the common case
