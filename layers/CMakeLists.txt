@@ -134,6 +134,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     queue_state.cpp
     query_state.h
     ray_tracing_state.h
+    ray_tracing_validation.cpp
     render_pass_state.h
     render_pass_state.cpp
     video_session_state.h

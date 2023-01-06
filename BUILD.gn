@@ -166,6 +166,7 @@ core_validation_sources = [
   "layers/queue_state.h",
   "layers/range_vector.h",
   "layers/ray_tracing_state.h",
+  "layers/ray_tracing_validation.cpp",
   "layers/render_pass_state.cpp",
   "layers/render_pass_state.h",
   "layers/sampler_state.h",
