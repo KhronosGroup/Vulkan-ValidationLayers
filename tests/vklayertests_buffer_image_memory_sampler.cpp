@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -10103,8 +10103,8 @@ TEST_F(VkLayerTest, ExtensionNotEnabled) {
         if (DeviceExtensionSupported(dev_ext)) {
             m_device_extension_names.push_back(dev_ext);
         } else {
-            printf("Did not find required device extension %s; skipped.\n", dev_ext);
-            break;
+            // Need to get out of the test now so that the subsequent code doesn't try to use an extension that isn't enabled.
+            GTEST_SKIP() << "Did not find required device extension: " << dev_ext;
         }
     }
 
