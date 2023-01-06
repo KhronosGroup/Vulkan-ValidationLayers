@@ -179,7 +179,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
         }
     } else if (image_state->IsExternalAHB()) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
-    } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
+    } else if (!image_state->sparse) {
         // No need to optimize this since the size will only be 3 at most
         const auto &memory_states = image_state->GetBoundMemoryStates();
         if (memory_states.empty()) {
@@ -199,7 +199,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
 bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state, const char *api_name,
                                                const char *error_code) const {
     bool result = false;
-    if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
+    if (!buffer_state->sparse) {
         result |= VerifyBoundMemoryIsValid(buffer_state->MemState(), buffer_state->buffer(), buffer_state->Handle(), api_name,
                                            error_code);
     }
