@@ -152,6 +152,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     containers/subresource_adapter.h
     core_checks/android_validation.cpp
     core_checks/buffer_validation.cpp
+    core_checks/buffer_address_validation.h
     core_checks/cmd_buffer_dynamic_validation.cpp
     core_checks/cmd_buffer_validation.cpp
     core_checks/copy_blit_resolve_validation.cpp

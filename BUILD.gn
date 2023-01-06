@@ -114,6 +114,7 @@ core_validation_sources = [
   "layers/utils/convert_to_renderpass2.h",
   "layers/core_checks/android_validation.cpp",
   "layers/core_checks/buffer_validation.cpp",
+  "layers/core_checks/buffer_address_validation.h",
   "layers/core_checks/cmd_buffer_dynamic_validation.cpp",
   "layers/core_checks/cmd_buffer_validation.cpp",
   "layers/core_checks/copy_blit_resolve_validation.cpp",

@@ -19,6 +19,7 @@
 
 #include "chassis.h"
 #include "core_checks/core_validation.h"
+#include "buffer_address_validation.h"
 
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
@@ -2537,7 +2538,7 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(bool isIndirect, VkCommandBuffer comman
     bool skip = ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
     const PIPELINE_STATE *pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
-    const char *rt_func_name = isIndirect ? "vkCmdTraceRaysIndirectKHR" : "vkCmdTraceRaysKHR";
+    const char *rt_func_name = isIndirect ? "vkCmdTraceRaysIndirectKHR()" : "vkCmdTraceRaysKHR()";
 
     if (!pipeline_state || (pipeline_state && !pipeline_state->pipeline())) {
         const char *vuid = isIndirect ? "VUID-vkCmdTraceRaysIndirectKHR-None-02700" : "VUID-vkCmdTraceRaysKHR-None-02700";

@@ -21,6 +21,7 @@
 #include "error_message/validation_error_enums.h"
 #include "core_checks/core_validation.h"
 #include "state_tracker/descriptor_sets.h"
+#include "buffer_address_validation.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;
@@ -3481,11 +3482,9 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
             const VkDeviceAddress start = cb_state->descriptor_buffer_binding_info[bufferIndex].address;
             const auto buffer_states = GetBuffersByAddress(start);
 
-            // TODO : Issue 4556 properly go through the list of buffers
             if (!buffer_states.empty()) {
                 const auto buffer_state_starts = GetBuffersByAddress(start + offset);
 
-                // TODO : Issue 4556 properly go through the list of buffers
                 if (!buffer_state_starts.empty()) {
                     const auto set_layout = pipeline_layout->set_layouts[firstSet + i];
                     const auto bindings = set_layout->GetBindings();
@@ -3529,7 +3528,6 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer
                     }
 
                     if (setLayoutSize > 0) {
-                        // TODO : Issue 4556 properly go through the list of buffers
                         const auto buffer_state_ends = GetBuffersByAddress(start + offset + setLayoutSize - 1);
                         if (!buffer_state_ends.empty()) {
                             valid_binding = true;
@@ -3654,24 +3652,100 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
     for (uint32_t i = 0; i < bufferCount; i++) {
         const VkDescriptorBufferBindingInfoEXT &bindingInfo = pBindingInfos[i];
         const auto buffer_states = GetBuffersByAddress(bindingInfo.address);
-        // TODO : Issue 4556 properly go through the list of buffers
-        const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
+        // Try to find a valid buffer in buffer_states.
+        // If none if found, output each violated VUIDs, with the list of buffers that violate it.
+        {
+            using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+            BufferAddressValidation<5> buffer_address_validator = {{{
+                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052",
+                 [this, commandBuffer](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                     if (!out_error_msg) {
+                         return !buffer_state->sparse && buffer_state->IsMemoryBound();
+                     } else {
+                         return ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindDescriptorBuffersEXT()",
+                                                              "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
+                     }
+                 }},
 
-        if (buffer_state) {
-            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindDescriptorBuffersEXT()",
-                                                  "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
+                {"VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
+                 [binding_usage = bindingInfo.usage](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                     if ((buffer_state->createInfo.usage &
+                          (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                           VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
+                         (binding_usage &
+                          (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+                           VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT))) {
+                         if (out_error_msg) {
+                             *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                         }
+                         return false;
+                     }
+                     return true;
+                 },
+                 [binding_usage = bindingInfo.usage, i]() {
+                     return "The following buffers have a usage that does not match pBindingInfos[" + std::to_string(i) +
+                            "].usage (" + string_VkBufferUsageFlags(binding_usage) + "):\n";
+                 }},
 
-            if ((buffer_state->createInfo.usage &
-                 (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                  VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) !=
-                (pBindingInfos[i].usage &
-                 (VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-                  VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT))) {
-                skip |= LogError(device, "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08055",
-                                 "vkCmdBindDescriptorBuffersEXT(): pBindingInfos[%" PRIu32
-                                 "].usage does not match the buffer from which the address was queried",
-                                 i);
-            }
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
+                 [binding_usage = bindingInfo.usage, &num_sampler_buffers](const BUFFER_STATE_PTR &buffer_state,
+                                                                           std::string *out_error_msg) {
+                     if (binding_usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+                         ++num_sampler_buffers;
+                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                             if (out_error_msg) {
+                                 *out_error_msg += "has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                             }
+                             return false;
+                         }
+                     }
+                     return true;
+                 },
+                 []() {
+                     return "The following buffers were not created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT:\n";
+                 }},
+
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08123",
+                 [binding_usage = bindingInfo.usage, &num_resource_buffers](const BUFFER_STATE_PTR &buffer_state,
+                                                                            std::string *out_error_msg) {
+                     if (binding_usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+                         ++num_resource_buffers;
+                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                             if (out_error_msg) {
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                             }
+                             return false;
+                         }
+                     }
+                     return true;
+                 },
+                 []() {
+                     return "The following buffers were not created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT:\n";
+                 }},
+
+                {"VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
+                 [binding_usage = bindingInfo.usage, &num_push_descriptor_buffers](const BUFFER_STATE_PTR &buffer_state,
+                                                                                   std::string *out_error_msg) {
+                     if (binding_usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
+                         ++num_push_descriptor_buffers;
+                         if (!(buffer_state->createInfo.usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) {
+                             if (out_error_msg) {
+                                 *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags(buffer_state->createInfo.usage);
+                             }
+                             return false;
+                         }
+                     }
+                     return true;
+                 },
+                 []() {
+                     return "The following buffers were not created with "
+                            "VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT:\n";
+                 }},
+            }}};
+
+            const std::string address_name = "pBindingInfos[" + std::to_string(i) + "].address";
+            skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT()",
+                                                                      address_name, bindingInfo.address, LogObjectList(device));
         }
 
         const auto *buffer_handle = LvlFindInChain<VkDescriptorBufferBindingPushDescriptorBufferHandleEXT>(pBindingInfos[i].pNext);
@@ -3700,37 +3774,6 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                              "].pNext contains a VkDescriptorBufferBindingPushDescriptorBufferHandleEXT structure, "
                              "but VkPhysicalDeviceDescriptorBufferPropertiesEXT::bufferlessPushDescriptors is VK_TRUE",
                              i);
-        }
-
-        if (bindingInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
-            ++num_sampler_buffers;
-
-            if (!buffer_state || (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) == 0)
-                skip |= LogError(device, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08122",
-                                 "vkCmdBindDescriptorBuffersEXT(): If usage includes "
-                                 "VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address "
-                                 "within a valid buffer that was created with VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT");
-        }
-
-        if (bindingInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
-            ++num_resource_buffers;
-
-            if (!buffer_state || (buffer_state->createInfo.usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) == 0)
-                skip |= LogError(device, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08123",
-                                 "vkCmdBindDescriptorBuffersEXT(): If usage includes "
-                                 "VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, address must be an address "
-                                 "within a valid buffer that was created with VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT");
-        }
-
-        if (bindingInfo.usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
-            ++num_push_descriptor_buffers;
-
-            if (!buffer_state || (buffer_state->createInfo.usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) == 0)
-                skip |= LogError(device, "VUID-VkDescriptorBufferBindingInfoEXT-usage-08124",
-                                 "vkCmdBindDescriptorBuffersEXT(): If usage includes "
-                                 "VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT, "
-                                 "address must be an address within a valid buffer that was created with "
-                                 "VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT");
         }
     }
 
@@ -4010,18 +4053,26 @@ bool CoreChecks::ValidateDescriptorAddressInfoEXT(VkDevice device, const VkDescr
     }
 
     const auto buffer_states = GetBuffersByAddress(address_info->address);
-    // TODO : Issue 4556 properly go through the list of buffers
-    const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
-    if ((address_info->address != 0) && (buffer_state == nullptr)) {
+    if ((address_info->address != 0) && buffer_states.empty()) {
         skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-None-08044",
                          "VkDescriptorAddressInfoEXT: address not 0 or a valid buffer address.");
-    }
+    } else {
+        using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+        BufferAddressValidation<1> buffer_address_validator = {
+            {{{"VUID-VkDescriptorAddressInfoEXT-range-08045",
+               [&address_info](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+                   if (address_info->range >
+                       buffer_state->createInfo.size - (address_info->address - buffer_state->deviceAddress)) {
+                       if (out_error_msg) {
+                           *out_error_msg += "range goes past buffer end";
+                       }
+                       return false;
+                   }
+                   return true;
+               }}}}};
 
-    if (buffer_state) {
-        if (address_info->range > buffer_state->createInfo.size - (address_info->address - buffer_state->deviceAddress)) {
-            skip |= LogError(device, "VUID-VkDescriptorAddressInfoEXT-range-08045",
-                             "VkDescriptorAddressInfoEXT: range passes the end of the buffer");
-        }
+        skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, "vkCmdBindDescriptorBuffersEXT", "address",
+                                                                  address_info->address, LogObjectList(device));
     }
 
     if (address_info->range == VK_WHOLE_SIZE) {
@@ -4140,15 +4191,26 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
             break;
     }
 
+    std::string_view vuid_memory_bound = "";
+    using BUFFER_STATE_PTR = ValidationStateTracker::BUFFER_STATE_PTR;
+    BufferAddressValidation<1> buffer_address_validator = {
+        {{{"", [this, device, &vuid_memory_bound](const BUFFER_STATE_PTR &buffer_state, std::string *out_error_msg) {
+               if (!out_error_msg) {
+                   return !buffer_state->sparse && buffer_state->IsMemoryBound();
+               } else {
+                   return ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()", vuid_memory_bound.data());
+               }
+           }}}}};
+
     switch (pDescriptorInfo->type) {
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
             if (pDescriptorInfo->data.pUniformBuffer) {
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
-                // TODO : Issue 4556 properly go through the list of buffers
-                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
-                if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
-                                                          "VUID-VkDescriptorDataEXT-type-08030");
+                if (!buffer_states.empty()) {
+                    vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08030";
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
+                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08039",
@@ -4159,11 +4221,11 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
             if (pDescriptorInfo->data.pStorageBuffer) {
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
-                // TODO : Issue 4556 properly go through the list of buffers
-                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
-                if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
-                                                          "VUID-VkDescriptorDataEXT-type-08031");
+                if (!buffer_states.empty()) {
+                    vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08031";
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
+                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08040",
@@ -4174,11 +4236,11 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pUniformTexelBuffer) {
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
-                // TODO : Issue 4556 properly go through the list of buffers
-                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
-                if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
-                                                          "VUID-VkDescriptorDataEXT-type-08032");
+                if (!buffer_states.empty()) {
+                    vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08032";
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
+                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08037",
@@ -4189,11 +4251,11 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
         case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
             if (pDescriptorInfo->data.pStorageTexelBuffer) {
                 const auto buffer_states = GetBuffersByAddress(pDescriptorInfo->data.pUniformBuffer->address);
-                // TODO : Issue 4556 properly go through the list of buffers
-                const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
-                if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
-                                                          "VUID-VkDescriptorDataEXT-type-08033");
+                if (!buffer_states.empty()) {
+                    vuid_memory_bound = "VUID-VkDescriptorDataEXT-type-08033";
+                    skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(
+                        *this, buffer_states, "vkGetDescriptorEXT()", "pDescriptorInfo->data.pUniformBuffer->address",
+                        pDescriptorInfo->data.pUniformBuffer->address, LogObjectList(device));
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(device, "VUID-VkDescriptorDataEXT-type-08038",

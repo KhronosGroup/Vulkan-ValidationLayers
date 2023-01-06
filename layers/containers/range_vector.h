@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2022 The Khronos Group Inc.
+/* Copyright (c) 2019-2023 The Khronos Group Inc.
  * Copyright (c) 2019-2023 Valve Corporation
  * Copyright (c) 2019-2023 LunarG, Inc.
- * Copyright (C) 2019-2022 Google Inc.
+ * Copyright (C) 2019-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include <cassert>
 #include <limits>
 #include <map>
+#include <string>
+#include <sstream>
 #include <utility>
 #include <cstdint>
 #include "custom_containers.h"
@@ -139,6 +141,13 @@ class range_view {
   private:
     const Range &range_;
 };
+
+template <typename Range>
+std::string string_range_hex(const Range &range) {
+    std::stringstream ss;
+    ss << std::hex << "[0x" << range.begin << ", 0x" << range.end << ')';
+    return ss.str();
+}
 
 // Type parameters for the range_map(s)
 struct insert_range_no_split_bounds {
