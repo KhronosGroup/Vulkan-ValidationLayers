@@ -224,6 +224,13 @@ elseif(MSVC)
     add_compile_options("$<$<CONFIG:Release>:/Zi>")
     add_link_options("$<$<CONFIG:Release>:/DEBUG:FULL>")
 
+    # Enable /LTCG (Link-time code generation)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    # Remove unreferenced code/data.
+    add_link_options("$<$<CONFIG:Release>:/OPT:REF>")
+    # Merge duplicate data/functions
+    add_link_options("$<$<CONFIG:Release>:/OPT:ICF>")
+
     # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
 
