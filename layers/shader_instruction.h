@@ -16,13 +16,13 @@
  *
  * The Shader Instruction file is in charge of holding instruction information
  */
-#ifndef VULKAN_SHADER_INSTRUCTION_H
-#define VULKAN_SHADER_INSTRUCTION_H
+#pragma once
 
-#include <stddef.h>  // size_t for gcc
-#include <stdint.h>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <string>
 #include <vector>
-#include <assert.h>
 #include "vk_layer_data.h"
 #include <spirv/unified1/spirv.hpp>
 
@@ -92,4 +92,3 @@ class Instruction {
     uint32_t type_id_;
 };
 
-#endif  // VULKAN_SHADER_INSTRUCTION_H
