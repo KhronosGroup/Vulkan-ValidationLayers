@@ -22,10 +22,6 @@ find_package(GTest REQUIRED CONFIG)
 # glslang is required for testing framework
 find_package(glslang CONFIG REQUIRED)
 
-if(MSVC_IDE)
-    file(COPY vk_layer_validation_tests.vcxproj.user DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
 if(MSVC)
     # If MSVC, disable some signed/unsigned mismatch warnings.
     add_compile_options(/wd4267)
@@ -105,6 +101,10 @@ target_include_directories(vk_layer_validation_tests PRIVATE
 if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
     # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
     target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
+endif()
+
+if(MSVC_IDE)
+    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$(SolutionDir)\\layers\\$(Configuration)")
 endif()
 
 if (NOT MSVC)
