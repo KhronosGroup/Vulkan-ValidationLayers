@@ -162,6 +162,7 @@ core_validation_sources = [
   "layers/pipeline_validation.cpp",
   "layers/qfo_transfer.h",
   "layers/query_state.h",
+  "layers/query_validation.cpp",
   "layers/queue_state.cpp",
   "layers/queue_state.h",
   "layers/range_vector.h",
