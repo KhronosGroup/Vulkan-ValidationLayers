@@ -115,7 +115,6 @@ core_validation_sources = [
   "layers/buffer_state.cpp",
   "layers/buffer_state.h",
   "layers/buffer_validation.cpp",
-  "layers/buffer_validation.h",
   "layers/cmd_buffer_state.cpp",
   "layers/cmd_buffer_state.h",
   "layers/convert_to_renderpass2.cpp",
