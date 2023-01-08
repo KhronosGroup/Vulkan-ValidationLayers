@@ -63,6 +63,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/parameter_validation_utils.cpp',
     'layers/pipeline_validation.cpp',
     'layers/object_tracker_utils.cpp',
+    'layers/query_validation.cpp',
     'layers/ray_tracing_validation.cpp',
     'layers/shader_module.cpp',
     'layers/shader_validation.cpp',
