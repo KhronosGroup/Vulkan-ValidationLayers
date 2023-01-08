@@ -69,7 +69,6 @@
 #include "chassis.h"
 #include "convert_to_renderpass2.h"
 #include "core_validation.h"
-#include "buffer_validation.h"
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
 #include "sync_utils.h"

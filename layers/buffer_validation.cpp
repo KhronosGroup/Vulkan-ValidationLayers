@@ -42,7 +42,6 @@
 #include "core_error_location.h"
 #include "shader_validation.h"
 #include "descriptor_sets.h"
-#include "buffer_validation.h"
 #include "sync_utils.h"
 #include "sync_vuid_maps.h"
 
@@ -4781,7 +4780,7 @@ void CoreChecks::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const
                        pBlitImageInfo->filter);
 }
 
-GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
+static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     // This approach allows for a single hash lookup or/create new
     auto &layout_map = map[&image_state];
     if (!layout_map) {
@@ -4790,7 +4789,7 @@ GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IM
     return &(*layout_map);
 }
 
-const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
+static const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
     auto it = map.find(&image_state);
     if (it != map.end()) {
         return &(*it->second);
