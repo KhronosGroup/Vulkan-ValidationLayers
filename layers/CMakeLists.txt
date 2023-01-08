@@ -153,6 +153,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     base_node.cpp
     device_memory_state.h
     device_memory_state.cpp
+    device_memory_validation.cpp
     buffer_state.h
     buffer_state.cpp
     cmd_buffer_state.h
