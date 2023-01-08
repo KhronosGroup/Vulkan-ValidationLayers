@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2021 The Khronos Group Inc.
- * Copyright (c) 2015-2021 Valve Corporation
- * Copyright (c) 2015-2021 LunarG, Inc.
- * Copyright (C) 2015-2021 Google Inc.
+/* Copyright (c) 2015-2021, 2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2021, 2023 Valve Corporation
+ * Copyright (c) 2015-2021, 2023 LunarG, Inc.
+ * Copyright (C) 2015-2021, 2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,6 @@
 #include <utility>
 #include <algorithm>
 #include <bitset>
-
-uint32_t FullMipChainLevels(uint32_t height, uint32_t width = 1, uint32_t depth = 1);
-uint32_t FullMipChainLevels(VkExtent3D);
-uint32_t FullMipChainLevels(VkExtent2D);
 
 GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, const IMAGE_STATE &image_state);
 const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image);
