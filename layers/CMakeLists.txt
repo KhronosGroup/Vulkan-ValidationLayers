@@ -143,6 +143,7 @@ set(CHASSIS_LIBRARY_FILES
     sync_utils.h)
 
 set(CORE_VALIDATION_LIBRARY_FILES
+    android_validation.cpp
     core_validation.cpp
     core_validation.h
     core_validation_error_enums.h

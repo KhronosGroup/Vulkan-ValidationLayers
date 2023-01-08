@@ -347,6 +347,11 @@ static inline uint32_t GetBitSetCount(uint32_t field) {
     return static_cast<uint32_t>(view_bits.count());
 }
 
+static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
+    // uint cast applies floor()
+    return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
+}
+
 extern "C" {
 #endif
 

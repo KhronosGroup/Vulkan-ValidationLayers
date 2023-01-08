@@ -52,6 +52,7 @@ spirvtools_path = None # default is to not search for repo
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
 
 layer_source_files = [common_codegen.repo_relative(path) for path in [
+    'layers/android_validation.cpp',
     'layers/buffer_validation.cpp',
     'layers/core_validation.cpp',
     'layers/cmd_buffer_state.cpp', # some Video VUIDs are in here
