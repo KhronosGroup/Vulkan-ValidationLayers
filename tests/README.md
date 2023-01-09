@@ -20,6 +20,15 @@ The tests are grouped into different categories. Some of the main test categorie
 - `VkGpuAssistedLayerTest` - Test [GPU-Assisted Validation](../docs/gpu_validation.md)
 - `VkPortabilitySubsetTest` - Test [VK_KHR_portability_subset validation](../docs/portability_validation.md)
 
+## Implicit Layers note
+
+In general, the implicit validation layers may change the expected message output, which may cause some tests to fail. One solution is to disable the implicit layer during the test session using the `VK_LOADER_LAYERS_DISABLE` environment variable introduced in Vulkan Loader v.1.3.234.
+
+Here is an example with OBS implicit layer:
+```bash
+export VK_LOADER_LAYERS_DISABLE=VK_LAYER_OBS_HOOK
+```
+
 ## Running Test on Linux
 
 **IMPORTANT** Make sure you have the correct `VK_LAYER_PATH` set on Linux
