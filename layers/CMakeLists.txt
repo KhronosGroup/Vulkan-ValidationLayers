@@ -67,6 +67,18 @@ if (USE_ROBIN_HOOD_HASHING)
     target_compile_definitions(robin_hood::robin_hood INTERFACE USE_ROBIN_HOOD_HASHING)
 endif()
 
+# Using mimalloc on non-Windows OSes currently results in unit test instability with some
+# OS version / driver combinations. On 32-bit systems, using mimalloc cause an increase in
+# the amount of virtual address space needed, which can also cause stability problems.
+if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+   find_package(mimalloc CONFIG)
+   option(USE_MIMALLOC "Use mimalloc, a fast malloc/free replacement library" ${mimalloc_FOUND})
+   if (USE_MIMALLOC)
+      target_compile_definitions(mimalloc-static INTERFACE USE_MIMALLOC)
+      target_link_libraries(VkLayer_utils PRIVATE mimalloc-static)
+   endif()
+endif()
+
 # Currently repos like LunarG/VulkanTools require source code from VVL
 # This results in VkLayer_utils needing to be installed. Ideally this is
 # cleaned up in the future since this is a result of history involving the mono-repo.
@@ -313,7 +325,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
 )
 
 target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
-target_link_libraries(VkLayer_khronos_validation PRIVATE VkLayer_utils)
 
 if(WIN32)
     target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
@@ -332,7 +343,9 @@ if (USE_ROBIN_HOOD_HASHING)
     # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
     target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
 endif()
-target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS)
+# Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
+# Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.
+target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS VkLayer_utils)
 
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)
