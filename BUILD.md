@@ -101,6 +101,10 @@ version of that dependency.
 - [robin-hood-hashing repository](https://github.com/martinus/robin-hood-hashing)
     - This is a header-only reimplementation of `std::unordered_map` and `std::unordered_set` which provides substantial performance improvements on all platforms.
     - You must clone this repository and build its `install` target
+- [mimalloc repository](https://github.com/microsoft/mimalloc)
+    - This is a reimplementation of malloc()/free() and their c++ equivalents.
+    - It is currently only used for windows 64 bit builds, where it is statically linked into the layer.
+    - For window 64 bit builds, you must clone this repository and build its `install` target
 
 For running the tests:
 
