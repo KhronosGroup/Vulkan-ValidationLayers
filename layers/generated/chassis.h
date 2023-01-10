@@ -4086,6 +4086,9 @@ class ValidationObject {
         // Wrap a newly created handle with a new unique ID, and return the new ID.
         template <typename HandleType>
         HandleType WrapNew(HandleType newlyCreatedHandle) {
+            // The assert is a safeguard against potential bugs in other layers or the loader.
+            // According to specification, a successfully created non-dispatchable object can not be VK_NULL_HANDLE.
+            assert(newlyCreatedHandle != VK_NULL_HANDLE);
             auto unique_id = global_unique_id++;
             unique_id = HashedUint64::hash(unique_id);
             unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
