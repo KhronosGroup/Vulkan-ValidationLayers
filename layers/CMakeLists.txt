@@ -18,13 +18,6 @@
 find_package(PythonInterp 3 QUIET)
 
 if (PYTHONINTERP_FOUND)
-    # Vulkan::Registry is treated as a header only library,
-    # in order to grab the registry directory we grab the include directory.
-    get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-    if (NOT EXISTS "${VulkanRegistry_DIR}/vk.xml")
-        message(FATAL_ERROR "Unable to find vk.xml")
-    endif()
-
     # Get the include directory of the SPIRV-Headers
     get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
 
@@ -39,7 +32,7 @@ if (PYTHONINTERP_FOUND)
     endif()
 
     add_custom_target(VulkanVL_generated_source
-        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VulkanRegistry_DIR} ${spirv_unified_include_dir} --incremental
+        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir} --incremental
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
     )
 
