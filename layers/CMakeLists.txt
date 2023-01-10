@@ -166,7 +166,6 @@ set(CORE_VALIDATION_LIBRARY_FILES
     generated/command_validation.cpp
     generated/synchronization_validation_types.cpp
     gpu_validation.cpp
-    generated/corechecks_optick_instrumentation.cpp
     xxhash.c
     xxhash.h)
 
@@ -209,36 +208,6 @@ set(GPU_UTILITY_LIBRARY_FILES
 set(SYNC_VALIDATION_LIBRARY_FILES
     synchronization_validation.cpp
     synchronization_validation.h)
-
-# Validation Layer performance instrumentation support using Optick.
-# https://optick.dev/ https://github.com/bombomby/optick
-# To include Optick instrumentation:
-# 1) Download the Optick 1.3.1 release: https://github.com/bombomby/optick/releases/tag/1.3.1.0
-# 2) Copy the files from the src directory to external/optick.
-# 3) Run CMake configure with -DINSTRUMENT_OPTICK.
-set(OPTICK_SOURCE_DIR "${PROJECT_SOURCE_DIR}/external/optick")
-if(INSTRUMENT_OPTICK)
-    # Optick Instrumentation currently supported only on Microsoft toolchain.
-    if(MSVC)
-        if(IS_DIRECTORY "${OPTICK_SOURCE_DIR}")
-            file(GLOB OPTICK_SOURCE_FILES "${OPTICK_SOURCE_DIR}/*.*")
-            source_group("Optick Lib" FILES ${OPTICK_SOURCE_FILES})
-            # Disable GPU performance measurements (timestamp queries).
-            # Not needed for CPU Validation Layer measurements, but would be interesting to try someday.
-            # We'll need to map Vulkan API calls into the layer stack API entry points in order to build.
-            set(KHRONOS_LAYER_COMPILE_DEFINITIONS
-                -DINSTRUMENT_OPTICK
-                -DOPTICK_ENABLE_GPU_D3D12=0
-                -DOPTICK_ENABLE_GPU_VULKAN=0)
-        else()
-            message(WARNING "Optick sources not found at ${OPTICK_SOURCE_DIR} - continuing without instrumentation.")
-            set(INSTRUMENT_OPTICK OFF)
-        endif()
-    else()
-        message(WARNING "Optick instrumentation not supported on this platform - continuing without instrumentation.")
-        set(INSTRUMENT_OPTICK OFF)
-    endif()
-endif()
 
 # NOTE: LunarG/VulkanTools disables BUILD_LAYERS and BUILD_TESTS to minimize dependencies.
 if (NOT BUILD_LAYERS)
@@ -308,7 +277,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     ${GPU_ASSISTED_LIBRARY_FILES}
     ${DEBUG_PRINTF_LIBRARY_FILES}
     ${SYNC_VALIDATION_LIBRARY_FILES}
-    ${OPTICK_SOURCE_FILES}
 )
 
 target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
@@ -323,9 +291,6 @@ else()
 endif()
 
 # Khronos validation additional dependencies
-if(INSTRUMENT_OPTICK)
-    target_include_directories(VkLayer_khronos_validation PRIVATE ${OPTICK_SOURCE_DIR})
-endif()
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
     # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2022 The Khronos Group Inc.
-# Copyright (c) 2021-2022 Valve Corporation
-# Copyright (c) 2021-2022 LunarG, Inc.
-# Copyright (c) 2021-2022 Google Inc.
+# Copyright (c) 2021-2023 The Khronos Group Inc.
+# Copyright (c) 2021-2023 Valve Corporation
+# Copyright (c) 2021-2023 LunarG, Inc.
+# Copyright (c) 2021-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -77,9 +77,7 @@ def main(argv):
                                               "command_validation.cpp",
                                               "command_validation.h",
                                               "vk_format_utils.cpp",
-                                              "vk_format_utils.h",
-                                              "corechecks_optick_instrumentation.cpp",
-                                              "corechecks_optick_instrumentation.h"]],
+                                              "vk_format_utils.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
                  '-export_header'],
