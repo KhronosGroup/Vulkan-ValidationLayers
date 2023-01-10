@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3270,9 +3270,10 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
 
                 if (create_info.pColorBlendState != nullptr && uses_color_attachment) {
-                    skip |= ValidatePipelineColorBlendStateCreateInfo(*create_info.pColorBlendState, i);
+                    auto const &color_blend_state = *create_info.pColorBlendState;
+                    skip |= ValidatePipelineColorBlendStateCreateInfo(color_blend_state, i);
 
-                    if ((create_info.pColorBlendState->flags &
+                    if ((color_blend_state.flags &
                          VK_PIPELINE_COLOR_BLEND_STATE_CREATE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_BIT_ARM) != 0) {
                         const auto *rasterization_order_attachment_access_feature =
                             LvlFindInChain<VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM>(device_createinfo_pnext);
@@ -3286,26 +3287,25 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 "VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesARM::"
                                 "rasterizationColorAttachmentAccess == VK_FALSE, but "
                                 "VkPipelineColorBlendStateCreateInfo::flags == %s",
-                                string_VkPipelineColorBlendStateCreateFlags(create_info.pColorBlendState->flags).c_str());
+                                string_VkPipelineColorBlendStateCreateFlags(color_blend_state.flags).c_str());
                         }
 
                         if ((subpass_flags & VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_ARM) == 0) {
-                            skip |=
-                                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06484",
-                                         "VkPipelineColorBlendStateCreateInfo::flags == %s but "
-                                         "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
-                                         string_VkPipelineColorBlendStateCreateFlags(create_info.pColorBlendState->flags).c_str(),
-                                         string_VkSubpassDescriptionFlags(subpass_flags).c_str());
+                            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-06484",
+                                             "VkPipelineColorBlendStateCreateInfo::flags == %s but "
+                                             "VkRenderPassCreateInfo::VkSubpassDescription::flags == %s",
+                                             string_VkPipelineColorBlendStateCreateFlags(color_blend_state.flags).c_str(),
+                                             string_VkSubpassDescriptionFlags(subpass_flags).c_str());
                         }
                     }
 
-                    if (create_info.pColorBlendState->pAttachments != nullptr) {
-                        const VkBlendOp first_color_blend_op = create_info.pColorBlendState->pAttachments[0].colorBlendOp;
-                        const VkBlendOp first_alpha_blend_op = create_info.pColorBlendState->pAttachments[0].alphaBlendOp;
-                        for (uint32_t attachment_index = 0; attachment_index < create_info.pColorBlendState->attachmentCount;
+                    if (color_blend_state.pAttachments != nullptr) {
+                        const VkBlendOp first_color_blend_op = color_blend_state.pAttachments[0].colorBlendOp;
+                        const VkBlendOp first_alpha_blend_op = color_blend_state.pAttachments[0].alphaBlendOp;
+                        for (uint32_t attachment_index = 0; attachment_index < color_blend_state.attachmentCount;
                              ++attachment_index) {
                             const VkPipelineColorBlendAttachmentState attachment_state =
-                                create_info.pColorBlendState->pAttachments[attachment_index];
+                                color_blend_state.pAttachments[attachment_index];
 
                             skip |= ValidatePipelineColorBlendAttachmentState(attachment_state, i, attachment_index);
 
@@ -3423,11 +3423,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     }
 
                     // If logicOpEnable is VK_TRUE, logicOp must be a valid VkLogicOp value
-                    if (create_info.pColorBlendState->logicOpEnable == VK_TRUE) {
+                    if (color_blend_state.logicOpEnable == VK_TRUE) {
                         skip |= validate_ranged_enum(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pColorBlendState->logicOp", ParameterName::IndexVector{i}), "VkLogicOp",
-                            AllVkLogicOpEnums, create_info.pColorBlendState->logicOp,
+                            AllVkLogicOpEnums, color_blend_state.logicOp,
                             "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
                     }
                 }
