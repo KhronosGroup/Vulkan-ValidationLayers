@@ -351,36 +351,6 @@ def makeGenOpts(args):
             helper_file_type  = 'typemap_helper_header')
         ]
 
-    # Helper file generator options for corechecks_optick_instrumentation.h
-    genOpts['corechecks_optick_instrumentation.h'] = [
-          HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'corechecks_optick_instrumentation.h',
-            directory         = directory,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            helper_file_type  = 'optick_instrumentation_header')
-        ]
-
-    # Helper file generator options for corechecks_optick_instrumentation.cpp
-    genOpts['corechecks_optick_instrumentation.cpp'] = [
-          HelperFileOutputGenerator,
-          HelperFileOutputGeneratorOptions(
-            conventions       = conventions,
-            filename          = 'corechecks_optick_instrumentation.cpp',
-            directory         = directory,
-            versions          = featuresPat,
-            emitversions      = featuresPat,
-            addExtensions     = addExtensionsPat,
-            removeExtensions  = removeExtensionsPat,
-            emitExtensions    = emitExtensionsPat,
-            helper_file_type  = 'optick_instrumentation_source')
-        ]
-
     # Layer chassis related generation structs
     # Options for layer chassis header
     genOpts['chassis.h'] = [

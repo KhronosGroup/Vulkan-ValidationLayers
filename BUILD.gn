@@ -134,8 +134,6 @@ core_validation_sources = [
   "layers/drawdispatch.cpp",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
-  "layers/generated/corechecks_optick_instrumentation.cpp",
-  "layers/generated/corechecks_optick_instrumentation.h",
   "layers/generated/gpu_as_inspection_comp.h",
   "layers/generated/gpu_pre_dispatch_comp.h",
   "layers/generated/gpu_pre_draw_vert.h",
