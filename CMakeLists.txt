@@ -246,26 +246,6 @@ option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 
-if(BUILD_LAYERS OR BUILD_TESTS)
-    find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
-
-    find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
-
-    find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
-    # See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
-    # The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
-    # Try to handle all possible combinations so that we work with externally built packages.
-    if (TARGET SPIRV-Tools)
-        set(SPIRV_TOOLS_TARGET "SPIRV-Tools")
-    elseif(TARGET SPIRV-Tools-static)
-        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-static")
-    elseif(TARGET SPIRV-Tools-shared)
-        set(SPIRV_TOOLS_TARGET "SPIRV-Tools-shared")
-    else()
-        message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
-    endif()
-endif()
-
 # uninstall target ---------------------------------------------------------------------------------------------------------------
 if(NOT TARGET uninstall)
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"

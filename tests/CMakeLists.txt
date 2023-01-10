@@ -121,9 +121,7 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     glslang::HLSL
     glslang::SPIRV
     glslang::SPVRemapper
-    ${SPIRV_TOOLS_TARGET}
-    SPIRV-Tools-opt
-    SPIRV-Headers::SPIRV-Headers
+    VVL-SPIRV-LIBS
     GTest::gtest
     GTest::gtest_main
 )

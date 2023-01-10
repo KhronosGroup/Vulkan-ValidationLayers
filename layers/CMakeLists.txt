@@ -15,32 +15,6 @@
 # limitations under the License.
 # ~~~
 
-find_package(PythonInterp 3 QUIET)
-
-if (PYTHONINTERP_FOUND)
-    # Get the include directory of the SPIRV-Headers
-    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
-
-    set(spirv_unified_include_dir "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/")
-    if (NOT IS_DIRECTORY ${spirv_unified_include_dir})
-        message(FATAL_ERROR "Unable to find spirv/unified1")
-    endif()
-
-    set(generate_source_py "${VVL_SOURCE_DIR}/scripts/generate_source.py")
-    if (NOT EXISTS ${generate_source_py})
-        message(FATAL_ERROR "Unable to find generate_source.py!")
-    endif()
-
-    add_custom_target(VulkanVL_generated_source
-        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir} --incremental
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
-    )
-
-    set_target_properties(VulkanVL_generated_source PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-else()
-    message(NOTICE "VulkanVL_generated_source target requires python 3")
-endif()
-
 # XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
 # We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
 #
@@ -266,8 +240,59 @@ if(INSTRUMENT_OPTICK)
     endif()
 endif()
 
+# NOTE: LunarG/VulkanTools disables BUILD_LAYERS and BUILD_TESTS to minimize dependencies.
 if (NOT BUILD_LAYERS)
     return()
+endif()
+
+# Represents all SPIRV libraries we need
+add_library(VVL-SPIRV-LIBS INTERFACE)
+
+find_package(SPIRV-Headers REQUIRED CONFIG QUIET)
+target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Headers::SPIRV-Headers)
+
+find_package(SPIRV-Tools-opt REQUIRED CONFIG QUIET)
+target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-opt)
+
+find_package(SPIRV-Tools REQUIRED CONFIG QUIET)
+
+# See https://github.com/KhronosGroup/SPIRV-Tools/issues/3909 for background on this.
+# The targets available from SPIRV-Tools change depending on how SPIRV_TOOLS_BUILD_STATIC is set.
+# Try to handle all possible combinations so that we work with externally built packages.
+if (TARGET SPIRV-Tools)
+    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools)
+elseif(TARGET SPIRV-Tools-static)
+    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-static)
+elseif(TARGET SPIRV-Tools-shared)
+    target_link_libraries(VVL-SPIRV-LIBS INTERFACE SPIRV-Tools-shared)
+else()
+    message(FATAL_ERROR "Cannot determine SPIRV-Tools target name")
+endif()
+
+find_package(PythonInterp 3 QUIET)
+
+if (PYTHONINTERP_FOUND)
+    # Get the include directory of the SPIRV-Headers
+    get_target_property(SPIRV_HEADERS_INCLUDE_DIR SPIRV-Headers::SPIRV-Headers INTERFACE_INCLUDE_DIRECTORIES)
+
+    set(spirv_unified_include_dir "${SPIRV_HEADERS_INCLUDE_DIR}/spirv/unified1/")
+    if (NOT IS_DIRECTORY ${spirv_unified_include_dir})
+        message(FATAL_ERROR "Unable to find spirv/unified1")
+    endif()
+
+    set(generate_source_py "${VVL_SOURCE_DIR}/scripts/generate_source.py")
+    if (NOT EXISTS ${generate_source_py})
+        message(FATAL_ERROR "Unable to find generate_source.py!")
+    endif()
+
+    add_custom_target(VulkanVL_generated_source
+        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir} --incremental
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
+    )
+
+    set_target_properties(VulkanVL_generated_source PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+else()
+    message(NOTICE "VulkanVL_generated_source target requires python 3")
 endif()
 
 add_library(VkLayer_khronos_validation MODULE)
@@ -306,11 +331,7 @@ if (USE_ROBIN_HOOD_HASHING)
     # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
     target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
 endif()
-target_link_libraries(VkLayer_khronos_validation PRIVATE
-    ${SPIRV_TOOLS_TARGET}
-    SPIRV-Tools-opt
-    SPIRV-Headers::SPIRV-Headers
-)
+target_link_libraries(VkLayer_khronos_validation PRIVATE VVL-SPIRV-LIBS)
 
 # There are 2 primary deliverables for the validation layers.
 # - The actual library VkLayer_khronos_validation.(dll|so|dylib)
