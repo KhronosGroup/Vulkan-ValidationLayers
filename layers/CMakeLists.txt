@@ -142,6 +142,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     ray_tracing_validation.cpp
     render_pass_state.h
     render_pass_state.cpp
+    render_pass_validation.cpp
     video_session_state.h
     video_session_state.cpp
     video_validation.cpp

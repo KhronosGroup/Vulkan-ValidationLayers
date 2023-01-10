@@ -171,6 +171,7 @@ core_validation_sources = [
   "layers/ray_tracing_validation.cpp",
   "layers/render_pass_state.cpp",
   "layers/render_pass_state.h",
+  "layers/render_pass_validation.cpp",
   "layers/sampler_state.h",
   "layers/shader_module.cpp",
   "layers/shader_module.h",
