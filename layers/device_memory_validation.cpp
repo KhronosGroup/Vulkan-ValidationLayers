@@ -1292,11 +1292,23 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         report_data->FormatHandle(swapchain_info->swapchain).c_str());
                 }
                 auto swapchain_state = Get<SWAPCHAIN_NODE>(swapchain_info->swapchain);
-                if (swapchain_state && swapchain_state->images.size() <= swapchain_info->imageIndex) {
-                    skip |= LogError(bind_info.image, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
-                                     "%s: imageIndex (%i) is out of bounds of %s images (size: %i)", error_prefix,
-                                     swapchain_info->imageIndex, report_data->FormatHandle(swapchain_info->swapchain).c_str(),
-                                     static_cast<int>(swapchain_state->images.size()));
+                if (swapchain_state) {
+                    if (swapchain_state->images.size() <= swapchain_info->imageIndex) {
+                        skip |= LogError(bind_info.image, "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
+                                         "%s: imageIndex (%" PRIu32 ") is out of bounds of %s images (size: %zu)", error_prefix,
+                                         swapchain_info->imageIndex, report_data->FormatHandle(swapchain_info->swapchain).c_str(),
+                                         swapchain_state->images.size());
+                    }
+                    if (IsExtEnabled(device_extensions.vk_ext_swapchain_maintenance1) &&
+                        (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
+                        if (swapchain_state->images[swapchain_info->imageIndex].acquired == false) {
+                            skip |= LogError(
+                                bind_info.image, "VUID-VkBindImageMemorySwapchainInfoKHR-swapchain-07756",
+                                "%s: The swapchain was created with VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT but "
+                                "imageIndex (%" PRIu32 ") has not been acquired",
+                                error_prefix, swapchain_info->imageIndex);
+                        }
+                    }
                 }
             } else {
                 if (image_state->create_from_swapchain) {

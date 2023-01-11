@@ -470,6 +470,13 @@ class CoreChecks : public ValidationStateTracker {
     template <typename BufBarrier>
     bool ValidateBarrierQueueFamilies(const Location& loc, const CMD_BUFFER_STATE* cb_state, const BufBarrier& barrier,
                                       const BUFFER_STATE* state_data) const;
+    bool ValidateSwapchainPresentModesCreateInfo(VkPresentModeKHR present_mode, const char* func_name,
+                                                 VkSwapchainCreateInfoKHR const* create_info,
+                                                 const SURFACE_STATE* surface_state) const;
+    bool ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR present_mode, const char* func_name,
+                                                   VkSurfaceCapabilitiesKHR* capabilities,
+                                                   VkSwapchainCreateInfoKHR const* create_info,
+                                                   const SURFACE_STATE* surface_state) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
     bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE& pipeline) const;
@@ -1752,6 +1759,7 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                              VkImage* pSwapchainImages, VkResult result) override;
     bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const override;
+    bool PreCallValidateReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo) const override;
     bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
                                                   const VkSwapchainCreateInfoKHR* pCreateInfos,
                                                   const VkAllocationCallbacks* pAllocator,
