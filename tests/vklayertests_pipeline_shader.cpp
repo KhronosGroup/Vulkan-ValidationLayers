@@ -15636,6 +15636,56 @@ TEST_F(VkLayerTest, InvalidViewportCountWithExtendedDynamicState) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayNonDynamic) {
+    TEST_DESCRIPTION("Validate VkPipelineColorBlendStateCreateInfo array with no extensions");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto set_info = [](CreatePipelineHelper &helper) { helper.cb_ci_.pAttachments = nullptr; };
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354");
+}
+
+TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayDynamic) {
+    TEST_DESCRIPTION("Validate VkPipelineColorBlendStateCreateInfo array with VK_EXT_extended_dynamic_state3");
+
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
+    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
+        !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
+        GTEST_SKIP() << "features not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    {
+        const auto set_info = [](CreatePipelineHelper &helper) { helper.cb_ci_.pAttachments = nullptr; };
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
+    }
+
+    // invalid if using only some dynamic state
+    {
+        VkDynamicState dynamic_states[2] = {VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT};
+        VkPipelineDynamicStateCreateInfo dynamic_create_info = LvlInitStruct<VkPipelineDynamicStateCreateInfo>();
+        dynamic_create_info.pDynamicStates = dynamic_states;
+        dynamic_create_info.dynamicStateCount = 2;
+        const auto set_info = [dynamic_create_info](CreatePipelineHelper &helper) {
+            helper.cb_ci_.pAttachments = nullptr;
+            helper.dyn_state_ci_ = dynamic_create_info;
+        };
+
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353");
+    }
+}
+
 TEST_F(VkLayerTest, StorageImageWriteLessComponent) {
     TEST_DESCRIPTION("Test writing to image with less components.");
 
