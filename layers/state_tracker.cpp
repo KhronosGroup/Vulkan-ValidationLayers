@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -3872,6 +3872,13 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
         surface_state->AddParent(swapchain.get());
         surface_state->swapchain = swapchain.get();
         swapchain->surface = std::move(surface_state);
+        auto swapchain_present_modes_ci = LvlFindInChain<VkSwapchainPresentModesCreateInfoEXT>(pCreateInfo->pNext);
+        if (swapchain_present_modes_ci) {
+            const uint32_t present_mode_count = swapchain_present_modes_ci->presentModeCount;
+            swapchain->present_modes.reserve(present_mode_count);
+            std::copy(swapchain_present_modes_ci->pPresentModes, swapchain_present_modes_ci->pPresentModes + present_mode_count,
+                      std::back_inserter(swapchain->present_modes));
+        }
         Add(std::move(swapchain));
     } else {
         surface_state->swapchain = nullptr;
@@ -4195,7 +4202,28 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
 
     if (pSurfaceInfo->surface) {
         auto surface_state = Get<SURFACE_STATE>(pSurfaceInfo->surface);
-        surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+
+        const VkSurfacePresentModeEXT *surface_present_mode = LvlFindInChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext);
+        if ((!IsExtEnabled(device_extensions.vk_ext_surface_maintenance1)) || (!surface_present_mode)) {
+            surface_state->SetCapabilities(physicalDevice, pSurfaceCapabilities->surfaceCapabilities);
+        } else {
+            const VkSurfacePresentScalingCapabilitiesEXT *present_scaling_caps =
+                LvlFindInChain<VkSurfacePresentScalingCapabilitiesEXT>(pSurfaceCapabilities->pNext);
+            const VkSurfacePresentModeCompatibilityEXT *compatible_modes =
+                LvlFindInChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
+        
+            if (compatible_modes && compatible_modes->pPresentModes) {
+                
+                surface_state->SetCompatibleModes(
+                    physicalDevice, surface_present_mode->presentMode,
+                    std::vector<VkPresentModeKHR>(compatible_modes->pPresentModes,
+                                                  compatible_modes->pPresentModes + compatible_modes->presentModeCount));
+            }
+            if (present_scaling_caps) {
+                surface_state->SetPresentModeCapabilities(physicalDevice, surface_present_mode->presentMode,
+                                                          pSurfaceCapabilities->surfaceCapabilities, *present_scaling_caps);
+            }
+        }
     } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query) &&
                LvlFindInChain<VkSurfaceProtectedCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
         auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);

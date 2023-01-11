@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -288,6 +288,7 @@ struct SWAPCHAIN_IMAGE {
 class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     const safe_VkSwapchainCreateInfoKHR createInfo;
+    std::vector<VkPresentModeKHR> present_modes;
     std::vector<SWAPCHAIN_IMAGE> images;
     bool retired = false;
     bool exclusive_full_screen_access;
@@ -343,6 +344,12 @@ struct hash<GpuQueue> {
 }  // namespace std
 
 // State for VkSurfaceKHR objects.
+struct PresentModeState {
+    VkSurfaceCapabilitiesKHR surface_capabilities_;
+    VkSurfacePresentScalingCapabilitiesEXT scaling_capabilities_;
+    std::vector<VkPresentModeKHR> compatible_present_modes_;
+};
+
 // Parent -> child relationships in the object usage tree:
 //    SURFACE_STATE -> nothing
 class SURFACE_STATE : public BASE_NODE {
@@ -375,13 +382,26 @@ class SURFACE_STATE : public BASE_NODE {
     void SetCapabilities(VkPhysicalDevice phys_dev, const VkSurfaceCapabilitiesKHR &caps);
     VkSurfaceCapabilitiesKHR GetCapabilities(VkPhysicalDevice phys_dev) const;
 
+    void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                            std::vector<VkPresentModeKHR> &&compatible_modes);
+    std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const;
+
+    void SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                                    const VkSurfaceCapabilitiesKHR &caps, const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps);
+    VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
+                                                                const VkPresentModeKHR present_mode) const;
+    VkSurfacePresentScalingCapabilitiesEXT GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
+                                                                             const VkPresentModeKHR present_mode) const;
     SWAPCHAIN_NODE *swapchain{nullptr};
 
   private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
     mutable std::mutex lock_;
     mutable layer_data::unordered_map<GpuQueue, bool> gpu_queue_support_;
-    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkPresentModeKHR>> present_modes_;
     mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
     mutable layer_data::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
+    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkPresentModeKHR>> present_modes_;
+    mutable layer_data::unordered_map<VkPhysicalDevice,
+        layer_data::unordered_map<VkPresentModeKHR, std::shared_ptr<PresentModeState>>> maint1_present_modes_;
+
 };

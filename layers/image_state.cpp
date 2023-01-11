@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (C) 2015-2022 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
@@ -762,3 +762,101 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_de
     capabilities_[phys_dev] = result;
     return result;
 }
+
+void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                                       std::vector<VkPresentModeKHR> &&compatible_modes) {
+    auto guard = Lock();
+    assert(phys_dev);
+
+    // If this surface or the present_mode is not in the map, create and add the present_mode state
+    auto surface_map = maint1_present_modes_.find(phys_dev);
+    if ((surface_map == maint1_present_modes_.end()) || (surface_map->second.find(present_mode) == surface_map->second.end())) {
+        auto present_mode_state = std::make_shared<PresentModeState>();
+        present_mode_state->compatible_present_modes_ = compatible_modes;
+
+        // For every present mode in compatible modes, add present_mode_state for it in maint1_present_modes_
+        for (auto mode : compatible_modes) {
+                maint1_present_modes_[phys_dev][mode] = present_mode_state;
+        }
+    }
+}
+
+std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const {
+    auto guard = Lock();
+    assert(phys_dev);
+    auto iter = maint1_present_modes_.find(phys_dev);
+    if ((iter != maint1_present_modes_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
+        return (iter->second)[present_mode]->compatible_present_modes_;
+    }
+
+    // Compatible modes not in state tracker, call to get compatible modes
+    std::vector<VkPresentModeKHR> result;
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = surface();
+    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    surface_present_mode.presentMode = present_mode;
+    surface_info.pNext = &surface_present_mode;
+    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = LvlInitStruct<VkSurfacePresentModeCompatibilityEXT>();
+    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    surface_capabilities.pNext = &present_mode_compatibility;
+    DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
+    result.resize(present_mode_compatibility.presentModeCount);
+    present_mode_compatibility.pPresentModes = result.data();
+    DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
+    return result;
+}
+
+// Set the surface and scaling caps for this present mode
+void SURFACE_STATE::SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
+                                               const VkSurfaceCapabilitiesKHR &caps,
+                                               const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps) {
+    auto guard = Lock();
+    assert(phys_dev);
+    maint1_present_modes_[phys_dev][present_mode]->scaling_capabilities_ = scaling_caps;
+    maint1_present_modes_[phys_dev][present_mode]->surface_capabilities_ = caps;
+};
+
+// Get the surface caps this particular present mode
+VkSurfaceCapabilitiesKHR SURFACE_STATE::GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
+                                                                          const VkPresentModeKHR present_mode) const {
+    auto iter = maint1_present_modes_.find(phys_dev);
+    if ((iter != maint1_present_modes_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
+        return (iter->second)[present_mode]->surface_capabilities_;
+    }
+
+    // Present mode surface capabilties not in state tracker, call to get surface capabilities
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = surface();
+    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    surface_present_mode.presentMode = present_mode;
+    surface_info.pNext = &surface_present_mode;
+    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
+    return surface_capabilities.surfaceCapabilities;
+}
+
+// Get the scaling capabilities for this particular present mode
+VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapabilities(VkPhysicalDevice phys_dev,
+                                                                                        const VkPresentModeKHR present_mode) const {
+    auto iter = maint1_present_modes_.find(phys_dev);
+    if ((iter != maint1_present_modes_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
+        return (iter->second)[present_mode]->scaling_capabilities_;
+    }
+
+    // Present mode scaling capabilties not in state tracker, call to get scaling capabilities
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    surface_info.surface = surface();
+    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    surface_present_mode.presentMode = present_mode;
+    surface_info.pNext = &surface_present_mode;
+    VkSurfacePresentScalingCapabilitiesEXT scaling_caps = LvlInitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
+    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    surface_capabilities.pNext = &scaling_caps;
+    DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
+    return scaling_caps;
+}
+
+
+
+
+
