@@ -139,6 +139,7 @@ set(CORE_VALIDATION_LIBRARY_FILES
     buffer_state.cpp
     cmd_buffer_state.h
     cmd_buffer_state.cpp
+    cmd_buffer_dynamic_validation.cpp
     image_state.h
     image_state.cpp
     pipeline_state.h
