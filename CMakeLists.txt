@@ -175,10 +175,17 @@ if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
 endif()
 
-option(VVL_ENABLE_ASAN "Use address sanitization (specifically -fsanitize=address)" OFF)
+option(VVL_ENABLE_ASAN "Use address sanitization")
+option(VVL_ENABLE_TSAN "Use thread sanitizer")
 if (VVL_ENABLE_ASAN)
     add_compile_options(-fsanitize=address)
+    add_compile_options(-fno-omit-frame-pointer) # Get nicer stack traces in error messages
     add_link_options(-fsanitize=address)
+elseif (VVL_ENABLE_TSAN)
+    # Thread sanitizer cannot be used in combination with address sanitizer
+    add_compile_options(-fsanitize=thread)
+    add_compile_options(-fno-omit-frame-pointer) # Get nicer stack traces in error messages
+    add_link_options(-fsanitize=thread)
 endif()
 
 # Platform-specific compiler switches
