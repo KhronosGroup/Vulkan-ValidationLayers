@@ -4370,6 +4370,18 @@ bool CoreChecks::PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer,
                                    pResolveImageInfo->pRegions, CMD_RESOLVEIMAGE2);
 }
 
+// Validate that an image's sampleCount matches the requirement for a specific API call
+bool CoreChecks::ValidateImageSampleCount(const IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count, const char *location,
+                                          const std::string &msgCode) const {
+    bool skip = false;
+    if (image_state->createInfo.samples != sample_count) {
+        skip = LogError(image_state->image(), msgCode, "%s for %s was created with a sample count of %s but must be %s.", location,
+                        report_data->FormatHandle(image_state->image()).c_str(),
+                        string_VkSampleCountFlagBits(image_state->createInfo.samples), string_VkSampleCountFlagBits(sample_count));
+    }
+    return skip;
+}
+
 template <typename RegionType>
 bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,

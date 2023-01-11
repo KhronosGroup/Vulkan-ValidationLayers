@@ -4541,18 +4541,6 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     return skip;
 }
 
-// Validate that an image's sampleCount matches the requirement for a specific API call
-bool CoreChecks::ValidateImageSampleCount(const IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count, const char *location,
-                                          const std::string &msgCode) const {
-    bool skip = false;
-    if (image_state->createInfo.samples != sample_count) {
-        skip = LogError(image_state->image(), msgCode, "%s for %s was created with a sample count of %s but must be %s.", location,
-                        report_data->FormatHandle(image_state->image()).c_str(),
-                        string_VkSampleCountFlagBits(image_state->createInfo.samples), string_VkSampleCountFlagBits(sample_count));
-    }
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                 VkDeviceSize dataSize, const void *pData) const {
     bool skip = false;
