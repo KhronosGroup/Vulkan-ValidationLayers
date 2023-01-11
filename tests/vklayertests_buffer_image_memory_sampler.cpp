@@ -6023,7 +6023,9 @@ TEST_F(VkLayerTest, Sync2InvalidBarriers) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported";
     }
@@ -6811,7 +6813,9 @@ TEST_F(VkLayerTest, Sync2InvalidBarrierQueueFamily) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
     if (!CheckSynchronization2SupportAndInitState(this)) {
         GTEST_SKIP() << "Synchronization2 not supported, skipping test";
     }
@@ -9590,7 +9594,8 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddOptionalExtensions(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     const bool cubic_support = IsExtensionsEnabled(VK_IMG_FILTER_CUBIC_EXTENSION_NAME);
 
     enum FormatTypes { FLOAT, SINT, UINT };
@@ -11271,6 +11276,11 @@ TEST_F(VkLayerTest, InvalidSamplerFilterMinmax) {
 
     if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
         GTEST_SKIP() << "Did not find required device support for YcbcrSamplerConversion";
+    }
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
 
     VkSampler sampler;
@@ -14434,6 +14444,10 @@ TEST_F(VkLayerTest, CopyMutableDescriptors) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    // TODO - Currently not working on MockICD with Profiles
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
     auto mutable_descriptor_type_features = LvlInitStruct<VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(mutable_descriptor_type_features);

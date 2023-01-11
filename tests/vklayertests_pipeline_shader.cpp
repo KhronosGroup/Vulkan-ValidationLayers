@@ -10791,6 +10791,10 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (m_device->phy().properties().limits.maxTessellationPatchSize == 0) {
+        GTEST_SKIP() << "patchControlPoints not supported";
+    }
+
     char const *tcsSource = R"glsl(
         #version 450
         layout(location=0) out int x[];
@@ -11351,7 +11355,7 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendMaxBlendAttachment) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-01410");
 }
 
-TEST_F(VkLayerTest, InvlidPipelineDiscardRectangle) {
+TEST_F(VkLayerTest, InvalidPipelineDiscardRectangle) {
     TEST_DESCRIPTION("Create a graphics pipeline invalid VkPipelineDiscardRectangleStateCreateInfoEXT");
 
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -11359,6 +11363,10 @@ TEST_F(VkLayerTest, InvlidPipelineDiscardRectangle) {
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    // TODO - Currently not working on MockICD with Profiles
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -15296,7 +15304,7 @@ TEST_F(VkLayerTest, TestLocalSizeIdExecutionMode) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, TestComputeLocalWorkgroupSize) {
+TEST_F(VkLayerTest, ComputeLocalWorkgroupSize) {
     TEST_DESCRIPTION("Test size of local workgroud with requiredSubgroupSize.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);

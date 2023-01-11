@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2022 The Khronos Group Inc.
- * Copyright (c) 2020-2022 Valve Corporation
- * Copyright (c) 2020-2022 LunarG, Inc.
- * Copyright (c) 2020-2022 Google, Inc.
+ * Copyright (c) 2020-2023 The Khronos Group Inc.
+ * Copyright (c) 2020-2023 Valve Corporation
+ * Copyright (c) 2020-2023 LunarG, Inc.
+ * Copyright (c) 2020-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,15 @@ VkValidationFeaturesEXT VkGpuAssistedLayerTest::GetValidationFeatures() {
 
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
 bool VkGpuAssistedLayerTest::CanEnableGpuAV() {
+    // Check version first before trying to call GetPhysicalDeviceFeatures2
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("At least Vulkan version 1.1 is required for GPU-AV\n");
+        return false;
+    }
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2>();
     GetPhysicalDeviceFeatures2(features2);
     if (!features2.features.fragmentStoresAndAtomics || !features2.features.vertexPipelineStoresAndAtomics) {
         printf("fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics are required for GPU-AV\n");
-        return false;
-    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        printf("At least Vulkan version 1.1 is required for GPU-AV\n");
         return false;
     } else if (IsPlatform(kMockICD)) {
         printf("Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw\n");

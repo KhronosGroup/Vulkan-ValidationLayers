@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2022 The Khronos Group Inc.
- * Copyright (c) 2020-2022 Valve Corporation
- * Copyright (c) 2020-2022 LunarG, Inc.
+/* Copyright (c) 2020-2023 The Khronos Group Inc.
+ * Copyright (c) 2020-2023 Valve Corporation
+ * Copyright (c) 2020-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -219,7 +219,8 @@ TEST_F(VkLayerTest, DestroyInstanceAllocationCallbacksCompatibility) {
     }
 }
 
-TEST_F(VkLayerTest, DestroyInstanceHandleLeak) {
+// TODO - Currently can not be ran with Profile layer
+TEST_F(VkLayerTest, DISABLED_DestroyInstanceHandleLeak) {
     TEST_DESCRIPTION("Test vkDestroyInstance while leaking a VkDevice object.");
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!IsPlatform(kMockICD)) {

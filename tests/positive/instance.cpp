@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,10 @@ TEST_F(VkPositiveLayerTest, TwoInstances) {
     TEST_DESCRIPTION("Create two instances before destroy");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     VkInstance i1, i2, i3;
 

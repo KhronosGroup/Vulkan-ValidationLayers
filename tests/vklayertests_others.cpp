@@ -108,11 +108,16 @@ TEST_F(VkLayerTest, VersionCheckPromotedAPIs) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    // TODO - Currently not working on MockICD with Profiles using 1.0
+    // Seems API version is not being passed through correctly
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+
     PFN_vkGetPhysicalDeviceProperties2 vkGetPhysicalDeviceProperties2 =
         (PFN_vkGetPhysicalDeviceProperties2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2");
-    assert(vkGetPhysicalDeviceProperties2);
 
-    VkPhysicalDeviceProperties2 phys_dev_props_2{};
+    VkPhysicalDeviceProperties2 phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-API-Version-Violation");
     vkGetPhysicalDeviceProperties2(gpu(), &phys_dev_props_2);

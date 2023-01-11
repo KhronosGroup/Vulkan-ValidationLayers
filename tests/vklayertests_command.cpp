@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  * Modifications Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -4035,6 +4035,11 @@ TEST_F(VkLayerTest, ResolveImageLowSampleCount) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
     // Create two images of sample count 1 and try to Resolve between them
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
@@ -4088,6 +4093,11 @@ TEST_F(VkLayerTest, ResolveImageHighSampleCount) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00259");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
 
     // Create two images of sample count 4 and try to Resolve between them
 
@@ -4149,6 +4159,11 @@ TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
     // Create two images of different types and try to copy between them
     VkImageObj srcImage(m_device);
     VkImageObj dstImage(m_device);
@@ -4208,6 +4223,11 @@ TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
 
 TEST_F(VkLayerTest, ResolveImageLayoutMismatch) {
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
 
     // Create two images of different types and try to copy between them
     VkImageObj srcImage(m_device);
@@ -4288,6 +4308,11 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     PFN_vkCmdResolveImage2KHR vkCmdResolveImage2Function = nullptr;
     if (copy_commands2) {
         vkCmdResolveImage2Function = (PFN_vkCmdResolveImage2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCmdResolveImage2KHR");
+    }
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Create two images of different types and try to copy between them
@@ -4474,6 +4499,12 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
 
 TEST_F(VkLayerTest, ResolveImageImageType) {
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
     // Create images of different types and try to resolve between them
     VkImageObj srcImage2D(m_device);
     VkImageObj dstImage1D(m_device);
@@ -4565,6 +4596,11 @@ TEST_F(VkLayerTest, ResolveImageImageType) {
 TEST_F(VkLayerTest, ResolveImageSizeExceeded) {
     TEST_DESCRIPTION("Resolve Image with subresource region greater than size of src/dst image");
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
 
     VkImageObj srcImage2D(m_device);
     VkImageObj dstImage2D(m_device);
@@ -8110,6 +8146,11 @@ TEST_F(VkLayerTest, VerifyImgFilterCubicSamplerInCmdDraw) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
