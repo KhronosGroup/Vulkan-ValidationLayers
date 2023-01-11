@@ -117,6 +117,7 @@ core_validation_sources = [
   "layers/buffer_validation.cpp",
   "layers/cmd_buffer_state.cpp",
   "layers/cmd_buffer_state.h",
+  "layers/cmd_buffer_dynamic_validation.cpp",
   "layers/convert_to_renderpass2.cpp",
   "layers/convert_to_renderpass2.h",
   "layers/core_error_location.cpp",

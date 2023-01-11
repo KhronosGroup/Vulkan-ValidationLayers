@@ -44,6 +44,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/base_node.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_dynamic_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_layout_state.cpp
