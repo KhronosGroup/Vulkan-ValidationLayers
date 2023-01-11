@@ -4146,6 +4146,7 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
     // number of color attachments.  In this case, we don't add any color
     // blend attachments even though we have a color attachment.
 
+    AddOptionalExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -4159,7 +4160,10 @@ TEST_F(VkLayerTest, NumBlendAttachMismatch) {
         helper.pipe_ms_state_ci_ = pipe_ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042");
+    const char *vuid = IsExtensionsEnabled(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME)
+                           ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609"
+                           : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042";
+    CreatePipelineHelper::OneshotTest(*this, set_MSAA, kErrorBit, vuid);
 }
 
 TEST_F(VkLayerTest, CmdClearAttachmentTests) {
