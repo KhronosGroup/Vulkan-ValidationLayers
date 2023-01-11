@@ -3035,6 +3035,10 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported.";
     }
+    // TODO - Currently not working on MockICD with Profiles
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     bool imageless_framebuffer_support = IsExtensionsEnabled(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
 
@@ -3905,6 +3909,11 @@ TEST_F(VkLayerTest, WriteDescriptorSetYcbcr) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
 
     // Create Ycbcr conversion
     VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // guaranteed sampling support
@@ -5796,6 +5805,11 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     if (!ycbcr_features.samplerYcbcrConversion) {
         printf("test requires KHR multiplane extensions, not available.  Skipping.\n");
     } else {
+        if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                             VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT)) {
+            GTEST_SKIP() << "Required formats/features not supported";
+        }
+
         VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
         VkImageObj image_obj(m_device);
         VkFormatProperties format_props;
@@ -10263,7 +10277,13 @@ TEST_F(VkLayerTest, MutableDescriptorSetLayoutMissingFeature) {
 TEST_F(VkLayerTest, ImageSubresourceOverlapBetweenRenderPassAndDescriptorSets) {
     TEST_DESCRIPTION("Validate if attachments in render pass and descriptor set use the same image subresources");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (!features.shaderStorageImageWriteWithoutFormat) {
+        GTEST_SKIP() << "shaderStorageImageWriteWithoutFormat is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t width = 32;
@@ -10564,7 +10584,13 @@ TEST_F(VkLayerTest, TestDescriptorReadFromWriteAttachment) {
 TEST_F(VkLayerTest, TestDescriptorWriteFromReadAttachment) {
     TEST_DESCRIPTION("Validate writting to a descriptor that uses same image view as framebuffer read attachment");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (!features.fragmentStoresAndAtomics) {
+        GTEST_SKIP() << "fragmentStoresAndAtomics is not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState(&features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     const uint32_t width = 32;

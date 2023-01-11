@@ -1022,8 +1022,12 @@ TEST_F(VkPositiveLayerTest, CreatePipeineWithTessellationDomainOrigin) {
         "VkPipelineTessellationDomainOriginStateCreateInfo");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
+    AddRequiredExtensions(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
 
     if (!m_device->phy().features().tessellationShader) {
         GTEST_SKIP() << "Device does not support tessellation shaders";
@@ -3950,6 +3954,10 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
     TEST_DESCRIPTION("Pass duplicate structs to whose vk.xml definition contains allowduplicate=true");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
 
     VkInstance instance;
 

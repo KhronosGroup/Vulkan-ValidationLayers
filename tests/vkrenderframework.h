@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -340,7 +340,7 @@ class VkRenderFramework : public VkTestFramework {
     bool AddRequestedDeviceExtensions(const char *dev_ext_name);
     // Returns true if the device extension is enabled. This call is only valid _after_ previous `AddRequired*Extensions` calls and
     // InitFramework has been called.
-    // `dev_ext_name` msut be an instance extension name; false is returned for all instance extension names.
+    // `dev_ext_name` must be an instance extension name; false is returned for all instance extension names.
     bool CanEnableDeviceExtension(const std::string &dev_ext_name) const;
 };
 
