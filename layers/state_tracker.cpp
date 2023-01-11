@@ -4211,12 +4211,12 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                 LvlFindInChain<VkSurfacePresentScalingCapabilitiesEXT>(pSurfaceCapabilities->pNext);
             const VkSurfacePresentModeCompatibilityEXT *compatible_modes =
                 LvlFindInChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
-        
+
             if (compatible_modes && compatible_modes->pPresentModes) {
                 surface_state->SetCompatibleModes(
                     physicalDevice, surface_present_mode->presentMode,
-                    std::vector<VkPresentModeKHR>(compatible_modes->pPresentModes,
-                                                  compatible_modes->pPresentModes + compatible_modes->presentModeCount));
+                    layer_data::span<const VkPresentModeKHR>(compatible_modes->pPresentModes,
+                                                             compatible_modes->presentModeCount));
             }
             if (present_scaling_caps) {
                 surface_state->SetPresentModeCapabilities(physicalDevice, surface_present_mode->presentMode,
@@ -4265,7 +4265,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesK
         if (surface) {
             auto surface_state = Get<SURFACE_STATE>(surface);
             surface_state->SetPresentModes(physicalDevice,
-                                           std::vector<VkPresentModeKHR>(pPresentModes, pPresentModes + *pPresentModeCount));
+                                           layer_data::span<const VkPresentModeKHR>(pPresentModes, *pPresentModeCount));
         } else if (IsExtEnabled(instance_extensions.vk_google_surfaceless_query)) {
             auto pd_state = Get<PHYSICAL_DEVICE_STATE>(physicalDevice);
             assert(pd_state);

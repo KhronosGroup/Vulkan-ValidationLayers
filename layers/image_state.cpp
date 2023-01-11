@@ -701,7 +701,9 @@ bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) con
     return supported == VK_TRUE;
 }
 
-void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes) {
+// Save data from vkGetPhysicalDeviceSurfacePresentModes
+void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, layer_data::span<const VkPresentModeKHR> modes) {
+
     auto guard = Lock();
     assert(phys_dev);
     for (auto new_present_mode : modes) {
@@ -712,6 +714,7 @@ void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPre
     }
 }
 
+// Helper for data obtained from vkGetPhysicalDeviceSurfacePresentModesKHR
 std::vector<VkPresentModeKHR> SURFACE_STATE::GetPresentModes(VkPhysicalDevice phys_dev) const {
     auto guard = Lock();
     assert(phys_dev);
@@ -771,19 +774,21 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_de
 }
 
 void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                                       std::vector<VkPresentModeKHR> &&compatible_modes) {
+                                       layer_data::span<const VkPresentModeKHR> compatible_modes) {
     auto guard = Lock();
     assert(phys_dev);
 
-    // If this surface or the present_mode is not in the map, create and add the present_mode state
+    // If this surface or the present_mode is not in the map, or if the state structure has no value,
+    // create and add the new present_mode state structure for each of the compatible modes
     auto surface_map = present_modes_data_.find(phys_dev);
-    if ((surface_map == present_modes_data_.end()) || (surface_map->second.find(present_mode) == surface_map->second.end())) {
+    if ((surface_map == present_modes_data_.end()) || (surface_map->second.find(present_mode) == surface_map->second.end()) ||
+        (surface_map->second.find(present_mode)->second.has_value() == false)) {
         auto present_mode_state = std::make_shared<PresentModeState>();
-        present_mode_state->compatible_present_modes_ = compatible_modes;
+        present_mode_state->compatible_present_modes_.assign(compatible_modes.begin(), compatible_modes.end());
 
         // For every present mode in compatible modes, add present_mode_state for it in present_modes_data_
         for (auto mode : compatible_modes) {
-                present_modes_data_[phys_dev][mode] = present_mode_state;
+            present_modes_data_[phys_dev][mode] = present_mode_state;
         }
     }
 }
@@ -795,7 +800,7 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice
     if ((iter != present_modes_data_.end()) && (iter->second.find(present_mode) != iter->second.end())) {
         if (((iter->second)[present_mode]).has_value()) {
             auto &compatible_modes = *(iter->second)[present_mode];
-            if (compatible_modes->compatible_present_modes_.size() != 0) {
+            if (compatible_modes->compatible_present_modes_.empty()) {
                 return compatible_modes->compatible_present_modes_;
             }
         }
@@ -803,13 +808,13 @@ std::vector<VkPresentModeKHR> SURFACE_STATE::GetCompatibleModes(VkPhysicalDevice
 
     // Compatible modes not in state tracker, call to get compatible modes
     std::vector<VkPresentModeKHR> result;
-    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = surface();
-    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    auto surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    VkSurfacePresentModeCompatibilityEXT present_mode_compatibility = LvlInitStruct<VkSurfacePresentModeCompatibilityEXT>();
-    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    auto present_mode_compatibility = LvlInitStruct<VkSurfacePresentModeCompatibilityEXT>();
+    auto surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
     surface_capabilities.pNext = &present_mode_compatibility;
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     result.resize(present_mode_compatibility.presentModeCount);
@@ -846,12 +851,12 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetPresentModeSurfaceCapabilities(VkPhys
     }
 
     // Present mode surface capabilties not in state tracker, call to get surface capabilities
-    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = surface();
-    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    auto surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    auto surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return surface_capabilities.surfaceCapabilities;
 }
@@ -869,13 +874,13 @@ VkSurfacePresentScalingCapabilitiesEXT SURFACE_STATE::GetPresentModeScalingCapab
     }
 
     // Present mode scaling capabilties not in state tracker, call to get scaling capabilities
-    VkPhysicalDeviceSurfaceInfo2KHR surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
+    auto surface_info = LvlInitStruct<VkPhysicalDeviceSurfaceInfo2KHR>();
     surface_info.surface = surface();
-    VkSurfacePresentModeEXT surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
+    auto surface_present_mode = LvlInitStruct<VkSurfacePresentModeEXT>();
     surface_present_mode.presentMode = present_mode;
     surface_info.pNext = &surface_present_mode;
-    VkSurfacePresentScalingCapabilitiesEXT scaling_caps = LvlInitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
-    VkSurfaceCapabilities2KHR surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
+    auto scaling_caps = LvlInitStruct<VkSurfacePresentScalingCapabilitiesEXT>();
+    auto surface_capabilities = LvlInitStruct<VkSurfaceCapabilities2KHR>();
     surface_capabilities.pNext = &scaling_caps;
     DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(phys_dev, &surface_info, &surface_capabilities);
     return scaling_caps;
