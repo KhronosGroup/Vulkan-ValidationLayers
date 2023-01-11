@@ -2215,7 +2215,8 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
 
             if (sample_location_state != nullptr) {
                 if ((sample_location_state->sampleLocationsEnable == VK_TRUE) &&
-                    (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false)) {
+                    (pipeline.IsDynamic(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false) &&
+                    (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) == false)) {
                     const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
                     skip |= ValidateSampleLocationsInfo(&sample_location_info, "vkCreateGraphicsPipelines");
                     const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
@@ -2227,8 +2228,11 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
 
                     // Note order or "divide" in "sampleLocationsInfo must evenly divide VkMultisamplePropertiesEXT"
                     if (SafeModulo(max_grid_size.width, grid_size.width) != 0) {
+                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                               ? "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07610"
+                                               : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521";
                         skip |= LogError(
-                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521",
+                            device, vuid,
                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                             "]: Because there is no dynamic state for Sample Location "
                             "and sampleLocationEnable is true, the "
@@ -2237,8 +2241,11 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                             pipe_index, grid_size.width, max_grid_size.width);
                     }
                     if (SafeModulo(max_grid_size.height, grid_size.height) != 0) {
+                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                               ? "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07611"
+                                               : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522";
                         skip |= LogError(
-                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522",
+                            device, vuid,
                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                             "]: Because there is no dynamic state for Sample Location "
                             "and sampleLocationEnable is true, the "
@@ -2247,8 +2254,11 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                             pipe_index, grid_size.height, max_grid_size.height);
                     }
                     if (sample_location_info.sampleLocationsPerPixel != multisample_state->rasterizationSamples) {
+                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                               ? "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-07612"
+                                               : "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523";
                         skip |= LogError(
-                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523",
+                            device, vuid,
                             "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                             "]: Because there is no dynamic state for Sample Location "
                             "and sampleLocationEnable is true, the "
