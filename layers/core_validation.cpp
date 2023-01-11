@@ -1291,22 +1291,6 @@ bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func
     return skip;
 }
 
-// If a renderpass is active, verify that the given command type is appropriate for current subpass state
-bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE &cb_state, const CMD_TYPE cmd_type) const {
-    if (!cb_state.activeRenderPass) return false;
-    bool skip = false;
-    if (cb_state.createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY &&
-        cb_state.activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
-        (cmd_type != CMD_EXECUTECOMMANDS && cmd_type != CMD_NEXTSUBPASS && cmd_type != CMD_ENDRENDERPASS &&
-         cmd_type != CMD_NEXTSUBPASS2 && cmd_type != CMD_NEXTSUBPASS2KHR && cmd_type != CMD_ENDRENDERPASS2 &&
-         cmd_type != CMD_ENDRENDERPASS2KHR)) {
-        skip |=
-            LogError(cb_state.commandBuffer(), kVUID_Core_DrawState_InvalidCommandBuffer,
-                     "%s() cannot be called in a subpass using secondary command buffers.", kGeneratedCommandNameList[cmd_type]);
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const char *caller_name, VkQueueFlags required_flags,
                                        const char *error_code) const {
     auto pool = cb_state.command_pool;
@@ -6187,66 +6171,6 @@ bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE &cb_state, 
             LogError(cb_state.commandBuffer(), error_code, "Cannot execute command %s on a secondary command buffer.", cmd_name);
     }
     return skip;
-}
-
-bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer,
-                                        CMD_TYPE cmd_type) const {
-    auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
-    assert(cb_state);
-    bool skip = false;
-    const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
-    const char *vuid;
-    const char *function_name = CommandTypeString(cmd_type);
-
-    skip |= ValidateCmd(*cb_state, cmd_type);
-
-    auto subpass_count = cb_state->activeRenderPass->createInfo.subpassCount;
-    if (cb_state->activeSubpass == subpass_count - 1) {
-        vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-03102" : "VUID-vkCmdNextSubpass-None-00909";
-        skip |= LogError(commandBuffer, vuid, "%s: Attempted to advance beyond final subpass.", function_name);
-    }
-    if (cb_state->transform_feedback_active) {
-        vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-None-02350" : "VUID-vkCmdNextSubpass-None-02349";
-        skip |= LogError(commandBuffer, vuid, "%s: transform feedback is active.", function_name);
-    }
-    return skip;
-}
-
-bool CoreChecks::PreCallValidateCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) const {
-    return ValidateCmdNextSubpass(RENDER_PASS_VERSION_1, commandBuffer, CMD_NEXTSUBPASS);
-}
-
-bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                   const VkSubpassEndInfo *pSubpassEndInfo) const {
-    return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer, CMD_NEXTSUBPASS2KHR);
-}
-
-bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                const VkSubpassEndInfo *pSubpassEndInfo) const {
-    return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer, CMD_NEXTSUBPASS2);
-}
-
-void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
-    auto framebuffer = Get<FRAMEBUFFER_STATE>(cb_state->activeRenderPassBeginInfo.framebuffer);
-    TransitionSubpassLayouts(cb_state.get(), cb_state->activeRenderPass.get(), cb_state->activeSubpass, framebuffer.get());
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
-    StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
-    RecordCmdNextSubpassLayouts(commandBuffer, contents);
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                  const VkSubpassEndInfo *pSubpassEndInfo) {
-    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
-}
-
-void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                               const VkSubpassEndInfo *pSubpassEndInfo) {
-    StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
-    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
 bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE &cb_state,
