@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-add_library(VkLayer_device_profile_api MODULE
-    ${CMAKE_CURRENT_SOURCE_DIR}/device_profile_api.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/vk_lunarg_device_profile_api_layer.h
-    ${PROJECT_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
+add_library(VkLayer_device_profile_api MODULE)
+
+target_sources(VkLayer_device_profile_api PRIVATE
+    ${VVL_SOURCE_DIR}/layers/vk_layer_extension_utils.cpp
+    device_profile_api.cpp
+    vk_lunarg_device_profile_api_layer.h
 )
 
 target_link_libraries(VkLayer_device_profile_api PRIVATE VkLayer_utils)

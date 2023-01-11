@@ -27,61 +27,60 @@ if(MSVC)
     add_compile_options(/wd4267)
 endif()
 
-set(COMMON_CPP
-    vklayertests_instanceless.cpp
-    vklayertests_pipeline_shader.cpp
-    vklayertests_buffer_image_memory_sampler.cpp
-    vklayertests_others.cpp
-    vklayertests_best_practices.cpp
-    vklayertests_arm_best_practices.cpp
-    vklayertests_amd_best_practices.cpp
-    vklayertests_gpu.cpp
-    vklayertests_debug_printf.cpp
-    vklayertests_descriptor_renderpass_framebuffer.cpp
-    vklayertests_dynamic_rendering.cpp
-    vklayertests_command.cpp
-    vklayertests_imageless_framebuffer.cpp
-    vklayertests_nvidia_best_practices.cpp
-    vklayertests_portability_subset.cpp
-    vklayertests_viewport_inheritance.cpp
-    vklayertests_wsi.cpp
-    vklayertests_video.cpp
-    vklayertests_graphics_library.cpp
-    vklayertests_android_hardware_buffer.cpp
-    vklayertests_ray_tracing.cpp
-    vklayertests_ray_tracing_pipeline.cpp
-    vklayertests_ray_tracing_gpu.cpp
+add_executable(vk_layer_validation_tests)
+
+target_sources(vk_layer_validation_tests PRIVATE
+    ${VVL_SOURCE_DIR}/layers/convert_to_renderpass2.cpp
+    ${VVL_SOURCE_DIR}/layers/generated/lvt_function_pointers.cpp
+    ${VVL_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
+    ${VVL_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
+    positive/android_hardware_buffer.cpp
     positive/command.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp
+    positive/graphics_library.cpp
     positive/image_buffer.cpp
     positive/instance.cpp
     positive/other.cpp
     positive/pipeline.cpp
+    positive/ray_tracing.cpp
+    positive/ray_tracing_pipeline.cpp
     positive/render_pass.cpp
     positive/shaderval.cpp
     positive/sync.cpp
     positive/tooling.cpp
     positive/video.cpp
-    positive/graphics_library.cpp
-    positive/android_hardware_buffer.cpp
-    positive/ray_tracing.cpp
-    positive/ray_tracing_pipeline.cpp
-    vksyncvaltests.cpp
-    vkerrormonitor.h
+    layer_validation_tests.cpp
     vkerrormonitor.cpp
+    vkerrormonitor.h
+    vklayertests_amd_best_practices.cpp
+    vklayertests_android_hardware_buffer.cpp
+    vklayertests_arm_best_practices.cpp
+    vklayertests_best_practices.cpp
+    vklayertests_buffer_image_memory_sampler.cpp
+    vklayertests_command.cpp
+    vklayertests_debug_printf.cpp
+    vklayertests_descriptor_renderpass_framebuffer.cpp
+    vklayertests_dynamic_rendering.cpp
+    vklayertests_gpu.cpp
+    vklayertests_graphics_library.cpp
+    vklayertests_imageless_framebuffer.cpp
+    vklayertests_instanceless.cpp
+    vklayertests_nvidia_best_practices.cpp
+    vklayertests_others.cpp
+    vklayertests_pipeline_shader.cpp
+    vklayertests_portability_subset.cpp
+    vklayertests_ray_tracing.cpp
+    vklayertests_ray_tracing_gpu.cpp
+    vklayertests_ray_tracing_pipeline.cpp
+    vklayertests_video.cpp
+    vklayertests_viewport_inheritance.cpp
+    vklayertests_wsi.cpp
     vkrenderframework.cpp
     vkrenderframework.h
+    vksyncvaltests.cpp
     vktestbinding.cpp
-    vktestframework.cpp)
-
-add_executable(vk_layer_validation_tests
-    layer_validation_tests.cpp
-    ../layers/generated/vk_format_utils.cpp
-    ../layers/convert_to_renderpass2.cpp
-    ../layers/generated/vk_safe_struct.cpp
-    ../layers/generated/lvt_function_pointers.cpp
-    ${COMMON_CPP}
+    vktestframework.cpp
 )
 
 # gtest_discover_tests has problem with cross-compiling, but it is faster and more robust
