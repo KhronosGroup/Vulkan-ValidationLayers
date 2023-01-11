@@ -373,7 +373,7 @@ class SURFACE_STATE : public BASE_NODE {
     void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
-    void SetPresentModes(VkPhysicalDevice phys_dev, std::vector<VkPresentModeKHR> &&modes);
+    void SetPresentModes(VkPhysicalDevice phys_dev, layer_data::span<const VkPresentModeKHR> modes);
     std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts);
@@ -383,9 +383,8 @@ class SURFACE_STATE : public BASE_NODE {
     VkSurfaceCapabilitiesKHR GetCapabilities(VkPhysicalDevice phys_dev) const;
 
     void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                            std::vector<VkPresentModeKHR> &&compatible_modes);
+                            layer_data::span<const VkPresentModeKHR> compatible_modes);
     std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const;
-
     void SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
                                     const VkSurfaceCapabilitiesKHR &caps, const VkSurfacePresentScalingCapabilitiesEXT &scaling_caps);
     VkSurfaceCapabilitiesKHR GetPresentModeSurfaceCapabilities(VkPhysicalDevice phys_dev,
@@ -401,5 +400,6 @@ class SURFACE_STATE : public BASE_NODE {
     mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
     mutable layer_data::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
     mutable layer_data::unordered_map<VkPhysicalDevice,
-        layer_data::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>> present_modes_data_;
+                                      layer_data::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
+        present_modes_data_;
 };
