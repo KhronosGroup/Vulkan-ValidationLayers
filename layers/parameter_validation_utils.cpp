@@ -2164,10 +2164,6 @@ bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipe
                             ParameterName("pCreateInfos[%i].pColorBlendState->logicOpEnable", ParameterName::IndexVector{index}),
                             info.logicOpEnable);
 
-    skip |= validate_array("vkCreateGraphicsPipelines",
-                           ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{index}),
-                           ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{index}),
-                           info.attachmentCount, &info.pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
     return skip;
 }
 
@@ -3429,6 +3425,22 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             ParameterName("pCreateInfos[%i].pColorBlendState->logicOp", ParameterName::IndexVector{i}), "VkLogicOp",
                             AllVkLogicOpEnums, color_blend_state.logicOp,
                             "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
+                    }
+
+                    // If any of the dynamic states are not set still need a valid array
+                    if ((color_blend_state.attachmentCount > 0) &&
+                        (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) ||
+                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) ||
+                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT))) {
+                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                               ? "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353"
+                                               : "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354";
+
+                        skip |= validate_array(
+                            "vkCreateGraphicsPipelines",
+                            ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
+                            ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
+                            color_blend_state.attachmentCount, &color_blend_state.pAttachments, false, true, kVUIDUndefined, vuid);
                     }
                 }
             }
