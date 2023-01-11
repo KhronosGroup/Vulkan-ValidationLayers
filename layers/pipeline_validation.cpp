@@ -1635,7 +1635,10 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
         }
 
         if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
-            skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042",
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                   ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07609"
+                                   : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06042";
+            skip |= LogError(device, vuid,
                              "vkCreateGraphicsPipelines() pCreateInfo[%" PRIu32
                              "]: %s subpass %u has colorAttachmentCount of %u which doesn't "
                              "match the pColorBlendState->attachmentCount of %u.",
