@@ -12102,10 +12102,9 @@ TEST_F(VkLayerTest, BindLibraryPipeline) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, TestPipelineColorWriteCreateInfoEXT) {
+TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXT) {
     TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -12124,17 +12123,33 @@ TEST_F(VkLayerTest, TestPipelineColorWriteCreateInfoEXT) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 
-    std::vector<VkBool32> max_enabled(m_device->props.limits.maxColorAttachments + 1, VK_TRUE);
-    color_write.attachmentCount = m_device->props.limits.maxColorAttachments + 1;
-    color_write.pColorWriteEnables = max_enabled.data();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-
     VkBool32 enabled = VK_FALSE;
     color_write.attachmentCount = 1;
     color_write.pColorWriteEnables = &enabled;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-pAttachments-04801");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, PipelineColorWriteCreateInfoEXTDynaimcState3) {
+    TEST_DESCRIPTION("Test VkPipelineColorWriteCreateInfoEXT in color blend state pNext with VK_EXT_extended_dynamic_state3");
+
+    AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPipelineColorWriteCreateInfoEXT color_write = LvlInitStruct<VkPipelineColorWriteCreateInfoEXT>();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.cb_ci_.pNext = &color_write;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
