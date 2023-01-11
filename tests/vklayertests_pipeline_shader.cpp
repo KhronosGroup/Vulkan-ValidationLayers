@@ -15675,12 +15675,12 @@ TEST_F(VkLayerTest, PipelineColorBlendStateCreateInfoValidArrayDynamic) {
     }
 
     auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
+    GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
     if (!extended_dynamic_state3_features.extendedDynamicState3ColorBlendEnable ||
         !extended_dynamic_state3_features.extendedDynamicState3ColorBlendEquation) {
         GTEST_SKIP() << "features not supported";
     }
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &extended_dynamic_state3_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     {
