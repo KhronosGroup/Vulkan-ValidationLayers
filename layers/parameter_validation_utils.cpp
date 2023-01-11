@@ -3427,11 +3427,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
                     }
 
-                    // If any of the dynamic states are not set still need a valid array
-                    if ((color_blend_state.attachmentCount > 0) &&
+                    const bool dynamic_not_set =
                         (!layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) ||
                          !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT) ||
-                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT))) {
+                         !layer_data::Contains(dynamic_state_map, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT));
+
+                    // If any of the dynamic states are not set still need a valid array
+                    if ((color_blend_state.attachmentCount > 0) && dynamic_not_set) {
                         const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
                                                ? "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353"
                                                : "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354";
@@ -3441,6 +3443,18 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
                             ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
                             color_blend_state.attachmentCount, &color_blend_state.pAttachments, false, true, kVUIDUndefined, vuid);
+                    }
+
+                    auto color_write = LvlFindInChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state.pNext);
+                    if (color_write && (color_write->attachmentCount != color_blend_state.attachmentCount) && dynamic_not_set) {
+                        const char *vuid = IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)
+                                               ? "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-07608"
+                                               : "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802";
+                        skip |= LogError(device, vuid,
+                                         "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of "
+                                         "pCreateInfo[%" PRIu32 "].pColorBlendState has different attachmentCount (%" PRIu32
+                                         ") than pColorBlendState.attachmentCount (%" PRIu32 ").",
+                                         i, color_write->attachmentCount, color_blend_state.attachmentCount);
                     }
                 }
             }

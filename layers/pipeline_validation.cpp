@@ -1712,7 +1712,6 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
         }
         auto color_write = LvlFindInChain<VkPipelineColorWriteCreateInfoEXT>(color_blend_state->pNext);
         if (color_write) {
-            // if over limit don't give extra redundant error of mismatch of attachmentCount
             if (color_write->attachmentCount > phys_dev_props.limits.maxColorAttachments) {
                 skip |= LogError(
                     device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-06655",
@@ -1720,13 +1719,6 @@ bool CoreChecks::ValidateGraphicsPipelineColorBlendState(const PIPELINE_STATE &p
                     "].pColorBlendState has an attachmentCount of (%" PRIu32
                     ") which is greater than the VkPhysicalDeviceLimits::maxColorAttachments limit (%" PRIu32 ").",
                     pipe_index, color_write->attachmentCount, phys_dev_props.limits.maxColorAttachments);
-            } else if (color_write->attachmentCount != color_blend_state->attachmentCount) {
-                skip |= LogError(
-                    device, "VUID-VkPipelineColorWriteCreateInfoEXT-attachmentCount-04802",
-                    "vkCreateGraphicsPipelines(): VkPipelineColorWriteCreateInfoEXT in the pNext chain of pCreateInfo[%" PRIu32
-                    "].pColorBlendState has different attachmentCount (%" PRIu32 ") than pColorBlendState.attachmentCount (%" PRIu32
-                    ").",
-                    pipe_index, color_write->attachmentCount, color_blend_state->attachmentCount);
             }
             if (!enabled_features.color_write_features.colorWriteEnable) {
                 for (uint32_t i = 0; i < color_write->attachmentCount; ++i) {
