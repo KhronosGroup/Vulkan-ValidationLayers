@@ -403,13 +403,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,
                                         const VkDeviceQueueCreateInfo* infos) const;
 
-    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+    bool ValidateProtectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const char* cmd_name,
                                 const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* image_state, const char* cmd_name,
+    bool ValidateUnprotectedImage(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& image_state, const char* cmd_name,
                                   const char* vuid, const char* more_message = "") const;
-    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+    bool ValidateProtectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const char* cmd_name,
                                  const char* vuid, const char* more_message = "") const;
-    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE* buffer_state, const char* cmd_name,
+    bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const char* cmd_name,
                                    const char* vuid, const char* more_message = "") const;
 
     bool ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipe_state_vec, const uint32_t count,
@@ -574,15 +574,46 @@ class CoreChecks : public ValidationStateTracker {
                                                     VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet, VkDescriptorUpdateTemplate descriptorUpdateTemplate,
                                                  const void* pData) const;
-    bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
-    bool ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
-    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
-    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const Location&) const;
-    template <typename Location>
-    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const Location&) const;
+    template <typename HandleT>
+    bool ValidateMemoryIsBoundToBuffer(HandleT handle, const BUFFER_STATE& buffer_state, const char* api_name,
+                                       const char* error_code) const {
+        bool result = false;
+        if (!buffer_state.sparse) {
+            const LogObjectList objlist(handle, buffer_state.Handle());
+            result |= VerifyBoundMemoryIsValid(buffer_state.MemState(), objlist, buffer_state.Handle(), api_name, error_code);
+        }
+        return result;
+    }
 
-    bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
-    bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE_KHR*, const char*, const char*) const;
+    bool ValidateHostVisibleMemoryIsBoundToBuffer(const BUFFER_STATE&, const char*, const char*) const;
+
+    template <typename HandleT>
+    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE& image_state, const char* api_name,
+                                      const char* error_code) const {
+        return ValidateMemoryIsBoundToImage<HandleT, SimpleErrorLocation>(handle, image_state,
+                                                                          SimpleErrorLocation(api_name, error_code));
+    }
+    template <typename HandleT>
+    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE& image_state, const Location& loc) const {
+        using LocationAdapter = core_error::LocationVuidAdapter<sync_vuid_maps::GetImageBarrierVUIDFunctor>;
+        return ValidateMemoryIsBoundToImage<HandleT, LocationAdapter>(handle, image_state,
+                                                                      LocationAdapter(loc, sync_vuid_maps::ImageError::kNoMemory));
+    }
+    template <typename HandleT, typename Location>
+    bool ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE&, const Location&) const;
+
+    template <typename HandleT>
+    bool ValidateMemoryIsBoundToAccelerationStructure(HandleT handle, const ACCELERATION_STRUCTURE_STATE& as_state,
+                                                      const char* api_name, const char* error_code) const {
+        const LogObjectList objlist(handle, as_state.Handle());
+        return VerifyBoundMemoryIsValid(as_state.MemState(), objlist, as_state.Handle(), api_name, error_code);
+    }
+    template <typename HandleT>
+    bool ValidateMemoryIsBoundToAccelerationStructure(HandleT handle, const ACCELERATION_STRUCTURE_STATE_KHR& as_state,
+                                                      const char* api_name, const char* error_code) const {
+        const LogObjectList objlist(handle, as_state.Handle());
+        return VerifyBoundMemoryIsValid(as_state.buffer_state->MemState(), objlist, as_state.Handle(), api_name, error_code);
+    }
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const char* caller_name, const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE& cb_state, const char* caller_name, VkQueueFlags flags,
                                const char* error_code) const;
@@ -620,13 +651,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateVideoDecodeInfoH265(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateActiveReferencePictureCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
     bool ValidateReferencePictureUseCount(const CMD_BUFFER_STATE& cb_state, const VkVideoDecodeInfoKHR& decode_info) const;
-    bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
-                                  const std::string& msgCode) const;
+    bool ValidateImageSampleCount(VkCommandBuffer, const IMAGE_STATE& image_state, VkSampleCountFlagBits sample_count,
+                                  const char* location, const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE& cb_state, const CMD_TYPE cmd) const;
     bool ValidateIndirectCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, CMD_TYPE cmd_type) const;
-    bool ValidateIndirectCountCmd(const BUFFER_STATE& count_buffer_state, VkDeviceSize count_buffer_offset,
-                                  CMD_TYPE cmd_type) const;
+    bool ValidateIndirectCountCmd(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& count_buffer_state,
+                                  VkDeviceSize count_buffer_offset, CMD_TYPE cmd_type) const;
     bool ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer,
                                                       const std::shared_ptr<const IMAGE_VIEW_STATE>& image_view_state,
                                                       const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info,
@@ -857,8 +888,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* src_img,
                                                           const IMAGE_STATE* dst_img, const RegionType* region, const uint32_t i,
                                                           const char* function, CMD_TYPE cmd_type) const;
-    template <typename T1>
-    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const T1 object,
+    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const LogObjectList& objlist,
                             const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
                             char const* usage_str) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
@@ -937,11 +967,11 @@ class CoreChecks : public ValidationStateTracker {
                            VkImageLayout explicit_layout, const char* caller, const char* layout_mismatch_msg_code,
                            bool* error) const;
 
-    bool CheckItgExtent(const CMD_BUFFER_STATE& cb_state, const VkExtent3D* extent, const VkOffset3D* offset,
-                        const VkExtent3D* granularity, const VkExtent3D* subresource_extent, const VkImageType image_type,
+    bool CheckItgExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
+                        const VkExtent3D& granularity, const VkExtent3D& subresource_extent, const VkImageType image_type,
                         const uint32_t i, const char* function, const char* member, const char* vuid) const;
 
-    bool CheckItgOffset(const CMD_BUFFER_STATE& cb_state, const VkOffset3D* offset, const VkExtent3D* granularity, const uint32_t i,
+    bool CheckItgOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity, const uint32_t i,
                         const char* function, const char* member, const char* vuid) const;
     VkExtent3D GetScaledItg(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img) const;
 
@@ -1065,28 +1095,28 @@ class CoreChecks : public ValidationStateTracker {
 
     void UpdateCmdBufImageLayouts(const CMD_BUFFER_STATE* cb_state);
 
-    template <typename T1>
-    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
-                                  const char* api_name, const char* error_code) const;
-    template <typename T1, typename LocType>
-    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
-                                  const LocType& location) const;
+    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
+                                  const VulkanTypedHandle& typed_handle, const char* api_name, const char* error_code) const;
+    template <typename LocType>
+    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const LogObjectList& objlist,
+                                  const VulkanTypedHandle& typed_handle, const LocType& location) const;
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,
                                                const VkAttachmentDescription2& attachment_description) const;
 
-    bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkImageUsageFlags desired, bool strict, const char* msgCode,
-                                 char const* func_name) const;
+    bool ValidateImageUsageFlags(VkCommandBuffer cb, IMAGE_STATE const& image_state, VkImageUsageFlags desired, bool strict,
+                                 const char* msgCode, char const* func_name) const;
 
-    bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags2KHR desired, char const* func_name,
-                                         const char* vuid) const;
+    bool ValidateImageFormatFeatureFlags(VkCommandBuffer cb, IMAGE_STATE const& image_state, VkFormatFeatureFlags2KHR desired,
+                                         char const* func_name, const char* vuid) const;
 
     bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceLayers* subresource_layers,
                                         char const* func_name, char const* member, uint32_t i) const;
 
-    bool ValidateBufferUsageFlags(BUFFER_STATE const* buffer_state, VkFlags desired, bool strict, const char* msgCode,
-                                  char const* func_name, char const* usage_string) const;
+    template <typename HandleT>
+    bool ValidateBufferUsageFlags(HandleT handle, const BUFFER_STATE& buffer_state, VkFlags desired, bool strict,
+                                  const char* msgCode, char const* func_name, char const* usage_string) const;
 
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const override;
@@ -1117,26 +1147,26 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView) const override;
     template <typename RegionType>
-    bool ValidateCmdCopyBufferBounds(const BUFFER_STATE* src_buffer_state, const BUFFER_STATE* dst_buffer_state,
+    bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const BUFFER_STATE& src_buffer_state, const BUFFER_STATE& dst_buffer_state,
                                      uint32_t regionCount, const RegionType* pRegions, CMD_TYPE cmd_type) const;
 
     template <typename RegionType>
-    bool ValidateImageBounds(const IMAGE_STATE* image_state, const uint32_t regionCount, const RegionType* pRegions,
-                             const char* func_name, const char* msg_code) const;
+    bool ValidateImageBounds(VkCommandBuffer cb, const IMAGE_STATE& image_state, const uint32_t regionCount,
+                             const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
-    bool ValidateBufferBounds(const IMAGE_STATE* image_state, const BUFFER_STATE* buff_state, uint32_t regionCount,
-                              const RegionType* pRegions, const char* func_name, const char* msg_code) const;
+    bool ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE& image_state, const BUFFER_STATE& buff_state,
+                              uint32_t regionCount, const RegionType* pRegions, const char* func_name, const char* msg_code) const;
 
     template <typename RegionType>
-    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img,
+    bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img,
                                                                 const RegionType* region, const uint32_t i, const char* function,
                                                                 const char* vuid) const;
 
-    bool ValidateImageMipLevel(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
+    bool ValidateImageMipLevel(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
 
-    bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE* img, const uint32_t base_layer,
+    bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE& cb_state, const IMAGE_STATE& img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
                                       const char* vuid) const;
     bool ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, const char* apiName) const;
