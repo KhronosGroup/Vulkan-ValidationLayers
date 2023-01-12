@@ -2614,11 +2614,11 @@ static bool RegionIntersects(const RegionType *region0, const RegionType *region
         switch (type) {
             case VK_IMAGE_TYPE_3D:
                 result &= RangesIntersect(region0->srcOffset.z, region0->extent.depth, region1->dstOffset.z, region1->extent.depth);
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
                 result &=
                     RangesIntersect(region0->srcOffset.y, region0->extent.height, region1->dstOffset.y, region1->extent.height);
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
                 result &= RangesIntersect(region0->srcOffset.x, region0->extent.width, region1->dstOffset.x, region1->extent.width);
                 break;
@@ -2647,11 +2647,11 @@ static bool RegionIntersectsBlit(const RegionType *region0, const RegionType *re
             case VK_IMAGE_TYPE_3D:
                 result &= RangesIntersect(region0->srcOffsets[0].z, region0->srcOffsets[1].z - region0->srcOffsets[0].z,
                                           region1->dstOffsets[0].z, region1->dstOffsets[1].z - region1->dstOffsets[0].z);
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
                 result &= RangesIntersect(region0->srcOffsets[0].y, region0->srcOffsets[1].y - region0->srcOffsets[0].y,
                                           region1->dstOffsets[0].y, region1->dstOffsets[1].y - region1->dstOffsets[0].y);
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
                 result &= RangesIntersect(region0->srcOffsets[0].x, region0->srcOffsets[1].x - region0->srcOffsets[0].x,
                                           region1->dstOffsets[0].x, region1->dstOffsets[1].x - region1->dstOffsets[0].x);
@@ -2787,11 +2787,11 @@ bool CoreChecks::CheckItgExtent(const CMD_BUFFER_STATE &cb_state, const VkExtent
             case VK_IMAGE_TYPE_3D:
                 z_ok = ((0 == SafeModulo(extent->depth, granularity->depth)) ||
                         (subresource_extent->depth == offset_extent_sum.depth));
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_2D:
                 y_ok = ((0 == SafeModulo(extent->height, granularity->height)) ||
                         (subresource_extent->height == offset_extent_sum.height));
-                // fall through
+                [[fallthrough]];
             case VK_IMAGE_TYPE_1D:
                 x_ok = ((0 == SafeModulo(extent->width, granularity->width)) ||
                         (subresource_extent->width == offset_extent_sum.width));

@@ -5130,6 +5130,7 @@ bool BestPractices::PreCallValidateCreatePipelineLayout(VkDevice device, const V
                             break;
                         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
                             descriptor_type_size = 1;
+                            break;
                         default:
                             // Unknown type.
                             break;

@@ -2206,7 +2206,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 *error_msg = error_str.str();
                 return false;
             }
-            // drop through
+            [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
             if (!(usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_SAMPLED_BIT";
@@ -3265,7 +3265,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 }
             }
         }
-        // Fall through
+        [[fallthrough]];
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             auto iter = dest_set->FindDescriptor(update->dstBinding, update->dstArrayElement);
             for (uint32_t di = 0; di < update->descriptorCount && !iter.AtEnd(); ++di, ++iter) {

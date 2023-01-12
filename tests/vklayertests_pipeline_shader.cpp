@@ -5777,6 +5777,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
                 break;
             default:
                 assert(0);
+                [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
@@ -5953,6 +5954,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
                 break;
             default:
                 assert(0);
+                [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
@@ -6073,6 +6075,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
                 break;
             default:
                 assert(0);
+                [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
@@ -6182,6 +6185,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
                 break;
             default:
                 assert(0);
+                [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
@@ -6247,6 +6251,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
                 break;
             default:
                 assert(0);
+                [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;

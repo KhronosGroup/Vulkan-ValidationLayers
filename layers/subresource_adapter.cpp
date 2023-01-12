@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2022 The Khronos Group Inc.
- * Copyright (c) 2019-2022 Valve Corporation
- * Copyright (c) 2019-2022 LunarG, Inc.
- * Copyright (C) 2019-2022 Google Inc.
+/* Copyright (c) 2019-2023 The Khronos Group Inc.
+ * Copyright (c) 2019-2023 Valve Corporation
+ * Copyright (c) 2019-2023 LunarG, Inc.
+ * Copyright (C) 2019-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ uint32_t RangeEncoder::LowerBoundWithStartImpl2(VkImageAspectFlags aspect_mask, 
             if (aspect_mask & aspect_bits_[0]) {
                 return 0;
             }
-            // no break
+            [[fallthrough]];
         case 1:
             if (aspect_mask & aspect_bits_[1]) {
                 return 1;
@@ -98,12 +98,12 @@ uint32_t RangeEncoder::LowerBoundWithStartImpl3(VkImageAspectFlags aspect_mask, 
             if (aspect_mask & aspect_bits_[0]) {
                 return 0;
             }
-            // no break
+            [[fallthrough]];
         case 1:
             if ((aspect_mask & aspect_bits_[1])) {
                 return 1;
             }
-            // no break
+            [[fallthrough]];
         case 2:
             if ((aspect_mask & aspect_bits_[2])) {
                 return 2;
