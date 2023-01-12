@@ -8280,7 +8280,12 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         VkFormat format = VK_FORMAT_D32_SFLOAT;
         VkFormatProperties image_format_properties;
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), format, &image_format_properties);
-        if ((image_format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) > 0) {
+        VkImageFormatProperties format_limits{};
+        VkResult result =
+            vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
+                                                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &format_limits);
+        if ((result == VK_SUCCESS) &&
+            ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
             img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
@@ -8298,7 +8303,12 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         VkFormat format = VK_FORMAT_S8_UINT;
         VkFormatProperties image_format_properties;
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), format, &image_format_properties);
-        if ((image_format_properties.linearTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) > 0) {
+        VkImageFormatProperties format_limits{};
+        VkResult result =
+            vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_LINEAR,
+                                                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &format_limits);
+        if ((result == VK_SUCCESS) &&
+            ImageFormatAndFeaturesSupported(gpu(), format, VK_IMAGE_TILING_LINEAR, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
             VkImageObj img(m_device);
             img.InitNoLayout(32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
@@ -14354,7 +14364,7 @@ TEST_F(VkLayerTest, InvalidMultiSampleImageView) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkImageFormatProperties image_format_properties;
-    vk::GetPhysicalDeviceImageFormatProperties(m_device->phy().handle(), image_create_info.format, image_create_info.imageType,
+    vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_create_info.format, image_create_info.imageType,
                                                image_create_info.tiling, image_create_info.usage, image_create_info.flags,
                                                &image_format_properties);
 
