@@ -2065,6 +2065,9 @@ TEST_F(VkPositiveLayerTest, FenceSemThreadRace) {
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (IsDriver(VK_DRIVER_ID_GOOGLE_SWIFTSHADER)) {
+        GTEST_SKIP() << "This test hangs on SwiftShader.";
+    }
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
