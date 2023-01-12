@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2015-2023 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
+ * Copyright (c) 2015-2023 Valve Corporation
  * Copyright (c) 2015-2023 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021-2022 ARM, Inc. All rights reserved.
  *
@@ -1892,7 +1892,7 @@ TEST_F(VkLayerTest, DynamicRenderingInfoMismatchedSamples) {
     image_ci.extent.depth = 1;
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
-    image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4020,9 +4020,10 @@ TEST_F(VkLayerTest, DynamicRenderingResolveModeWithIntegerColorFormat) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
     VkImageObj image(m_device);
     image.Init(image_create_info);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UINT);
@@ -4130,7 +4131,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewSamples) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4197,7 +4198,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFormatMatch) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4304,7 +4305,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayout) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4367,7 +4368,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewLayoutSeparateDepthStencil) 
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4493,7 +4494,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewShadingRateLayout) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4605,7 +4606,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFragmentDensityLayout) {
     image_create_info.extent = {32, 32, 4};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4667,7 +4668,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewReadOnlyOptimalLayout) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -4799,10 +4800,11 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoColorAttachment) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
     VkImageObj image(m_device);
     image.Init(image_create_info);
     VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
@@ -4917,6 +4919,8 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoDepthAttachment) {
         (depth_stencil_resolve_properties.supportedDepthResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0;
     bool has_stencil_resolve_mode_average =
         (depth_stencil_resolve_properties.supportedStencilResolveModes & VK_RESOLVE_MODE_AVERAGE_BIT) != 0;
+    bool has_stencil_resolve_mode_zero =
+        (depth_stencil_resolve_properties.supportedStencilResolveModes & VK_RESOLVE_MODE_SAMPLE_ZERO_BIT) != 0;
 
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -4924,9 +4928,10 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoDepthAttachment) {
     image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
     VkImageObj image(m_device);
     image.Init(image_create_info);
 
@@ -5026,18 +5031,24 @@ TEST_F(VkLayerTest, DynamicRenderingRenderingInfoDepthAttachment) {
     stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     stencil_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     if (depth_stencil_resolve_properties.independentResolveNone == VK_FALSE && has_depth_resolve_mode_average) {
+        depth_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+        stencil_attachment.resolveMode = VK_RESOLVE_MODE_NONE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06104");
         m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
     }
-    if (depth_stencil_resolve_properties.independentResolve == VK_FALSE && has_depth_resolve_mode_average) {
+    if (depth_stencil_resolve_properties.independentResolve == VK_FALSE && has_depth_resolve_mode_average &&
+        has_stencil_resolve_mode_zero) {
+        depth_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+        stencil_attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+        m_errorMonitor->SetUnexpectedError("VUID-VkRenderingInfo-pDepthAttachment-06104");  // if independentResolveNone is false
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pDepthAttachment-06105");
         m_commandBuffer->BeginRendering(begin_rendering_info);
         m_errorMonitor->VerifyFound();
     }
 
+    depth_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     stencil_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     stencil_attachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     if (has_stencil_resolve_mode_average) {
@@ -6564,6 +6575,8 @@ TEST_F(VkLayerTest, DynamicRenderingCommandBufferInheritanceWithInvalidDepthForm
     auto features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
     if (!dynamic_rendering_features.dynamicRendering) {
         GTEST_SKIP() << "Test requires (unsupported) dynamicRendering";
+    } else if (!features2.features.variableMultisampleRate) {
+        GTEST_SKIP() << "Test requires (unsupported) variableMultisampleRate";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));

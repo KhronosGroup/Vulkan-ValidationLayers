@@ -4048,29 +4048,18 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
                                                      "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615"});
 }
 
-TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
+TEST_F(VkLayerTest, VertexInputAttributeDescriptionOffset) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputAttributeDescription-offset-00622: offset must be less than or equal to "
         "VkPhysicalDeviceLimits::maxVertexInputAttributeOffset");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    uint32_t maxVertexInputAttributeOffset = 0;
-    {
-        VkPhysicalDeviceProperties device_props = {};
-        vk::GetPhysicalDeviceProperties(gpu(), &device_props);
-        maxVertexInputAttributeOffset = device_props.limits.maxVertexInputAttributeOffset;
-        if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
-            // Attempt to artificially lower maximum offset
-            PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
-                (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
-            if (!fpvkSetPhysicalDeviceLimitsEXT) {
-                GTEST_SKIP() << "All offsets are valid & device_profile_api not found";
-            }
-            device_props.limits.maxVertexInputAttributeOffset = device_props.limits.maxVertexInputBindingStride - 2;
-            fpvkSetPhysicalDeviceLimitsEXT(gpu(), &device_props.limits);
-            maxVertexInputAttributeOffset = device_props.limits.maxVertexInputAttributeOffset;
-        }
+    VkPhysicalDeviceProperties device_props = {};
+    vk::GetPhysicalDeviceProperties(gpu(), &device_props);
+    const uint32_t maxVertexInputAttributeOffset = device_props.limits.maxVertexInputAttributeOffset;
+    if (maxVertexInputAttributeOffset == 0xFFFFFFFF) {
+        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -4083,7 +4072,6 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_offset_00622) {
     VkVertexInputAttributeDescription vertex_input_attribute_description{};
     vertex_input_attribute_description.format = VK_FORMAT_R8_UNORM;
     vertex_input_attribute_description.offset = maxVertexInputAttributeOffset + 1;
-
     const auto set_attribute = [&](CreatePipelineHelper &helper) {
         helper.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
         helper.vi_ci_.vertexBindingDescriptionCount = 1;
