@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2022 NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -660,6 +660,10 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh)
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (m_device->props.limits.maxGeometryOutputVertices <= 3) {
+        GTEST_SKIP() << "Device doesn't support requried maxGeometryOutputVertices";
+    }
 
     char const *vsSource = R"glsl(
         #version 450
