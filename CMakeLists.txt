@@ -21,8 +21,6 @@ project(VVL LANGUAGES CXX C)
 
 option(BUILD_TESTS "Build the tests" OFF)
 
-add_definitions(-DVK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
-
 if (UPDATE_DEPS)
     find_package(PythonInterp 3 REQUIRED)
 
@@ -114,8 +112,6 @@ if (MIMALLOC_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${MIMALLOC_INSTALL_DIR})
 endif()
 
-find_package(VulkanHeaders REQUIRED CONFIG QUIET)
-
 set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")
 set(CMAKE_CXX_STANDARD ${VVL_CPP_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -138,12 +134,15 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # "Helper" targets that don't have interesting source code should set their FOLDER property to this
 set(LAYERS_HELPER_FOLDER "Helper Targets")
 
+find_package(VulkanHeaders REQUIRED CONFIG QUIET)
+
+target_compile_definitions(Vulkan::Headers INTERFACE VK_ENABLE_BETA_EXTENSIONS) # Enable beta Vulkan extensions
 if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
+    target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_WIN32_KHR)
 elseif(ANDROID)
-    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
+    target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
 elseif(APPLE)
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
+    target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_MACOS_MVK VK_USE_PLATFORM_METAL_EXT)
 else()
     option(BUILD_WSI_XCB_SUPPORT "Build XCB WSI support" ON)
     option(BUILD_WSI_XLIB_SUPPORT "Build Xlib WSI support" ON)
@@ -153,22 +152,22 @@ else()
 
     if(BUILD_WSI_XCB_SUPPORT)
         pkg_check_modules(XCB REQUIRED QUIET IMPORTED_TARGET xcb)
-        add_definitions(-DVK_USE_PLATFORM_XCB_KHR)
+        target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_XCB_KHR)
     endif()
 
     if(BUILD_WSI_XLIB_SUPPORT)
         pkg_check_modules(X11 REQUIRED QUIET IMPORTED_TARGET x11)
-        add_definitions(-DVK_USE_PLATFORM_XLIB_KHR -DVK_USE_PLATFORM_XLIB_XRANDR_EXT)
+        target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_XLIB_KHR VK_USE_PLATFORM_XLIB_XRANDR_EXT)
     endif()
 
     if(BUILD_WSI_WAYLAND_SUPPORT)
-        add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
+        target_compile_definitions(Vulkan::Headers INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
     endif()
 endif()
 
 if (ANNOTATED_SPEC_LINK)
     message("ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
-    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
+    add_compile_definitions(ANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
 endif()
 
 # NOTE: The idiom for open source projects is to not enable warnings as errors.
@@ -237,13 +236,13 @@ elseif(MSVC)
     add_link_options("$<$<CONFIG:Release>:/OPT:ICF>")
 
     # Allow usage of unsafe CRT functions and minimize what Windows.h leaks
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -DWIN32_LEAN_AND_MEAN)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX WIN32_LEAN_AND_MEAN)
 
     add_compile_options($<$<BOOL:${MSVC_IDE}>:/MP>) # Speed up Visual Studio builds
 endif()
 
 if(MINGW)
-    add_definitions(-D_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
+    add_compile_definitions(_WIN32_WINNT=0x0600) # Must be declared before including Windows.h
     add_compile_options("-Wa,-mbig-obj")
 endif()
 

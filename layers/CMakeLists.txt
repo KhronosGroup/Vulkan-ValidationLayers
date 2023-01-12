@@ -21,7 +21,7 @@
 # v0.8.1 also has compilation issues that are removed by setting this define.
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
 # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
-add_definitions(-DXXH_NO_LONG_LONG)
+add_compile_definitions(XXH_NO_LONG_LONG)
 
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
