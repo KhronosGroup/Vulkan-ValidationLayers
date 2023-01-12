@@ -2308,7 +2308,6 @@ TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
 TEST_F(VkLayerTest, InvalidSampleLocations) {
     TEST_DESCRIPTION("Test invalid cases of VK_EXT_sample_location");
 
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitFramework());
     if (!AreRequiredExtensionsEnabled()) {
@@ -2405,6 +2404,10 @@ TEST_F(VkLayerTest, InvalidSampleLocations) {
     // 1 from VK_SAMPLE_COUNT_1_BIT
     const uint32_t valid_count =
         multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
+
+    if (valid_count <= 1) {
+        GTEST_SKIP() << "Need a maxSampleLocationGridSize width x height greater than 1";
+    }
 
     std::vector<VkSampleLocationEXT> sample_location(valid_count,{0.5, 0.5});
     auto sample_locations_info = LvlInitStruct<VkSampleLocationsInfoEXT>();

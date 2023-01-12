@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2020-2022 The Khronos Group Inc.
- * Copyright (c) 2020-2022 Valve Corporation
- * Copyright (c) 2020-2022 LunarG, Inc.
- * Copyright (c) 2020-2022 Google, Inc.
+ * Copyright (c) 2020-2023 The Khronos Group Inc.
+ * Copyright (c) 2020-2023 Valve Corporation
+ * Copyright (c) 2020-2023 LunarG, Inc.
+ * Copyright (c) 2020-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -771,7 +771,9 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
@@ -923,7 +925,9 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-
+    if (IsPlatform(kMockICD)) {
+        GTEST_SKIP() << "Test not supported by MockICD, GPU-Assisted validation test requires a driver that can draw";
+    }
     auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(gpl_features);
     if (!gpl_features.graphicsPipelineLibrary) {
