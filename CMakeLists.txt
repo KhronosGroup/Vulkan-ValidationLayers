@@ -194,6 +194,7 @@ endif()
 # Platform-specific compiler switches
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
     add_compile_options(-Wconversion
+                        -Wimplicit-fallthrough
 
                         # TODO These warnings also get turned on with -Wconversion in some versions of clang.
                         #      Leave off until further investigation.
@@ -213,12 +214,6 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -fno-builtin-memcmp)
 
     set(CMAKE_C_STANDARD 99)
-
-    # For GCC version 7.1 or greater, we need to disable the implicit fallthrough warning since there's no consistent way to satisfy
-    # all compilers until they all accept the C++17 standard.
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.1)
-        add_compile_options(-Wimplicit-fallthrough=0)
-    endif()
 elseif(MSVC)
     # Warn about nested declarations
     add_compile_options("/w34456")

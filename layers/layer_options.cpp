@@ -99,6 +99,7 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
             break;
         case VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT:
             enable_data[sync_validation_queue_submit] = true;
+            break;
         default:
             assert(true);
     }

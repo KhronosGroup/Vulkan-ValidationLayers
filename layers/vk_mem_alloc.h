@@ -29,6 +29,7 @@
 //    6/05/19 - Make changes to suppress warnings from clang 3.8.0
 //    6/05/19 - Make changes to suppress more warnings from GCC
 //   11/18/20 - Make changes to suppress warnings from clang
+//    1/12/23 - Make changes to suppress -Wimplicit-fallthrough warnings from GCC and clang
 // 
 //
 
@@ -2595,10 +2596,12 @@ VMA_CALL_PRE void VMA_CALL_POST vmaFreeStatsString(
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wtautological-compare"
 #pragma clang diagnostic ignored "-Wnullability-completeness"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #endif
 #if GCC_VERSION >= 80000
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
