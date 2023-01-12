@@ -2094,7 +2094,7 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
-    skip |= ValidateIndirectCountCmd(*count_buffer_state, countBufferOffset, cmd_type);
+    skip |= ValidateIndirectCountCmd(*cb_state, *count_buffer_state, countBufferOffset, cmd_type);
     skip |= ValidateVTGShaderStages(*cb_state, cmd_type);
     return skip;
 }
@@ -2137,7 +2137,7 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
     skip |= ValidateCmdDrawType(*cb_state, true, VK_PIPELINE_BIND_POINT_GRAPHICS, cmd_type);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
-    skip |= ValidateIndirectCountCmd(*count_buffer_state, countBufferOffset, cmd_type);
+    skip |= ValidateIndirectCountCmd(*cb_state, *count_buffer_state, countBufferOffset, cmd_type);
     skip |= ValidateVTGShaderStages(*cb_state, cmd_type);
     return skip;
 }
@@ -2300,7 +2300,6 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                                 << ") was found such that valid usage passes. "
                                    "At least one buffer associated to this device address must be valid. The following buffers ";
             const auto error_msg_prefix = error_msg_prefix_ss.str();
-
             for (const auto &buffer_state : buffer_states) {
                 assert(buffer_state);
 
@@ -2308,7 +2307,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
                     continue;
                 }
 
-                skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), rt_func_name, vuid_single_device_memory);
+                skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, rt_func_name, vuid_single_device_memory);
 
                 if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
                     vuid_binding_table_flag_invalid_buffers.buffers.add(buffer_state->Handle());
@@ -2542,7 +2541,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
-    skip |= ValidateIndirectCountCmd(*count_buffer_state, countBufferOffset, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
+    skip |= ValidateIndirectCountCmd(*cb_state, *count_buffer_state, countBufferOffset, CMD_DRAWMESHTASKSINDIRECTCOUNTNV);
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
                                             "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV));
     if (maxDrawCount > 1) {
@@ -2600,8 +2599,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     auto buffer_state = Get<BUFFER_STATE>(buffer);
     auto count_buffer_state = Get<BUFFER_STATE>(countBuffer);
     skip |= ValidateIndirectCmd(*cb_state, *buffer_state, cmd_type);
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state.get(), caller_name, vuid.indirect_count_contiguous_memory);
-    skip |= ValidateBufferUsageFlags(count_buffer_state.get(), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+    skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, caller_name, vuid.indirect_count_contiguous_memory);
+    skip |= ValidateBufferUsageFlags(commandBuffer, *count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_count_buffer_bit, "vkCmdDrawMeshTasksIndirectCountEXT()",
                                      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,

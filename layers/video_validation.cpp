@@ -1305,9 +1305,9 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         has_separate_images = true;
                     }
 
-                    skip |= ValidateProtectedImage(*cb_state, reference_resource.image_state.get(), "vkCmdBeginVideoCodingKHR()",
+                    skip |= ValidateProtectedImage(*cb_state, *reference_resource.image_state, "vkCmdBeginVideoCodingKHR()",
                                                    "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07235", where);
-                    skip |= ValidateUnprotectedImage(*cb_state, reference_resource.image_state.get(), "vkCmdBeginVideoCodingKHR()",
+                    skip |= ValidateUnprotectedImage(*cb_state, *reference_resource.image_state, "vkCmdBeginVideoCodingKHR()",
                                                      "VUID-vkCmdBeginVideoCodingKHR-commandBuffer-07236", where);
 
                     const auto &supported_profiles = reference_resource.image_state->supported_video_profiles;
@@ -1462,9 +1462,9 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     auto buffer_state = Get<BUFFER_STATE>(pDecodeInfo->srcBuffer);
     if (buffer_state) {
         const char *where = " Buffer referenced in pDecodeInfo->srcBuffer";
-        skip |= ValidateProtectedBuffer(*cb_state, buffer_state.get(), "vkCmdDecodeVideoKHR()",
+        skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, "vkCmdDecodeVideoKHR()",
                                         "VUID-vkCmdDecodeVideoKHR-commandBuffer-07136", where);
-        skip |= ValidateUnprotectedBuffer(*cb_state, buffer_state.get(), "vkCmdDecodeVideoKHR()",
+        skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, "vkCmdDecodeVideoKHR()",
                                           "VUID-vkCmdDecodeVideoKHR-commandBuffer-07137", where);
     }
 
@@ -1582,9 +1582,9 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07144", "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07145");
     if (dst_resource) {
         const char *where = " Image referenced in pDecodeInfo->dstPictureResource";
-        skip |= ValidateProtectedImage(*cb_state, dst_resource.image_state.get(), "vkCmdDecodeVideoKHR()",
+        skip |= ValidateProtectedImage(*cb_state, *dst_resource.image_state, "vkCmdDecodeVideoKHR()",
                                        "VUID-vkCmdDecodeVideoKHR-commandBuffer-07147", where);
-        skip |= ValidateUnprotectedImage(*cb_state, dst_resource.image_state.get(), "vkCmdDecodeVideoKHR()",
+        skip |= ValidateUnprotectedImage(*cb_state, *dst_resource.image_state, "vkCmdDecodeVideoKHR()",
                                          "VUID-vkCmdDecodeVideoKHR-commandBuffer-07148", where);
 
         const auto &dst_supported_profiles = dst_resource.image_state->supported_video_profiles;

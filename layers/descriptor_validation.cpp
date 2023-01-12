@@ -851,12 +851,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             }
         }
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
-            if (ValidateProtectedBuffer(context.cb_state, buffer_node, context.caller, context.vuids.unprotected_command_buffer,
+            if (ValidateProtectedBuffer(context.cb_state, *buffer_node, context.caller, context.vuids.unprotected_command_buffer,
                                         "Buffer is in a descriptorSet")) {
                 return true;
             }
             if (binding_info.second.is_writable &&
-                ValidateUnprotectedBuffer(context.cb_state, buffer_node, context.caller, context.vuids.protected_command_buffer,
+                ValidateUnprotectedBuffer(context.cb_state, *buffer_node, context.caller, context.vuids.protected_command_buffer,
                                           "Buffer is in a descriptorSet")) {
                 return true;
             }
@@ -1162,12 +1162,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                 }
             }
             if (enabled_features.core11.protectedMemory == VK_TRUE) {
-                if (ValidateProtectedImage(context.cb_state, image_view_state->image_state.get(), context.caller,
+                if (ValidateProtectedImage(context.cb_state, *image_view_state->image_state, context.caller,
                                            context.vuids.unprotected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
                 }
                 if (binding_info.second.is_writable &&
-                    ValidateUnprotectedImage(context.cb_state, image_view_state->image_state.get(), context.caller,
+                    ValidateUnprotectedImage(context.cb_state, *image_view_state->image_state, context.caller,
                                              context.vuids.protected_command_buffer, "Image is in a descriptorSet")) {
                     return true;
                 }
@@ -1492,12 +1492,12 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
         }
 
         if (enabled_features.core11.protectedMemory == VK_TRUE) {
-            if (ValidateProtectedBuffer(context.cb_state, buffer_view_state->buffer_state.get(), context.caller,
+            if (ValidateProtectedBuffer(context.cb_state, *buffer_view_state->buffer_state, context.caller,
                                         context.vuids.unprotected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;
             }
             if (binding_info.second.is_writable &&
-                ValidateUnprotectedBuffer(context.cb_state, buffer_view_state->buffer_state.get(), context.caller,
+                ValidateUnprotectedBuffer(context.cb_state, *buffer_view_state->buffer_state, context.caller,
                                           context.vuids.protected_command_buffer, "Buffer is in a descriptorSet")) {
                 return true;
             }
@@ -2043,7 +2043,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
 
     // Validate that memory is bound to image
-    if (ValidateMemoryIsBoundToImage(image_node, func_name, kVUID_Core_Bound_Resource_FreedMemoryAccess)) {
+    if (ValidateMemoryIsBoundToImage(device, *image_node, func_name, kVUID_Core_Bound_Resource_FreedMemoryAccess)) {
         *error_code = kVUID_Core_Bound_Resource_FreedMemoryAccess;
         *error_msg = "No memory bound to image.";
         return false;
@@ -2625,7 +2625,7 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
     auto buffer_node = Get<BUFFER_STATE>(buffer_info->buffer);
     // Any invalid buffer should already be caught by object_tracker
     assert(buffer_node);
-    if (ValidateMemoryIsBoundToBuffer(buffer_node.get(), func_name, "VUID-VkWriteDescriptorSet-descriptorType-00329")) {
+    if (ValidateMemoryIsBoundToBuffer(device, *buffer_node, func_name, "VUID-VkWriteDescriptorSet-descriptorType-00329")) {
         *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00329";
         *error_msg = "No memory bound to buffer.";
         return false;
@@ -2716,7 +2716,7 @@ bool CoreChecks::ValidateAccelerationStructureUpdate(T acc_node, const char *fun
                                                      std::string *error_msg) const {
     // nullDescriptor feature allows this to be VK_NULL_HANDLE
     if (acc_node) {
-        if (ValidateMemoryIsBoundToAccelerationStructure(acc_node, func_name, kVUIDUndefined)) {
+        if (ValidateMemoryIsBoundToAccelerationStructure(device, *acc_node, func_name, kVUIDUndefined)) {
             *error_code = kVUIDUndefined;
             *error_msg = "No memory bound to acceleration structure.";
             return false;
@@ -3599,7 +3599,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(
         const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
 
         if (buffer_state) {
-            skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkCmdBindDescriptorBuffersEXT()",
+            skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, "vkCmdBindDescriptorBuffersEXT()",
                                                   "VUID-vkCmdBindDescriptorBuffersEXT-pBindingInfos-08052");
 
             if ((buffer_state->createInfo.usage &
@@ -4081,7 +4081,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 // TODO : Issue 4556 properly go through the list of buffers
                 const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
+                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08030");
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
@@ -4096,7 +4096,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 // TODO : Issue 4556 properly go through the list of buffers
                 const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
+                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08031");
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
@@ -4111,7 +4111,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 // TODO : Issue 4556 properly go through the list of buffers
                 const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
+                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08032");
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
@@ -4126,7 +4126,7 @@ bool CoreChecks::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescri
                 // TODO : Issue 4556 properly go through the list of buffers
                 const auto buffer_state = !buffer_states.empty() ? buffer_states[0] : std::shared_ptr<BUFFER_STATE>(nullptr);
                 if (buffer_state) {
-                    skip |= ValidateMemoryIsBoundToBuffer(buffer_state.get(), "vkGetDescriptorEXT()",
+                    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, "vkGetDescriptorEXT()",
                                                           "VUID-VkDescriptorDataEXT-type-08033");
                 }
             } else if (!enabled_features.robustness2_features.nullDescriptor) {
