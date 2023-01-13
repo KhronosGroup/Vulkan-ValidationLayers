@@ -44,14 +44,14 @@ jobs:
           cache-name: cache-macos-xcode
         with:
           path: |
-            external/glslang/build/install
-            external/Vulkan-Headers/build/install
-            external/SPIRV-Headers/build/install
-            external/SPIRV-Tools/build/install
-            external/robin-hood-hashing/build/install
-            external/googletest/build/install
-            external/Vulkan-Headers/registry
-            external/SPIRV-Headers/include
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
         run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
@@ -87,14 +87,14 @@ jobs:
           cache-name: cache-macos-latest-ninja
         with:
           path: |
-            external/glslang/build/install
-            external/Vulkan-Headers/build/install
-            external/SPIRV-Headers/build/install
-            external/SPIRV-Tools/build/install
-            external/robin-hood-hashing/build/install
-            external/googletest/build/install
-            external/Vulkan-Headers/registry
-            external/SPIRV-Headers/include
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
         run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Ninja"

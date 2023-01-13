@@ -40,12 +40,13 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.split(os.path.abspath(__file
 # TODO: Pass this in as arg, may be useful for running locally
 EXTERNAL_DIR_NAME = "external"
 BUILD_DIR_NAME = "build"
-EXTERNAL_DIR = RepoRelative(EXTERNAL_DIR_NAME)
 VVL_BUILD_DIR = RepoRelative(BUILD_DIR_NAME)
 CONFIGURATIONS = ['release', 'debug']
 DEFAULT_CONFIGURATION = CONFIGURATIONS[0]
 ARCHS = [ 'x64', 'Win32' ]
 DEFAULT_ARCH = ARCHS[0]
+
+def externalDir(config): return os.path.join(RepoRelative(EXTERNAL_DIR_NAME), config)
 
 # Runs a command in a directory and returns its return code.
 # Directory is project root by default, or a relative path from project root
@@ -63,9 +64,10 @@ def IsWindows(): return 'windows' == platform.system().lower()
 
 #
 # Verify consistency of generated source code
-def CheckVVLCodegenConsistency():
+def CheckVVLCodegenConsistency(args):
     print("Check Generated Source Code Consistency")
-    gen_check_cmd = 'python3 scripts/generate_source.py --verify %s/Vulkan-Headers/registry %s/SPIRV-Headers/include/spirv/unified1/' % (EXTERNAL_DIR, EXTERNAL_DIR)
+    ext_dir = externalDir(args.configuration)
+    gen_check_cmd = f'python3 scripts/generate_source.py --verify {ext_dir}/Vulkan-Headers/registry {ext_dir}/SPIRV-Headers/include/spirv/unified1/'
     RunShellCmd(gen_check_cmd)
 
 #
@@ -78,7 +80,7 @@ def BuildVVL(args, build_tests=False):
 
     utils.make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
-    cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
     # By default BUILD_WERROR is OFF, CI should always enable it.
     cmake_cmd = cmake_cmd + ' -DBUILD_WERROR=ON'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
@@ -95,18 +97,22 @@ def BuildVVL(args, build_tests=False):
     RunShellCmd(install_cmd, VVL_BUILD_DIR)
 
     print('Run vk_validation_stats.py')
-    utils.make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration.capitalize()))
-    RunShellCmd(f'python3 ../scripts/vk_validation_stats.py ../{EXTERNAL_DIR_NAME}/Vulkan-Headers/registry/validusage.json -text layers/{args.configuration.capitalize()}/vuid_coverage_database.txt', VVL_BUILD_DIR)
+    utils.make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration))
+    ext_dir = externalDir(args.configuration)
+    stats_script = os.path.join('..', 'scripts', 'vk_validation_stats.py')
+    validusage = os.path.join(ext_dir, 'Vulkan-Headers', 'registry', 'validusage.json')
+    outfile = os.path.join('layers', args.configuration, 'vuid_coverage_database.txt')
+    RunShellCmd(f'python3 {stats_script} {validusage} -text {outfile}', VVL_BUILD_DIR)
 
 #
 # Prepare Loader for executing Layer Validation Tests
 def BuildLoader(args):
-    LOADER_DIR = RepoRelative("%s/Vulkan-Loader" % EXTERNAL_DIR_NAME)
+    LOADER_DIR = RepoRelative(os.path.join("%s/Vulkan-Loader" % EXTERNAL_DIR_NAME))
     # Clone Loader repo
     if not os.path.exists(LOADER_DIR):
         print("Clone Loader Source Code")
         clone_loader_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Loader.git'
-        RunShellCmd(clone_loader_cmd, EXTERNAL_DIR)
+        RunShellCmd(clone_loader_cmd, EXTERNAL_DIR_NAME)
 
     print("Run update_deps.py for Loader Repository")
     update_cmd = 'python3 scripts/update_deps.py --dir external'
@@ -115,7 +121,7 @@ def BuildLoader(args):
     print("Run CMake for Loader")
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
     utils.make_dirs(LOADER_BUILD_DIR)
-    cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
 
@@ -131,7 +137,7 @@ def BuildMockICD(args):
     if not os.path.exists(VT_DIR):
         print("Clone Vulkan-Tools Repository")
         clone_tools_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Tools.git'
-        RunShellCmd(clone_tools_cmd, EXTERNAL_DIR)
+        RunShellCmd(clone_tools_cmd, EXTERNAL_DIR_NAME)
 
     ICD_BUILD_DIR = RepoRelative("%s/Vulkan-Tools/%s" % (EXTERNAL_DIR_NAME,BUILD_DIR_NAME))
 
@@ -141,7 +147,7 @@ def BuildMockICD(args):
     print("Run CMake for ICD")
     utils.make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
-        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake {args.cmake} ..'
+        f'cmake -DCMAKE_BUILD_TYPE={args.configuration} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake {args.cmake} ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
 
     print("Build Mock ICD")
@@ -158,7 +164,7 @@ def BuildProfileLayer(args):
     if not os.path.exists(VP_DIR):
         print("Clone Vulkan-Profiles Repository")
         clone_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Profiles.git'
-        RunShellCmd(clone_cmd, EXTERNAL_DIR)
+        RunShellCmd(clone_cmd, EXTERNAL_DIR_NAME)
 
     BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
 
@@ -180,32 +186,32 @@ def BuildProfileLayer(args):
 def RunVVLTests(args):
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
     lvt_cmd = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'tests')
-    if IsWindows(): lvt_cmd = os.path.join(lvt_cmd, args.configuration.capitalize())
+    if IsWindows(): lvt_cmd = os.path.join(lvt_cmd, args.configuration)
     lvt_cmd = os.path.join(lvt_cmd, 'vk_layer_validation_tests')
 
     lvt_env = dict(os.environ)
 
     if not IsWindows():
-        lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
+        lvt_env['LD_LIBRARY_PATH'] = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader')
     else:
-        loader_dll = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration.capitalize(), 'vulkan-1.dll')
+        loader_dll = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration, 'vulkan-1.dll')
         loader_dll_dst = os.path.join(os.path.dirname(lvt_cmd), 'vulkan-1.dll')
         shutil.copyfile(loader_dll, loader_dll_dst)
-    lvt_env['LD_LIBRARY_PATH'] += os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
+    lvt_env['LD_LIBRARY_PATH'] += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
 
     layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
-    if IsWindows(): layer_path = os.path.join(layer_path, args.configuration.capitalize())
+    if IsWindows(): layer_path = os.path.join(layer_path, args.configuration)
     if not os.path.isdir(layer_path):
         raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
-    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
+    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
     lvt_env['VK_LAYER_PATH'] = layer_path
 
-    vk_driver_files = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
-    if IsWindows(): vk_driver_files = os.path.join(vk_driver_files, args.configuration.capitalize())
+    vk_driver_files = os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
+    if IsWindows(): vk_driver_files = os.path.join(vk_driver_files, args.configuration)
     vk_driver_files = os.path.join(vk_driver_files, 'VkICD_mock_icd.json')
     if not os.path.isfile(vk_driver_files):
         raise Exception(f'VK_DRIVER_FILES "{vk_driver_files}" does not exist')
-    vk_driver_files + os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
+    vk_driver_files + os.pathsep + os.path.join(EXTERNAL_DIR_NAME, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
     lvt_env['VK_DRIVER_FILES'] = vk_driver_files
 
     lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'

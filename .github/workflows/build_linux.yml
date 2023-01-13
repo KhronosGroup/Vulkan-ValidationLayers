@@ -81,14 +81,14 @@ jobs:
           cache-name: cache-linux
         with:
           path: |
-            external/glslang/build/install
-            external/Vulkan-Headers/build/install
-            external/SPIRV-Headers/build/install
-            external/SPIRV-Tools/build/install
-            external/robin-hood-hashing/build/install
-            external/googletest/build/install
-            external/Vulkan-Headers/registry
-            external/SPIRV-Headers/include
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }}
@@ -135,14 +135,14 @@ jobs:
           cache-name: cache-linux-cpp20
         with:
           path: |
-            external/glslang/build/install
-            external/Vulkan-Headers/build/install
-            external/SPIRV-Headers/build/install
-            external/SPIRV-Tools/build/install
-            external/robin-hood-hashing/build/install
-            external/googletest/build/install
-            external/Vulkan-Headers/registry
-            external/SPIRV-Headers/include
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build Vulkan-ValidationLayers
         run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20'
