@@ -6104,6 +6104,10 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
 
     VkImageObj image(m_device);
     auto depth_stencil_format = FindSupportedDepthStencilFormat(gpu());
+    if (depth_stencil_format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+        GTEST_SKIP() << "Insufficient depth-stencil formats supported";
+    }
+
     image.Init(32, 32, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView imageView = image.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
