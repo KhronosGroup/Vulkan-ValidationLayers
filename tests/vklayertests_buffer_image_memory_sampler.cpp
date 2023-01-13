@@ -11243,10 +11243,15 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
 
     // invalid imageType
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
-    // Can't just set height to 1 as stateless valdiation will hit 04713 first
-    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00956");
-    m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-extent-02253");
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06412");
+    // Check that image format is valid
+    if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
+                                                   image_create_info.usage, image_create_info.flags,
+                                                   &image_format_props) == VK_SUCCESS) {
+        // Can't just set height to 1 as stateless validation will hit 04713 first
+        m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageType-00956");
+        m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-extent-02253");
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-06412");
+    }
     image_create_info = reset_create_info;
 
     // Test using a format that doesn't support disjoint
