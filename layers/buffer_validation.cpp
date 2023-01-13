@@ -4801,14 +4801,6 @@ static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &map, c
     return &(*layout_map);
 }
 
-static const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, const IMAGE_STATE &image_state) {
-    auto it = map.find(&image_state);
-    if (it != map.end()) {
-        return &(*it->second);
-    }
-    return nullptr;
-}
-
 // Helper to update the Global or Overlay layout map
 struct GlobalLayoutUpdater {
     bool update(VkImageLayout &dst, const image_layout_map::ImageSubresourceLayoutMap::LayoutEntry &src) const {

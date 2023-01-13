@@ -168,15 +168,6 @@ bool CoreChecks::ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count
     return skip;
 }
 
-// For given pipeline, return number of MSAA samples, or one if MSAA disabled
-static VkSampleCountFlagBits GetNumSamples(PIPELINE_STATE const &pipeline) {
-    const auto ms_state = pipeline.MultisampleState();
-    if (ms_state) {
-        return ms_state->rasterizationSamples;
-    }
-    return VK_SAMPLE_COUNT_1_BIT;
-}
-
 bool CoreChecks::GetPhysicalDeviceImageFormatProperties(IMAGE_STATE &image_state, const char *vuid_string) const {
     bool skip = false;
     const auto image_create_info = image_state.createInfo;
