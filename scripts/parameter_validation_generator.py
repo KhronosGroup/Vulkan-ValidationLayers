@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2022 The Khronos Group Inc.
-# Copyright (c) 2015-2022 Valve Corporation
-# Copyright (c) 2015-2022 LunarG, Inc.
-# Copyright (c) 2015-2022 Google Inc.
+# Copyright (c) 2015-2023 The Khronos Group Inc.
+# Copyright (c) 2015-2023 Valve Corporation
+# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2023 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -358,9 +358,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         copyright  = '/* *** THIS FILE IS GENERATED - DO NOT EDIT! ***\n'
         copyright += ' * See parameter_validation_generator.py for modifications\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2015-2022 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2022 LunarG, Inc.\n'
-        copyright += ' * Copyright (C) 2015-2022 Google Inc.\n'
+        copyright += ' * Copyright (c) 2015-2023 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2023 LunarG, Inc.\n'
+        copyright += ' * Copyright (C) 2015-2023 Google Inc.\n'
         copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
@@ -436,13 +436,20 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             for enum_item in node.iter('enum'):
                 if enum_item.get('extends') == "VkStructureType":
                     struct_type_id = enum_item.get('name')
+                    # This captures all sType in core (or promoted)
                     self.stype_version_dict[struct_type_id] = version_name
         for extensions in root.findall('extensions'):
             for extension in extensions.findall('extension'):
+                extensionName = extension.get('name')
+                promotedTo = extension.get('promotedto')
+                # TODO Issue 5103 - this is being used to remove false positive currently
+                promotedToCore = promotedTo is not None and 'VK_VERSION' in promotedTo
+
                 for entry in extension.iterfind('require/enum[@extends="VkStructureType"]'):
-                    alias = entry.get('alias')
-                    if alias is not None and (entry.get('comment') is None or 'typo' not in entry.get('comment')):
-                        self.stype_version_dict[alias] = extension.get('name')
+                    if (entry.get('comment') is None or 'typo' not in entry.get('comment')):
+                        alias = entry.get('alias')
+                        if (alias is not None and promotedToCore):
+                            self.stype_version_dict[alias] = extensionName
 
         # Build map of structure type names to VkStructureType enum values
         # Find all types of category "struct"

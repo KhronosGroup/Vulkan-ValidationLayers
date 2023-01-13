@@ -1,9 +1,9 @@
 /* *** THIS FILE IS GENERATED - DO NOT EDIT! ***
  * See parameter_validation_generator.py for modifications
  *
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Copyright (c) 2015-2017 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2577,16 +2577,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkDeviceQueueGlobalPriorityCreateInfoKHR structure members
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR: { // Covers VUID-VkDeviceQueueGlobalPriorityCreateInfoKHR-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_GLOBAL_PRIORITY_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_global_priority))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR), but its parent extension "
-                               "VK_EXT_global_priority has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-            if (is_const_param) {
                 VkDeviceQueueGlobalPriorityCreateInfoKHR *structure = (VkDeviceQueueGlobalPriorityCreateInfoKHR *) header;
                 skip |= validate_ranged_enum("VkDeviceQueueGlobalPriorityCreateInfoKHR", "globalPriority", "VkQueueGlobalPriorityKHR", AllVkQueueGlobalPriorityKHREnums, structure->globalPriority, "VUID-VkDeviceQueueGlobalPriorityCreateInfoKHR-globalPriority-parameter");
             }
@@ -2595,34 +2585,12 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_global_priority_query))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR), but its parent extension "
-                               "VK_EXT_global_priority_query has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-            if (is_const_param) {
                 VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR *structure = (VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR *) header;
                 skip |= validate_bool32("VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR", "globalPriorityQuery", structure->globalPriorityQuery);
             }
         } break;
 
-        // Validation code for VkQueueFamilyGlobalPriorityPropertiesKHR structure members
-        case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR: { // Covers VUID-VkQueueFamilyGlobalPriorityPropertiesKHR-sType-sType
-            if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_global_priority_query))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES_KHR), but its parent extension "
-                               "VK_EXT_global_priority_query has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-        } break;
+        // No Validation code for VkQueueFamilyGlobalPriorityPropertiesKHR structure members  -- Covers VUID-VkQueueFamilyGlobalPriorityPropertiesKHR-sType-sType
 
         // Validation code for VkFragmentShadingRateAttachmentInfoKHR structure members
         case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR: { // Covers VUID-VkFragmentShadingRateAttachmentInfoKHR-sType-sType
@@ -2745,16 +2713,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR: { // Covers VUID-VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR-sType-sType
-            if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_NV_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_nv_fragment_shader_barycentric))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR), but its parent extension "
-                               "VK_NV_fragment_shader_barycentric has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
             if (is_const_param) {
                 VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *structure = (VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *) header;
                 skip |= validate_bool32("VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR", "fragmentShaderBarycentric", structure->fragmentShaderBarycentric);
@@ -3866,16 +3824,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceBufferDeviceAddressFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceBufferDeviceAddressFeaturesEXT-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_ext_buffer_device_address))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT), but its parent extension "
-                               "VK_EXT_buffer_device_address has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-            if (is_const_param) {
                 VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *structure = (VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *) header;
                 skip |= validate_bool32("VkPhysicalDeviceBufferDeviceAddressFeaturesEXT", "bufferDeviceAddress", structure->bufferDeviceAddress);
 
@@ -4581,16 +4529,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_arm_rasterization_order_attachment_access))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_FEATURES_EXT), but its parent extension "
-                               "VK_ARM_rasterization_order_attachment_access has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-            if (is_const_param) {
                 VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *structure = (VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT *) header;
                 skip |= validate_bool32("VkPhysicalDeviceRasterizationOrderAttachmentAccessFeaturesEXT", "rasterizationOrderColorAttachmentAccess", structure->rasterizationOrderColorAttachmentAccess);
 
@@ -4611,16 +4549,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         // Validation code for VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT: { // Covers VUID-VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT-sType-sType
             if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT), but its parent extension "
-                               "VK_VALVE_mutable_descriptor_type has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
-            if (is_const_param) {
                 VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *structure = (VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT *) header;
                 skip |= validate_bool32("VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT", "mutableDescriptorType", structure->mutableDescriptorType);
             }
@@ -4628,16 +4556,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
         // Validation code for VkMutableDescriptorTypeCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT: { // Covers VUID-VkMutableDescriptorTypeCreateInfoEXT-sType-sType
-            if (is_const_param) {
-                if ((is_physdev_api && !SupportedByPdev(physical_device, VK_VALVE_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME)) || (!is_physdev_api && !IsExtEnabled(device_extensions.vk_valve_mutable_descriptor_type))) {
-                        skip |= LogError(
-                               instance, pnext_vuid,
-                               "%s: Includes a pNext pointer (%s) to a VkStructureType (VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT), but its parent extension "
-                               "VK_VALVE_mutable_descriptor_type has not been enabled.",
-                               api_name, parameter_name.get_name().c_str());
-                }
-            }
-
             if (is_const_param) {
                 VkMutableDescriptorTypeCreateInfoEXT *structure = (VkMutableDescriptorTypeCreateInfoEXT *) header;
                 skip |= validate_array("VkMutableDescriptorTypeCreateInfoEXT", "mutableDescriptorTypeListCount", "pMutableDescriptorTypeLists", structure->mutableDescriptorTypeListCount, &structure->pMutableDescriptorTypeLists, false, true, kVUIDUndefined, "VUID-VkMutableDescriptorTypeCreateInfoEXT-pMutableDescriptorTypeLists-parameter");
