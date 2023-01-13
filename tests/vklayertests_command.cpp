@@ -10104,9 +10104,19 @@ TEST_F(VkLayerTest, ResolveInvalidUsage) {
     ASSERT_TRUE(srcImage.initialized());
 
     image_create_info.format = dst_format;
+
+    // Some implementations don't support multisampling, check that image format is valid
+    VkImageFormatProperties image_format_props{};
+    VkResult result =
+        vk::GetPhysicalDeviceImageFormatProperties(gpu(), dst_format, image_create_info.imageType, image_create_info.tiling,
+                                                   image_create_info.usage, image_create_info.flags, &image_format_props);
+    bool src_image_2_tests_valid = false;
     VkImageObj srcImage2(m_device);
-    srcImage2.init(&image_create_info);
-    ASSERT_TRUE(srcImage2.initialized());
+    if ((result == VK_SUCCESS) && (image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) != 0) {
+        srcImage2.init(&image_create_info);
+        ASSERT_TRUE(srcImage2.initialized());
+        src_image_2_tests_valid = true;
+    }
 
     image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -10180,10 +10190,12 @@ TEST_F(VkLayerTest, ResolveInvalidUsage) {
                                   1, &resolveRegion);
     m_errorMonitor->VerifyFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06765");
-    m_commandBuffer->ResolveImage(srcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage2.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                  1, &resolveRegion);
-    m_errorMonitor->VerifyFound();
+    if (src_image_2_tests_valid) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-06765");
+        m_commandBuffer->ResolveImage(srcImage2.handle(), VK_IMAGE_LAYOUT_GENERAL, invalidDstImage2.handle(),
+                                      VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
+        m_errorMonitor->VerifyFound();
+    }
 
     m_commandBuffer->end();
 }
