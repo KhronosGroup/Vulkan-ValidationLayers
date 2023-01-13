@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
  * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (c) 2015-2022 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021-2022 ARM, Inc. All rights reserved.
@@ -738,6 +738,10 @@ TEST_F(VkLayerTest, DynamicRenderingGraphicsPipelineCreateInfo) {
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    if (m_device->props.limits.maxGeometryOutputVertices == 0) {
+        GTEST_SKIP() << "Device doesn't support required maxGeometryOutputVertices";
+    }
 
     const VkPipelineLayoutObj pl(m_device);
     VkPipelineObj pipe(m_device);
