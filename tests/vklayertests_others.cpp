@@ -8043,20 +8043,21 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
 
     vk::CmdEndRenderPass(commandBuffer.handle());
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-viewportCount-03394");
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCount-viewportCount-arraylength");
-    VkViewport viewport2 = {
-        0, 0, 1, 1, 0.0f, 0.0f,
-    };
-    vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 0, &viewport2);
-    m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
+    if (features2.features.multiViewport) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-viewportCount-03394");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCount-viewportCount-arraylength");
-        vkCmdSetViewportWithCount(commandBuffer.handle(), 0, &viewport2);
+        VkViewport viewport2 = {
+            0, 0, 1, 1, 0.0f, 0.0f,
+        };
+        vkCmdSetViewportWithCountEXT(commandBuffer.handle(), 0, &viewport2);
         m_errorMonitor->VerifyFound();
+        if (vulkan_13) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewportWithCount-viewportCount-03394");
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetViewportWithCount-viewportCount-arraylength");
+            vkCmdSetViewportWithCount(commandBuffer.handle(), 0, &viewport2);
+            m_errorMonitor->VerifyFound();
+        }
     }
-
     {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-offset-03400");
         VkRect2D scissor2 = {{1, 0}, {INT32_MAX, 16}};
@@ -8081,15 +8082,17 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicStateEnabled) {
         }
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03397");
-    m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
-    vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
-    m_errorMonitor->VerifyFound();
-    if (vulkan_13) {
+    if (features2.features.multiViewport) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03397");
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
-        vkCmdSetScissorWithCount(commandBuffer.handle(), 0, 0);
+        vkCmdSetScissorWithCountEXT(commandBuffer.handle(), 0, 0);
         m_errorMonitor->VerifyFound();
+        if (vulkan_13) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-scissorCount-03397");
+            m_errorMonitor->SetUnexpectedError("VUID-vkCmdSetScissorWithCount-scissorCount-arraylength");
+            vkCmdSetScissorWithCount(commandBuffer.handle(), 0, 0);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetScissorWithCount-x-03399");
