@@ -79,7 +79,7 @@ struct InterfaceVariable {
 
     DecorationSet decorations;
     bool descriptor{false};  // if interfacing with descriptors
-    VkShaderStageFlagBits stage;
+    VkShaderStageFlagBits stage{VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM};
 
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
