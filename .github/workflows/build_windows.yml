@@ -1,5 +1,5 @@
 # Copyright (c) 2022 Valve Corporation
-# Copyright (c) 2022 LunarG, Inc.
+# Copyright (c) 2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,14 +55,14 @@ jobs:
           cache-name: cache-windows
         with:
           path: |
-            external/glslang/build/install
-            external/Vulkan-Headers/build/install
-            external/SPIRV-Headers/build/install
-            external/SPIRV-Tools/build/install
-            external/robin-hood-hashing/build/install
-            external/googletest/build/install
-            external/Vulkan-Headers/registry
-            external/SPIRV-Headers/include
+            external/${{ matrix.config }}/glslang/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Headers/build/install
+            external/${{ matrix.config }}/SPIRV-Tools/build/install
+            external/${{ matrix.config }}/robin-hood-hashing/build/install
+            external/${{ matrix.config }}/googletest/build/install
+            external/${{ matrix.config }}/Vulkan-Headers/registry
+            external/${{ matrix.config }}/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Build and Test Vulkan-ValidationLayers
         run: python3 scripts/github_ci_build_desktop.py --config ${{ matrix.config }} --arch ${{ matrix.arch }}

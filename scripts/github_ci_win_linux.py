@@ -33,7 +33,7 @@ def Build(args):
         common_ci.BuildLoader(args)
         common_ci.BuildProfileLayer(args)
         common_ci.BuildMockICD(args)
-        common_ci.CheckVVLCodegenConsistency()
+        common_ci.CheckVVLCodegenConsistency(args)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
