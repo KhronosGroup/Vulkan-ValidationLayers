@@ -2,7 +2,7 @@
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
 # Copyright (c) 2018 Valve Corporation
-# Copyright (c) 2018-2022 LunarG, Inc.
+# Copyright (c) 2018-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -206,11 +206,6 @@ A list of options to pass to CMake during the generation phase.
 A list of environment variables where one must be set to "true"
 (case-insensitive) in order for this repo to be fetched and built.
 This list can be used to specify repos that should be built only in CI.
-Typically, this list might contain "TRAVIS" and/or "APPVEYOR" because
-each of these CI systems sets an environment variable with its own
-name to "true".  Note that this could also be (ab)used to control
-the processing of the repo with any environment variable.  The default
-is an empty list, which means that the repo is always processed.
 
 - build_step (optional)
 
