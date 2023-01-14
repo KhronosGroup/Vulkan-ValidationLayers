@@ -14857,6 +14857,12 @@ TEST_F(VkLayerTest, IncompatibleScissorCountAndViewportCount) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    VkPhysicalDeviceFeatures features{};
+    vk::GetPhysicalDeviceFeatures(gpu(), &features);
+    if (features.multiViewport == false) {
+        GTEST_SKIP() << "multiViewport feature not supported by device";
+    }
+
     VkViewport viewports[2] = {{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f}};
 
     auto set_viewport_state_createinfo = [&](CreatePipelineHelper &helper) {
