@@ -10780,6 +10780,10 @@ TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init(&deviceFeatures));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
+    if (m_device->props.limits.maxGeometryOutputVertices == 0) {
+        GTEST_SKIP() << "Device doesn't support geometry shaders";
+    }
+
     VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj gs(this, bindStateGeomShaderText, VK_SHADER_STAGE_GEOMETRY_BIT);
 
