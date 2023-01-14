@@ -450,10 +450,13 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
 
     topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06252");
-    topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                                          "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+
+    if (m_device->phy().features().tessellationShader) {
+        topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                          std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                                              "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+    }
 }
 
 TEST_F(VkLayerTest, PointSizeGeomShaderDontWrite) {
