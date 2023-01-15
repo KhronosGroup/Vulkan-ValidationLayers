@@ -44,8 +44,11 @@
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
+
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#include <unistd.h>
+#endif
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
