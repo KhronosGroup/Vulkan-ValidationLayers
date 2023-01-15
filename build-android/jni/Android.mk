@@ -42,6 +42,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/android_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/external_object_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/base_node.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_state.cpp

@@ -53,6 +53,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/device_validation.cpp',
     'layers/device_memory_validation.cpp',
     'layers/drawdispatch.cpp',
+    'layers/external_object_validation.cpp',
     'layers/gpu_vuids.h',
     'layers/parameter_validation_utils.cpp',
     'layers/pipeline_validation.cpp',
