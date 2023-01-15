@@ -6400,18 +6400,6 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
-    bool skip = false;
-
-    if (!performance_lock_acquired) {
-        skip |= LogError(device, "VUID-vkReleaseProfilingLockKHR-device-03235",
-                         "vkReleaseProfilingLockKHR(): The profiling lock of device must have been held via a previous successful "
-                         "call to vkAcquireProfilingLockKHR.");
-    }
-
-    return skip;
-}
-
 bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
                                                                    uint32_t bindingCount, const VkBuffer *pBuffers,
                                                                    const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes) const {
