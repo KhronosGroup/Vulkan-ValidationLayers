@@ -204,6 +204,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     descriptor_sets.cpp
     descriptor_sets.h
     descriptor_validation.cpp
+    device_validation.cpp
     device_memory_state.cpp
     device_memory_state.h
     device_memory_validation.cpp
