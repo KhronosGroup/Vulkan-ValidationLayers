@@ -1317,3 +1317,15 @@ void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool 
         }
     }
 }
+
+bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
+    bool skip = false;
+
+    if (!performance_lock_acquired) {
+        skip |= LogError(device, "VUID-vkReleaseProfilingLockKHR-device-03235",
+                         "vkReleaseProfilingLockKHR(): The profiling lock of device must have been held via a previous successful "
+                         "call to vkAcquireProfilingLockKHR.");
+    }
+
+    return skip;
+}
