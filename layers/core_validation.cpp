@@ -59,12 +59,6 @@
 #include <string>
 #include <valarray>
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-
-#include <unistd.h>
-#include <sys/types.h>
-#endif
-
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
 #include "core_validation.h"
