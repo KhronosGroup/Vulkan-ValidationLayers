@@ -82,8 +82,6 @@
 
 [[maybe_unused]] static const char *kVUID_Core_invalidDepthStencilFormat = "UNASSIGNED-CoreValidation-depthStencil-format";
 
-[[maybe_unused]] static const char *kVUID_Core_DeviceAddress_NoAssociatedBuffer = "UNASSIGNED-CoreValidation-VkDeviceAddress-NoAssociatedBuffer";
-
 // clang-format on
 
 #undef DECORATE_UNUSED
