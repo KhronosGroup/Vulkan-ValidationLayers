@@ -209,6 +209,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     device_memory_state.h
     device_memory_validation.cpp
     drawdispatch.cpp
+    external_object_validation.cpp
     gpu_utils.cpp
     gpu_utils.h
     gpu_validation.cpp

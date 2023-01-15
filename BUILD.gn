@@ -134,6 +134,7 @@ core_validation_sources = [
   "layers/device_state.h",
   "layers/device_validation.cpp",
   "layers/drawdispatch.cpp",
+  "layers/external_object_validation.cpp",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
   "layers/generated/gpu_as_inspection_comp.h",
