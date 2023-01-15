@@ -132,6 +132,7 @@ core_validation_sources = [
   "layers/device_memory_state.h",
   "layers/device_memory_validation.cpp",
   "layers/device_state.h",
+  "layers/device_validation.cpp",
   "layers/drawdispatch.cpp",
   "layers/generated/command_validation.cpp",
   "layers/generated/command_validation.h",
