@@ -2239,7 +2239,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
     const auto buffer_states = GetBuffersByAddress(binding_table.deviceAddress);
     if (buffer_states.empty()) {
-        skip |= LogError(device, kVUID_Core_DeviceAddress_NoAssociatedBuffer,
+        skip |= LogError(device, "VUID-VkStridedDeviceAddressRegionKHR-size-04631",
                          "%s: no buffer is associated with %s->deviceAddress (0x%" PRIx64 ").", rt_func_name, binding_table_name,
                          binding_table.deviceAddress);
     } else {
