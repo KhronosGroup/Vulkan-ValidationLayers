@@ -1,5 +1,5 @@
-# Copyright (c) 2021-2022 Valve Corporation
-# Copyright (c) 2021-2022 LunarG, Inc.
+# Copyright (c) 2021-2023 Valve Corporation
+# Copyright (c) 2021-2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,6 +57,9 @@ jobs:
             config: debug
     steps:
       - uses: actions/checkout@v3
+      - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.17.2
       - uses: actions/setup-python@v4
         with:
           python-version: '3.7'
@@ -65,7 +68,7 @@ jobs:
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
-                                libxcb-randr0-dev cmake
+                                libxcb-randr0-dev
       - name: Cache dependent components
         # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
         # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
@@ -91,9 +94,6 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
-      - name: Test CMake minimum version requirements
-        run: python3 scripts/cmake_test_min.py
-        if: matrix.cc == 'gcc' && matrix.config == 'release'
 
   linux-cpp20:
     runs-on: ubuntu-20.04
