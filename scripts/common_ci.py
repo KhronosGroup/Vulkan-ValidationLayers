@@ -166,6 +166,8 @@ def BuildProfileLayer(args):
     utils.make_dirs(BUILD_DIR)
     cmake_cmd = \
         f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    # Currently issue with the Loader dependency being built in the profile layer repo
+    cmake_cmd += ' -DCMAKE_C_FLAGS="-Wno-typedef-redefinition"'
     RunShellCmd(cmake_cmd, BUILD_DIR)
 
     print("Build Profile Layer")
