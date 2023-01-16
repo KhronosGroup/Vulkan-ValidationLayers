@@ -9733,14 +9733,11 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
-        const uint32_t rasterization_stream = 300;
-        if (rasterization_stream >= transform_feedback_props.maxTransformFeedbackStreams) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
-        }
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
         if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413");
         }
-        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), rasterization_stream);
+        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), transform_feedback_props.maxTransformFeedbackStreams + 1);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
