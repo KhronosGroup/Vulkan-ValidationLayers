@@ -716,9 +716,8 @@ uint32_t SHADER_MODULE_STATE::GetConstantValueById(uint32_t id) const {
     return value->GetConstantValue();
 }
 
-// Returns an int32_t corresponding to the spv::Dim of the given resource, when positive, and corresponding to an unknown type, when
-// negative.
-int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const InterfaceVariable& resource) const {
+// Returns spv::Dim of the given OpVariable
+spv::Dim SHADER_MODULE_STATE::GetShaderResourceDimensionality(const InterfaceVariable& resource) const {
     const Instruction* type = FindDef(resource.type_id);
     while (true) {
         switch (type->Opcode()) {
@@ -729,9 +728,9 @@ int32_t SHADER_MODULE_STATE::GetShaderResourceDimensionality(const InterfaceVari
                 type = FindDef(type->Word(3));
                 break;
             case spv::OpTypeImage:
-                return type->Word(3);
+                return spv::Dim(type->Word(3));
             default:
-                return -1;
+                return spv::DimMax;
         }
     }
 }

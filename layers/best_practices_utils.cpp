@@ -1385,9 +1385,10 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
         bool accesses_2d = false;
         for (const InterfaceVariable& variable : *interface_variables) {
             auto dim = module_state->GetShaderResourceDimensionality(variable);
-            if (dim < 0) continue;
-            auto spvdim = spv::Dim(dim);
-            if (spvdim != spv::Dim1D && spvdim != spv::DimBuffer) accesses_2d = true;
+            if (dim != spv::Dim1D && dim != spv::DimBuffer) {
+                accesses_2d = true;
+                break;
+            }
         }
 
         if (accesses_2d && dimensions < 2) {
