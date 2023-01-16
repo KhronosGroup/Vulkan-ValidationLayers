@@ -1,8 +1,8 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017, 2019-2022 The Khronos Group Inc.
-# Copyright (c) 2015-2017, 2019-2022 Valve Corporation
-# Copyright (c) 2015-2017, 2019-2022 LunarG, Inc.
+# Copyright (c) 2015-2017, 2019-2023 The Khronos Group Inc.
+# Copyright (c) 2015-2017, 2019-2023 Valve Corporation
+# Copyright (c) 2015-2017, 2019-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -150,6 +150,30 @@ def BuildMockICD(args):
     RunShellCmd(build_cmd, ICD_BUILD_DIR)
 
 #
+# Prepare Profile Layer for use with Layer Validation Tests
+def BuildProfileLayer(args):
+    RunShellCmd('pip3 install jsonschema', EXTERNAL_DIR_NAME)
+
+    VP_DIR = RepoRelative("%s/Vulkan-Profiles" % EXTERNAL_DIR_NAME)
+    if not os.path.exists(VP_DIR):
+        print("Clone Vulkan-Profiles Repository")
+        clone_cmd = 'git clone https://github.com/KhronosGroup/Vulkan-Profiles.git'
+        RunShellCmd(clone_cmd, EXTERNAL_DIR)
+
+    BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
+
+    print("Run CMake for Profile Layer")
+    utils.make_dirs(BUILD_DIR)
+    cmake_cmd = \
+        f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
+    RunShellCmd(cmake_cmd, BUILD_DIR)
+
+    print("Build Profile Layer")
+    build_cmd = f'cmake --build .'
+    if not IsWindows(): build_cmd = build_cmd + f' -- -j{os.cpu_count()}'
+    RunShellCmd(build_cmd, BUILD_DIR)
+
+#
 # Run the Layer Validation Tests
 def RunVVLTests(args):
     print("Run Vulkan-ValidationLayer Tests using Mock ICD")
@@ -165,11 +189,13 @@ def RunVVLTests(args):
         loader_dll = os.path.join(EXTERNAL_DIR, 'Vulkan-Loader', BUILD_DIR_NAME, 'loader', args.configuration.capitalize(), 'vulkan-1.dll')
         loader_dll_dst = os.path.join(os.path.dirname(lvt_cmd), 'vulkan-1.dll')
         shutil.copyfile(loader_dll, loader_dll_dst)
+    lvt_env['LD_LIBRARY_PATH'] += os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
 
     layer_path = os.path.join(PROJECT_ROOT, BUILD_DIR_NAME, 'layers')
     if IsWindows(): layer_path = os.path.join(layer_path, args.configuration.capitalize())
     if not os.path.isdir(layer_path):
         raise Exception(f'VK_LAYER_PATH directory "{layer_path}" does not exist')
+    layer_path += os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
     lvt_env['VK_LAYER_PATH'] = layer_path
 
     vk_driver_files = os.path.join(EXTERNAL_DIR, 'Vulkan-Tools', BUILD_DIR_NAME, 'icd')
@@ -177,7 +203,13 @@ def RunVVLTests(args):
     vk_driver_files = os.path.join(vk_driver_files, 'VkICD_mock_icd.json')
     if not os.path.isfile(vk_driver_files):
         raise Exception(f'VK_DRIVER_FILES "{vk_driver_files}" does not exist')
+    vk_driver_files + os.pathsep + os.path.join(EXTERNAL_DIR, 'Vulkan-Profiles', BUILD_DIR_NAME, 'lib')
     lvt_env['VK_DRIVER_FILES'] = vk_driver_files
+
+    lvt_env['VK_INSTANCE_LAYERS'] = 'VK_LAYER_KHRONOS_validation' + os.pathsep + 'VK_LAYER_KHRONOS_profiles'
+    lvt_env['VK_KHRONOS_PROFILES_SIMULATE_CAPABILITIES'] = 'SIMULATE_API_VERSION_BIT,SIMULATE_FEATURES_BIT,SIMULATE_PROPERTIES_BIT,SIMULATE_EXTENSIONS_BIT,SIMULATE_FORMATS_BIT,SIMULATE_QUEUE_FAMILY_PROPERTIES_BIT'
+    lvt_env['VK_KHRONOS_PROFILES_EMULATE_PORTABILITY'] = 'false'
+    lvt_env['VK_KHRONOS_PROFILES_DEBUG_REPORTS'] = 'DEBUG_REPORT_ERROR_BIT'
 
     RunShellCmd(lvt_cmd, env=lvt_env)
     print("Re-Running multithreaded tests with VK_LAYER_FINE_GRAINED_LOCKING=1:")
@@ -202,4 +234,10 @@ def GetArgParser():
         '--cmake', dest='cmake',
         metavar='CMAKE', type=str,
         default='', help='Additional args to pass to cmake')
+    parser.add_argument(
+        '--build', dest='build',
+        action='store_true', help='Build the layers')
+    parser.add_argument(
+        '--test', dest='test',
+        action='store_true', help='Tests the layers')
     return parser
