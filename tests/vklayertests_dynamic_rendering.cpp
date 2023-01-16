@@ -2653,10 +2653,6 @@ TEST_F(VkLayerTest, DynamicRenderingCreatePipelineWithoutFeature) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
-    // TODO Issue 4867 - MockICD doesn't return proper values
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
