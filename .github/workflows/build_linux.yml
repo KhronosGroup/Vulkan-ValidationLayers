@@ -65,6 +65,7 @@ jobs:
           python-version: '3.7'
       - name: Install build dependencies
         run: |
+          python3 -m pip install jsonschema
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
@@ -89,11 +90,23 @@ jobs:
             external/Vulkan-Headers/registry
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.cc }}-${{ matrix.cxx }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
-      - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --config ${{ matrix.config }}
+      - name: Build Vulkan-ValidationLayers
+        run: python3 scripts/github_ci_win_linux.py --build --config ${{ matrix.config }}
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+      - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
+      - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
+      - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
 
   linux-cpp20:
     runs-on: ubuntu-20.04
@@ -106,6 +119,7 @@ jobs:
           python-version: '3.7'
       - name: Install build dependencies
         run: |
+          python3 -m pip install jsonschema
           sudo apt-get -qq update
           sudo apt-get install -y libxkbcommon-dev libwayland-dev libmirclient-dev libxrandr-dev \
                                 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
@@ -130,8 +144,20 @@ jobs:
             external/Vulkan-Headers/registry
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
-      - name: Build and Test Vulkan-ValidationLayers
-        run: python3 scripts/github_ci_win_linux.py --config release --cmake='-DVVL_CPP_STANDARD=20'
+      - name: Build Vulkan-ValidationLayers
+        run: python3 scripts/github_ci_win_linux.py --build --config release --cmake='-DVVL_CPP_STANDARD=20'
         env:
           CC: clang
           CXX: clang++
+      - name: Test Vulkan-ValidationLayers - Pixel 6 Adreno profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_adreno.json
+      - name: Test Vulkan-ValidationLayers - Pixel 6 Mali profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/pixel_6_mali.json
+      - name: Test Vulkan-ValidationLayers - NVIDIA Tegra X1 profile
+        run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2021 Valve Corporation
-# Copyright (c) 2020-2021 LunarG, Inc.
+# Copyright (c) 2020-2021, 2023 Valve Corporation
+# Copyright (c) 2020-2021, 2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,15 +27,12 @@ import common_ci
 
 #
 # Module Entrypoint
-def main():
-    parser = common_ci.GetArgParser()
-    args = parser.parse_args()
-
+def Build(args):
     try:
         common_ci.BuildVVL(args, True)
         common_ci.BuildLoader(args)
+        common_ci.BuildProfileLayer(args)
         common_ci.BuildMockICD(args)
-        common_ci.RunVVLTests(args)
         common_ci.CheckVVLCodegenConsistency()
 
     except subprocess.CalledProcessError as proc_error:
@@ -47,5 +44,24 @@ def main():
 
     sys.exit(0)
 
+def Test(args):
+    try:
+        common_ci.RunVVLTests(args)
+
+    except subprocess.CalledProcessError as proc_error:
+        print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
+        sys.exit(proc_error.returncode)
+    except Exception as unknown_error:
+        print('An unkown error occured: %s', unknown_error)
+        sys.exit(1)
+
+    sys.exit(0)
+
 if __name__ == '__main__':
-  main()
+    parser = common_ci.GetArgParser()
+    args = parser.parse_args()
+
+    if (args.build):
+        Build(args)
+    if (args.test):
+        Test(args)
