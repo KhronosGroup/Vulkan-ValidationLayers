@@ -8970,10 +8970,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Disabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    // TODO Issue 4867 - MockICD doesn't return proper values
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
 
     auto extended_dynamic_state3_features = LvlInitStruct<VkPhysicalDeviceExtendedDynamicState3FeaturesEXT>();
     auto features2 = GetPhysicalDeviceFeatures2(extended_dynamic_state3_features);
@@ -9446,10 +9442,6 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
         GTEST_SKIP() << "At least Vulkan version 1.3 is required";
     }
-    // TODO Issue 4867 - MockICD doesn't return proper values
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
 
     auto line_rasterization_feature = LvlInitStruct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
     auto provoking_vertex_features = LvlInitStruct<VkPhysicalDeviceProvokingVertexFeaturesEXT>(&line_rasterization_feature);
@@ -9738,11 +9730,14 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         vk::CmdDraw(commandBuffer.handle(), 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-transformFeedback-07411");
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
+        const uint32_t rasterization_stream = 300;
+        if (rasterization_stream >= transform_feedback_props.maxTransformFeedbackStreams) {
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07412");
+        }
         if (!transform_feedback_props.transformFeedbackRasterizationStreamSelect) {
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetRasterizationStreamEXT-rasterizationStream-07413");
         }
-        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), 300U);
+        vkCmdSetRasterizationStreamEXT(commandBuffer.handle(), rasterization_stream);
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
@@ -11636,11 +11631,6 @@ TEST_F(VkLayerTest, ValidateDiscardRectanglesDynamicStateNotSet) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    // TODO Issue 4867 - MockICD doesn't return proper values
-    if (IsPlatform(kMockICD)) {
-        GTEST_SKIP() << "Test not supported by MockICD";
-    }
 
     auto vkCmdSetDiscardRectangleEXT =
         (PFN_vkCmdSetDiscardRectangleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetDiscardRectangleEXT");
