@@ -35,6 +35,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     ${VVL_SOURCE_DIR}/layers/generated/vk_format_utils.cpp
     ${VVL_SOURCE_DIR}/layers/generated/vk_safe_struct.cpp
     positive/android_hardware_buffer.cpp
+    positive/best_practices.cpp
     positive/command.cpp
     positive/descriptors.cpp
     positive/dynamic_rendering.cpp
