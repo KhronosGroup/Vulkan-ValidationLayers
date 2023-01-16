@@ -94,9 +94,6 @@ if(MSVC)
     add_compile_options("/bigobj")
     add_compile_options("/we4189")
     add_compile_options("/we5038")
-    # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015. The changed behavior is
-    # that constructor initializers are now fixed to clear the struct members.
-    add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
 else()
     add_compile_options(-Wpointer-arith -Wno-unused-function -Wno-sign-compare)
 endif()
@@ -278,8 +275,6 @@ endif()
 # Khronos validation additional dependencies
 if (USE_ROBIN_HOOD_HASHING)
     target_link_libraries(VkLayer_khronos_validation PRIVATE robin_hood::robin_hood)
-    # This warning produces what look like false positives in robin_hood.h with Visual Studio 2015
-    target_compile_options(VkLayer_khronos_validation PRIVATE "$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19.1>>:/wd4996>")
 endif()
 # Order matters here. VkLayer_utils should be the last link library to ensure mimalloc overrides are picked up correctly.
 # Otherwise, libraries after VkLayer_utils will not benefit from this performance improvement.

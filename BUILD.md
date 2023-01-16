@@ -195,7 +195,7 @@ cmake -S . -B build/ --preset dev
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
   - Versions
     - [2022](https://www.visualstudio.com/vs/downloads/)
-    - [2015-2019](https://www.visualstudio.com/vs/older-downloads/)
+    - [2017-2019](https://www.visualstudio.com/vs/older-downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
 - [CMake 3.17.2](https://cmake.org/files/v3.17/cmake-3.17.2-win64-x64.zip) is the minimum CMake version supported.  [CMake 3.19.3](https://cmake.org/files/v3.19/cmake-3.19.3-win64-x64.zip) is recommended.
@@ -413,8 +413,7 @@ Follow the setup steps for Linux or OSX above, then from your terminal:
 
 #### Windows
 
-Follow the setup steps for Windows above, then from Developer Command Prompt
-for VS2015:
+Follow the setup steps for Windows above, then from the Developer Command Prompt:
 
     cd build-android
     update_external_sources_android.bat
