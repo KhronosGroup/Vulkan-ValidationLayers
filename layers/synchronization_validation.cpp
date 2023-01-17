@@ -666,7 +666,7 @@ ResourceAccessRange GetBufferRange(VkDeviceSize offset, VkDeviceSize buf_whole_s
 }
 
 SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
-                                                             const InterfaceVariable &interface_var,
+                                                             const ResourceInterfaceVariable &variable,
                                                              VkShaderStageFlagBits stage_flag) {
     if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
         assert(stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -683,7 +683,7 @@ SyncStageAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType de
     // If the desriptorSet is writable, we don't need to care SHADER_READ. SHADER_WRITE is enough.
     // Because if write hazard happens, read hazard might or might not happen.
     // But if write hazard doesn't happen, read hazard is impossible to happen.
-    if (interface_var.is_writable) {
+    if (variable.is_writable) {
         return stage_access->second.storage_write;
     } else if (descriptor_type == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE ||
                descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
@@ -2142,7 +2142,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
         } else if (!stage_state.descriptor_variables) {
             continue;
         }
-        for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
+        for (const auto &variable : *stage_state.descriptor_variables) {
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
@@ -2276,7 +2276,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
         } else if (!stage_state.descriptor_variables) {
             continue;
         }
-        for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
+        for (const auto &variable : *stage_state.descriptor_variables) {
             const auto *descriptor_set = (*per_sets)[variable.decorations.set].bound_descriptor_set.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);

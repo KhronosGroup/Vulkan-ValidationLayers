@@ -880,7 +880,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
             for (const auto &desc_index : binding_info.second.samplers_used_by_image[index]) {
                 const auto *desc =
                     context.descriptor_set.GetDescriptorFromBinding(desc_index.sampler_slot.binding, desc_index.sampler_index);
-                // TODO: This check _shouldn't_ be necessary due to the checks made in FindVariableDescriptorType in
+                // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
                 //       shader_validation.cpp. However, without this check some traces still crash.
                 if (desc && (desc->GetClass() == cvdescriptorset::DescriptorClass::PlainSampler)) {
                     const auto *sampler_state = static_cast<const cvdescriptorset::SamplerDescriptor *>(desc)->GetSamplerState();
@@ -1079,7 +1079,7 @@ bool CoreChecks::ValidateDescriptor(const DescriptorContext &context, const Desc
                     if (!stage.descriptor_variables) {
                         continue;
                     }
-                    for (const InterfaceVariable &variable : *stage.descriptor_variables) {
+                    for (const auto &variable : *stage.descriptor_variables) {
                         if (variable.decorations.set == set_index && variable.decorations.binding == binding) {
                             descriptor_writable |= variable.is_writable;
                             descriptor_readable |= variable.is_readable | variable.is_sampler_implicitLod_dref_proj;

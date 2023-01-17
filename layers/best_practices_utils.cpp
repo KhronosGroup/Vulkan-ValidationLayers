@@ -1370,8 +1370,8 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
                                       kThreadGroupDispatchCountAlignmentArm);
     }
 
-    auto interface_variables = module_state->GetInterfaceVariable(entrypoint);
-    if (interface_variables) {
+    auto variables = module_state->GetResourceInterfaceVariable(entrypoint);
+    if (variables) {
         unsigned dimensions = 0;
         if (x > 1) dimensions++;
         if (y > 1) dimensions++;
@@ -1383,7 +1383,7 @@ bool BestPractices::ValidateCreateComputePipelineArm(const VkComputePipelineCrea
         // There are some false positives here. We could simply have a shader that does this within a 1D grid,
         // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
         bool accesses_2d = false;
-        for (const InterfaceVariable& variable : *interface_variables) {
+        for (const auto& variable : *variables) {
             auto dim = module_state->GetShaderResourceDimensionality(variable);
             if (dim != spv::Dim1D && dim != spv::DimBuffer) {
                 accesses_2d = true;
