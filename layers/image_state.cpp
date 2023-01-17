@@ -832,8 +832,7 @@ void SURFACE_STATE::SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const 
     if (!present_modes_data_[phys_dev][present_mode].has_value()) {
         present_modes_data_[phys_dev][present_mode] = std::make_shared<PresentModeState>();
     }
-    // Old MacOS doesn't support Value()
-    auto &present_mode_state = *(present_modes_data_[phys_dev][present_mode]);
+    auto &present_mode_state = present_modes_data_[phys_dev][present_mode].value();
     present_mode_state->scaling_capabilities_ = scaling_caps;
     present_mode_state->surface_capabilities_ = caps;
 }

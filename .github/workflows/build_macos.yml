@@ -1,5 +1,5 @@
 # Copyright (c) 2022 Valve Corporation
-# Copyright (c) 2022 LunarG, Inc.
+# Copyright (c) 2022-2023 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,11 +54,10 @@ jobs:
             external/SPIRV-Headers/include
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ matrix.config }}-${{ hashfiles('scripts/known_good.json') }}
       - name: Generate build files and dependencies
-        # Note: Testing uses std::filesystem introduced in macOS 10.15, disable testing to ensure build passes against 10.12 SDK
-        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode" -D BUILD_TESTS=OFF
+        run: cmake -S. -B build --preset dev -DCMAKE_BUILD_TYPE=${{matrix.config}} -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -G "Xcode"
         env:
-          # Ensure we can build against 10.12 SDK: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
-          MACOSX_DEPLOYMENT_TARGET: 10.12
+          # Ensure we can build against 10.15: https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html
+          MACOSX_DEPLOYMENT_TARGET: 10.15
       - name: Build Vulkan-ValidationLayers
         run: cmake --build build --parallel $(sysctl -n hw.logicalcpu) --config ${{matrix.config}}
       - name: Install Vulkan-ValidationLayers

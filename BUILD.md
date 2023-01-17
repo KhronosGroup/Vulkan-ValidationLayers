@@ -423,7 +423,7 @@ Follow the setup steps for Windows above, then from the Developer Command Prompt
 
 ### MacOS Build Requirements
 
-Tested on OSX version 10.12
+Tested on OSX version 10.15
 
 NOTE: To force the OSX version set the environment variable [MACOSX_DEPLOYMENT_TARGET](https://cmake.org/cmake/help/latest/envvar/MACOSX_DEPLOYMENT_TARGET.html) when building VVL and it's dependencies.
 
