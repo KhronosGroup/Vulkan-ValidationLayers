@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6835,24 +6835,35 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
     const auto *raytracing_features = LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     if (!raytracing_features || raytracing_features->rayTracingPipeline == VK_FALSE) {
         skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-rayTracingPipeline-03586",
-                         "vkCreateRayTracingPipelinesKHR: The rayTracingPipeline feature must be enabled.");
+                         "vkCreateRayTracingPipelinesKHR(): The rayTracingPipeline feature must be enabled.");
     }
     for (uint32_t i = 0; i < createInfoCount; i++) {
         for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-            std::stringstream msg;
-            msg << "pCreateInfos[%" << i << "].pStages[%" << stage_index << "]";
-            ValidatePipelineShaderStageCreateInfo("vkCreateRayTracingPipelinesKHR", msg.str().c_str(),
+            std::stringstream stage_ss;
+            stage_ss << "pCreateInfos[" << i << "].pStages[" << stage_index << "]";
+            const std::string stage_str = stage_ss.str();
+            ValidatePipelineShaderStageCreateInfo("vkCreateRayTracingPipelinesKHR", stage_str.c_str(),
                                                   &pCreateInfos[i].pStages[stage_index]);
+
+            const auto stage = pCreateInfos[i].pStages[stage_index].stage;
+            constexpr std::array allowed_stages = {VK_SHADER_STAGE_RAYGEN_BIT_KHR,       VK_SHADER_STAGE_ANY_HIT_BIT_KHR,
+                                                   VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,  VK_SHADER_STAGE_MISS_BIT_KHR,
+                                                   VK_SHADER_STAGE_INTERSECTION_BIT_KHR, VK_SHADER_STAGE_CALLABLE_BIT_KHR};
+            if (std::find(allowed_stages.begin(), allowed_stages.end(), stage) == allowed_stages.end()) {
+                skip |=
+                    LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-stage-06899",
+                             "vkCreateRayTracingPipelinesKHR(): %s is %s.", stage_str.c_str(), string_VkShaderStageFlagBits(stage));
+            }
         }
         if (!raytracing_features || (raytracing_features && raytracing_features->rayTraversalPrimitiveCulling == VK_FALSE)) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTraversalPrimitiveCulling-03596",
-                                 "vkCreateRayTracingPipelinesKHR: If the rayTraversalPrimitiveCulling feature is not enabled, "
+                                 "vkCreateRayTracingPipelinesKHR(): If the rayTraversalPrimitiveCulling feature is not enabled, "
                                  "flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR.");
             }
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTraversalPrimitiveCulling-03597",
-                                 "vkCreateRayTracingPipelinesKHR: If the rayTraversalPrimitiveCulling feature is not enabled, "
+                                 "vkCreateRayTracingPipelinesKHR(): If the rayTraversalPrimitiveCulling feature is not enabled, "
                                  "flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR.");
             }
         }
@@ -6860,7 +6871,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != 0) &&
             (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineStageCreationFeedbackCount-06652",
-                             "vkCreateRayTracingPipelinesKHR: in pCreateInfo[%" PRIu32
+                             "vkCreateRayTracingPipelinesKHR(): in pCreateInfo[%" PRIu32
                              "], When chained to VkRayTracingPipelineCreateInfoKHR, "
                              "VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoKHR::stageCount(=%" PRIu32 ").",
@@ -6874,25 +6885,26 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
                                          VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905",
-                                 "vkCreateRayTracingPipelinesKHR: If the pipelineCreationCacheControl feature is not enabled,"
+                                 "vkCreateRayTracingPipelinesKHR(): If the pipelineCreationCacheControl feature is not enabled,"
                                  "flags must not include VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT or"
                                  "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
             }
         }
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
-            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904",
-                             "vkCreateRayTracingPipelinesKHR: flags must not include VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.");
+            skip |=
+                LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904",
+                         "vkCreateRayTracingPipelinesKHR(): flags must not include VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.");
         }
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
             if (pCreateInfos[i].pLibraryInterface == NULL) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465",
-                                 "vkCreateRayTracingPipelinesKHR: If flags includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, "
+                                 "vkCreateRayTracingPipelinesKHR(): If flags includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, "
                                  "pLibraryInterface must not be NULL.");
             }
         }
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DISPATCH_BASE) {
             skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-flags-03816",
-                             "vkCreateRayTracingPipelinesKHR: flags must not contain the VK_PIPELINE_CREATE_DISPATCH_BASE flag.");
+                             "vkCreateRayTracingPipelinesKHR(): flags must not contain the VK_PIPELINE_CREATE_DISPATCH_BASE flag.");
         }
         for (uint32_t group_index = 0; group_index < pCreateInfos[i].groupCount; ++group_index) {
             if ((pCreateInfos[i].pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) ||
@@ -6901,7 +6913,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                     (pCreateInfos[i].pGroups[group_index].anyHitShader == VK_SHADER_UNUSED_KHR)) {
                     skip |= LogError(
                         device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470",
-                        "vkCreateRayTracingPipelinesKHR: If flags includes "
+                        "vkCreateRayTracingPipelinesKHR(): If flags includes "
                         "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR,"
                         "for any element of pGroups with a type of VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR"
                         "or VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR, the anyHitShader of that element "
@@ -6911,7 +6923,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                     (pCreateInfos[i].pGroups[group_index].closestHitShader == VK_SHADER_UNUSED_KHR)) {
                     skip |= LogError(
                         device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471",
-                        "vkCreateRayTracingPipelinesKHR: If flags includes "
+                        "vkCreateRayTracingPipelinesKHR(): If flags includes "
                         "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR,"
                         "for any element of pGroups with a type of VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR"
                         "or VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR, the closestHitShader of that "
@@ -6923,7 +6935,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
                 if (!(pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR)) {
                     skip |= LogError(
                         device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTracingPipelineShaderGroupHandleCaptureReplay-03599",
-                        "vkCreateRayTracingPipelinesKHR: If "
+                        "vkCreateRayTracingPipelinesKHR(): If "
                         "VkPhysicalDeviceRayTracingPipelineFeaturesKHR::rayTracingPipelineShaderGroupHandleCaptureReplay is "
                         "VK_TRUE and the pShaderGroupCaptureReplayHandle member of any element of pGroups is not NULL, flags must "
                         "include VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR.");
@@ -6934,14 +6946,14 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             if (pCreateInfos[i].basePipelineIndex != -1) {
                 if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03423",
-                                     "vkCreateRayTracingPipelinesKHR: parameter, pCreateInfos->basePipelineHandle, must be "
+                                     "vkCreateRayTracingPipelinesKHR(): parameter, pCreateInfos->basePipelineHandle, must be "
                                      "VK_NULL_HANDLE if pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag "
                                      "and pCreateInfos->basePipelineIndex is not -1.");
                 }
                 if (pCreateInfos[i].basePipelineIndex > static_cast<int32_t>(i)) {
                     skip |=
                         LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-flags-03415",
-                                 "vkCreateRayTracingPipelinesKHR: If the flags member of any element of pCreateInfos contains the"
+                                 "vkCreateRayTracingPipelinesKHR(): If the flags member of any element of pCreateInfos contains the"
                                  "VK_PIPELINE_CREATE_DERIVATIVE_BIT flag, and the basePipelineIndex member of that same element is"
                                  "not -1, basePipelineIndex must be less than the index into pCreateInfos that corresponds to that "
                                  "element.");
@@ -6950,7 +6962,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
                 if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03422",
-                                     "vkCreateRayTracingPipelinesKHR: if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                     "vkCreateRayTracingPipelinesKHR(): if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
                                      "basePipelineHandle is VK_NULL_HANDLE, basePipelineIndex (%" PRId32
                                      ") must be a valid into the calling"
                                      "commands pCreateInfos parameter %" PRIu32 ".",
@@ -6959,7 +6971,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             } else {
                 if (pCreateInfos[i].basePipelineIndex != -1) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03424",
-                                     "vkCreateRayTracingPipelinesKHR: if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                     "vkCreateRayTracingPipelinesKHR(): if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
                                      "basePipelineHandle is not VK_NULL_HANDLE, basePipelineIndex must be -1.");
                 }
             }
@@ -6967,32 +6979,32 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR &&
             (raytracing_features && raytracing_features->rayTracingPipelineShaderGroupHandleCaptureReplay == VK_FALSE)) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03598",
-                             "vkCreateRayTracingPipelinesKHR: If flags includes "
+                             "vkCreateRayTracingPipelinesKHR(): If flags includes "
                              "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR, "
                              "rayTracingPipelineShaderGroupHandleCaptureReplay must be enabled.");
         }
         const bool library_enabled = IsExtEnabled(device_extensions.vk_khr_pipeline_library);
         if (!library_enabled && (pCreateInfos[i].pLibraryInfo || pCreateInfos[i].pLibraryInterface)) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03595",
-                             "vkCreateRayTracingPipelinesKHR: If the VK_KHR_pipeline_library extension is not enabled, "
+                             "vkCreateRayTracingPipelinesKHR(): If the VK_KHR_pipeline_library extension is not enabled, "
                              "pLibraryInfo and pLibraryInterface must be NULL.");
         }
         if (pCreateInfos[i].pLibraryInfo) {
             if (pCreateInfos[i].pLibraryInfo->libraryCount == 0) {
                 if (pCreateInfos[i].stageCount == 0) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03600",
-                                     "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL and its libraryCount is 0, "
+                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount is 0, "
                                      "stageCount must not be 0.");
                 }
                 if (pCreateInfos[i].groupCount == 0) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03601",
-                                     "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL and its libraryCount is 0, "
+                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount is 0, "
                                      "groupCount must not be 0.");
                 }
             } else {
                 if (pCreateInfos[i].pLibraryInterface == NULL) {
                     skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraryInfo-03590",
-                                     "vkCreateRayTracingPipelinesKHR: If pLibraryInfo is not NULL and its libraryCount member "
+                                     "vkCreateRayTracingPipelinesKHR(): If pLibraryInfo is not NULL and its libraryCount member "
                                      "is greater than 0, its "
                                      "pLibraryInterface member must not be NULL.");
                 }
@@ -7002,15 +7014,16 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(
             if (pCreateInfos[i].pLibraryInterface->maxPipelineRayHitAttributeSize >
                 phys_dev_ext_props.ray_tracing_propsKHR.maxRayHitAttributeSize) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineInterfaceCreateInfoKHR-maxPipelineRayHitAttributeSize-03605",
-                                 "vkCreateRayTracingPipelinesKHR: maxPipelineRayHitAttributeSize must be less than or equal to "
+                                 "vkCreateRayTracingPipelinesKHR(): maxPipelineRayHitAttributeSize must be less than or equal to "
                                  "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayHitAttributeSize.");
             }
         }
         if (deferredOperation != VK_NULL_HANDLE) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT) {
-                skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03587",
-                                 "vkCreateRayTracingPipelinesKHR: If deferredOperation is not VK_NULL_HANDLE, the flags member of "
-                                 "elements of pCreateInfos must not include VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
+                skip |=
+                    LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-deferredOperation-03587",
+                             "vkCreateRayTracingPipelinesKHR(): If deferredOperation is not VK_NULL_HANDLE, the flags member of "
+                             "elements of pCreateInfos must not include VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
             }
         }
         if (pCreateInfos[i].pDynamicState) {
@@ -8331,7 +8344,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
 }
 
 bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
-    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos, uint32_t infoCount, const char *api_name) const {
+    const VkAccelerationStructureBuildGeometryInfoKHR *pInfos, uint32_t infoCount, uint64_t total_primitive_count,
+    const char *api_name) const {
     bool skip = false;
     for (uint32_t i = 0; i < infoCount; ++i) {
         if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
@@ -8361,6 +8375,33 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                              " less than or equal to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxGeometryCount",
                              api_name);
         }
+
+        const VkAccelerationStructureGeometryKHR *pGeometry = pInfos[i].pGeometries    ? pInfos[i].pGeometries
+                                                              : pInfos[i].ppGeometries ? pInfos[i].ppGeometries[0]
+                                                                                       : nullptr;
+        if (pGeometry) {
+            if (total_primitive_count > phys_dev_ext_props.acc_structure_props.maxPrimitiveCount) {
+                switch (pGeometry->geometryType) {
+                    case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
+                        skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03795",
+                                         "(%s): total number of triangles in all geometries (%" PRIu64
+                                         ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount "
+                                         "(%" PRIu64 ")",
+                                         api_name, total_primitive_count, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
+                        break;
+                    case VK_GEOMETRY_TYPE_AABBS_KHR:
+                        skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03794",
+                                         "(%s): total number of AABBs in all geometries (%" PRIu64
+                                         ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount "
+                                         "(%" PRIu64 ")",
+                                         api_name, total_primitive_count, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         if (pInfos[i].pGeometries) {
             for (uint32_t j = 0; j < pInfos[i].geometryCount; ++j) {
                 skip |= validate_ranged_enum(
@@ -8453,16 +8494,20 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{i, j}), NULL,
                         pInfos[i].pGeometries[j].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);
+                    if (pInfos[i].pGeometries[j].geometry.aabbs.stride % 8) {
+                        skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545",
+                                         "(%s): stride is not a multiple of 8.", api_name);
+                    }
                     if (pInfos[i].pGeometries[j].geometry.aabbs.stride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
-                                         "(%s):stride must be less than or equal to 2^32-1", api_name);
+                                         "(%s): stride must be less than or equal to 2^32-1.", api_name);
                     }
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                     pInfos[i].pGeometries[j].geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789",
                                      "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, the geometryType member"
-                                     " of elements of either pGeometries or ppGeometries must be VK_GEOMETRY_TYPE_INSTANCES_KHR",
+                                     " of elements of either pGeometries or ppGeometries must be VK_GEOMETRY_TYPE_INSTANCES_KHR.",
                                      api_name);
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
@@ -8470,7 +8515,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03791",
                                          "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR the geometryType member "
                                          "of elements of"
-                                         " either pGeometries or ppGeometries must not be VK_GEOMETRY_TYPE_INSTANCES_KHR",
+                                         " either pGeometries or ppGeometries must not be VK_GEOMETRY_TYPE_INSTANCES_KHR.",
                                          api_name);
                     }
                     if (pInfos[i].pGeometries[j].geometryType != pInfos[i].pGeometries[0].geometryType) {
@@ -8575,6 +8620,10 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
                                          "(%s):stride must be less than or equal to 2^32-1", api_name);
                     }
+                    if (pInfos[i].ppGeometries[j]->geometry.aabbs.stride % 8) {
+                        skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545",
+                                         "(%s): stride is not a multiple of 8.", api_name);
+                    }
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                     pInfos[i].ppGeometries[j]->geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
@@ -8607,7 +8656,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresKH
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
     bool skip = false;
-    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, "vkCmdBuildAccelerationStructuresKHR");
+    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkCmdBuildAccelerationStructuresKHR");
     for (uint32_t i = 0; i < infoCount; ++i) {
         if (SafeModulo(pInfos[i].scratchData.deviceAddress,
                        phys_dev_ext_props.acc_structure_props.minAccelerationStructureScratchOffsetAlignment) != 0) {
@@ -8721,7 +8770,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructuresIn
     const VkDeviceAddress *pIndirectDeviceAddresses, const uint32_t *pIndirectStrides,
     const uint32_t *const *ppMaxPrimitiveCounts) const {
     bool skip = false;
-    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, "vkCmdBuildAccelerationStructuresIndirectKHR");
+    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkCmdBuildAccelerationStructuresIndirectKHR");
     const auto *ray_tracing_acceleration_structure_features =
         LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!ray_tracing_acceleration_structure_features ||
@@ -8836,7 +8885,7 @@ bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructuresKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) const {
     bool skip = false;
-    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, "vkBuildAccelerationStructuresKHR");
+    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pInfos, infoCount, 0, "vkBuildAccelerationStructuresKHR");
     const auto *ray_tracing_acceleration_structure_features =
         LvlFindInChain<VkPhysicalDeviceAccelerationStructureFeaturesKHR>(device_createinfo_pnext);
     if (!ray_tracing_acceleration_structure_features ||
@@ -8882,7 +8931,14 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
     VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR *pBuildInfo,
     const uint32_t *pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR *pSizeInfo) const {
     bool skip = false;
-    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pBuildInfo, 1, "vkGetAccelerationStructureBuildSizesKHR");
+    uint64_t total_primitive_count = 0;
+    if (pBuildInfo && pMaxPrimitiveCounts) {
+        for (uint32_t i = 0; i < pBuildInfo->geometryCount; ++i) {
+            total_primitive_count += pMaxPrimitiveCounts[i];
+        }
+    }
+    skip |= ValidateAccelerationStructureBuildGeometryInfoKHR(pBuildInfo, 1, total_primitive_count,
+                                                              "vkGetAccelerationStructureBuildSizesKHR");
     const auto *ray_tracing_pipeline_features =
         LvlFindInChain<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>(device_createinfo_pnext);
     const auto *ray_query_features = LvlFindInChain<VkPhysicalDeviceRayQueryFeaturesKHR>(device_createinfo_pnext);
@@ -8891,8 +8947,8 @@ bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureBuildSiz
         skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-rayTracingPipeline-03617",
                          "vkGetAccelerationStructureBuildSizesKHR: The rayTracingPipeline or rayQuery feature must be enabled");
     }
-    if (pBuildInfo != nullptr) {
-        if (pBuildInfo->geometryCount != 0 && pMaxPrimitiveCounts == nullptr) {
+    if (pBuildInfo) {
+        if (pBuildInfo->geometryCount != 0 && !pMaxPrimitiveCounts) {
             skip |= LogError(device, "VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03619",
                              "vkGetAccelerationStructureBuildSizesKHR: If pBuildInfo->geometryCount is not 0, pMaxPrimitiveCounts "
                              "must be a valid pointer to an array of pBuildInfo->geometryCount uint32_t values");
