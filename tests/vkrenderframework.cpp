@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1079,7 +1079,6 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, vector<const char *>
 }
 
 uint32_t VkDeviceObj::QueueFamilyMatching(VkQueueFlags with, VkQueueFlags without, bool all_bits) {
-    // Find a queue family with and without desired capabilities
     for (uint32_t i = 0; i < queue_props.size(); i++) {
         auto flags = queue_props[i].queueFlags;
         bool matches = all_bits ? (flags & with) == with : (flags & with) != 0;

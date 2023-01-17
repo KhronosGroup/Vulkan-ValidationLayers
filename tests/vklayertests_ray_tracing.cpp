@@ -1150,9 +1150,13 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     auto accel_features = LvlInitStruct<VkPhysicalDeviceAccelerationStructureFeaturesKHR>();
     auto bda_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(&accel_features);
+    auto ray_query_features = LvlInitStruct<VkPhysicalDeviceRayQueryFeaturesKHR>(&bda_features);
+    ray_query_features.rayQuery = VK_TRUE;
     accel_features.accelerationStructureIndirectBuild = VK_TRUE;
     accel_features.accelerationStructureHostCommands = VK_TRUE;
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    bda_features.bufferDeviceAddress = VK_TRUE;
+
+    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&ray_query_features);
     if (!InitFrameworkForRayTracingTest(this, true, &features2)) {
         GTEST_SKIP() << "unable to init ray tracing test";
     }
@@ -1165,6 +1169,8 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
         GetDeviceProcAddr<PFN_vkCmdBuildAccelerationStructuresIndirectKHR>("vkCmdBuildAccelerationStructuresIndirectKHR");
     auto vkBuildAccelerationStructuresKHR =
         GetDeviceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
+    auto vkGetAccelerationStructureBuildSizesKHR =
+        GetInstanceProcAddr<PFN_vkGetAccelerationStructureBuildSizesKHR>("vkGetAccelerationStructureBuildSizesKHR");
 
     VkBufferObj vbo;
     VkBufferObj ibo;
@@ -1353,7 +1359,89 @@ TEST_F(VkLayerTest, RayTracingValidateCmdBuildAccelerationStructuresKHR) {
         vkCmdBuildAccelerationStructuresKHR(m_commandBuffer->handle(), 1, &invalid_build_info_khr, &pBuildRangeInfos);
         m_errorMonitor->VerifyFound();
     }
-
+    // Total number of triangles in all geometries superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount
+    {
+        constexpr auto primitive_count = std::numeric_limits<uint32_t>::max();
+        // Check that primitive count is indeed superior to limit
+        if (primitive_count > acc_struct_properties.maxPrimitiveCount) {
+            auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03795");
+            vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &build_info_khr,
+                                                    &primitive_count, &build_size_info);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+    // Total number of AABBs in all geometries superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount
+    {
+        constexpr auto primitive_count = std::numeric_limits<uint32_t>::max();
+        // Check that primitive count is indeed superior to limit
+        if (primitive_count > acc_struct_properties.maxPrimitiveCount) {
+            auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+            auto [aabb_buffer, aabb_geometry] = GetSimpleAABB(*m_device, VK_API_VERSION_1_1);
+            auto aabb_build_info_khr = build_info_khr;
+            aabb_build_info_khr.pGeometries = &aabb_geometry;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03794");
+            vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &aabb_build_info_khr,
+                                                    &primitive_count, &build_size_info);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+    // Invalid stride in pGeometry.geometry.aabbs (not a multiple of 8)
+    {
+        auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+        auto [aabb_buffer, as_aabb_geometry] = GetSimpleAABB(*m_device, VK_API_VERSION_1_1);
+        as_aabb_geometry.geometry.aabbs.stride = 1;
+        auto invalid_aabb_build_info_khr = build_info_khr;
+        invalid_aabb_build_info_khr.pGeometries = &as_aabb_geometry;
+        constexpr uint32_t primitive_count = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545");
+        vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+                                                &invalid_aabb_build_info_khr, &primitive_count, &build_size_info);
+        m_errorMonitor->VerifyFound();
+    }
+    // Invalid stride in ppGeometry.geometry.aabbs (not a multiple of 8)
+    {
+        auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+        auto [aabb_buffer, as_aabb_geometry] = GetSimpleAABB(*m_device, VK_API_VERSION_1_1);
+        as_aabb_geometry.geometry.aabbs.stride = 1;
+        auto invalid_aabb_build_info_khr = build_info_khr;
+        invalid_aabb_build_info_khr.pGeometries = nullptr;
+        const auto ppGeometry = &as_aabb_geometry;
+        invalid_aabb_build_info_khr.ppGeometries = &ppGeometry;
+        constexpr uint32_t primitive_count = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545");
+        vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+                                                &invalid_aabb_build_info_khr, &primitive_count, &build_size_info);
+        m_errorMonitor->VerifyFound();
+    }
+    // Invalid stride in pGeometry.geometry.aabbs (superior to UINT32_MAX)
+    {
+        auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+        auto [aabb_buffer, as_aabb_geometry] = GetSimpleAABB(*m_device, VK_API_VERSION_1_1);
+        as_aabb_geometry.geometry.aabbs.stride = 8ull * std::numeric_limits<uint32_t>::max();
+        auto invalid_aabb_build_info_khr = build_info_khr;
+        invalid_aabb_build_info_khr.pGeometries = &as_aabb_geometry;
+        constexpr uint32_t primitive_count = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820");
+        vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+                                                &invalid_aabb_build_info_khr, &primitive_count, &build_size_info);
+        m_errorMonitor->VerifyFound();
+    }
+    // Invalid stride in ppGeometry.geometry.aabbs (superior to UINT32_MAX)
+    {
+        auto build_size_info = LvlInitStruct<VkAccelerationStructureBuildSizesInfoKHR>();
+        auto [aabb_buffer, as_aabb_geometry] = GetSimpleAABB(*m_device, VK_API_VERSION_1_1);
+        as_aabb_geometry.geometry.aabbs.stride = 8ull * std::numeric_limits<uint32_t>::max();
+        auto invalid_aabb_build_info_khr = build_info_khr;
+        invalid_aabb_build_info_khr.pGeometries = nullptr;
+        const auto ppGeometry = &as_aabb_geometry;
+        invalid_aabb_build_info_khr.ppGeometries = &ppGeometry;
+        constexpr uint32_t primitive_count = 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820");
+        vkGetAccelerationStructureBuildSizesKHR(device(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+                                                &invalid_aabb_build_info_khr, &primitive_count, &build_size_info);
+        m_errorMonitor->VerifyFound();
+    }
     // Invalid VetexStride and Indexdata
     {
         VkAccelerationStructureGeometryKHR invalid_geometry_triangles = valid_geometry_triangles;
