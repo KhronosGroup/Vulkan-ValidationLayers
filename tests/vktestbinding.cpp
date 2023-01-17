@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -678,9 +678,15 @@ void Buffer::bind_memory(const Device &dev, VkMemoryPropertyFlags mem_props, VkD
     bind_memory(internal_mem_, mem_offset);
 }
 
-VkDeviceAddress Buffer::address() const {
+VkDeviceAddress Buffer::address(uint32_t vk_api_version /*= VK_API_VERSION_1_2*/) const {
     auto bdai = LvlInitStruct<VkBufferDeviceAddressInfo>();
     bdai.buffer = handle();
+    if (vk_api_version < VK_API_VERSION_1_2) {
+        const auto vkGetBufferDeviceAddressKHR =
+            reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR"));
+        assert(vkGetBufferDeviceAddressKHR);
+        return vkGetBufferDeviceAddressKHR(device(), &bdai);
+    }
     return vk::GetBufferDeviceAddress(device(), &bdai);
 }
 

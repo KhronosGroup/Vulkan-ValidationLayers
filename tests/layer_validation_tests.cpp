@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google, Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2472,7 +2472,6 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
         alloc_pnext = &alloc_flags;
     }
-    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
     vbo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
     ibo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
 
@@ -2504,6 +2503,36 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
     geometry->geometry.triangles.transformOffset = 0;
     geometry->geometry.aabbs = {};
     geometry->geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+}
+
+std::pair<VkBufferObj &&, VkAccelerationStructureGeometryKHR> GetSimpleAABB(const VkDeviceObj &device,
+                                                                            uint32_t vk_api_version /*= VK_API_VERSION_1_2*/) {
+    const std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
+
+    const VkDeviceSize aabb_buffer_size = sizeof(aabbs[0]) * aabbs.size();
+    VkBufferObj aabb_buffer;
+    auto alloc_flags = LvlInitStruct<VkMemoryAllocateFlagsInfo>();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
+    aabb_buffer.init(
+        device, aabb_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        &alloc_flags);
+
+    uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.memory().map();
+    std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
+    aabb_buffer.memory().unmap();
+
+    VkDeviceOrHostAddressConstKHR address;
+    address.deviceAddress = aabb_buffer.address(vk_api_version);
+
+    auto as_geom = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
+    as_geom.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+    as_geom.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+    as_geom.geometry.aabbs.data = address;
+    as_geom.geometry.aabbs.stride = static_cast<VkDeviceSize>(sizeof(aabbs[0]));
+
+    return {std::move(aabb_buffer), as_geom};
 }
 
 void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
@@ -2573,16 +2602,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                                               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VkCommandBufferObj ray_tracing_command_buffer(m_device, &ray_tracing_command_pool);
 
-    struct AABB {
-        float min_x;
-        float min_y;
-        float min_z;
-        float max_x;
-        float max_y;
-        float max_z;
-    };
-
-    const std::vector<AABB> aabbs = {{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}};
+    constexpr std::array<VkAabbPositionsKHR, 1> aabbs = {{{-1.0f, -1.0f, -1.0f, +1.0f, +1.0f, +1.0f}}};
 
     struct VkGeometryInstanceNV {
         float transform[12];
@@ -2593,7 +2613,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         uint64_t accelerationStructureHandle;
     };
 
-    VkDeviceSize aabb_buffer_size = sizeof(AABB) * aabbs.size();
+    const VkDeviceSize aabb_buffer_size = sizeof(VkAabbPositionsKHR) * aabbs.size();
     VkBufferObj aabb_buffer;
     aabb_buffer.init(*m_device, aabb_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                      VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
@@ -2612,7 +2632,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     geometry.geometry.aabbs.aabbData = aabb_buffer.handle();
     geometry.geometry.aabbs.numAABBs = static_cast<uint32_t>(aabbs.size());
     geometry.geometry.aabbs.offset = 0;
-    geometry.geometry.aabbs.stride = static_cast<VkDeviceSize>(sizeof(AABB));
+    geometry.geometry.aabbs.stride = static_cast<VkDeviceSize>(sizeof(VkAabbPositionsKHR));
     geometry.flags = 0;
 
     VkAccelerationStructureInfoNV bot_level_as_info = LvlInitStruct<VkAccelerationStructureInfoNV>();
