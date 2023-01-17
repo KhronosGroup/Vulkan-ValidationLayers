@@ -113,3 +113,39 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     vk::FreeMemory(m_device->device(), VK_NULL_HANDLE, NULL);
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
+    TEST_DESCRIPTION(
+        "Test issuing draw command with pipeline layout that has 2 descriptor sets with first descriptor set begin unused and "
+        "unbound. Its purpose is to catch regression of this bug: "
+        "https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4597.");
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    OneOffDescriptorSet empty_ds(m_device, {});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&empty_ds.layout_, &empty_ds.layout_});
+
+    m_commandBuffer->begin();
+
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
+                              &empty_ds.set_, 0, nullptr);
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);
+
+    // The draw command will most likely produce a crash in case of a regression.
+    m_commandBuffer->Draw(1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
