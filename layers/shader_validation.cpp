@@ -145,7 +145,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(safe_VkPipelineVertexInputStateCreate
 
     struct AttribInputPair {
         const VkVertexInputAttributeDescription *attrib = nullptr;
-        const InterfaceVariable *input = nullptr;
+        const UserDefinedInterfaceVariable *input = nullptr;
     };
     std::map<uint32_t, AttribInputPair> location_map;
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
@@ -186,7 +186,7 @@ bool CoreChecks::ValidateFsOutputsAgainstDynamicRenderingRenderPass(const SHADER
     bool skip = false;
 
     struct Attachment {
-        const InterfaceVariable *output = nullptr;
+        const UserDefinedInterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -284,7 +284,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const SHADER_MODULE_STATE &m
     struct Attachment {
         const VkAttachmentReference2 *reference = nullptr;
         const VkAttachmentDescription2 *attachment = nullptr;
-        const InterfaceVariable *output = nullptr;
+        const UserDefinedInterfaceVariable *output = nullptr;
     };
     std::map<uint32_t, Attachment> location_map;
 
@@ -894,14 +894,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     for (auto &var : inputs) {
         const uint32_t location = var.first.first;
         const uint32_t component = var.first.second;
-        InterfaceVariable &interface_var = var.second;
+        UserDefinedInterfaceVariable &variable = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (interface_var.offset != 0 || interface_var.is_patch) {
+        if (variable.offset != 0 || variable.is_patch) {
             continue;
         }
 
-        const uint32_t num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_input_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id, strip_input_array_level);
         max_comp_in = std::max(max_comp_in, location * 4 + component + num_components);
     }
 
@@ -909,14 +909,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
     for (auto &var : outputs) {
         const uint32_t location = var.first.first;
         const uint32_t component = var.first.second;
-        InterfaceVariable &interface_var = var.second;
+        UserDefinedInterfaceVariable &variable = var.second;
 
         // Only need to look at the first location, since we use the type's whole size
-        if (interface_var.offset != 0 || interface_var.is_patch) {
+        if (variable.offset != 0 || variable.is_patch) {
             continue;
         }
 
-        const uint32_t num_components = module_state.GetComponentsConsumedByType(interface_var.type_id, strip_output_array_level);
+        const uint32_t num_components = module_state.GetComponentsConsumedByType(variable.type_id, strip_output_array_level);
         max_comp_out = std::max(max_comp_out, location * 4 + component + num_components);
     }
 
@@ -3145,10 +3145,7 @@ bool CoreChecks::ValidatePipelineShaderStage(const PIPELINE_STATE &pipeline, con
     skip |= ValidatePushConstantUsage(pipeline, module_state, pStage, vuid_layout_mismatch);
 
     // Validate descriptor use (can dereference because entrypoint is validated by here)
-    for (const InterfaceVariable &variable : *stage_state.descriptor_variables) {
-        if (!variable.descriptor) {
-            continue;
-        }
+    for (const auto &variable : *stage_state.descriptor_variables) {
         // Verify given pipelineLayout has requested setLayout with requested binding
         // const auto& layout_state = (stage_state.stage_flag == VK_SHADER_STAGE_VERTEX_BIT) ?
         // pipeline->PreRasterPipelineLayoutState() : pipeline->FragmentShaderPipelineLayoutState();

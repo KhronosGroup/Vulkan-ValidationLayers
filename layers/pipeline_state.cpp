@@ -58,13 +58,13 @@ PipelineStageState::PipelineStageState(const safe_VkPipelineShaderStageCreateInf
       writes_to_gl_layer(module_state->WritesToGlLayer()),
       has_input_attachment_capability(module_state->HasInputAttachmentCapability()) {
     if (entrypoint) {
-        descriptor_variables = module_state->GetInterfaceVariable(*entrypoint);
+        descriptor_variables = module_state->GetResourceInterfaceVariable(*entrypoint);
         if (descriptor_variables) {
             has_writable_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
-                                                  [](const InterfaceVariable &variable) { return variable.is_writable; });
+                                                  [](const auto &variable) { return variable.is_writable; });
 
             has_atomic_descriptor = std::any_of(descriptor_variables->begin(), descriptor_variables->end(),
-                                                [](const InterfaceVariable &variable) { return variable.is_atomic_operation; });
+                                                [](const auto &variable) { return variable.is_atomic_operation; });
         }
         wrote_primitive_shading_rate = WrotePrimitiveShadingRate(stage_flag, *entrypoint, module_state.get());
     }
@@ -158,7 +158,7 @@ PIPELINE_STATE::ActiveSlotMap PIPELINE_STATE::GetActiveSlots(const StageStateVec
             continue;
         }
         // Capture descriptor uses for the pipeline
-        for (const InterfaceVariable &variable : *stage.descriptor_variables) {
+        for (const auto &variable : *stage.descriptor_variables) {
             // While validating shaders capture which slots are used by the pipeline
             auto &entry = active_slots[variable.decorations.set][variable.decorations.binding];
             entry.is_writable |= variable.is_writable;

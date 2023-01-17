@@ -68,18 +68,38 @@ struct DecorationSet {
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
 };
 
-// Information about a OpVariable used as an interface in the shader
-struct InterfaceVariable {
+// vkspec.html#interfaces-iointerfaces-user describes 'User-defined Variable Interface'
+// These are Input/Output OpVariable that go in-between stages
+// (also for example the input to a Vertex and output of the Fragment).
+// These are always ints/floats (not images or samplers).
+// Besides the input vertex binding, all of these are fully known at pipeline creation time
+struct UserDefinedInterfaceVariable {
     uint32_t id;
     uint32_t type_id;
-    spv::StorageClass storage_class;
 
     // if a block with multiple location, track which offset to only check the first
     uint32_t offset;
 
+    bool is_patch{false};
+
+    UserDefinedInterfaceVariable() : id(0), type_id(0), offset(0) {}
+
+    UserDefinedInterfaceVariable(const Instruction *insn) : id(insn->Word(2)), type_id(insn->Word(1)), offset(0) {}
+};
+
+// vkspec.html#interfaces-resources describes 'Shader Resource Interface'
+// These are the OpVariable attached to descriptors.
+// The slots are known at Pipeline creation time, but the type images/sampler/etc is
+// not known until the descriptors are bound.
+// The main purpose of this struct is to track what operations are statically done so
+// at draw/submit time we can cross reference with the last bound descriptor.
+struct ResourceInterfaceVariable {
+    uint32_t id;
+    uint32_t type_id;
+    spv::StorageClass storage_class;
+
+    VkShaderStageFlagBits stage;
     DecorationSet decorations;
-    bool descriptor{false};  // if interfacing with descriptors
-    VkShaderStageFlagBits stage{VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM};
 
     // List of samplers that sample a given image. The index of array is index of image.
     std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
@@ -87,7 +107,6 @@ struct InterfaceVariable {
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
 
-    bool is_patch{false};
     bool is_readable{false};
     bool is_writable{false};
     bool is_atomic_operation{false};
@@ -98,10 +117,7 @@ struct InterfaceVariable {
     bool is_write_without_format{false};  // For storage images
     bool is_dref_operation{false};
 
-    InterfaceVariable() : id(0), type_id(0), storage_class(spv::StorageClassMax), offset(0) {}
-
-    InterfaceVariable(const Instruction *insn)
-        : id(insn->Word(2)), type_id(insn->Word(1)), storage_class(static_cast<spv::StorageClass>(insn->Word(3))), offset(0) {}
+    ResourceInterfaceVariable(const SHADER_MODULE_STATE &module_state, const Instruction *insn, VkShaderStageFlagBits stage);
 };
 
 std::vector<uint32_t> FindEntrypointInterfaces(const Instruction &entrypoint);
@@ -183,7 +199,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // All ids that can be accessed from the entry point
         layer_data::unordered_set<uint32_t> accessible_ids;
 
-        std::vector<InterfaceVariable> interface_variables;  // currently only for descriptors
+        std::vector<UserDefinedInterfaceVariable> user_defined_interface_variables;
+        std::vector<ResourceInterfaceVariable> resource_interface_variables;
         layer_data::unordered_set<uint32_t> attachment_indexes;
 
         StructInfo push_constant_used_in_shader;
@@ -305,10 +322,10 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         }
         return nullptr;
     }
-    const std::vector<InterfaceVariable> *GetInterfaceVariable(const Instruction &entrypoint) const {
+    const std::vector<ResourceInterfaceVariable> *GetResourceInterfaceVariable(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
-                return &entry_point.interface_variables;
+                return &entry_point.resource_interface_variables;
             }
         }
         return nullptr;
@@ -352,7 +369,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     const Instruction *GetConstantDef(uint32_t id) const;
     uint32_t GetConstantValueById(uint32_t id) const;
-    spv::Dim GetShaderResourceDimensionality(const InterfaceVariable &resource) const;
+    spv::Dim GetShaderResourceDimensionality(const ResourceInterfaceVariable &resource) const;
     uint32_t GetLocationsConsumedByType(uint32_t type, bool strip_array_level) const;
     uint32_t GetComponentsConsumedByType(uint32_t type, bool strip_array_level) const;
     uint32_t GetFundamentalType(uint32_t type) const;
@@ -363,12 +380,12 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
 
     // State tracking helpers for collecting interface information
-    void FindVariableDescriptorType(InterfaceVariable &interface_var) const;
     layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
-    bool CollectInterfaceBlockMembers(std::map<location_t, InterfaceVariable> *out, bool is_array_of_verts, bool is_patch,
-                                      const Instruction *variable_insn) const;
-    std::map<location_t, InterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint, spv::StorageClass sinterface,
-                                                                       bool is_array_of_verts) const;
+    bool CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
+                                      bool is_patch, const Instruction *variable_insn) const;
+    std::map<location_t, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
+                                                                                  spv::StorageClass sinterface,
+                                                                                  bool is_array_of_verts) const;
     std::vector<uint32_t> CollectBuiltinBlockMembers(const Instruction &entrypoint, uint32_t storageClass) const;
 
     uint32_t GetNumComponentsInBaseType(const Instruction *insn) const;
