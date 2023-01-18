@@ -19,104 +19,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(VVL LANGUAGES CXX C)
 
-option(BUILD_TESTS "Build the tests" OFF)
-
-if (UPDATE_DEPS)
-    find_package(PythonInterp 3 REQUIRED)
-
-    if (CMAKE_GENERATOR_PLATFORM)
-        set(_target_arch ${CMAKE_GENERATOR_PLATFORM})
-    else()
-        if (MSVC_IDE)
-            message(WARNING "CMAKE_GENERATOR_PLATFORM not set. Using x64 as target architecture.")
-        endif()
-        set(_target_arch x64)
-    endif()
-
-    if (NOT CMAKE_BUILD_TYPE)
-        message(WARNING "CMAKE_BUILD_TYPE not set. Using Debug for dependency build type")
-        set(_build_type Debug)
-    else()
-        set(_build_type ${CMAKE_BUILD_TYPE})
-    endif()
-
-    message("********************************************************************************")
-    message("* NOTE: Adding target vvl_update_deps to run as needed for updating            *")
-    message("*       dependencies.                                                          *")
-    message("********************************************************************************")
-
-    set(optional_args)
-    if (NOT BUILD_TESTS)
-        set(optional_args "--optional=tests")
-    endif()
-
-    if (UPDATE_DEPS_SKIP_EXISTING_INSTALL)
-        set(optional_args ${optional_args} "--skip-existing-install")
-    endif()
-
-    if (DEFINED CMAKE_TOOLCHAIN_FILE)
-        set(optional_args ${optional_args} "--cmake_var")
-        set(optional_args ${optional_args} "CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
-    endif()
-
-    set(_update_deps_dir ${CMAKE_CURRENT_LIST_DIR}/external/${_build_type})
-    if (UPDATE_DEPS_DIR AND EXISTS "${UPDATE_DEPS_DIR}")
-        set(_update_deps_dir ${UPDATE_DEPS_DIR})
-    endif()
-    set(_helper_file "${_update_deps_dir}/helper.cmake")
-
-    # Add a target so that update_deps.py will run when necessary
-    # NOTE: This is triggered off of the timestamps of known_good.json and helper.cmake
-    add_custom_command(
-        OUTPUT ${_helper_file}
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py 
-            --dir ${_update_deps_dir} --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
-        DEPENDS ${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json
-    )
-
-    add_custom_target(vvl_update_deps ALL DEPENDS ${_helper_file})
-
-    # Check if update_deps.py needs to be run on first cmake run
-    if (${CMAKE_CURRENT_LIST_DIR}/scripts/known_good.json IS_NEWER_THAN ${_helper_file})
-        execute_process(
-            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/scripts/update_deps.py
-                --dir ${_update_deps_dir} --arch ${_target_arch} --config ${_build_type} --generator "${CMAKE_GENERATOR}" ${optional_args}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-            RESULT_VARIABLE _update_deps_result
-        )
-        if (NOT (${_update_deps_result} EQUAL 0))
-            message(FATAL_ERROR "Could not run update_deps.py which is necessary to download dependencies.")
-        endif()
-    endif()
-    include(${_helper_file})
-else()
-    message("********************************************************************************")
-    message("* NOTE: Not adding target to run update_deps.py automatically.                 *")
-    message("********************************************************************************")
-    find_package(PythonInterp 3 QUIET)
-endif()
-# Dependencies can be installed in arbitrary locations. This is done by update_deps.py / users.
-if (ROBIN_HOOD_HASHING_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
-endif()
-if (GLSLANG_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${GLSLANG_INSTALL_DIR})
-endif()
-if (SPIRV_HEADERS_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_HEADERS_INSTALL_DIR})
-endif()
-if (SPIRV_TOOLS_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${SPIRV_TOOLS_INSTALL_DIR})
-endif()
-if (GOOGLETEST_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${GOOGLETEST_INSTALL_DIR})
-endif()
-if (VULKAN_HEADERS_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${VULKAN_HEADERS_INSTALL_DIR})
-endif()
-if (MIMALLOC_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${MIMALLOC_INSTALL_DIR})
-endif()
+add_subdirectory(scripts)
 
 set(VVL_CPP_STANDARD 17 CACHE STRING "Set the C++ standard to build against.")
 set(CMAKE_CXX_STANDARD ${VVL_CPP_STANDARD})
@@ -252,7 +155,6 @@ if(MINGW)
     add_compile_options("-Wa,-mbig-obj")
 endif()
 
-option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 
@@ -271,6 +173,7 @@ if(BUILD_LAYERS OR BUILD_LAYER_SUPPORT_FILES)
     add_subdirectory(layers)
 endif()
 
+option(BUILD_TESTS "Build the tests")
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

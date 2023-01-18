@@ -138,8 +138,9 @@ if (NOT WIN32)
     endif()
 endif()
 
+option(INSTALL_TESTS "Install tests")
 if(INSTALL_TESTS)
-    install(TARGETS vk_layer_validation_tests DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS vk_layer_validation_tests)
 endif()
 
 add_subdirectory(layers)
