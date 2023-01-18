@@ -63,57 +63,57 @@ set_target_properties(SPIRV-Tools-prebuilt PROPERTIES IMPORTED_LOCATION
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
                      -fvisibility=hidden -DXXH_NO_LONG_LONG")
 add_library(VkLayer_khronos_validation SHARED
-        ${SRC_DIR}/layers/android_validation.cpp
-        ${SRC_DIR}/layers/state_tracker.cpp
-        ${SRC_DIR}/layers/base_node.cpp
-        ${SRC_DIR}/layers/buffer_state.cpp
-        ${SRC_DIR}/layers/cmd_buffer_state.cpp
-        ${SRC_DIR}/layers/cmd_buffer_dynamic_validation.cpp
-        ${SRC_DIR}/layers/device_validation.cpp
-        ${SRC_DIR}/layers/device_memory_state.cpp
-        ${SRC_DIR}/layers/device_memory_validation.cpp
-        ${SRC_DIR}/layers/external_object_validation.cpp
-        ${SRC_DIR}/layers/image_state.cpp
-        ${SRC_DIR}/layers/pipeline_state.cpp
-        ${SRC_DIR}/layers/pipeline_validation.cpp
-        ${SRC_DIR}/layers/queue_state.cpp
-        ${SRC_DIR}/layers/render_pass_state.cpp
-        ${SRC_DIR}/layers/render_pass_validation.cpp
-        ${SRC_DIR}/layers/video_session_state.cpp
-        ${SRC_DIR}/layers/video_validation.cpp
-        ${SRC_DIR}/layers/core_validation.cpp
-        ${SRC_DIR}/layers/drawdispatch.cpp
+        ${SRC_DIR}/layers/core_checks/android_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/state_tracker.cpp
+        ${SRC_DIR}/layers/state_tracker/base_node.cpp
+        ${SRC_DIR}/layers/state_tracker/buffer_state.cpp
+        ${SRC_DIR}/layers/state_tracker/cmd_buffer_state.cpp
+        ${SRC_DIR}/layers/core_checks/cmd_buffer_dynamic_validation.cpp
+        ${SRC_DIR}/layers/core_checks/device_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/device_memory_state.cpp
+        ${SRC_DIR}/layers/core_checks/device_memory_validation.cpp
+        ${SRC_DIR}/layers/core_checks/external_object_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/image_state.cpp
+        ${SRC_DIR}/layers/state_tracker/pipeline_state.cpp
+        ${SRC_DIR}/layers/core_checks/pipeline_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/queue_state.cpp
+        ${SRC_DIR}/layers/state_tracker/render_pass_state.cpp
+        ${SRC_DIR}/layers/core_checks/render_pass_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/video_session_state.cpp
+        ${SRC_DIR}/layers/core_checks/video_validation.cpp
+        ${SRC_DIR}/layers/core_checks/core_validation.cpp
+        ${SRC_DIR}/layers/core_checks/drawdispatch_validation.cpp
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
-        ${SRC_DIR}/layers/descriptor_sets.cpp
-        ${SRC_DIR}/layers/descriptor_validation.cpp
-        ${SRC_DIR}/layers/buffer_validation.cpp
-        ${SRC_DIR}/layers/shader_module.cpp
-        ${SRC_DIR}/layers/shader_instruction.cpp
-        ${SRC_DIR}/layers/shader_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/descriptor_sets.cpp
+        ${SRC_DIR}/layers/core_checks/descriptor_validation.cpp
+        ${SRC_DIR}/layers/core_checks/buffer_validation.cpp
+        ${SRC_DIR}/layers/state_tracker/shader_module.cpp
+        ${SRC_DIR}/layers/state_tracker/shader_instruction.cpp
+        ${SRC_DIR}/layers/core_checks/shader_validation.cpp
         ${SRC_DIR}/layers/generated/spirv_validation_helper.cpp
         ${SRC_DIR}/layers/generated/spirv_grammar_helper.cpp
         ${SRC_DIR}/layers/generated/command_validation.cpp
-        ${SRC_DIR}/layers/gpu_validation.cpp
-        ${SRC_DIR}/layers/gpu_utils.cpp
-        ${SRC_DIR}/layers/debug_printf.cpp
-        ${SRC_DIR}/layers/best_practices_utils.cpp
-        ${SRC_DIR}/layers/sync_utils.cpp
-        ${SRC_DIR}/layers/sync_vuid_maps.cpp
+        ${SRC_DIR}/layers/gpu_validation/gpu_validation.cpp
+        ${SRC_DIR}/layers/gpu_validation/gpu_utils.cpp
+        ${SRC_DIR}/layers/gpu_validation/debug_printf.cpp
+        ${SRC_DIR}/layers/best_practices/best_practices_utils.cpp
+        ${SRC_DIR}/layers/sync/sync_utils.cpp
+        ${SRC_DIR}/layers/sync/sync_vuid_maps.cpp
         ${SRC_DIR}/layers/core_error_location.cpp
-        ${SRC_DIR}/layers/generated/synchronization_validation_types.cpp
-        ${SRC_DIR}/layers/synchronization_validation.cpp
+        ${SRC_DIR}/layers/generated/sync_validation_types.cpp
+        ${SRC_DIR}/layers/sync/sync_validation.cpp
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
         ${COMMON_DIR}/include/chassis.cpp
         ${COMMON_DIR}/include/parameter_validation.cpp
-        ${SRC_DIR}/layers/parameter_validation_utils.cpp
+        ${SRC_DIR}/layers/stateless/parameter_validation_utils.cpp
         ${COMMON_DIR}/include/object_tracker.cpp
         ${SRC_DIR}/layers/object_tracker_utils.cpp
         ${COMMON_DIR}/include/thread_safety.cpp
-        ${SRC_DIR}/layers/image_layout_map.cpp
+        ${SRC_DIR}/layers/state_tracker/image_layout_map.cpp
         ${SRC_DIR}/layers/subresource_adapter.cpp
-        ${SRC_DIR}/layers/query_validation.cpp
-        ${SRC_DIR}/layers/ray_tracing_validation.cpp
-        ${SRC_DIR}/layers/wsi_validation.cpp
+        ${SRC_DIR}/layers/core_checks/query_validation.cpp
+        ${SRC_DIR}/layers/core_checks/ray_tracing_validation.cpp
+        ${SRC_DIR}/layers/core_checks/wsi_validation.cpp
         ${SRC_DIR}/layers/xxhash.c)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include

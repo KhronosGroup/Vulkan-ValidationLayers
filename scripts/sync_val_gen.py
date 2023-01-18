@@ -881,7 +881,7 @@ def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
     expanded = ('VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT', 'VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT',
                 'VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT', 'VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT')
     for stage in stage_order:
-        if (stage in expanded) or (vvl_fake_extension in stage) : 
+        if (stage in expanded) or (vvl_fake_extension in stage) :
             continue
 
         queue_flag_list = stage_queue_table[stage]
@@ -973,7 +973,7 @@ def GenSyncTypeHelper(gen, is_source) :
     enums_in_bit_order = EnumsInBitOrder(gen.sync_enum)
 
     if config['is_source']:
-        lines.extend(('#include "synchronization_validation_types.h"', ''))
+        lines.extend(('#include "sync_validation_types.h"', ''))
     else:
         lines.extend(('#pragma once', '', '#include <array>', '#include <bitset>', '#include <map>', '#include <stdint.h>', '#include <vulkan/vulkan.h>',
                  '#include "vk_layer_data.h"'))

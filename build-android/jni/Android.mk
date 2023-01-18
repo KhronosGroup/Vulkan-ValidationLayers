@@ -1,5 +1,7 @@
 # Copyright 2015 The Android Open Source Project
-# Copyright (C) 2015 Valve Corporation
+# Copyright (c) 2015-2023 The Khronos Group Inc.
+# Copyright (c) 2015-2023 LunarG, Inc.
+# Copyright (c) 2015-2023 Valve Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,66 +39,72 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_khronos_validation
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/android_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/device_memory_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/external_object_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/base_node.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/cmd_buffer_dynamic_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_layout_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_sub_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/pipeline_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/queue_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/render_pass_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/render_pass_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/video_session_state.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/video_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/drawdispatch.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_sets.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_module.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_instruction.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/state_tracker.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/android_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/device_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/device_memory_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/device_memory_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/external_object_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/base_node.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/buffer_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/cmd_buffer_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/cmd_buffer_dynamic_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_layout_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_sub_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/pipeline_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/queue_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/render_pass_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/render_pass_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/video_session_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/video_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/core_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/drawdispatch_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/descriptor_sets.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/descriptor_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/buffer_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_module.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_instruction.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_validation_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_grammar_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/debug_printf.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/gpu_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation/debug_printf.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices/best_practices_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/best_practices.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync_utils.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync_vuid_maps.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_vuid_maps.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_error_location.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/synchronization_validation_types.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/synchronization_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/sync_validation_types.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/sync/sync_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/layer_options.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/query_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/ray_tracing_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/wsi_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/query_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/ray_tracing_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/wsi_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/stateless/parameter_validation_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/vk_safe_struct.cpp
-LOCAL_SRC_FILES += $(SRC_DIR)/layers/image_layout_map.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/core_checks \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/gpu_av \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/state_tracker \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/stateless \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/sync \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
@@ -149,6 +157,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
@@ -205,6 +214,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \

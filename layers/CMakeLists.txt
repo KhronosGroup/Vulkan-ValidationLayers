@@ -161,6 +161,27 @@ endif()
 add_library(VkLayer_khronos_validation MODULE)
 
 target_sources(VkLayer_khronos_validation PRIVATE
+    best_practices/best_practices_error_enums.h
+    best_practices/best_practices_utils.cpp
+    best_practices/best_practices_validation.h
+    core_checks/android_validation.cpp
+    core_checks/buffer_validation.cpp
+    core_checks/cmd_buffer_dynamic_validation.cpp
+    core_checks/core_validation.cpp
+    core_checks/core_validation.h
+    core_checks/descriptor_validation.cpp
+    core_checks/device_validation.cpp
+    core_checks/device_memory_validation.cpp
+    core_checks/drawdispatch_validation.cpp
+    core_checks/external_object_validation.cpp
+    core_checks/pipeline_validation.cpp
+    core_checks/query_validation.cpp
+    core_checks/ray_tracing_validation.cpp
+    core_checks/render_pass_validation.cpp
+    core_checks/shader_validation.cpp
+    core_checks/shader_validation.h
+    core_checks/video_validation.cpp
+    core_checks/wsi_validation.cpp
     generated/best_practices.cpp
     generated/best_practices.h
     generated/chassis.cpp
@@ -173,91 +194,73 @@ target_sources(VkLayer_khronos_validation PRIVATE
     generated/parameter_validation.h
     generated/spirv_grammar_helper.cpp
     generated/spirv_validation_helper.cpp
-    generated/synchronization_validation_types.cpp
+    generated/sync_validation_types.cpp
     generated/thread_safety.cpp
     generated/thread_safety.h
     generated/vk_safe_struct.cpp
     generated/vk_safe_struct.h
-    android_validation.cpp
-    base_node.cpp
-    base_node.h
-    best_practices_error_enums.h
-    best_practices_utils.cpp
-    best_practices_validation.h
-    buffer_state.cpp
-    buffer_state.h
-    buffer_validation.cpp
-    cmd_buffer_dynamic_validation.cpp
-    cmd_buffer_state.cpp
-    cmd_buffer_state.h
+    gpu_validation/debug_printf.cpp
+    gpu_validation/debug_printf.h
+    gpu_validation/gpu_utils.cpp
+    gpu_validation/gpu_utils.h
+    gpu_validation/gpu_validation.cpp
+    gpu_validation/gpu_validation.cpp
+    gpu_validation/gpu_validation.h
+    state_tracker/base_node.cpp
+    state_tracker/base_node.h
+    state_tracker/buffer_state.cpp
+    state_tracker/buffer_state.h
+    state_tracker/cmd_buffer_state.cpp
+    state_tracker/cmd_buffer_state.h
+    state_tracker/descriptor_sets.cpp
+    state_tracker/descriptor_sets.h
+    state_tracker/device_memory_state.cpp
+    state_tracker/device_memory_state.h
+    state_tracker/device_state.h
+    state_tracker/image_layout_map.cpp
+    state_tracker/image_layout_map.h
+    state_tracker/image_state.cpp
+    state_tracker/image_state.h
+    state_tracker/pipeline_layout_state.cpp
+    state_tracker/pipeline_layout_state.h
+    state_tracker/pipeline_state.cpp
+    state_tracker/pipeline_state.h
+    state_tracker/pipeline_sub_state.cpp
+    state_tracker/pipeline_sub_state.h
+    state_tracker/query_state.h
+    state_tracker/queue_state.cpp
+    state_tracker/queue_state.h
+    state_tracker/ray_tracing_state.h
+    state_tracker/render_pass_state.cpp
+    state_tracker/render_pass_state.h
+    state_tracker/sampler_state.h
+    state_tracker/shader_instruction.cpp
+    state_tracker/shader_instruction.h
+    state_tracker/shader_module.cpp
+    state_tracker/shader_module.h
+    state_tracker/state_tracker.cpp
+    state_tracker/state_tracker.h
+    state_tracker/video_session_state.cpp
+    state_tracker/video_session_state.h
+    stateless/parameter_validation_utils.cpp
+    stateless/stateless_validation.h
+    sync/sync_validation.cpp
+    sync/sync_validation.h
+    sync/sync_utils.cpp
+    sync/sync_utils.h
+    sync/sync_vuid_maps.cpp
+    sync/sync_vuid_maps.h
     convert_to_renderpass2.cpp
     core_error_location.cpp
     core_error_location.h
-    core_validation.cpp
     core_validation_error_enums.h
-    core_validation.h
-    debug_printf.cpp
-    debug_printf.h
-    descriptor_sets.cpp
-    descriptor_sets.h
-    descriptor_validation.cpp
-    device_validation.cpp
-    device_memory_state.cpp
-    device_memory_state.h
-    device_memory_validation.cpp
-    drawdispatch.cpp
-    external_object_validation.cpp
-    gpu_utils.cpp
-    gpu_utils.h
-    gpu_validation.cpp
-    gpu_validation.cpp
-    gpu_validation.h
-    image_layout_map.cpp
-    image_layout_map.h
-    image_state.cpp
-    image_state.h
     layer_options.cpp
     object_lifetime_validation.h
     object_tracker_utils.cpp
-    parameter_validation_utils.cpp
-    pipeline_layout_state.cpp
-    pipeline_state.cpp
-    pipeline_state.h
-    pipeline_sub_state.cpp
-    pipeline_validation.cpp
-    query_state.h
-    query_validation.cpp
-    queue_state.cpp
-    queue_state.h
     range_vector.h
-    ray_tracing_state.h
-    ray_tracing_validation.cpp
-    render_pass_state.cpp
-    render_pass_state.h
-    render_pass_validation.cpp
-    sampler_state.h
-    shader_instruction.cpp
-    shader_instruction.h
-    shader_module.cpp
-    shader_module.h
-    shader_validation.cpp
-    shader_validation.h
-    stateless_validation.h
-    state_tracker.cpp
-    state_tracker.h
     subresource_adapter.cpp
     subresource_adapter.h
-    synchronization_validation.cpp
-    synchronization_validation.h
-    sync_utils.cpp
-    sync_utils.h
-    sync_vuid_maps.cpp
-    sync_vuid_maps.h
-    video_session_state.cpp
-    video_session_state.h
-    video_validation.cpp
     vk_layer_settings_ext.h
-    wsi_validation.cpp
     xxhash.c
     xxhash.h
 )
@@ -271,6 +274,15 @@ elseif(APPLE)
 else()
     target_link_options(VkLayer_khronos_validation PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
+
+target_include_directories(VkLayer_khronos_validation PUBLIC
+    best_practices
+    core_checks
+    gpu_av
+    state_tracker
+    stateless
+    sync
+)
 
 # Khronos validation additional dependencies
 if (USE_ROBIN_HOOD_HASHING)
