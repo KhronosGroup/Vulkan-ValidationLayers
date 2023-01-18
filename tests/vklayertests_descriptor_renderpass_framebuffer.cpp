@@ -12202,7 +12202,7 @@ TEST_F(VkLayerTest, DescriptorBufferSetLayout) {
     }
     {
         VkSampler samplers[2] = {sampler.handle(), sampler.handle()};
-        const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, samplers};
+        const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, samplers};
         const VkDescriptorSetLayoutCreateFlags flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT |
                                                        VK_DESCRIPTOR_SET_LAYOUT_CREATE_EMBEDDED_IMMUTABLE_SAMPLERS_BIT_EXT;
         const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, flags, 1U, &binding);
@@ -12805,7 +12805,8 @@ TEST_F(VkLayerTest, DescriptorBufferBindingAndOffsets) {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         };
         const auto dslci1 = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
-            nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT, size32(bindings), bindings);
+            nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT),
+            size32(bindings), bindings);
         dsl1.init(*m_device, dslci1);
 
         const VkDescriptorSetLayoutBinding bindings2[] = {
@@ -13139,6 +13140,8 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
     auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
     auto buffer_device_address_features = LvlInitStruct<VkPhysicalDeviceBufferDeviceAddressFeatures>(&descriptor_buffer_features);
@@ -13148,6 +13151,9 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
     if (!AreRequiredExtensionsEnabled()) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
+
+    const bool acceleration_structure = IsExtensionsEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    const bool nv_ray_tracing = IsExtensionsEnabled(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
@@ -13215,7 +13221,7 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         dgi.type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
         dgi.data.pUniformTexelBuffer = nullptr;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08037");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformBufferDescriptorSize, &buffer);
+        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.uniformTexelBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
         dgi.type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
@@ -13236,17 +13242,21 @@ TEST_F(VkLayerTest, DescriptorBufferDescriptorGetInfo) {
         vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
         m_errorMonitor->VerifyFound();
 
-        dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        dgi.data.accelerationStructure = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08041");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
-        m_errorMonitor->VerifyFound();
+        if (acceleration_structure) {
+            dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+            dgi.data.accelerationStructure = 0;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08041");
+            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+            m_errorMonitor->VerifyFound();
+        }
 
-        dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-        dgi.data.accelerationStructure = 0;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08042");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
-        m_errorMonitor->VerifyFound();
+        if (nv_ray_tracing) {
+            dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+            dgi.data.accelerationStructure = 0;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorDataEXT-type-08042");
+            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.accelerationStructureDescriptorSize, &buffer);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     {
@@ -13352,6 +13362,7 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_MUTABLE_DESCRIPTOR_TYPE_EXTENSION_NAME);
     AddOptionalExtensions(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    AddOptionalExtensions(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
     auto descriptor_buffer_features = LvlInitStruct<VkPhysicalDeviceDescriptorBufferFeaturesEXT>();
     auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&descriptor_buffer_features);
@@ -13364,6 +13375,8 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         GTEST_SKIP() << "At least Vulkan version 1.2 is required";
     }
+
+    const bool nv_ray_tracing = IsExtensionsEnabled(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
@@ -13441,11 +13454,13 @@ TEST_F(VkLayerTest, DescriptorBufferVarious) {
         vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, & buffer);
         m_errorMonitor->VerifyFound();
 
-        dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
-        dgi.data.pStorageTexelBuffer = &dai;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08029");
-        vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
-        m_errorMonitor->VerifyFound();
+        if (nv_ray_tracing) {
+            dgi.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+            dgi.data.pStorageTexelBuffer = &dai;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorGetInfoEXT-type-08029");
+            vkGetDescriptorEXT(m_device->device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     {
