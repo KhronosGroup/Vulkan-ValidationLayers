@@ -499,6 +499,7 @@ class ValidationObject {
         // Unwrap a handle.
         template <typename HandleType>
         HandleType Unwrap(HandleType wrappedHandle) {
+            if (wrappedHandle == (HandleType)VK_NULL_HANDLE) return wrappedHandle;
             auto iter = unique_id_mapping.find(reinterpret_cast<uint64_t const &>(wrappedHandle));
             if (iter == unique_id_mapping.end())
                 return (HandleType)0;
@@ -508,11 +509,10 @@ class ValidationObject {
         // Wrap a newly created handle with a new unique ID, and return the new ID.
         template <typename HandleType>
         HandleType WrapNew(HandleType newlyCreatedHandle) {
-            // The assert is a safeguard against potential bugs in other layers or the loader.
-            // According to specification, a successfully created non-dispatchable object can not be VK_NULL_HANDLE.
-            assert(newlyCreatedHandle != VK_NULL_HANDLE);
+            if (newlyCreatedHandle == (HandleType)VK_NULL_HANDLE) return newlyCreatedHandle;
             auto unique_id = global_unique_id++;
             unique_id = HashedUint64::hash(unique_id);
+            assert(unique_id != 0); // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
             unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
             return (HandleType)unique_id;
         }
