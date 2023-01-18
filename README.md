@@ -2,6 +2,10 @@
 
 This project provides the Khronos official Vulkan validation layers for Windows, Linux, Android, and MacOS.
 
+## master to main upcoming change (January 23, 2023)
+
+See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5084 for details.
+
 ## CI Build Status
 | Build Status |
 |:------------|
