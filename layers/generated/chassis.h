@@ -4059,7 +4059,7 @@ class ValidationObject {
         }
 
         // Debug Logging Helpers
-        bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogError(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
             const bool result = LogMsg(report_data, kErrorBit, objlist, vuid_text, format, argptr);
@@ -4067,7 +4067,7 @@ class ValidationObject {
             return result;
         }
 
-        bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
             const bool result = LogMsg(report_data, kWarningBit, objlist, vuid_text, format, argptr);
@@ -4075,7 +4075,7 @@ class ValidationObject {
             return result;
         }
 
-        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogPerformanceWarning(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
             const bool result = LogMsg(report_data, kPerformanceWarningBit, objlist, vuid_text, format, argptr);
@@ -4083,7 +4083,7 @@ class ValidationObject {
             return result;
         }
 
-        bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, const std::string &vuid_text, const char *format, ...) const {
+        bool DECORATE_PRINTF(4, 5) LogInfo(const LogObjectList &objlist, std::string_view vuid_text, const char *format, ...) const {
             va_list argptr;
             va_start(argptr, format);
             const bool result = LogMsg(report_data, kInformationBit, objlist, vuid_text, format, argptr);

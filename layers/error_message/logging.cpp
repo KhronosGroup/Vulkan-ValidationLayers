@@ -317,8 +317,8 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) 
 
 // helper for VUID based filtering. This needs to be separate so it can be called before incurring
 // the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
-static bool LogMsgEnabled(const debug_report_data *debug_data, const std::string &vuid_text,
-                                 VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type) {
+static bool LogMsgEnabled(const debug_report_data *debug_data, std::string_view vuid_text,
+                          VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type) {
     if (!(debug_data->active_severities & severity) || !(debug_data->active_types & type)) {
         return false;
     }
@@ -335,7 +335,10 @@ static bool LogMsgEnabled(const debug_report_data *debug_data, const std::string
     return true;
 }
 
-VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects, const std::string &vuid_text, const char *format, va_list argptr) {
+VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
+                       std::string_view vuid_text, const char *format, va_list argptr) {
+    assert(*(vuid_text.data() + vuid_text.size()) == '\0');
+
     VkDebugUtilsMessageSeverityFlagsEXT severity;
     VkDebugUtilsMessageTypeFlagsEXT type;
 
@@ -387,7 +390,7 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
         const char *spec_text = nullptr;
         std::string spec_type;
         for (uint32_t i = 0; i < num_vuids; i++) {
-            if (0 == strcmp(vuid_text.c_str(), vuid_spec_text[i].vuid)) {
+            if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
                 spec_text = vuid_spec_text[i].spec_text;
                 spec_type = vuid_spec_text[i].url_id;
                 break;
@@ -431,7 +434,7 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
         }
     }
 
-    return debug_log_msg(debug_data, msg_flags, objects, "Validation", str_plus_spec_text.c_str(), vuid_text.c_str());
+    return debug_log_msg(debug_data, msg_flags, objects, "Validation", str_plus_spec_text.c_str(), vuid_text.data());
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
