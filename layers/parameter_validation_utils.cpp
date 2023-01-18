@@ -8350,28 +8350,28 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
     for (uint32_t i = 0; i < infoCount; ++i) {
         if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
             skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03654",
-                             "(%s): type must not be VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR.", api_name);
+                             "%s(): type must not be VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR.", api_name);
         }
         if (pInfos[i].flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR &&
             pInfos[i].flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR) {
             skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-flags-03796",
-                             "(%s): If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR bit set,"
+                             "%s(): If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR bit set,"
                              "then it must not have the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR bit set.",
                              api_name);
         }
         if (pInfos[i].pGeometries && pInfos[i].ppGeometries) {
             skip |=
                 LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-pGeometries-03788",
-                         "(%s): Only one of pGeometries or ppGeometries can be a valid pointer, the other must be NULL", api_name);
+                         "%s(): Only one of pGeometries or ppGeometries can be a valid pointer, the other must be NULL", api_name);
         }
         if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && pInfos[i].geometryCount != 1) {
             skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03790",
-                             "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, geometryCount must be 1", api_name);
+                             "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, geometryCount must be 1", api_name);
         }
         if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
             pInfos[i].geometryCount > phys_dev_ext_props.acc_structure_props.maxGeometryCount) {
             skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03793",
-                             "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then geometryCount must be"
+                             "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then geometryCount must be"
                              " less than or equal to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxGeometryCount",
                              api_name);
         }
@@ -8384,14 +8384,14 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                 switch (pGeometry->geometryType) {
                     case VK_GEOMETRY_TYPE_TRIANGLES_KHR:
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03795",
-                                         "(%s): total number of triangles in all geometries (%" PRIu64
+                                         "%s(): total number of triangles in all geometries (%" PRIu64
                                          ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount "
                                          "(%" PRIu64 ")",
                                          api_name, total_primitive_count, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
                         break;
                     case VK_GEOMETRY_TYPE_AABBS_KHR:
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03794",
-                                         "(%s): total number of AABBs in all geometries (%" PRIu64
+                                         "%s(): total number of AABBs in all geometries (%" PRIu64
                                          ") is superior to VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount "
                                          "(%" PRIu64 ")",
                                          api_name, total_primitive_count, phys_dev_ext_props.acc_structure_props.maxPrimitiveCount);
@@ -8443,14 +8443,14 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
 
                     if (pInfos[i].pGeometries[j].geometry.triangles.vertexStride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819",
-                                         "(%s):vertexStride must be less than or equal to 2^32-1", api_name);
+                                         "%s():vertexStride must be less than or equal to 2^32-1", api_name);
                     }
                     if (pInfos[i].pGeometries[j].geometry.triangles.indexType != VK_INDEX_TYPE_UINT16 &&
                         pInfos[i].pGeometries[j].geometry.triangles.indexType != VK_INDEX_TYPE_UINT32 &&
                         pInfos[i].pGeometries[j].geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
                         skip |=
                             LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798",
-                                     "(%s):indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR",
+                                     "%s():indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR",
                                      api_name);
                     }
                 }
@@ -8496,31 +8496,31 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);
                     if (pInfos[i].pGeometries[j].geometry.aabbs.stride % 8) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545",
-                                         "(%s): stride is not a multiple of 8.", api_name);
+                                         "%s(): stride is not a multiple of 8.", api_name);
                     }
                     if (pInfos[i].pGeometries[j].geometry.aabbs.stride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
-                                         "(%s): stride must be less than or equal to 2^32-1.", api_name);
+                                         "%s(): stride must be less than or equal to 2^32-1.", api_name);
                     }
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                     pInfos[i].pGeometries[j].geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789",
-                                     "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, the geometryType member"
+                                     "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, the geometryType member"
                                      " of elements of either pGeometries or ppGeometries must be VK_GEOMETRY_TYPE_INSTANCES_KHR.",
                                      api_name);
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
                     if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03791",
-                                         "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR the geometryType member "
+                                         "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR the geometryType member "
                                          "of elements of"
                                          " either pGeometries or ppGeometries must not be VK_GEOMETRY_TYPE_INSTANCES_KHR.",
                                          api_name);
                     }
                     if (pInfos[i].pGeometries[j].geometryType != pInfos[i].pGeometries[0].geometryType) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03792",
-                                         "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then the geometryType"
+                                         "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then the geometryType"
                                          " member of each geometry in either pGeometries or ppGeometries must be the same.",
                                          api_name);
                     }
@@ -8565,14 +8565,14 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                                                  "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
                     if (pInfos[i].ppGeometries[j]->geometry.triangles.vertexStride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819",
-                                         "(%s):vertexStride must be less than or equal to 2^32-1", api_name);
+                                         "%s():vertexStride must be less than or equal to 2^32-1", api_name);
                     }
                     if (pInfos[i].ppGeometries[j]->geometry.triangles.indexType != VK_INDEX_TYPE_UINT16 &&
                         pInfos[i].ppGeometries[j]->geometry.triangles.indexType != VK_INDEX_TYPE_UINT32 &&
                         pInfos[i].ppGeometries[j]->geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
                         skip |=
                             LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-03798",
-                                     "(%s):indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR",
+                                     "%s():indexType must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR",
                                      api_name);
                     }
                 }
@@ -8618,31 +8618,31 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-pNext-pNext", kVUIDUndefined);
                     if (pInfos[i].ppGeometries[j]->geometry.aabbs.stride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03820",
-                                         "(%s):stride must be less than or equal to 2^32-1", api_name);
+                                         "%s():stride must be less than or equal to 2^32-1", api_name);
                     }
                     if (pInfos[i].ppGeometries[j]->geometry.aabbs.stride % 8) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryAabbsDataKHR-stride-03545",
-                                         "(%s): stride is not a multiple of 8.", api_name);
+                                         "%s(): stride is not a multiple of 8.", api_name);
                     }
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
                     pInfos[i].ppGeometries[j]->geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                     skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03789",
-                                     "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, the geometryType member"
+                                     "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, the geometryType member"
                                      " of elements of either pGeometries or ppGeometries must be VK_GEOMETRY_TYPE_INSTANCES_KHR",
                                      api_name);
                 }
                 if (pInfos[i].type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR) {
                     if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03791",
-                                         "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR the geometryType member "
+                                         "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR the geometryType member "
                                          "of elements of"
                                          " either pGeometries or ppGeometries must not be VK_GEOMETRY_TYPE_INSTANCES_KHR",
                                          api_name);
                     }
                     if (pInfos[i].ppGeometries[j]->geometryType != pInfos[i].ppGeometries[0]->geometryType) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-type-03792",
-                                         "(%s): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then the geometryType"
+                                         "%s(): If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR then the geometryType"
                                          " member of each geometry in either pGeometries or ppGeometries must be the same.",
                                          api_name);
                     }
