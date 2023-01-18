@@ -837,9 +837,9 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
                 {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
                 {6, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, hopefully_undereferencable_pointer},
             };
-            const auto dslci =
-                LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(nullptr, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR,
-                                                               size32(non_sampler_bindings), non_sampler_bindings);
+            const auto dslci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(
+                nullptr, static_cast<VkDescriptorSetLayoutCreateFlags>(VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR),
+                size32(non_sampler_bindings), non_sampler_bindings);
             vk_testing::DescriptorSetLayout dsl(*m_device, dslci);
         }
     }
