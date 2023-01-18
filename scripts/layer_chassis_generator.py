@@ -593,7 +593,7 @@ bool wrap_handles = true;
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
 #include "stateless_validation.h"
-#include "synchronization_validation.h"
+#include "sync_validation.h"
 #include "thread_safety.h"
 
 // This header file must be included after the above validation object class definitions

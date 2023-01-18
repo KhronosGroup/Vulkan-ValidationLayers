@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Copyright (c) 2013-2019 The Khronos Group Inc.
+# Copyright (c) 2013-2023 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -460,34 +460,34 @@ def makeGenOpts(args):
 
 # Create an API generator and corresponding generator options based on
 # the requested target and command line options.
-    # Helper file generator options for synchronization_validation_types.h
-    genOpts['synchronization_validation_types.h'] = [
+    # Helper file generator options for sync_validation_types.h
+    genOpts['sync_validation_types.h'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
-            filename          = 'synchronization_validation_types.h',
+            filename          = 'sync_validation_types.h',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
-            helper_file_type  = 'synchronization_helper_header',
+            helper_file_type  = 'sync_helper_header',
             valid_usage_path  = args.scripts)
         ]
 
-    genOpts['synchronization_validation_types.cpp'] = [
+    genOpts['sync_validation_types.cpp'] = [
           HelperFileOutputGenerator,
           HelperFileOutputGeneratorOptions(
             conventions       = conventions,
-            filename          = 'synchronization_validation_types.cpp',
+            filename          = 'sync_validation_types.cpp',
             directory         = directory,
             versions          = featuresPat,
             emitversions      = featuresPat,
             addExtensions     = addExtensionsPat,
             removeExtensions  = removeExtensionsPat,
             emitExtensions    = emitExtensionsPat,
-            helper_file_type  = 'synchronization_helper_source',
+            helper_file_type  = 'sync_helper_source',
             valid_usage_path  = args.scripts)
         ]
 

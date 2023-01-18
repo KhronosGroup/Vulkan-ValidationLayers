@@ -258,7 +258,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                         if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
                             item_name = elem.get('name')
                             self.core_object_types.append(item_name)
-        elif self.helper_file_type == 'synchronization_helper_header' or self.helper_file_type == 'synchronization_helper_source':
+        elif self.helper_file_type == 'sync_helper_header' or self.helper_file_type == 'sync_helper_source':
             if groupName in sync_val_gen.sync_enum_types:
                 self.sync_enum[groupName] = []
                 for elem in groupElem.findall('enum'):
@@ -2122,9 +2122,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             return self.GenerateExtensionHelperHeader()
         elif self.helper_file_type == 'typemap_helper_header':
             return self.GenerateTypeMapHelperHeader()
-        elif self.helper_file_type == 'synchronization_helper_header':
+        elif self.helper_file_type == 'sync_helper_header':
             return self.GenerateSyncHelperHeader()
-        elif self.helper_file_type == 'synchronization_helper_source':
+        elif self.helper_file_type == 'sync_helper_source':
             return self.GenerateSyncHelperSource()
         else:
             return 'Bad Helper File Generator Option %s' % self.helper_file_type
