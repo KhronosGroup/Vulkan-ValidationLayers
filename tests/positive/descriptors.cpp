@@ -1334,3 +1334,102 @@ TEST_F(VkPositiveLayerTest, BindingEmptyDescriptorSets) {
                               &empty_ds.set_, 0, nullptr);
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, DrawingWithUnboundUnusedSetWithInputAttachments) {
+    TEST_DESCRIPTION(
+        "Test issuing draw command with pipeline layout that has 2 descriptor sets with input attachment descriptors. "
+        "The second descriptor set is unused and unbound. Its purpose is to catch regression of the following bug or similar "
+        "issues when accessing unbound set: https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4576");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto width = static_cast<uint32_t>(m_viewports[0].width);
+    const auto height = static_cast<uint32_t>(m_viewports[0].height);
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    const VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+
+    VkImageObj image_input(m_device);
+    image_input.Init(width, height, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
+    VkImageView view_input = image_input.targetView(format);
+
+    // Create render pass with a subpass that has input attachment.
+    vk_testing::RenderPass render_pass;
+    {
+        VkAttachmentDescription input_attachment = {};
+        input_attachment.format = format;
+        input_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        input_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        input_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        input_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        input_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        input_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        input_attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+        const VkAttachmentReference attachment_reference = {0, VK_IMAGE_LAYOUT_GENERAL};
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.inputAttachmentCount = 1;
+        subpass.pInputAttachments = &attachment_reference;
+
+        auto rpci = LvlInitStruct<VkRenderPassCreateInfo>();
+        rpci.attachmentCount = 1;
+        rpci.pAttachments = &input_attachment;
+        rpci.subpassCount = 1;
+        rpci.pSubpasses = &subpass;
+
+        render_pass.init(*m_device, rpci);
+        ASSERT_TRUE(render_pass.initialized());
+    }
+
+    auto fbci = LvlInitStruct<VkFramebufferCreateInfo>();
+    fbci.renderPass = render_pass.handle();
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &view_input;
+    fbci.width = width;
+    fbci.height = height;
+    fbci.layers = 1;
+    vk_testing::Framebuffer fb(*m_device, fbci);
+    ASSERT_TRUE(fb.initialized());
+
+    char const *fsSource = R"glsl(
+        #version 450
+        layout(input_attachment_index=0, set=0, binding=0) uniform subpassInput x;
+        void main() {
+        vec4 color = subpassLoad(x);
+        }
+    )glsl";
+    VkShaderObj vs(this, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    OneOffDescriptorSet descriptor_set(m_device, {binding});
+    descriptor_set.WriteDescriptorImageInfo(0, view_input, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.UpdateDescriptorSets();
+    const VkDescriptorSetLayoutObj ds_layout_unused(m_device, {binding});
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_, &ds_layout_unused});
+
+    VkPipelineObj pipe(m_device);
+    pipe.SetViewport(m_viewports);
+    pipe.SetScissor(m_scissors);
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    ASSERT_VK_SUCCESS(pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle()));
+
+    m_commandBuffer->begin();
+    m_renderPassBeginInfo.renderPass = render_pass.handle();
+    m_renderPassBeginInfo.framebuffer = fb.handle();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    // This draw command will likely produce a crash in case of a regression.
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
