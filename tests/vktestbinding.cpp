@@ -385,7 +385,8 @@ void Device::wait() { EXPECT(vk::DeviceWaitIdle(handle()) == VK_SUCCESS); }
 
 VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
-    VkResult err = vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
+    VkResult err =
+        vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
     EXPECT(err == VK_SUCCESS || err == VK_TIMEOUT);
 
     return err;
