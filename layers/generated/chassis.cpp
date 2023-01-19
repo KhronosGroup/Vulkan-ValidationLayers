@@ -13385,6 +13385,52 @@ VKAPI_ATTR void VKAPI_CALL GetMicromapBuildSizesEXT(
 
 
 
+VKAPI_ATTR void VKAPI_CALL CmdDrawClusterHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    groupCountX,
+    uint32_t                                    groupCountY,
+    uint32_t                                    groupCountZ) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawClusterHUAWEI]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawClusterHUAWEI]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    }
+    DispatchCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterHUAWEI]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDrawClusterHUAWEI(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDrawClusterIndirectHUAWEI(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    bool skip = false;
+    for (const ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallValidateCmdDrawClusterIndirectHUAWEI]) {
+        auto lock = intercept->ReadLock();
+        skip |= intercept->PreCallValidateCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+        if (skip) return;
+    }
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPreCallRecordCmdDrawClusterIndirectHUAWEI]) {
+        auto lock = intercept->WriteLock();
+        intercept->PreCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+    }
+    DispatchCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+    for (ValidationObject* intercept : layer_data->intercept_vectors[InterceptIdPostCallRecordCmdDrawClusterIndirectHUAWEI]) {
+        auto lock = intercept->WriteLock();
+        intercept->PostCallRecordCmdDrawClusterIndirectHUAWEI(commandBuffer, buffer, offset);
+    }
+}
+
+
 
 VKAPI_ATTR void VKAPI_CALL SetDeviceMemoryPriorityEXT(
     VkDevice                                    device,
@@ -15662,6 +15708,8 @@ const layer_data::unordered_map<std::string, function_data> name_to_funcptr_map 
     {"vkCmdWriteMicromapsPropertiesEXT", {kFuncTypeDev, (void*)CmdWriteMicromapsPropertiesEXT}},
     {"vkGetDeviceMicromapCompatibilityEXT", {kFuncTypeDev, (void*)GetDeviceMicromapCompatibilityEXT}},
     {"vkGetMicromapBuildSizesEXT", {kFuncTypeDev, (void*)GetMicromapBuildSizesEXT}},
+    {"vkCmdDrawClusterHUAWEI", {kFuncTypeDev, (void*)CmdDrawClusterHUAWEI}},
+    {"vkCmdDrawClusterIndirectHUAWEI", {kFuncTypeDev, (void*)CmdDrawClusterIndirectHUAWEI}},
     {"vkSetDeviceMemoryPriorityEXT", {kFuncTypeDev, (void*)SetDeviceMemoryPriorityEXT}},
     {"vkGetDescriptorSetLayoutHostMappingInfoVALVE", {kFuncTypeDev, (void*)GetDescriptorSetLayoutHostMappingInfoVALVE}},
     {"vkGetDescriptorSetHostMappingVALVE", {kFuncTypeDev, (void*)GetDescriptorSetHostMappingVALVE}},

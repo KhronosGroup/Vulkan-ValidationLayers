@@ -4,10 +4,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -769,6 +769,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_FEATURES_HUAWEI";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_CULLING_SHADER_PROPERTIES_HUAWEI";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT:
@@ -3256,6 +3260,8 @@ static inline const char* string_VkQueryPipelineStatisticFlagBits(VkQueryPipelin
             return "VK_QUERY_PIPELINE_STATISTIC_CLIPPING_INVOCATIONS_BIT";
         case VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT:
             return "VK_QUERY_PIPELINE_STATISTIC_CLIPPING_PRIMITIVES_BIT";
+        case VK_QUERY_PIPELINE_STATISTIC_CLUSTER_CULLING_SHADER_INVOCATIONS_BIT_HUAWEI:
+            return "VK_QUERY_PIPELINE_STATISTIC_CLUSTER_CULLING_SHADER_INVOCATIONS_BIT_HUAWEI";
         case VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT:
             return "VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT";
         case VK_QUERY_PIPELINE_STATISTIC_FRAGMENT_SHADER_INVOCATIONS_BIT:
@@ -3956,6 +3962,8 @@ static inline const char* string_VkShaderStageFlagBits(VkShaderStageFlagBits inp
             return "VK_SHADER_STAGE_CALLABLE_BIT_KHR";
         case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
             return "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR";
+        case VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI:
+            return "VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI";
         case VK_SHADER_STAGE_COMPUTE_BIT:
             return "VK_SHADER_STAGE_COMPUTE_BIT";
         case VK_SHADER_STAGE_FRAGMENT_BIT:
@@ -5514,6 +5522,8 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_GGP_PROPRIETARY";
         case VK_DRIVER_ID_GOOGLE_SWIFTSHADER:
             return "VK_DRIVER_ID_GOOGLE_SWIFTSHADER";
+        case VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA:
+            return "VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_IMAGINATION_PROPRIETARY:
             return "VK_DRIVER_ID_IMAGINATION_PROPRIETARY";
         case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
@@ -5781,6 +5791,8 @@ static inline const char* string_VkPipelineStageFlagBits2(uint64_t input_value)
             return "VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT";
         case VK_PIPELINE_STAGE_2_CLEAR_BIT:
             return "VK_PIPELINE_STAGE_2_CLEAR_BIT";
+        case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
+            return "VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI";
         case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT:
             return "VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT";
         case VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV:
@@ -7277,6 +7289,8 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
             return "VK_DRIVER_ID_GGP_PROPRIETARY";
         case VK_DRIVER_ID_GOOGLE_SWIFTSHADER:
             return "VK_DRIVER_ID_GOOGLE_SWIFTSHADER";
+        case VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA:
+            return "VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_IMAGINATION_PROPRIETARY:
             return "VK_DRIVER_ID_IMAGINATION_PROPRIETARY";
         case VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA:
@@ -7627,6 +7641,8 @@ static inline const char* string_VkPipelineStageFlagBits2KHR(uint64_t input_valu
             return "VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT";
         case VK_PIPELINE_STAGE_2_CLEAR_BIT:
             return "VK_PIPELINE_STAGE_2_CLEAR_BIT";
+        case VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI:
+            return "VK_PIPELINE_STAGE_2_CLUSTER_CULLING_SHADER_BIT_HUAWEI";
         case VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT:
             return "VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT";
         case VK_PIPELINE_STAGE_2_COMMAND_PREPROCESS_BIT_NV:

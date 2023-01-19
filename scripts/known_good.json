@@ -17,7 +17,7 @@
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "5eeb2c4c570ce92f5f48bf667e39e9d4da2ef13a"
+            "commit": "v1.3.239"
         },
         {
             "name": "SPIRV-Headers",
