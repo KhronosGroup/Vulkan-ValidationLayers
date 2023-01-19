@@ -1331,6 +1331,12 @@ typedef enum InterceptId{
     InterceptIdPreCallValidateGetMicromapBuildSizesEXT,
     InterceptIdPreCallRecordGetMicromapBuildSizesEXT,
     InterceptIdPostCallRecordGetMicromapBuildSizesEXT,
+    InterceptIdPreCallValidateCmdDrawClusterHUAWEI,
+    InterceptIdPreCallRecordCmdDrawClusterHUAWEI,
+    InterceptIdPostCallRecordCmdDrawClusterHUAWEI,
+    InterceptIdPreCallValidateCmdDrawClusterIndirectHUAWEI,
+    InterceptIdPreCallRecordCmdDrawClusterIndirectHUAWEI,
+    InterceptIdPostCallRecordCmdDrawClusterIndirectHUAWEI,
     InterceptIdPreCallValidateSetDeviceMemoryPriorityEXT,
     InterceptIdPreCallRecordSetDeviceMemoryPriorityEXT,
     InterceptIdPostCallRecordSetDeviceMemoryPriorityEXT,
@@ -3000,6 +3006,12 @@ void ValidationObject::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateGetMicromapBuildSizesEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMicromapBuildSizesEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMicromapBuildSizesEXT);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawClusterHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawClusterHUAWEI);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawClusterHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDrawClusterIndirectHUAWEI);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDrawClusterIndirectHUAWEI);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDrawClusterIndirectHUAWEI);
     BUILD_DISPATCH_VECTOR(PreCallValidateSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetDeviceMemoryPriorityEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetDeviceMemoryPriorityEXT);

@@ -4,10 +4,10 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (c) 2015-2022 Google Inc.
+ * Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (c) 2015-2023 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12230,6 +12230,39 @@ struct safe_VkAccelerationStructureTrianglesOpacityMicromapEXT {
     void initialize(const safe_VkAccelerationStructureTrianglesOpacityMicromapEXT* copy_src);
     VkAccelerationStructureTrianglesOpacityMicromapEXT *ptr() { return reinterpret_cast<VkAccelerationStructureTrianglesOpacityMicromapEXT *>(this); }
     VkAccelerationStructureTrianglesOpacityMicromapEXT const *ptr() const { return reinterpret_cast<VkAccelerationStructureTrianglesOpacityMicromapEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 clustercullingShader;
+    VkBool32 multiviewClusterCullingShader;
+    safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct);
+    safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& copy_src);
+    safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& operator=(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI& copy_src);
+    safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI();
+    ~safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI();
+    void initialize(const VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* in_struct);
+    void initialize(const safe_VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI* copy_src);
+    VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI *ptr() { return reinterpret_cast<VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI *>(this); }
+    VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI const *ptr() const { return reinterpret_cast<VkPhysicalDeviceClusterCullingShaderFeaturesHUAWEI const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI {
+    VkStructureType sType;
+    void* pNext{};
+    uint32_t maxWorkGroupCount[3];
+    uint32_t maxWorkGroupSize[3];
+    uint32_t maxOutputClusterCount;
+    safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(const VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* in_struct);
+    safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& copy_src);
+    safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& operator=(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI& copy_src);
+    safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI();
+    ~safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI();
+    void initialize(const VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* in_struct);
+    void initialize(const safe_VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI* copy_src);
+    VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI *ptr() { return reinterpret_cast<VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI *>(this); }
+    VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI const *ptr() const { return reinterpret_cast<VkPhysicalDeviceClusterCullingShaderPropertiesHUAWEI const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceBorderColorSwizzleFeaturesEXT {
