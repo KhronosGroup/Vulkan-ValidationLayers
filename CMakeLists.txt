@@ -99,8 +99,7 @@ elseif (VVL_ENABLE_TSAN)
     add_link_options(-fsanitize=thread)
 endif()
 
-# Platform-specific compiler switches
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+if(${CMAKE_C_COMPILER_ID} MATCHES "Clang")
     add_compile_options(-Wconversion
                         -Wimplicit-fallthrough
 
