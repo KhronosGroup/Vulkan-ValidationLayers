@@ -720,7 +720,7 @@ char **VkTestFramework::ReadFileData(const char *fileName) {
         ptr_len += (len);
         if (count < len) {
             if (count == 0) {
-                m_num_shader_strings = (i + 1);
+                m_num_shader_strings = (static_cast<int>(i) + 1);
                 break;
             }
             len = count;

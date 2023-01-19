@@ -269,11 +269,11 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     enabled_extensions_ = extensions;
 
     VkDeviceCreateInfo dev_info = LvlInitStruct<VkDeviceCreateInfo>(create_device_pnext);
-    dev_info.queueCreateInfoCount = create_queue_infos.size();
+    dev_info.queueCreateInfoCount = static_cast<uint32_t>(create_queue_infos.size());
     dev_info.pQueueCreateInfos = create_queue_infos.data();
     dev_info.enabledLayerCount = 0;
     dev_info.ppEnabledLayerNames = NULL;
-    dev_info.enabledExtensionCount = extensions.size();
+    dev_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     dev_info.ppEnabledExtensionNames = extensions.data();
 
     VkPhysicalDeviceFeatures all_features;
@@ -385,7 +385,7 @@ void Device::wait() { EXPECT(vk::DeviceWaitIdle(handle()) == VK_SUCCESS); }
 
 VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
     const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
-    VkResult err = vk::WaitForFences(handle(), fence_handles.size(), fence_handles.data(), wait_all, timeout);
+    VkResult err = vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
     EXPECT(err == VK_SUCCESS || err == VK_TIMEOUT);
 
     return err;
@@ -393,7 +393,8 @@ VkResult Device::wait(const std::vector<const Fence *> &fences, bool wait_all, u
 
 void Device::update_descriptor_sets(const std::vector<VkWriteDescriptorSet> &writes,
                                     const std::vector<VkCopyDescriptorSet> &copies) {
-    vk::UpdateDescriptorSets(handle(), writes.size(), writes.data(), copies.size(), copies.data());
+    vk::UpdateDescriptorSets(handle(), static_cast<uint32_t>(writes.size()), writes.data(), static_cast<uint32_t>(copies.size()),
+                             copies.data());
 }
 
 VkResult Queue::submit(const std::vector<const CommandBuffer *> &cmds, const Fence &fence, bool expect_success) {
@@ -980,7 +981,7 @@ NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
 void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
                           const std::vector<const DescriptorSetLayout *> &layouts) {
     const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
-    info.setLayoutCount = layout_handles.size();
+    info.setLayoutCount = static_cast<uint32_t>(layout_handles.size());
     info.pSetLayouts = layout_handles.data();
 
     init(dev, info);
@@ -1019,7 +1020,7 @@ std::vector<DescriptorSet *> DescriptorPool::alloc_sets(const Device &dev,
     set_handles.resize(layout_handles.size());
 
     VkDescriptorSetAllocateInfo alloc_info = LvlInitStruct<VkDescriptorSetAllocateInfo>();
-    alloc_info.descriptorSetCount = layout_handles.size();
+    alloc_info.descriptorSetCount = static_cast<uint32_t>(layout_handles.size());
     alloc_info.descriptorPool = handle();
     alloc_info.pSetLayouts = layout_handles.data();
     VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, set_handles.data());

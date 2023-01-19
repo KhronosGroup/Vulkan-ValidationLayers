@@ -1202,18 +1202,18 @@ inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &se
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type,
                                                          const std::vector<VkDescriptorImageInfo> &image_info) {
-    return write_descriptor_set(set, binding, array_element, type, image_info.size(), &image_info[0]);
+    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(image_info.size()), &image_info[0]);
 }
 
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type,
                                                          const std::vector<VkDescriptorBufferInfo> &buffer_info) {
-    return write_descriptor_set(set, binding, array_element, type, buffer_info.size(), &buffer_info[0]);
+    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(buffer_info.size()), &buffer_info[0]);
 }
 
 inline VkWriteDescriptorSet Device::write_descriptor_set(const DescriptorSet &set, uint32_t binding, uint32_t array_element,
                                                          VkDescriptorType type, const std::vector<VkBufferView> &buffer_views) {
-    return write_descriptor_set(set, binding, array_element, type, buffer_views.size(), &buffer_views[0]);
+    return write_descriptor_set(set, binding, array_element, type, static_cast<uint32_t>(buffer_views.size()), &buffer_views[0]);
 }
 
 inline VkCopyDescriptorSet Device::copy_descriptor_set(const DescriptorSet &src_set, uint32_t src_binding,
@@ -1265,7 +1265,7 @@ struct GraphicsPipelineFromLibraries {
     GraphicsPipelineFromLibraries(const Device &dev, layer_data::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo *ci = nullptr)
         : libs(libs) {
         link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
-        link_info.libraryCount = libs.size();
+        link_info.libraryCount = static_cast<uint32_t>(libs.size());
         link_info.pLibraries = libs.data();
 
         if (ci) {
