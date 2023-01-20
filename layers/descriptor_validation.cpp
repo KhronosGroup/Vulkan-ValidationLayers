@@ -2062,7 +2062,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         if (IsExtEnabled(device_extensions.vk_ext_image_2d_view_of_3d)) {
             if ((type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) && (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
                 (type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) {
-                *error_code = "UNASSIGNED-VkWriteDescriptorSet-descriptorType";
+                *error_code = "VUID-VkDescriptorImageInfo-imageView-07795";
                 std::stringstream error_str;
                 error_str << "ImageView (" << report_data->FormatHandle(image_view)
                           << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)
@@ -2097,7 +2097,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             }
 
             if (!(image_node->createInfo.flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)) {
-                *error_code = "UNASSIGNED-VkDescriptorImageInfo-compatibleBit";
+                *error_code = "VUID-VkDescriptorImageInfo-imageView-07796";
                 std::stringstream error_str;
                 error_str << "ImageView (" << report_data->FormatHandle(image_view)
                           << ") , is a 2D image view created from 3D image (" << report_data->FormatHandle(image)

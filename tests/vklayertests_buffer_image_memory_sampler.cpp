@@ -14944,7 +14944,7 @@ TEST_F(VkLayerTest, Image2DViewOf3D) {
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_2d.init(*m_device, view_ci);
     descriptor_set.WriteDescriptorImageInfo(0, view_2d.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkDescriptorImageInfo-compatibleBit");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorImageInfo-imageView-07796");
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
     descriptor_set.descriptor_writes.clear();
