@@ -685,6 +685,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <string>',
             '#include <utility>',
             '#include <set>',
+            '#include <array>',
             '#include <vector>',
             '#include <cassert>',
             '',
@@ -839,18 +840,18 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '']),
             struct.extend([
                 '',
-                '        static const std::vector<const char *> V_1_1_promoted_%s_apis = {' % type.lower() ])
+                '        constexpr std::array<const char *, %d> V_1_1_promoted_%s_apis = {{' % (len(promoted_1_1_ext_list), type.lower()) ])
             struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_1_ext_list])
             struct.extend([
-                '        };',
-                '        static const std::vector<const char *> V_1_2_promoted_%s_apis = {' % type.lower() ])
+                '        }};',
+                '        constexpr std::array<const char *, %d> V_1_2_promoted_%s_apis = {{' % (len(promoted_1_2_ext_list), type.lower()) ])
             struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_2_ext_list])
             struct.extend([
-                '        };',
-                '        static const std::vector<const char *> V_1_3_promoted_%s_apis = {' % type.lower() ])
+                '        }};',
+                '        constexpr std::array<const char *, %d> V_1_3_promoted_%s_apis = {{' % (len(promoted_1_3_ext_list), type.lower()) ])
             struct.extend(['            %s,' % extension_dict[ext_name]['define'] for ext_name in promoted_1_3_ext_list])
             struct.extend([
-                '        };',
+                '        }};',
                 '',
                 '        // Initialize struct data, robust to invalid pCreateInfo',
                 '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
