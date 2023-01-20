@@ -26,6 +26,7 @@
 #include "layer_chassis_dispatch.h"
 #include "core_validation_error_enums.h"
 #include "enum_flag_bits.h"
+#include "vk_layer_data.h"
 
 static const int kMaxParamCheckerStringLength = 256;
 
@@ -5752,7 +5753,7 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo *pCreateInfo, uint32_t i, uint32_t j) {
     bool partial_overlap = false;
 
-    static const std::vector<VkDescriptorType> all_descriptor_types = {
+    constexpr std::array all_descriptor_types = {
         VK_DESCRIPTOR_TYPE_SAMPLER,
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
@@ -5771,20 +5772,22 @@ static bool MutableDescriptorTypePartialOverlap(const VkDescriptorPoolCreateInfo
 
     const auto *mutable_descriptor_type = LvlFindInChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
     if (mutable_descriptor_type) {
-        std::vector<VkDescriptorType> first_types, second_types;
+        layer_data::span<const VkDescriptorType> first_types, second_types;
+
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > i) {
-            for (uint32_t k = 0; k < mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount; ++k) {
-                first_types.push_back(mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes[k]);
-            }
+            const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[i].descriptorTypeCount;
+            auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[i].pDescriptorTypes;
+            first_types = layer_data::make_span(pDescriptorTypes, descriptorTypeCount);
         } else {
-            first_types = all_descriptor_types;
+            first_types = layer_data::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }
+
         if (mutable_descriptor_type->mutableDescriptorTypeListCount > j) {
-            for (uint32_t k = 0; k < mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount; ++k) {
-                second_types.push_back(mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes[k]);
-            }
+            const uint32_t descriptorTypeCount = mutable_descriptor_type->pMutableDescriptorTypeLists[j].descriptorTypeCount;
+            auto *pDescriptorTypes = mutable_descriptor_type->pMutableDescriptorTypeLists[j].pDescriptorTypes;
+            second_types = layer_data::make_span(pDescriptorTypes, descriptorTypeCount);
         } else {
-            second_types = all_descriptor_types;
+            second_types = layer_data::make_span(all_descriptor_types.data(), all_descriptor_types.size());
         }
 
         bool complete_overlap = first_types.size() == second_types.size();

@@ -75,8 +75,8 @@ template <typename HandleT, typename LocType>
 bool CoreChecks::ValidateMemoryIsBoundToImage(HandleT handle, const IMAGE_STATE &image_state, const LocType &location) const {
     bool result = false;
     if (image_state.create_from_swapchain != VK_NULL_HANDLE) {
-        const LogObjectList objlist(handle, image_state.Handle(), image_state.create_from_swapchain);
         if (!image_state.bind_swapchain) {
+            const LogObjectList objlist(handle, image_state.Handle(), image_state.create_from_swapchain);
             result |= LogError(
                 objlist, location.Vuid(),
                 "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "

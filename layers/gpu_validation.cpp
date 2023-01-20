@@ -271,8 +271,8 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, "Failed to map vertex buffer for acceleration structure build validation.");
         } else {
-            const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-            std::memcpy(mapped_vbo_buffer, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+            constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+            std::memcpy(mapped_vbo_buffer, (uint8_t *)vertices.data(), sizeof(vertices[0]) * vertices.size());
             vmaUnmapMemory(vmaAllocator, vbo_allocation);
         }
     }
@@ -300,8 +300,8 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState() {
         if (result != VK_SUCCESS) {
             ReportSetupProblem(device, "Failed to map index buffer for acceleration structure build validation.");
         } else {
-            const std::vector<uint32_t> indicies = {0, 1, 2};
-            std::memcpy(mapped_ibo_buffer, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+            constexpr std::array<uint32_t, 3> indicies = {0, 1, 2};
+            std::memcpy(mapped_ibo_buffer, (uint8_t *)indicies.data(), sizeof(indicies[0]) * indicies.size());
             vmaUnmapMemory(vmaAllocator, ibo_allocation);
         }
     }
