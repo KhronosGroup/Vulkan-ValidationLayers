@@ -4544,9 +4544,9 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
         kInternal,  // Image layout mismatch is *within* a given command buffer
         kExternal   // Image layout mismatch is with the current state of the image, found at QueueSubmit
     };
-    std::array<TestType, 2> test_list = {{kInternal, kExternal}};
-    const std::vector<std::string> internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-02699"};
-    const std::vector<std::string> external_errors = {"UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout"};
+    constexpr std::array test_list = {kInternal, kExternal};
+    constexpr std::array internal_errors = {"VUID-VkDescriptorImageInfo-imageLayout-00344", "VUID-vkCmdDraw-None-02699"};
+    constexpr std::array external_errors = {"UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout"};
 
     // Common steps to create the two classes of errors (or two classes of positives)
     auto do_test = [&](VkImageObj *image, vk_testing::ImageView *view, VkImageAspectFlags aspect_mask, VkImageLayout image_layout,
@@ -4585,7 +4585,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
             if (positive_test || (test_type == kExternal)) {
             } else {
                 for (const auto &err : internal_errors) {
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
+                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
                 }
             }
             cmd_buf.Draw(1, 0, 0, 0);
@@ -4601,7 +4601,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
             if (positive_test || (test_type == kInternal)) {
             } else {
                 for (const auto &err : external_errors) {
-                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err.c_str());
+                    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, err);
                 }
             }
             vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);

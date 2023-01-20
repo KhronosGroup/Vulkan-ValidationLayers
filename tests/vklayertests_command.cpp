@@ -6575,7 +6575,8 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
     const std::vector<VkViewport> vp = {
         {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}};
     const std::vector<VkRect2D> sc = {{{0, 0}, {32, 32}}, {{32, 0}, {32, 32}}, {{0, 32}, {32, 32}}, {{32, 32}, {32, 32}}};
-    const std::vector<VkViewportWScalingNV> scale = {{-0.2f, -0.2f}, {0.2f, -0.2f}, {-0.2f, 0.2f}, {0.2f, 0.2f}};
+    constexpr std::array scale = {VkViewportWScalingNV{-0.2f, -0.2f}, VkViewportWScalingNV{0.2f, -0.2f},
+                                  VkViewportWScalingNV{-0.2f, 0.2f}, VkViewportWScalingNV{0.2f, 0.2f}};
 
     const uint32_t vp_count = static_cast<uint32_t>(vp.size());
 

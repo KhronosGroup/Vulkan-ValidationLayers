@@ -2068,10 +2068,10 @@ TEST_F(VkLayerTest, NVRayTracingValidateGeometry) {
     VkBufferObj unbound_buffer;
     unbound_buffer.init_no_mem(*m_device, unbound_buffer_ci);
 
-    const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    const std::vector<uint32_t> indicies = {0, 1, 2};
-    const std::vector<float> aabbs = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
-    const std::vector<float> transforms = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
+    constexpr std::array<uint32_t, 3> indicies = {0, 1, 2};
+    constexpr std::array aabbs = {0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+    constexpr std::array transforms = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
     uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo.memory().map();
     std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());

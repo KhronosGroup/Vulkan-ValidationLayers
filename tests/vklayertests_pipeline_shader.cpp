@@ -30,6 +30,8 @@
 #include "layer_validation_tests.h"
 #include "core_validation_error_enums.h"
 
+#include <limits>
+
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
     TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
     VkPhysicalDeviceFeatures device_features = {};
@@ -391,21 +393,27 @@ TEST_F(VkLayerTest, InvalidTopology) {
     topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428");
 
-    topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"});
+    {
+        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+    }
 
-    topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"});
+    {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429"};
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+    }
 
-    topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
-                                                          "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
-                                                          "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+    {
+        topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00428",
+                                      "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430",
+                                      "VUID-VkGraphicsPipelineCreateInfo-topology-00737"};
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+    }
 
     topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00429");
@@ -453,9 +461,9 @@ TEST_F(VkLayerTest, PrimitiveTopologyListRestart) {
 
     if (m_device->phy().features().tessellationShader) {
         topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                          std::vector<string>{"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
-                                                              "VUID-VkGraphicsPipelineCreateInfo-topology-00737"});
+        constexpr std::array vuids = {"VUID-VkPipelineInputAssemblyStateCreateInfo-topology-06253",
+                                      "VUID-VkGraphicsPipelineCreateInfo-topology-00737"};
+        CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
     }
 }
 
@@ -1827,9 +1835,9 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
 
     auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {shaderStage}; };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
-                                      std::vector<std::string>{"VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
-                                                               "VUID-VkGraphicsPipelineCreateInfo-stage-00727"});
+    constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-pStages-06896",
+                                  "VUID-VkGraphicsPipelineCreateInfo-stage-00727"};
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 
     // Finally, check the string validation for the shader stage pName variable.  Correct the shader stage data, and bork the
     // string before calling again
@@ -3913,7 +3921,8 @@ TEST_F(VkLayerTest, PSOLineWidthInvalid) {
     }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    const std::vector<float> test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f), NAN};
+    const std::array test_cases = {-1.0f, 0.0f, NearestSmaller(1.0f), NearestGreater(1.0f),
+                                   std::numeric_limits<float>::quiet_NaN()};
 
     // test VkPipelineRasterizationStateCreateInfo::lineWidth
     for (const auto test_case : test_cases) {
@@ -4236,10 +4245,9 @@ TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_Info, kErrorBit,
-        vector<string>{"VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
-                       "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616"});
+    constexpr std::array vuids = {"VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
+                                  "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616"};
+    CreatePipelineHelper::OneshotTest(*this, set_Info, kErrorBit, vuids);
 }
 
 TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
@@ -4276,11 +4284,10 @@ TEST_F(VkLayerTest, InvalidVertexAttributeDescriptions) {
         helper.vi_ci_.pVertexAttributeDescriptions = input_attribs.data();
         helper.vi_ci_.vertexAttributeDescriptionCount = attribute_count;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_Info, kErrorBit,
-        vector<string>{"VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
-                       "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
-                       "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617"});
+    constexpr std::array vuids = {"VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
+                                  "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                  "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617"};
+    CreatePipelineHelper::OneshotTest(*this, set_Info, kErrorBit, vuids);
 }
 
 TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
@@ -5035,9 +5042,8 @@ TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByLocation) {
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<std::string>{"fragment shader consumes input location 0.0 which is not written by vertex shader"});
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                      "fragment shader consumes input location 0.0 which is not written by vertex shader");
 }
 
 TEST_F(VkLayerTest, CreatePipelineVsFsMismatchByComponent) {
@@ -5760,12 +5766,12 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
                 // just component limit (maxVertexOutputComponents)
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
-            case 1:
+            case 1: {
                 // component and location limit (maxVertexOutputComponents)
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
+            }
             default:
                 assert(0);
                 [[fallthrough]];
@@ -5930,19 +5936,19 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         };
         // maxTessellationControlPerVertexInputComponents and maxTessellationControlPerVertexOutputComponents
         switch (overflow) {
-            case 2:
+            case 2: {
                 // in and out component limit
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
-            case 1:
+            }
+            case 1: {
                 // (in and out component limit) and (in and out location limit)
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
+            }
             default:
                 assert(0);
                 [[fallthrough]];
@@ -6051,21 +6057,21 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
 
         // maxTessellationEvaluationInputComponents and maxTessellationEvaluationOutputComponents
         switch (overflow) {
-            case 2:
-                // in and out component limit
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
-                break;
-            case 1:
+            case 1: {
                 // (in and out component limit) and (in and out location limit)
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
+            }
+            case 2: {
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                break;
+            }
             default:
-                assert(0);
+                assert(false);
                 [[fallthrough]];
             case 0:
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
@@ -6160,20 +6166,20 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         };
         // maxGeometryInputComponents and maxGeometryOutputComponents
         switch (overflow) {
-            case 2:
-                // in and out component limit
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
-                break;
-            case 1:
+            case 1: {
                 // (in and out component limit) and (in and out location limit) and maxGeometryTotalOutputComponents
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                   "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
-                                   "VUID-RuntimeSpirv-Location-06272"});
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
+                                              "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
+            }
+            case 2: {
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                break;
+            }
             default:
                 assert(0);
                 [[fallthrough]];
@@ -6230,15 +6236,15 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         switch (overflow) {
+            case 1: {
+                // component and location limit (maxFragmentInputComponents)
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+                break;
+            }
             case 2:
                 // just component limit (maxFragmentInputComponents)
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
-                break;
-            case 1:
-                // component and location limit (maxFragmentInputComponents)
-                CreatePipelineHelper::OneshotTest(
-                    *this, set_info, kErrorBit,
-                    vector<string>{"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"});
                 break;
             default:
                 assert(0);
@@ -7929,58 +7935,64 @@ TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    CreatePipelineHelper::OneshotTest(
-        *this,
-        [&](CreatePipelineHelper &helper) {
-            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
-            helper.pipe_ms_state_ci_.alphaToCoverageEnable = VK_TRUE;
-        },
-        kErrorBit,
-        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769"});
-
-    CreatePipelineHelper::OneshotTest(
-        *this,
-        [&](CreatePipelineHelper &helper) {
-            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
-            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
-        },
-        kErrorBit,
-        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772"});
-
-    CreatePipelineHelper::OneshotTest(
-        *this,
-        [&](CreatePipelineHelper &helper) {
-            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
-            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
-        },
-        kErrorBit,
-        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771"});
-
-    CreatePipelineHelper::OneshotTest(
-        *this,
-        [&](CreatePipelineHelper &helper) {
-            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
-            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
-        },
-        kErrorBit,
-        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773"});
-
-    CreatePipelineHelper::OneshotTest(
-        *this,
-        [&](CreatePipelineHelper &helper) {
-            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
-            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
-        },
-        kErrorBit,
-        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
-                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774"});
+    {
+        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769"};
+        CreatePipelineHelper::OneshotTest(
+            *this,
+            [&](CreatePipelineHelper &helper) {
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+                helper.pipe_ms_state_ci_.alphaToCoverageEnable = VK_TRUE;
+            },
+            kErrorBit, vuids);
+    }
+    {
+        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772"};
+        CreatePipelineHelper::OneshotTest(
+            *this,
+            [&](CreatePipelineHelper &helper) {
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+                helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+            },
+            kErrorBit, vuids);
+    }
+    {
+        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771"};
+        CreatePipelineHelper::OneshotTest(
+            *this,
+            [&](CreatePipelineHelper &helper) {
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
+                helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+            },
+            kErrorBit, vuids);
+    }
+    {
+        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773"};
+        CreatePipelineHelper::OneshotTest(
+            *this,
+            [&](CreatePipelineHelper &helper) {
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
+                helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+            },
+            kErrorBit, vuids);
+    }
+    {
+        constexpr std::array vuids = {"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                      "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774"};
+        CreatePipelineHelper::OneshotTest(
+            *this,
+            [&](CreatePipelineHelper &helper) {
+                helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
+                helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+            },
+            kErrorBit, vuids);
+    }
 
     PFN_vkCmdSetLineStippleEXT vkCmdSetLineStippleEXT =
         (PFN_vkCmdSetLineStippleEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetLineStippleEXT");
@@ -8340,10 +8352,9 @@ TEST_F(VkLayerTest, VertexStoresAndAtomicsFeatureDisable) {
                 info.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
             };
 
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06341"};
             // extra VU for not enabling atomic float support
-            CreatePipelineHelper::OneshotTest(
-                *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                std::vector<string>{"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06341"});
+            CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT, vuids);
         }
     }
 }
@@ -8395,9 +8406,8 @@ TEST_F(VkLayerTest, FragmentStoresAndAtomicsFeatureDisable) {
             };
 
             // extra VU for not enabling atomic float support
-            CreatePipelineHelper::OneshotTest(
-                *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                std::vector<string>{"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06340"});
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-None-06282", "VUID-RuntimeSpirv-NonWritable-06340"};
+            CreatePipelineHelper::OneshotTest(*this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT, vuids);
         }
     }
 }
@@ -9479,11 +9489,11 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageBuffer8BitAccess-06328",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",        // Int8
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});      // StorageBuffer8BitAccess
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-storageBuffer8BitAccess-06328",  // feature
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091",        // Int8
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091"};
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              vuids);  // StorageBuffer8BitAccess
         }
     }
     // uniformAndStorageBuffer8BitAccess
@@ -9506,11 +9516,11 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                  // Int8
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                // UniformAndStorageBuffer8BitAccess
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-uniformAndStorageBuffer8BitAccess-06329",  // feature
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091",                  // Int8
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091"};
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              vuids);  // UniformAndStorageBuffer8BitAccess
         }
     }
 
@@ -9564,11 +9574,11 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});       // StorageBuffer16BitAccess
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Float16
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091"};
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              vuids);  // StorageBuffer16BitAccess
         }
     }
 
@@ -9592,11 +9602,11 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                 // UniformAndStorageBuffer16BitAccess
+            constexpr std::array vuids = {"VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Float16
+                                          "VUID-VkShaderModuleCreateInfo-pCode-01091"};
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit,
+                                              vuids);  // UniformAndStorageBuffer16BitAccess
         }
     }
 
@@ -9623,11 +9633,12 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Float16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});    // StoragePushConstant16
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Float16
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"       // StoragePushConstant16
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -9663,13 +9674,14 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
-                               "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Float16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});   // StorageInputOutput16 frag
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Float16 vert
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"      // StorageInputOutput16 frag
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -9693,11 +9705,12 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});       // StorageBuffer16BitAccess
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storageBuffer16BitAccess-06331",  // feature
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",         // Int16
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"          // StorageBuffer16BitAccess
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -9721,11 +9734,12 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});                 // UniformAndStorageBuffer16BitAccess
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-uniformAndStorageBuffer16BitAccess-06332",  // feature
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",                   // Int16
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"                    // UniformAndStorageBuffer16BitAccess
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -9752,11 +9766,12 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
                 helper.pipeline_layout_ci_ = pipeline_layout_info;
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Int16
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});    // StoragePushConstant16
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storagePushConstant16-06333",  // feature
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",      // Int16
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"       // StoragePushConstant16
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -9792,13 +9807,14 @@ TEST_F(VkLayerTest, Storage8and16bitCapability) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
-                               "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Int16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
-                               "VUID-VkShaderModuleCreateInfo-pCode-01091"});   // StorageInputOutput16 frag
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature vert
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // feature frag
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",     // Int16 vert
+                "VUID-VkShaderModuleCreateInfo-pCode-01091",     // StorageInputOutput16 vert
+                "VUID-VkShaderModuleCreateInfo-pCode-01091"      // StorageInputOutput16 frag
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 }
@@ -10087,10 +10103,11 @@ TEST_F(VkLayerTest, Storage8and16bitFeatures) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",    // StorageInputOutput16 vert
-                               "VUID-RuntimeSpirv-storageInputOutput16-06334"});  // StorageInputOutput16 frag
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // StorageInputOutput16 vert
+                "VUID-RuntimeSpirv-storageInputOutput16-06334"   // StorageInputOutput16 frag
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -10246,10 +10263,11 @@ TEST_F(VkLayerTest, Storage8and16bitFeatures) {
             const auto set_info = [&](CreatePipelineHelper &helper) {
                 helper.shader_stages_ = {vs->GetStageCreateInfo(), fs->GetStageCreateInfo()};
             };
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, kErrorBit,
-                vector<string>{"VUID-RuntimeSpirv-storageInputOutput16-06334",    // StorageInputOutput16 vert
-                               "VUID-RuntimeSpirv-storageInputOutput16-06334"});  // StorageInputOutput16 frag
+            constexpr std::array vuids = {
+                "VUID-RuntimeSpirv-storageInputOutput16-06334",  // StorageInputOutput16 vert
+                "VUID-RuntimeSpirv-storageInputOutput16-06334"   // StorageInputOutput16 frag
+            };
+            CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
         }
     }
 
@@ -10766,9 +10784,8 @@ TEST_F(VkLayerTest, ValidateGeometryShaderEnabled) {
         helper.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
     };
 
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00704", "VUID-VkShaderModuleCreateInfo-pCode-01091"});
+    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00704", "VUID-VkShaderModuleCreateInfo-pCode-01091"};
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
 
 TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
@@ -10820,12 +10837,10 @@ TEST_F(VkLayerTest, ValidateTessellationShaderEnabled) {
         helper.shader_stages_.emplace_back(tcs.GetStageCreateInfo());
         helper.shader_stages_.emplace_back(tes.GetStageCreateInfo());
     };
-
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, kErrorBit,
-        std::vector<string>{"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                            "VUID-VkShaderModuleCreateInfo-pCode-01091",
-                            "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"});
+    constexpr std::array vuids = {"VUID-VkPipelineShaderStageCreateInfo-stage-00705", "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                                  "VUID-VkShaderModuleCreateInfo-pCode-01091",
+                                  "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-00430"};
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
 }
 
 TEST_F(VkLayerTest, CreateComputesPipelineWithBadBasePointer) {
@@ -11291,10 +11306,9 @@ TEST_F(VkLayerTest, PipelineAdvancedBlendInvalidBlendOps) {
             color_blend_state.pAttachments = attachment_states;
             helper.gp_ci_.pColorBlendState = &color_blend_state;
         };
-        CreatePipelineHelper::OneshotTest(
-            *this, set_info_color, kErrorBit,
-            std::vector<string>{"VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
-                                "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408"});
+        constexpr std::array vuids = {"VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01407",
+                                      "VUID-VkPipelineColorBlendAttachmentState-advancedBlendIndependentBlend-01408"};
+        CreatePipelineHelper::OneshotTest(*this, set_info_color, kErrorBit, vuids);
     }
 }
 

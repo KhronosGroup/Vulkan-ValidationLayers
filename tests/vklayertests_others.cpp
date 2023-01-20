@@ -4259,11 +4259,10 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 2;
         };
-        CreatePipelineHelper::OneshotTest(
-            *this, break_vp, kErrorBit,
-            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
-                                 "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
-                                 "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"}));
+        constexpr std::array vuids = {"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-viewportCount-02054",
+                                      "VUID-VkPipelineViewportStateCreateInfo-viewportCount-01216",
+                                      "VUID-VkPipelineViewportStateCreateInfo-scissorCount-01217"};
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit, vuids);
     }
 
     // viewportCounts must match
@@ -4279,9 +4278,8 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
             vsrisci.shadingRateImageEnable = VK_TRUE;
             vsrisci.viewportCount = 0;
         };
-        CreatePipelineHelper::OneshotTest(
-            *this, break_vp, kErrorBit,
-            vector<std::string>({"VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056"}));
+        CreatePipelineHelper::OneshotTest(*this, break_vp, kErrorBit,
+                                          "VUID-VkPipelineViewportShadingRateImageStateCreateInfoNV-shadingRateImageEnable-02056");
     }
 
     // pShadingRatePalettes must not be NULL.

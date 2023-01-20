@@ -42,6 +42,7 @@
 #include "icd-spv.h"
 #include "test_common.h"
 #include "vk_layer_config.h"
+#include "vk_layer_data.h"
 #include "vk_format_utils.h"
 #include "vkrenderframework.h"
 #include "vk_typemap_helper.h"
@@ -571,8 +572,8 @@ struct CreatePipelineHelper {
     //
     // info_override can be any callable that takes a CreatePipelineHeper &
     // flags, error can be any args accepted by "SetDesiredFailure".
-    template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::vector<Error> &errors) {
+    template <typename Test, typename OverrideFunc, typename ErrorContainer>
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const ErrorContainer &errors) {
         CreatePipelineHelper helper(test);
         helper.InitInfo();
         info_override(helper);
@@ -586,14 +587,22 @@ struct CreatePipelineHelper {
         }
     }
 
-    template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, Error error) {
-        OneshotTest(test, info_override, flags, std::vector<Error>(1, error));
+    template <typename Test, typename OverrideFunc>
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const char *error) {
+        std::array errors = {error};
+        OneshotTest(test, info_override, flags, errors);
+    }
+
+    template <typename Test, typename OverrideFunc>
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags, const std::string &error) {
+        std::array errors = {error};
+        OneshotTest(test, info_override, flags, errors);
     }
 
     template <typename Test, typename OverrideFunc>
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const VkFlags flags) {
-        OneshotTest(test, info_override, flags, std::vector<std::string>{});
+        std::array<const char *, 0> errors;
+        OneshotTest(test, info_override, flags, errors);
     }
 };
 
