@@ -26,6 +26,8 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+#include <array>
+
 // Global list of sType,size identifiers
 std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
 
@@ -443,7 +445,7 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
     const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
 
-    const std::vector<VkImageTiling> tilings = {VK_IMAGE_TILING_LINEAR, VK_IMAGE_TILING_OPTIMAL};
+    constexpr std::array tilings = {VK_IMAGE_TILING_LINEAR, VK_IMAGE_TILING_OPTIMAL};
     for (const auto tiling : tilings) {
         image_ci.tiling = tiling;
 
@@ -2475,8 +2477,8 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
     vbo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
     ibo->init(device, 1024, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, usage, alloc_pnext);
 
-    const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    const std::vector<uint32_t> indicies = {0, 1, 2};
+    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
+    constexpr std::array<uint32_t, 3> indicies = {{0, 1, 2}};
 
     uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo->memory().map();
     std::memcpy(mapped_vbo_buffer_data + offset, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
@@ -2646,7 +2648,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
 
     VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info);
 
-    const std::vector<VkGeometryInstanceNV> instances = {
+    const std::array instances = {
         VkGeometryInstanceNV{
             {
                 // clang-format off
@@ -2663,7 +2665,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
         },
     };
 
-    VkDeviceSize instance_buffer_size = sizeof(VkGeometryInstanceNV) * instances.size();
+    VkDeviceSize instance_buffer_size = sizeof(instances[0]) * instances.size();
     VkBufferObj instance_buffer;
     instance_buffer.init(*m_device, instance_buffer_size,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,

@@ -105,8 +105,8 @@ TEST_F(VkPositiveLayerTest, RayTracingAccelerationStructureReference) {
         GetInstanceProcAddr<PFN_vkBuildAccelerationStructuresKHR>("vkBuildAccelerationStructuresKHR");
 
     // Build Bottom Level Acceleration Structure
-    const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
-    const std::vector<uint32_t> indices = {0, 1, 2};
+    constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
+    constexpr std::array<uint32_t, 3> indices = {{0, 1, 2}};
     VkAccelerationStructureGeometryKHR blas_geometry = LvlInitStruct<VkAccelerationStructureGeometryKHR>();
     blas_geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
     blas_geometry.flags = 0;
