@@ -315,7 +315,9 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    instance_extensions_.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    // Beginning with the 1.3.216 Vulkan SDK, the VK_KHR_PORTABILITY_subset extension is mandatory.
+    AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 #endif
 
     RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
