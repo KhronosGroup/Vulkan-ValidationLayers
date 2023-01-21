@@ -105,14 +105,15 @@ def VerifyCopyrights(commit, target_files):
     for file in target_files:
         if file is None or not os.path.isfile(file):
             continue
-        # Capture the last year on the line as a separate match. It should be the highest (or only year of the range)
-        copyright_match = re.search('Copyright .*(\d{4}) LunarG', open(file, encoding="utf-8", errors='ignore').read(1024))
-        if copyright_match:
-            copyright_year = copyright_match.group(1)
-            if int(commit_year) > int(copyright_year):
-                msg = 'Change written in {} but copyright ends in {}.'.format(commit_year, copyright_year)
-                CPrint('ERR_MSG', '\n' + file + ' has an out-of-date LunarG copyright notice. ' + msg)
-                retval = 1;
+        for company in ["LunarG", "Valve"]:
+            # Capture the last year on the line as a separate match. It should be the highest (or only year of the range)
+            copyright_match = re.search('Copyright .*(\d{4}) ' + company, open(file, encoding="utf-8", errors='ignore').read(1024))
+            if copyright_match:
+                copyright_year = copyright_match.group(1)
+                if int(commit_year) > int(copyright_year):
+                    msg = 'Change written in {} but copyright ends in {}.'.format(commit_year, copyright_year)
+                    CPrint('ERR_MSG', '\n' + file + ' has an out-of-date ' + company + ' copyright notice. ' + msg)
+                    retval = 1
     return retval
 #
 #
