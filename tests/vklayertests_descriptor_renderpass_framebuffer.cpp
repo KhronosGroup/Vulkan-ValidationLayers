@@ -8806,7 +8806,7 @@ TEST_F(VkLayerTest, InvalidFragmentShadingRateAttachments) {
     rpci.flags = 0;
     attach_desc.format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    if (attach_desc.format) {
+    if (attach_desc.format != VK_FORMAT_UNDEFINED) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-pAttachments-04586");
         vkCreateRenderPass2KHR(m_device->device(), &rpci, NULL, &rp);
         m_errorMonitor->VerifyFound();
@@ -12378,7 +12378,8 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08103");
             }
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferCreateInfo-usage-08101");
-            buffCI.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
+            buffCI.usage =
+                VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
             vk::CreateBuffer(m_device->device(), &buffCI, NULL, &buffer);
             m_errorMonitor->VerifyFound();
 
@@ -12617,7 +12618,8 @@ TEST_F(VkLayerTest, DescriptorBufferNotEnabled) {
         vk_testing::Buffer as_buffer(*m_device, buffCI, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 0U);
 
         auto asci = LvlInitStruct<VkAccelerationStructureCreateInfoKHR>();
-        // asci.createFlags = VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
+        asci.createFlags = 0;
+        asci.buffer = as_buffer.handle();
         vk_testing::AccelerationStructureKHR as(*m_device, asci);
 
         uint8_t data[256];

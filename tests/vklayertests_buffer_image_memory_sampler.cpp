@@ -5483,18 +5483,13 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     const bool maintenance2 = IsExtensionsEnabled(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
     const bool feedback_loop_layout = IsExtensionsEnabled(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
 
-    // Set separate depth stencil feature bit
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     auto separate_depth_stencil_layouts_features = LvlInitStruct<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>();
-    auto features2 = LvlInitStruct<VkPhysicalDeviceFeatures2KHR>(&separate_depth_stencil_layouts_features);
-    if (vkGetPhysicalDeviceFeatures2KHR) {
-        vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    } else {
-        separate_depth_stencil_layouts_features.separateDepthStencilLayouts = VK_FALSE;
+    auto features2 = GetPhysicalDeviceFeatures2(separate_depth_stencil_layouts_features);
+    if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts != VK_TRUE) {
+        GTEST_SKIP() << "separateDepthStencilLayouts feature not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, (vkGetPhysicalDeviceFeatures2KHR) ? &features2 : nullptr));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     // Add a token self-dependency for this test to avoid unexpected errors
@@ -11873,7 +11868,7 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // density maps can't be sparse (or protected)
-    if (m_device->phy().features().sparseResidencyImage2D) {
+    if (features2.features.sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
         image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
         VkImageObj image(m_device);
@@ -12871,9 +12866,9 @@ TEST_F(VkLayerTest, InvalidShadingRateUsage) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
 
-    auto format =
+    const VkFormat format =
         FindFormatWithoutFeatures(gpu(), VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    if (!format) {
+    if (format == VK_FORMAT_UNDEFINED) {
         GTEST_SKIP() << "No format found without shading rate attachment support";
     }
 

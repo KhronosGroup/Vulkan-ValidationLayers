@@ -481,24 +481,20 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags undesired_features) {
     const VkFormat first_vk_format = static_cast<VkFormat>(1);
     const VkFormat last_vk_format = static_cast<VkFormat>(130);  // avoid compressed/feature protected, otherwise 184
-
+    VkFormat return_format = VK_FORMAT_UNDEFINED;
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         VkFormatProperties format_props;
         vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
 
-        const VkFormatFeatureFlags core_filter = 0x1FFF;
-        const auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
-                                                                 : format_props.optimalTilingFeatures & core_filter;
-
-        const auto valid_features = features & core_filter;
-        if (undesired_features == UINT32_MAX) {
-            if (!valid_features) return format;
-        } else {
-            if (valid_features && !(valid_features & undesired_features)) return format;
+        const auto features =
+            (tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures : format_props.optimalTilingFeatures;
+        if ((features & undesired_features) == 0) {
+            return_format = format;
+            break;
         }
     }
 
-    return VK_FORMAT_UNDEFINED;
+    return return_format;
 }
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
