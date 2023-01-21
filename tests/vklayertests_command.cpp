@@ -5545,7 +5545,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     }
 
     auto multi_draw_features = LvlInitStruct<VkPhysicalDeviceMultiDrawFeaturesEXT>();
-    auto features2 = GetPhysicalDeviceFeatures2(multi_draw_features);
+    GetPhysicalDeviceFeatures2(multi_draw_features);
     if (!multi_draw_features.multiDraw) {
         GTEST_SKIP() << "Test requires (unsupported) multiDraw";
     }
@@ -5553,7 +5553,7 @@ TEST_F(VkLayerTest, MultiDrawTests) {
     auto properties2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_properties);
     GetPhysicalDeviceProperties2(properties2);
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &multi_draw_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
@@ -5638,14 +5638,6 @@ TEST_F(VkLayerTest, MultiDrawFeatures) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    auto multi_draw_props = LvlInitStruct<VkPhysicalDeviceMultiDrawPropertiesEXT>();
-    auto pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&multi_draw_props);
-    GetPhysicalDeviceProperties2(pd_props2);
-    if (multi_draw_props.maxMultiDrawCount == 0) {
-        // If using MockICD and profiles the value might be zero'ed and cause false errors
-        return;
-    }
 
     auto vkCmdDrawMultiEXT = (PFN_vkCmdDrawMultiEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawMultiEXT");
     auto vkCmdDrawMultiIndexedEXT =
@@ -5765,42 +5757,50 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(tf_features);
+    if (tf_features.transformFeedback != VK_TRUE) {
+        GTEST_SKIP() << "transformFeedback feature not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &tf_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto tf_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-    auto pd_properties = LvlInitStruct<VkPhysicalDeviceProperties2>(&tf_properties);
-    GetPhysicalDeviceProperties2(pd_properties);
+    GetPhysicalDeviceProperties2(tf_properties);
 
-    PFN_vkCmdDrawIndirectByteCountEXT fpvkCmdDrawIndirectByteCountEXT =
+    PFN_vkCmdDrawIndirectByteCountEXT vkCmdDrawIndirectByteCountEXT =
         (PFN_vkCmdDrawIndirectByteCountEXT)vk::GetDeviceProcAddr(device(), "vkCmdDrawIndirectByteCountEXT");
 
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
     VkBufferCreateInfo buffer_create_info = LvlInitStruct<VkBufferCreateInfo>();
     buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     buffer_create_info.size = 1024;
     VkBufferObj counter_buffer;
     counter_buffer.init(*m_device, buffer_create_info);
 
-    // Greater stride than maxTransformFeedbackBufferDataStride
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289");
-    fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 0, 0xCADECADE);
-    m_errorMonitor->VerifyFound();
+    {
+        CreatePipelineHelper pipeline(*this);
+        pipeline.InitInfo();
+        pipeline.InitState();
+        pipeline.CreateGraphicsPipeline();
 
-    // some mock ICD json files are missing a valid stride value
-    if (tf_properties.maxTransformFeedbackBufferDataStride > 0) {
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline_);
+
+        // Greater stride than maxTransformFeedbackBufferDataStride
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289");
+        vkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 0,
+                                      tf_properties.maxTransformFeedbackBufferDataStride + 4);
+        m_errorMonitor->VerifyFound();
+
         // non-4 multiple stride
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-counterBufferOffset-04568");
-        fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 4);
+        vkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 4);
         m_errorMonitor->VerifyFound();
-    }
 
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-
-    if (!tf_properties.maxTransformFeedbackBufferDataStride) {
-        GTEST_SKIP() << "maxTransformFeedbackBufferDataStride is zero, skipping subtests";
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
     }
 
     std::vector<const char *> device_extension_names;
@@ -5828,6 +5828,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
     pipeline.AddShader(&vs);
     pipeline.AddShader(&fs);
     pipeline.CreateVKPipeline(pipelineLayout.handle(), renderpass.handle());
+
     m_renderPassBeginInfo.renderPass = renderpass.handle();
     VkFramebufferCreateInfo fbci = {
         VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, renderpass.handle(), 0, nullptr, 256, 256, 1};
@@ -5846,7 +5847,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedbackDraw-02288");
     }
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287");
-    fpvkCmdDrawIndirectByteCountEXT(commandBuffer.handle(), 1, 0, counter_buffer2.handle(), 0, 0, 1);
+    vkCmdDrawIndirectByteCountEXT(commandBuffer.handle(), 1, 0, counter_buffer2.handle(), 0, 0, 1);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6696,12 +6697,6 @@ TEST_F(VkLayerTest, TransformFeedbackFeatureEnabled) {
         GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
     }
 
-    auto tf_properties = LvlInitStruct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
-    GetPhysicalDeviceProperties2(tf_properties);
-    if (tf_properties.maxTransformFeedbackBuffers == 0) {
-        GTEST_SKIP() << "maxTransformFeedbackBuffers is zero";
-    }
-
     // transformFeedback not enabled
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -6804,12 +6799,12 @@ TEST_F(VkLayerTest, TransformFeedbackCmdBindTransformFeedbackBuffersEXT) {
     }
 
     auto tf_features = LvlInitStruct<VkPhysicalDeviceTransformFeedbackFeaturesEXT>();
-    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(tf_features);
+    GetPhysicalDeviceFeatures2(tf_features);
     if (!tf_features.transformFeedback) {
         GTEST_SKIP() << "transformFeedback not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &tf_features));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     auto vkCmdBindTransformFeedbackBuffersEXT =
@@ -10627,6 +10622,7 @@ TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
     m_errorMonitor->VerifyFound();
 
     if (m_device->props.limits.maxDrawIndirectCount < layer_data::MaxTypeValue(m_device->props.limits.maxDrawIndirectCount)) {
+        m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
         vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0,
                                       m_device->props.limits.maxDrawIndirectCount + 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));

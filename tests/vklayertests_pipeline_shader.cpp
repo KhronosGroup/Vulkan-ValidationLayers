@@ -10940,19 +10940,16 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
     }
 
     VkPhysicalDeviceSubgroupSizeControlFeaturesEXT sscf = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlFeaturesEXT>();
-    sscf.subgroupSizeControl = VK_TRUE;
-    sscf.computeFullSubgroups = VK_TRUE;
-
-    VkPhysicalDeviceFeatures2 pd_features2 = GetPhysicalDeviceFeatures2(sscf);
-    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE || sscf.subgroupSizeControl == VK_FALSE) {
+    GetPhysicalDeviceFeatures2(sscf);
+    if (sscf.subgroupSizeControl == VK_FALSE || sscf.computeFullSubgroups == VK_FALSE) {
         GTEST_SKIP() << "Required features are not supported";
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &sscf));
 
     auto subgroup_properties = LvlInitStruct<VkPhysicalDeviceSubgroupSizeControlPropertiesEXT>();
-    auto props = LvlInitStruct<VkPhysicalDeviceProperties2>(&subgroup_properties);
-    GetPhysicalDeviceProperties2(props);
+    auto props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>(&subgroup_properties);
+    GetPhysicalDeviceProperties2(props11);
 
     if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
         GTEST_SKIP() << "Required shader stage not present in requiredSubgroupSizeStages";
@@ -10960,10 +10957,6 @@ TEST_F(VkLayerTest, PipelineSubgroupSizeControl) {
 
     auto subgroup_size_control = LvlInitStruct<VkPipelineShaderStageRequiredSubgroupSizeCreateInfoEXT>();
     subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
-
-    VkPhysicalDeviceVulkan11Properties props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props11);
-    GetPhysicalDeviceProperties2(pd_props2);
 
     {
         CreateComputePipelineHelper cs_pipeline(*this);
@@ -11085,8 +11078,7 @@ TEST_F(VkLayerTest, SubgroupSizeControlFeaturesNotEnabled) {
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &pd_features2));
 
     VkPhysicalDeviceVulkan11Properties props11 = LvlInitStruct<VkPhysicalDeviceVulkan11Properties>();
-    VkPhysicalDeviceProperties2 pd_props2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&props11);
-    GetPhysicalDeviceProperties2(pd_props2);
+    GetPhysicalDeviceProperties2(props11);
 
     if (props11.subgroupSize == 0) {
         GTEST_SKIP() << "subgroupSize is 0, skipping test.";
