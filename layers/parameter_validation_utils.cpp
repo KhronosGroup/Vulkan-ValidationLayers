@@ -8162,9 +8162,9 @@ bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCo
 }
 
 bool StatelessValidation::ValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
-                                                          const VkViewport *pViewports, bool is_ext) const {
+                                                          const VkViewport *pViewports, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const char *api_call = is_ext ? "vkCmdSetViewportWithCountEXT" : "vkCmdSetViewportWithCount";
+    const char *api_call = CommandTypeString(cmd_type);
 
     if (!physical_device_features.multiViewport) {
         if (viewportCount != 1) {
@@ -8196,21 +8196,21 @@ bool StatelessValidation::ValidateCmdSetViewportWithCount(VkCommandBuffer comman
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCountEXT(VkCommandBuffer commandBuffer, uint32_t viewportCount,
     const VkViewport *pViewports) const {
     bool skip = false;
-    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, true);
+    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNTEXT);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount,
     const VkViewport *pViewports) const {
     bool skip = false;
-    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, false);
+    skip = ValidateCmdSetViewportWithCount(commandBuffer, viewportCount, pViewports, CMD_SETVIEWPORTWITHCOUNT);
     return skip;
 }
 
 bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
-                                                         const VkRect2D *pScissors, bool is_ext) const {
+                                                         const VkRect2D *pScissors, CMD_TYPE cmd_type) const {
     bool skip = false;
-    const char *api_call = is_ext ? "vkCmdSetScissorWithCountEXT" : "vkCmdSetScissorWithCount";
+    const char *api_call = CommandTypeString(cmd_type);
 
     if (!physical_device_features.multiViewport) {
         if (scissorCount != 1) {
@@ -8274,23 +8274,23 @@ bool StatelessValidation::ValidateCmdSetScissorWithCount(VkCommandBuffer command
 bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCountEXT(VkCommandBuffer commandBuffer, uint32_t scissorCount,
     const VkRect2D *pScissors) const {
     bool skip = false;
-    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, true);
+    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, CMD_SETSCISSORWITHCOUNTEXT);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount,
     const VkRect2D *pScissors) const {
     bool skip = false;
-    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, false);
+    skip = ValidateCmdSetScissorWithCount(commandBuffer, scissorCount, pScissors, CMD_SETSCISSORWITHCOUNT);
     return skip;
 }
 
 bool StatelessValidation::ValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                         const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
                                                         const VkDeviceSize *pSizes, const VkDeviceSize *pStrides,
-                                                        bool is_2ext) const {
+                                                        CMD_TYPE cmd_type) const {
     bool skip = false;
-    const char *api_call = is_2ext ? "vkCmdBindVertexBuffers2EXT()" : "vkCmdBindVertexBuffers2()";
+    const char *api_call = CommandTypeString(cmd_type);
 
     // Check VUID-vkCmdBindVertexBuffers2-bindingCount-arraylength
     {
@@ -8356,7 +8356,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2EXT(VkComma
                                                                          const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                          const VkDeviceSize *pStrides) const {
     bool skip = false;
-    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, true);
+    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
+                                         CMD_BINDVERTEXBUFFERS2EXT);
     return skip;
 }
 
@@ -8365,7 +8366,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers2(VkCommandB
                                                                       const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes,
                                                                       const VkDeviceSize *pStrides) const {
     bool skip = false;
-    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides, false);
+    skip = ValidateCmdBindVertexBuffers2(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes, pStrides,
+                                         CMD_BINDVERTEXBUFFERS2);
     return skip;
 }
 
@@ -9212,34 +9214,33 @@ bool StatelessValidation::manual_PreCallValidateCmdClearColorImage(VkCommandBuff
     return skip;
 }
 
-bool StatelessValidation::ValidateCmdBeginRenderPass(const char *const func_name,
-                                                     const VkRenderPassBeginInfo *const rp_begin) const {
+bool StatelessValidation::ValidateCmdBeginRenderPass(const VkRenderPassBeginInfo *const rp_begin, CMD_TYPE cmd_type) const {
     bool skip = false;
     if ((rp_begin->clearValueCount != 0) && !rp_begin->pClearValues) {
         skip |= LogError(rp_begin->renderPass, "VUID-VkRenderPassBeginInfo-clearValueCount-04962",
                          "%s: VkRenderPassBeginInfo::clearValueCount != 0 (%" PRIu32
                          "), but VkRenderPassBeginInfo::pClearValues is null.",
-                         func_name, rp_begin->clearValueCount);
+                         CommandTypeString(cmd_type), rp_begin->clearValueCount);
     }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                    VkSubpassContents) const {
-    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass", pRenderPassBegin);
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer,
                                                                        const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                        const VkSubpassBeginInfo *) const {
-    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2KHR", pRenderPassBegin);
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS2KHR);
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                     const VkSubpassBeginInfo *) const {
-    bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2", pRenderPassBegin);
+    bool skip = ValidateCmdBeginRenderPass(pRenderPassBegin, CMD_BEGINRENDERPASS2);
     return skip;
 }
 
