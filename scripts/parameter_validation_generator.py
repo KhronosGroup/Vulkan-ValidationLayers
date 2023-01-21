@@ -280,6 +280,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBeginRenderPass',
             'vkCmdBeginRenderPass2KHR',
             'vkCmdBeginRenderPass2',
+            'vkCmdBeginRendering',
+            'vkCmdBeginRenderingKHR',
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',
@@ -361,7 +363,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         copyright += ' * Copyright (c) 2015-2023 The Khronos Group Inc.\n'
         copyright += ' * Copyright (c) 2015-2023 LunarG, Inc.\n'
         copyright += ' * Copyright (C) 2015-2023 Google Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2023 Valve Corporation\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'

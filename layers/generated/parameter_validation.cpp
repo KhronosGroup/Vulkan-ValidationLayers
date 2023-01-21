@@ -4,7 +4,7 @@
  * Copyright (c) 2015-2023 The Khronos Group Inc.
  * Copyright (c) 2015-2023 LunarG, Inc.
  * Copyright (C) 2015-2023 Google Inc.
- * Copyright (c) 2015-2017 Valve Corporation
+ * Copyright (c) 2015-2023 Valve Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -10244,6 +10244,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
     return skip;
 }
 
@@ -11886,6 +11887,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
     return skip;
 }
 

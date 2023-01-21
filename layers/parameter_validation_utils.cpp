@@ -417,6 +417,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.maintenance4_props = maintance4_props;
     }
 
+    if (IsExtEnabled(device_extensions.vk_khr_fragment_shading_rate)) {
+        auto fragment_shading_rate_props = LvlInitStruct<VkPhysicalDeviceFragmentShadingRatePropertiesKHR>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fragment_shading_rate_props);
+        GetPhysicalDeviceProperties2(physicalDevice, prop2);
+        phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object
@@ -9240,6 +9247,338 @@ bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2KHR(VkCommand
 bool StatelessValidation::manual_PreCallValidateCmdBeginRenderPass2(VkCommandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                     const VkSubpassBeginInfo *) const {
     bool skip = ValidateCmdBeginRenderPass("vkCmdBeginRenderPass2", pRenderPassBegin);
+    return skip;
+}
+
+static bool UniqueRenderingInfoImageViews(const VkRenderingInfo *pRenderingInfo, VkImageView imageView) {
+    bool unique_views = true;
+    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+        if (pRenderingInfo->pColorAttachments[i].imageView == imageView) {
+            unique_views = false;
+        }
+
+        if (pRenderingInfo->pColorAttachments[i].resolveImageView == imageView) {
+            unique_views = false;
+        }
+    }
+
+    if (pRenderingInfo->pDepthAttachment) {
+        if (pRenderingInfo->pDepthAttachment->imageView == imageView) {
+            unique_views = false;
+        }
+
+        if (pRenderingInfo->pDepthAttachment->resolveImageView == imageView) {
+            unique_views = false;
+        }
+    }
+
+    if (pRenderingInfo->pStencilAttachment) {
+        if (pRenderingInfo->pStencilAttachment->imageView == imageView) {
+            unique_views = false;
+        }
+
+        if (pRenderingInfo->pStencilAttachment->resolveImageView == imageView) {
+            unique_views = false;
+        }
+    }
+    return unique_views;
+}
+
+bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                    CMD_TYPE cmd_type) const {
+    bool skip = false;
+    const char *func_name = CommandTypeString(cmd_type);
+
+    if (pRenderingInfo->viewMask == 0 && pRenderingInfo->layerCount == 0) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-viewMask-06069",
+                         "%s(): If viewMask is 0 (%" PRIu32 "), layerCount must not be 0 (%" PRIu32 ").", func_name,
+                         pRenderingInfo->viewMask, pRenderingInfo->layerCount);
+    }
+
+    if (pRenderingInfo->colorAttachmentCount > device_limits.maxColorAttachments) {
+        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06106",
+                         "%s(): colorAttachmentCount (%u) must be less than or equal to "
+                         "VkPhysicalDeviceLimits::maxColorAttachments (%u).",
+                         func_name, pRenderingInfo->colorAttachmentCount, device_limits.maxColorAttachments);
+    }
+
+    const auto rendering_fragment_shading_rate_attachment_info =
+        LvlFindInChain<VkRenderingFragmentShadingRateAttachmentInfoKHR>(pRenderingInfo->pNext);
+    if (rendering_fragment_shading_rate_attachment_info &&
+        (rendering_fragment_shading_rate_attachment_info->imageView != VK_NULL_HANDLE)) {
+        if (UniqueRenderingInfoImageViews(pRenderingInfo, rendering_fragment_shading_rate_attachment_info->imageView) == false) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06125",
+                             "%s(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any element "
+                             "of pColorAttachments must not equal VkRenderingFragmentShadingRateAttachmentInfoKHR->imageView.",
+                             func_name);
+        }
+
+        const VkImageLayout image_layout = rendering_fragment_shading_rate_attachment_info->imageLayout;
+        if (image_layout != VK_IMAGE_LAYOUT_GENERAL &&
+            image_layout != VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06147",
+                             "%s(): VkRenderingFragmentShadingRateAttachmentInfoKHR->layout (%s) must be VK_IMAGE_LAYOUT_GENERAL "
+                             "or VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR.",
+                             func_name, string_VkImageLayout(image_layout));
+        }
+
+        if (!IsPowerOfTwo(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width)) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06149",
+                             "%s(): shadingRateAttachmentTexelSize.width (%u) must be a power of two.", func_name,
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width);
+        }
+
+        const uint32_t max_frs_attach_texel_width =
+            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.width;
+        if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width > max_frs_attach_texel_width) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06150",
+                             "%s(): shadingRateAttachmentTexelSize.width (%u) must be less than or equal to "
+                             "maxFragmentShadingRateAttachmentTexelSize.width (%u).",
+                             func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                             max_frs_attach_texel_width);
+        }
+
+        const uint32_t min_frs_attach_texel_width =
+            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.width;
+        if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width < min_frs_attach_texel_width) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06151",
+                             "%s(): shadingRateAttachmentTexelSize.width (%u) must be greater than or equal to "
+                             "minFragmentShadingRateAttachmentTexelSize.width (%u).",
+                             func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                             min_frs_attach_texel_width);
+        }
+
+        if (!IsPowerOfTwo(rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height)) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06152",
+                             "%s(): shadingRateAttachmentTexelSize.height (%u) must be a power of two.", func_name,
+                             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height);
+        }
+
+        const uint32_t max_frs_attach_texel_height =
+            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSize.height;
+        if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height > max_frs_attach_texel_height) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06153",
+                             "%s(): shadingRateAttachmentTexelSize.height (%u) must be less than or equal to "
+                             "maxFragmentShadingRateAttachmentTexelSize.height (%u).",
+                             func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                             max_frs_attach_texel_height);
+        }
+
+        const uint32_t min_frs_attach_texel_height =
+            phys_dev_ext_props.fragment_shading_rate_props.minFragmentShadingRateAttachmentTexelSize.height;
+        if (rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height < min_frs_attach_texel_height) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06154",
+                             "%s(): shadingRateAttachmentTexelSize.height (%u) must be greater than or equal to "
+                             "minFragmentShadingRateAttachmentTexelSize.height (%u).",
+                             func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                             min_frs_attach_texel_height);
+        }
+
+        const uint32_t max_frs_attach_texel_aspect_ratio =
+            phys_dev_ext_props.fragment_shading_rate_props.maxFragmentShadingRateAttachmentTexelSizeAspectRatio;
+        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width /
+             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height) >
+            max_frs_attach_texel_aspect_ratio) {
+            skip |= LogError(
+                commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06155",
+                "%s(): the quotient of shadingRateAttachmentTexelSize.width (%u) and shadingRateAttachmentTexelSize.height (%u) "
+                "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%u).",
+                func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                max_frs_attach_texel_aspect_ratio);
+        }
+
+        if ((rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height /
+             rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width) >
+            max_frs_attach_texel_aspect_ratio) {
+            skip |= LogError(
+                commandBuffer, "VUID-VkRenderingFragmentShadingRateAttachmentInfoKHR-imageView-06156",
+                "%s(): the quotient of shadingRateAttachmentTexelSize.height (%u) and shadingRateAttachmentTexelSize.width (%u) "
+                "must be less than or equal to maxFragmentShadingRateAttachmentTexelSizeAspectRatio (%u).",
+                func_name, rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.height,
+                rendering_fragment_shading_rate_attachment_info->shadingRateAttachmentTexelSize.width,
+                max_frs_attach_texel_aspect_ratio);
+        }
+    }
+
+    const auto fragment_density_map_attachment_info =
+        LvlFindInChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext);
+    if (fragment_density_map_attachment_info && (fragment_density_map_attachment_info->imageView != VK_NULL_HANDLE)) {
+        if (UniqueRenderingInfoImageViews(pRenderingInfo, fragment_density_map_attachment_info->imageView) == false) {
+            skip |=
+                LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06116",
+                         "%s(): imageView or resolveImageView member of pDepthAttachment, pStencilAttachment, or any"
+                         "element of pColorAttachments must not equal VkRenderingFragmentDensityMapAttachmentInfoEXT->imageView.",
+                         func_name);
+        }
+
+        if (fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_GENERAL &&
+            fragment_density_map_attachment_info->imageLayout != VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06157",
+                             "%s(): VkRenderingFragmentDensityMapAttachmentInfoEXT::imageView is not VK_NULL_HANDLE, but "
+                             "VkRenderingFragmentDensityMapAttachmentInfoEXT::imageLayout is %s.",
+                             func_name, string_VkImageLayout(fragment_density_map_attachment_info->imageLayout));
+        }
+
+        if (rendering_fragment_shading_rate_attachment_info &&
+            (rendering_fragment_shading_rate_attachment_info->imageView == fragment_density_map_attachment_info->imageView)) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-imageView-06126",
+                             "%s(): VkRenderingFragmentDensityMapAttachmentInfoEXT::imageView and "
+                             "VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView are the same.",
+                             func_name);
+        }
+    }
+
+    for (uint32_t j = 0; j < pRenderingInfo->colorAttachmentCount; ++j) {
+        if (pRenderingInfo->pColorAttachments[j].imageView != VK_NULL_HANDLE) {
+            const VkImageLayout image_layout = pRenderingInfo->pColorAttachments[j].imageLayout;
+            const VkResolveModeFlagBits resolve_mode = pRenderingInfo->pColorAttachments[j].resolveMode;
+            const VkImageLayout resolve_image_layout = pRenderingInfo->pColorAttachments[j].resolveImageLayout;
+            if (image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06090",
+                                 "%s(): imageLayout must not be "
+                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL or "
+                                 "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL.",
+                                 func_name);
+            }
+
+            if (resolve_mode != VK_RESOLVE_MODE_NONE) {
+                if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+                    resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06091",
+                                     "%s(): resolveImageLayout must not be "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL or "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL.",
+                                     func_name);
+                }
+            }
+
+            if (IsExtEnabled(device_extensions.vk_khr_maintenance2)) {
+                if (image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                    image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06096",
+                                     "%s(): imageLayout must not be "
+                                     "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL "
+                                     "or VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL.",
+                                     func_name);
+                }
+
+                if (resolve_mode != VK_RESOLVE_MODE_NONE) {
+                    if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
+                        resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+                        skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06097",
+                                         "%s(): resolveImageLayout must not be "
+                                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL or "
+                                         "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL.",
+                                         func_name);
+                    }
+                }
+            }
+
+            if (image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                image_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
+                image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
+                image_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06100",
+                                 "%s(): imageLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL"
+                                 " or VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL"
+                                 " or VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL"
+                                 " or VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL.",
+                                 func_name);
+            }
+
+            if (resolve_mode != VK_RESOLVE_MODE_NONE) {
+                if (resolve_image_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                    resolve_image_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) {
+                    skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-colorAttachmentCount-06101",
+                                     "%s(): resolveImageLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
+                                     "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL.",
+                                     func_name);
+                }
+            }
+        }
+    }
+
+    if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
+        const VkImageLayout layout = pRenderingInfo->pDepthAttachment->imageLayout;
+        if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            skip |=
+                LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06092",
+                         "%s(): pDepthAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.", func_name);
+        }
+
+        if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
+            const VkImageLayout resolve_layout = pRenderingInfo->pDepthAttachment->resolveImageLayout;
+            if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06093",
+                                 "%s(): pDepthAttachment->resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.",
+                                 func_name);
+            }
+
+            if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+                resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06098",
+                                 "%s(): resolveImageLayout must not be "
+                                 "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.",
+                                 func_name);
+            }
+
+            if (!(pRenderingInfo->pDepthAttachment->resolveMode &
+                  phys_dev_ext_props.depth_stencil_resolve_props.supportedDepthResolveModes)) {
+                skip |= LogError(device, "VUID-VkRenderingInfo-pDepthAttachment-06102",
+                                 "%s(): Includes a resolveMode structure with invalid mode=%u.", func_name,
+                                 pRenderingInfo->pDepthAttachment->resolveMode);
+            }
+        }
+    }
+
+    if (pRenderingInfo->pStencilAttachment != nullptr && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
+        const VkImageLayout layout = pRenderingInfo->pStencilAttachment->imageLayout;
+        if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            skip |=
+                LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06094",
+                         "%s(): pStencilAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.", func_name);
+        }
+
+        if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
+            const VkImageLayout resolve_layout = pRenderingInfo->pStencilAttachment->resolveImageLayout;
+            if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06095",
+                             "%s(): pStencilAttachment->resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.",
+                             func_name);
+            }
+
+            if (IsExtEnabled(device_extensions.vk_khr_maintenance2) &&
+                resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06099",
+                                 "%s(): resolveImageLayout must not be "
+                                 "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL.",
+                                 func_name);
+            }
+
+            if (!(pRenderingInfo->pStencilAttachment->resolveMode &
+                  phys_dev_ext_props.depth_stencil_resolve_props.supportedStencilResolveModes)) {
+                skip |= LogError(device, "VUID-VkRenderingInfo-pStencilAttachment-06103",
+                                 "%s(): Includes a resolveMode structure with invalid mode (%s).", func_name,
+                                 string_VkResolveModeFlagBits(pRenderingInfo->pStencilAttachment->resolveMode));
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer,
+                                                                     const VkRenderingInfo *pRenderingInfo) const {
+    bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERINGKHR);
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer,
+                                                                  const VkRenderingInfo *pRenderingInfo) const {
+    bool skip = ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, CMD_BEGINRENDERING);
     return skip;
 }
 
