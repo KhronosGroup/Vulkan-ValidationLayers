@@ -280,6 +280,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBeginRenderPass',
             'vkCmdBeginRenderPass2KHR',
             'vkCmdBeginRenderPass2',
+            'vkCmdBeginRendering',
+            'vkCmdBeginRenderingKHR',
             'vkCmdSetDiscardRectangleEXT',
             'vkGetQueryPoolResults',
             'vkCmdBeginConditionalRenderingEXT',

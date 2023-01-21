@@ -10244,6 +10244,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRendering(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRendering(commandBuffer, pRenderingInfo);
     return skip;
 }
 
@@ -11886,6 +11887,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderingKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
     return skip;
 }
 
