@@ -200,7 +200,7 @@ TEST_F(VkLayerTest, DynamicRenderingCommandDraw) {
     vk_testing::ImageView depth_image_view(*m_device, ivci);
 
     VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment.imageView = depth_image_view.handle();
 
     VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>();
@@ -1511,6 +1511,7 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     ASSERT_VK_SUCCESS(err);
 
     VkImageObj image(m_device);
+    VkImageObj image_fragment(m_device);
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = depth_format;
@@ -1523,7 +1524,9 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     image.Init(image_create_info);
+    image_fragment.Init(image_create_info);
     ASSERT_TRUE(image.initialized());
+    ASSERT_TRUE(image_fragment.initialized());
 
     VkImageViewCreateInfo ivci = {VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                                   nullptr,
@@ -1536,7 +1539,9 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
                                   {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1}};
 
     VkImageView depth_image_view = image.targetView(ivci);
+    VkImageView depth_image_view_fragment = image_fragment.targetView(ivci);
     ASSERT_NE(depth_image_view, VK_NULL_HANDLE);
+    ASSERT_NE(depth_image_view_fragment, VK_NULL_HANDLE);
 
     VkRenderingAttachmentInfoKHR depth_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -1555,12 +1560,17 @@ TEST_F(VkLayerTest, DynamicRenderingAttachmentInfo) {
     begin_rendering_info.pNext = &fragment_density_map;
 
     m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-multiview-06127");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06107");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06108");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06116");
+    m_commandBuffer->BeginRendering(begin_rendering_info);
+    m_errorMonitor->VerifyFound();
+    fragment_density_map.imageView = depth_image_view_fragment;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-multiview-06127");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06108");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06145");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06146");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06132");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingAttachmentInfo-imageView-06860");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 }
@@ -1696,9 +1706,6 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
     }
     bool fragment_density = IsExtensionsEnabled(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
     bool shading_rate = IsExtensionsEnabled(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
-    if (!fragment_density && !shading_rate) {
-        GTEST_SKIP() << "shading rate / fragment shading not supported";
-    }
 
     auto dynamic_rendering_features = LvlInitStruct<VkPhysicalDeviceDynamicRenderingFeatures>();
     VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(dynamic_rendering_features);
@@ -1716,6 +1723,19 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
 
     VkFormat depthStencilFormat = FindSupportedDepthStencilFormat(gpu());
 
+    // Mostly likely will only find support for this on a custom profiles
+    if (!ImageFormatAndFeaturesSupported(gpu(), depthStencilFormat, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        shading_rate = false;
+    }
+    if (!ImageFormatAndFeaturesSupported(gpu(), depthStencilFormat, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_DENSITY_MAP_BIT_EXT)) {
+        fragment_density = false;
+    }
+    if (!fragment_density && !shading_rate) {
+        GTEST_SKIP() << "shading rate / fragment shading not supported";
+    }
+
     VkImageObj image(m_device);
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1728,7 +1748,12 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (shading_rate) image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    if (shading_rate) {
+        image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+    }
+    if (fragment_density) {
+        image_create_info.usage |= VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    }
 
     VkImageFormatProperties imageFormatProperties;
     if (vk::GetPhysicalDeviceImageFormatProperties(gpu(), image_create_info.format, image_create_info.imageType,
@@ -1797,6 +1822,7 @@ TEST_F(VkLayerTest, DynamicRenderingPipelineMissingFlags) {
         VkRenderingFragmentDensityMapAttachmentInfoEXT fragment_density_map =
             LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
         fragment_density_map.imageView = depth_image_view.handle();
+        fragment_density_map.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
         VkRenderingInfoKHR begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&fragment_density_map);
         begin_rendering_info.layerCount = 1;
@@ -1984,6 +2010,11 @@ TEST_F(VkLayerTest, DynamicRenderingBeginRenderingFragmentShadingRate) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!ImageFormatAndFeaturesSupported(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                         VK_FORMAT_FEATURE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) {
+        GTEST_SKIP() << "format doesn't support FRAGMENT_SHADING_RATE_ATTACHMENT_BIT";
+    }
 
     auto image_ci = LvlInitStruct<VkImageCreateInfo>(nullptr);
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -2364,8 +2395,6 @@ TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06115");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapRenderAreaWithoutDeviceGroupExt) {
@@ -3528,7 +3557,8 @@ TEST_F(VkLayerTest, DynamicRenderingInvalidRenderingFragmentDensityMapAttachment
     image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
     VkImageObj image2(m_device);
     image2.Init(image_create_info);
-    VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UINT);
+    VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                                VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
     rendering_fragment_density.imageView = image_view2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingFragmentDensityMapAttachmentInfoEXT-imageView-06160");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06109");
@@ -3607,7 +3637,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentCreateFlags) {
     image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3662,7 +3692,7 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentLayerCount) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 2;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -3671,7 +3701,8 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentDensityMapAttachmentLayerCount) {
 
     VkImageObj image(m_device);
     image.Init(image_create_info);
-    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0,
+                                              VK_REMAINING_ARRAY_LAYERS, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     auto rendering_fragment_density = LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>();
     rendering_fragment_density.imageView = image_view;
@@ -3723,23 +3754,19 @@ TEST_F(VkLayerTest, DynamicRenderingPNextImageView) {
     auto phys_dev_props_2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&fsr_properties);
     GetPhysicalDeviceProperties2(phys_dev_props_2);
 
-    VkImageObj image1(m_device);
-    image1.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
-                VK_IMAGE_TILING_LINEAR, 0);
-    VkImageView image_view1 = image1.targetView(VK_FORMAT_R8G8B8A8_UNORM);
-    VkImageObj image2(m_device);
-    image2.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, VK_IMAGE_TILING_LINEAR, 0);
-    VkImageView image_view2 = image2.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR,
+               VK_IMAGE_TILING_LINEAR, 0);
+    VkImageView image_view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto rendering_fragment_shading_rate = LvlInitStruct<VkRenderingFragmentShadingRateAttachmentInfoKHR>();
-    rendering_fragment_shading_rate.imageView = image_view1;
+    rendering_fragment_shading_rate.imageView = image_view;
     rendering_fragment_shading_rate.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     rendering_fragment_shading_rate.shadingRateAttachmentTexelSize = fsr_properties.minFragmentShadingRateAttachmentTexelSize;
     auto rendering_fragment_density =
         LvlInitStruct<VkRenderingFragmentDensityMapAttachmentInfoEXT>(&rendering_fragment_shading_rate);
-    rendering_fragment_density.imageView = image_view2;
+    rendering_fragment_density.imageView = image_view;
     rendering_fragment_density.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     auto begin_rendering_info = LvlInitStruct<VkRenderingInfoKHR>(&rendering_fragment_density);
     begin_rendering_info.layerCount = 1;
@@ -3749,7 +3776,6 @@ TEST_F(VkLayerTest, DynamicRenderingPNextImageView) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06126");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
-    m_commandBuffer->end();
 }
 
 TEST_F(VkLayerTest, DynamicRenderingRenderArea) {
@@ -4599,7 +4625,7 @@ TEST_F(VkLayerTest, DynamicRenderingResolveImageViewFragmentDensityLayout) {
     VkImageCreateInfo image_create_info = LvlInitStruct<VkImageCreateInfo>();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent = {32, 32, 4};
+    image_create_info.extent = {32, 32, 1};
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
@@ -6155,7 +6181,7 @@ TEST_F(VkLayerTest, DynamicRenderingAndExecuteCommandsWithMismatchingDepthStenci
     VkImageView imageView = image.targetView(depth_stencil_format, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkRenderingAttachmentInfoKHR depth_stencil_attachment = LvlInitStruct<VkRenderingAttachmentInfoKHR>();
-    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_stencil_attachment.imageView = imageView;
 
     VkCommandBufferInheritanceRenderingInfoKHR inheritance_rendering_info =
