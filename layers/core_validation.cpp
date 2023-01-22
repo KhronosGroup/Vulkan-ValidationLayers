@@ -2401,13 +2401,13 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Acceleration structures NV
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV] >
-        phys_dev_ext_props.ray_tracing_propsNV.maxDescriptorSetAccelerationStructures) {
+        phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures) {
         skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02381",
                          "vkCreatePipelineLayout(): sum of acceleration structures NV bindings among all stages (%" PRIu32
                          ") exceeds device "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxDescriptorSetAccelerationStructures limit (%" PRIu32 ").",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV],
-                         phys_dev_ext_props.ray_tracing_propsNV.maxDescriptorSetAccelerationStructures);
+                         phys_dev_ext_props.ray_tracing_props_nv.maxDescriptorSetAccelerationStructures);
     }
 
     if (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing)) {

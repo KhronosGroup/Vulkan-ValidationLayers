@@ -1097,34 +1097,34 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(const SHADER_MODULE_STATE 
 
         case VK_SHADER_STAGE_MESH_BIT_NV:
             if (entrypoint.Word(1) == spv::ExecutionModelMeshNV) {
-                if (num_vertices > phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices) {
+                if (num_vertices > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07113",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
                                      "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
-                                     phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices,
-                                     num_vertices - phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputVertices);
+                                     phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices,
+                                     num_vertices - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputVertices);
                 }
-                if (num_primitives > phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives) {
+                if (num_primitives > phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshNV-07114",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output primitives count exceeds the "
                                      "maxMeshOutputPrimitives of %" PRIu32 " by %" PRIu32,
-                                     phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives,
-                                     num_primitives - phys_dev_ext_props.mesh_shader_props_NV.maxMeshOutputPrimitives);
+                                     phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives,
+                                     num_primitives - phys_dev_ext_props.mesh_shader_props_nv.maxMeshOutputPrimitives);
                 }
             } else if (entrypoint.Word(1) == spv::ExecutionModelMeshEXT) {
-                if (num_vertices > phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices) {
+                if (num_vertices > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07115",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output vertices count exceeds the "
                                      "maxMeshOutputVertices of %" PRIu32 " by %" PRIu32,
-                                     phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices,
-                                     num_vertices - phys_dev_ext_props.mesh_shader_props.maxMeshOutputVertices);
+                                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices,
+                                     num_vertices - phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputVertices);
                 }
-                if (num_primitives > phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives) {
+                if (num_primitives > phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives) {
                     skip |= LogError(module_state.vk_shader_module(), "VUID-RuntimeSpirv-MeshEXT-07116",
                                      "Invalid Pipeline CreateInfo State: Mesh shader output primitives count exceeds the "
                                      "maxMeshOutputPrimitives of %u by %u ",
-                                     phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives,
-                                     num_primitives - phys_dev_ext_props.mesh_shader_props.maxMeshOutputPrimitives);
+                                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives,
+                                     num_primitives - phys_dev_ext_props.mesh_shader_props_ext.maxMeshOutputPrimitives);
                 }
             }
             break;
@@ -2126,15 +2126,15 @@ bool CoreChecks::ValidateExecutionModes(const SHADER_MODULE_STATE &module_state,
                 }
                 case spv::ExecutionModeSubgroupUniformControlFlowKHR: {
                     if (!enabled_features.shader_subgroup_uniform_control_flow_features.shaderSubgroupUniformControlFlow ||
-                        (phys_dev_ext_props.subgroup_properties.supportedStages & stage) == 0 ||
+                        (phys_dev_ext_props.subgroup_props.supportedStages & stage) == 0 ||
                         module_state.HasInvocationRepackInstruction()) {
                         std::stringstream msg;
                         if (!enabled_features.shader_subgroup_uniform_control_flow_features.shaderSubgroupUniformControlFlow) {
                             msg << "shaderSubgroupUniformControlFlow feature must be enabled";
-                        } else if ((phys_dev_ext_props.subgroup_properties.supportedStages & stage) == 0) {
+                        } else if ((phys_dev_ext_props.subgroup_props.supportedStages & stage) == 0) {
                             msg << "stage" << string_VkShaderStageFlagBits(stage)
                                 << " must be in VkPhysicalDeviceSubgroupProperties::supportedStages("
-                                << string_VkShaderStageFlags(phys_dev_ext_props.subgroup_properties.supportedStages) << ")";
+                                << string_VkShaderStageFlags(phys_dev_ext_props.subgroup_props.supportedStages) << ")";
                         } else {
                             msg << "the shader must not use any invocation repack instructions";
                         }
@@ -3729,10 +3729,10 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
             y_vuid = "VUID-RuntimeSpirv-TaskEXT-07292";
             z_vuid = "VUID-RuntimeSpirv-TaskEXT-07293";
             workgroup_size_vuid = "VUID-RuntimeSpirv-TaskEXT-07294";
-            max_local_size_x = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[0];
-            max_local_size_y = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[1];
-            max_local_size_z = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupSize[2];
-            max_workgroup_size = phys_dev_ext_props.mesh_shader_props.maxTaskWorkGroupInvocations;
+            max_local_size_x = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[0];
+            max_local_size_y = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[1];
+            max_local_size_z = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupSize[2];
+            max_workgroup_size = phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupInvocations;
             break;
         }
 
@@ -3741,10 +3741,10 @@ bool CoreChecks::ValidateTaskMeshWorkGroupSizes(const SHADER_MODULE_STATE &modul
             y_vuid = "VUID-RuntimeSpirv-MeshEXT-07296";
             z_vuid = "VUID-RuntimeSpirv-MeshEXT-07297";
             workgroup_size_vuid = "VUID-RuntimeSpirv-MeshEXT-07298";
-            max_local_size_x = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[0];
-            max_local_size_y = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[1];
-            max_local_size_z = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupSize[2];
-            max_workgroup_size = phys_dev_ext_props.mesh_shader_props.maxMeshWorkGroupInvocations;
+            max_local_size_x = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[0];
+            max_local_size_y = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[1];
+            max_local_size_z = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupSize[2];
+            max_workgroup_size = phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupInvocations;
             break;
         }
 
