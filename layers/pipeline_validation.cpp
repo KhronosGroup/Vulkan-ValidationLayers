@@ -1043,12 +1043,12 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
     bool skip = false;
 
     if (isKHR) {
-        if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth) {
+        if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth) {
             skip |=
                 LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-maxPipelineRayRecursionDepth-03589",
                          "vkCreateRayTracingPipelinesKHR: maxPipelineRayRecursionDepth (%d ) must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::maxRayRecursionDepth %d",
-                         create_info.maxPipelineRayRecursionDepth, phys_dev_ext_props.ray_tracing_propsKHR.maxRayRecursionDepth);
+                         create_info.maxPipelineRayRecursionDepth, phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth);
         }
         if (create_info.pLibraryInfo) {
             for (uint32_t i = 0; i < create_info.pLibraryInfo->libraryCount; ++i) {
@@ -1081,11 +1081,11 @@ bool CoreChecks::ValidateRayTracingPipeline(const PIPELINE_STATE &pipeline,
             }
         }
     } else {
-        if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth) {
+        if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457",
                              "vkCreateRayTracingPipelinesNV: maxRecursionDepth (%d) must be less than or equal to "
                              "VkPhysicalDeviceRayTracingPropertiesNV::maxRecursionDepth (%d)",
-                             create_info.maxRecursionDepth, phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
+                             create_info.maxRecursionDepth, phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth);
         }
     }
     const auto *groups = create_info.ptr()->pGroups;

@@ -455,7 +455,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     }
 
-    if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_propsNV.maxGeometryCount) {
+    if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props_nv.maxGeometryCount) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241",
                          "vkCmdBuildAccelerationStructureNV(): geometryCount [%d] must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.",
@@ -1009,7 +1009,7 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
             device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-03482",
             "vkGetRayTracingShaderGroupHandlesKHR: pipeline must have not been created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.");
     }
-    if (dataSize < (phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize * groupCount)) {
+    if (dataSize < (phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleSize * groupCount)) {
         skip |= LogError(device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-dataSize-02420",
                          "vkGetRayTracingShaderGroupHandlesKHR: dataSize (%zu) must be at least "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleSize * groupCount.",
@@ -1036,7 +1036,7 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
                                                                                 uint32_t firstGroup, uint32_t groupCount,
                                                                                 size_t dataSize, void *pData) const {
     bool skip = false;
-    if (dataSize < (phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleCaptureReplaySize * groupCount)) {
+    if (dataSize < (phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleCaptureReplaySize * groupCount)) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484",
                          "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: dataSize (%zu) must be at least "
                          "VkPhysicalDeviceRayTracingPipelinePropertiesKHR::shaderGroupHandleCaptureReplaySize * groupCount.",

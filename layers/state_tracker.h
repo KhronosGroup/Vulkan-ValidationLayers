@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2022 The Khronos Group Inc.
- * Copyright (c) 2015-2022 Valve Corporation
- * Copyright (c) 2015-2022 LunarG, Inc.
- * Copyright (C) 2015-2022 Google Inc.
+/* Copyright (c) 2015-2023 The Khronos Group Inc.
+ * Copyright (c) 2015-2023 Valve Corporation
+ * Copyright (c) 2015-2023 LunarG, Inc.
+ * Copyright (C) 2015-2023 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -1483,14 +1483,14 @@ class ValidationStateTracker : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props;
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_NV;
-        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
@@ -1508,7 +1508,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
         VkPhysicalDeviceConservativeRasterizationPropertiesEXT conservative_rasterization_props;
         VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
-        VkPhysicalDeviceSubgroupProperties subgroup_properties;
+        VkPhysicalDeviceSubgroupProperties subgroup_props;
         VkPhysicalDeviceExtendedDynamicState3PropertiesEXT extended_dynamic_state3_props;
         VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_props;
         VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT descriptor_buffer_density_props;

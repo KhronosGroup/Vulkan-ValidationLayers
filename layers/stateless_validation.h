@@ -64,10 +64,10 @@ class StatelessValidation : public ValidationObject {
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
-        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
-        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_propsEXT;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_propsKHR;
+        VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props_nv;
+        VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_props_ext;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props_nv;
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_props_khr;
         VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vertex_attribute_divisor_props;
