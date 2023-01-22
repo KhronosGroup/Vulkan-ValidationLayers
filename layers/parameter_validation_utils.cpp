@@ -425,6 +425,13 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.fragment_shading_rate_props = fragment_shading_rate_props;
     }
 
+    if (IsExtEnabled(device_extensions.vk_khr_depth_stencil_resolve)) {
+        auto depth_stencil_resolve_props = LvlInitStruct<VkPhysicalDeviceDepthStencilResolveProperties>();
+        auto prop2 = LvlInitStruct<VkPhysicalDeviceProperties2>(&depth_stencil_resolve_props);
+        GetPhysicalDeviceProperties2(physicalDevice, prop2);
+        phys_dev_ext_props.depth_stencil_resolve_props = depth_stencil_resolve_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object
@@ -9507,6 +9514,11 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
             skip |=
                 LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06092",
                          "%s(): pDepthAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.", func_name);
+        } else if (layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL || layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-07732",
+                             "%s(): pDepthAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or "
+                             "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
+                             func_name);
         }
 
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
@@ -9514,6 +9526,12 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
             if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
                 skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-06093",
                                  "%s(): pDepthAttachment->resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.",
+                                 func_name);
+            } else if (resolve_layout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL ||
+                       resolve_layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL) {
+                skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pDepthAttachment-07733",
+                                 "%s(): pDepthAttachment->resolveImageLayout must not be "
+                                 "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL.",
                                  func_name);
             }
 
@@ -9540,6 +9558,11 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
             skip |=
                 LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06094",
                          "%s(): pStencilAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.", func_name);
+        } else if (layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+            skip |= LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-07734",
+                             "%s(): pStencilAttachment->imageLayout is can't be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL or "
+                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL.",
+                             func_name);
         }
 
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE) {
@@ -9547,6 +9570,12 @@ bool StatelessValidation::ValidateCmdBeginRendering(VkCommandBuffer commandBuffe
             if (resolve_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
                 skip |=
                     LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-06095",
+                             "%s(): pStencilAttachment->resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.",
+                             func_name);
+            } else if (resolve_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                       resolve_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL) {
+                skip |=
+                    LogError(commandBuffer, "VUID-VkRenderingInfo-pStencilAttachment-07735",
                              "%s(): pStencilAttachment->resolveImageLayout must not be VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL.",
                              func_name);
             }

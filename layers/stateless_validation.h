@@ -74,6 +74,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT blend_operation_advanced_props;
         VkPhysicalDeviceMaintenance4PropertiesKHR maintenance4_props;
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
+        VkPhysicalDeviceDepthStencilResolveProperties depth_stencil_resolve_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
