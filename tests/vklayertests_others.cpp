@@ -542,19 +542,19 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pFeatures specified as NULL");
     // Specify NULL for a pointer to a handle
     // Expected to trigger an error with
-    // parameter_validation::validate_required_pointer
+    // StatelessValidation::ValidateRequiredPointer
     vk::GetPhysicalDeviceFeatures(gpu(), NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pQueueFamilyPropertyCount specified as NULL");
     // Specify NULL for pointer to array count
-    // Expected to trigger an error with parameter_validation::validate_array
+    // Expected to trigger an error with StatelessValidation::ValidateArray
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), NULL, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-viewportCount-arraylength");
     // Specify 0 for a required array count
-    // Expected to trigger an error with parameter_validation::validate_array
+    // Expected to trigger an error with StatelessValidation::ValidateArray
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
     m_commandBuffer->SetViewport(0, 0, &viewport);
     m_errorMonitor->VerifyFound();
@@ -567,21 +567,21 @@ TEST_F(VkLayerTest, RequiredParameter) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetViewport-pViewports-parameter");
     // Specify NULL for a required array
-    // Expected to trigger an error with parameter_validation::validate_array
+    // Expected to trigger an error with StatelessValidation::ValidateArray
     m_commandBuffer->SetViewport(0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter memory specified as VK_NULL_HANDLE");
     // Specify VK_NULL_HANDLE for a required handle
     // Expected to trigger an error with
-    // parameter_validation::validate_required_handle
+    // StatelessValidation::ValidateRequiredHandle
     vk::UnmapMemory(device(), VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pFences[0] specified as VK_NULL_HANDLE");
     // Specify VK_NULL_HANDLE for a required handle array entry
     // Expected to trigger an error with
-    // parameter_validation::validate_required_handle_array
+    // StatelessValidation::ValidateRequiredHandleArray
     VkFence fence = VK_NULL_HANDLE;
     vk::ResetFences(device(), 1, &fence);
     m_errorMonitor->VerifyFound();
@@ -589,14 +589,14 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "required parameter pAllocateInfo specified as NULL");
     // Specify NULL for a required struct pointer
     // Expected to trigger an error with
-    // parameter_validation::validate_struct_type
+    // StatelessValidation::ValidateStructType
     VkDeviceMemory memory = VK_NULL_HANDLE;
     vk::AllocateMemory(device(), NULL, NULL, &memory);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "value of faceMask must not be 0");
     // Specify 0 for a required VkFlags parameter
-    // Expected to trigger an error with parameter_validation::validate_flags
+    // Expected to trigger an error with StatelessValidation::ValidateFlags
     m_commandBuffer->SetStencilReference(0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -780,7 +780,7 @@ TEST_F(VkLayerTest, ReservedParameter) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " must be 0");
     // Specify 0 for a reserved VkFlags parameter
     // Expected to trigger an error with
-    // parameter_validation::validate_reserved_flags
+    // StatelessValidation::ValidateReservedFlags
     VkSemaphore sem_handle = VK_NULL_HANDLE;
     VkSemaphoreCreateInfo sem_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     sem_info.flags = 1;
@@ -1070,7 +1070,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     // Zero struct memory, effectively setting sType to
     // VK_STRUCTURE_TYPE_APPLICATION_INFO
     // Expected to trigger an error with
-    // parameter_validation::validate_struct_type
+    // StatelessValidation::ValidateStructType
     VkMemoryAllocateInfo alloc_info = {};
     VkDeviceMemory memory = VK_NULL_HANDLE;
     vk::AllocateMemory(device(), &alloc_info, NULL, &memory);
@@ -1080,7 +1080,7 @@ TEST_F(VkLayerTest, InvalidStructSType) {
     // Zero struct memory, effectively setting sType to
     // VK_STRUCTURE_TYPE_APPLICATION_INFO
     // Expected to trigger an error with
-    // parameter_validation::validate_struct_type_array
+    // StatelessValidation::ValidateStructTypeArray
     VkSubmitInfo submit_info = {};
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
@@ -1101,7 +1101,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     m_errorMonitor->SetDesiredFailureMsg((kErrorBit | kWarningBit), "VUID-VkCommandPoolCreateInfo-pNext-pNext");
     // Set VkCommandPoolCreateInfo::pNext to a non-NULL value, when pNext must be NULL.
     // Need to pick a function that has no allowed pNext structure types.
-    // Expected to trigger an error with parameter_validation::validate_struct_pnext
+    // Expected to trigger an error with StatelessValidation::ValidateStructPnext
     VkCommandPool pool = VK_NULL_HANDLE;
     auto pool_ci = LvlInitStruct<VkCommandPoolCreateInfo>();
     auto app_info = LvlInitStruct<VkApplicationInfo>();
@@ -1113,7 +1113,7 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     // Set VkMemoryAllocateInfo::pNext to a non-NULL value, but use
     // a function that has allowed pNext structure types and specify
     // a structure type that is not allowed.
-    // Expected to trigger an error with parameter_validation::validate_struct_pnext
+    // Expected to trigger an error with StatelessValidation::ValidateStructPnext
     VkDeviceMemory memory = VK_NULL_HANDLE;
     VkMemoryAllocateInfo memory_alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(&app_info);
     vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
@@ -1135,7 +1135,7 @@ TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {
                                          "does not fall within the begin..end range of the core VkFormat enumeration tokens");
     // Specify an invalid VkFormat value
     // Expected to trigger an error with
-    // parameter_validation::validate_ranged_enum
+    // StatelessValidation::ValidateRangedEnum
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(gpu(), static_cast<VkFormat>(8000), &format_properties);
     m_errorMonitor->VerifyFound();
@@ -1146,7 +1146,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadMask) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags bitmask value
-    // Expected to trigger an error with parameter_validation::validate_flags
+    // Expected to trigger an error with StatelessValidation::ValidateFlags
     VkImageFormatProperties image_format_properties;
     vk::GetPhysicalDeviceImageFormatProperties(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
                                                static_cast<VkImageUsageFlags>(1 << 25), 0, &image_format_properties);
@@ -1158,7 +1158,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "contains flag bits that are not recognized members of");
     // Specify an invalid VkFlags array entry
-    // Expected to trigger an error with parameter_validation::validate_flags_array
+    // Expected to trigger an error with StatelessValidation::ValidateFlagsArray
     VkSemaphore semaphore;
     VkSemaphoreCreateInfo semaphore_create_info = LvlInitStruct<VkSemaphoreCreateInfo>();
     vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
@@ -1185,7 +1185,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Specify an invalid VkBool32 value, expecting a warning with parameter_validation::validate_bool32
+    // Specify an invalid VkBool32 value, expecting a warning with StatelessValidation::ValidateBool32
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;

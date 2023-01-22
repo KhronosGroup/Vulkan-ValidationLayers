@@ -93,8 +93,8 @@ static std::shared_mutex secondary_cb_map_mutex;
 static ReadLockGuard CBReadLock() { return ReadLockGuard(secondary_cb_map_mutex); }
 static WriteLockGuard CBWriteLock() { return WriteLockGuard(secondary_cb_map_mutex); }
 
-bool StatelessValidation::validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
-                                          const char *validateString) const {
+bool StatelessValidation::ValidateString(const char *apiName, const ParameterName &stringName, const std::string &vuid,
+                                         const char *validateString) const {
     bool skip = false;
 
     VkStringErrorFlags result = vk_string_validate(kMaxParamCheckerStringLength, validateString);
@@ -111,7 +111,7 @@ bool StatelessValidation::validate_string(const char *apiName, const ParameterNa
     return skip;
 }
 
-bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t effective_api_version) const {
+bool StatelessValidation::ValidateApiVersion(uint32_t api_version, uint32_t effective_api_version) const {
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
     if (api_version_nopatch != effective_api_version) {
@@ -130,7 +130,7 @@ bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t ef
     return skip;
 }
 
-bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) const {
+bool StatelessValidation::ValidateInstanceExtensions(const VkInstanceCreateInfo *pCreateInfo) const {
     bool skip = false;
     // Create and use a local instance extension object, as an actual instance has not been created yet
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
@@ -138,8 +138,8 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
     local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        skip |= validate_extension_reqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388",
-                                        "instance", pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= ValidateExtensionReqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
+                                      pCreateInfo->ppEnabledExtensionNames[i]);
     }
     if (pCreateInfo->flags & VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR &&
         !local_instance_extensions.vk_khr_portability_enumeration) {
@@ -164,8 +164,8 @@ bool StatelessValidation::SupportedByPdev(const VkPhysicalDevice physical_device
     return false;
 }
 
-bool StatelessValidation::validate_validation_features(const VkInstanceCreateInfo *pCreateInfo,
-                                                       const VkValidationFeaturesEXT *validation_features) const {
+bool StatelessValidation::ValidateValidationFeatures(const VkInstanceCreateInfo *pCreateInfo,
+                                                     const VkValidationFeaturesEXT *validation_features) const {
     bool skip = false;
     bool debug_printf = false;
     bool gpu_assisted = false;
@@ -221,10 +221,10 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
     uint32_t local_api_version = (pCreateInfo->pApplicationInfo && pCreateInfo->pApplicationInfo->apiVersion)
                                      ? pCreateInfo->pApplicationInfo->apiVersion
                                      : VK_API_VERSION_1_0;
-    skip |= validate_api_version(local_api_version, api_version);
-    skip |= validate_instance_extensions(pCreateInfo);
+    skip |= ValidateApiVersion(local_api_version, api_version);
+    skip |= ValidateInstanceExtensions(pCreateInfo);
     const auto *validation_features = LvlFindInChain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
-    if (validation_features) skip |= validate_validation_features(pCreateInfo, validation_features);
+    if (validation_features) skip |= ValidateValidationFeatures(pCreateInfo, validation_features);
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
     auto export_metal_object_info = LvlFindInChain<VkExportMetalObjectCreateInfoEXT>(pCreateInfo->pNext);
@@ -441,8 +441,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     bool skip = false;
 
     for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-        skip |= validate_string("vkCreateDevice", "pCreateInfo->ppEnabledLayerNames",
-                                "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
+        skip |= ValidateString("vkCreateDevice", "pCreateInfo->ppEnabledLayerNames",
+                               "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
     }
 
     // If this device supports VK_KHR_portability_subset, it must be enabled
@@ -455,10 +455,10 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
 
     for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         skip |=
-            validate_string("vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
-                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
-        skip |= validate_extension_reqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
-                                        pCreateInfo->ppEnabledExtensionNames[i]);
+            ValidateString("vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
+                           "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= ValidateExtensionReqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
+                                      pCreateInfo->ppEnabledExtensionNames[i]);
         if (portability_extension_name == pCreateInfo->ppEnabledExtensionNames[i]) {
             portability_requested = true;
         }
@@ -775,7 +775,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     return skip;
 }
 
-bool StatelessValidation::require_device_extension(bool flag, char const *function_name, char const *extension_name) const {
+bool StatelessValidation::RequireDeviceExtension(bool flag, char const *function_name, char const *extension_name) const {
     if (!flag) {
         return LogError(device, kVUID_PVError_ExtensionNotEnabled,
                         "%s() called even though the %s extension was not enabled for this VkDevice.", function_name,
@@ -1417,9 +1417,9 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             constexpr VkImageCompressionFlagsEXT AllVkImageCompressionFlagBitsEXT =
                 (VK_IMAGE_COMPRESSION_DEFAULT_EXT | VK_IMAGE_COMPRESSION_FIXED_RATE_DEFAULT_EXT |
                  VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT | VK_IMAGE_COMPRESSION_DISABLED_EXT);
-            skip |= validate_flags("vkCreateImage", "VkImageCompressionControlEXT::flags", "VkImageCompressionFlagsEXT",
-                                   AllVkImageCompressionFlagBitsEXT, image_compression_control->flags, kRequiredSingleBit,
-                                   "VUID-VkImageCompressionControlEXT-flags-06747");
+            skip |= ValidateFlags("vkCreateImage", "VkImageCompressionControlEXT::flags", "VkImageCompressionFlagsEXT",
+                                  AllVkImageCompressionFlagBitsEXT, image_compression_control->flags, kRequiredSingleBit,
+                                  "VUID-VkImageCompressionControlEXT-flags-06747");
 
             if (image_compression_control->flags == VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT &&
                 !image_compression_control->pFixedRateFlags) {
@@ -1900,23 +1900,23 @@ bool StatelessValidation::ValidatePipelineTessellationStateCreateInfo(const VkPi
                                                                       uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pTessellationState", ParameterName::IndexVector{index}),
-                                 "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO", &info,
-                                 VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                 "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+    skip |= ValidateStructType("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pTessellationState", ParameterName::IndexVector{index}),
+                               "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO};
 
-    skip |= validate_struct_pnext(
+    skip |= ValidateStructPnext(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{index}),
         "VkPipelineTessellationDomainOriginStateCreateInfo", info.pNext, allowed_structs.size(), allowed_structs.data(),
         GeneratedVulkanHeaderVersion, "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext",
         "VUID-VkPipelineTessellationStateCreateInfo-sType-unique");
 
-    skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
-                                    ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{index}),
-                                    info.flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
+    skip |= ValidateReservedFlags("vkCreateGraphicsPipelines",
+                                  ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{index}),
+                                  info.flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
 
     return skip;
 }
@@ -1927,24 +1927,24 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
     bool skip = false;
 
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
-    skip |= validate_struct_pnext(
+    skip |= ValidateStructPnext(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pVertexInputState->pNext", ParameterName::IndexVector{index}),
         "VkPipelineVertexInputDivisorStateCreateInfoEXT", info.pNext, allowed_structs.size(), allowed_structs.data(),
         GeneratedVulkanHeaderVersion, "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
         "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
-    skip |= validate_struct_type("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pVertexInputState", ParameterName::IndexVector{index}),
-                                 "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", &info,
-                                 VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                 "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
-    skip |= validate_array(
+    skip |= ValidateStructType("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pVertexInputState", ParameterName::IndexVector{index}),
+                               "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
+    skip |= ValidateArray(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pVertexInputState->vertexBindingDescriptionCount", ParameterName::IndexVector{index}),
         "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions", info.vertexBindingDescriptionCount,
         &info.pVertexBindingDescriptions, false, true, kVUIDUndefined,
         "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
 
-    skip |= validate_array(
+    skip |= ValidateArray(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pVertexInputState->vertexAttributeDescriptionCount", ParameterName::IndexVector{index}),
         "pCreateInfos[i]->pVertexAttributeDescriptions", info.vertexAttributeDescriptionCount, &info.pVertexAttributeDescriptions,
@@ -1953,13 +1953,12 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
     if (info.pVertexBindingDescriptions != nullptr) {
         for (uint32_t vertex_binding_description_index = 0; vertex_binding_description_index < info.vertexBindingDescriptionCount;
              ++vertex_binding_description_index) {
-            skip |=
-                validate_ranged_enum("vkCreateGraphicsPipelines",
-                                     ParameterName("pCreateInfos[%i].pVertexInputState->pVertexBindingDescriptions[%i].inputRate",
-                                                   ParameterName::IndexVector{index, vertex_binding_description_index}),
-                                     "VkVertexInputRate", AllVkVertexInputRateEnums,
-                                     info.pVertexBindingDescriptions[vertex_binding_description_index].inputRate,
-                                     "VUID-VkVertexInputBindingDescription-inputRate-parameter");
+            skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                                       ParameterName("pCreateInfos[%i].pVertexInputState->pVertexBindingDescriptions[%i].inputRate",
+                                                     ParameterName::IndexVector{index, vertex_binding_description_index}),
+                                       "VkVertexInputRate", AllVkVertexInputRateEnums,
+                                       info.pVertexBindingDescriptions[vertex_binding_description_index].inputRate,
+                                       "VUID-VkVertexInputBindingDescription-inputRate-parameter");
         }
     }
 
@@ -1967,12 +1966,12 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
         for (uint32_t vertex_attribute_description_index = 0;
              vertex_attribute_description_index < info.vertexAttributeDescriptionCount; ++vertex_attribute_description_index) {
             const VkFormat format = info.pVertexAttributeDescriptions[vertex_attribute_description_index].format;
-            skip |= validate_ranged_enum(
-                "vkCreateGraphicsPipelines",
-                ParameterName("pCreateInfos[%i].pVertexInputState->pVertexAttributeDescriptions[%i].format",
-                              ParameterName::IndexVector{index, vertex_attribute_description_index}),
-                "VkFormat", AllVkFormatEnums, info.pVertexAttributeDescriptions[vertex_attribute_description_index].format,
-                "VUID-VkVertexInputAttributeDescription-format-parameter");
+            skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                                       ParameterName("pCreateInfos[%i].pVertexInputState->pVertexAttributeDescriptions[%i].format",
+                                                     ParameterName::IndexVector{index, vertex_attribute_description_index}),
+                                       "VkFormat", AllVkFormatEnums,
+                                       info.pVertexAttributeDescriptions[vertex_attribute_description_index].format,
+                                       "VUID-VkVertexInputAttributeDescription-format-parameter");
             if (FormatIsDepthOrStencil(format)) {
                 // Should never hopefully get here, but there are known driver advertising the wrong feature flags
                 // see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4849
@@ -1987,9 +1986,9 @@ bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPip
         }
     }
 
-    skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
-                                    ParameterName("pCreateInfos[%i].pVertexInputState->flags", ParameterName::IndexVector{index}),
-                                    info.flags, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask");
+    skip |= ValidateReservedFlags("vkCreateGraphicsPipelines",
+                                  ParameterName("pCreateInfos[%i].pVertexInputState->flags", ParameterName::IndexVector{index}),
+                                  info.flags, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask");
 
     return skip;
 }
@@ -1999,7 +1998,7 @@ bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipeli
                                                                   uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type(
+    skip |= ValidateStructType(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pViewportState", ParameterName::IndexVector{index}),
         "VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO", &info, VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         false, kVUIDUndefined, "VUID-VkPipelineViewportStateCreateInfo-sType-sType");
@@ -2012,7 +2011,7 @@ bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipeli
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_COARSE_SAMPLE_ORDER_STATE_CREATE_INFO_NV,
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,
     };
-    skip |= validate_struct_pnext(
+    skip |= ValidateStructPnext(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pViewportState->pNext", ParameterName::IndexVector{index}),
         "VkPipelineViewportSwizzleStateCreateInfoNV, VkPipelineViewportWScalingStateCreateInfoNV, "
         "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, "
@@ -2020,9 +2019,9 @@ bool StatelessValidation::ValidatePipelineViewportStateCreateInfo(const VkPipeli
         info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
         "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext", "VUID-VkPipelineViewportStateCreateInfo-sType-unique");
 
-    skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
-                                    ParameterName("pCreateInfos[%i].pViewportState->flags", ParameterName::IndexVector{index}),
-                                    info.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
+    skip |= ValidateReservedFlags("vkCreateGraphicsPipelines",
+                                  ParameterName("pCreateInfos[%i].pViewportState->flags", ParameterName::IndexVector{index}),
+                                  info.flags, "VUID-VkPipelineViewportStateCreateInfo-flags-zerobitmask");
 
     return skip;
 }
@@ -2032,7 +2031,7 @@ bool StatelessValidation::ValidatePipelineMultisampleStateCreateInfo(const VkPip
                                                                      uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type(
+    skip |= ValidateStructType(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pMultisampleState", ParameterName::IndexVector{index}),
         "VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO", &info, VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         false, kVUIDUndefined, "VUID-VkPipelineMultisampleStateCreateInfo-sType-sType");
@@ -2041,43 +2040,42 @@ bool StatelessValidation::ValidatePipelineMultisampleStateCreateInfo(const VkPip
                                             VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_REDUCTION_STATE_CREATE_INFO_NV,
                                             VK_STRUCTURE_TYPE_PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV,
                                             VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT};
-    skip |= validate_struct_pnext(
+    skip |= ValidateStructPnext(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pMultisampleState->pNext", ParameterName::IndexVector{index}),
         "VkPipelineCoverageModulationStateCreateInfoNV, VkPipelineCoverageReductionStateCreateInfoNV, "
         "VkPipelineCoverageToColorStateCreateInfoNV, VkPipelineSampleLocationsStateCreateInfoEXT",
         info.pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
         "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext", "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
-    skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
-                                    ParameterName("pCreateInfos[%i].pMultisampleState->flags", ParameterName::IndexVector{index}),
-                                    info.flags, "VUID-VkPipelineMultisampleStateCreateInfo-flags-zerobitmask");
+    skip |= ValidateReservedFlags("vkCreateGraphicsPipelines",
+                                  ParameterName("pCreateInfos[%i].pMultisampleState->flags", ParameterName::IndexVector{index}),
+                                  info.flags, "VUID-VkPipelineMultisampleStateCreateInfo-flags-zerobitmask");
 
     skip |=
-        validate_bool32("vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->sampleShadingEnable", ParameterName::IndexVector{index}),
-                        info.sampleShadingEnable);
+        ValidateBool32("vkCreateGraphicsPipelines",
+                       ParameterName("pCreateInfos[%i].pMultisampleState->sampleShadingEnable", ParameterName::IndexVector{index}),
+                       info.sampleShadingEnable);
 
     skip |=
-        validate_array("vkCreateGraphicsPipelines",
-                       ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{index}),
-                       ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{index}),
-                       info.rasterizationSamples, &info.pSampleMask, true, false, kVUIDUndefined, kVUIDUndefined);
+        ValidateArray("vkCreateGraphicsPipelines",
+                      ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{index}),
+                      ParameterName("pCreateInfos[%i].pMultisampleState->pSampleMask", ParameterName::IndexVector{index}),
+                      info.rasterizationSamples, &info.pSampleMask, true, false, kVUIDUndefined, kVUIDUndefined);
 
     skip |=
-        validate_flags("vkCreateGraphicsPipelines",
-                       ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{index}),
-                       "VkSampleCountFlagBits", AllVkSampleCountFlagBits, info.rasterizationSamples, kRequiredSingleBit,
-                       "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
+        ValidateFlags("vkCreateGraphicsPipelines",
+                      ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{index}),
+                      "VkSampleCountFlagBits", AllVkSampleCountFlagBits, info.rasterizationSamples, kRequiredSingleBit,
+                      "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
 
-    skip |= validate_bool32(
+    skip |= ValidateBool32(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pMultisampleState->alphaToCoverageEnable", ParameterName::IndexVector{index}),
         info.alphaToCoverageEnable);
 
-    skip |=
-        validate_bool32("vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pMultisampleState->alphaToOneEnable", ParameterName::IndexVector{index}),
-                        info.alphaToOneEnable);
+    skip |= ValidateBool32("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pMultisampleState->alphaToOneEnable", ParameterName::IndexVector{index}),
+                           info.alphaToOneEnable);
     return skip;
 }
 
@@ -2086,52 +2084,52 @@ bool StatelessValidation::ValidatePipelineColorBlendAttachmentState(const VkPipe
                                                                     uint32_t pipe_index, uint32_t attachment_index) const {
     bool skip = false;
 
-    skip |= validate_bool32("vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].blendEnable",
-                                          ParameterName::IndexVector{pipe_index, attachment_index}),
-                            attachment_state.blendEnable);
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcColorBlendFactor",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcColorBlendFactor,
-                                 "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-parameter");
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstColorBlendFactor",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstColorBlendFactor,
-                                 "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-parameter");
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorBlendOp",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendOp", AllVkBlendOpEnums, attachment_state.colorBlendOp,
-                                 "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-parameter");
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcAlphaBlendFactor",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcAlphaBlendFactor,
-                                 "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-parameter");
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstAlphaBlendFactor",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstAlphaBlendFactor,
-                                 "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-parameter");
-
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].alphaBlendOp",
-                                               ParameterName::IndexVector{pipe_index, attachment_index}),
-                                 "VkBlendOp", AllVkBlendOpEnums, attachment_state.alphaBlendOp,
-                                 "VUID-VkPipelineColorBlendAttachmentState-alphaBlendOp-parameter");
-
-    skip |= validate_flags("vkCreateGraphicsPipelines",
-                           ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorWriteMask",
+    skip |= ValidateBool32("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].blendEnable",
                                          ParameterName::IndexVector{pipe_index, attachment_index}),
-                           "VkColorComponentFlagBits", AllVkColorComponentFlagBits, attachment_state.colorWriteMask, kOptionalFlags,
-                           "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
+                           attachment_state.blendEnable);
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcColorBlendFactor",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcColorBlendFactor,
+                               "VUID-VkPipelineColorBlendAttachmentState-srcColorBlendFactor-parameter");
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstColorBlendFactor",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstColorBlendFactor,
+                               "VUID-VkPipelineColorBlendAttachmentState-dstColorBlendFactor-parameter");
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorBlendOp",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendOp", AllVkBlendOpEnums, attachment_state.colorBlendOp,
+                               "VUID-VkPipelineColorBlendAttachmentState-colorBlendOp-parameter");
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].srcAlphaBlendFactor",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.srcAlphaBlendFactor,
+                               "VUID-VkPipelineColorBlendAttachmentState-srcAlphaBlendFactor-parameter");
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].dstAlphaBlendFactor",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendFactor", AllVkBlendFactorEnums, attachment_state.dstAlphaBlendFactor,
+                               "VUID-VkPipelineColorBlendAttachmentState-dstAlphaBlendFactor-parameter");
+
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].alphaBlendOp",
+                                             ParameterName::IndexVector{pipe_index, attachment_index}),
+                               "VkBlendOp", AllVkBlendOpEnums, attachment_state.alphaBlendOp,
+                               "VUID-VkPipelineColorBlendAttachmentState-alphaBlendOp-parameter");
+
+    skip |= ValidateFlags("vkCreateGraphicsPipelines",
+                          ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments[%i].colorWriteMask",
+                                        ParameterName::IndexVector{pipe_index, attachment_index}),
+                          "VkColorComponentFlagBits", AllVkColorComponentFlagBits, attachment_state.colorWriteMask, kOptionalFlags,
+                          "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
 
     return skip;
 }
@@ -2141,7 +2139,7 @@ bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipe
                                                                     uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type(
+    skip |= ValidateStructType(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pColorBlendState", ParameterName::IndexVector{index}),
         "VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO", &info, VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         false, kVUIDUndefined, "VUID-VkPipelineColorBlendStateCreateInfo-sType-sType");
@@ -2149,20 +2147,20 @@ bool StatelessValidation::ValidatePipelineColorBlendStateCreateInfo(const VkPipe
     constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT,
                                             VK_STRUCTURE_TYPE_PIPELINE_COLOR_WRITE_CREATE_INFO_EXT};
 
-    skip |= validate_struct_pnext(
+    skip |= ValidateStructPnext(
         "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].pColorBlendState->pNext", ParameterName::IndexVector{index}),
         "VkPipelineColorBlendAdvancedStateCreateInfoEXT, VkPipelineColorWriteCreateInfoEXT", info.pNext, allowed_structs.size(),
         allowed_structs.data(), GeneratedVulkanHeaderVersion, "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",
         "VUID-VkPipelineColorBlendStateCreateInfo-sType-unique");
 
-    skip |= validate_flags("vkCreateGraphicsPipelines",
-                           ParameterName("pCreateInfos[%i].pColorBlendState->flags", ParameterName::IndexVector{index}),
-                           "VkPipelineColorBlendStateCreateFlagBits", AllVkPipelineColorBlendStateCreateFlagBits, info.flags,
-                           kOptionalFlags, "VUID-VkPipelineColorBlendStateCreateInfo-flags-parameter");
+    skip |= ValidateFlags("vkCreateGraphicsPipelines",
+                          ParameterName("pCreateInfos[%i].pColorBlendState->flags", ParameterName::IndexVector{index}),
+                          "VkPipelineColorBlendStateCreateFlagBits", AllVkPipelineColorBlendStateCreateFlagBits, info.flags,
+                          kOptionalFlags, "VUID-VkPipelineColorBlendStateCreateInfo-flags-parameter");
 
-    skip |= validate_bool32("vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pColorBlendState->logicOpEnable", ParameterName::IndexVector{index}),
-                            info.logicOpEnable);
+    skip |= ValidateBool32("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pColorBlendState->logicOpEnable", ParameterName::IndexVector{index}),
+                           info.logicOpEnable);
 
     return skip;
 }
@@ -2172,83 +2170,80 @@ bool StatelessValidation::ValidatePipelineDepthStencilStateCreateInfo(const VkPi
                                                                       uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pDepthStencilState", ParameterName::IndexVector{index}),
-                                 "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO", &info,
-                                 VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                 "VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType");
+    skip |= ValidateStructType("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pDepthStencilState", ParameterName::IndexVector{index}),
+                               "VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineDepthStencilStateCreateInfo-sType-sType");
 
-    skip |= validate_struct_pnext("vkCreateGraphicsPipelines",
-                                  ParameterName("pCreateInfos[%i].pDepthStencilState->pNext", ParameterName::IndexVector{index}),
-                                  nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                  "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", nullptr);
+    skip |= ValidateStructPnext("vkCreateGraphicsPipelines",
+                                ParameterName("pCreateInfos[%i].pDepthStencilState->pNext", ParameterName::IndexVector{index}),
+                                nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", nullptr);
 
-    skip |= validate_flags("vkCreateGraphicsPipelines",
-                           ParameterName("pCreateInfos[%i].pDepthStencilState->flags", ParameterName::IndexVector{index}),
-                           "VkPipelineDepthStencilStateCreateFlagBits", AllVkPipelineDepthStencilStateCreateFlagBits, info.flags,
-                           kOptionalFlags, "VUID-VkPipelineDepthStencilStateCreateInfo-flags-parameter");
+    skip |= ValidateFlags("vkCreateGraphicsPipelines",
+                          ParameterName("pCreateInfos[%i].pDepthStencilState->flags", ParameterName::IndexVector{index}),
+                          "VkPipelineDepthStencilStateCreateFlagBits", AllVkPipelineDepthStencilStateCreateFlagBits, info.flags,
+                          kOptionalFlags, "VUID-VkPipelineDepthStencilStateCreateInfo-flags-parameter");
+
+    skip |= ValidateBool32("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pDepthStencilState->depthTestEnable", ParameterName::IndexVector{index}),
+                           info.depthTestEnable);
 
     skip |=
-        validate_bool32("vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pDepthStencilState->depthTestEnable", ParameterName::IndexVector{index}),
-                        info.depthTestEnable);
+        ValidateBool32("vkCreateGraphicsPipelines",
+                       ParameterName("pCreateInfos[%i].pDepthStencilState->depthWriteEnable", ParameterName::IndexVector{index}),
+                       info.depthWriteEnable);
 
-    skip |=
-        validate_bool32("vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pDepthStencilState->depthWriteEnable", ParameterName::IndexVector{index}),
-                        info.depthWriteEnable);
-
-    skip |= validate_ranged_enum(
+    skip |= ValidateRangedEnum(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->depthCompareOp", ParameterName::IndexVector{index}), "VkCompareOp",
         AllVkCompareOpEnums, info.depthCompareOp, "VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter");
 
-    skip |= validate_bool32(
+    skip |= ValidateBool32(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->depthBoundsTestEnable", ParameterName::IndexVector{index}),
         info.depthBoundsTestEnable);
 
     skip |=
-        validate_bool32("vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pDepthStencilState->stencilTestEnable", ParameterName::IndexVector{index}),
-                        info.stencilTestEnable);
+        ValidateBool32("vkCreateGraphicsPipelines",
+                       ParameterName("pCreateInfos[%i].pDepthStencilState->stencilTestEnable", ParameterName::IndexVector{index}),
+                       info.stencilTestEnable);
 
     skip |=
-        validate_ranged_enum("vkCreateGraphicsPipelines",
-                             ParameterName("pCreateInfos[%i].pDepthStencilState->front.failOp", ParameterName::IndexVector{index}),
-                             "VkStencilOp", AllVkStencilOpEnums, info.front.failOp, "VUID-VkStencilOpState-failOp-parameter");
+        ValidateRangedEnum("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pDepthStencilState->front.failOp", ParameterName::IndexVector{index}),
+                           "VkStencilOp", AllVkStencilOpEnums, info.front.failOp, "VUID-VkStencilOpState-failOp-parameter");
 
     skip |=
-        validate_ranged_enum("vkCreateGraphicsPipelines",
-                             ParameterName("pCreateInfos[%i].pDepthStencilState->front.passOp", ParameterName::IndexVector{index}),
-                             "VkStencilOp", AllVkStencilOpEnums, info.front.passOp, "VUID-VkStencilOpState-passOp-parameter");
+        ValidateRangedEnum("vkCreateGraphicsPipelines",
+                           ParameterName("pCreateInfos[%i].pDepthStencilState->front.passOp", ParameterName::IndexVector{index}),
+                           "VkStencilOp", AllVkStencilOpEnums, info.front.passOp, "VUID-VkStencilOpState-passOp-parameter");
 
-    skip |= validate_ranged_enum(
+    skip |= ValidateRangedEnum(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->front.depthFailOp", ParameterName::IndexVector{index}), "VkStencilOp",
         AllVkStencilOpEnums, info.front.depthFailOp, "VUID-VkStencilOpState-depthFailOp-parameter");
 
-    skip |= validate_ranged_enum(
+    skip |= ValidateRangedEnum(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->front.compareOp", ParameterName::IndexVector{index}), "VkCompareOp",
         AllVkCompareOpEnums, info.front.compareOp, "VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter");
 
-    skip |=
-        validate_ranged_enum("vkCreateGraphicsPipelines",
-                             ParameterName("pCreateInfos[%i].pDepthStencilState->back.failOp", ParameterName::IndexVector{index}),
-                             "VkStencilOp", AllVkStencilOpEnums, info.back.failOp, "VUID-VkStencilOpState-failOp-parameter");
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pDepthStencilState->back.failOp", ParameterName::IndexVector{index}),
+                               "VkStencilOp", AllVkStencilOpEnums, info.back.failOp, "VUID-VkStencilOpState-failOp-parameter");
 
-    skip |=
-        validate_ranged_enum("vkCreateGraphicsPipelines",
-                             ParameterName("pCreateInfos[%i].pDepthStencilState->back.passOp", ParameterName::IndexVector{index}),
-                             "VkStencilOp", AllVkStencilOpEnums, info.back.passOp, "VUID-VkStencilOpState-passOp-parameter");
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pDepthStencilState->back.passOp", ParameterName::IndexVector{index}),
+                               "VkStencilOp", AllVkStencilOpEnums, info.back.passOp, "VUID-VkStencilOpState-passOp-parameter");
 
-    skip |= validate_ranged_enum(
+    skip |= ValidateRangedEnum(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->back.depthFailOp", ParameterName::IndexVector{index}), "VkStencilOp",
         AllVkStencilOpEnums, info.back.depthFailOp, "VUID-VkStencilOpState-depthFailOp-parameter");
 
-    skip |= validate_ranged_enum(
+    skip |= ValidateRangedEnum(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pDepthStencilState->back.compareOp", ParameterName::IndexVector{index}), "VkCompareOp",
         AllVkCompareOpEnums, info.back.compareOp, "VUID-VkPipelineDepthStencilStateCreateInfo-depthCompareOp-parameter");
@@ -2261,27 +2256,27 @@ bool StatelessValidation::ValidatePipelineInputAssemblyStateCreateInfo(const VkP
                                                                        uint32_t index) const {
     bool skip = false;
 
-    skip |= validate_struct_type("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pInputAssemblyState", ParameterName::IndexVector{index}),
-                                 "VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO", &info,
-                                 VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                 "VUID-VkPipelineInputAssemblyStateCreateInfo-sType-sType");
+    skip |= ValidateStructType("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pInputAssemblyState", ParameterName::IndexVector{index}),
+                               "VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO", &info,
+                               VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, false, kVUIDUndefined,
+                               "VUID-VkPipelineInputAssemblyStateCreateInfo-sType-sType");
 
-    skip |= validate_struct_pnext("vkCreateGraphicsPipelines",
-                                  ParameterName("pCreateInfos[%i].pInputAssemblyState->pNext", ParameterName::IndexVector{index}),
-                                  nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                  "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext", nullptr);
+    skip |= ValidateStructPnext("vkCreateGraphicsPipelines",
+                                ParameterName("pCreateInfos[%i].pInputAssemblyState->pNext", ParameterName::IndexVector{index}),
+                                nullptr, info.pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext", nullptr);
 
-    skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
-                                    ParameterName("pCreateInfos[%i].pInputAssemblyState->flags", ParameterName::IndexVector{index}),
-                                    info.flags, "VUID-VkPipelineInputAssemblyStateCreateInfo-flags-zerobitmask");
+    skip |= ValidateReservedFlags("vkCreateGraphicsPipelines",
+                                  ParameterName("pCreateInfos[%i].pInputAssemblyState->flags", ParameterName::IndexVector{index}),
+                                  info.flags, "VUID-VkPipelineInputAssemblyStateCreateInfo-flags-zerobitmask");
 
-    skip |= validate_ranged_enum("vkCreateGraphicsPipelines",
-                                 ParameterName("pCreateInfos[%i].pInputAssemblyState->topology", ParameterName::IndexVector{index}),
-                                 "VkPrimitiveTopology", AllVkPrimitiveTopologyEnums, info.topology,
-                                 "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-parameter");
+    skip |= ValidateRangedEnum("vkCreateGraphicsPipelines",
+                               ParameterName("pCreateInfos[%i].pInputAssemblyState->topology", ParameterName::IndexVector{index}),
+                               "VkPrimitiveTopology", AllVkPrimitiveTopologyEnums, info.topology,
+                               "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-parameter");
 
-    skip |= validate_bool32(
+    skip |= ValidateBool32(
         "vkCreateGraphicsPipelines",
         ParameterName("pCreateInfos[%i].pInputAssemblyState->primitiveRestartEnable", ParameterName::IndexVector{index}),
         info.primitiveRestartEnable);
@@ -2344,9 +2339,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         color_attachment_count = rendering_struct->colorAttachmentCount;
 
                         if ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-                            skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
-                                                         AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
-                                                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
+                            skip |= ValidateRangedEnum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
+                                                       AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
+                                                       "VUID-VkGraphicsPipelineCreateInfo-renderPass-06583");
 
                             if (!FormatHasDepth(rendering_struct->depthAttachmentFormat)) {
                                 skip |= LogError(
@@ -2358,9 +2353,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
 
                         if ((rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) {
-                            skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
-                                                         AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
-                                                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
+                            skip |= ValidateRangedEnum("VkPipelineRenderingCreateInfo", "stencilAttachmentFormat", "VkFormat",
+                                                       AllVkFormatEnums, rendering_struct->stencilAttachmentFormat,
+                                                       "VUID-VkGraphicsPipelineCreateInfo-renderPass-06584");
                             if (!FormatHasStencil(rendering_struct->stencilAttachmentFormat)) {
                                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06588",
                                                  "vkCreateGraphicsPipelines() pCreateInfos[%" PRIu32
@@ -2371,7 +2366,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         }
 
                         if (color_attachment_count != 0) {
-                            skip |= validate_ranged_enum_array(
+                            skip |= ValidateRangedEnumArray(
                                 "VkPipelineRenderingCreateInfo", "VUID-VkGraphicsPipelineCreateInfo-renderPass-06579",
                                 "colorAttachmentCount", "pColorAttachmentFormats", "VkFormat", AllVkFormatEnums,
                                 color_attachment_count, rendering_struct->pColorAttachmentFormats, true, true);
@@ -2379,9 +2374,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                         if (rendering_struct->pColorAttachmentFormats) {
                             for (uint32_t j = 0; j < color_attachment_count; ++j) {
-                                skip |= validate_ranged_enum("VkPipelineRenderingCreateInfo", "pColorAttachmentFormats", "VkFormat",
-                                                             AllVkFormatEnums, rendering_struct->pColorAttachmentFormats[j],
-                                                             "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
+                                skip |= ValidateRangedEnum("VkPipelineRenderingCreateInfo", "pColorAttachmentFormats", "VkFormat",
+                                                           AllVkFormatEnums, rendering_struct->pColorAttachmentFormats[j],
+                                                           "VUID-VkGraphicsPipelineCreateInfo-renderPass-06580");
                             }
                         }
                     }
@@ -2392,11 +2387,11 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         color_attachment_count = attachment_sample_count_info->colorAttachmentCount;
 
                         for (uint32_t j = 0; j < color_attachment_count; ++j) {
-                            skip |= validate_flags("vkCreateGraphicsPipelines",
-                                                   ParameterName("VkAttachmentSampleCountInfoAMD->pColorAttachmentSamples"),
-                                                   "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
-                                                   attachment_sample_count_info->pColorAttachmentSamples[j], kRequiredFlags,
-                                                   "VUID-VkGraphicsPipelineCreateInfo-pColorAttachmentSamples-06592");
+                            skip |= ValidateFlags("vkCreateGraphicsPipelines",
+                                                  ParameterName("VkAttachmentSampleCountInfoAMD->pColorAttachmentSamples"),
+                                                  "VkSampleCountFlagBits", AllVkSampleCountFlagBits,
+                                                  attachment_sample_count_info->pColorAttachmentSamples[j], kRequiredFlags,
+                                                  "VUID-VkGraphicsPipelineCreateInfo-pColorAttachmentSamples-06592");
                         }
                     }
                 }
@@ -2419,20 +2414,20 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                 // TODO while PRIu32 should probably be used instead of %i below, %i is necessary due to
                 // ParameterName::IndexFormatSpecifier
-                skip |= validate_struct_type_array(
+                skip |= ValidateStructTypeArray(
                     "vkCreateGraphicsPipelines", ParameterName("pCreateInfos[%i].stageCount", ParameterName::IndexVector{i}),
                     ParameterName("pCreateInfos[%i].pStages", ParameterName::IndexVector{i}),
                     "VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO", create_info.stageCount, create_info.pStages,
                     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, true, true,
                     "VUID-VkPipelineShaderStageCreateInfo-sType-sType", "VUID-VkGraphicsPipelineCreateInfo-pStages-06600",
                     "VUID-VkGraphicsPipelineCreateInfo-pStages-06600");
-                skip |= validate_struct_type("vkCreateGraphicsPipelines",
-                                             ParameterName("pCreateInfos[%i].pRasterizationState", ParameterName::IndexVector{i}),
-                                             "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
-                                             create_info.pRasterizationState,
-                                             VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, true,
-                                             "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
-                                             "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
+                skip |=
+                    ValidateStructType("vkCreateGraphicsPipelines",
+                                       ParameterName("pCreateInfos[%i].pRasterizationState", ParameterName::IndexVector{i}),
+                                       "VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO",
+                                       create_info.pRasterizationState, VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+                                       true, "VUID-VkGraphicsPipelineCreateInfo-pRasterizationState-06601",
+                                       "VUID-VkPipelineRasterizationStateCreateInfo-sType-sType");
             }
 
             // <VkDynamicState, index in pDynamicStates, hash for enum key>
@@ -2516,13 +2511,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 for (uint32_t stage_index = 0; stage_index < create_info.stageCount; ++stage_index) {
                     active_shaders |= create_info.pStages[stage_index].stage;
 
-                    skip |= validate_required_pointer(
+                    skip |= ValidateRequiredPointer(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].stage[%i].pName", ParameterName::IndexVector{i, stage_index}),
                         create_info.pStages[stage_index].pName, "VUID-VkPipelineShaderStageCreateInfo-pName-parameter");
 
                     if (create_info.pStages[stage_index].pName) {
-                        skip |= validate_string(
+                        skip |= ValidateString(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
                             "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", create_info.pStages[stage_index].pName);
@@ -3420,7 +3415,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                     // If logicOpEnable is VK_TRUE, logicOp must be a valid VkLogicOp value
                     if (color_blend_state.logicOpEnable == VK_TRUE) {
-                        skip |= validate_ranged_enum(
+                        skip |= ValidateRangedEnum(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pColorBlendState->logicOp", ParameterName::IndexVector{i}), "VkLogicOp",
                             AllVkLogicOpEnums, color_blend_state.logicOp,
@@ -3438,7 +3433,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                ? "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07353"
                                                : "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-07354";
 
-                        skip |= validate_array(
+                        skip |= ValidateArray(
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pColorBlendState->attachmentCount", ParameterName::IndexVector{i}),
                             ParameterName("pCreateInfos[%i].pColorBlendState->pAttachments", ParameterName::IndexVector{i}),
@@ -3612,9 +3607,9 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                                                        VkPipeline *pPipelines) const {
     bool skip = false;
     for (uint32_t i = 0; i < createInfoCount; i++) {
-        skip |= validate_string("vkCreateComputePipelines",
-                                ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
-                                "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
+        skip |=
+            ValidateString("vkCreateComputePipelines", ParameterName("pCreateInfos[%i].stage.pName", ParameterName::IndexVector{i}),
+                           "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", pCreateInfos[i].stage.pName);
         auto feedback_struct = LvlFindInChain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if (feedback_struct) {
             const uint32_t feedback_count = feedback_struct->pipelineStageCreationFeedbackCount;
@@ -3812,8 +3807,8 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         // If compareEnable is VK_TRUE, compareOp must be a valid VkCompareOp value
         const auto *sampler_reduction = LvlFindInChain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
         if (pCreateInfo->compareEnable == VK_TRUE) {
-            skip |= validate_ranged_enum("vkCreateSampler", "pCreateInfo->compareOp", "VkCompareOp", AllVkCompareOpEnums,
-                                         pCreateInfo->compareOp, "VUID-VkSamplerCreateInfo-compareEnable-01080");
+            skip |= ValidateRangedEnum("vkCreateSampler", "pCreateInfo->compareOp", "VkCompareOp", AllVkCompareOpEnums,
+                                       pCreateInfo->compareOp, "VUID-VkSamplerCreateInfo-compareEnable-01080");
             if (sampler_reduction != nullptr) {
                 if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
                     skip |= LogError(device, "VUID-VkSamplerCreateInfo-compareEnable-01423",
@@ -3840,8 +3835,8 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
             (pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) ||
             (pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
-            skip |= validate_ranged_enum("vkCreateSampler", "pCreateInfo->borderColor", "VkBorderColor", AllVkBorderColorEnums,
-                                         pCreateInfo->borderColor, "VUID-VkSamplerCreateInfo-addressModeU-01078");
+            skip |= ValidateRangedEnum("vkCreateSampler", "pCreateInfo->borderColor", "VkBorderColor", AllVkBorderColorEnums,
+                                       pCreateInfo->borderColor, "VUID-VkSamplerCreateInfo-addressModeU-01078");
         }
 
         // Checks for the IMG cubic filtering extension
@@ -4305,14 +4300,14 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
                                                                    const VkDescriptorSet *pDescriptorSets) const {
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
-    // validate_array()
-    return validate_array("vkFreeDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount, &pDescriptorSets,
-                          true, true, kVUIDUndefined, kVUIDUndefined);
+    // ValidateArray()
+    return ValidateArray("vkFreeDescriptorSets", "descriptorSetCount", "pDescriptorSets", descriptorSetCount, &pDescriptorSets,
+                         true, true, kVUIDUndefined, kVUIDUndefined);
 }
 
-bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
-                                                      const VkWriteDescriptorSet *pDescriptorWrites,
-                                                      const bool isPushDescriptor) const {
+bool StatelessValidation::ValidateWriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
+                                                     const VkWriteDescriptorSet *pDescriptorWrites,
+                                                     const bool isPushDescriptor) const {
     bool skip = false;
 
     if (pDescriptorWrites != NULL) {
@@ -4327,9 +4322,9 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
             // If called from vkCmdPushDescriptorSetKHR, the dstSet member is ignored.
             if (!isPushDescriptor) {
                 // dstSet must be a valid VkDescriptorSet handle
-                skip |= validate_required_handle(vkCallingFunction,
-                                                 ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
-                                                 pDescriptorWrites[i].dstSet);
+                skip |= ValidateRequiredHandle(vkCallingFunction,
+                                               ParameterName("pDescriptorWrites[%i].dstSet", ParameterName::IndexVector{i}),
+                                               pDescriptorWrites[i].dstSet);
             }
 
             if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
@@ -4370,11 +4365,11 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     // member of any given element of pImageInfo must be a valid VkImageLayout
                     for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
                          ++descriptor_index) {
-                        skip |= validate_ranged_enum(vkCallingFunction,
-                                                     ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
-                                                                   ParameterName::IndexVector{i, descriptor_index}),
-                                                     "VkImageLayout", AllVkImageLayoutEnums,
-                                                     pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout, kVUIDUndefined);
+                        skip |= ValidateRangedEnum(vkCallingFunction,
+                                                   ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
+                                                                 ParameterName::IndexVector{i, descriptor_index}),
+                                                   "VkImageLayout", AllVkImageLayoutEnums,
+                                                   pDescriptorWrites[i].pImageInfo[descriptor_index].imageLayout, kVUIDUndefined);
                     }
                 }
             } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
@@ -4534,7 +4529,7 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                                      uint32_t descriptorCopyCount,
                                                                      const VkCopyDescriptorSet *pDescriptorCopies) const {
-    return validate_WriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
+    return ValidateWriteDescriptorSet("vkUpdateDescriptorSets", descriptorWriteCount, pDescriptorWrites, false);
 }
 
 template <typename RenderPassCreateInfoGeneric>
@@ -5001,9 +4996,9 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
-    // validate_array()
-    skip |= validate_array("vkFreeCommandBuffers", "commandBufferCount", "pCommandBuffers", commandBufferCount, &pCommandBuffers,
-                           true, true, kVUIDUndefined, kVUIDUndefined);
+    // ValidateArray()
+    skip |= ValidateArray("vkFreeCommandBuffers", "commandBufferCount", "pCommandBuffers", commandBufferCount, &pCommandBuffers,
+                          true, true, kVUIDUndefined, kVUIDUndefined);
     return skip;
 }
 
@@ -5025,21 +5020,21 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         const bool k_not_required = false;
         const char *k_no_vuid = nullptr;
         const VkCommandBufferInheritanceInfo *info = pBeginInfo->pInheritanceInfo;
-        skip |= validate_struct_type(cmd_name, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
-                                     info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
-                                     "VUID-VkCommandBufferInheritanceInfo-sType-sType");
+        skip |= ValidateStructType(cmd_name, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
+                                   info, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, k_not_required, k_no_vuid,
+                                   "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
         if (info) {
             constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT,
                                                     VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDERING_INFO_KHR,
                                                     VK_STRUCTURE_TYPE_ATTACHMENT_SAMPLE_COUNT_INFO_AMD,
                                                     VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV};
-            skip |= validate_struct_pnext(
+            skip |= ValidateStructPnext(
                 cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT",
                 info->pNext, allowed_structs.size(), allowed_structs.data(), GeneratedVulkanHeaderVersion,
                 "VUID-VkCommandBufferInheritanceInfo-pNext-pNext", "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
-            skip |= validate_bool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
+            skip |= ValidateBool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", info->occlusionQueryEnable);
 
             // Explicit VUs
             if (!physical_device_features.inheritedQueries && info->occlusionQueryEnable == VK_TRUE) {
@@ -5050,23 +5045,23 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
             }
 
             if (physical_device_features.inheritedQueries) {
-                skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
-                                       AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
-                                       "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+                skip |= ValidateFlags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
+                                      AllVkQueryControlFlagBits, info->queryFlags, kOptionalFlags,
+                                      "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
             } else {  // !inheritedQueries
-                skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
-                                                "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
+                skip |= ValidateReservedFlags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", info->queryFlags,
+                                              "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
             }
 
             if (physical_device_features.pipelineStatisticsQuery) {
                 skip |=
-                    validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
-                                   AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
-                                   "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
+                    ValidateFlags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
+                                  AllVkQueryPipelineStatisticFlagBits, info->pipelineStatistics, kOptionalFlags,
+                                  "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
             } else {  // !pipelineStatisticsQuery
                 skip |=
-                    validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", info->pipelineStatistics,
-                                            "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
+                    ValidateReservedFlags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", info->pipelineStatistics,
+                                          "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
             }
 
             const auto *conditional_rendering = LvlFindInChain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(info->pNext);
@@ -5690,24 +5685,24 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
         const auto *present_regions = LvlFindInChain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             // TODO: This and all other pNext extension dependencies should be added to code-generation
-            skip |= require_device_extension(IsExtEnabled(device_extensions.vk_khr_incremental_present), "vkQueuePresentKHR",
-                                             VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
+            skip |= RequireDeviceExtension(IsExtEnabled(device_extensions.vk_khr_incremental_present), "vkQueuePresentKHR",
+                                           VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
                 skip |= LogError(device, "VUID-VkPresentRegionsKHR-swapchainCount-01260",
                                  "QueuePresentKHR(): pPresentInfo->swapchainCount has a value of %i but VkPresentRegionsKHR "
                                  "extension swapchainCount is %i. These values must be equal.",
                                  pPresentInfo->swapchainCount, present_regions->swapchainCount);
             }
-            skip |= validate_struct_pnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
-                                          GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
-                                          "VUID-VkPresentInfoKHR-sType-unique");
-            skip |= validate_array("QueuePresentKHR", "pCreateInfo->pNext->swapchainCount", "pCreateInfo->pNext->pRegions",
-                                   present_regions->swapchainCount, &present_regions->pRegions, true, false, kVUIDUndefined,
-                                   kVUIDUndefined);
+            skip |= ValidateStructPnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
+                                        GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
+                                        "VUID-VkPresentInfoKHR-sType-unique");
+            skip |= ValidateArray("QueuePresentKHR", "pCreateInfo->pNext->swapchainCount", "pCreateInfo->pNext->pRegions",
+                                  present_regions->swapchainCount, &present_regions->pRegions, true, false, kVUIDUndefined,
+                                  kVUIDUndefined);
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                skip |= validate_array("QueuePresentKHR", "pCreateInfo->pNext->pRegions[].rectangleCount",
-                                       "pCreateInfo->pNext->pRegions[].pRectangles", present_regions->pRegions[i].rectangleCount,
-                                       &present_regions->pRegions[i].pRectangles, true, false, kVUIDUndefined, kVUIDUndefined);
+                skip |= ValidateArray("QueuePresentKHR", "pCreateInfo->pNext->pRegions[].rectangleCount",
+                                      "pCreateInfo->pNext->pRegions[].pRectangles", present_regions->pRegions[i].rectangleCount,
+                                      &present_regions->pRegions[i].pRectangles, true, false, kVUIDUndefined, kVUIDUndefined);
             }
         }
     }
@@ -5981,7 +5976,7 @@ bool StatelessValidation::manual_PreCallValidateCmdPushDescriptorSetKHR(VkComman
                                                                         VkPipelineLayout layout, uint32_t set,
                                                                         uint32_t descriptorWriteCount,
                                                                         const VkWriteDescriptorSet *pDescriptorWrites) const {
-    return validate_WriteDescriptorSet("vkCmdPushDescriptorSetKHR", descriptorWriteCount, pDescriptorWrites, true);
+    return ValidateWriteDescriptorSet("vkCmdPushDescriptorSetKHR", descriptorWriteCount, pDescriptorWrites, true);
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer,
@@ -6290,8 +6285,8 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
 bool StatelessValidation::manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
                                                                                    const char *pLayerName, uint32_t *pPropertyCount,
                                                                                    VkExtensionProperties *pProperties) const {
-    return validate_array("vkEnumerateDeviceExtensionProperties", "pPropertyCount", "pProperties", pPropertyCount, &pProperties,
-                          true, false, false, kVUIDUndefined, "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
+    return ValidateArray("vkEnumerateDeviceExtensionProperties", "pPropertyCount", "pProperties", pPropertyCount, &pProperties,
+                         true, false, false, kVUIDUndefined, "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
 }
 
 void StatelessValidation::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -6592,8 +6587,8 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
         }
     }
     skip |=
-        validate_flags(func_name, "info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV,
-                       info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
+        ValidateFlags(func_name, "info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV,
+                      info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-parameter");
     return skip;
 }
 
@@ -7083,7 +7078,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
             OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_full_screen_exclusive))
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME);
-    skip |= validate_struct_type(
+    skip |= ValidateStructType(
         "vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR",
         pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true,
         "VUID-vkGetDeviceGroupSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
@@ -7091,11 +7086,11 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
         constexpr std::array allowed_structs = {VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_INFO_EXT,
                                                 VK_STRUCTURE_TYPE_SURFACE_FULL_SCREEN_EXCLUSIVE_WIN32_INFO_EXT};
 
-        skip |= validate_struct_pnext("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->pNext",
-                                      "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
-                                      pSurfaceInfo->pNext, allowed_structs.size(), allowed_structs.data(),
-                                      GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
-                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
+        skip |= ValidateStructPnext("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->pNext",
+                                    "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
+                                    pSurfaceInfo->pNext, allowed_structs.size(), allowed_structs.data(),
+                                    GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
+                                    "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
         if (pSurfaceInfo->surface == VK_NULL_HANDLE && !instance_extensions.vk_google_surfaceless_query) {
             skip |= LogError(device, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-06521",
@@ -7103,7 +7098,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                              "VK_GOOGLE_surfaceless_query is not enabled.");
         }
 
-        skip |= validate_required_handle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
+        skip |= ValidateRequiredHandle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
     return skip;
 }
@@ -7115,8 +7110,8 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) == 0) {
-        skip |= validate_array("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
-                               &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
+        skip |= ValidateArray("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
+                              &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
     }
     return skip;
 }
@@ -7676,8 +7671,8 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemor
             "vkCopyAccelerationStructureToMemoryKHR: The "
             "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructureHostCommands feature must be enabled.");
     }
-    skip |= validate_required_pointer("vkCopyAccelerationStructureToMemoryKHR", "pInfo->dst.hostAddress", pInfo->dst.hostAddress,
-                                      "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03732");
+    skip |= ValidateRequiredPointer("vkCopyAccelerationStructureToMemoryKHR", "pInfo->dst.hostAddress", pInfo->dst.hostAddress,
+                                    "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03732");
     if (SafeModulo((VkDeviceSize)pInfo->dst.hostAddress, 16) != 0) {
         skip |= LogError(device, "VUID-vkCopyAccelerationStructureToMemoryKHR-pInfo-03751",
                          "vkCopyAccelerationStructureToMemoryKHR(): pInfo->dst.hostAddress must be aligned to 16 bytes.");
@@ -7756,8 +7751,8 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
             "vkCopyMemoryToAccelerationStructureKHR: The "
             "VkPhysicalDeviceAccelerationStructureFeaturesKHR::accelerationStructureHostCommands feature must be enabled.");
     }
-    skip |= validate_required_pointer("vkCopyMemoryToAccelerationStructureKHR", "pInfo->src.hostAddress", pInfo->src.hostAddress,
-                                      "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03729");
+    skip |= ValidateRequiredPointer("vkCopyMemoryToAccelerationStructureKHR", "pInfo->src.hostAddress", pInfo->src.hostAddress,
+                                    "VUID-vkCopyMemoryToAccelerationStructureKHR-pInfo-03729");
     return skip;
 }
 
@@ -8430,7 +8425,7 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
 
         if (pInfos[i].pGeometries) {
             for (uint32_t j = 0; j < pInfos[i].geometryCount; ++j) {
-                skip |= validate_ranged_enum(
+                skip |= ValidateRangedEnum(
                     api_name, ParameterName("pInfos[%i].pGeometries[%i].geometryType", ParameterName::IndexVector{i, j}),
                     "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[i].pGeometries[j].geometryType,
                     "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
@@ -8438,30 +8433,30 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     constexpr std::array allowed_structs = {
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_TRIANGLES_OPACITY_MICROMAP_EXT};
 
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(
                         api_name, ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
                         &(pInfos[i].pGeometries[j].geometry.triangles),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles.pNext", ParameterName::IndexVector{i, j}),
                         NULL, pInfos[i].pGeometries[j].geometry.triangles.pNext, allowed_structs.size(), allowed_structs.data(),
                         GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext",
                         kVUIDUndefined);
                     skip |=
-                        validate_ranged_enum(api_name,
-                                             ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles.vertexFormat",
-                                                           ParameterName::IndexVector{i, j}),
-                                             "VkFormat", AllVkFormatEnums, pInfos[i].pGeometries[j].geometry.triangles.vertexFormat,
-                                             "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.triangles",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
-                                                 &pInfos[i].pGeometries[j].geometry.triangles,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
-                    skip |= validate_ranged_enum(
+                        ValidateRangedEnum(api_name,
+                                           ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles.vertexFormat",
+                                                         ParameterName::IndexVector{i, j}),
+                                           "VkFormat", AllVkFormatEnums, pInfos[i].pGeometries[j].geometry.triangles.vertexFormat,
+                                           "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.triangles",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
+                                               &pInfos[i].pGeometries[j].geometry.triangles,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
+                    skip |= ValidateRangedEnum(
                         api_name,
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.triangles.indexType", ParameterName::IndexVector{i, j}),
                         "VkIndexType", AllVkIndexTypeEnums, pInfos[i].pGeometries[j].geometry.triangles.indexType,
@@ -8481,41 +8476,41 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     }
                 }
                 if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.instances",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
-                                                 &pInfos[i].pGeometries[j].geometry.instances,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.instances",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
+                                               &pInfos[i].pGeometries[j].geometry.instances,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
+                    skip |= ValidateStructType(
                         api_name, ParameterName("pInfos[%i].pGeometries[%i].geometry.instances", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
                         &(pInfos[i].pGeometries[j].geometry.instances),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.instances.pNext", ParameterName::IndexVector{i, j}),
                         NULL, pInfos[i].pGeometries[j].geometry.instances.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined);
 
-                    skip |= validate_bool32(api_name,
-                                            ParameterName("pInfos[%i].pGeometries[%i].geometry.instances.arrayOfPointers",
-                                                          ParameterName::IndexVector{i, j}),
-                                            pInfos[i].pGeometries[j].geometry.instances.arrayOfPointers);
+                    skip |= ValidateBool32(api_name,
+                                           ParameterName("pInfos[%i].pGeometries[%i].geometry.instances.arrayOfPointers",
+                                                         ParameterName::IndexVector{i, j}),
+                                           pInfos[i].pGeometries[j].geometry.instances.arrayOfPointers);
                 }
                 if (pInfos[i].pGeometries[j].geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.aabbs",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
-                                                 &pInfos[i].pGeometries[j].geometry.aabbs,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.aabbs",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
+                                               &pInfos[i].pGeometries[j].geometry.aabbs,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
+                    skip |= ValidateStructType(
                         api_name, ParameterName("pInfos[%i].pGeometries[%i].geometry.aabbs", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
                         &(pInfos[i].pGeometries[j].geometry.aabbs),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].pGeometries[%i].geometry.aabbs.pNext", ParameterName::IndexVector{i, j}), NULL,
                         pInfos[i].pGeometries[j].geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
@@ -8555,40 +8550,40 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
         }
         if (pInfos[i].ppGeometries != NULL) {
             for (uint32_t j = 0; j < pInfos[i].geometryCount; ++j) {
-                skip |= validate_ranged_enum(
+                skip |= ValidateRangedEnum(
                     api_name, ParameterName("pInfos[%i].ppGeometries[%i]->geometryType", ParameterName::IndexVector{i, j}),
                     "VkGeometryTypeKHR", AllVkGeometryTypeKHREnums, pInfos[i].ppGeometries[j]->geometryType,
                     "VUID-VkAccelerationStructureGeometryKHR-geometryType-parameter");
                 if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.triangles",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
-                                                 &pInfos[i].ppGeometries[j]->geometry.triangles,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.triangles",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
+                                               &pInfos[i].ppGeometries[j]->geometry.triangles,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-triangles-parameter", kVUIDUndefined);
+                    skip |= ValidateStructType(
                         api_name,
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR",
                         &(pInfos[i].ppGeometries[j]->geometry.triangles),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles.pNext", ParameterName::IndexVector{i, j}),
                         NULL, pInfos[i].ppGeometries[j]->geometry.triangles.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-pNext-pNext", kVUIDUndefined);
-                    skip |= validate_ranged_enum(api_name,
-                                                 ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles.vertexFormat",
-                                                               ParameterName::IndexVector{i, j}),
-                                                 "VkFormat", AllVkFormatEnums,
-                                                 pInfos[i].ppGeometries[j]->geometry.triangles.vertexFormat,
-                                                 "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
-                    skip |= validate_ranged_enum(api_name,
-                                                 ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles.indexType",
-                                                               ParameterName::IndexVector{i, j}),
-                                                 "VkIndexType", AllVkIndexTypeEnums,
-                                                 pInfos[i].ppGeometries[j]->geometry.triangles.indexType,
-                                                 "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
+                    skip |=
+                        ValidateRangedEnum(api_name,
+                                           ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles.vertexFormat",
+                                                         ParameterName::IndexVector{i, j}),
+                                           "VkFormat", AllVkFormatEnums, pInfos[i].ppGeometries[j]->geometry.triangles.vertexFormat,
+                                           "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-parameter");
+                    skip |= ValidateRangedEnum(api_name,
+                                               ParameterName("pInfos[%i].ppGeometries[%i]->geometry.triangles.indexType",
+                                                             ParameterName::IndexVector{i, j}),
+                                               "VkIndexType", AllVkIndexTypeEnums,
+                                               pInfos[i].ppGeometries[j]->geometry.triangles.indexType,
+                                               "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-indexType-parameter");
                     if (pInfos[i].ppGeometries[j]->geometry.triangles.vertexStride > UINT32_MAX) {
                         skip |= LogError(device, "VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexStride-03819",
                                          "%s():vertexStride must be less than or equal to 2^32-1", api_name);
@@ -8603,41 +8598,41 @@ bool StatelessValidation::ValidateAccelerationStructureBuildGeometryInfoKHR(
                     }
                 }
                 if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.instances",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
-                                                 &pInfos[i].ppGeometries[j]->geometry.instances,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.instances",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
+                                               &pInfos[i].ppGeometries[j]->geometry.instances,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-instances-parameter", kVUIDUndefined);
+                    skip |= ValidateStructType(
                         api_name,
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.instances", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR",
                         &(pInfos[i].ppGeometries[j]->geometry.instances),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryInstancesDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.instances.pNext", ParameterName::IndexVector{i, j}),
                         NULL, pInfos[i].ppGeometries[j]->geometry.instances.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
                         "VUID-VkAccelerationStructureGeometryInstancesDataKHR-pNext-pNext", kVUIDUndefined);
-                    skip |= validate_bool32(api_name,
-                                            ParameterName("pInfos[%i].ppGeometries[%i]->geometry.instances.arrayOfPointers",
-                                                          ParameterName::IndexVector{i, j}),
-                                            pInfos[i].ppGeometries[j]->geometry.instances.arrayOfPointers);
+                    skip |= ValidateBool32(api_name,
+                                           ParameterName("pInfos[%i].ppGeometries[%i]->geometry.instances.arrayOfPointers",
+                                                         ParameterName::IndexVector{i, j}),
+                                           pInfos[i].ppGeometries[j]->geometry.instances.arrayOfPointers);
                 }
                 if (pInfos[i].ppGeometries[j]->geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
-                    skip |= validate_struct_type(api_name, "pInfos[i].pGeometries[j].geometry.aabbs",
-                                                 "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
-                                                 &pInfos[i].ppGeometries[j]->geometry.aabbs,
-                                                 VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
-                                                 "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
-                    skip |= validate_struct_type(
+                    skip |= ValidateStructType(api_name, "pInfos[i].pGeometries[j].geometry.aabbs",
+                                               "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
+                                               &pInfos[i].ppGeometries[j]->geometry.aabbs,
+                                               VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, true,
+                                               "VUID-VkAccelerationStructureGeometryKHR-aabbs-parameter", kVUIDUndefined);
+                    skip |= ValidateStructType(
                         api_name, ParameterName("pInfos[%i].ppGeometries[%i]->geometry.aabbs", ParameterName::IndexVector{i, j}),
                         "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR",
                         &(pInfos[i].ppGeometries[j]->geometry.aabbs),
                         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR, false, kVUIDUndefined,
                         "VUID-VkAccelerationStructureGeometryAabbsDataKHR-sType-sType");
-                    skip |= validate_struct_pnext(
+                    skip |= ValidateStructPnext(
                         api_name,
                         ParameterName("pInfos[%i].ppGeometries[%i]->geometry.aabbs.pNext", ParameterName::IndexVector{i, j}), NULL,
                         pInfos[i].ppGeometries[j]->geometry.aabbs.pNext, 0, NULL, GeneratedVulkanHeaderVersion,
@@ -9484,12 +9479,12 @@ bool StatelessValidation::manual_PreCallValidateExportMetalObjectsEXT(VkDevice d
         VK_STRUCTURE_TYPE_EXPORT_METAL_DEVICE_INFO_EXT,       VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT,
         VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT, VK_STRUCTURE_TYPE_EXPORT_METAL_TEXTURE_INFO_EXT,
     };
-    skip |= validate_struct_pnext("vkExportMetalObjectsEXT", "pMetalObjectsInfo->pNext",
-                                  "VkExportMetalBufferInfoEXT, VkExportMetalCommandQueueInfoEXT, VkExportMetalDeviceInfoEXT, "
-                                  "VkExportMetalIOSurfaceInfoEXT, VkExportMetalSharedEventInfoEXT, VkExportMetalTextureInfoEXT",
-                                  pMetalObjectsInfo->pNext, allowed_structs.size(), allowed_structs.data(),
-                                  GeneratedVulkanHeaderVersion, "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext",
-                                  "VUID-VkExportMetalObjectsInfoEXT-sType-unique", false, true);
+    skip |= ValidateStructPnext("vkExportMetalObjectsEXT", "pMetalObjectsInfo->pNext",
+                                "VkExportMetalBufferInfoEXT, VkExportMetalCommandQueueInfoEXT, VkExportMetalDeviceInfoEXT, "
+                                "VkExportMetalIOSurfaceInfoEXT, VkExportMetalSharedEventInfoEXT, VkExportMetalTextureInfoEXT",
+                                pMetalObjectsInfo->pNext, allowed_structs.size(), allowed_structs.data(),
+                                GeneratedVulkanHeaderVersion, "VUID-VkExportMetalObjectsInfoEXT-pNext-pNext",
+                                "VUID-VkExportMetalObjectsInfoEXT-sType-unique", false, true);
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
