@@ -15,9 +15,9 @@
  *
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
-#include "video_session_state.h"
-#include "image_state.h"
-#include "state_tracker.h"
+#include "state_tracker/video_session_state.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/state_tracker.h"
 #include "layer_chassis_dispatch.h"
 
 VideoProfileDesc::VideoProfileDesc(const ValidationStateTracker *dev_data, VkVideoProfileInfoKHR const *profile)

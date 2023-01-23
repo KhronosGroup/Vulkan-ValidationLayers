@@ -27,9 +27,9 @@
  * Author: Nathaniel Cesario <nathaniel@lunarg.com>
  */
 
-#include "pipeline_layout_state.h"
-#include "state_tracker.h"
-#include "descriptor_sets.h"
+#include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/state_tracker.h"
+#include "state_tracker/descriptor_sets.h"
 
 // Dictionary of canonical form of the pipeline set layout of descriptor set layouts
 static PipelineLayoutSetLayoutsDict pipeline_layout_set_layouts_dict;

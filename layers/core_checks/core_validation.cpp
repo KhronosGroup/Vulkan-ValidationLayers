@@ -61,12 +61,12 @@
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
-#include "core_validation.h"
-#include "shader_validation.h"
+#include "core_checks/core_validation.h"
+#include "core_checks/shader_validation.h"
 #include "vk_layer_utils.h"
-#include "sync_utils.h"
-#include "sync_vuid_maps.h"
-#include "stateless_validation.h"
+#include "sync/sync_utils.h"
+#include "sync/sync_vuid_maps.h"
+#include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
 // these templates are defined in buffer_validation.cpp so we need to pull in the explicit instantiations from there

@@ -22,7 +22,7 @@
 #include "subresource_adapter.h"
 #include "vk_format_utils.h"
 #include <cmath>
-#include "image_state.h"
+#include "state_tracker/image_state.h"
 #include "layer_chassis_dispatch.h"
 
 namespace subresource_adapter {

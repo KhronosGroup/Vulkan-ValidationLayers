@@ -17,10 +17,10 @@
  *
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
-#include "sync_vuid_maps.h"
+#include "sync/sync_vuid_maps.h"
 #include "core_error_location.h"
-#include "device_state.h"
-#include "core_validation.h"
+#include "state_tracker/device_state.h"
+#include "core_checks/core_validation.h"
 #include <cassert>
 #include <algorithm>
 #include <array>

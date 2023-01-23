@@ -15,15 +15,15 @@
  * Author: Spencer Fricke <s.fricke@samsung.com>
  */
 
-#include "shader_module.h"
+#include "state_tracker/shader_module.h"
 
 #include <sstream>
 #include <string>
 
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
-#include "pipeline_state.h"
-#include "descriptor_sets.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/descriptor_sets.h"
 #include "spirv_grammar_helper.h"
 
 void DecorationSet::Add(uint32_t decoration, uint32_t value) {

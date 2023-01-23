@@ -95,8 +95,6 @@ add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
 target_include_directories(vk_layer_validation_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/layers
-    ${PROJECT_SOURCE_DIR}/layers/best_practices
-    ${PROJECT_SOURCE_DIR}/layers/generated
 )
 
 if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)

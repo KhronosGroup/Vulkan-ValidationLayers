@@ -21,7 +21,7 @@
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.

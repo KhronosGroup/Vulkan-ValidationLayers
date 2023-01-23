@@ -46,7 +46,7 @@
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 #include "enum_flag_bits.h"
 
 bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFlagsEXT lib_flags,

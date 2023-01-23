@@ -27,7 +27,7 @@
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #pragma once
-#include "base_node.h"
+#include "state_tracker/base_node.h"
 #include "hash_vk_types.h"
 #include "vk_layer_utils.h"
 

@@ -27,9 +27,9 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
-#include "buffer_state.h"
+#include "state_tracker/buffer_state.h"
 #include "layer_chassis_dispatch.h"
-#include "state_tracker.h"
+#include "state_tracker/state_tracker.h"
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleType(const VkBufferCreateInfo *create_info) {
     const auto *external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);

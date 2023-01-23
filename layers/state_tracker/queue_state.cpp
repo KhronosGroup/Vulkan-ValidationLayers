@@ -24,9 +24,9 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Tobias Hector <tobias.hector@amd.com>
  */
-#include "queue_state.h"
-#include "cmd_buffer_state.h"
-#include "state_tracker.h"
+#include "state_tracker/queue_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/state_tracker.h"
 
 using SemOp = SEMAPHORE_STATE::SemOp;
 

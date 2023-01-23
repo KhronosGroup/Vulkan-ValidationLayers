@@ -479,7 +479,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         # Headers
         write('#include "chassis.h"', file=self.outFile)
         self.newline()
-        write('#include "stateless_validation.h"', file=self.outFile)
+        write('#include "stateless/stateless_validation.h"', file=self.outFile)
         write('#include "enum_flag_bits.h"', file=self.outFile)
         self.newline()
     #

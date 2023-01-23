@@ -17,7 +17,7 @@
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
-#include "best_practices_error_enums.h"
+#include "best_practices/best_practices_error_enums.h"
 #include "core_validation_error_enums.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {

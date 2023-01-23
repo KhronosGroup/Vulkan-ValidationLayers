@@ -17,7 +17,6 @@
 
 LOCAL_PATH := $(call my-dir)
 SRC_DIR := ../..
-LAYER_DIR := ../generated
 THIRD_PARTY := ../third_party
 
 VULKAN_INCLUDE := $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Headers/include
@@ -98,13 +97,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_layout_map.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/subresource_adapter.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/core_checks \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/gpu_av \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/state_tracker \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/stateless \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/sync \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/shaderc/third_party/spirv-tools/external/spirv-headers/include \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/robin-hood-hashing/src/include
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
@@ -157,7 +150,6 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
@@ -214,7 +206,6 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(SRC_DIR)/layers/best_practices \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \

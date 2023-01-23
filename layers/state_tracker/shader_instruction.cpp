@@ -15,8 +15,8 @@
  * Author: Spencer Fricke <spencerfricke@gmail.com>
  */
 
-#include "shader_instruction.h"
-#include "shader_module.h"
+#include "state_tracker/shader_instruction.h"
+#include "state_tracker/shader_module.h"
 #include "spirv_grammar_helper.h"
 
 Instruction::Instruction(std::vector<uint32_t>::const_iterator it) : result_id_(0), type_id_(0) {

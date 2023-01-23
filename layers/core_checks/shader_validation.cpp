@@ -21,7 +21,7 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  */
 
-#include "shader_validation.h"
+#include "core_checks/shader_validation.h"
 
 #include <cassert>
 #include <cinttypes>
@@ -35,7 +35,7 @@
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 #include "spirv_grammar_helper.h"
 #include "xxhash.h"
 

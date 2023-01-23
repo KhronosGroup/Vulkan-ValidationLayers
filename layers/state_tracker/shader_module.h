@@ -25,9 +25,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "shader_instruction.h"
-#include "base_node.h"
-#include "sampler_state.h"
+#include "state_tracker/shader_instruction.h"
+#include "state_tracker/base_node.h"
+#include "state_tracker/sampler_state.h"
 #include <spirv/unified1/spirv.hpp>
 #include "spirv-tools/optimizer.hpp"
 

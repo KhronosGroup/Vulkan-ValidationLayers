@@ -26,8 +26,8 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 #pragma once
-#include "device_memory_state.h"
-#include "buffer_state.h"
+#include "state_tracker/device_memory_state.h"
+#include "state_tracker/buffer_state.h"
 #include "layer_chassis_dispatch.h"
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {

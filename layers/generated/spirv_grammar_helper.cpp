@@ -4,7 +4,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
 
 #include "vk_layer_data.h"
 #include "spirv_grammar_helper.h"
-#include "shader_instruction.h"
+#include "state_tracker/shader_instruction.h"
 
 // All information related to each SPIR-V opcode instruction
 struct InstructionInfo {

@@ -18,8 +18,8 @@
  * Author: Locke Lin <locke@lunarg.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
-#include "sync_utils.h"
-#include "state_tracker.h"
+#include "sync/sync_utils.h"
+#include "state_tracker/state_tracker.h"
 #include "sync_validation_types.h"
 #include "enum_flag_bits.h"
 

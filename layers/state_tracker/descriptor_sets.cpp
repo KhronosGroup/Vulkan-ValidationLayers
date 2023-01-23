@@ -21,8 +21,8 @@
  *         Jeremy Gebben <jeremyg@lunarg.com>
  */
 
-#include "descriptor_sets.h"
-#include "cmd_buffer_state.h"
+#include "state_tracker/descriptor_sets.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 static DESCRIPTOR_POOL_STATE::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
     DESCRIPTOR_POOL_STATE::TypeCountMap counts;

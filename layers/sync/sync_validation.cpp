@@ -24,8 +24,8 @@
 #include <memory>
 #include <vector>
 
-#include "sync_validation.h"
-#include "sync_utils.h"
+#include "sync/sync_validation.h"
+#include "sync/sync_utils.h"
 
 // Utilities to DRY up Get... calls
 template <typename Map, typename Key = typename Map::key_type, typename RetVal = std::optional<typename Map::mapped_type>>

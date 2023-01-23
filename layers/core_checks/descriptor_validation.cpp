@@ -22,8 +22,8 @@
  */
 
 #include "core_validation_error_enums.h"
-#include "core_validation.h"
-#include "descriptor_sets.h"
+#include "core_checks/core_validation.h"
+#include "state_tracker/descriptor_sets.h"
 
 using DescriptorSet = cvdescriptorset::DescriptorSet;
 using DescriptorSetLayout = cvdescriptorset::DescriptorSetLayout;

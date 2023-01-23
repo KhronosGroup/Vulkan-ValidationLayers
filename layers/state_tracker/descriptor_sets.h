@@ -21,12 +21,12 @@
 #ifndef CORE_VALIDATION_DESCRIPTOR_SETS_H_
 #define CORE_VALIDATION_DESCRIPTOR_SETS_H_
 
-#include "base_node.h"
-#include "buffer_state.h"
-#include "image_state.h"
-#include "pipeline_state.h"
-#include "ray_tracing_state.h"
-#include "sampler_state.h"
+#include "state_tracker/base_node.h"
+#include "state_tracker/buffer_state.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/sampler_state.h"
 #include "hash_vk_types.h"
 #include "vk_layer_logging.h"
 #include "vk_layer_utils.h"
