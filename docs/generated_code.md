@@ -27,7 +27,7 @@ cmake --build . --target VulkanVL_generated_source
 
 The Vulkan code is generated from the [vk.xml](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/registry/vk.xml) and uses the python helper functions in the `Vulkan-Headers/registry` folder.
 
-The SPIR-V code is generated from the [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/master/include/spirv/unified1/spirv.core.grammar.json)
+The SPIR-V code is generated from the [SPIR-V Grammer](https://github.com/KhronosGroup/SPIRV-Headers/blob/main/include/spirv/unified1/spirv.core.grammar.json)
 
 ## Tips
 

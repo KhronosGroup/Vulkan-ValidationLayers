@@ -3606,7 +3606,6 @@ void addFullTestCommentIfPresent(const ::testing::TestInfo &test_info, std::stri
     }
 }
 
-// Inspired by https://github.com/google/googletest/blob/master/googletest/docs/AdvancedGuide.md
 class LogcatPrinter : public ::testing::EmptyTestEventListener {
     // Called before a test starts.
     virtual void OnTestStart(const ::testing::TestInfo &test_info) {

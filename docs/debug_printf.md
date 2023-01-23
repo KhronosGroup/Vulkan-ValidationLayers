@@ -1,5 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2020-2022 LunarG, Inc. -->
+<!-- Copyright 2020-2023 LunarG, Inc. -->
+<!-- Copyright 2020-2023 Valve Corporation -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -188,7 +189,7 @@ unrelated to Debug Printf, making it difficult to find the desired output.
 
 ### Other References
 Documentation for the GL_EXT_debug_printf extension can be found
-[here](https://github.com/KhronosGroup/GLSL/blob/master/extensions/ext/GLSL_EXT_debug_printf.txt)
+[here](https://github.com/KhronosGroup/GLSL/blob/main/extensions/ext/GLSL_EXT_debug_printf.txt)
 
 There is a validation layer test that demonstrates the simple and programmatic use of Debug
 Printf. It is called "GpuDebugPrintf" and is in vklayertests_gpu.cpp in the

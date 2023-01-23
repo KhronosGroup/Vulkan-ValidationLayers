@@ -1,5 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2022 LunarG, Inc. -->
+<!-- Copyright 2015-2023 LunarG, Inc. -->
+<!-- Copyright 2015-2023 Valve Corporation -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -331,7 +332,7 @@ This doesn't present any particular problem, but it does raise some issues:
 ### Code Structure and Relationship to the Core Validation Layer
 
 The GPU-Assisted Validation code is largely contained in one
-[file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/layers/gpu_validation.cpp), with "hooks" in
+[file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/layers/gpu_validation.cpp), with "hooks" in
 the other validation code that call functions in this file.
 These hooks in the validation code look something like this:
 
@@ -696,7 +697,7 @@ The validation layer can continue to read valid records until it sees a Record L
 
 The programmatic interface for the above informal description is codified in the
 [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) repository in file
-[`instrument.hpp`](https://github.com/KhronosGroup/SPIRV-Tools/blob/master/include/spirv-tools/instrument.hpp).
+[`instrument.hpp`](https://github.com/KhronosGroup/SPIRV-Tools/blob/main/include/spirv-tools/instrument.hpp).
 It consists largely of integer constant definitions for the codes and values mentioned above and
 offsets into the record for locating each item.
 

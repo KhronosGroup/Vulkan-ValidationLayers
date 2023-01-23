@@ -31,7 +31,7 @@
 # Notes:
 #    Exits with non 0 exit code if formatting is needed.
 #    Requires python3 to run correctly
-#    In standalone mode (outside of CI), changes must be rebased on master
+#    In standalone mode (outside of CI), changes must be rebased on main
 #        to get meaningful and complete results
 
 import os
@@ -193,7 +193,7 @@ def VerifyCommitMessageFormat(commit, target_files):
         CPrint('HELP_MSG', "     state_tracker: Remove 'using std::*' statements")
         CPrint('HELP_MSG', "     stateless: Account for DynStateWithCount for multiViewport\n")
         CPrint('HELP_MSG', "Refer to this document for additional detail:")
-        CPrint('HELP_MSG', "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/CONTRIBUTING.md#coding-conventions-and-formatting")
+        CPrint('HELP_MSG', "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/CONTRIBUTING.md#coding-conventions-and-formatting")
     return retval
 
 #
@@ -232,7 +232,7 @@ def VerifyTypeAssign(commit, target_files):
 #
 # Entrypoint
 def main():
-    DEFAULT_REFSPEC = 'origin/master'
+    DEFAULT_REFSPEC = 'origin/main'
 
     parser = argparse.ArgumentParser(description='''Usage: python3 ./scripts/check_code_format.py
     - Reqires python3 and clang-format 7.0+
@@ -240,11 +240,11 @@ def main():
     - May produce inaccurate clang-format results if local branch is not rebased on the TARGET_REFSPEC
     ''', formatter_class=RawDescriptionHelpFormatter)
     parser.add_argument('--target-refspec', metavar='TARGET_REFSPEC', type=str, dest='target_refspec', help = 'Refspec to '
-        + 'diff against (default is origin/master)', default=DEFAULT_REFSPEC)
+        + 'diff against (default is origin/main)', default=DEFAULT_REFSPEC)
     parser.add_argument('--base-refspec', metavar='BASE_REFSPEC', type=str, dest='base_refspec', help = 'Base refspec to '
         + ' compare (default is HEAD)', default='HEAD')
-    parser.add_argument('--fetch-main', dest='fetch_main', action='store_true', help='Fetch the master branch first.'
-        + ' Useful with --target-refspec=FETCH_HEAD to compare against what is currently on master')
+    parser.add_argument('--fetch-main', dest='fetch_main', action='store_true', help='Fetch the main branch first.'
+        + ' Useful with --target-refspec=FETCH_HEAD to compare against what is currently on main')
     args = parser.parse_args()
 
     if sys.version_info[0] != 3:
@@ -258,14 +258,14 @@ def main():
     base_refspec = args.base_refspec
 
     if args.fetch_main:
-        print('Fetching master branch...')
-        subprocess.check_call(['git', 'fetch', 'https://github.com/KhronosGroup/Vulkan-ValidationLayers.git', 'master'])
+        print('Fetching main branch...')
+        subprocess.check_call(['git', 'fetch', 'https://github.com/KhronosGroup/Vulkan-ValidationLayers.git', 'main'])
 
     # Check if this is a merge commit
     commit_parents = check_output(['git', 'rev-list', '--parents', '-n', '1', 'HEAD'])
     if len(commit_parents.split(b' ')) > 2:
-        # If this is a merge commit, this is a PR being built, and has been merged into master for testing.
-        # The first parent (HEAD^) is going to be master, the second parent (HEAD^2) is going to be the PR commit.
+        # If this is a merge commit, this is a PR being built, and has been merged into main for testing.
+        # The first parent (HEAD^) is going to be main, the second parent (HEAD^2) is going to be the PR commit.
         # TODO (ncesario) We should *ONLY* get here when on github CI, building a PR. Should probably print a
         #      warning if this happens locally.
         target_refspec = 'HEAD^'

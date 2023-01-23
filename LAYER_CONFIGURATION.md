@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019,2022 LunarG, Inc. -->
-
+<!-- Copyright 2015-2023 LunarG, Inc. -->
+<!-- Copyright 2015-2023 Valve Corporation -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -33,7 +33,7 @@ In order to enable a Vulkan layer from the command-line, you must first make sur
   1. The layer's Manifest JSON file is found by the Vulkan Desktop Loader because it is in:
       * One of the standard operating system install paths
       * It was added using one of the layer path environment variables (`VK_LAYER_PATH` or `VK_ADD_LAYER_PATH`).
-      * See the `Layer Discovery` section of the Vulkan Loader's [Layer Interface doc](https://github.com/KhronosGroup/Vulkan-Loader/blob/master/docs/LoaderLayerInterface.md).
+      * See the `Layer Discovery` section of the Vulkan Loader's [Layer Interface doc](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md).
   2. The layer's library file is able to be loaded by the Vulkan Desktop Loader because it is in:
       * A standard library path for the operating system
       * The library path has been updated using an operating system-specific mechanism such as:
@@ -117,7 +117,7 @@ $ export VK_LOADER_LAYERS_ENABLE=*api_dump,*validation
 ```
 
 More info about the new layer filtering environment variables can be found in the `Layer Filtering` section of the
-of the [Loader Layer Documentation](https://github.com/KhronosGroup/Vulkan-Loader/blob/master/docs/LoaderLayerInterface.md).
+of the [Loader Layer Documentation](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md).
 
 #### Older Loaders
 

@@ -38,7 +38,7 @@ struct AtomicInstructionInfo {
 // Provides easy access to len, opcode, and content words without the caller needing to care too much about the physical SPIRV module layout.
 //
 // For more information of the physical module layout to help understand this struct:
-// https://github.com/KhronosGroup/SPIRV-Guide/blob/master/chapters/parsing_instructions.md
+// https://github.com/KhronosGroup/SPIRV-Guide/blob/main/chapters/parsing_instructions.md
 class Instruction {
     public:
     Instruction(std::vector<uint32_t>::const_iterator it);

@@ -48,7 +48,7 @@ to work on an issue that is assigned, simply coordinate with the current assigne
   - Implemented VUID checks must be accompanied by relevant tests
   - Validation source code should be in a separate commit from the tests, unless there are interdependencies. The repo should compile and
     pass all tests after each commit.
-* Please base your fixes on the master branch. SDK branches are generally not updated except for critical fixes needed to repair an SDK release.
+* Please base your fixes on the `main` branch. SDK branches are generally not updated except for critical fixes needed to repair an SDK release.
 * The resulting Pull Request will be assigned to a repository maintainer. It is the maintainer's responsibility to ensure the Pull Request
   passes the Google/LunarG internal CI processes. Once the Pull Request has been approved and is passing internal CI, a repository maintainer
   will merge the PR.
@@ -104,10 +104,6 @@ that to be accepted into the repository, the pull request must [pass all tests](
 
 * [How to setup tests to run](./tests) and [overview for creating tests](docs/creating_tests.md).
 
-#### **GitHub Cloud CI Testing**
-Pull Requests to GitHub are tested in the cloud on Linux and Windows VMs. The Linux VMs use [Github Actions](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) with the sequence of commands driven by the [ci_build.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.github/workflows/ci_build.yml) file. The Windows VMs use [AppVeyor](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) with the sequence of commands driven by the [.appveyor.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.appveyor.yml) file.
-
-The Linux testing includes iterating on all of the validation layer tests over multiple [different device](https://github.com/KhronosGroup/Vulkan-ValidationLayers/tree/master/tests/device_profiles) profiles using the [Profile Layer](https://github.com/KhronosGroup/Vulkan-Profiles) in combination with the [mock icd](https://github.com/KhronosGroup/Vulkan-Tools/tree/master/icd). This is a fast way to simulate testing across different devices. Any new tests must pass across all device profiles.
 
 #### **Special Considerations for Validation Layers**
 * **Validation Checks:**  Validation checks are carried out by the Khronos Validation layer. The CoreChecks validation object
