@@ -1150,7 +1150,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 
             if (is_const_param) {
                 VkDescriptorSetLayoutBindingFlagsCreateInfo *structure = (VkDescriptorSetLayoutBindingFlagsCreateInfo *) header;
-                skip |= ValidateFlagsArray("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, false);
+                skip |= ValidateFlagsArray("VkDescriptorSetLayoutBindingFlagsCreateInfo", "bindingCount", "pBindingFlags", "VkDescriptorBindingFlagBits", AllVkDescriptorBindingFlagBits, structure->bindingCount, structure->pBindingFlags, false, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-parameter");
             }
         } break;
 
@@ -5696,7 +5696,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
 
             skip |= ValidateArray("vkQueueSubmit", ParameterName("pSubmits[%i].waitSemaphoreCount", ParameterName::IndexVector{ submitIndex }), ParameterName("pSubmits[%i].pWaitSemaphores", ParameterName::IndexVector{ submitIndex }), pSubmits[submitIndex].waitSemaphoreCount, &pSubmits[submitIndex].pWaitSemaphores, false, true, kVUIDUndefined, "VUID-VkSubmitInfo-pWaitSemaphores-parameter");
 
-            skip |= ValidateFlagsArray("vkQueueSubmit", ParameterName("pSubmits[%i].waitSemaphoreCount", ParameterName::IndexVector{ submitIndex }), ParameterName("pSubmits[%i].pWaitDstStageMask", ParameterName::IndexVector{ submitIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pSubmits[submitIndex].waitSemaphoreCount, pSubmits[submitIndex].pWaitDstStageMask, false, false);
+            skip |= ValidateFlagsArray("VkSubmitInfo", ParameterName("pSubmits[%i].waitSemaphoreCount", ParameterName::IndexVector{ submitIndex }), ParameterName("pSubmits[%i].pWaitDstStageMask", ParameterName::IndexVector{ submitIndex }), "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pSubmits[submitIndex].waitSemaphoreCount, pSubmits[submitIndex].pWaitDstStageMask, false, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
 
             skip |= ValidateArray("vkQueueSubmit", ParameterName("pSubmits[%i].commandBufferCount", ParameterName::IndexVector{ submitIndex }), ParameterName("pSubmits[%i].pCommandBuffers", ParameterName::IndexVector{ submitIndex }), pSubmits[submitIndex].commandBufferCount, &pSubmits[submitIndex].pCommandBuffers, false, true, kVUIDUndefined, "VUID-VkSubmitInfo-pCommandBuffers-parameter");
 
@@ -19439,7 +19439,7 @@ bool StatelessValidation::PreCallValidateCmdSetColorWriteMaskEXT(
     bool skip = false;
     if (!IsExtEnabled(device_extensions.vk_khr_get_physical_device_properties2)) skip |= OutputExtensionError("vkCmdSetColorWriteMaskEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!IsExtEnabled(device_extensions.vk_ext_extended_dynamic_state3)) skip |= OutputExtensionError("vkCmdSetColorWriteMaskEXT", VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-    skip |= ValidateFlagsArray("vkCmdSetColorWriteMaskEXT", "attachmentCount", "pColorWriteMasks", "VkColorComponentFlagBits", AllVkColorComponentFlagBits, attachmentCount, pColorWriteMasks, true, false);
+    skip |= ValidateFlagsArray("vkCmdSetColorWriteMaskEXT", "attachmentCount", "pColorWriteMasks", "VkColorComponentFlagBits", AllVkColorComponentFlagBits, attachmentCount, pColorWriteMasks, true, "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
     return skip;
 }
 

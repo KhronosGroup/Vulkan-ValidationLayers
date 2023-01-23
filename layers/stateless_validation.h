@@ -863,28 +863,22 @@ class StatelessValidation : public ValidationObject {
      * @param count Number of VkFlags values in the array.
      * @param array Array of VkFlags value to validate.
      * @param count_required The 'count' parameter may not be 0 when true.
-     * @param array_required The 'array' parameter may not be NULL when true.
+     * @param array_required_vuid The VUID for the 'array' parameter.
      * @return Boolean value indicating that the call should be skipped.
      */
     bool ValidateFlagsArray(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
                             const char *flag_bits_name, VkFlags all_flags, uint32_t count, const VkFlags *array,
-                            bool count_required, bool array_required) const {
+                            bool count_required, const char *array_required_vuid) const {
         bool skip_call = false;
 
-        if ((count == 0) || (array == nullptr)) {
-            skip_call |= ValidateArray(api_name, count_name, array_name, count, &array, count_required, array_required,
-                                       kVUIDUndefined, kVUIDUndefined);
+        if (array == nullptr) {
+            // Flag arrays always need to have a valid array
+            skip_call |= ValidateArray(api_name, count_name, array_name, count, &array, count_required, true, kVUIDUndefined,
+                                       array_required_vuid);
         } else {
             // Verify that all VkFlags values in the array
             for (uint32_t i = 0; i < count; ++i) {
-                if (array[i] == 0) {
-                    // Current XML registry logic for validity generation uses the array parameter's optional tag to determine if
-                    // elements in the array are allowed be 0
-                    if (array_required) {
-                        skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: value of %s[%d] must not be 0",
-                                              api_name, array_name.get_name().c_str(), i);
-                    }
-                } else if ((array[i] & (~all_flags)) != 0) {
+                if ((array[i] & (~all_flags)) != 0) {
                     skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
                                           "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
                                           array_name.get_name().c_str(), i, flag_bits_name);
