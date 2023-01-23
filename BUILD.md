@@ -158,24 +158,7 @@ directories and place them in any location (see option `--dir` in the
   `VVL_CPP_STANDARD` option at cmake generation time. Current code is written
   to compile under C++17.
 
-## Cmake
-
-### EXPORT_COMPILE_COMMANDS
-
-There are 2 methods to enable exporting compile commands:
-
-
-```bash
-# 1) Set environment variables
-# Requires CMake 3.17 (https://cmake.org/cmake/help/latest/envvar/CMAKE_EXPORT_COMPILE_COMMANDS.html)
-export CMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-# 2) Pass in cache variables
-cmake ... -D CMAKE_EXPORT_COMPILE_COMMANDS=ON
-```
-
-NOTE: Modern tools will generally enable exporting compile commands for you (e.g. VSCode).
-Also `CMAKE_EXPORT_COMPILE_COMMANDS` is implemented only by Makefile and Ninja generators. For other generators, this option is ignored.
+## CMake
 
 ### CMakePresets.json (3.21+)
 
