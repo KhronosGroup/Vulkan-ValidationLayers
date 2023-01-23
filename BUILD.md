@@ -465,9 +465,6 @@ indicated by *install_dir*:
 - *install_dir*`/share/vulkan/explicit_layer.d` : The Vulkan validation layer
   JSON files (Linux and MacOS)
 
-The `uninstall` target can be used to remove the above files from the install
-directory.
-
 ### Windows Install Target
 
 The CMake project also generates an "install" target that you can use to copy
@@ -529,7 +526,3 @@ operation.
 > `/usr/local`, which would be used if you do not specify
 > `CMAKE_INSTALL_PREFIX`. In this case, you may need to use `sudo` to install
 > to system directories later when you run `make install`.
-
-To uninstall the files from the system directories, you can execute:
-
-    sudo make uninstall
