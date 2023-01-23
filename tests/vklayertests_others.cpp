@@ -617,8 +617,14 @@ TEST_F(VkLayerTest, RequiredParameter) {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = 1;
     // Set a null pointer for pWaitSemaphores
-    submitInfo.pWaitSemaphores = NULL;
+    submitInfo.pWaitSemaphores = nullptr;
     submitInfo.pWaitDstStageMask = &stageFlags;
+    vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-parameter");
+    submitInfo.pWaitSemaphores = &semaphore;
+    submitInfo.pWaitDstStageMask = nullptr;
     vk::QueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
@@ -9884,6 +9890,18 @@ TEST_F(VkLayerTest, ValidateExtendedDynamicState3Enabled) {
         m_errorMonitor->VerifyFound();
         vk::CmdEndRenderPass(commandBuffer.handle());
 
+        commandBuffer.end();
+    }
+
+    if (extended_dynamic_state3_features.extendedDynamicState3ColorWriteMask) {
+        auto vkCmdSetColorWriteMaskEXT =
+            (PFN_vkCmdSetColorWriteMaskEXT)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetColorWriteMaskEXT");
+
+        VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+        commandBuffer.begin();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetColorWriteMaskEXT-pColorWriteMasks-parameter");
+        vkCmdSetColorWriteMaskEXT(commandBuffer.handle(), 0U, 1U, nullptr);
+        m_errorMonitor->VerifyFound();
         commandBuffer.end();
     }
 }

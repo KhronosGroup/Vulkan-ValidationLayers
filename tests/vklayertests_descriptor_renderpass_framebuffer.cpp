@@ -7124,18 +7124,25 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
         {VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT}};
     auto flags_create_info = LvlInitStruct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
     flags_create_info.bindingCount = size32(flags);
-    flags_create_info.pBindingFlags = flags.data();
+    flags_create_info.pBindingFlags = nullptr;
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     auto ds_layout_ci = LvlInitStruct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
     ds_layout_ci.bindingCount = 1;
     ds_layout_ci.pBindings = &binding;
 
+    VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+    {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-parameter");
+        vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &dsl);
+        m_errorMonitor->VerifyFound();
+    }
+
     {
         // VU for VkDescriptorSetLayoutBindingFlagsCreateInfoEXT::bindingCount
+        flags_create_info.pBindingFlags = flags.data();
         flags_create_info.bindingCount = 2;
 
-        VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-bindingCount-03002");
         vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &dsl);
         m_errorMonitor->VerifyFound();
@@ -7144,7 +7151,6 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
     flags_create_info.bindingCount = 1;
 
     {
-        VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
         // set is missing UPDATE_AFTER_BIND_POOL flag.
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutCreateInfo-flags-03000");
         // binding uses a feature we disabled
