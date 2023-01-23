@@ -343,10 +343,9 @@ you can get it with something like the following:
 
 #### Additional OSX System Requirements
 
-Tested on OSX version 10.13.3
+Tested on OSX version 10.15
 
 Setup Homebrew and components
-
 
 - Ensure Homebrew is at the beginning of your PATH:
 
@@ -428,7 +427,7 @@ To create and open an Xcode project:
 
 ```bash
 cmake -G Xcode -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Debug ..
-open VULKAN.xcodeproj
+cmake --open .
 ```
 
 Within Xcode, you can select Debug or Release builds in the Build Settings of the project.
@@ -445,68 +444,16 @@ indicated by *install_dir*:
 The `uninstall` target can be used to remove the above files from the install
 directory.
 
-### Windows Install Target
+### Software Installation
 
-The CMake project also generates an "install" target that you can use to copy
-the primary build artifacts to a specific location using a "bin, include, lib"
-style directory structure. This may be useful for collecting the artifacts and
-providing them to another project that is dependent on them.
+After you have built your project you can install using CMake's install functionality.
 
-The default location is `$CMAKE_BINARY_DIR\install`, but can be changed with
-the `CMAKE_INSTALL_PREFIX` variable when first generating the project build
-files with CMake.
+CMake Docs:
+- [Software Installation Guide](https://cmake.org/cmake/help/latest/guide/user-interaction/index.html#software-installation)
+- [CLI for installing a project](https://cmake.org/cmake/help/latest/manual/cmake.1.html#install-a-project)
 
-You can build the install target from the command line with:
-
-    cmake --build . --config Release --target install
-
-or build the `INSTALL` target from the Visual Studio solution explorer.
-
-### Linux Install Target
-
-Installing the files resulting from your build to the systems directories is
-optional since environment variables can usually be used instead to locate the
-binaries. There are also risks with interfering with binaries installed by
-packages. If you are certain that you would like to install your binaries to
-system directories, you can proceed with these instructions.
-
-Assuming that you've built the code as described above and the current
-directory is still `build`, you can execute:
-
-    sudo make install
-
-This command installs files to `/usr/local` if no `CMAKE_INSTALL_PREFIX` is
-specified when creating the build files with CMake:
-
-- `/usr/local/lib`:  Vulkan layers shared objects
-- `/usr/local/share/vulkan/explicit_layer.d`:  Layer JSON files
-
-You may need to run `ldconfig` in order to refresh the system loader search
-cache on some Linux systems.
-
-You can further customize the installation location by setting additional
-CMake variables to override their defaults. For example, if you would like to
-install to `/tmp/build` instead of `/usr/local`, on your CMake command line
-specify:
-
-    -DCMAKE_INSTALL_PREFIX=/tmp/build
-
-Then run `make install` as before. The install step places the files in
-`/tmp/build`. This may be useful for collecting the artifacts and providing
-them to another project that is dependent on them.
-
-See the CMake documentation for more details on using these variables to
-further customize your installation.
-
-Also see the `LoaderAndLayerInterface` document in the `loader` folder of the
-Vulkan-Loader repository for more information about loader and layer
-operation.
-
-> Note: For Linux, the default value for `CMAKE_INSTALL_PREFIX` is
-> `/usr/local`, which would be used if you do not specify
-> `CMAKE_INSTALL_PREFIX`. In this case, you may need to use `sudo` to install
-> to system directories later when you run `make install`.
-
-To uninstall the files from the system directories, you can execute:
-
-    sudo make uninstall
+```sh
+# EX: Installs Release artifacts into `build/install` directory.
+# NOTE: --config is only needed for multi-config generators (Visual Studio, Xcode, etc)
+cmake --install build/ --config Release --prefix build/install
+```
