@@ -1188,14 +1188,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         return checkExpr
     #
     # Generate check string for an array of VkFlags values
-    def makeFlagsArrayCheck(self, prefix, value, lenValue, valueRequired, lenValueRequired, funcPrintName, lenPrintName, valuePrintName, postProcSpec):
+    def makeFlagsArrayCheck(self, prefix, value, lenValueRequired, callerName, lenPrintName, valuePrintName, postProcSpec):
         checkExpr = []
         flagBitsName = value.type.replace('Flags', 'FlagBits')
         if not flagBitsName in self.flagBits:
             raise Exception('Unsupported parameter validation case: array of reserved VkFlags')
         else:
             allFlags = 'All' + flagBitsName
-            checkExpr.append('skip |= ValidateFlagsArray("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(funcPrintName, lenPrintName, valuePrintName, flagBitsName, allFlags, value.len, value.name, lenValueRequired, valueRequired, pf=prefix, **postProcSpec))
+            array_required_vuid = self.GetVuid(callerName, "%s-parameter" % (value.name))
+            checkExpr.append('skip |= ValidateFlagsArray("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, "{}", {}, {pf}{}, {pf}{}, {}, {});\n'.format(callerName, lenPrintName, valuePrintName, flagBitsName, allFlags, value.len, value.name, lenValueRequired, array_required_vuid, pf=prefix, **postProcSpec))
         return checkExpr
     #
     # Generate pNext check string
@@ -1504,7 +1505,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.type in self.handleTypes and value.isconst and not self.isHandleOptional(value, lenParam):
                         usedLines += self.makeHandleCheck(valuePrefix, value, lenParam, req, cvReq, funcName, lenDisplayName, valueDisplayName, postProcSpec)
                     elif value.type in self.flags and value.isconst:
-                        usedLines += self.makeFlagsArrayCheck(valuePrefix, value, lenParam, req, cvReq, funcName, lenDisplayName, valueDisplayName, postProcSpec)
+                        callerName = structTypeName if structTypeName else funcName
+                        usedLines += self.makeFlagsArrayCheck(valuePrefix, value, cvReq, callerName, lenDisplayName, valueDisplayName, postProcSpec)
                     elif value.isbool and value.isconst:
                         usedLines.append('skip |= ValidateBool32Array("{}", {ppp}"{}"{pps}, {ppp}"{}"{pps}, {pf}{}, {pf}{}, {}, {});\n'.format(funcName, lenDisplayName, valueDisplayName, value.len, value.name, cvReq, req, pf=valuePrefix, **postProcSpec))
                     elif value.israngedenum and value.isconst:
