@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2022 Valve Software
+ * Copyright 2014-2023 Valve Software
  * Copyright 2015-2022 Google Inc.
- * Copyright 2019-2022 LunarG, Inc.
+ * Copyright 2019-2023 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -430,7 +430,7 @@ void CheckAndroidVersion() {
     if ((target_version != 0) && (target_version < 26)) {
         LOGCONSOLE(
             "ERROR - Targeted Android version is %d and needs to be 26 or above. Please read "
-            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md for how to build the Validation Layers "
+            "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/BUILD.md for how to build the Validation Layers "
             "for Android 25 and below",
             target_version);
     }

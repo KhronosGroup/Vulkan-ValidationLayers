@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
-# Copyright (c) 2018 Valve Corporation
+# Copyright (c) 2018-2023 Valve Corporation
 # Copyright (c) 2018-2023 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -622,7 +622,7 @@ def main():
         '--ref',
         dest='ref',
         default='',
-        help="Override 'commit' with git reference. E.g., 'origin/master'")
+        help="Override 'commit' with git reference. E.g., 'origin/main'")
     parser.add_argument(
         '--no-build',
         dest='do_build',
