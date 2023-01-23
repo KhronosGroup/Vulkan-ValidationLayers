@@ -24,9 +24,9 @@
 #pragma once
 
 #include "chassis.h"
-#include "state_tracker.h"
-#include "image_state.h"
-#include "cmd_buffer_state.h"
+#include "state_tracker/state_tracker.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include <string>
 #include <chrono>
 

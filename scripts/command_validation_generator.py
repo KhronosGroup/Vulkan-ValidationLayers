@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021-2022 The Khronos Group Inc.
+# Copyright (c) 2021-2023 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2021-2022 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2021-2023 The Khronos Group Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -164,7 +164,7 @@ class CommandValidationOutputGenerator(OutputGenerator):
 
         if self.source_file:
             write('#include "vk_layer_logging.h"', file=self.outFile)
-            write('#include "core_validation.h"', file=self.outFile)
+            write('#include "core_checks/core_validation.h"', file=self.outFile)
         elif self.header_file:
             write('#pragma once', file=self.outFile)
             write('#include <array>', file=self.outFile)

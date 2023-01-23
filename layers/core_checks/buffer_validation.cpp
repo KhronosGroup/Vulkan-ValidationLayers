@@ -38,12 +38,12 @@
 #include "vk_typemap_helper.h"
 
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 #include "core_error_location.h"
-#include "shader_validation.h"
-#include "descriptor_sets.h"
-#include "sync_utils.h"
-#include "sync_vuid_maps.h"
+#include "core_checks/shader_validation.h"
+#include "state_tracker/descriptor_sets.h"
+#include "sync/sync_utils.h"
+#include "sync/sync_vuid_maps.h"
 
 using LayoutRange = image_layout_map::ImageSubresourceLayoutMap::RangeType;
 using LayoutEntry = image_layout_map::ImageSubresourceLayoutMap::LayoutEntry;

@@ -18,10 +18,10 @@
  * John Zulauf <jzulauf@lunarg.com>
  *
  */
-#include "image_layout_map.h"
+#include "state_tracker/image_layout_map.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
-#include "image_state.h"
-#include "cmd_buffer_state.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #endif
 
 namespace image_layout_map {

@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2021-2022 The Khronos Group Inc.
+# Copyright (c) 2021-2023 The Khronos Group Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -140,7 +140,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         copyright += '\n'
         copyright += '/***************************************************************************\n'
         copyright += ' *\n'
-        copyright += ' * Copyright (c) 2021-2022 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2021-2023 The Khronos Group Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -165,7 +165,7 @@ class SpirvGrammarHelperOutputGenerator(OutputGenerator):
         if self.sourceFile:
             write('#include "vk_layer_data.h"', file=self.outFile)
             write('#include "spirv_grammar_helper.h"', file=self.outFile)
-            write('#include "shader_instruction.h"', file=self.outFile)
+            write('#include "state_tracker/shader_instruction.h"', file=self.outFile)
         elif self.headerFile:
             write('#pragma once', file=self.outFile)
             write('#include <cstdint>', file=self.outFile)

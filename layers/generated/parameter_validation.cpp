@@ -25,7 +25,7 @@
 
 #include "chassis.h"
 
-#include "stateless_validation.h"
+#include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
 bool StatelessValidation::CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const char *api_name, const uint32_t promoted_version) const {

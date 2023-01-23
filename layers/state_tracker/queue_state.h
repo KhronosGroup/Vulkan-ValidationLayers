@@ -25,7 +25,7 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  */
 #pragma once
-#include "base_node.h"
+#include "state_tracker/base_node.h"
 #include <condition_variable>
 #include <deque>
 #include <future>

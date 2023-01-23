@@ -147,7 +147,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkCreateInstance',
             'vkCreateDevice',
             'vkEnumeratePhysicalDevices',
-            #'vkEnumeratePhysicalDeviceGroups',            
+            #'vkEnumeratePhysicalDeviceGroups',
             'vkGetPhysicalDeviceQueueFamilyProperties',
             'vkGetPhysicalDeviceQueueFamilyProperties2',
             'vkGetPhysicalDeviceQueueFamilyProperties2KHR',

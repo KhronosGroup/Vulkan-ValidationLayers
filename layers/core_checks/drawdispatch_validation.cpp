@@ -40,7 +40,7 @@
  */
 
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 
 // clang-format off
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {

@@ -27,10 +27,10 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
-#include "image_state.h"
-#include "pipeline_state.h"
-#include "descriptor_sets.h"
-#include "state_tracker.h"
+#include "state_tracker/image_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "state_tracker/descriptor_sets.h"
+#include "state_tracker/state_tracker.h"
 #include <limits>
 
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {

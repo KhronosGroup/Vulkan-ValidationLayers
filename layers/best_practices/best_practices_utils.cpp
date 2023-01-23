@@ -21,14 +21,14 @@
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 
-#include "best_practices_validation.h"
+#include "best_practices/best_practices_validation.h"
 #include "layer_chassis_dispatch.h"
-#include "best_practices_error_enums.h"
-#include "shader_validation.h"
-#include "sync_utils.h"
-#include "cmd_buffer_state.h"
-#include "device_state.h"
-#include "render_pass_state.h"
+#include "best_practices/best_practices_error_enums.h"
+#include "core_checks/shader_validation.h"
+#include "sync/sync_utils.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/device_state.h"
+#include "state_tracker/render_pass_state.h"
 
 #include <string>
 #include <bitset>

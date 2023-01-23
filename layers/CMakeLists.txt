@@ -57,7 +57,7 @@ target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils PUBLIC
     .
-    generated
+    generated # Needed otherwise VkLayer_utils won't install properly.
 )
 
 find_package(robin_hood CONFIG)
@@ -274,15 +274,6 @@ elseif(APPLE)
 else()
     target_link_options(VkLayer_khronos_validation PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_khronos_validation.map,-Bsymbolic,--exclude-libs,ALL)
 endif()
-
-target_include_directories(VkLayer_khronos_validation PUBLIC
-    best_practices
-    core_checks
-    gpu_av
-    state_tracker
-    stateless
-    sync
-)
 
 # Khronos validation additional dependencies
 if (USE_ROBIN_HOOD_HASHING)

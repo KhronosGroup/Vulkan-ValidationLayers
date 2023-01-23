@@ -100,13 +100,7 @@ config("vulkan_internal_config") {
 config("vulkan_layer_config") {
   include_dirs = [
     "layers",
-    "layers/best_practices",
-    "layers/core_checks",
     "layers/generated",
-    "layers/gpu_av",
-    "layers/state_tracker",
-    "layers/stateless",
-    "layers/sync",
   ]
   if (is_clang) {
     cflags = [ "-Wno-extra-semi" ]
@@ -318,13 +312,7 @@ config("vulkan_memory_allocator_config") {
 source_set("vulkan_layer_utils") {
   include_dirs = [
     "layers",
-    "layers/best_practices",
-    "layers/core_checks",
     "layers/generated",
-    "layers/gpu_av",
-    "layers/state_tracker",
-    "layers/stateless",
-    "layers/sync",
   ]
   sources = [
     "$vulkan_headers_dir/include/vulkan/vk_layer.h",

@@ -46,8 +46,8 @@
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
-#include "core_validation.h"
-#include "sync_utils.h"
+#include "core_checks/core_validation.h"
+#include "sync/sync_utils.h"
 #include "convert_to_renderpass2.h"
 
 bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE &rp1_state, const char *type2_string,

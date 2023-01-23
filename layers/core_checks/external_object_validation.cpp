@@ -41,7 +41,7 @@
 
 #include "vk_enum_string_helper.h"
 #include "chassis.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 
 bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *info) const {
     bool skip = false;

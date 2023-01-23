@@ -27,13 +27,13 @@
  */
 #pragma once
 #include "hash_vk_types.h"
-#include "base_node.h"
-#include "sampler_state.h"
-#include "ray_tracing_state.h"
-#include "render_pass_state.h"
-#include "shader_module.h"
-#include "pipeline_layout_state.h"
-#include "pipeline_sub_state.h"
+#include "state_tracker/base_node.h"
+#include "state_tracker/sampler_state.h"
+#include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/render_pass_state.h"
+#include "state_tracker/shader_module.h"
+#include "state_tracker/pipeline_layout_state.h"
+#include "state_tracker/pipeline_sub_state.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace cvdescriptorset {

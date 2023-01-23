@@ -25,7 +25,7 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
-#include "base_node.h"
+#include "state_tracker/base_node.h"
 #include "vk_layer_utils.h"
 
 BASE_NODE::~BASE_NODE() { Destroy(); }

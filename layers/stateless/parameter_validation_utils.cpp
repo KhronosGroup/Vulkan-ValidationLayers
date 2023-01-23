@@ -22,7 +22,7 @@
 #include <cmath>
 
 #include "chassis.h"
-#include "stateless_validation.h"
+#include "stateless/stateless_validation.h"
 #include "layer_chassis_dispatch.h"
 #include "core_validation_error_enums.h"
 #include "enum_flag_bits.h"

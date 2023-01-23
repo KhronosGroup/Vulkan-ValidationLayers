@@ -587,13 +587,13 @@ bool wrap_handles = true;
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 // Include layer validation object definitions
-#include "best_practices_validation.h"
-#include "core_validation.h"
-#include "gpu_validation.h"
+#include "best_practices/best_practices_validation.h"
+#include "core_checks/core_validation.h"
+#include "gpu_validation/gpu_validation.h"
 #include "object_lifetime_validation.h"
-#include "debug_printf.h"
-#include "stateless_validation.h"
-#include "sync_validation.h"
+#include "gpu_validation/debug_printf.h"
+#include "stateless/stateless_validation.h"
+#include "sync/sync_validation.h"
 #include "thread_safety.h"
 
 // This header file must be included after the above validation object class definitions

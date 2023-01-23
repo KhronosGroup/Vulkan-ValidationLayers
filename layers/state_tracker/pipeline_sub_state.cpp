@@ -17,9 +17,9 @@
  * Author: Nathaniel Cesario <nathaniel@lunarg.com>
  */
 
-#include "pipeline_sub_state.h"
+#include "state_tracker/pipeline_sub_state.h"
 
-#include "state_tracker.h"
+#include "state_tracker/state_tracker.h"
 
 VertexInputState::VertexInputState(const PIPELINE_STATE &p, const safe_VkGraphicsPipelineCreateInfo &create_info)
     : parent(p), input_state(create_info.pVertexInputState), input_assembly_state(create_info.pInputAssemblyState) {

@@ -25,7 +25,7 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  */
 #pragma once
-#include "base_node.h"
+#include "state_tracker/base_node.h"
 
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.

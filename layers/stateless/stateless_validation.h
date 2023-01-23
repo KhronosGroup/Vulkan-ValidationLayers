@@ -23,8 +23,8 @@
 
 #include "parameter_name.h"
 #include "vk_typemap_helper.h"
-#include "sync_utils.h"
-#include "cmd_buffer_state.h"
+#include "sync/sync_utils.h"
+#include "state_tracker/cmd_buffer_state.h"
 
 [[maybe_unused]] static const char *kVUID_PVError_RequiredParameter = "UNASSIGNED-GeneralParameterError-RequiredParameter";
 [[maybe_unused]] static const char *kVUID_PVError_UnrecognizedValue = "UNASSIGNED-GeneralParameterError-UnrecognizedValue";

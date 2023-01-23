@@ -25,8 +25,8 @@
  * Author: Tobias Hector <tobias.hector@amd.com>
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
-#include "device_memory_state.h"
-#include "image_state.h"
+#include "state_tracker/device_memory_state.h"
+#include "state_tracker/image_state.h"
 
 static VkExternalMemoryHandleTypeFlags GetExportHandleType(const VkMemoryAllocateInfo *p_alloc_info) {
     auto export_info = LvlFindInChain<VkExportMemoryAllocateInfo>(p_alloc_info->pNext);

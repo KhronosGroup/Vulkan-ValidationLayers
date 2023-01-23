@@ -35,11 +35,11 @@
 #include "vk_typemap_helper.h"
 
 #include "chassis.h"
-#include "state_tracker.h"
-#include "shader_validation.h"
-#include "sync_utils.h"
-#include "cmd_buffer_state.h"
-#include "render_pass_state.h"
+#include "state_tracker/state_tracker.h"
+#include "core_checks/shader_validation.h"
+#include "sync/sync_utils.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/render_pass_state.h"
 
 // NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
 //        attachments won't persist past the API entry point exit.

@@ -29,16 +29,16 @@
 
 #pragma once
 
-#include "state_tracker.h"
-#include "image_layout_map.h"
-#include "gpu_validation.h"
-#include "shader_validation.h"
+#include "state_tracker/state_tracker.h"
+#include "state_tracker/image_layout_map.h"
+#include "gpu_validation/gpu_validation.h"
+#include "core_checks/shader_validation.h"
 #include "core_error_location.h"
 #include "qfo_transfer.h"
-#include "cmd_buffer_state.h"
-#include "render_pass_state.h"
-#include "video_session_state.h"
-#include "sync_vuid_maps.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/render_pass_state.h"
+#include "state_tracker/video_session_state.h"
+#include "sync/sync_vuid_maps.h"
 
 // Set of VUID that need to go between core_validation.cpp and drawdispatch_validation.cpp
 struct DrawDispatchVuid {

@@ -28,7 +28,7 @@
  * Author: Daniel Rakos <daniel.rakos@rastergrid.com>
  */
 #pragma once
-#include "device_memory_state.h"
+#include "state_tracker/device_memory_state.h"
 #include "range_vector.h"
 
 class ValidationStateTracker;

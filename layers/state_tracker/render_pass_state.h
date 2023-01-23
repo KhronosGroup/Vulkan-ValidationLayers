@@ -26,7 +26,7 @@
  * Author: Jeremy Gebben <jeremyg@lunarg.com>
  */
 #pragma once
-#include "base_node.h"
+#include "state_tracker/base_node.h"
 #include "vk_safe_struct.h"
 
 class IMAGE_VIEW_STATE;

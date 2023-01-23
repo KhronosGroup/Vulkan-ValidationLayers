@@ -4,7 +4,7 @@
 
 /***************************************************************************
  *
- * Copyright (c) 2021-2022 The Khronos Group Inc.
+ * Copyright (c) 2021-2023 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include "vk_layer_logging.h"
-#include "core_validation.h"
+#include "core_checks/core_validation.h"
 
 static const std::array<const char *, CMD_RANGE_SIZE> kGeneratedMustBeRecordingList = {{
     kVUIDUndefined,
