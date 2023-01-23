@@ -5717,7 +5717,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (int overflow = 0; overflow < 3; ++overflow) {
+    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
         const uint32_t maxVsOutComp = m_device->props.limits.maxVertexOutputComponents + overflow;
@@ -5762,22 +5762,24 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
         };
 
         switch (overflow) {
-            case 2:
-                // just component limit (maxVertexOutputComponents)
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
+            case 0: {
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
+            }
             case 1: {
                 // component and location limit (maxVertexOutputComponents)
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
-            default:
-                assert(0);
-                [[fallthrough]];
-            case 0:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+            case 2: {
+                // just component limit (maxVertexOutputComponents)
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
+            }
+            default: {
+                assert(0);
+            }
         }
     }
 }
@@ -5849,7 +5851,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (int overflow = 0; overflow < 3; ++overflow) {
+    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -5936,10 +5938,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         };
         // maxTessellationControlPerVertexInputComponents and maxTessellationControlPerVertexOutputComponents
         switch (overflow) {
-            case 2: {
-                // in and out component limit
-                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
+            case 0: {
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
                 break;
             }
             case 1: {
@@ -5949,12 +5949,15 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
-            default:
-                assert(0);
-                [[fallthrough]];
-            case 0:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+            case 2: {
+                // in and out component limit
+                constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
+            }
+            default: {
+                assert(0);
+            }
         }
     }
 }
@@ -5968,7 +5971,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (int overflow = 0; overflow < 3; ++overflow) {
+    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -6057,6 +6060,10 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
 
         // maxTessellationEvaluationInputComponents and maxTessellationEvaluationOutputComponents
         switch (overflow) {
+            case 0: {
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                break;
+            }
             case 1: {
                 // (in and out component limit) and (in and out location limit)
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
@@ -6070,12 +6077,9 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
-            default:
+            default: {
                 assert(false);
-                [[fallthrough]];
-            case 0:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-                break;
+            }
         }
     }
 }
@@ -6089,7 +6093,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (int overflow = 0; overflow < 3; ++overflow) {
+    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -6166,6 +6170,10 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         };
         // maxGeometryInputComponents and maxGeometryOutputComponents
         switch (overflow) {
+            case 0: {
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                break;
+            }
             case 1: {
                 // (in and out component limit) and (in and out location limit) and maxGeometryTotalOutputComponents
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272",
@@ -6180,12 +6188,9 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, vuids);
                 break;
             }
-            default:
+            default: {
                 assert(0);
-                [[fallthrough]];
-            case 0:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-                break;
+            }
         }
     }
 }
@@ -6198,7 +6203,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // overflow == 0: no overflow, 1: too many components, 2: location number too large
-    for (int overflow = 0; overflow < 3; ++overflow) {
+    for (uint32_t overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
         const uint32_t maxFsInComp = m_device->props.limits.maxFragmentInputComponents + overflow;
@@ -6236,6 +6241,10 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         switch (overflow) {
+            case 0: {
+                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
+                break;
+            }
             case 1: {
                 // component and location limit (maxFragmentInputComponents)
                 constexpr std::array vuids = {"VUID-RuntimeSpirv-Location-06272", "VUID-RuntimeSpirv-Location-06272"};
@@ -6246,12 +6255,9 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
                 // just component limit (maxFragmentInputComponents)
                 CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-Location-06272");
                 break;
-            default:
+            default: {
                 assert(0);
-                [[fallthrough]];
-            case 0:
-                CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-                break;
+            }
         }
     }
 }
