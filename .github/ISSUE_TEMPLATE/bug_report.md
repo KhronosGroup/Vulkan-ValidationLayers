@@ -7,16 +7,32 @@ assignees: ''
 
 ---
 
-**Describe the Issue**
-Issue description.
-
-**Valid Usage ID**
-If applicable, please include the validation messages encountered leading up to the issue
-
 **Environment:**
  - OS: 
  - GPU:
  - SDK or header version if building from repo:
  - Options enabled (synchronization, best practices, etc.):
 
+**Describe the Issue**
+
+A clear and concise description of what the bug is.
+
+**Expected behavior**
+
+A clear and concise description of what you expected to happen.
+
+**Valid Usage ID**
+If applicable, please include the validation messages encountered leading up to the issue
+
 **Additional context**
+
+<details>
+<summary>code or terminal output</summary>
+
+```sh
+# callstacks, crashes, etc.
+# EX:
+Validation Error: [ VUID-vkCmdDrawMultiEXT-colorAttachmentCount-06188 ] Object 0: handle = 0x3d47e60 ...
+```
+
+</details>

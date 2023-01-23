@@ -14,4 +14,3 @@ Issue description:
 Please include the valid usage IDs for the checks you are requesting:
 
 **Additional Context**
-Any additional information:
