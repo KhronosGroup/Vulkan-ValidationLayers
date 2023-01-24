@@ -434,15 +434,17 @@ Within Xcode, you can select Debug or Release builds in the Build Settings of th
 
 ## Installed Files
 
-The `install` target installs the following files under the directory
-indicated by *install_dir*:
+The installation depends on the target platform
 
-- *install_dir*`/lib` : The Vulkan validation layer libraries
-- *install_dir*`/share/vulkan/explicit_layer.d` : The Vulkan validation layer
-  JSON files (Linux and MacOS)
+For UNIX operating systems:
 
-The `uninstall` target can be used to remove the above files from the install
-directory.
+- *install_dir*`/lib` : The Vulkan validation layer library
+- *install_dir*`/share/vulkan/explicit_layer.d` : The VkLayer_khronos_validation.json manifest
+
+For WIN32/MINGW:
+
+- *install_dir*`/bin` : The Vulkan validation layer library
+- *install_dir*`/bin` : The VkLayer_khronos_validation.json manifest
 
 ### Software Installation
 
