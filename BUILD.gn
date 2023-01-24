@@ -340,7 +340,7 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
     "layers/vk_mem_alloc.h",
-    "layers/xxhash.c",
+    "layers/xxhash.cpp",
     "layers/xxhash.h",
   ]
   defines = [ "XXH_NO_LONG_LONG" ]

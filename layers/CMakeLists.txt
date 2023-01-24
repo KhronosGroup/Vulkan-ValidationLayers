@@ -14,15 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ~~~
-
-# XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
-# We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
-#
-# v0.8.1 also has compilation issues that are removed by setting this define.
-# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
-# https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
-add_compile_definitions(XXH_NO_LONG_LONG)
-
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
     generated/vk_format_utils.h
@@ -51,8 +42,17 @@ target_sources(VkLayer_utils PRIVATE
     vk_layer_utils.h
     vk_layer_utils.cpp
     xxhash.h
-    xxhash.c
+    xxhash.cpp
 )
+
+# XXH_NO_LONG_LONG: removes compilation of algorithms relying on 64-bit types (XXH3 and XXH64). Only XXH32 will be compiled.
+# We only need XXH32 due to restrictions requiring a 32 bit hash. This also reduces binary size.
+#
+# v0.8.1 also has compilation issues that are removed by setting this define.
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/4639
+# https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4640
+target_compile_definitions(VkLayer_utils PUBLIC XXH_NO_LONG_LONG)
+
 target_link_libraries(VkLayer_utils PUBLIC Vulkan::Headers)
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils PUBLIC
@@ -99,7 +99,7 @@ else()
 endif()
 
 # Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(generated/parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
@@ -261,8 +261,6 @@ target_sources(VkLayer_khronos_validation PRIVATE
     subresource_adapter.cpp
     subresource_adapter.h
     vk_layer_settings_ext.h
-    xxhash.c
-    xxhash.h
 )
 
 target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
