@@ -4,11 +4,16 @@
         "name": "VK_LAYER_KHRONOS_validation",
         "type": "GLOBAL",
         "library_path": "@JSON_LIBRARY_PATH@",
-        "api_version": "@JSON_API_VERSION@",
+        "api_version": "1.3.239",
         "implementation_version": "1",
         "description": "Khronos Validation Layer",
         "introduction": "The main, comprehensive Khronos validation layer.\n\nVulkan is an Explicit API, enabling direct control over how GPUs actually work. By design, minimal error checking is done inside a Vulkan driver. Applications have full control and responsibility for correct operation. Any errors in how Vulkan is used can result in a crash. \n\nThe Khronos Valiation Layer can be enabled to assist development by enabling developers to verify their applications correctly use the Vulkan API.",
-        "platforms": [ "WINDOWS", "LINUX", "ANDROID", "MACOS" ],
+        "platforms": [
+            "WINDOWS",
+            "LINUX",
+            "ANDROID",
+            "MACOS"
+        ],
         "url": "https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html",
         "instance_extensions": [
             {
@@ -59,7 +64,12 @@
                 {
                     "label": "Standard",
                     "description": "Good default validation setup that balance validation coverage and performance.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX",
+                        "MACOS",
+                        "ANDROID"
+                    ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -68,21 +78,26 @@
                         },
                         {
                             "key": "disables",
-                            "value": [ "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT" ]
+                            "value": [
+                                "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT"
+                            ]
                         }
                     ]
                 },
                 {
                     "label": "Reduced-Overhead",
                     "description": "Disables some checks in the interest of better performance.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX",
+                        "MACOS"
+                    ],
                     "status": "STABLE",
                     "editor_state": "01110111111111111111111001111111111110",
                     "settings": [
                         {
                             "key": "enables",
-                            "value": [
-                            ]
+                            "value": []
                         },
                         {
                             "key": "disables",
@@ -100,7 +115,12 @@
                 {
                     "label": "Best Practices",
                     "description": "Provides warnings on valid API usage that is potential API misuse.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX",
+                        "MACOS",
+                        "ANDROID"
+                    ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -124,7 +144,12 @@
                 {
                     "label": "Synchronization",
                     "description": "Identify resource access conflicts due to missing or incorrect synchronization operations between actions reading or writing the same regions of memory.",
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX",
+                        "MACOS",
+                        "ANDROID"
+                    ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -147,7 +172,10 @@
                 {
                     "label": "GPU-Assisted",
                     "description": "Check for API usage errors at shader execution time.",
-                    "platforms": [ "WINDOWS", "LINUX" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX"
+                    ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -172,7 +200,10 @@
                 {
                     "label": "Debug Printf",
                     "description": "Debug shader code by \"printing\" any values of interest to the debug callback or stdout.",
-                    "platforms": [ "WINDOWS", "LINUX" ],
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX"
+                    ],
                     "status": "STABLE",
                     "settings": [
                         {
@@ -221,7 +252,9 @@
                                         "settings": [
                                             {
                                                 "key": "debug_action",
-                                                "value": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
+                                                "value": [
+                                                    "VK_DBG_LAYER_ACTION_LOG_MSG"
+                                                ]
                                             }
                                         ]
                                     }
@@ -238,7 +271,9 @@
                             "key": "VK_DBG_LAYER_ACTION_DEBUG_OUTPUT",
                             "label": "Debug Output",
                             "description": "Log a txt message using the Windows OutputDebugString function.",
-                            "platforms": [ "WINDOWS" ]
+                            "platforms": [
+                                "WINDOWS"
+                            ]
                         },
                         {
                             "key": "VK_DBG_LAYER_ACTION_BREAK",
@@ -246,7 +281,9 @@
                             "description": "Trigger a breakpoint if a debugger is in use."
                         }
                     ],
-                    "default": [ "VK_DBG_LAYER_ACTION_LOG_MSG" ]
+                    "default": [
+                        "VK_DBG_LAYER_ACTION_LOG_MSG"
+                    ]
                 },
                 {
                     "key": "report_flags",
@@ -391,7 +428,9 @@
                             "view": "ADVANCED"
                         }
                     ],
-                    "default": [ "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT" ]
+                    "default": [
+                        "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT"
+                    ]
                 },
                 {
                     "key": "enables",
@@ -406,7 +445,12 @@
                             "description": "This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
                             "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_SYNCHRONIZATION_VALIDATION_QUEUE_SUBMIT",
@@ -420,7 +464,10 @@
                             "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
                             "url": "${LUNARG_SDK}/debug_printf.html",
                             "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ],
                             "settings": [
                                 {
                                     "key": "printf_to_stdout",
@@ -428,13 +475,18 @@
                                     "description": "Enable redirection of Debug Printf messages from the debug callback to stdout",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -445,13 +497,18 @@
                                     "description": "Set the verbosity of debug printf messages",
                                     "type": "BOOL",
                                     "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -467,13 +524,18 @@
                                         "max": 1048576
                                     },
                                     "unit": "bytes",
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -485,7 +547,10 @@
                             "label": "GPU-Assisted",
                             "description": "Check for API usage errors at shader execution time.",
                             "url": "${LUNARG_SDK}/gpu_validation.html",
-                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ],
                             "settings": [
                                 {
                                     "key": "gpuav_descriptor_indexing",
@@ -493,13 +558,18 @@
                                     "description": "Enable descriptor indexing access checking",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -510,13 +580,18 @@
                                     "description": "Enable buffer out of bounds checking",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
+                                                ]
                                             }
                                         ]
                                     },
@@ -527,7 +602,10 @@
                                             "description": "Warn on out of bounds accesses even if robustness is enabled",
                                             "type": "BOOL",
                                             "default": true,
-                                            "platforms": [ "WINDOWS", "LINUX" ],
+                                            "platforms": [
+                                                "WINDOWS",
+                                                "LINUX"
+                                            ],
                                             "dependence": {
                                                 "mode": "ALL",
                                                 "settings": [
@@ -546,13 +624,18 @@
                                     "description": "Enable draw indirect checking",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -563,13 +646,18 @@
                                     "description": "Enable dispatch indirect checking",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -580,13 +668,18 @@
                                     "description": "Use linear allocation algorithm",
                                     "type": "BOOL",
                                     "default": true,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "platforms": [
+                                        "WINDOWS",
+                                        "LINUX"
+                                    ],
                                     "dependence": {
                                         "mode": "ANY",
                                         "settings": [
                                             {
                                                 "key": "enables",
-                                                "value": [ "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT" ]
+                                                "value": [
+                                                    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT"
+                                                ]
                                             }
                                         ]
                                     }
@@ -597,40 +690,64 @@
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
                             "label": "Reserve Descriptor Set Binding Slot",
                             "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                            "platforms": [ "WINDOWS", "LINUX" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX"
+                            ]
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",
                             "label": "Best Practices",
                             "description": "Activating this feature enables the output of warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
                             "url": "${LUNARG_SDK}/best_practices.html",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",
                             "label": "ARM-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to ARM-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS",
+                                "ANDROID"
+                            ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",
                             "label": "AMD-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on AMD GPUs.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS"
+                            ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",
                             "label": "IMG-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on Imagination GPUs.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "MACOS"
+                            ]
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",
                             "label": "NVIDIA-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to NVIDIA-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [ "WINDOWS", "LINUX", "ANDROID" ]
+                            "platforms": [
+                                "WINDOWS",
+                                "LINUX",
+                                "ANDROID"
+                            ]
                         }
-
                     ],
                     "default": []
                 },
@@ -642,7 +759,12 @@
                     "status": "STABLE",
                     "type": "BOOL",
                     "default": true,
-                    "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                    "platforms": [
+                        "WINDOWS",
+                        "LINUX",
+                        "MACOS",
+                        "ANDROID"
+                    ]
                 }
             ]
         }

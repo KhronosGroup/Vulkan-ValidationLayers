@@ -149,7 +149,8 @@ if (PYTHONINTERP_FOUND)
     endif()
 
     add_custom_target(VulkanVL_generated_source
-        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir} --incremental
+        COMMAND ${PYTHON_EXECUTABLE} ${generate_source_py} ${VULKAN_HEADERS_REGISTRY_DIRECTORY} ${spirv_unified_include_dir}
+            --incremental --generated-version ${VulkanHeaders_VERSION}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
     )
 
@@ -301,8 +302,6 @@ elseif(APPLE)
 else()
     set(JSON_LIBRARY_PATH "./libVkLayer_khronos_validation.so")
 endif()
-
-set(JSON_API_VERSION ${VulkanHeaders_VERSION})
 
 configure_file(${INPUT_FILE} ${INTERMEDIATE_FILE} @ONLY)
 
