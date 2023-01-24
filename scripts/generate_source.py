@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import difflib
+import json
 
 import common_codegen
 
@@ -36,6 +37,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
     parser.add_argument('grammar', metavar='GRAMMAR_PATH', help='path to the SPIRV-Headers grammar directory')
+    parser.add_argument('--generated-version', help='sets the header version used to generate the repo')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-i', '--incremental', action='store_true', help='only update repo files that change')
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
@@ -88,6 +90,20 @@ def main(argv):
                  '-o', 'spirv_tools_commit_id.h']]
 
     repo_dir = common_codegen.repo_relative('layers/generated')
+
+    # Update the api_version in the respective json files
+    if args.generated_version:
+        json_files = []
+        json_files.append(common_codegen.repo_relative('layers/json/VkLayer_khronos_validation.json.in'))
+        json_files.append(common_codegen.repo_relative('tests/layers/VkLayer_device_profile_api.json.in'))
+        for json_file in json_files:
+            with open(json_file) as f:
+                data = json.load(f)
+
+            data["layer"]["api_version"] = args.generated_version
+
+            with open(json_file, 'w') as f:
+                f.write(json.dumps(data, indent=4))
 
     # get directory where generators will run
     if args.verify or args.incremental:

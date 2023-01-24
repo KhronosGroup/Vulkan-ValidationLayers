@@ -46,8 +46,6 @@ else()
     set(JSON_LIBRARY_PATH "./libVkLayer_device_profile_api.so")
 endif()
 
-set(JSON_API_VERSION ${VulkanHeaders_VERSION})
-
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_device_profile_api.json.in" ${INTERMEDIATE_FILE} @ONLY)
 
 # It's much simpler for development if the device profile layer is in the same location as the validation layer
