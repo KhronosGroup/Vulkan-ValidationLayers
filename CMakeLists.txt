@@ -17,7 +17,7 @@
 cmake_minimum_required(VERSION 3.17.2)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-project(VVL LANGUAGES CXX C)
+project(VVL LANGUAGES CXX)
 
 add_subdirectory(scripts)
 
@@ -28,7 +28,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
-set(CMAKE_C_VISIBILITY_PRESET "hidden")
 set(CMAKE_VISIBILITY_INLINES_HIDDEN "YES")
 
 include(GNUInstallDirs)
@@ -99,7 +98,7 @@ elseif (VVL_ENABLE_TSAN)
     add_link_options(-fsanitize=thread)
 endif()
 
-if(${CMAKE_C_COMPILER_ID} MATCHES "Clang")
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     add_compile_options(-Wconversion
                         -Wimplicit-fallthrough
 
@@ -112,15 +111,13 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "Clang")
                         -Wstring-conversion)
 
 endif()
-if(${CMAKE_C_COMPILER_ID} MATCHES "(GNU|Clang)")
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     add_compile_options(-Wall
                         -Wextra
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
                         -fno-strict-aliasing
                         -fno-builtin-memcmp)
-
-    set(CMAKE_C_STANDARD 99)
 elseif(MSVC)
     # Warn about nested declarations
     add_compile_options("/w34456")
