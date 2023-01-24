@@ -2190,21 +2190,81 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          "vkCreateImage(): VkImageCreateInfo struct has both VkExternalMemoryImageCreateInfoNV and "
                          "VkExternalMemoryImageCreateInfo chained structs.");
     }
-    if (external_memory_create_info) {
-        if (external_memory_create_info->handleTypes != 0 && pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+    if (external_memory_create_info && external_memory_create_info->handleTypes != 0) {
+        if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= LogError(
                 device, "VUID-VkImageCreateInfo-pNext-01443",
                 "vkCreateImage: VkImageCreateInfo pNext chain includes VkExternalMemoryImageCreateInfo with handleTypes %" PRIu32
                 " but pCreateInfo->initialLayout is %s.",
                 external_memory_create_info->handleTypes, string_VkImageLayout(pCreateInfo->initialLayout));
         }
-    } else if (external_memory_create_info_nv) {
-        if (external_memory_create_info_nv->handleTypes != 0 && pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+        // Check external memory handle types compatibility
+        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
+        auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+        external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
+        auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+        image_info.format = pCreateInfo->format;
+        image_info.type = pCreateInfo->imageType;
+        image_info.tiling = pCreateInfo->tiling;
+        image_info.usage = pCreateInfo->usage;
+        image_info.flags = pCreateInfo->flags;
+
+        auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+        auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+        result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_info, &image_properties);
+        const auto compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+
+        if (result != VK_SUCCESS) {
+            skip |= LogError(
+                device, "VUID-VkImageCreateInfo-pNext-00990",
+                "vkCreateImage(): The handle type (%s), format (%s), type (%s), tiling (%s), usage (%s), flags (%s) "
+                "is not supported combination of parameters and vkGetPhysicalDeviceImageFormatProperties2 returned back %s.",
+                string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType), string_VkFormat(image_info.format),
+                string_VkImageType(image_info.type), string_VkImageTiling(image_info.tiling),
+                string_VkImageUsageFlags(image_info.usage).c_str(), string_VkImageCreateFlags(image_info.flags).c_str(),
+                string_VkResult(result));
+        } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
+            const bool single_flag = GetBitSetCount(external_memory_create_info->handleTypes) == 1;
+            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00990",
+                             "vkCreateImage(): VkImageCreateInfo pNext chain contains VkExternalMemoryImageCreateInfo with "
+                             "%s (%s).",
+                             single_flag ? "unsupported flag" : "incompatible flags",
+                             string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str());
+        }
+    } else if (external_memory_create_info_nv && external_memory_create_info_nv->handleTypes != 0) {
+        if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= LogError(
                 device, "VUID-VkImageCreateInfo-pNext-01443",
                 "vkCreateImage: VkImageCreateInfo pNext chain includes VkExternalMemoryImageCreateInfoNV with handleTypes %" PRIu32
                 " but pCreateInfo->initialLayout is %s.",
                 external_memory_create_info_nv->handleTypes, string_VkImageLayout(pCreateInfo->initialLayout));
+        }
+        // Check external memory handle types compatibility
+        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info_nv->handleTypes);
+        auto handle_type = static_cast<VkExternalMemoryHandleTypeFlagBitsNV>(any_type);
+        VkExternalImageFormatPropertiesNV external_image_properties = {};
+        result = DispatchGetPhysicalDeviceExternalImageFormatPropertiesNV(
+            physical_device, pCreateInfo->format, pCreateInfo->imageType, pCreateInfo->tiling, pCreateInfo->usage,
+            pCreateInfo->flags, handle_type, &external_image_properties);
+        const auto compatible_types = external_image_properties.compatibleHandleTypes;
+
+        if (result != VK_SUCCESS) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00991",
+                             "vkCreateImage(): The handle type (%s), format (%s), type (%s), tiling (%s), usage (%s), flags (%s) "
+                             "is not supported combination of parameters and vkGetPhysicalDeviceExternalImageFormatPropertiesNV "
+                             "returned back %s.",
+                             string_VkExternalMemoryHandleTypeFlagBitsNV(handle_type), string_VkFormat(pCreateInfo->format),
+                             string_VkImageType(pCreateInfo->imageType), string_VkImageTiling(pCreateInfo->tiling),
+                             string_VkImageUsageFlags(pCreateInfo->usage).c_str(),
+                             string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkResult(result));
+        } else if ((external_memory_create_info_nv->handleTypes & compatible_types) !=
+                   external_memory_create_info_nv->handleTypes) {
+            const bool single_flag = GetBitSetCount(external_memory_create_info_nv->handleTypes) == 1;
+            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-00991",
+                             "vkCreateImage(): VkImageCreateInfo pNext chain contains VkExternalMemoryImageCreateInfoNV with "
+                             "%s (%s).",
+                             single_flag ? "unsupported flag" : "incompatible flags",
+                             string_VkExternalMemoryHandleTypeFlagsNV(external_memory_create_info_nv->handleTypes).c_str());
         }
     }
 
@@ -5326,6 +5386,25 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
                 device, "VUID-VkBufferCreateInfo-usage-08103",
                 "vkCreateBuffer(): If VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT is set, usage must also contain "
                 "one of VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT or VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT.");
+        }
+    }
+
+    auto external_memory_info = LvlFindInChain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
+    if (external_memory_info && external_memory_info->handleTypes) {
+        const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
+        auto external_buffer_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+        external_buffer_info.flags = pCreateInfo->flags;
+        external_buffer_info.usage = pCreateInfo->usage;
+        external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
+        auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+        DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &external_buffer_info, &external_buffer_properties);
+        const auto compatible_types = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+
+        if ((external_memory_info->handleTypes & compatible_types) != external_memory_info->handleTypes) {
+            skip |= LogError(device, "VUID-VkBufferCreateInfo-pNext-00920",
+                             "vkCreateBuffer(): VkBufferCreateInfo pNext chain contains VkExternalMemoryBufferCreateInfo with "
+                             "unsupported or incompatible handleTypes flags (%s).",
+                             string_VkExternalMemoryHandleTypeFlags(external_memory_info->handleTypes).c_str());
         }
     }
 
