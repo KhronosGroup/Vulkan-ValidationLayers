@@ -268,13 +268,8 @@ if (!is_android) {
       deps += [ ":vulkan_clean_old_validation_layer_objects" ]
     }
 
-    json_names = [ "VkLayer_khronos_validation.json" ]
-    sources = [ "$vulkan_headers_dir/include/vulkan/vulkan_core.h" ]
-    outputs = []
-    foreach(json_name, json_names) {
-      sources += [ "layers/json/$json_name.in" ]
-      outputs += [ "$vulkan_data_dir/$json_name" ]
-    }
+    sources = [ "layers/json/VkLayer_khronos_validation.json.in" ]
+    outputs = [ "$vulkan_data_dir/VkLayer_khronos_validation.json" ]
 
     if (is_linux) {
       _platform = "Linux"
