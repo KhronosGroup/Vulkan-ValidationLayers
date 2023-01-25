@@ -27,11 +27,9 @@ import os
 import platform
 import sys
 
-
 def glob_slash(dirname):
     """Like regular glob but replaces \ with / in returned paths."""
     return [s.replace('\\', '/') for s in glob.glob(dirname)]
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -42,7 +40,6 @@ def main():
              'Linux|Darwin|Windows|Fuchsia|...')
     parser.add_argument('source_dir')
     parser.add_argument('target_dir')
-    parser.add_argument('version_header', help='path to vulkan_core.h')
     parser.add_argument('json_files', nargs='*')
     args = parser.parse_args()
 
@@ -86,18 +83,6 @@ def main():
         target_fname = os.path.join(target_dir, os.path.basename(json_fname))
         with open(target_fname, 'w') as outfile:
             json.dump(data, outfile)
-
-    # Get the Vulkan version from the vulkan_core.h file
-    vk_header_filename = args.version_header
-    vk_version = None
-    with open(vk_header_filename) as vk_header_file:
-        for line in vk_header_file:
-            if line.startswith('#define VK_HEADER_VERSION'):
-                vk_version = line.split()[-1]
-                break
-    if not vk_version:
-        print('failed to extract vk_version', file=sys.stderr)
-        return 1
 
     # Set json file prefix and suffix for generating files, default to Linux.
     if args.no_path_prefix:
