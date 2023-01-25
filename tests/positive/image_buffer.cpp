@@ -2603,3 +2603,45 @@ TEST_F(VkPositiveLayerTest, FramebufferWithAttachmentsTo3DImageMultipleSubpasses
     vk::CmdEndRenderPass(m_commandBuffer->handle());
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveLayerTest, TexelBufferAlignmentIn13) {
+    TEST_DESCRIPTION("texelBufferAlignment is enabled by default in 1.3.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "At least Vulkan version 1.3 is required";
+    }
+
+    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->props.limits.minTexelBufferOffsetAlignment;
+    if (minTexelBufferOffsetAlignment == 1) {
+        GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
+    }
+
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
+    }
+
+    auto props_1_3 = LvlInitStruct<VkPhysicalDeviceVulkan13Properties>();
+    GetPhysicalDeviceProperties2(props_1_3);
+    if (props_1_3.uniformTexelBufferOffsetAlignmentBytes > 4 || !props_1_3.uniformTexelBufferOffsetSingleTexelAlignment) {
+        GTEST_SKIP() << "need uniformTexelBufferOffsetAlignmentBytes to be more than 4 with "
+                        "uniformTexelBufferOffsetSingleTexelAlignment support";
+    }
+
+    // to prevent VUID-VkBufferViewCreateInfo-buffer-02751
+    const uint32_t block_size = 4;  // VK_FORMAT_R8G8B8A8_UNORM
+
+    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.offset = minTexelBufferOffsetAlignment + block_size;
+    CreateBufferViewTest(*this, &buff_view_ci, {});
+}

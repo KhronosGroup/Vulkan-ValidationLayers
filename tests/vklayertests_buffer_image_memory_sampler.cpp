@@ -4859,6 +4859,37 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-buffer-00934"});
 }
 
+TEST_F(VkPositiveLayerTest, TexelBufferAlignmentIn12) {
+    TEST_DESCRIPTION("texelBufferAlignment is not enabled by default in 1.2.");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_3) {
+        GTEST_SKIP() << "Vulkan version 1.2 or less is required";
+    }
+
+    const VkDeviceSize minTexelBufferOffsetAlignment = m_device->props.limits.minTexelBufferOffsetAlignment;
+    if (minTexelBufferOffsetAlignment == 1) {
+        GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
+    }
+
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
+    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
+    }
+
+    const VkBufferCreateInfo buffer_info = VkBufferObj::create_info(1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_info, (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VkBufferViewCreateInfo buff_view_ci = LvlInitStruct<VkBufferViewCreateInfo>();
+    buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buff_view_ci.range = VK_WHOLE_SIZE;
+    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
+    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-00926"});
+}
+
 TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
     TEST_DESCRIPTION("Test VK_EXT_texel_buffer_alignment.");
     auto texel_buffer_alignment_features = LvlInitStruct<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT>();
