@@ -213,6 +213,14 @@ object_lifetimes_sources = [
   "layers/object_tracker/object_tracker_utils.cpp",
 ]
 
+explicit_validation_sources = [
+  "layers/generated/explicit_validation_commands.cpp",
+  "layers/generated/explicit_validation_decl.h",
+  "layers/generated/explicit_validation_structs.cpp",
+  "layers/explicit/explicit_validation.h",
+  "layers/explicit/explicit_validation_utils.cpp",
+]
+
 stateless_validation_sources = [
   "layers/generated/parameter_validation.cpp",
   "layers/generated/parameter_validation.h",
@@ -263,9 +271,9 @@ chassis_sources = [
 layers = [ [
       "khronos_validation",
       core_validation_sources + object_lifetimes_sources +
-          stateless_validation_sources + thread_safety_sources +
-          unique_objects_sources + best_practices_sources +
-          debug_printf_sources + chassis_sources,
+          explicit_validation_sources + stateless_validation_sources +
+          thread_safety_sources + unique_objects_sources +
+          best_practices_sources + debug_printf_sources + chassis_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]

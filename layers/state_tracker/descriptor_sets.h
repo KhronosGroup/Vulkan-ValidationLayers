@@ -320,7 +320,7 @@ class DescriptorSetLayout : public BASE_NODE {
  *   descriptor type, but all descriptors in a set can be accessed via the common Descriptor*.
  */
 
-// Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"
+// Slightly broader than type, each c++ "class" will have a corresponding "DescriptorClass"
 enum DescriptorClass {
     PlainSampler,
     ImageSampler,

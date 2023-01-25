@@ -177,6 +177,8 @@ target_sources(VkLayer_khronos_validation PRIVATE
     error_message/core_error_location.cpp
     error_message/core_error_location.h
     error_message/validation_error_enums.h
+    explicit/explicit_validation.h
+    explicit/explicit_validation_utils.cpp
     external/vma/vma.h
     external/vma/vma.cpp
     generated/best_practices.cpp
@@ -185,6 +187,9 @@ target_sources(VkLayer_khronos_validation PRIVATE
     generated/valid_param_values.cpp
     generated/command_validation.cpp
     generated/enum_flag_bits.h
+    generated/explicit_validation_commands.cpp
+    generated/explicit_validation_decl.h
+    generated/explicit_validation_structs.cpp
     generated/layer_chassis_dispatch.cpp
     generated/object_tracker.cpp
     generated/object_tracker.h

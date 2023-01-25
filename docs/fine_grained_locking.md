@@ -24,7 +24,7 @@ However, when the Vulkan ValidationLayer is enabled with the standard configurat
 ![alt_text](images/fine_grained_locking_image2.png "DoomEternal CPU usage WITH validation")
 
 
- A great discussion of the id Tech 7 engine can be found [here](https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf).
+A great discussion of the id Tech 7 engine can be found [here](https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf).
 
 The largest location of wait time is ValidationObject::validation_object_mutex:
 

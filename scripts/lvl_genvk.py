@@ -203,6 +203,55 @@ def makeGenOpts(args):
             valid_usage_path  = args.scripts)
         ]
 
+    # Options for explicit validation source file, containing virtual function overrides (which
+    # validate commands).
+    genOpts['explicit_validation_commands.cpp'] = [
+          ExplicitValidationOutputGenerator,
+          ExplicitValidationGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'explicit_validation_commands.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            valid_usage_path  = args.scripts,
+            quiet             = args.quiet)
+          ]
+
+    # Options for explicit validation implementation source file, containing other validation (which
+    # validate structs).
+    genOpts['explicit_validation_structs.cpp'] = [
+          ExplicitValidationOutputGenerator,
+          ExplicitValidationGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'explicit_validation_structs.cpp',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            valid_usage_path  = args.scripts,
+            quiet             = args.quiet)
+          ]
+
+    # Options for explicit validation header file, containing function signatures.
+    genOpts['explicit_validation_decl.h'] = [
+          ExplicitValidationOutputGenerator,
+          ExplicitValidationGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'explicit_validation_decl.h',
+            directory         = directory,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            valid_usage_path  = args.scripts)
+          ]
+
     # Options for dispatch table helper generator
     genOpts['vk_dispatch_table_helper.h'] = [
           DispatchTableHelperOutputGenerator,
@@ -618,7 +667,7 @@ def genTarget(args):
     else:
         write('No generator options for unknown target:',
               args.target, file=sys.stderr)
-        return none
+        return None
 
 # -feature name
 # -extension name
@@ -709,6 +758,7 @@ if __name__ == '__main__':
     from thread_safety_generator import  ThreadGeneratorOptions, ThreadOutputGenerator
     from parameter_validation_generator import ParameterValidationGeneratorOptions, ParameterValidationOutputGenerator
     from object_tracker_generator import ObjectTrackerGeneratorOptions, ObjectTrackerOutputGenerator
+    from explicit_validation_generator import ExplicitValidationGeneratorOptions, ExplicitValidationOutputGenerator
     from dispatch_table_helper_generator import DispatchTableHelperOutputGenerator, DispatchTableHelperOutputGeneratorOptions
     from helper_file_generator import HelperFileOutputGenerator, HelperFileOutputGeneratorOptions
     from layer_dispatch_table_generator import LayerDispatchTableOutputGenerator, LayerDispatchTableGeneratorOptions

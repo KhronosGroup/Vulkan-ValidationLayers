@@ -75,6 +75,110 @@ static bool UpdateLogMsgCounts(const debug_report_data *debug_data, int32_t vuid
     }
 }
 
+// helper for VUID based filtering. This needs to be separate so it can be called before incurring
+// the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
+static bool LogMsgEnabled(const debug_report_data *debug_data, const std::string &vuid_text,
+                                 VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type) {
+    if (!(debug_data->active_severities & severity) || !(debug_data->active_types & type)) {
+        return false;
+    }
+    // If message is in filter list, bail out very early
+    const uint32_t message_id = vvl_vuid_hash(vuid_text);
+    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
+        != debug_data->filter_message_ids.end()) {
+        return false;
+    }
+    if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, static_cast<int32_t>(message_id))) {
+        // Count for this particular message is over the limit, ignore it
+        return false;
+    }
+    return true;
+}
+
+// Helper function that uses vsnprintf to generate the message as a string.  If the message is to be
+// skipped, it returns an empty string.
+//
+// debug_data->debug_output_mutex must be locked before calling this function.
+static std::string debug_log_format_msg(const debug_report_data *debug_data, VkFlags msg_flags, const std::string &vuid_text, const char *format, va_list argptr) {
+    VkDebugUtilsMessageSeverityFlagsEXT severity;
+    VkDebugUtilsMessageTypeFlagsEXT type;
+
+    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &type);
+    // Avoid logging cost if msg is to be ignored
+    if (!LogMsgEnabled(debug_data, vuid_text, severity, type)) {
+        return "";
+    }
+
+    // Best guess at an upper bound for message length. At least some of the extra space
+    // should get used to store the VUID URL and text in the common case, without additional allocations.
+    std::string formatted(1024, '\0');
+
+    // vsnprintf() returns the number of characters that *would* have been printed, if there was
+    // enough space. If we have a huge message, reallocate the string and try again.
+    int result;
+    size_t old_size = formatted.size();
+    // The va_list will be destroyed by the call to vsnprintf(), so use a copy in case we need
+    // to try again.
+    va_list arg_copy;
+    va_copy(arg_copy, argptr);
+    result = vsnprintf(formatted.data(), formatted.size(), format, arg_copy);
+    va_end(arg_copy);
+
+    assert(result >= 0);
+    if (result < 0) {
+        formatted = "Message generation failure";
+    } else if (static_cast<size_t>(result) <= old_size) {
+        // Shrink the string to exactly fit the successfully printed string
+        formatted.resize(result);
+    } else {
+        // Grow buffer to fit needed size. Note that the input size to vsnprintf() must
+        // include space for the trailing '\0' character, but the return value DOES NOT
+        // include the `\0' character.
+        formatted.resize(result + 1);
+        // consume the va_list passed to us by the caller
+        result = vsnprintf(formatted.data(), formatted.size(), format, argptr);
+        // remove the `\0' character from the string
+        formatted.resize(result);
+    }
+
+    return formatted;
+}
+
+// Get the link to the spec for this VUID
+static std::string debug_log_get_link(const std::string &vuid_text, const std::string &spec_type) {
+    std::string spec_link = "https://www.khronos.org/registry/vulkan/specs/_MAGIC_KHRONOS_SPEC_TYPE_/html/vkspec.html";
+#ifdef ANNOTATED_SPEC_LINK
+    spec_link = ANNOTATED_SPEC_LINK;
+#endif
+    static std::string kAtToken = "_MAGIC_ANNOTATED_SPEC_TYPE_";
+    static std::string kKtToken = "_MAGIC_KHRONOS_SPEC_TYPE_";
+    static std::string kVeToken = "_MAGIC_VERSION_ID_";
+    auto Replace = [](std::string &dest_string, const std::string &to_replace, const std::string &replace_with) {
+        if (dest_string.find(to_replace) != std::string::npos) {
+            dest_string.replace(dest_string.find(to_replace), to_replace.size(), replace_with);
+        }
+    };
+
+    std::string link = "";
+    if (0 == spec_type.compare("default")) {
+        link = "https://github.com/KhronosGroup/Vulkan-Docs/search?q=";
+    } else {
+        link.append(spec_link);
+        std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
+        std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
+        std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
+        std::string header_version = major_version + "." + minor_version + "." + patch_version;
+        std::string annotated_spec_type = major_version + "." + minor_version + "-extensions";
+        Replace(link, kKtToken, spec_type);
+        Replace(link, kAtToken, annotated_spec_type);
+        Replace(link, kVeToken, header_version);
+        link.append("#");  // CMake hates hashes
+    }
+    link.append(vuid_text);
+
+    return link;
+}
+
 static bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
                                  const char *layer_prefix, const char *message, const char *text_vuid) {
     bool bail = false;
@@ -235,6 +339,9 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, debug_
         callback_state.debug_utils_callback_function_ptr = utils_create_info->pfnUserCallback;
         callback_state.debug_utils_msg_flags = utils_create_info->messageSeverity;
         callback_state.debug_utils_msg_type = utils_create_info->messageType;
+        // TODO: add a VK_DEBUG_UTILS_MESSENGER_CREATE_ENABLE_ANNOTATIONS_BIT to VK_EXT_debug_utils.
+        // There are no other flags for now, so just take any non-zero value as indication of flag.
+        debug_data->annotated = create_info->flags != 0;
     } else {  // Debug report callback
         auto report_create_info = reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(create_info);
         auto report_callback = reinterpret_cast<VkDebugReportCallbackEXT *>(callback);
@@ -245,6 +352,7 @@ static void LayerCreateCallback(DebugCallbackStatusFlags callback_status, debug_
         callback_state.debug_report_callback_object = *report_callback;
         callback_state.debug_report_callback_function_ptr = report_create_info->pfnCallback;
         callback_state.debug_report_msg_flags = report_create_info->flags;
+        debug_data->annotated = false;
     }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -315,67 +423,12 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) 
     }
 }
 
-// helper for VUID based filtering. This needs to be separate so it can be called before incurring
-// the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
-static bool LogMsgEnabled(const debug_report_data *debug_data, const std::string &vuid_text,
-                                 VkDebugUtilsMessageSeverityFlagsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type) {
-    if (!(debug_data->active_severities & severity) || !(debug_data->active_types & type)) {
-        return false;
-    }
-    // If message is in filter list, bail out very early
-    const uint32_t message_id = vvl_vuid_hash(vuid_text);
-    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(), message_id)
-        != debug_data->filter_message_ids.end()) {
-        return false;
-    }
-    if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, static_cast<int32_t>(message_id))) {
-        // Count for this particular message is over the limit, ignore it
-        return false;
-    }
-    return true;
-}
-
 VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects, const std::string &vuid_text, const char *format, va_list argptr) {
-    VkDebugUtilsMessageSeverityFlagsEXT severity;
-    VkDebugUtilsMessageTypeFlagsEXT type;
 
-    DebugReportFlagsToAnnotFlags(msg_flags, &severity, &type);
     std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
-    // Avoid logging cost if msg is to be ignored
-    if (!LogMsgEnabled(debug_data, vuid_text, severity, type)) {
+    std::string str_plus_spec_text = debug_log_format_msg(debug_data, msg_flags, vuid_text, format, argptr);
+    if (str_plus_spec_text == "") {
         return false;
-    }
-
-    // Best guess at an upper bound for message length. At least some of the extra space
-    // should get used to store the VUID URL and text in the common case, without additional allocations.
-    std::string str_plus_spec_text(1024, '\0');
-
-    // vsnprintf() returns the number of characters that *would* have been printed, if there was
-    // enough space. If we have a huge message, reallocate the string and try again.
-    int result;
-    size_t old_size = str_plus_spec_text.size();
-    // The va_list will be destroyed by the call to vsnprintf(), so use a copy in case we need
-    // to try again.
-    va_list arg_copy;
-    va_copy(arg_copy, argptr);
-    result = vsnprintf(str_plus_spec_text.data(), str_plus_spec_text.size(), format, arg_copy);
-    va_end(arg_copy);
-
-    assert(result >= 0);
-    if (result < 0) {
-        str_plus_spec_text = "Message generation failure";
-    } else if (static_cast<size_t>(result) <= old_size) {
-        // Shrink the string to exactly fit the successfully printed string
-        str_plus_spec_text.resize(result);
-    } else {
-        // Grow buffer to fit needed size. Note that the input size to vsnprintf() must
-        // include space for the trailing '\0' character, but the return value DOES NOT
-        // include the `\0' character.
-        str_plus_spec_text.resize(result + 1);
-        // consume the va_list passed to us by the caller
-        result = vsnprintf(str_plus_spec_text.data(), str_plus_spec_text.size(), format, argptr);
-        // remove the `\0' character from the string
-        str_plus_spec_text.resize(result);
     }
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
@@ -396,42 +449,57 @@ VKAPI_ATTR bool LogMsg(const debug_report_data *debug_data, VkFlags msg_flags, c
 
         // Construct and append the specification text and link to the appropriate version of the spec
         if (nullptr != spec_text) {
-            std::string spec_link = "https://www.khronos.org/registry/vulkan/specs/_MAGIC_KHRONOS_SPEC_TYPE_/html/vkspec.html";
-#ifdef ANNOTATED_SPEC_LINK
-            spec_link = ANNOTATED_SPEC_LINK;
-#endif
-            static std::string kAtToken = "_MAGIC_ANNOTATED_SPEC_TYPE_";
-            static std::string kKtToken = "_MAGIC_KHRONOS_SPEC_TYPE_";
-            static std::string kVeToken = "_MAGIC_VERSION_ID_";
-            auto Replace = [](std::string &dest_string, const std::string &to_replace, const std::string &replace_with) {
-                if (dest_string.find(to_replace) != std::string::npos) {
-                    dest_string.replace(dest_string.find(to_replace), to_replace.size(), replace_with);
-                }
-            };
 
             str_plus_spec_text.append(" The Vulkan spec states: ");
             str_plus_spec_text.append(spec_text);
-            if (0 == spec_type.compare("default")) {
-                str_plus_spec_text.append(" (https://github.com/KhronosGroup/Vulkan-Docs/search?q=)");
-            } else {
-                str_plus_spec_text.append(" (");
-                str_plus_spec_text.append(spec_link);
-                std::string major_version = std::to_string(VK_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE));
-                std::string minor_version = std::to_string(VK_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE));
-                std::string patch_version = std::to_string(VK_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE));
-                std::string header_version = major_version + "." + minor_version + "." + patch_version;
-                std::string annotated_spec_type = major_version + "." + minor_version + "-extensions";
-                Replace(str_plus_spec_text, kKtToken, spec_type);
-                Replace(str_plus_spec_text, kAtToken, annotated_spec_type);
-                Replace(str_plus_spec_text, kVeToken, header_version);
-                str_plus_spec_text.append("#");  // CMake hates hashes
-            }
-            str_plus_spec_text.append(vuid_text);
+            str_plus_spec_text.append(" (");
+            str_plus_spec_text.append(debug_log_get_link(vuid_text, spec_type));
             str_plus_spec_text.append(")");
         }
     }
 
     return debug_log_msg(debug_data, msg_flags, objects, "Validation", str_plus_spec_text.c_str(), vuid_text.c_str());
+}
+
+VKAPI_ATTR bool LogFormattedMsg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects, const std::string &vuid_text, const char *format, va_list argptr) {
+
+    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
+    std::string formatted = debug_log_format_msg(debug_data, msg_flags, vuid_text, format, argptr);
+    if (formatted == "") {
+        return false;
+    }
+
+    // If annotations are not enabled, remove them from the message.
+    if (!debug_data->annotated)
+    {
+        size_t write = 0;
+        for (size_t read = 0; read < formatted.size(); ++read)
+        {
+            // If an annotation is visited, skip it.
+            if (read + 2 < formatted.size() && formatted[read] == '$' && formatted[read+1] == '{') {
+                while (read < formatted.size() && formatted[read] != '}') {
+                    ++read;
+                }
+                continue;
+            }
+
+            // Not an annotation
+            formatted[write++] = formatted[read];
+        }
+        // Resize to as many characters remaining after contraction.
+        formatted.resize(write);
+    }
+
+    // TODO: make autogen output this somewhere usable.  Codified VUs will eventually need to just
+    // point to the all-extension spec once the ifdef situation is resolved.
+    const char *spec_type = "1.3-extensions";
+
+    std::string message = " The Vulkan spec states (";
+    message.append(debug_log_get_link(vuid_text, spec_type));
+    message.append("):\n\n");
+    message.append(formatted);
+
+    return debug_log_msg(debug_data, msg_flags, objects, "Validation", message.c_str(), vuid_text.c_str());
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,

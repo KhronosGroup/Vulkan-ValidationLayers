@@ -4,6 +4,7 @@ This directory contains more detailed information about how each part of the Val
 
 - [VK_LAYER_KHRONOS_validation overview](./khronos_validation_layer.md)
     - [Core Validation Checks](./core_checks.md)
+        - And accompanying [Explicit Validation Checks](./explicit_validation.md)
     - [Best Practices Validation](./best_practices.md)
     - [Shader Debug Printf](./debug_printf.md)
     - [Fine Grained Locking](./fine_grained_locking.md)

@@ -3235,7 +3235,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         case VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT: { // Covers VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType
             if (is_const_param) {
                 VkDebugUtilsMessengerCreateInfoEXT *structure = (VkDebugUtilsMessengerCreateInfoEXT *) header;
-                skip |= ValidateReservedFlags("VkDebugUtilsMessengerCreateInfoEXT", "flags", structure->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
+                //skip |= ValidateReservedFlags("VkDebugUtilsMessengerCreateInfoEXT", "flags", structure->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
 
                 skip |= ValidateFlags("VkDebugUtilsMessengerCreateInfoEXT", "messageSeverity", "VkDebugUtilsMessageSeverityFlagBitsEXT", AllVkDebugUtilsMessageSeverityFlagBitsEXT, structure->messageSeverity, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
 
@@ -15848,7 +15848,7 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(
     {
         skip |= ValidateStructPnext("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->pNext", nullptr, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion, kVUIDUndefined, kVUIDUndefined, false, true);
 
-        skip |= ValidateReservedFlags("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
+        //skip |= ValidateReservedFlags("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->flags", pCreateInfo->flags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-flags-zerobitmask");
 
         skip |= ValidateFlags("vkCreateDebugUtilsMessengerEXT", "pCreateInfo->messageSeverity", "VkDebugUtilsMessageSeverityFlagBitsEXT", AllVkDebugUtilsMessageSeverityFlagBitsEXT, pCreateInfo->messageSeverity, kRequiredFlags, "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-messageSeverity-requiredbitmask");
 

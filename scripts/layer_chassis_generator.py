@@ -272,6 +272,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeParameterValidation,         // Instance or device parameter validation layer object
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
+    LayerObjectTypeExplicitValidation,          // Instance or device explicit validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
     LayerObjectTypeDebugPrintf,                 // Instance or device shader debug printf layer object
@@ -329,6 +330,7 @@ typedef enum DisableFlags {
     handle_wrapping,
     shader_validation,
     shader_validation_caching,
+    explicit_validation,
     // Insert new disables above this line
     kMaxDisableFlags,
 } DisableFlags;
@@ -555,6 +557,7 @@ bool wrap_handles = true;
 #include "core_checks/core_validation.h"
 #include "gpu_validation/gpu_validation.h"
 #include "object_tracker/object_lifetime_validation.h"
+#include "explicit/explicit_validation.h"
 #include "gpu_validation/debug_printf.h"
 #include "stateless/stateless_validation.h"
 #include "sync/sync_validation.h"
@@ -804,6 +807,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         local_object_dispatch.emplace_back(new CoreChecks);
     }
 
+    if (!local_disables[explicit_validation]) {
+        local_object_dispatch.emplace_back(new ExplicitValidation);
+    }
+
     if (local_enables[best_practices]) {
         local_object_dispatch.emplace_back(new BestPractices);
     }
@@ -1011,6 +1018,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     if (!disables[core_checks]) {
         device_interceptor->object_dispatch.emplace_back(new CoreChecks);
+    }
+
+    if (!disables[explicit_validation]) {
+        device_interceptor->object_dispatch.emplace_back(new ExplicitValidation);
     }
 
     if (enables[best_practices]) {
@@ -1637,6 +1648,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
                                 typeid(&StatelessValidation::name), \\
                                 typeid(&ObjectLifetimes::name), \\
                                 typeid(&CoreChecks::name), \\
+                                typeid(&ExplicitValidation::name), \\
                                 typeid(&BestPractices::name), \\
                                 typeid(&GpuAssisted::name), \\
                                 typeid(&DebugPrintf::name), \\
@@ -1648,6 +1660,7 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
                                               const std::type_info& tpv_typeid,
                                               const std::type_info& tot_typeid,
                                               const std::type_info& tcv_typeid,
+                                              const std::type_info& tev_typeid,
                                               const std::type_info& tbp_typeid,
                                               const std::type_info& tga_typeid,
                                               const std::type_info& tdp_typeid,
@@ -1666,6 +1679,9 @@ VVL_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionProperties(V
                 break;
             case LayerObjectTypeCoreValidation:
                 if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
+                break;
+            case LayerObjectTypeExplicitValidation:
+                if (tev_typeid != vo_typeid) intercept_vector->push_back(item);
                 break;
             case LayerObjectTypeBestPractices:
                 if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);

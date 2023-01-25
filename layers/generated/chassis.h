@@ -3889,6 +3889,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeParameterValidation,         // Instance or device parameter validation layer object
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
+    LayerObjectTypeExplicitValidation,          // Instance or device explicit validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
     LayerObjectTypeDebugPrintf,                 // Instance or device shader debug printf layer object
@@ -3946,6 +3947,7 @@ typedef enum DisableFlags {
     handle_wrapping,
     shader_validation,
     shader_validation_caching,
+    explicit_validation,
     // Insert new disables above this line
     kMaxDisableFlags,
 } DisableFlags;

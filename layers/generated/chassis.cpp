@@ -46,6 +46,7 @@ bool wrap_handles = true;
 #include "core_checks/core_validation.h"
 #include "gpu_validation/gpu_validation.h"
 #include "object_tracker/object_lifetime_validation.h"
+#include "explicit/explicit_validation.h"
 #include "gpu_validation/debug_printf.h"
 #include "stateless/stateless_validation.h"
 #include "sync/sync_validation.h"
@@ -294,6 +295,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         local_object_dispatch.emplace_back(new CoreChecks);
     }
 
+    if (!local_disables[explicit_validation]) {
+        local_object_dispatch.emplace_back(new ExplicitValidation);
+    }
+
     if (local_enables[best_practices]) {
         local_object_dispatch.emplace_back(new BestPractices);
     }
@@ -501,6 +506,10 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     if (!disables[core_checks]) {
         device_interceptor->object_dispatch.emplace_back(new CoreChecks);
+    }
+
+    if (!disables[explicit_validation]) {
+        device_interceptor->object_dispatch.emplace_back(new ExplicitValidation);
     }
 
     if (enables[best_practices]) {

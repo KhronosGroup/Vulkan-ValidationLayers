@@ -175,7 +175,7 @@ class ValidationJSON:
                     else:
                         self.implicit_vuids.add(vuid_string)    # otherwise, implicit
                         vtype = 'implicit'
-                    vuid_text = self.sanitize(ventry['text'], vuid_string)
+                    vuid_text = self.sanitize(''.join(ventry['text'].split('\n')), vuid_string)
                     self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':vuid_text})
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
         self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})

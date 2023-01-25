@@ -122,7 +122,7 @@ class ParameterValidationGeneratorOptions(GeneratorOptions):
 # Generates param checker layer code.
 #
 # ---- methods ----
-# ParamCheckerOutputGenerator(errFile, warnFile, diagFile) - args as for
+# ParameterValidationOutputGenerator(errFile, warnFile, diagFile) - args as for
 #   OutputGenerator. Defines additional internal state.
 # ---- methods overriding base class ----
 # beginFile(genOpts)

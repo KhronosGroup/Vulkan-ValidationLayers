@@ -1335,6 +1335,8 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
                                                const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                                const char *param_name, const char *image_layer_count_var_name, const VkImage image,
                                                const SubresourceRangeErrorCodes &errorCodes) const {
+    return false;
+#if 0
     bool skip = false;
 
     // Validate mip levels
@@ -1399,6 +1401,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
     }
 
     return skip;
+#endif
 }
 
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
