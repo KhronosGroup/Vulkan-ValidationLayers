@@ -1051,6 +1051,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (texel_buffer_alignment_features) {
             enabled_features.texel_buffer_alignment_features = *texel_buffer_alignment_features;
         }
+        // texelBufferAlignment was not promoted to VkPhysicalDeviceVulkan13Features
+        // but the feature is automatically enabled.
+        // Setting the feature explicitly to 'false' doesn't change that
+        if (api_version >= VK_API_VERSION_1_3) {
+            enabled_features.texel_buffer_alignment_features.texelBufferAlignment = true;
+        }
 
         const auto *pipeline_exe_props_features =
             LvlFindInChain<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>(pCreateInfo->pNext);
