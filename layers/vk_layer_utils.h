@@ -178,6 +178,21 @@ static inline int MostSignificantBit(uint32_t mask) {
 #endif
 }
 
+// Iterates over all set bits and calls the callback with a bit mask corresponding to each flag.
+// FlagBits and Flags follow Vulkan naming convensions for flag types.
+// An example of a more efficient implementation: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
+template <typename FlagBits, typename Flags, typename Callback>
+void IterateFlags(Flags flags, Callback callback) {
+    uint32_t bit_shift = 0;
+    while (flags) {
+        if (flags & 1) {
+            if (!callback(static_cast<FlagBits>(1ull << bit_shift))) return;
+        }
+        flags >>= 1;
+        ++bit_shift;
+    }
+}
+
 static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
     uint32_t size = 0;
     switch (sample_count) {

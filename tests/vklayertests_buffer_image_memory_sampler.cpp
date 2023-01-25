@@ -29,7 +29,9 @@
 #include <type_traits>
 
 #include "cast_utils.h"
+#include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
+#include "vk_layer_utils.h"
 
 TEST_F(VkLayerTest, BufferExtents) {
     TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
@@ -11192,6 +11194,162 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     m_errorMonitor->VerifyFound();
 
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
+}
+
+TEST_F(VkLayerTest, CreateBufferIncompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Creating buffer with incompatible external memory handle types");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Try all flags first. It's unlikely all of them are compatible.
+    auto external_memory_info = LvlInitStruct<VkExternalMemoryBufferCreateInfo>();
+    external_memory_info.handleTypes = AllVkExternalMemoryHandleTypeFlagBits;
+    auto buffer_create_info = LvlInitStruct<VkBufferCreateInfo>(&external_memory_info);
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
+
+    // Get all exportable handle types supported by the platform.
+    VkExternalMemoryHandleTypeFlags supported_handle_types = 0;
+    VkExternalMemoryHandleTypeFlags any_compatible_group = 0;
+    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
+        AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
+            auto external_buffer_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+            external_buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            external_buffer_info.handleType = flag;
+            auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+            vk::GetPhysicalDeviceExternalBufferProperties(gpu(), &external_buffer_info, &external_buffer_properties);
+            const auto external_features = external_buffer_properties.externalMemoryProperties.externalMemoryFeatures;
+            if (external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) {
+                supported_handle_types |= external_buffer_info.handleType;
+                any_compatible_group = external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+            }
+            return true;
+        });
+
+    // Main test case. Handle types are supported but not compatible with each other
+    if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
+        external_memory_info.handleTypes = supported_handle_types;
+        CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
+    }
+}
+
+TEST_F(VkLayerTest, CreateImageIncompatibleExternalHandleTypes) {
+    TEST_DESCRIPTION("Creating image with incompatible external memory handle types");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Try all flags first. It's unlikely all of them are compatible.
+    auto external_memory_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
+    external_memory_info.handleTypes = AllVkExternalMemoryHandleTypeFlagBits;
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>(&external_memory_info);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
+
+    // Get all exportable handle types supported by the platform.
+    VkExternalMemoryHandleTypeFlags supported_handle_types = 0;
+    VkExternalMemoryHandleTypeFlags any_compatible_group = 0;
+
+    auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+    image_info.format = image_create_info.format;
+    image_info.type = image_create_info.imageType;
+    image_info.tiling = image_create_info.tiling;
+    image_info.usage = image_create_info.usage;
+    image_info.flags = image_create_info.flags;
+
+    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
+        AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
+            external_image_info.handleType = flag;
+            auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+            auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+            VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(gpu(), &image_info, &image_properties);
+            const auto external_features = external_image_properties.externalMemoryProperties.externalMemoryFeatures;
+            if (result == VK_SUCCESS && (external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT)) {
+                supported_handle_types |= external_image_info.handleType;
+                any_compatible_group = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+            }
+            return true;
+        });
+
+    // Main test case. Handle types are supported but not compatible with each other
+    if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
+        external_memory_info.handleTypes = supported_handle_types;
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
+    }
+}
+
+TEST_F(VkLayerTest, CreateImageIncompatibleExternalHandleTypesNV) {
+    TEST_DESCRIPTION("Creating image with incompatible external memory handle types from NVIDIA extension");
+
+    AddRequiredExtensions(VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto external_memory_info = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
+    auto image_create_info = LvlInitStruct<VkImageCreateInfo>(&external_memory_info);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    // Get all exportable handle types supported by the platform.
+    VkExternalMemoryHandleTypeFlagsNV supported_handle_types = 0;
+    VkExternalMemoryHandleTypeFlagsNV any_compatible_group = 0;
+
+    auto vkGetPhysicalDeviceExternalImageFormatPropertiesNV =
+        GetInstanceProcAddr<PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV>(
+            "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
+
+    IterateFlags<VkExternalMemoryHandleTypeFlagBitsNV>(
+        AllVkExternalMemoryHandleTypeFlagBitsNV, [&](VkExternalMemoryHandleTypeFlagBitsNV flag) {
+            VkExternalImageFormatPropertiesNV external_image_properties = {};
+            VkResult result = vkGetPhysicalDeviceExternalImageFormatPropertiesNV(
+                gpu(), image_create_info.format, image_create_info.imageType, image_create_info.tiling, image_create_info.usage,
+                image_create_info.flags, flag, &external_image_properties);
+            if (result == VK_SUCCESS &&
+                (external_image_properties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV)) {
+                supported_handle_types |= flag;
+                any_compatible_group = external_image_properties.compatibleHandleTypes;
+            }
+            return true;
+        });
+
+    // Main test case. Handle types are supported but not compatible with each other
+    if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
+        external_memory_info.handleTypes = supported_handle_types;
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00991");
+    }
 }
 
 TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
