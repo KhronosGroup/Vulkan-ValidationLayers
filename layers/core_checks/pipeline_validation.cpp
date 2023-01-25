@@ -2862,7 +2862,8 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
         const auto raster_state = pipeline.RasterizationState();
         const bool has_rasterization = raster_state && (raster_state->rasterizerDiscardEnable == VK_FALSE);
         if (has_rasterization) {
-            if (((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
+            if (pipeline.fragment_shader_state && pipeline.fragment_output_state &&
+                ((rendering_struct->depthAttachmentFormat != VK_FORMAT_UNDEFINED) ||
                  (rendering_struct->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)) &&
                 !pipeline.DepthStencilState()) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06053",
@@ -2873,7 +2874,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const PIPELINE_STATE &
                                  string_VkFormat(rendering_struct->stencilAttachmentFormat));
             }
 
-            if ((rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
+            if (pipeline.fragment_output_state && (rendering_struct->colorAttachmentCount != 0) && !color_blend_state &&
                 pipeline.GetCreateInfo<VkGraphicsPipelineCreateInfo>().renderPass == VK_NULL_HANDLE) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-renderPass-06054",
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32
