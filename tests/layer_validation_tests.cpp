@@ -24,7 +24,9 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 #include "cast_utils.h"
+#include "enum_flag_bits.h"
 #include "layer_validation_tests.h"
+#include "vk_layer_utils.h"
 
 #include <array>
 
@@ -495,6 +497,85 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
     }
 
     return return_format;
+}
+
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+                                                                       const VkBufferCreateInfo &buffer_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features,
+                                                                       bool find_single_flag) {
+    auto external_buffer_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    external_buffer_info.flags = buffer_create_info.flags;
+    external_buffer_info.usage = buffer_create_info.usage;
+
+    VkExternalMemoryHandleTypeFlags supported_handle_type = 0;
+    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
+        AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
+            external_buffer_info.handleType = flag;
+
+            auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+            vk::GetPhysicalDeviceExternalBufferProperties(test.gpu(), &external_buffer_info, &external_buffer_properties);
+            const auto external_features = external_buffer_properties.externalMemoryProperties.externalMemoryFeatures;
+            if ((external_features & requested_features) == requested_features) {
+                supported_handle_type |= flag;
+                if (find_single_flag) return false;
+            }
+            return true;
+        });
+    return supported_handle_type;
+}
+
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+                                                                       const VkImageCreateInfo &image_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features,
+                                                                       bool find_single_flag) {
+    auto external_image_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_image_info);
+    image_info.format = image_create_info.format;
+    image_info.type = image_create_info.imageType;
+    image_info.tiling = image_create_info.tiling;
+    image_info.usage = image_create_info.usage;
+    image_info.flags = image_create_info.flags;
+
+    VkExternalMemoryHandleTypeFlags supported_handle_type = 0;
+    IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
+        AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
+            external_image_info.handleType = flag;
+            auto external_image_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+            auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_image_properties);
+            VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(test.gpu(), &image_info, &image_properties);
+            const auto external_features = external_image_properties.externalMemoryProperties.externalMemoryFeatures;
+            if (result == VK_SUCCESS && (external_features & requested_features) == requested_features) {
+                supported_handle_type |= flag;
+                if (find_single_flag) return false;
+            }
+            return true;
+        });
+    return supported_handle_type;
+}
+
+VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkLayerTest &test,
+                                                                           const VkImageCreateInfo &image_create_info,
+                                                                           VkExternalMemoryFeatureFlagsNV requested_features,
+                                                                           bool find_single_flag) {
+    auto vkGetPhysicalDeviceExternalImageFormatPropertiesNV =
+        test.GetInstanceProcAddr<PFN_vkGetPhysicalDeviceExternalImageFormatPropertiesNV>(
+            "vkGetPhysicalDeviceExternalImageFormatPropertiesNV");
+
+    VkExternalMemoryHandleTypeFlagsNV supported_handle_type = 0;
+    IterateFlags<VkExternalMemoryHandleTypeFlagBitsNV>(
+        AllVkExternalMemoryHandleTypeFlagBitsNV, [&](VkExternalMemoryHandleTypeFlagBitsNV flag) {
+            VkExternalImageFormatPropertiesNV external_image_properties = {};
+            VkResult result = vkGetPhysicalDeviceExternalImageFormatPropertiesNV(
+                test.gpu(), image_create_info.format, image_create_info.imageType, image_create_info.tiling,
+                image_create_info.usage, image_create_info.flags, flag, &external_image_properties);
+            const auto external_features = external_image_properties.externalMemoryFeatures;
+            if (result == VK_SUCCESS && (external_features & requested_features) == requested_features) {
+                supported_handle_type |= flag;
+                if (find_single_flag) return false;
+            }
+            return true;
+        });
+    return supported_handle_type;
 }
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
@@ -986,7 +1067,7 @@ void VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
     app_info_.apiVersion = m_target_api_version;
 }
 
-uint32_t VkLayerTest::DeviceValidationVersion() {
+uint32_t VkLayerTest::DeviceValidationVersion() const {
     // The validation layers assume the version we are validating to is the apiVersion unless the device apiVersion is lower
     return std::min(m_target_api_version, physDevProps().apiVersion);
 }

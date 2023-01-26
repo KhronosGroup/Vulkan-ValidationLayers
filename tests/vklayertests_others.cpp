@@ -27,8 +27,9 @@
  */
 
 #include "cast_utils.h"
-#include "layer_validation_tests.h"
 #include "core_validation_error_enums.h"
+#include "layer_validation_tests.h"
+#include "vk_layer_utils.h"
 
 class MessageIdFilter {
   public:
@@ -7389,7 +7390,6 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
     const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
 #endif
-    const auto wrong_handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
 
     AddRequiredExtensions(ext_mem_extension_name);
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -7455,7 +7455,15 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     buffer_info.pNext = &external_buffer_info;
     VkBufferObj buffer_export;
     buffer_export.init_no_mem(*m_device, buffer_info);
-    external_buffer_info.handleTypes = wrong_handle_type;
+
+    auto importable_buffer_types =
+        FindSupportedExternalMemoryHandleTypes(*this, buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+    importable_buffer_types &= ~handle_type;  // we need to find a flag that is different from handle_type
+    if (importable_buffer_types == 0) GTEST_SKIP() << "Cannot find two different buffer handle types, skipping test";
+    auto wrong_buffer_handle_type =
+        static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_buffer_types));
+    external_buffer_info.handleTypes = wrong_buffer_handle_type;
+
     VkBufferObj buffer_import;
     buffer_import.init_no_mem(*m_device, buffer_info);
 
@@ -7497,7 +7505,14 @@ TEST_F(VkLayerTest, ValidateImportMemoryHandleType) {
     image_info.mipLevels = 1;
     VkImageObj image_export(m_device);
     image_export.init_no_mem(*m_device, image_info);
-    external_image_info.handleTypes = wrong_handle_type;
+
+    auto importable_image_types =
+        FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT);
+    importable_image_types &= ~handle_type;  // we need to find a flag that is different from handle_type
+    if (importable_image_types == 0) GTEST_SKIP() << "Cannot find two different image handle types, skipping test";
+    auto wrong_image_handle_type = static_cast<VkExternalMemoryHandleTypeFlagBits>(1 << MostSignificantBit(importable_image_types));
+    external_image_info.handleTypes = wrong_image_handle_type;
+
     VkImageObj image_import(m_device);
     image_import.init_no_mem(*m_device, image_info);
 
@@ -10479,12 +10494,8 @@ TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkExternalMemoryImageCreateInfoNV external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
-    external_mem_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-
-    VkExternalMemoryImageCreateInfo external_mem = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&external_mem_nv);
-    external_mem.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-
+    auto external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
+    auto external_mem = LvlInitStruct<VkExternalMemoryImageCreateInfo>(&external_mem_nv);
     VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>(&external_mem);
     ici.imageType = VK_IMAGE_TYPE_2D;
     ici.arrayLayers = 1;
@@ -10495,6 +10506,10 @@ TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
     ici.samples = VK_SAMPLE_COUNT_1_BIT;
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    external_mem_nv.handleTypes =
+        FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
+    external_mem.handleTypes = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-00988");
     VkImage test_image;
@@ -11232,24 +11247,14 @@ TEST_F(VkLayerTest, DestroyActiveQueryPool) {
 TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     TEST_DESCRIPTION("Validate layout of image with external memory");
 
-#ifdef _WIN32
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-#else
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-#endif
-
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddOptionalExtensions(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(Init());
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     VkExternalMemoryImageCreateInfo external_mem = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
-    external_mem.handleTypes = handle_type;
-
-    VkExternalMemoryImageCreateInfoNV external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
-    external_mem_nv.handleTypes = handle_type;
-
     VkImageCreateInfo ici = LvlInitStruct<VkImageCreateInfo>(&external_mem);
     ici.imageType = VK_IMAGE_TYPE_2D;
     ici.arrayLayers = 1;
@@ -11261,15 +11266,25 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    VkImage test_image;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
-    vk::CreateImage(device(), &ici, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
-
-    ici.pNext = &external_mem_nv;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
-    vk::CreateImage(device(), &ici, nullptr, &test_image);
-    m_errorMonitor->VerifyFound();
+    external_mem.handleTypes = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
+    if (external_mem.handleTypes) {
+        VkImage test_image;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
+        vk::CreateImage(device(), &ici, nullptr, &test_image);
+        m_errorMonitor->VerifyFound();
+    }
+    if (IsExtensionsEnabled(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME)) {
+        auto external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
+        external_mem_nv.handleTypes =
+            FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
+        if (external_mem.handleTypes) {
+            ici.pNext = &external_mem_nv;
+            VkImage test_image;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
+            vk::CreateImage(device(), &ici, nullptr, &test_image);
+            m_errorMonitor->VerifyFound();
+        }
+    }
 }
 
 TEST_F(VkLayerTest, ValidateCreateSamplerWithBorderColorSwizzle) {

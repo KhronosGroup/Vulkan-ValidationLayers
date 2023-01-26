@@ -12365,22 +12365,10 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
 TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     TEST_DESCRIPTION("Test exporting memory with mismatching handleTypes.");
 
-#ifdef _WIN32
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
-#else
-    const auto ext_mem_extension_name = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
-    const auto handle_type = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
-#endif
-
-    // Check for external memory instance extensions
-    AddRequiredExtensions(ext_mem_extension_name);
-    AddOptionalExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
-    const bool bind_memory2 = IsExtensionsEnabled(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-
-    if (!AreRequiredExtensionsEnabled()) {
-        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        GTEST_SKIP() << "At least Vulkan version 1.1 is required";
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -12391,7 +12379,6 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     // Create Export Image
     VkImage image_export = VK_NULL_HANDLE;
     VkExternalMemoryImageCreateInfo external_image_info = LvlInitStruct<VkExternalMemoryImageCreateInfo>();
-    external_image_info.handleTypes = handle_type;
     VkImageCreateInfo image_info = LvlInitStruct<VkImageCreateInfo>(&external_image_info);
     image_info.imageType = VK_IMAGE_TYPE_2D;
     image_info.arrayLayers = 1;
@@ -12406,6 +12393,9 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     if (result != VK_SUCCESS) {
         GTEST_SKIP() << "Unable to create a valid external image";
     }
+
+    external_image_info.handleTypes =
+        FindSupportedExternalMemoryHandleTypes(*this, image_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
 
     // Create export memory with different handleType
     VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>();
@@ -12436,19 +12426,14 @@ TEST_F(VkLayerTest, InvalidExportExternalImageHandleType) {
     vk::BindImageMemory(device(), image_export, memory, 0);
     m_errorMonitor->VerifyFound();
 
-    if (bind_memory2 == true) {
-        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function =
-            (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    bind_image_info.image = image_export;
+    bind_image_info.memory = memory;
+    bind_image_info.memoryOffset = 0;
 
-        VkBindImageMemoryInfo bind_image_info = LvlInitStruct<VkBindImageMemoryInfo>();
-        bind_image_info.image = image_export;
-        bind_image_info.memory = memory;
-        bind_image_info.memoryOffset = 0;
-
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02728");
-        vkBindImageMemory2Function(device(), 1, &bind_image_info);
-        m_errorMonitor->VerifyFound();
-    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-memory-02728");
+    vk::BindImageMemory2(device(), 1, &bind_image_info);
+    m_errorMonitor->VerifyFound();
 
     vk::FreeMemory(device(), memory, nullptr);
     vk::DestroyImage(device(), image_export, nullptr);
@@ -13682,7 +13667,7 @@ TEST_F(VkLayerTest, InvalidMemoryAllocatepNextChain) {
     vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
 
     VkExportMemoryAllocateInfoNV export_memory_info_nv = LvlInitStruct<VkExportMemoryAllocateInfoNV>();
-    export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    export_memory_info_nv.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_NV;
 
     VkExportMemoryAllocateInfo export_memory_info = LvlInitStruct<VkExportMemoryAllocateInfo>(&export_memory_info_nv);
     export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;

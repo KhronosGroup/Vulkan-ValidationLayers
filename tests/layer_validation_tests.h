@@ -285,7 +285,7 @@ class VkLayerTest : public VkRenderFramework {
     }
 
     template <typename Proc, bool assert_proc = true>
-    [[nodiscard]] const Proc GetInstanceProcAddr(const char *proc_name) noexcept {
+    [[nodiscard]] const Proc GetInstanceProcAddr(const char *proc_name) const noexcept {
         static_assert(std::is_pointer_v<Proc>);
 
         auto proc = reinterpret_cast<Proc>(vk::GetInstanceProcAddr(instance(), proc_name));
@@ -314,7 +314,7 @@ class VkLayerTest : public VkRenderFramework {
     bool m_enableWSI;
 
     void SetTargetApiVersion(uint32_t target_api_version);
-    uint32_t DeviceValidationVersion();
+    uint32_t DeviceValidationVersion() const;
     bool LoadDeviceProfileLayer(
         PFN_vkSetPhysicalDeviceFormatPropertiesEXT &fpvkSetPhysicalDeviceFormatPropertiesEXT,
         PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT);
@@ -921,6 +921,21 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci);
 
 VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = UINT32_MAX);
+
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+                                                                       const VkBufferCreateInfo &buffer_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features,
+                                                                       bool find_single_flag = false);
+
+VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
+                                                                       const VkImageCreateInfo &image_create_info,
+                                                                       VkExternalMemoryFeatureFlags requested_features,
+                                                                       bool find_single_flag = false);
+
+VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkLayerTest &test,
+                                                                           const VkImageCreateInfo &image_create_info,
+                                                                           VkExternalMemoryFeatureFlagsNV requested_features,
+                                                                           bool find_single_flag = false);
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
