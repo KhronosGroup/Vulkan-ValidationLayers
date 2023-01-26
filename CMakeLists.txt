@@ -111,8 +111,7 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -Wextra
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers
-                        -fno-strict-aliasing
-                        -fno-builtin-memcmp)
+                        -fno-strict-aliasing)
 elseif(MSVC)
     # Warn about nested declarations
     add_compile_options("/w34456")
