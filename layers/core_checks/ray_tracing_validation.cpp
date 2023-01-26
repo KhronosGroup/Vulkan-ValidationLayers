@@ -1005,9 +1005,15 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
     }
     const PIPELINE_STATE &pipeline_state = *pPipeline;
     if (pipeline_state.GetPipelineCreateFlags() & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
-        skip |= LogError(
-            device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-03482",
-            "vkGetRayTracingShaderGroupHandlesKHR: pipeline must have not been created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.");
+        if (!enabled_features.pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_pipeline_library_group_handles)
+                                   ? "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828"
+                                   : "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-03482";
+            skip |= LogError(device, vuid,
+                             "vkGetRayTracingShaderGroupHandlesKHR: If the pipelineLibraryGroupHandles feature is not enabled, "
+                             "pipeline must have not been created with "
+                             "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.");
+        }
     }
     if (dataSize < (phys_dev_ext_props.ray_tracing_props_khr.shaderGroupHandleSize * groupCount)) {
         skip |= LogError(device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-dataSize-02420",
@@ -1047,6 +1053,18 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
         return skip;
     }
     const auto &create_info = pipeline_state->GetCreateInfo<VkRayTracingPipelineCreateInfoKHR>();
+    if (create_info.flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+        if (!enabled_features.pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
+            const char *vuid = IsExtEnabled(device_extensions.vk_ext_pipeline_library_group_handles)
+                                   ? "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829"
+                                   : "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07830";
+            skip |= LogError(
+                device, vuid,
+                "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: If the pipelineLibraryGroupHandles feature is not enabled, "
+                "pipeline must have not been created with "
+                "VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.");
+        }
+    }
     if (firstGroup >= create_info.groupCount) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051",
                          "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: firstGroup must be less than the number of shader "
