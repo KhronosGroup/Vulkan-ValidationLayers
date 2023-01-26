@@ -25,11 +25,15 @@ import platform
 import shutil
 import argparse
 
-import utils.utils as utils
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3. Run script with [-h] option for more details.")
     sys_exit(0)
+
+# Utility for creating a directory if it does not exist. Behaves similarly to 'mkdir -p'
+def make_dirs(path, clean=False):
+    if clean and os.path.isdir(path):
+        shutil.rmtree(path)
+    os.makedirs(path, exist_ok=True)
 
 # helper to define paths relative to the repo root
 def RepoRelative(path):
@@ -78,7 +82,7 @@ def BuildVVL(args, build_tests=False):
     cmake_ver_cmd = 'cmake --version'
     RunShellCmd(cmake_ver_cmd)
 
-    utils.make_dirs(VVL_BUILD_DIR)
+    make_dirs(VVL_BUILD_DIR)
     print("Run CMake for Validation Layers")
     cmake_cmd = f'cmake -DUPDATE_DEPS=ON -DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
     # By default BUILD_WERROR is OFF, CI should always enable it.
@@ -97,7 +101,7 @@ def BuildVVL(args, build_tests=False):
     RunShellCmd(install_cmd, VVL_BUILD_DIR)
 
     print('Run vk_validation_stats.py')
-    utils.make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration))
+    make_dirs(os.path.join(VVL_BUILD_DIR, 'layers', args.configuration))
     ext_dir = externalDir(args.configuration)
     stats_script = os.path.join('..', 'scripts', 'vk_validation_stats.py')
     validusage = os.path.join(ext_dir, 'Vulkan-Headers', 'registry', 'validusage.json')
@@ -120,7 +124,7 @@ def BuildLoader(args):
 
     print("Run CMake for Loader")
     LOADER_BUILD_DIR = RepoRelative("%s/Vulkan-Loader/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
-    utils.make_dirs(LOADER_BUILD_DIR)
+    make_dirs(LOADER_BUILD_DIR)
     cmake_cmd = f'cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE={args.configuration} {args.cmake} ..'
     if IsWindows(): cmake_cmd = cmake_cmd + f' -A {args.arch}'
     RunShellCmd(cmake_cmd, LOADER_BUILD_DIR)
@@ -145,7 +149,7 @@ def BuildMockICD(args):
     RunShellCmd(f'python3 scripts/update_deps.py --dir {EXTERNAL_DIR_NAME} --config {args.configuration} --arch {args.arch}', VT_DIR)
 
     print("Run CMake for ICD")
-    utils.make_dirs(ICD_BUILD_DIR)
+    make_dirs(ICD_BUILD_DIR)
     cmake_cmd = \
         f'cmake -DCMAKE_BUILD_TYPE={args.configuration} -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF -C {VT_DIR}/{EXTERNAL_DIR_NAME}/helper.cmake {args.cmake} ..'
     RunShellCmd(cmake_cmd, ICD_BUILD_DIR)
@@ -169,7 +173,7 @@ def BuildProfileLayer(args):
     BUILD_DIR = RepoRelative("%s/Vulkan-Profiles/%s" % (EXTERNAL_DIR_NAME, BUILD_DIR_NAME))
 
     print("Run CMake for Profile Layer")
-    utils.make_dirs(BUILD_DIR)
+    make_dirs(BUILD_DIR)
     cmake_cmd = \
         f'cmake -DCMAKE_BUILD_TYPE={args.configuration.capitalize()} {args.cmake} ..'
     # Currently issue with the Loader dependency being built in the profile layer repo
