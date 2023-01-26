@@ -1575,8 +1575,8 @@ TEST_F(VkLayerTest, InvalidCmdBufferPipelineDestroyed) {
 
 TEST_F(VkLayerTest, InvalidPipeline) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    uint64_t fake_pipeline_handle = 0xbaad6001;
-    VkPipeline bad_pipeline = reinterpret_cast<VkPipeline &>(fake_pipeline_handle);
+    constexpr uint64_t fake_pipeline_handle = 0xbaad6001;
+    VkPipeline bad_pipeline = CastFromUint64<VkPipeline>(fake_pipeline_handle);
 
     // Enable VK_KHR_draw_indirect_count for KHR variants
     AddOptionalExtensions(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
@@ -3085,8 +3085,8 @@ TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
         pipeline_rasterization_state_create_info_template;
     pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
 
-    uint64_t fake_pipeline_id = 0xCADECADE;
-    VkPipeline fake_pipeline_handle = reinterpret_cast<VkPipeline &>(fake_pipeline_id);
+    constexpr uint64_t fake_pipeline_id = 0xCADECADE;
+    VkPipeline fake_pipeline_handle = CastFromUint64<VkPipeline>(fake_pipeline_id);
 
     VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                                                nullptr,

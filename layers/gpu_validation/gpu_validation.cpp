@@ -20,6 +20,7 @@
 
 #include <climits>
 #include <cmath>
+#include "cast_utils.h"
 #include "gpu_validation/gpu_validation.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
@@ -699,10 +700,11 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
     }
 
     mapped_validation_buffer->instances_to_validate = pInfo->instanceCount;
-    mapped_validation_buffer->replacement_handle_bits_0 =
-        reinterpret_cast<const uint32_t *>(&as_validation_state.replacement_as_handle)[0];
-    mapped_validation_buffer->replacement_handle_bits_1 =
-        reinterpret_cast<const uint32_t *>(&as_validation_state.replacement_as_handle)[1];
+    {
+        const auto replacement_as_handle = vvl_bit_cast<std::array<uint32_t, 2>>(as_validation_state.replacement_as_handle);
+        mapped_validation_buffer->replacement_handle_bits_0 = replacement_as_handle[0];
+        mapped_validation_buffer->replacement_handle_bits_1 = replacement_as_handle[1];
+    }
     mapped_validation_buffer->invalid_handle_found = 0;
     mapped_validation_buffer->invalid_handle_bits_0 = 0;
     mapped_validation_buffer->invalid_handle_bits_1 = 0;
@@ -710,11 +712,11 @@ void GpuAssisted::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
 
     uint32_t *mapped_valid_handles = reinterpret_cast<uint32_t *>(&mapped_validation_buffer[1]);
     for (std::size_t i = 0; i < current_valid_handles.size(); i++) {
-        const uint64_t current_valid_handle = current_valid_handles[i];
+        const auto current_valid_handle = vvl_bit_cast<std::array<uint32_t, 2>>(current_valid_handles[i]);
 
-        *mapped_valid_handles = reinterpret_cast<const uint32_t *>(&current_valid_handle)[0];
+        *mapped_valid_handles = current_valid_handle[0];
         ++mapped_valid_handles;
-        *mapped_valid_handles = reinterpret_cast<const uint32_t *>(&current_valid_handle)[1];
+        *mapped_valid_handles = current_valid_handle[1];
         ++mapped_valid_handles;
     }
 
@@ -805,9 +807,9 @@ void gpuav_state::CommandBuffer::ProcessAccelerationStructure(VkQueue queue) {
                                        reinterpret_cast<void **>(&mapped_validation_buffer));
         if (result == VK_SUCCESS) {
             if (mapped_validation_buffer->invalid_handle_found > 0) {
-                uint64_t invalid_handle = 0;
-                reinterpret_cast<uint32_t *>(&invalid_handle)[0] = mapped_validation_buffer->invalid_handle_bits_0;
-                reinterpret_cast<uint32_t *>(&invalid_handle)[1] = mapped_validation_buffer->invalid_handle_bits_1;
+                const std::array<uint32_t, 2> invalid_handles = {mapped_validation_buffer->invalid_handle_bits_0,
+                                                                 mapped_validation_buffer->invalid_handle_bits_1};
+                const uint64_t invalid_handle = vvl_bit_cast<uint64_t>(invalid_handles);
 
                 device_state->LogError(
                     as_validation_buffer_info.acceleration_structure, "UNASSIGNED-AccelerationStructure",

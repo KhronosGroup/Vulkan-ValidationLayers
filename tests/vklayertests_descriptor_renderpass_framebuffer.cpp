@@ -3569,8 +3569,8 @@ TEST_F(VkLayerTest, InvalidDescriptorPool) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkResetDescriptorPool-descriptorPool-parameter");
-    uint64_t fake_pool_handle = 0xbaad6001;
-    VkDescriptorPool bad_pool = reinterpret_cast<VkDescriptorPool &>(fake_pool_handle);
+    constexpr uint64_t fake_pool_handle = 0xbaad6001;
+    VkDescriptorPool bad_pool = CastFromUint64<VkDescriptorPool>(fake_pool_handle);
     vk::ResetDescriptorPool(device(), bad_pool, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -3582,8 +3582,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSet) {
     // call vk::CmdBindDescriptorSets w/ false Descriptor Set
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    uint64_t fake_set_handle = 0xbaad6001;
-    VkDescriptorSet bad_set = reinterpret_cast<VkDescriptorSet &>(fake_set_handle);
+    constexpr uint64_t fake_set_handle = 0xbaad6001;
+    VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(fake_set_handle);
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = 0;
@@ -3620,8 +3620,8 @@ TEST_F(VkLayerTest, InvalidDescriptorSet) {
 TEST_F(VkLayerTest, InvalidDescriptorSetLayout) {
     // Attempt to create a Pipeline Layout with an invalid Descriptor Set Layout.
     // ObjectTracker should catch this.
-    uint64_t fake_layout_handle = 0xbaad6001;
-    VkDescriptorSetLayout bad_layout = reinterpret_cast<VkDescriptorSetLayout &>(fake_layout_handle);
+    constexpr uint64_t fake_layout_handle = 0xbaad6001;
+    VkDescriptorSetLayout bad_layout = CastFromUint64<VkDescriptorSetLayout>(fake_layout_handle);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-parameter");
     ASSERT_NO_FATAL_FAILURE(Init());
     VkPipelineLayout pipeline_layout;
@@ -7574,7 +7574,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
         (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
     ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
 
-    uint64_t badhandle = 0xcadecade;
+    constexpr uint64_t badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
     auto create_info = LvlInitStruct<VkDescriptorUpdateTemplateCreateInfo>();
     create_info.flags = 0;
@@ -7595,9 +7595,9 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     // descriptorSetLayout is NULL
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350");
 
-    // Bad pipelineLayout handle, to be ignored if templatType is DESCRIPTOR_SET
+    // Bad pipelineLayout handle, to be ignored if template type is DESCRIPTOR_SET
     {
-        create_info.pipelineLayout = reinterpret_cast<VkPipelineLayout &>(badhandle);
+        create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
         create_info.descriptorSetLayout = ds_layout_ub.handle();
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
@@ -7634,7 +7634,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     // Bad descriptorSetLayout handle, to be ignored if templateType is PUSH_DESCRIPTORS
     // NOTE: AMD's Windows proprietary driver doesn't seem to ignore this handle
     create_info.set = 2;
-    create_info.descriptorSetLayout = reinterpret_cast<VkDescriptorSetLayout &>(badhandle);
+    create_info.descriptorSetLayout = CastFromUint64<VkDescriptorSetLayout>(badhandle);
     if (!IsDriver(VK_DRIVER_ID_AMD_PROPRIETARY)) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
