@@ -128,12 +128,12 @@ VkRenderFramework::~VkRenderFramework() {
     debug_reporter_.error_monitor_.Finish();
 }
 
-VkPhysicalDevice VkRenderFramework::gpu() {
+VkPhysicalDevice VkRenderFramework::gpu() const {
     EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
     return gpu_;
 }
 
-const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() {
+const VkPhysicalDeviceProperties &VkRenderFramework::physDevProps() const {
     EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
     return physDevProps_;
 }

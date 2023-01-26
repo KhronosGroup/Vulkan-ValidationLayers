@@ -158,15 +158,15 @@ const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table
 
 class VkRenderFramework : public VkTestFramework {
   public:
-    VkInstance instance() { return instance_; }
-    VkDevice device() { return m_device->device(); }
+    VkInstance instance() const { return instance_; }
+    VkDevice device() const { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
-    VkPhysicalDevice gpu();
-    VkRenderPass renderPass() { return m_renderPass; }
+    VkPhysicalDevice gpu() const;
+    VkRenderPass renderPass() const { return m_renderPass; }
     const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
-    VkFramebuffer framebuffer() { return m_framebuffer; }
+    VkFramebuffer framebuffer() const { return m_framebuffer; }
     ErrorMonitor &Monitor();
-    const VkPhysicalDeviceProperties &physDevProps();
+    const VkPhysicalDeviceProperties &physDevProps() const;
 
     bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
     bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
