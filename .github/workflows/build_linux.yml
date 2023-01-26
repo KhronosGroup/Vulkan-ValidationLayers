@@ -161,3 +161,38 @@ jobs:
         run: python3 scripts/github_ci_win_linux.py --test --config release --cmake='-DVVL_CPP_STANDARD=20'
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: tests/device_profiles/nvidia_tegra_x1.json
+
+  gn:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+      - name: Cache dependent components
+        # Speed up builds by caching the build/install artifacts so they can be retrieved without rebuilding.
+        # Note: Normally the build/install artifacts are enough to satisfy the dependencies.
+        #       But in this repo, there are extra tests and steps that require files that are not placed in build/install.
+        #       When adding new similar tests, make sure to add any other required directories/files to the cache list.
+        id: cache-deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-gn
+        with:
+          path: |
+            buildtools/
+            depot_tools/
+            testing/
+            tools/
+            third_party/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashfiles('scripts/known_good.json') }}
+      - name: Install build dependencies
+        run: |
+          sudo apt-get -qq update
+          sudo apt-get install -y libxkbcommon-dev libwayland-dev libxrandr-dev \
+                                  libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-ewmh-dev \
+                                  libxcb-randr0-dev
+      - name: Build Vulkan-ValidationLayers Using Ninja
+        run: python3 scripts/github_ci_gn.py
