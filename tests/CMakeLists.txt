@@ -22,11 +22,6 @@ find_package(GTest REQUIRED CONFIG)
 # glslang is required for testing framework
 find_package(glslang CONFIG REQUIRED)
 
-if(MSVC)
-    # If MSVC, disable some signed/unsigned mismatch warnings.
-    add_compile_options(/wd4267)
-endif()
-
 add_executable(vk_layer_validation_tests)
 
 target_sources(vk_layer_validation_tests PRIVATE
@@ -97,17 +92,20 @@ target_include_directories(vk_layer_validation_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/layers
 )
 
-if (MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-    # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
-    target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
-endif()
-
-if(MSVC_IDE)
-    set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:VkLayer_khronos_validation>")
-endif()
-
-if (NOT MSVC)
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
+elseif(MSVC)
+    # Disable some signed/unsigned mismatch warnings.
+    target_compile_options(vk_layer_validation_tests PRIVATE /wd4267)
+
+    if(MSVC_IDE)
+        set_target_properties(vk_layer_validation_tests PROPERTIES VS_DEBUGGER_ENVIRONMENT "VK_LAYER_PATH=$<TARGET_FILE_DIR:VkLayer_khronos_validation>")
+    endif()
+
+    if (CMAKE_SIZEOF_VOID_P EQUAL 4)
+        # Due to IHV driver issues, we need the extra 2GB of virtual address space for 32 bit testing
+        target_link_options(vk_layer_validation_tests PRIVATE /LARGEADDRESSAWARE)
+    endif()
 endif()
 
 target_link_libraries(vk_layer_validation_tests PRIVATE

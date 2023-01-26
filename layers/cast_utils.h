@@ -1,6 +1,6 @@
 /* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+ * Copyright (c) 2019-2023 Valve Corporation
+ * Copyright (c) 2019-2023 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <type_traits>
 #include <functional>
 
 #define CAST_TO_FROM_UTILS
@@ -31,12 +33,29 @@
 template <typename HandleType, typename Uint>
 static inline HandleType CastFromUint(Uint untyped_handle) {
     static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<HandleType *>(&untyped_handle);
+    HandleType var{};
+    std::memcpy(&var, &untyped_handle, sizeof(Uint));
+    return var;
 }
 template <typename HandleType, typename Uint>
 static inline Uint CastToUint(HandleType handle) {
     static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<Uint *>(&handle);
+    Uint var{};
+    std::memcpy(&var, &handle, sizeof(Uint));
+    return var;
+}
+
+// Implementation of C++20 bit_cast
+// https://en.cppreference.com/w/cpp/numeric/bit_cast
+template <class To, class From>
+std::enable_if_t<sizeof(To) == sizeof(From) && std::is_trivially_copyable_v<From> && std::is_trivially_copyable_v<To>, To>
+vvl_bit_cast(const From &src) noexcept {
+    static_assert(std::is_trivially_constructible_v<To>,
+                  "This implementation additionally requires "
+                  "destination type to be trivially constructible");
+    To dst;
+    std::memcpy(&dst, &src, sizeof(To));
+    return dst;
 }
 
 // Ensure that the size changing casts are *static* to ensure portability

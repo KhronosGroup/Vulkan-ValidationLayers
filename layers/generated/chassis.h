@@ -35,6 +35,7 @@
 #include <memory>
 
 #include "vulkan/vulkan.h"
+#include "cast_utils.h"
 #include "vk_layer_settings_ext.h"
 #include "vk_layer_config.h"
 #include "vk_layer_data.h"
@@ -4090,7 +4091,7 @@ class ValidationObject {
         template <typename HandleType>
         HandleType Unwrap(HandleType wrappedHandle) {
             if (wrappedHandle == (HandleType)VK_NULL_HANDLE) return wrappedHandle;
-            auto iter = unique_id_mapping.find(reinterpret_cast<uint64_t const &>(wrappedHandle));
+            auto iter = unique_id_mapping.find(CastToUint64(wrappedHandle));
             if (iter == unique_id_mapping.end())
                 return (HandleType)0;
             return (HandleType)iter->second;
@@ -4103,7 +4104,7 @@ class ValidationObject {
             auto unique_id = global_unique_id++;
             unique_id = HashedUint64::hash(unique_id);
             assert(unique_id != 0); // can't be 0, otherwise unwrap will apply special rule for VK_NULL_HANDLE
-            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
+            unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
             return (HandleType)unique_id;
         }
 
@@ -4111,7 +4112,7 @@ class ValidationObject {
         VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
             auto unique_id = global_unique_id++;
             unique_id = HashedUint64::hash(unique_id);
-            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
+            unique_id_mapping.insert_or_assign(unique_id, CastToUint64(newlyCreatedHandle));
             map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
             return (VkDisplayKHR)unique_id;
         }

@@ -23,6 +23,7 @@
  */
 
 #include <mutex>
+#include "cast_utils.h"
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 #include "vk_layer_utils.h"
@@ -528,7 +529,7 @@ VkResult DispatchCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo
 void DispatchDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
-    uint64_t renderPass_id = reinterpret_cast<uint64_t &>(renderPass);
+    uint64_t renderPass_id = CastToUint64(renderPass);
 
     auto iter = unique_id_mapping.pop(renderPass_id);
     if (iter != unique_id_mapping.end()) {
@@ -687,12 +688,12 @@ void DispatchDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorP
 
     // remove references to implicitly freed descriptor sets
     for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
-        unique_id_mapping.erase(reinterpret_cast<uint64_t &>(descriptor_set));
+        unique_id_mapping.erase(CastToUint64(descriptor_set));
     }
     layer_data->pool_descriptor_sets_map.erase(descriptorPool);
     lock.unlock();
 
-    uint64_t descriptorPool_id = reinterpret_cast<uint64_t &>(descriptorPool);
+    uint64_t descriptorPool_id = CastToUint64(descriptorPool);
 
     auto iter = unique_id_mapping.pop(descriptorPool_id);
     if (iter != unique_id_mapping.end()) {
@@ -716,7 +717,7 @@ VkResult DispatchResetDescriptorPool(VkDevice device, VkDescriptorPool descripto
         WriteLockGuard lock(dispatch_lock);
         // remove references to implicitly freed descriptor sets
         for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
-            unique_id_mapping.erase(reinterpret_cast<uint64_t &>(descriptor_set));
+            unique_id_mapping.erase(CastToUint64(descriptor_set));
         }
         layer_data->pool_descriptor_sets_map[descriptorPool].clear();
     }
@@ -783,7 +784,7 @@ VkResult DispatchFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
             VkDescriptorSet handle = pDescriptorSets[index0];
             pool_descriptor_sets.erase(handle);
-            uint64_t unique_id = reinterpret_cast<uint64_t &>(handle);
+            uint64_t unique_id = CastToUint64(handle);
             unique_id_mapping.erase(unique_id);
         }
     }
@@ -868,7 +869,7 @@ void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdate
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
     WriteLockGuard lock(dispatch_lock);
-    uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    uint64_t descriptor_update_template_id = CastToUint64(descriptorUpdateTemplate);
     layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     lock.unlock();
 
@@ -889,7 +890,7 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
     WriteLockGuard lock(dispatch_lock);
-    uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    uint64_t descriptor_update_template_id = CastToUint64(descriptorUpdateTemplate);
     layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     lock.unlock();
 
@@ -1025,7 +1026,7 @@ void DispatchUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet de
     if (!wrap_handles)
         return layer_data->device_dispatch_table.UpdateDescriptorSetWithTemplate(device, descriptorSet, descriptorUpdateTemplate,
                                                                                  pData);
-    uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    uint64_t template_handle = CastToUint64(descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
@@ -1043,7 +1044,7 @@ void DispatchUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet
     if (!wrap_handles)
         return layer_data->device_dispatch_table.UpdateDescriptorSetWithTemplateKHR(device, descriptorSet, descriptorUpdateTemplate,
                                                                                     pData);
-    uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    uint64_t template_handle = CastToUint64(descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
@@ -1062,7 +1063,7 @@ void DispatchCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CmdPushDescriptorSetWithTemplateKHR(commandBuffer, descriptorUpdateTemplate,
                                                                                      layout, set, pData);
-    uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
+    uint64_t template_handle = CastToUint64(descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
         ReadLockGuard lock(dispatch_lock);
@@ -1204,7 +1205,7 @@ VkResult DispatchDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarker
     if (!wrap_handles) return layer_data->device_dispatch_table.DebugMarkerSetObjectTagEXT(device, pTagInfo);
     safe_VkDebugMarkerObjectTagInfoEXT local_tag_info(pTagInfo);
     {
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.object));
+        auto it = unique_id_mapping.find(CastToUint64(local_tag_info.object));
         if (it != unique_id_mapping.end()) {
             local_tag_info.object = it->second;
         }
@@ -1219,7 +1220,7 @@ VkResult DispatchDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarke
     if (!wrap_handles) return layer_data->device_dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     safe_VkDebugMarkerObjectNameInfoEXT local_name_info(pNameInfo);
     {
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.object));
+        auto it = unique_id_mapping.find(CastToUint64(local_name_info.object));
         if (it != unique_id_mapping.end()) {
             local_name_info.object = it->second;
         }
@@ -1235,7 +1236,7 @@ VkResult DispatchSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsOb
     if (!wrap_handles) return layer_data->device_dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
     safe_VkDebugUtilsObjectTagInfoEXT local_tag_info(pTagInfo);
     {
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.objectHandle));
+        auto it = unique_id_mapping.find(CastToUint64(local_tag_info.objectHandle));
         if (it != unique_id_mapping.end()) {
             local_tag_info.objectHandle = it->second;
         }
@@ -1250,7 +1251,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     if (!wrap_handles) return layer_data->device_dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     safe_VkDebugUtilsObjectNameInfoEXT local_name_info(pNameInfo);
     {
-        auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.objectHandle));
+        auto it = unique_id_mapping.find(CastToUint64(local_name_info.objectHandle));
         if (it != unique_id_mapping.end()) {
             local_name_info.objectHandle = it->second;
         }
@@ -1403,7 +1404,7 @@ void DispatchFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint
 void DispatchDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks* pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-    uint64_t commandPool_id = reinterpret_cast<uint64_t &>(commandPool);
+    uint64_t commandPool_id = CastToUint64(commandPool);
     auto iter = unique_id_mapping.pop(commandPool_id);
     if (iter != unique_id_mapping.end()) {
         commandPool = (VkCommandPool)iter->second;
@@ -1973,7 +1974,7 @@ void DispatchFreeMemory(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.FreeMemory(device, memory, pAllocator);
-    uint64_t memory_id = reinterpret_cast<uint64_t &>(memory);
+    uint64_t memory_id = CastToUint64(memory);
     auto iter = unique_id_mapping.pop(memory_id);
     if (iter != unique_id_mapping.end()) {
         memory = (VkDeviceMemory)iter->second;
@@ -2272,7 +2273,7 @@ void DispatchDestroyFence(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFence(device, fence, pAllocator);
-    uint64_t fence_id = reinterpret_cast<uint64_t &>(fence);
+    uint64_t fence_id = CastToUint64(fence);
     auto iter = unique_id_mapping.pop(fence_id);
     if (iter != unique_id_mapping.end()) {
         fence = (VkFence)iter->second;
@@ -2367,7 +2368,7 @@ void DispatchDestroySemaphore(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
-    uint64_t semaphore_id = reinterpret_cast<uint64_t &>(semaphore);
+    uint64_t semaphore_id = CastToUint64(semaphore);
     auto iter = unique_id_mapping.pop(semaphore_id);
     if (iter != unique_id_mapping.end()) {
         semaphore = (VkSemaphore)iter->second;
@@ -2400,7 +2401,7 @@ void DispatchDestroyEvent(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyEvent(device, event, pAllocator);
-    uint64_t event_id = reinterpret_cast<uint64_t &>(event);
+    uint64_t event_id = CastToUint64(event);
     auto iter = unique_id_mapping.pop(event_id);
     if (iter != unique_id_mapping.end()) {
         event = (VkEvent)iter->second;
@@ -2475,7 +2476,7 @@ void DispatchDestroyQueryPool(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
-    uint64_t queryPool_id = reinterpret_cast<uint64_t &>(queryPool);
+    uint64_t queryPool_id = CastToUint64(queryPool);
     auto iter = unique_id_mapping.pop(queryPool_id);
     if (iter != unique_id_mapping.end()) {
         queryPool = (VkQueryPool)iter->second;
@@ -2537,7 +2538,7 @@ void DispatchDestroyBuffer(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
-    uint64_t buffer_id = reinterpret_cast<uint64_t &>(buffer);
+    uint64_t buffer_id = CastToUint64(buffer);
     auto iter = unique_id_mapping.pop(buffer_id);
     if (iter != unique_id_mapping.end()) {
         buffer = (VkBuffer)iter->second;
@@ -2581,7 +2582,7 @@ void DispatchDestroyBufferView(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
-    uint64_t bufferView_id = reinterpret_cast<uint64_t &>(bufferView);
+    uint64_t bufferView_id = CastToUint64(bufferView);
     auto iter = unique_id_mapping.pop(bufferView_id);
     if (iter != unique_id_mapping.end()) {
         bufferView = (VkBufferView)iter->second;
@@ -2623,7 +2624,7 @@ void DispatchDestroyImage(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImage(device, image, pAllocator);
-    uint64_t image_id = reinterpret_cast<uint64_t &>(image);
+    uint64_t image_id = CastToUint64(image);
     auto iter = unique_id_mapping.pop(image_id);
     if (iter != unique_id_mapping.end()) {
         image = (VkImage)iter->second;
@@ -2683,7 +2684,7 @@ void DispatchDestroyImageView(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
-    uint64_t imageView_id = reinterpret_cast<uint64_t &>(imageView);
+    uint64_t imageView_id = CastToUint64(imageView);
     auto iter = unique_id_mapping.pop(imageView_id);
     if (iter != unique_id_mapping.end()) {
         imageView = (VkImageView)iter->second;
@@ -2725,7 +2726,7 @@ void DispatchDestroyShaderModule(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
-    uint64_t shaderModule_id = reinterpret_cast<uint64_t &>(shaderModule);
+    uint64_t shaderModule_id = CastToUint64(shaderModule);
     auto iter = unique_id_mapping.pop(shaderModule_id);
     if (iter != unique_id_mapping.end()) {
         shaderModule = (VkShaderModule)iter->second;
@@ -2758,7 +2759,7 @@ void DispatchDestroyPipelineCache(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
-    uint64_t pipelineCache_id = reinterpret_cast<uint64_t &>(pipelineCache);
+    uint64_t pipelineCache_id = CastToUint64(pipelineCache);
     auto iter = unique_id_mapping.pop(pipelineCache_id);
     if (iter != unique_id_mapping.end()) {
         pipelineCache = (VkPipelineCache)iter->second;
@@ -2870,7 +2871,7 @@ void DispatchDestroyPipeline(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
-    uint64_t pipeline_id = reinterpret_cast<uint64_t &>(pipeline);
+    uint64_t pipeline_id = CastToUint64(pipeline);
     auto iter = unique_id_mapping.pop(pipeline_id);
     if (iter != unique_id_mapping.end()) {
         pipeline = (VkPipeline)iter->second;
@@ -2916,7 +2917,7 @@ void DispatchDestroyPipelineLayout(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
-    uint64_t pipelineLayout_id = reinterpret_cast<uint64_t &>(pipelineLayout);
+    uint64_t pipelineLayout_id = CastToUint64(pipelineLayout);
     auto iter = unique_id_mapping.pop(pipelineLayout_id);
     if (iter != unique_id_mapping.end()) {
         pipelineLayout = (VkPipelineLayout)iter->second;
@@ -2958,7 +2959,7 @@ void DispatchDestroySampler(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySampler(device, sampler, pAllocator);
-    uint64_t sampler_id = reinterpret_cast<uint64_t &>(sampler);
+    uint64_t sampler_id = CastToUint64(sampler);
     auto iter = unique_id_mapping.pop(sampler_id);
     if (iter != unique_id_mapping.end()) {
         sampler = (VkSampler)iter->second;
@@ -3008,7 +3009,7 @@ void DispatchDestroyDescriptorSetLayout(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
-    uint64_t descriptorSetLayout_id = reinterpret_cast<uint64_t &>(descriptorSetLayout);
+    uint64_t descriptorSetLayout_id = CastToUint64(descriptorSetLayout);
     auto iter = unique_id_mapping.pop(descriptorSetLayout_id);
     if (iter != unique_id_mapping.end()) {
         descriptorSetLayout = (VkDescriptorSetLayout)iter->second;
@@ -3146,7 +3147,7 @@ void DispatchDestroyFramebuffer(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-    uint64_t framebuffer_id = reinterpret_cast<uint64_t &>(framebuffer);
+    uint64_t framebuffer_id = CastToUint64(framebuffer);
     auto iter = unique_id_mapping.pop(framebuffer_id);
     if (iter != unique_id_mapping.end()) {
         framebuffer = (VkFramebuffer)iter->second;
@@ -4242,7 +4243,7 @@ void DispatchDestroySamplerYcbcrConversion(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-    uint64_t ycbcrConversion_id = reinterpret_cast<uint64_t &>(ycbcrConversion);
+    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
     auto iter = unique_id_mapping.pop(ycbcrConversion_id);
     if (iter != unique_id_mapping.end()) {
         ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
@@ -4578,7 +4579,7 @@ void DispatchDestroyPrivateDataSlot(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlot(device, privateDataSlot, pAllocator);
-    uint64_t privateDataSlot_id = reinterpret_cast<uint64_t &>(privateDataSlot);
+    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
     auto iter = unique_id_mapping.pop(privateDataSlot_id);
     if (iter != unique_id_mapping.end()) {
         privateDataSlot = (VkPrivateDataSlot)iter->second;
@@ -5168,7 +5169,7 @@ void DispatchDestroySurfaceKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
-    uint64_t surface_id = reinterpret_cast<uint64_t &>(surface);
+    uint64_t surface_id = CastToUint64(surface);
     auto iter = unique_id_mapping.pop(surface_id);
     if (iter != unique_id_mapping.end()) {
         surface = (VkSurfaceKHR)iter->second;
@@ -5603,7 +5604,7 @@ void DispatchDestroyVideoSessionKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyVideoSessionKHR(device, videoSession, pAllocator);
-    uint64_t videoSession_id = reinterpret_cast<uint64_t &>(videoSession);
+    uint64_t videoSession_id = CastToUint64(videoSession);
     auto iter = unique_id_mapping.pop(videoSession_id);
     if (iter != unique_id_mapping.end()) {
         videoSession = (VkVideoSessionKHR)iter->second;
@@ -5709,7 +5710,7 @@ void DispatchDestroyVideoSessionParametersKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyVideoSessionParametersKHR(device, videoSessionParameters, pAllocator);
-    uint64_t videoSessionParameters_id = reinterpret_cast<uint64_t &>(videoSessionParameters);
+    uint64_t videoSessionParameters_id = CastToUint64(videoSessionParameters);
     auto iter = unique_id_mapping.pop(videoSessionParameters_id);
     if (iter != unique_id_mapping.end()) {
         videoSessionParameters = (VkVideoSessionParametersKHR)iter->second;
@@ -6618,7 +6619,7 @@ void DispatchDestroySamplerYcbcrConversionKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
-    uint64_t ycbcrConversion_id = reinterpret_cast<uint64_t &>(ycbcrConversion);
+    uint64_t ycbcrConversion_id = CastToUint64(ycbcrConversion);
     auto iter = unique_id_mapping.pop(ycbcrConversion_id);
     if (iter != unique_id_mapping.end()) {
         ycbcrConversion = (VkSamplerYcbcrConversion)iter->second;
@@ -6940,7 +6941,7 @@ void DispatchDestroyDeferredOperationKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDeferredOperationKHR(device, operation, pAllocator);
-    uint64_t operation_id = reinterpret_cast<uint64_t &>(operation);
+    uint64_t operation_id = CastToUint64(operation);
     auto iter = unique_id_mapping.pop(operation_id);
     if (iter != unique_id_mapping.end()) {
         operation = (VkDeferredOperationKHR)iter->second;
@@ -7498,7 +7499,7 @@ void DispatchDestroyDebugReportCallbackEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    uint64_t callback_id = reinterpret_cast<uint64_t &>(callback);
+    uint64_t callback_id = CastToUint64(callback);
     auto iter = unique_id_mapping.pop(callback_id);
     if (iter != unique_id_mapping.end()) {
         callback = (VkDebugReportCallbackEXT)iter->second;
@@ -7724,7 +7725,7 @@ void DispatchDestroyCuModuleNVX(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCuModuleNVX(device, module, pAllocator);
-    uint64_t module_id = reinterpret_cast<uint64_t &>(module);
+    uint64_t module_id = CastToUint64(module);
     auto iter = unique_id_mapping.pop(module_id);
     if (iter != unique_id_mapping.end()) {
         module = (VkCuModuleNVX)iter->second;
@@ -7742,7 +7743,7 @@ void DispatchDestroyCuFunctionNVX(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCuFunctionNVX(device, function, pAllocator);
-    uint64_t function_id = reinterpret_cast<uint64_t &>(function);
+    uint64_t function_id = CastToUint64(function);
     auto iter = unique_id_mapping.pop(function_id);
     if (iter != unique_id_mapping.end()) {
         function = (VkCuFunctionNVX)iter->second;
@@ -8290,7 +8291,7 @@ void DispatchDestroyDebugUtilsMessengerEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-    uint64_t messenger_id = reinterpret_cast<uint64_t &>(messenger);
+    uint64_t messenger_id = CastToUint64(messenger);
     auto iter = unique_id_mapping.pop(messenger_id);
     if (iter != unique_id_mapping.end()) {
         messenger = (VkDebugUtilsMessengerEXT)iter->second;
@@ -8408,7 +8409,7 @@ void DispatchDestroyValidationCacheEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
-    uint64_t validationCache_id = reinterpret_cast<uint64_t &>(validationCache);
+    uint64_t validationCache_id = CastToUint64(validationCache);
     auto iter = unique_id_mapping.pop(validationCache_id);
     if (iter != unique_id_mapping.end()) {
         validationCache = (VkValidationCacheEXT)iter->second;
@@ -8542,7 +8543,7 @@ void DispatchDestroyAccelerationStructureNV(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
-    uint64_t accelerationStructure_id = reinterpret_cast<uint64_t &>(accelerationStructure);
+    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
     auto iter = unique_id_mapping.pop(accelerationStructure_id);
     if (iter != unique_id_mapping.end()) {
         accelerationStructure = (VkAccelerationStructureNV)iter->second;
@@ -9602,7 +9603,7 @@ void DispatchDestroyIndirectCommandsLayoutNV(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
-    uint64_t indirectCommandsLayout_id = reinterpret_cast<uint64_t &>(indirectCommandsLayout);
+    uint64_t indirectCommandsLayout_id = CastToUint64(indirectCommandsLayout);
     auto iter = unique_id_mapping.pop(indirectCommandsLayout_id);
     if (iter != unique_id_mapping.end()) {
         indirectCommandsLayout = (VkIndirectCommandsLayoutNV)iter->second;
@@ -9665,7 +9666,7 @@ void DispatchDestroyPrivateDataSlotEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
-    uint64_t privateDataSlot_id = reinterpret_cast<uint64_t &>(privateDataSlot);
+    uint64_t privateDataSlot_id = CastToUint64(privateDataSlot);
     auto iter = unique_id_mapping.pop(privateDataSlot_id);
     if (iter != unique_id_mapping.end()) {
         privateDataSlot = (VkPrivateDataSlot)iter->second;
@@ -10178,7 +10179,7 @@ void DispatchDestroyBufferCollectionFUCHSIA(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferCollectionFUCHSIA(device, collection, pAllocator);
-    uint64_t collection_id = reinterpret_cast<uint64_t &>(collection);
+    uint64_t collection_id = CastToUint64(collection);
     auto iter = unique_id_mapping.pop(collection_id);
     if (iter != unique_id_mapping.end()) {
         collection = (VkBufferCollectionFUCHSIA)iter->second;
@@ -10426,7 +10427,7 @@ void DispatchDestroyMicromapEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyMicromapEXT(device, micromap, pAllocator);
-    uint64_t micromap_id = reinterpret_cast<uint64_t &>(micromap);
+    uint64_t micromap_id = CastToUint64(micromap);
     auto iter = unique_id_mapping.pop(micromap_id);
     if (iter != unique_id_mapping.end()) {
         micromap = (VkMicromapEXT)iter->second;
@@ -11224,7 +11225,7 @@ void DispatchDestroyOpticalFlowSessionNV(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyOpticalFlowSessionNV(device, session, pAllocator);
-    uint64_t session_id = reinterpret_cast<uint64_t &>(session);
+    uint64_t session_id = CastToUint64(session);
     auto iter = unique_id_mapping.pop(session_id);
     if (iter != unique_id_mapping.end()) {
         session = (VkOpticalFlowSessionNV)iter->second;
@@ -11363,7 +11364,7 @@ void DispatchDestroyAccelerationStructureKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
-    uint64_t accelerationStructure_id = reinterpret_cast<uint64_t &>(accelerationStructure);
+    uint64_t accelerationStructure_id = CastToUint64(accelerationStructure);
     auto iter = unique_id_mapping.pop(accelerationStructure_id);
     if (iter != unique_id_mapping.end()) {
         accelerationStructure = (VkAccelerationStructureKHR)iter->second;

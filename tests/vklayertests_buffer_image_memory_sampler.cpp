@@ -1136,8 +1136,8 @@ TEST_F(VkLayerTest, CreateUnknownObject) {
 
     // Pass bogus handle into GetImageMemoryRequirements
     VkMemoryRequirements mem_reqs;
-    uint64_t fakeImageHandle = 0xCADECADE;
-    VkImage fauxImage = reinterpret_cast<VkImage &>(fakeImageHandle);
+    constexpr uint64_t fakeImageHandle = 0xCADECADE;
+    VkImage fauxImage = CastFromUint64<VkImage>(fakeImageHandle);
 
     vk::GetImageMemoryRequirements(m_device->device(), fauxImage, &mem_reqs);
 
