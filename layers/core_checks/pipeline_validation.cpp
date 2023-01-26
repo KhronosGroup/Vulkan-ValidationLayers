@@ -1982,7 +1982,6 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
                                                           const uint32_t pipe_index) const {
     bool skip = false;
     const auto *multisample_state = pipeline.MultisampleState();
-    const uint32_t raster_samples = static_cast<uint32_t>(pipeline.GetNumSamples());
     if (subpass_desc && multisample_state) {
         const auto &rp_state = pipeline.RenderPassState();
         auto accum_color_samples = [subpass_desc, &rp_state](uint32_t &samples) {
@@ -1994,6 +1993,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const PIPELINE_STATE &
             }
         };
 
+        const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
         if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
                   IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||

@@ -281,6 +281,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
         } else if (!enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) {
+            const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
             for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
                 if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
                     continue;
@@ -288,7 +289,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 auto view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pColorAttachments[i].imageView);
                 auto samples = Get<IMAGE_STATE>(view_state->create_info.image)->createInfo.samples;
 
-                if (samples != pipeline.GetNumSamples()) {
+                if (samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
                                                   ? vuid.dynamic_rendering_07285
                                                   : vuid.dynamic_rendering_multi_sample;
@@ -297,14 +298,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                      ") sample count (%s) must match corresponding VkPipelineMultisampleStateCreateInfo "
                                      "sample count (%s)",
                                      caller, i, string_VkSampleCountFlagBits(samples),
-                                     string_VkSampleCountFlagBits(pipeline.GetNumSamples()));
+                                     string_VkSampleCountFlagBits(rasterization_samples));
                 }
             }
 
             if ((rendering_info.pDepthAttachment != nullptr) && (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE)) {
                 const auto &depth_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pDepthAttachment->imageView);
                 const auto &depth_image_samples = Get<IMAGE_STATE>(depth_view_state->create_info.image)->createInfo.samples;
-                if (depth_image_samples != pipeline.GetNumSamples()) {
+                if (depth_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
                                                   ? vuid.dynamic_rendering_07286
                                                   : vuid.dynamic_rendering_06189;
@@ -312,7 +313,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                      "%s: Depth attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
                                      caller, string_VkSampleCountFlagBits(depth_image_samples),
-                                     string_VkSampleCountFlagBits(pipeline.GetNumSamples()));
+                                     string_VkSampleCountFlagBits(rasterization_samples));
                 }
             }
 
@@ -320,7 +321,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 (rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE)) {
                 const auto &stencil_view_state = Get<IMAGE_VIEW_STATE>(rendering_info.pStencilAttachment->imageView);
                 const auto &stencil_image_samples = Get<IMAGE_STATE>(stencil_view_state->create_info.image)->createInfo.samples;
-                if (stencil_image_samples != pipeline.GetNumSamples()) {
+                if (stencil_image_samples != rasterization_samples) {
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
                                                   ? vuid.dynamic_rendering_07287
                                                   : vuid.dynamic_rendering_06190;
@@ -328,7 +329,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                      "%s: Stencil attachment sample count (%s) must match corresponding "
                                      "VkPipelineMultisampleStateCreateInfo::rasterizationSamples count (%s)",
                                      caller, string_VkSampleCountFlagBits(stencil_image_samples),
-                                     string_VkSampleCountFlagBits(pipeline.GetNumSamples()));
+                                     string_VkSampleCountFlagBits(rasterization_samples));
                 }
             }
         }
@@ -471,7 +472,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     // Skip the check if rasterization is disabled.
     const auto *raster_state = pipeline.RasterizationState();
     if (!raster_state || (raster_state->rasterizerDiscardEnable == VK_FALSE)) {
-        VkSampleCountFlagBits pso_num_samples = pipeline.GetNumSamples();
         if (cb_state.activeRenderPass) {
             if (cb_state.activeRenderPass->UsesDynamicRendering()) {
                 // TODO: Mirror the below VUs but using dynamic rendering
@@ -509,10 +509,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
                 }
 
+                const VkSampleCountFlagBits rasterization_samples = cb_state.GetRasterizationSamples(pipeline);
                 if (!(IsExtEnabled(device_extensions.vk_amd_mixed_attachment_samples) ||
                       IsExtEnabled(device_extensions.vk_nv_framebuffer_mixed_samples) ||
                       enabled_features.multisampled_render_to_single_sampled_features.multisampledRenderToSingleSampled) &&
-                    ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
+                    ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
                     const LogObjectList objlist(pipeline.pipeline(), cb_state.activeRenderPass->renderPass());
                     const char *vuid_string = IsExtEnabled(device_extensions.vk_ext_multisampled_render_to_single_sampled)
                                                   ? vuid.msrtss_rasterization_samples
@@ -520,7 +521,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     skip |= LogError(objlist, vuid_string,
                                      "%s: In %s the sample count is %s while the current %s has %s and they need to be the same.",
                                      caller, report_data->FormatHandle(pipeline.pipeline()).c_str(),
-                                     string_VkSampleCountFlagBits(pso_num_samples),
+                                     string_VkSampleCountFlagBits(rasterization_samples),
                                      report_data->FormatHandle(cb_state.activeRenderPass->renderPass()).c_str(),
                                      string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
                 }
