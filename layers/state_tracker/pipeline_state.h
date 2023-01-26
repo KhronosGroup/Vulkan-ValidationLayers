@@ -352,15 +352,6 @@ class PIPELINE_STATE : public BASE_NODE {
         return nullptr;
     }
 
-    // For given pipeline, return number of MSAA samples, or one if MSAA disabled
-    VkSampleCountFlagBits GetNumSamples() const {
-        const auto ms_state = MultisampleState();
-        if (ms_state) {
-            return ms_state->rasterizationSamples;
-        }
-        return VK_SAMPLE_COUNT_1_BIT;
-    }
-
     const safe_VkPipelineRasterizationStateCreateInfo *RasterizationState() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (pre_raster_state) {

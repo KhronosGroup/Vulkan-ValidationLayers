@@ -5325,6 +5325,7 @@ void ValidationStateTracker::PostCallRecordCmdSetRasterizationSamplesEXT(VkComma
                                                                          VkSampleCountFlagBits rasterizationSamples) {
     auto cb_state = GetWrite<CMD_BUFFER_STATE>(commandBuffer);
     cb_state->RecordStateCmd(CMD_SETRASTERIZATIONSAMPLESEXT, CB_DYNAMIC_RASTERIZATION_SAMPLES_EXT_SET);
+    cb_state->dynamic_state_value.rasterization_samples = rasterizationSamples;
 }
 
 void ValidationStateTracker::PostCallRecordCmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples,

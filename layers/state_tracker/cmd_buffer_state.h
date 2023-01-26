@@ -207,6 +207,8 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
         // VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT
         // maxDiscardRectangles is at max 8 on all known implementations currently
         std::bitset<32> discard_rectangles;
+        // VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT
+        VkSampleCountFlagBits rasterization_samples;
     } dynamic_state_value;
 
     std::string begin_rendering_func_name;
@@ -547,6 +549,20 @@ class CMD_BUFFER_STATE : public REFCOUNTED_NODE {
             }
         }
         return false;
+    }
+
+    // For given pipeline, return number of MSAA samples, or one if MSAA disabled
+    VkSampleCountFlagBits GetRasterizationSamples(const PIPELINE_STATE &pipeline) const {
+        VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_1_BIT;
+        if (pipeline.IsDynamic(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            rasterization_samples = dynamic_state_value.rasterization_samples;
+        } else {
+            const auto ms_state = pipeline.MultisampleState();
+            if (ms_state) {
+                rasterization_samples = ms_state->rasterizationSamples;
+            }
+        }
+        return rasterization_samples;
     }
 
     bool RasterizationDisabled() const;
