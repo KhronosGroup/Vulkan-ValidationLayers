@@ -1364,6 +1364,12 @@ void ValidationStateTracker::CreateDevice(const VkDeviceCreateInfo *pCreateInfo)
         if (shader_core_builtins_features) {
             enabled_features.shader_core_builtins_features = *shader_core_builtins_features;
         }
+
+        const auto pipeline_library_group_handles_features =
+            LvlFindInChain<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(pCreateInfo->pNext);
+        if (pipeline_library_group_handles_features) {
+            enabled_features.pipeline_library_group_handles_features = *pipeline_library_group_handles_features;
+        }
     }
 
     // Store physical device properties and physical device mem limits into CoreChecks structs
