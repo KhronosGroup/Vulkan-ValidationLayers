@@ -14,14 +14,11 @@ git remote set-head origin -a
 ```
 
 ## CI Build Status
-| Build Status |
-|:------------|
-| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_windows.yml/badge.svg?branch=main)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
-| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux.yml/badge.svg?branch=main)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
-| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_macos.yml/badge.svg?branch=main)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
-| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux_gn.yml/badge.svg?branch=main)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
-| [![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_android.yml/badge.svg?branch=main)](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions) |
 
+![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_windows.yml/badge.svg)
+![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_linux.yml/badge.svg)
+![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_macos.yml/badge.svg)
+![Build Status](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions/workflows/build_android.yml/badge.svg)
 
 ## Introduction
 
