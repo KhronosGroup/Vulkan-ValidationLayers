@@ -750,6 +750,9 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
 
     VkRayTracingPipelineCreateInfoKHR pipeline_ci = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
     pipeline_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
+    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
+        pipeline_ci.flags |= VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
+    }
     pipeline_ci.stageCount = 1;
     pipeline_ci.pStages = &stage_create_info;
     pipeline_ci.groupCount = 1;
@@ -819,6 +822,20 @@ TEST_F(VkLayerTest, RayTracingLibraryFlags) {
         library_ci.pLibraries = &invalid_library;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-03381");
         vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
+        auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+        GetPhysicalDeviceProperties2(ray_tracing_properties);
+        const auto vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
+            GetInstanceProcAddr<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
+                "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+        std::vector<uint8_t> handle_buffer;
+        handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07830");
+        vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
+            m_device->handle(), library, 0, 1, ray_tracing_properties.shaderGroupHandleCaptureReplaySize, handle_buffer.data());
         m_errorMonitor->VerifyFound();
     }
 
@@ -1196,6 +1213,87 @@ TEST_F(VkLayerTest, RayTracingTestWrongPipelineType) {
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622");
     vkGetRayTracingShaderGroupStackSizeKHR(device(), pipe.pipeline_, 0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, RayTracingPipelineLibraryGroupHandlesEXT) {
+    TEST_DESCRIPTION("Validate VK_EXT_pipeline_library_group_handles");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
+    if (!InitFrameworkForRayTracingTest(this, true)) {
+        GTEST_SKIP() << "unable to init ray tracing test";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+    auto ray_tracing_features = LvlInitStruct<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>();
+    auto pipeline_library_group_handles_features =
+        LvlInitStruct<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT>(&ray_tracing_features);
+    auto features2 = GetPhysicalDeviceFeatures2(ray_tracing_features);
+
+    if (!ray_tracing_features.rayTracingPipeline) {
+        GTEST_SKIP() << "Feature rayTracing is not supported.";
+    }
+    if (!pipeline_library_group_handles_features.pipelineLibraryGroupHandles) {
+        GTEST_SKIP() << "Feature pipelineLibraryGroupHandles is not supported.";
+    }
+    if (!ray_tracing_features.rayTracingPipelineShaderGroupHandleCaptureReplay) {
+        GTEST_SKIP() << "rayTracingShaderGroupHandleCaptureReplay not enabled";
+    }
+    pipeline_library_group_handles_features.pipelineLibraryGroupHandles = false;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    const VkPipelineLayoutObj pipeline_layout(m_device, {});
+
+    VkShaderObj chit_shader(this, bindStateRTShaderText, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, SPV_ENV_VULKAN_1_2);
+    VkPipelineShaderStageCreateInfo stage_create_info = LvlInitStruct<VkPipelineShaderStageCreateInfo>();
+    stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+    stage_create_info.module = chit_shader.handle();
+    stage_create_info.pName = "main";
+
+    VkRayTracingShaderGroupCreateInfoKHR group_create_info = LvlInitStruct<VkRayTracingShaderGroupCreateInfoKHR>();
+    group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+    group_create_info.generalShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.closestHitShader = 0;
+    group_create_info.anyHitShader = VK_SHADER_UNUSED_KHR;
+    group_create_info.intersectionShader = VK_SHADER_UNUSED_KHR;
+
+    VkRayTracingPipelineInterfaceCreateInfoKHR interface_ci = LvlInitStruct<VkRayTracingPipelineInterfaceCreateInfoKHR>();
+    interface_ci.maxPipelineRayHitAttributeSize = 4;
+    interface_ci.maxPipelineRayPayloadSize = 4;
+
+    auto ray_tracing_properties = LvlInitStruct<VkPhysicalDeviceRayTracingPipelinePropertiesKHR>();
+    GetPhysicalDeviceProperties2(ray_tracing_properties);
+
+    const auto vkGetRayTracingShaderGroupHandlesKHR =
+        GetInstanceProcAddr<PFN_vkGetRayTracingShaderGroupHandlesKHR>("vkGetRayTracingShaderGroupHandlesKHR");
+    CreateNVRayTracingPipelineHelper rt_pipe(*this);
+    rt_pipe.rp_ci_KHR_ = LvlInitStruct<VkRayTracingPipelineCreateInfoKHR>();
+    rt_pipe.rp_ci_KHR_.flags =
+        VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR;
+    rt_pipe.rp_ci_KHR_.stageCount = 1;
+    rt_pipe.rp_ci_KHR_.pStages = &stage_create_info;
+    rt_pipe.rp_ci_KHR_.groupCount = 1;
+    rt_pipe.rp_ci_KHR_.pGroups = &group_create_info;
+    rt_pipe.rp_ci_KHR_.layout = pipeline_layout.handle();
+    rt_pipe.rp_ci_KHR_.pLibraryInterface = &interface_ci;
+    VkResult err = rt_pipe.CreateKHRRayTracingPipeline(false, false);
+    ASSERT_VK_SUCCESS(err);
+
+    std::vector<uint8_t> handle_buffer;
+    handle_buffer.resize(ray_tracing_properties.shaderGroupHandleSize);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-07828");
+    vkGetRayTracingShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 1, ray_tracing_properties.shaderGroupHandleSize,
+                                         handle_buffer.data());
+    m_errorMonitor->VerifyFound();
+    const auto vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
+        GetInstanceProcAddr<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
+            "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+    handle_buffer.resize(ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-07829");
+    vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 0, 1,
+                                                      ray_tracing_properties.shaderGroupHandleCaptureReplaySize,
+                                                      handle_buffer.data());
     m_errorMonitor->VerifyFound();
 }
 
