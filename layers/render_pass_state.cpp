@@ -213,8 +213,8 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
             const auto final_layout = rp->createInfo.pAttachments[attachment].finalLayout;
-            // Add final transitions for attachments at the end of the render pass.
-            if (final_layout != attachment_layout[attachment]) {
+            // Add final transitions for attachments that were used and change layout.
+            if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
                 final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
             }
         }
