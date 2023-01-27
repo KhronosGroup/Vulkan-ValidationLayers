@@ -88,8 +88,8 @@ endif()
 
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation)
 target_include_directories(vk_layer_validation_tests PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/layers
+    ${VVL_SOURCE_DIR}/layers
+    .
 )
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
