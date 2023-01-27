@@ -43,7 +43,6 @@
 // Set of VUID that need to go between core_validation.cpp and drawdispatch_validation.cpp
 struct DrawDispatchVuid {
     const char* pipeline_bound = kVUIDUndefined;
-    const char* dynamic_state = kVUIDUndefined;
     const char* index_binding = kVUIDUndefined;
     const char* vertex_binding = kVUIDUndefined;
     const char* vertex_binding_null = kVUIDUndefined;
@@ -156,6 +155,17 @@ struct DrawDispatchVuid {
     const char* dynamic_coverage_reduction_mode = kVUIDUndefined;
     const char* dynamic_representative_fragment_test_enable = kVUIDUndefined;
     const char* dynamic_shading_rate_image_enable = kVUIDUndefined;
+    const char* dynamic_viewport = kVUIDUndefined;
+    const char* dynamic_scissor = kVUIDUndefined;
+    const char* dynamic_depth_bias = kVUIDUndefined;
+    const char* dynamic_line_width = kVUIDUndefined;
+    const char* dynamic_line_stipple_ext = kVUIDUndefined;
+    const char* dynamic_blend_constants = kVUIDUndefined;
+    const char* dynamic_depth_bounds = kVUIDUndefined;
+    const char* dynamic_stencil_compare_mask = kVUIDUndefined;
+    const char* dynamic_stencil_write_mask = kVUIDUndefined;
+    const char* dynamic_stencil_reference = kVUIDUndefined;
+    const char* dynamic_state_inherited = kVUIDUndefined;
     const char* primitives_generated = kVUIDUndefined;
     const char* primitives_generated_streams = kVUIDUndefined;
     const char* mesh_shader_stages = kVUIDUndefined;
