@@ -153,8 +153,6 @@ if (PYTHONINTERP_FOUND)
             --incremental --generated-version ${VulkanHeaders_VERSION}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/generated
     )
-
-    set_target_properties(VulkanVL_generated_source PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 else()
     message(NOTICE "VulkanVL_generated_source target requires python 3")
 endif()
