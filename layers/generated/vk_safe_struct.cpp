@@ -59944,6 +59944,62 @@ void safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM::initialize(const safe
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    pipelineLibraryGroupHandles(in_struct->pipelineLibraryGroupHandles)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT() :
+    sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT),
+    pNext(nullptr),
+    pipelineLibraryGroupHandles()
+{}
+
+safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    pipelineLibraryGroupHandles = copy_src.pipelineLibraryGroupHandles;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::operator=(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    pipelineLibraryGroupHandles = copy_src.pipelineLibraryGroupHandles;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::~safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::initialize(const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct)
+{
+    if (pNext)
+        FreePnextChain(pNext);
+    sType = in_struct->sType;
+    pipelineLibraryGroupHandles = in_struct->pipelineLibraryGroupHandles;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT::initialize(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    pipelineLibraryGroupHandles = copy_src->pipelineLibraryGroupHandles;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkAccelerationStructureGeometryTrianglesDataKHR::safe_VkAccelerationStructureGeometryTrianglesDataKHR(const VkAccelerationStructureGeometryTrianglesDataKHR* in_struct) :
     sType(in_struct->sType),
     vertexFormat(in_struct->vertexFormat),
@@ -63501,6 +63557,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM:
             safe_pNext = new safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM(reinterpret_cast<const VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             safe_pNext = new safe_VkWriteDescriptorSetAccelerationStructureKHR(reinterpret_cast<const VkWriteDescriptorSetAccelerationStructureKHR *>(pNext));
             break;
@@ -64939,6 +64998,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_PROPERTIES_ARM:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_LIBRARY_GROUP_HANDLES_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             delete reinterpret_cast<const safe_VkWriteDescriptorSetAccelerationStructureKHR *>(header);

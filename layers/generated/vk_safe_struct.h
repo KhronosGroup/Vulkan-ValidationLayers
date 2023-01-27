@@ -13090,6 +13090,21 @@ struct safe_VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM {
     VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM const *>(this); }
 };
 
+struct safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT {
+    VkStructureType sType;
+    void* pNext{};
+    VkBool32 pipelineLibraryGroupHandles;
+    safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct);
+    safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& operator=(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT& copy_src);
+    safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT();
+    ~safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT();
+    void initialize(const VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT* copy_src);
+    VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT *>(this); }
+    VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDevicePipelineLibraryGroupHandlesFeaturesEXT const *>(this); }
+};
+
 struct safe_VkAccelerationStructureGeometryTrianglesDataKHR {
     VkStructureType sType;
     const void* pNext{};

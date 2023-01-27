@@ -459,6 +459,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_physical_device_drm{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
+    ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
     ExtEnabled vk_ext_pipeline_properties{kNotEnabled};
     ExtEnabled vk_ext_pipeline_protected_access{kNotEnabled};
     ExtEnabled vk_ext_pipeline_robustness{kNotEnabled};
@@ -840,6 +841,10 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control, {})},
             {VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})},
+            {VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_library_group_handles, {{
+                           {&DeviceExtensions::vk_khr_ray_tracing_pipeline, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_pipeline_library, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})},
             {VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_properties, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_protected_access, {{
@@ -1476,6 +1481,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
+    VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME,
     VK_EXT_PIPELINE_PROPERTIES_EXTENSION_NAME,
     VK_EXT_PIPELINE_PROTECTED_ACCESS_EXTENSION_NAME,
     VK_EXT_PIPELINE_ROBUSTNESS_EXTENSION_NAME,
