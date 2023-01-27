@@ -107,6 +107,8 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
                         -Wno-unused-parameter
                         -Wno-missing-field-initializers)
 elseif(MSVC)
+    # TODO: Update to /W4
+    add_compile_options("/W3")
     # Warn about nested declarations
     add_compile_options("/w34456")
     # Warn about potentially uninitialized variables
