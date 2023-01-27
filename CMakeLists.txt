@@ -32,10 +32,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN "YES")
 
 include(GNUInstallDirs)
 
-# Enable GUI folders
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-# "Helper" targets that don't have interesting source code should set their FOLDER property to this
-set(LAYERS_HELPER_FOLDER "Helper Targets")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON) # Remove when min is 3.26, see CMP0143
 
 find_package(VulkanHeaders REQUIRED CONFIG QUIET)
 
