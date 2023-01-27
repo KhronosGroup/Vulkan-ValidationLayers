@@ -70,9 +70,7 @@ if (ANNOTATED_SPEC_LINK)
     add_compile_definitions(ANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
 endif()
 
-# NOTE: The idiom for open source projects is to not enable warnings as errors.
-# This reduces problems for users who simply want to build the repository.
-option(BUILD_WERROR "Treat compiler warnings as errors" OFF)
+option(BUILD_WERROR "Treat compiler warnings as errors")
 if (BUILD_WERROR)
     add_compile_options("$<IF:$<CXX_COMPILER_ID:MSVC>,/WX,-Werror>")
 endif()
