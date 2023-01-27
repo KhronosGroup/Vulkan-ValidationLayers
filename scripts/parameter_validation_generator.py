@@ -425,6 +425,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             s = self.GenerateCopyright()
             write(s, file=self.outFile)
 
+        if self.header_file or self.enum_file:
+            write('#pragma once\n', file=self.outFile)
+
+        if self.enum_file:
+            write('#include "vulkan/vulkan.h"\n', file=self.outFile)
+
         if not self.source_file:
             return
 

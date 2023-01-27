@@ -23,6 +23,8 @@
  */
 
 
+#pragma once
+
 bool PreCallValidateCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
