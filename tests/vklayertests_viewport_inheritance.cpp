@@ -1,4 +1,5 @@
-/* Copyright (c) 2021 The Khronos Group Inc.
+/* Copyright (c) 2021-2023 The Khronos Group Inc.
+ * Copyright (c) 2023 LunarG, Inc.
  * Copyright (c) 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -436,7 +437,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     vk::EndCommandBuffer(primary_cmd);
 
     // Viewport with incorrect depth range.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportAlternateDepthArray);
     vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
@@ -447,7 +448,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     m_errorMonitor->VerifyFound();
 
     // Viewport not provided.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetScissor(primary_cmd, 0, 1, test_data.kScissorArray);
     test_data.BeginRenderPass(primary_cmd);
@@ -457,7 +458,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     m_errorMonitor->VerifyFound();
 
     // Scissor not provided.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
     test_data.BeginPrimaryCommandBuffer(primary_cmd);
     vk::CmdSetViewport(primary_cmd, 0, 1, test_data.kViewportArray);
     test_data.BeginRenderPass(primary_cmd);
@@ -470,8 +471,8 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     // Don't swap the loop order or you'll mess up subpass_cmd for upcoming tests.
     for (int should_fail = 1; should_fail >= 0; --should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07832");  // viewport
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07831");  // scissor
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 0, nullptr);
         } else {
             test_data.BeginSubpassCommandBuffer(subpass_cmd, 1, test_data.kViewportDepthOnlyArray);
@@ -502,8 +503,8 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     // trashed afterwards).
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
         } else {
         }
         std::array<VkCommandBuffer, 2> secondaries = {should_fail ? static_state_cmd : subpass_cmd,
@@ -525,8 +526,8 @@ TEST_F(VkLayerTest, ViewportInheritance) {
     // viewport/scissor pipeline.
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
         } else {
         }
 
@@ -550,7 +551,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
 
     for (int should_fail = 0; should_fail < 2; ++should_fail) {
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
         } else {
         }
 
@@ -622,7 +623,7 @@ TEST_F(VkLayerTest, ViewportInheritance) {
         test_data.BeginPrimaryCommandBuffer(primary_cmd);
         test_data.BeginRenderPass(primary_cmd);
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
             vk::CmdExecuteCommands(primary_cmd, 1, &set_viewport_cmd);
             VkCommandBuffer secondaries[2] = {set_scissor_cmd, subpass_cmd};
             vk::CmdExecuteCommands(primary_cmd, 2, secondaries);
@@ -685,8 +686,8 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     VkCommandPool pool = m_commandPool->handle();
 
     // Test using viewport/scissor with count state without providing it to be inherited.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor
     VkCommandBuffer draw_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportArray);
     test_data.BindGraphicsPipeline(draw_cmd, true, 0 /* dynamic viewport and scissor count */);
     vk::CmdDraw(draw_cmd, 3, 1, 0, 0);
@@ -704,7 +705,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     // Test drawing with pipeline that uses more viewports than have been inherited.
     for (int i = 0; i < 4; ++i) {
         auto should_fail = i & 1;
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");  // viewport
+        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport
 
         test_data.BeginSubpassCommandBuffer(draw_cmd, should_fail ? 1 : 2, test_data.kViewportDepthOnlyArray);
         test_data.BindGraphicsPipeline(draw_cmd, true, 2); // Uses 2 viewports
@@ -755,11 +756,11 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         auto should_fail = i & 1;
         auto use_with_count = i & 4;
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport 0 (or with count)
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor 0 (or with count)
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 0 (or with count)
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor 0 (or with count)
             if (!use_with_count) {
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport 1
-                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // scissor 1
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 1
+                m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // scissor 1
             }
         } else {
         }
@@ -814,7 +815,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
     for (int i = 0; i < 3; ++i) {
         auto should_fail = i & 1;
         if (should_fail) {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701"); // viewport 1
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");  // viewport 1
         } else {
         }
 
@@ -847,7 +848,7 @@ TEST_F(VkLayerTest, ViewportInheritanceMultiViewport) {
         auto should_fail = i & 2;
         auto inherited_incorrect_depth = i & 4;
 
-        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+        if (should_fail) m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07850");
 
         VkViewport viewports[3];
         viewports[0] = test_data.kViewportArray[0];

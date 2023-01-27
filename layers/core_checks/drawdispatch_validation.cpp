@@ -46,7 +46,6 @@
 struct DispatchVuidsCmdDraw : DrawDispatchVuid {
     DispatchVuidsCmdDraw() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDraw-None-02700";
-        dynamic_state                      = "VUID-vkCmdDraw-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDraw-None-04007";
         vertex_binding_null                = "VUID-vkCmdDraw-None-04008";
         compatible_pipeline                = "VUID-vkCmdDraw-None-02697";
@@ -150,6 +149,17 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDraw-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDraw-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDraw-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDraw-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDraw-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDraw-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDraw-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDraw-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDraw-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDraw-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDraw-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDraw-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDraw-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDraw-None-07850";
         primitives_generated               = "VUID-vkCmdDraw-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDraw-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDraw-stage-06481";
@@ -164,7 +174,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
     DispatchVuidsCmdDrawMultiEXT() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMultiEXT-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawMultiEXT-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawMultiEXT-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawMultiEXT-None-04008";
         compatible_pipeline                = "VUID-vkCmdDrawMultiEXT-None-02697";
@@ -268,6 +277,17 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawMultiEXT-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawMultiEXT-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMultiEXT-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawMultiEXT-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawMultiEXT-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawMultiEXT-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawMultiEXT-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawMultiEXT-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawMultiEXT-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawMultiEXT-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawMultiEXT-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawMultiEXT-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawMultiEXT-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawMultiEXT-None-07850";
         primitives_generated               = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiEXT-stage-06481";
@@ -282,7 +302,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexed() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndexed-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndexed-commandBuffer-02701";
         index_binding                      = "VUID-vkCmdDrawIndexed-None-07312";
         vertex_binding                     = "VUID-vkCmdDrawIndexed-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndexed-None-04008";
@@ -387,6 +406,17 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndexed-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndexed-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexed-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndexed-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndexed-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndexed-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndexed-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndexed-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndexed-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndexed-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndexed-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndexed-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndexed-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndexed-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexed-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexed-stage-06481";
@@ -401,7 +431,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
     DispatchVuidsCmdDrawMultiIndexedEXT() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMultiIndexedEXT-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawMultiIndexedEXT-commandBuffer-02701";
         index_binding                      = "VUID-vkCmdDrawMultiIndexedEXT-None-07312";
         vertex_binding                     = "VUID-vkCmdDrawMultiIndexedEXT-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawMultiIndexedEXT-None-04008";
@@ -506,6 +535,17 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawMultiIndexedEXT-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawMultiIndexedEXT-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMultiIndexedEXT-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawMultiIndexedEXT-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawMultiIndexedEXT-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawMultiIndexedEXT-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawMultiIndexedEXT-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawMultiIndexedEXT-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawMultiIndexedEXT-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawMultiIndexedEXT-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawMultiIndexedEXT-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawMultiIndexedEXT-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawMultiIndexedEXT-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawMultiIndexedEXT-None-07850";
         primitives_generated               = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMultiIndexedEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawMultiIndexedEXT-stage-06481";
@@ -520,7 +560,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirect() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndirect-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndirect-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirect-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndirect-None-04008";
         compatible_pipeline                = "VUID-vkCmdDrawIndirect-None-02697";
@@ -626,6 +665,17 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndirect-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndirect-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirect-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndirect-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndirect-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndirect-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndirect-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndirect-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndirect-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndirect-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndirect-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndirect-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndirect-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndirect-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirect-stage-06481";
@@ -640,7 +690,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirect() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirect-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02701";
         index_binding                      = "VUID-vkCmdDrawIndexedIndirect-None-07312";
         vertex_binding                     = "VUID-vkCmdDrawIndexedIndirect-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndexedIndirect-None-04008";
@@ -747,6 +796,17 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndexedIndirect-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndexedIndirect-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexedIndirect-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndexedIndirect-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndexedIndirect-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndexedIndirect-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndexedIndirect-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndexedIndirect-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndexedIndirect-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndexedIndirect-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndexedIndirect-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndexedIndirect-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndexedIndirect-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndexedIndirect-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirect-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirect-stage-06481";
@@ -761,7 +821,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
 struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
     DispatchVuidsCmdDispatch() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDispatch-None-02700";
-        dynamic_state                      = "VUID-vkCmdDispatch-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatch-None-02697";
         linear_filter_sampler              = "VUID-vkCmdDispatch-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdDispatch-mipmapMode-04770";
@@ -797,7 +856,6 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
 struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
     DispatchVuidsCmdDispatchIndirect() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDispatchIndirect-None-02700";
-        dynamic_state                      = "VUID-vkCmdDispatchIndirect-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchIndirect-None-02697";
         linear_filter_sampler              = "VUID-vkCmdDispatchIndirect-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdDispatchIndirect-mipmapMode-04770";
@@ -835,7 +893,6 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectCount() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndirectCount-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndirectCount-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirectCount-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndirectCount-None-04008";
         compatible_pipeline                = "VUID-vkCmdDrawIndirectCount-None-02697";
@@ -944,6 +1001,17 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndirectCount-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndirectCount-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirectCount-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndirectCount-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndirectCount-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndirectCount-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndirectCount-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndirectCount-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndirectCount-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndirectCount-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndirectCount-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndirectCount-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndirectCount-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndirectCount-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectCount-stage-06481";
@@ -958,7 +1026,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
     DispatchVuidsCmdDrawIndexedIndirectCount() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndexedIndirectCount-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701";
         index_binding                      = "VUID-vkCmdDrawIndexedIndirectCount-None-07312";
         vertex_binding                     = "VUID-vkCmdDrawIndexedIndirectCount-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndexedIndirectCount-None-04008";
@@ -1068,6 +1135,17 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndexedIndirectCount-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndexedIndirectCount-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndexedIndirectCount-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndexedIndirectCount-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndexedIndirectCount-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndexedIndirectCount-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndexedIndirectCount-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndexedIndirectCount-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndexedIndirectCount-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndexedIndirectCount-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndexedIndirectCount-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndexedIndirectCount-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndexedIndirectCount-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndexedIndirectCount-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndexedIndirectCount-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndexedIndirectCount-stage-06481";
@@ -1082,7 +1160,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
 struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysNV() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdTraceRaysNV-None-02700";
-        dynamic_state                      = "VUID-vkCmdTraceRaysNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysNV-None-02697";
         linear_filter_sampler              = "VUID-vkCmdTraceRaysNV-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdTraceRaysNV-mipmapMode-04770";
@@ -1118,7 +1195,6 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
 struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysKHR() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdTraceRaysKHR-None-02700";
-        dynamic_state                      = "VUID-vkCmdTraceRaysKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysKHR-None-02697";
         linear_filter_sampler              = "VUID-vkCmdTraceRaysKHR-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdTraceRaysKHR-mipmapMode-04770";
@@ -1154,7 +1230,6 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
 struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirectKHR() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirectKHR-None-02700";
-        dynamic_state                      = "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirectKHR-None-02697";
         linear_filter_sampler              = "VUID-vkCmdTraceRaysIndirectKHR-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdTraceRaysIndirectKHR-mipmapMode-04770";
@@ -1192,7 +1267,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
 struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
     DispatchVuidsCmdTraceRaysIndirect2KHR() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdTraceRaysIndirect2KHR-None-02700";
-        dynamic_state                      = "VUID-vkCmdTraceRaysIndirect2KHR-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdTraceRaysIndirect2KHR-None-02697";
         linear_filter_sampler              = "VUID-vkCmdTraceRaysIndirect2KHR-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdTraceRaysIndirect2KHR-mipmapMode-04770";
@@ -1230,7 +1304,6 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksNV() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksNV-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawMeshTasksNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksNV-None-02697";
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
@@ -1325,6 +1398,17 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawMeshTasksNV-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawMeshTasksNV-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksNV-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawMeshTasksNV-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawMeshTasksNV-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawMeshTasksNV-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawMeshTasksNV-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawMeshTasksNV-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawMeshTasksNV-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawMeshTasksNV-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawMeshTasksNV-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawMeshTasksNV-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawMeshTasksNV-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawMeshTasksNV-None-07850";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksNV-stage-06480";
@@ -1340,7 +1424,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectNV() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-02697";
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
@@ -1438,6 +1521,17 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07850";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480";
@@ -1453,7 +1547,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
 struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
     DispatchVuidsCmdDrawMeshTasksIndirectCountNV() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02697";
         render_pass_compatible             = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
         subpass_index                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
@@ -1554,6 +1647,17 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07850";
         primitives_generated               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-primitivesGeneratedQueryWithNonZeroStreams-06709";
         mesh_shader_stages                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480";
@@ -1607,7 +1711,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
 struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
     DispatchVuidsCmdDrawIndirectByteCountEXT() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-02700";
-        dynamic_state                      = "VUID-vkCmdDrawIndirectByteCountEXT-commandBuffer-02701";
         vertex_binding                     = "VUID-vkCmdDrawIndirectByteCountEXT-None-04007";
         vertex_binding_null                = "VUID-vkCmdDrawIndirectByteCountEXT-None-04008";
         compatible_pipeline                = "VUID-vkCmdDrawIndirectByteCountEXT-None-02697";
@@ -1713,6 +1816,17 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         dynamic_coverage_reduction_mode    = "VUID-vkCmdDrawIndirectByteCountEXT-None-07647";
         dynamic_representative_fragment_test_enable  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07648";
         dynamic_shading_rate_image_enable  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07649";
+        dynamic_viewport                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-07831";
+        dynamic_scissor                    = "VUID-vkCmdDrawIndirectByteCountEXT-None-07832";
+        dynamic_depth_bias                 = "VUID-vkCmdDrawIndirectByteCountEXT-None-07834";
+        dynamic_line_width                 = "VUID-vkCmdDrawIndirectByteCountEXT-None-07833";
+        dynamic_line_stipple_ext           = "VUID-vkCmdDrawIndirectByteCountEXT-None-07849";
+        dynamic_blend_constants            = "VUID-vkCmdDrawIndirectByteCountEXT-None-07835";
+        dynamic_depth_bounds               = "VUID-vkCmdDrawIndirectByteCountEXT-None-07836";
+        dynamic_stencil_compare_mask       = "VUID-vkCmdDrawIndirectByteCountEXT-None-07837";
+        dynamic_stencil_write_mask         = "VUID-vkCmdDrawIndirectByteCountEXT-None-07838";
+        dynamic_stencil_reference          = "VUID-vkCmdDrawIndirectByteCountEXT-None-07839";
+        dynamic_state_inherited            = "VUID-vkCmdDrawIndirectByteCountEXT-None-07850";
         primitives_generated               = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithRasterizerDiscard-06708";
         primitives_generated_streams       = "VUID-vkCmdDrawIndirectByteCountEXT-primitivesGeneratedQueryWithNonZeroStreams-06709";
         invalid_mesh_shader_stages         = "VUID-vkCmdDrawIndirectByteCountEXT-stage-06481";
@@ -1727,7 +1841,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
 struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
     DispatchVuidsCmdDispatchBase() : DrawDispatchVuid() {
         pipeline_bound                     = "VUID-vkCmdDispatchBase-None-02700";
-        dynamic_state                      = "VUID-vkCmdDispatchBase-commandBuffer-02701";
         compatible_pipeline                = "VUID-vkCmdDispatchBase-None-02697";
         linear_filter_sampler              = "VUID-vkCmdDispatchBase-magFilter-04553";
         linear_mipmap_sampler              = "VUID-vkCmdDispatchBase-mipmapMode-04770";

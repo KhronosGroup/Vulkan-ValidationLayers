@@ -136,7 +136,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
 
     const auto rp_state = pipeline.RasterizationState();
     if (rp_state && (rp_state->depthBiasEnable == VK_TRUE)) {
-        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BIAS_SET, cmd_type, vuid.dynamic_depth_bias);
     }
 
     // Any line topology
@@ -144,26 +144,27 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
         pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
         pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY) {
-        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_WIDTH_SET, cmd_type, vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_WIDTH_SET, cmd_type, vuid.dynamic_line_width);
         const auto *line_state = LvlFindInChain<VkPipelineRasterizationLineStateCreateInfoEXT>(rp_state);
         if (line_state && line_state->stippledLineEnable) {
-            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_EXT_SET, cmd_type, vuid.dynamic_state);
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_LINE_STIPPLE_EXT_SET, cmd_type, vuid.dynamic_line_stipple_ext);
         }
     }
 
     if (pipeline.BlendConstantsEnabled()) {
-        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_BLEND_CONSTANTS_SET, cmd_type, vuid.dynamic_state);
+        skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_BLEND_CONSTANTS_SET, cmd_type, vuid.dynamic_blend_constants);
     }
 
     const auto ds_state = pipeline.DepthStencilState();
     if (ds_state) {
         if (ds_state->depthBoundsTestEnable == VK_TRUE) {
-            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_SET, cmd_type, vuid.dynamic_state);
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_DEPTH_BOUNDS_SET, cmd_type, vuid.dynamic_depth_bounds);
         }
         if (ds_state->stencilTestEnable == VK_TRUE) {
-            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET, cmd_type, vuid.dynamic_state);
-            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_WRITE_MASK_SET, cmd_type, vuid.dynamic_state);
-            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_REFERENCE_SET, cmd_type, vuid.dynamic_state);
+            skip |=
+                ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_COMPARE_MASK_SET, cmd_type, vuid.dynamic_stencil_compare_mask);
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_WRITE_MASK_SET, cmd_type, vuid.dynamic_stencil_write_mask);
+            skip |= ValidateCBDynamicStatus(cb_state, CB_DYNAMIC_STENCIL_REFERENCE_SET, cmd_type, vuid.dynamic_stencil_reference);
         }
     }
 
@@ -215,7 +216,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                 ss << CommandTypeString(cmd_type) << ": Dynamic viewport(s) ";
                 ListBits(ss, missing_viewport_mask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewport().";
-                skip |= LogError(device, vuid.dynamic_state, "%s", ss.str().c_str());
+                skip |= LogError(device, vuid.dynamic_viewport, "%s", ss.str().c_str());
             }
         }
 
@@ -227,7 +228,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
                 ss << CommandTypeString(cmd_type) << ": Dynamic scissor(s) ";
                 ListBits(ss, missing_scissor_mask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissor().";
-                skip |= LogError(device, vuid.dynamic_state, "%s", ss.str().c_str());
+                skip |= LogError(device, vuid.dynamic_scissor, "%s", ss.str().c_str());
             }
         }
 
@@ -275,7 +276,7 @@ bool CoreChecks::ValidateDrawDynamicState(const CMD_BUFFER_STATE &cb_state, cons
         const uint32_t viewport_count = viewport_state->viewportCount;
         const uint32_t max_inherited = uint32_t(cb_state.inheritedViewportDepths.size());
         if (viewport_count > max_inherited) {
-            skip |= LogError(device, vuid.dynamic_state,
+            skip |= LogError(device, vuid.dynamic_state_inherited,
                              "Pipeline requires more viewports (%u) than inherited (viewportDepthCount=%u).",
                              unsigned(viewport_count), unsigned(max_inherited));
         }

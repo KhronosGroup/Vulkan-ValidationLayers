@@ -5104,7 +5104,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 if (inherited_viewport->minDepth != expected_viewport_depth->minDepth ||
                     inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
                     return validation_.LogError(
-                        primary_state_->commandBuffer(), "VUID-vkCmdDraw-commandBuffer-02701",
+                        primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
                         "vkCmdExecuteCommands(): Draw commands in pCommandBuffers[%u] (%s) consume inherited viewport %u %s"
                         "but this state was not inherited as its depth range [%f, %f] does not match "
                         "pViewportDepths[%u] = [%f, %f]",
@@ -5164,8 +5164,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 ss << "was left undefined after vkCmdBindPipeline (with non-dynamic state) in pCommandBuffers[" << trashed_by
                    << "].";
             }
-            return validation_.LogError(primary_state_->commandBuffer(), "VUID-vkCmdDraw-commandBuffer-02701", "%s",
-                                        ss.str().c_str());
+            return validation_.LogError(primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850", "%s", ss.str().c_str());
         };
 
         // Check if secondary command buffer uses viewport/scissor-with-count state, and validate this state if so.
@@ -5195,7 +5194,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
         if (secondary_state->usedDynamicViewportCount &&
             viewport_count_to_inherit_ > secondary_state->inheritedViewportDepths.size()) {
             skip |= validation_.LogError(
-                primary_state_->commandBuffer(), "VUID-vkCmdDraw-commandBuffer-02701",
+                primary_state_->commandBuffer(), "VUID-vkCmdDraw-None-07850",
                 "vkCmdExecuteCommands(): "
                 "Draw commands in pCommandBuffers[%u] (%s) consume inherited dynamic viewport with count state "
                 "but the dynamic viewport count (%u) exceeds the inheritance limit (viewportDepthCount=%u).",

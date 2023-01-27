@@ -151,7 +151,7 @@ TEST_F(VkLayerTest, DynamicDepthBiasNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic depth bias
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07834");
     VKTriangleTest(BsoFailDepthBias);
     m_errorMonitor->VerifyFound();
 }
@@ -162,7 +162,7 @@ TEST_F(VkLayerTest, DynamicLineWidthNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic line width
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07833");
     VKTriangleTest(BsoFailLineWidth);
     m_errorMonitor->VerifyFound();
 }
@@ -185,7 +185,7 @@ TEST_F(VkLayerTest, DynamicLineStippleNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07849");
     VKTriangleTest(BsoFailLineStipple);
     m_errorMonitor->VerifyFound();
 }
@@ -219,7 +219,7 @@ TEST_F(VkLayerTest, DynamicBlendConstantsNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic blend constant state
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07835");
     VKTriangleTest(BsoFailBlend);
     m_errorMonitor->VerifyFound();
 }
@@ -233,7 +233,7 @@ TEST_F(VkLayerTest, DynamicDepthBoundsNotBound) {
         GTEST_SKIP() << "Device does not support depthBounds test";
     }
     // Dynamic depth bounds
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07836");
     VKTriangleTest(BsoFailDepthBounds);
     m_errorMonitor->VerifyFound();
 }
@@ -244,7 +244,7 @@ TEST_F(VkLayerTest, DynamicStencilReadNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil read mask
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07837");
     VKTriangleTest(BsoFailStencilReadMask);
     m_errorMonitor->VerifyFound();
 }
@@ -255,7 +255,7 @@ TEST_F(VkLayerTest, DynamicStencilWriteNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil write mask
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07838");
     VKTriangleTest(BsoFailStencilWriteMask);
     m_errorMonitor->VerifyFound();
 }
@@ -266,7 +266,7 @@ TEST_F(VkLayerTest, DynamicStencilRefNotBound) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     // Dynamic stencil reference
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07839");
     VKTriangleTest(BsoFailStencilReference);
     m_errorMonitor->VerifyFound();
 }
@@ -9733,7 +9733,7 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07833");
         vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
@@ -9743,7 +9743,7 @@ TEST_F(VkLayerTest, ValidateMultiviewUnboundResourcesAfterBeginRenderPassAndNext
             vk::CmdNextSubpass(m_commandBuffer->handle(), VK_SUBPASS_CONTENTS_INLINE);
             vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[i].handle());
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-commandBuffer-02701");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-None-07833");
             m_commandBuffer->Draw(1, 0, 0, 0);
             m_errorMonitor->VerifyFound();
         }
