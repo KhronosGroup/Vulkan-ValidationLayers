@@ -487,16 +487,14 @@ class GoodRepo(object):
 
     def CMakeBuild(self):
         """Build CMake command for the build phase and execute it"""
-        cmake_cmd = ['cmake', '--build', self.build_dir, '--target', 'install']
+        cmake_cmd = ['cmake', '--build', self.build_dir, '--target', 'install', '--config', CONFIG_MAP[self._args.config]]
         if self._args.do_clean:
             cmake_cmd.append('--clean-first')
 
-        # Multi-config generators need this specified, it's a no-op on single-config generators
-        cmake_cmd.append('--config {}'.format(CONFIG_MAP[self._args.config]))
-
         # Ninja is parallel by default
         if self._args.generator != "Ninja":
-            cmake_cmd.append('--parallel {}'.format(multiprocessing.cpu_count()))
+            cmake_cmd.append('--parallel')
+            cmake_cmd.append(format(multiprocessing.cpu_count()))
 
         if VERBOSE:
             print("CMake command: " + " ".join(cmake_cmd))
