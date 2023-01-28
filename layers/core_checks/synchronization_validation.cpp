@@ -48,6 +48,19 @@
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
 
+extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
+                                                        const VkImageMemoryBarrier *barrier);
+extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
+                                                        const VkImageMemoryBarrier2KHR *barrier);
+extern template bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
+                                                                   const VkImageMemoryBarrier &img_barrier,
+                                                                   const CommandBufferImageLayoutMap &current_map,
+                                                                   CommandBufferImageLayoutMap &layout_updates) const;
+extern template bool CoreChecks::UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE *cb_state, const Location &loc,
+                                                                   const VkImageMemoryBarrier2KHR &img_barrier,
+                                                                   const CommandBufferImageLayoutMap &current_map,
+                                                                   CommandBufferImageLayoutMap &layout_updates) const;
+
 bool CoreChecks::ValidateStageMaskHost(const Location &loc, VkPipelineStageFlags2KHR stageMask) const {
     bool skip = false;
     if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
@@ -1403,6 +1416,198 @@ bool CoreChecks::ValidateSubpassDependency(const LogObjectList &objects, const L
     skip |= ValidatePipelineStage(objects, loc.dot(Field::dstStageMask), dst_queue_flags, converted_barrier.dstStageMask);
     skip |= ValidateAccessMask(objects, loc.dot(Field::dstAccessMask), dst_queue_flags, converted_barrier.dstAccessMask,
                                converted_barrier.dstStageMask);
+    return skip;
+}
+
+// Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
+bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &loc, VkImage image, VkImageLayout layout,
+                                                   VkImageUsageFlags usage_flags) const {
+    bool skip = false;
+    bool is_error = false;
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            is_error = ((usage_flags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0);
+            break;
+        // alias VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV
+        case VK_IMAGE_LAYOUT_FRAGMENT_SHADING_RATE_ATTACHMENT_OPTIMAL_KHR:
+            // alias VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR
+            is_error = ((usage_flags & VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
+            is_error = ((usage_flags & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0);
+            is_error |= ((usage_flags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0);
+            is_error |= ((usage_flags & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_SRC_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DST_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0);
+            break;
+        case VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR:
+            is_error = ((usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR) == 0);
+            break;
+        default:
+            // Other VkImageLayout values do not have VUs defined in this context.
+            break;
+    }
+
+    if (is_error) {
+        const auto &vuid = sync_vuid_maps::GetBadImageLayoutVUID(loc, layout);
+
+        skip |=
+            LogError(image, vuid, "%s Image barrier Layout=%s is not compatible with %s usage flags 0x%" PRIx32 ".",
+                     loc.Message().c_str(), string_VkImageLayout(layout), report_data->FormatHandle(image).c_str(), usage_flags);
+    }
+    return skip;
+}
+
+// Verify image barriers are compatible with the images they reference.
+template <typename ImageBarrier>
+bool CoreChecks::ValidateBarriersToImages(const Location &outer_loc, const CMD_BUFFER_STATE *cb_state,
+                                          uint32_t imageMemoryBarrierCount, const ImageBarrier *pImageMemoryBarriers) const {
+    bool skip = false;
+    using sync_vuid_maps::GetImageBarrierVUID;
+    using sync_vuid_maps::ImageError;
+
+    // Scoreboard for duplicate layout transition barriers within the list
+    // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
+    const CommandBufferImageLayoutMap &current_map = cb_state->GetImageSubresourceLayoutMap();
+    CommandBufferImageLayoutMap layout_updates;
+
+    for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
+        auto loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
+        const auto &img_barrier = pImageMemoryBarriers[i];
+
+        auto image_state = Get<IMAGE_STATE>(img_barrier.image);
+        if (!image_state) {
+            continue;
+        }
+
+        if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
+            (img_barrier.oldLayout != img_barrier.newLayout)) {
+            VkImageUsageFlags usage_flags = image_state->createInfo.usage;
+            skip |=
+                ValidateBarrierLayoutToImageUsage(loc.dot(Field::oldLayout), img_barrier.image, img_barrier.oldLayout, usage_flags);
+            skip |=
+                ValidateBarrierLayoutToImageUsage(loc.dot(Field::newLayout), img_barrier.image, img_barrier.newLayout, usage_flags);
+        }
+
+        // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
+        if (image_state->layout_locked) {
+            // TODO: Add unique id for error when available
+            skip |= LogError(
+                img_barrier.image, "VUID-Undefined",
+                "%s Attempting to transition shared presentable %s"
+                " from layout %s to layout %s, but image has already been presented and cannot have its layout transitioned.",
+                loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
+        }
+
+        const VkImageCreateInfo &image_create_info = image_state->createInfo;
+        const VkFormat image_format = image_create_info.format;
+        const VkImageAspectFlags aspect_mask = img_barrier.subresourceRange.aspectMask;
+        // For a Depth/Stencil image both aspects MUST be set
+        auto image_loc = loc.dot(Field::image);
+        if (FormatIsDepthAndStencil(image_format)) {
+            if (enabled_features.core12.separateDepthStencilLayouts) {
+                if (!(aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
+                    auto vuid = GetImageBarrierVUID(loc, ImageError::kNotDepthOrStencilAspect);
+                    skip |= LogError(img_barrier.image, vuid,
+                                     "%s references %s of format %s that must have either the depth or stencil "
+                                     "aspects set, but its aspectMask is 0x%" PRIx32 ".",
+                                     image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                     string_VkFormat(image_format), aspect_mask);
+                }
+            } else {
+                auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                if ((aspect_mask & ds_mask) != (ds_mask)) {
+                    auto error = IsExtEnabled(device_extensions.vk_khr_separate_depth_stencil_layouts)
+                                     ? ImageError::kNotSeparateDepthAndStencilAspect
+                                     : ImageError::kNotDepthAndStencilAspect;
+                    auto vuid = GetImageBarrierVUID(image_loc, error);
+                    skip |= LogError(img_barrier.image, vuid,
+                                     "%s references %s of format %s that must have the depth and stencil "
+                                     "aspects set, but its aspectMask is 0x%" PRIx32 ".",
+                                     image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                     string_VkFormat(image_format), aspect_mask);
+                }
+            }
+        }
+
+        if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            // TODO: Set memory invalid which is in mem_tracker currently
+        } else if (!QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
+            skip |= UpdateCommandBufferImageLayoutMap(cb_state, loc, img_barrier, current_map, layout_updates);
+        }
+
+        // checks color format and (single-plane or non-disjoint)
+        // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
+        if ((FormatIsColor(image_format) == true) &&
+            ((FormatIsMultiplane(image_format) == false) || (image_state->disjoint == false))) {
+            if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+                auto error = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion) ? ImageError::kNotColorAspect
+                                                                                             : ImageError::kNotColorAspectYcbcr;
+                const auto &vuid = GetImageBarrierVUID(loc, error);
+                skip |= LogError(img_barrier.image, vuid,
+                                 "%s references %s of format %s that must be only VK_IMAGE_ASPECT_COLOR_BIT, "
+                                 "but its aspectMask is 0x%" PRIx32 ".",
+                                 image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                 string_VkFormat(image_format), aspect_mask);
+            }
+        }
+
+        VkImageAspectFlags valid_disjoint_mask =
+            VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
+        if ((FormatIsMultiplane(image_format) == true) && (image_state->disjoint == true) &&
+            ((aspect_mask & valid_disjoint_mask) == 0)) {
+            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadMultiplanarAspect);
+            skip |= LogError(img_barrier.image, vuid,
+                             "%s references %s of format %s has aspectMask (0x%" PRIx32
+                             ") but needs to include either an VK_IMAGE_ASPECT_PLANE_*_BIT or VK_IMAGE_ASPECT_COLOR_BIT.",
+                             image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                             string_VkFormat(image_format), aspect_mask);
+        }
+
+        if ((FormatPlaneCount(image_format) == 2) && ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) != 0)) {
+            const auto &vuid = GetImageBarrierVUID(image_loc, ImageError::kBadPlaneCount);
+            skip |= LogError(img_barrier.image, vuid,
+                             "%s references %s of format %s has only two planes but included "
+                             "VK_IMAGE_ASPECT_PLANE_2_BIT in its aspectMask (0x%" PRIx32 ").",
+                             image_loc.Message().c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                             string_VkFormat(image_format), aspect_mask);
+        }
+    }
     return skip;
 }
 
