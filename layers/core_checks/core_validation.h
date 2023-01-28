@@ -1021,6 +1021,11 @@ class CoreChecks : public ValidationStateTracker {
 
     void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE* cb_state, const RENDER_PASS_STATE*, FRAMEBUFFER_STATE*);
 
+    template <typename ImageBarrier>
+    bool UpdateCommandBufferImageLayoutMap(const CMD_BUFFER_STATE* cb_state, const Location& loc, const ImageBarrier& img_barrier,
+                                           const CommandBufferImageLayoutMap& current_map,
+                                           CommandBufferImageLayoutMap& layout_updates) const;
+
     bool ValidateBarrierLayoutToImageUsage(const Location& loc, VkImage image, VkImageLayout layout, VkImageUsageFlags usage) const;
 
     template <typename ImageBarrier>
