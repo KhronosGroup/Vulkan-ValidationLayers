@@ -90,6 +90,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/state_tracker/shader_module.cpp
         ${SRC_DIR}/layers/state_tracker/shader_instruction.cpp
         ${SRC_DIR}/layers/core_checks/shader_validation.cpp
+        ${SRC_DIR}/layers/core_checks/synchronization_validation.cpp
         ${SRC_DIR}/layers/generated/spirv_validation_helper.cpp
         ${SRC_DIR}/layers/generated/spirv_grammar_helper.cpp
         ${SRC_DIR}/layers/generated/command_validation.cpp

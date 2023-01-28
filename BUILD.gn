@@ -127,6 +127,7 @@ core_validation_sources = [
   "layers/core_checks/render_pass_validation.cpp",
   "layers/core_checks/shader_validation.cpp",
   "layers/core_checks/shader_validation.h",
+  "layers/core_checks/synchronization_validation.cpp",
   "layers/core_checks/video_validation.cpp",
   "layers/core_checks/wsi_validation.cpp",
   "layers/core_error_location.cpp",

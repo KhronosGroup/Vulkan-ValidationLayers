@@ -179,6 +179,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/render_pass_validation.cpp
     core_checks/shader_validation.cpp
     core_checks/shader_validation.h
+    core_checks/synchronization_validation.cpp
     core_checks/video_validation.cpp
     core_checks/wsi_validation.cpp
     generated/best_practices.cpp
