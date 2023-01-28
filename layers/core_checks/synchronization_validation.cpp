@@ -2068,7 +2068,6 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
 
         skip |=
             ValidateImageBarrierSubresourceRange(loc.dot(Field::subresourceRange), image_data.get(), mem_barrier.subresourceRange);
-        skip |= ValidateImageAcquired(*image_data, loc.StringFunc().c_str());
     }
     return skip;
 }
