@@ -122,6 +122,7 @@ core_validation_sources = [
   "layers/core_checks/device_validation.cpp",
   "layers/core_checks/drawdispatch_validation.cpp",
   "layers/core_checks/external_object_validation.cpp",
+  "layers/core_checks/image_validation.cpp",
   "layers/core_checks/pipeline_validation.cpp",
   "layers/core_checks/query_validation.cpp",
   "layers/core_checks/ray_tracing_validation.cpp",
