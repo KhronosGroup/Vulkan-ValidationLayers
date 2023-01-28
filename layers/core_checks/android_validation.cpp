@@ -495,6 +495,132 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
     return skip;
 }
 
+// Validate creating an image with an external format
+// This could be wrapped with VK_USE_PLATFORM_ANDROID_KHR instead of AHB_VALIDATION_SUPPORT, but this check is only for AHB
+bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
+    bool skip = false;
+
+    const VkExternalFormatANDROID *ext_fmt_android = LvlFindInChain<VkExternalFormatANDROID>(create_info->pNext);
+    if (ext_fmt_android) {
+        if (0 != ext_fmt_android->externalFormat) {
+            if (VK_FORMAT_UNDEFINED != create_info->format) {
+                skip |=
+                    LogError(device, "VUID-VkImageCreateInfo-pNext-01974",
+                             "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with non-zero "
+                             "externalFormat, but the VkImageCreateInfo's format is not VK_FORMAT_UNDEFINED.");
+            }
+
+            if (0 != (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT & create_info->flags)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02396",
+                                 "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with "
+                                 "non-zero externalFormat, but flags include VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.");
+            }
+
+            if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02397",
+                                 "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with "
+                                 "non-zero externalFormat, but usage includes bits (0x%" PRIx32
+                                 ") other than VK_IMAGE_USAGE_SAMPLED_BIT.",
+                                 create_info->usage);
+            }
+
+            if (VK_IMAGE_TILING_OPTIMAL != create_info->tiling) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02398",
+                                 "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with "
+                                 "non-zero externalFormat, but layout is not VK_IMAGE_TILING_OPTIMAL.");
+            }
+        }
+
+        if ((0 != ext_fmt_android->externalFormat) &&
+            (ahb_ext_formats_map.find(ext_fmt_android->externalFormat) == ahb_ext_formats_map.end())) {
+            skip |= LogError(device, "VUID-VkExternalFormatANDROID-externalFormat-01894",
+                             "vkCreateImage(): Chained VkExternalFormatANDROID struct contains a non-zero externalFormat (%" PRIu64
+                             ") which has "
+                             "not been previously retrieved by vkGetAndroidHardwareBufferPropertiesANDROID().",
+                             ext_fmt_android->externalFormat);
+        }
+    }
+
+    if ((nullptr == ext_fmt_android) || (0 == ext_fmt_android->externalFormat)) {
+        if (VK_FORMAT_UNDEFINED == create_info->format) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-pNext-01975",
+                         "vkCreateImage(): VkImageCreateInfo struct's format is VK_FORMAT_UNDEFINED, but either does not have a "
+                         "chained VkExternalFormatANDROID struct or the struct exists but has an externalFormat of 0.");
+        }
+    }
+
+    const VkExternalMemoryImageCreateInfo *emici = LvlFindInChain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
+    if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
+        if (create_info->imageType != VK_IMAGE_TYPE_2D) {
+            skip |=
+                LogError(device, "VUID-VkImageCreateInfo-pNext-02393",
+                         "vkCreateImage(): VkImageCreateInfo struct with imageType %s has chained VkExternalMemoryImageCreateInfo "
+                         "struct with handleType VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID.",
+                         string_VkImageType(create_info->imageType));
+        }
+
+        if ((create_info->mipLevels != 1) && (create_info->mipLevels != FullMipChainLevels(create_info->extent))) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02394",
+                             "vkCreateImage(): VkImageCreateInfo struct with chained VkExternalMemoryImageCreateInfo struct of "
+                             "handleType VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID "
+                             "specifies mipLevels = %" PRId32 " (full chain mipLevels are %" PRId32 ").",
+                             create_info->mipLevels, FullMipChainLevels(create_info->extent));
+        }
+    }
+
+    return skip;
+}
+
+// Validate creating an image view with an AHB format
+// This could be wrapped with VK_USE_PLATFORM_ANDROID_KHR instead of AHB_VALIDATION_SUPPORT, but this check is only for AHB
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const {
+    bool skip = false;
+    auto image_state = Get<IMAGE_STATE>(create_info->image);
+
+    if (image_state->HasAHBFormat()) {
+        if (VK_FORMAT_UNDEFINED != create_info->format) {
+            skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02399",
+                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
+                             "format member is %s and must be VK_FORMAT_UNDEFINED.",
+                             string_VkFormat(create_info->format));
+        }
+
+        // Chain must include a compatible ycbcr conversion
+        bool conv_found = false;
+        uint64_t external_format = 0;
+        const VkSamplerYcbcrConversionInfo *ycbcr_conv_info = LvlFindInChain<VkSamplerYcbcrConversionInfo>(create_info->pNext);
+        if (ycbcr_conv_info != nullptr) {
+            auto ycbcr_state = Get<SAMPLER_YCBCR_CONVERSION_STATE>(ycbcr_conv_info->conversion);
+            if (ycbcr_state) {
+                conv_found = true;
+                external_format = ycbcr_state->external_format;
+            }
+        }
+        if ((!conv_found) || (external_format != image_state->ahb_format)) {
+            skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02400",
+                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct with "
+                             "an externalFormat (%" PRIu64
+                             ") but needs a chained VkSamplerYcbcrConversionInfo struct with a VkSamplerYcbcrConversion created "
+                             "with the same external format.",
+                             image_state->ahb_format);
+        }
+
+        // Errors in create_info swizzles
+        if (IsIdentitySwizzle(create_info->components) == false) {
+            skip |= LogError(
+                create_info->image, "VUID-VkImageViewCreateInfo-image-02401",
+                "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
+                "includes one or more non-identity component swizzles, r swizzle = %s, g swizzle = %s, b swizzle = %s, a swizzle "
+                "= %s.",
+                string_VkComponentSwizzle(create_info->components.r), string_VkComponentSwizzle(create_info->components.g),
+                string_VkComponentSwizzle(create_info->components.b), string_VkComponentSwizzle(create_info->components.a));
+        }
+    }
+
+    return skip;
+}
+
 #else  // !AHB_VALIDATION_SUPPORT
 
 // Case building for Android without AHB Validation
@@ -528,5 +654,11 @@ bool CoreChecks::ValidateImageImportedHandleANDROID(const char *func_name, VkExt
                                                     VkDeviceMemory memory, VkImage image) const {
     return false;
 }
+
+bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
+    return false;
+}
+
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const { return false; }
 
 #endif  // AHB_VALIDATION_SUPPORT
