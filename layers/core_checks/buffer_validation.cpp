@@ -2961,12 +2961,6 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
     return skip;
 }
 
-bool CoreChecks::ValidateImageAcquired(IMAGE_STATE const &image_state, const char *func_name) const {
-    bool skip = false;
-
-    return skip;
-}
-
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                                const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                                const char *param_name, const char *image_layer_count_var_name, const VkImage image,
