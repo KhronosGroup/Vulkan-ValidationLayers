@@ -126,6 +126,170 @@ static bool RegionIntersectsBlit(const RegionType *region0, const RegionType *re
     return result;
 }
 
+// Test if the extent argument has all dimensions set to 0.
+static inline bool IsExtentAllZeroes(const VkExtent3D &extent) {
+    return ((extent.width == 0) && (extent.height == 0) && (extent.depth == 0));
+}
+
+// Returns the image transfer granularity for a specific image scaled by compressed block size if necessary.
+VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE *img) const {
+    // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
+    VkExtent3D granularity = {0, 0, 0};
+    const auto pool = cb_state.command_pool;
+    if (pool) {
+        granularity = physical_device_state->queue_family_properties[pool->queueFamilyIndex].minImageTransferGranularity;
+        if (FormatIsBlockedImage(img->createInfo.format)) {
+            auto block_size = FormatTexelBlockExtent(img->createInfo.format);
+            granularity.width *= block_size.width;
+            granularity.height *= block_size.height;
+        }
+    }
+    return granularity;
+}
+
+// Test elements of a VkExtent3D structure against alignment constraints contained in another VkExtent3D structure
+static inline bool IsExtentAligned(const VkExtent3D &extent, const VkExtent3D &granularity) {
+    bool valid = true;
+    if ((SafeModulo(extent.depth, granularity.depth) != 0) || (SafeModulo(extent.width, granularity.width) != 0) ||
+        (SafeModulo(extent.height, granularity.height) != 0)) {
+        valid = false;
+    }
+    return valid;
+}
+
+// Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
+bool CoreChecks::CheckItgOffset(const LogObjectList &objlist, const VkOffset3D &offset, const VkExtent3D &granularity,
+                                const uint32_t i, const char *function, const char *member, const char *vuid) const {
+    bool skip = false;
+    VkExtent3D offset_extent = {};
+    offset_extent.width = static_cast<uint32_t>(abs(offset.x));
+    offset_extent.height = static_cast<uint32_t>(abs(offset.y));
+    offset_extent.depth = static_cast<uint32_t>(abs(offset.z));
+    if (IsExtentAllZeroes(granularity)) {
+        // If the queue family image transfer granularity is (0, 0, 0), then the offset must always be (0, 0, 0)
+        if (IsExtentAllZeroes(offset_extent) == false) {
+            skip |= LogError(objlist, vuid,
+                             "%s: pRegion[%d].%s (x=%d, y=%d, z=%d) must be (x=0, y=0, z=0) when the command buffer's queue family "
+                             "image transfer granularity is (w=0, h=0, d=0).",
+                             function, i, member, offset.x, offset.y, offset.z);
+        }
+    } else {
+        // If the queue family image transfer granularity is not (0, 0, 0), then the offset dimensions must always be even
+        // integer multiples of the image transfer granularity.
+        if (IsExtentAligned(offset_extent, granularity) == false) {
+            skip |= LogError(objlist, vuid,
+                             "%s: pRegion[%d].%s (x=%d, y=%d, z=%d) dimensions must be even integer multiples of this command "
+                             "buffer's queue family image transfer granularity (w=%d, h=%d, d=%d).",
+                             function, i, member, offset.x, offset.y, offset.z, granularity.width, granularity.height,
+                             granularity.depth);
+        }
+    }
+    return skip;
+}
+
+// Test if two VkExtent3D structs are equivalent
+static inline bool IsExtentEqual(const VkExtent3D &extent, const VkExtent3D &other_extent) {
+    bool result = true;
+    if ((extent.width != other_extent.width) || (extent.height != other_extent.height) || (extent.depth != other_extent.depth)) {
+        result = false;
+    }
+    return result;
+}
+
+// Check elements of a VkExtent3D structure against a queue family's Image Transfer Granularity values
+bool CoreChecks::CheckItgExtent(const LogObjectList &objlist, const VkExtent3D &extent, const VkOffset3D &offset,
+                                const VkExtent3D &granularity, const VkExtent3D &subresource_extent, const VkImageType image_type,
+                                const uint32_t i, const char *function, const char *member, const char *vuid) const {
+    bool skip = false;
+    if (IsExtentAllZeroes(granularity)) {
+        // If the queue family image transfer granularity is (0, 0, 0), then the extent must always match the image
+        // subresource extent.
+        if (IsExtentEqual(extent, subresource_extent) == false) {
+            skip |= LogError(objlist, vuid,
+                             "%s: pRegion[%d].%s (w=%d, h=%d, d=%d) must match the image subresource extents (w=%d, h=%d, d=%d) "
+                             "when the command buffer's queue family image transfer granularity is (w=0, h=0, d=0).",
+                             function, i, member, extent.width, extent.height, extent.depth, subresource_extent.width,
+                             subresource_extent.height, subresource_extent.depth);
+        }
+    } else {
+        // If the queue family image transfer granularity is not (0, 0, 0), then the extent dimensions must always be even
+        // integer multiples of the image transfer granularity or the offset + extent dimensions must always match the image
+        // subresource extent dimensions.
+        VkExtent3D offset_extent_sum = {};
+        offset_extent_sum.width = static_cast<uint32_t>(abs(offset.x)) + extent.width;
+        offset_extent_sum.height = static_cast<uint32_t>(abs(offset.y)) + extent.height;
+        offset_extent_sum.depth = static_cast<uint32_t>(abs(offset.z)) + extent.depth;
+        bool x_ok = true;
+        bool y_ok = true;
+        bool z_ok = true;
+        switch (image_type) {
+            case VK_IMAGE_TYPE_3D:
+                z_ok =
+                    ((0 == SafeModulo(extent.depth, granularity.depth)) || (subresource_extent.depth == offset_extent_sum.depth));
+                [[fallthrough]];
+            case VK_IMAGE_TYPE_2D:
+                y_ok = ((0 == SafeModulo(extent.height, granularity.height)) ||
+                        (subresource_extent.height == offset_extent_sum.height));
+                [[fallthrough]];
+            case VK_IMAGE_TYPE_1D:
+                x_ok =
+                    ((0 == SafeModulo(extent.width, granularity.width)) || (subresource_extent.width == offset_extent_sum.width));
+                break;
+            default:
+                // Unrecognized or new IMAGE_TYPE enums will be caught in parameter_validation
+                assert(false);
+        }
+        if (!(x_ok && y_ok && z_ok)) {
+            skip |= LogError(objlist, vuid,
+                             "%s: pRegion[%d].%s (w=%d, h=%d, d=%d) dimensions must be even integer multiples of this command "
+                             "buffer's queue family image transfer granularity (w=%d, h=%d, d=%d) or offset (x=%d, y=%d, z=%d) + "
+                             "extent (w=%d, h=%d, d=%d) must match the image subresource extents (w=%d, h=%d, d=%d).",
+                             function, i, member, extent.width, extent.height, extent.depth, granularity.width, granularity.height,
+                             granularity.depth, offset.x, offset.y, offset.z, extent.width, extent.height, extent.depth,
+                             subresource_extent.width, subresource_extent.height, subresource_extent.depth);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &img, uint32_t mip_level,
+                                       const uint32_t i, const char *function, const char *member, const char *vuid) const {
+    bool skip = false;
+    if (mip_level >= img.createInfo.mipLevels) {
+        LogObjectList objlist(cb_state.Handle(), img.Handle());
+        skip |= LogError(objlist, vuid,
+                         "In %s, pRegions[%" PRIu32 "].%s.mipLevel is %" PRIu32 ", but provided %s has %" PRIu32 " mip levels.",
+                         function, i, member, mip_level, report_data->FormatHandle(img.image()).c_str(), img.createInfo.mipLevels);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE &cb_state, const IMAGE_STATE &img, const uint32_t base_layer,
+                                              const uint32_t layer_count, const uint32_t i, const char *function,
+                                              const char *member, const char *vuid) const {
+    bool skip = false;
+    if (base_layer >= img.createInfo.arrayLayers || layer_count > img.createInfo.arrayLayers ||
+        (base_layer + layer_count) > img.createInfo.arrayLayers) {
+        if (layer_count == VK_REMAINING_ARRAY_LAYERS) {
+            LogObjectList objlist(cb_state.Handle(), img.Handle());
+            skip |= LogError(objlist, vuid,
+                             "In %s, pRegions[%" PRIu32
+                             "].%s.layerCount is VK_REMAINING_ARRAY_LAYERS, "
+                             "but this special value is not supported here.",
+                             function, i, member);
+        } else {
+            LogObjectList objlist(cb_state.Handle(), img.Handle());
+            skip |= LogError(objlist, vuid,
+                             "In %s, pRegions[%" PRIu32 "].%s.baseArrayLayer is %" PRIu32
+                             " and .layerCount is "
+                             "%" PRIu32 ", but provided %s has %" PRIu32 " array layers.",
+                             function, i, member, base_layer, layer_count, report_data->FormatHandle(img.image()).c_str(),
+                             img.createInfo.arrayLayers);
+        }
+    }
+    return skip;
+}
+
 // All VUID from copy_bufferimage_to_imagebuffer_common.txt
 static const char *GetBufferImageCopyCommandVUID(const std::string &id, bool image_to_buffer, bool copy2) {
     // clang-format off
@@ -1726,6 +1890,19 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const IMAGE_STATE &ima
         }
     }
 
+    return skip;
+}
+
+// Validate that an image's sampleCount matches the requirement for a specific API call
+bool CoreChecks::ValidateImageSampleCount(VkCommandBuffer cb, const IMAGE_STATE &image_state, VkSampleCountFlagBits sample_count,
+                                          const char *location, const std::string &msgCode) const {
+    bool skip = false;
+    if (image_state.createInfo.samples != sample_count) {
+        LogObjectList objlist(cb, image_state.Handle());
+        skip = LogError(objlist, msgCode, "%s for %s was created with a sample count of %s but must be %s.", location,
+                        report_data->FormatHandle(image_state.Handle()).c_str(),
+                        string_VkSampleCountFlagBits(image_state.createInfo.samples), string_VkSampleCountFlagBits(sample_count));
+    }
     return skip;
 }
 
