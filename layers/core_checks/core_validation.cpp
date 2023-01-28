@@ -67,24 +67,6 @@
 #include "stateless/stateless_validation.h"
 #include "enum_flag_bits.h"
 
-// these templates are defined in buffer_validation.cpp so we need to pull in the explicit instantiations from there
-extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
-                                                        const VkImageMemoryBarrier *barrier);
-extern template void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
-                                                        const VkImageMemoryBarrier2KHR *barrier);
-extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_STATE const *cb_state,
-                                                                const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
-                                                                const safe_VkSubpassDescription2 &sub_desc,
-                                                                const VkRenderPass rp_handle,
-                                                                const VkImageMemoryBarrier &img_barrier,
-                                                                const CMD_BUFFER_STATE *primary_cb_state) const;
-extern template bool CoreChecks::ValidateImageBarrierAttachment(const Location &loc, CMD_BUFFER_STATE const *cb_state,
-                                                                const FRAMEBUFFER_STATE *framebuffer, uint32_t active_subpass,
-                                                                const safe_VkSubpassDescription2 &sub_desc,
-                                                                const VkRenderPass rp_handle,
-                                                                const VkImageMemoryBarrier2KHR &img_barrier,
-                                                                const CMD_BUFFER_STATE *primary_cb_state) const;
-
 using std::max;
 using std::string;
 using std::stringstream;
