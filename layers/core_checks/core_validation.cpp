@@ -875,28 +875,6 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE &cb_state, const c
     return false;
 }
 
-bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo, const char *apiName) const {
-    bool skip = false;
-    const VkSampleCountFlagBits sample_count = pSampleLocationsInfo->sampleLocationsPerPixel;
-    const uint32_t sample_total_size = pSampleLocationsInfo->sampleLocationGridSize.width *
-                                       pSampleLocationsInfo->sampleLocationGridSize.height * SampleCountSize(sample_count);
-    if (pSampleLocationsInfo->sampleLocationsCount != sample_total_size) {
-        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527",
-                         "%s: VkSampleLocationsInfoEXT::sampleLocationsCount (%u) must equal grid width * grid height * pixel "
-                         "sample rate which currently is (%u * %u * %u).",
-                         apiName, pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->sampleLocationGridSize.width,
-                         pSampleLocationsInfo->sampleLocationGridSize.height, SampleCountSize(sample_count));
-    }
-    if ((phys_dev_ext_props.sample_locations_props.sampleLocationSampleCounts & sample_count) == 0) {
-        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526",
-                         "%s: VkSampleLocationsInfoEXT::sampleLocationsPerPixel of %s is not supported by the device, please check "
-                         "VkPhysicalDeviceSampleLocationsPropertiesEXT::sampleLocationSampleCounts for valid sample counts.",
-                         apiName, string_VkSampleCountFlagBits(sample_count));
-    }
-
-    return skip;
-}
-
 bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo1,
                                           const VkSampleLocationsInfoEXT *pSampleLocationsInfo2) const {
     if (pSampleLocationsInfo1->sampleLocationsPerPixel != pSampleLocationsInfo2->sampleLocationsPerPixel ||
