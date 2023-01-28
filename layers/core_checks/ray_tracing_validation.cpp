@@ -1132,3 +1132,151 @@ bool CoreChecks::ValidateGeometryNV(const VkGeometryNV &geometry, const char *fu
     }
     return skip;
 }
+
+bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const char *rt_func_name,
+                                                      const char *vuid_single_device_memory, const char *vuid_binding_table_flag,
+                                                      const VkStridedDeviceAddressRegionKHR &binding_table,
+                                                      const char *binding_table_name) const {
+    bool skip = false;
+
+    if (binding_table.deviceAddress == 0) {
+        return skip;
+    }
+
+    const auto buffer_states = GetBuffersByAddress(binding_table.deviceAddress);
+    if (buffer_states.empty()) {
+        skip |= LogError(device, "VUID-VkStridedDeviceAddressRegionKHR-size-04631",
+                         "%s: no buffer is associated with %s->deviceAddress (0x%" PRIx64 ").", rt_func_name, binding_table_name,
+                         binding_table.deviceAddress);
+    } else {
+        // Try to find a buffer satisfying all VUIDs
+        const bool no_valid_buffer_found = std::none_of(
+            buffer_states.begin(), buffer_states.end(),
+            [&binding_table](const ValidationStateTracker::BUFFER_STATE_PTR &buffer_state) {
+                assert(buffer_state);
+
+                if (!buffer_state) {
+                    return false;
+                }
+
+                if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
+                    return false;
+                }
+                if (!buffer_state->sparse) {
+                    if (const auto mem_state = buffer_state->MemState(); !mem_state || mem_state->Destroyed()) {
+                        return false;
+                    }
+                }
+                if (binding_table.size != 0) {
+                    const auto device_address_range = buffer_state->DeviceAddressRange();
+                    const sparse_container::range<VkDeviceSize> requested_range(
+                        binding_table.deviceAddress, binding_table.deviceAddress + binding_table.size - 1);
+                    if (!device_address_range.includes(requested_range)) {
+                        return false;
+                    }
+
+                    if (binding_table.size != 0 && binding_table.stride > buffer_state->createInfo.size) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+        // If no valid buffer was found, for each violated VUID,
+        // output the list of buffers (associated to binding_table.deviceAddress) that violates it,
+        // alongside relevant info.
+        if (no_valid_buffer_found) {
+            struct InvalidBuffers {
+                LogObjectList buffers;
+                std::string error_msg;
+            };
+
+            InvalidBuffers vuid_binding_table_flag_invalid_buffers{{commandBuffer}};
+            InvalidBuffers vuid_address_range_invalid_buffers{{commandBuffer}};
+            InvalidBuffers vuid_stride_invalid_buffers{{commandBuffer}};
+            const std::string address_string = std::to_string(binding_table.deviceAddress);
+            const sparse_container::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
+                                                                        binding_table.deviceAddress + binding_table.size - 1);
+            std::string requested_range_string =
+                '[' + std::to_string(requested_range.begin) + ", " + std::to_string(requested_range.end) + ')';
+            std::stringstream error_msg_prefix_ss;
+            error_msg_prefix_ss << rt_func_name << ": No buffer associated to" << binding_table_name << "->deviceAddress (0x"
+                                << address_string
+                                << ") was found such that valid usage passes. "
+                                   "At least one buffer associated to this device address must be valid. The following buffers ";
+            const auto error_msg_prefix = error_msg_prefix_ss.str();
+            for (const auto &buffer_state : buffer_states) {
+                assert(buffer_state);
+
+                if (!buffer_state) {
+                    continue;
+                }
+
+                skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, rt_func_name, vuid_single_device_memory);
+
+                if (!(static_cast<uint32_t>(buffer_state->createInfo.usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
+                    vuid_binding_table_flag_invalid_buffers.buffers.add(buffer_state->Handle());
+
+                    std::string &error_msg = vuid_binding_table_flag_invalid_buffers.error_msg;
+                    if (error_msg.empty()) {
+                        error_msg += error_msg_prefix +
+                                     "have not been created with the VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR usage flag:\n";
+                    }
+                    // +1 because commandBuffer takes index 0 in the log object list
+                    const auto obj_index = vuid_binding_table_flag_invalid_buffers.buffers.object_list.size() - 1 + 1;
+                    error_msg += "Object " + std::to_string(obj_index) + ": buffer has usage " +
+                                 string_VkBufferUsageFlags(buffer_state->createInfo.usage) + '\n';
+                }
+
+                if (binding_table.size != 0) {
+                    const auto buffer_address_range = buffer_state->DeviceAddressRange();
+                    if (!buffer_address_range.includes(requested_range)) {
+                        vuid_address_range_invalid_buffers.buffers.add(buffer_state->Handle());
+
+                        std::string &error_msg = vuid_address_range_invalid_buffers.error_msg;
+                        if (error_msg.empty()) {
+                            error_msg += error_msg_prefix + "do not include " + binding_table_name +
+                                         " buffer device address range " + requested_range_string + ":\n";
+                        }
+                        const auto obj_index = vuid_address_range_invalid_buffers.buffers.object_list.size() - 1 + 1;
+                        const std::string buffer_address_range_string = '[' + std::to_string(buffer_address_range.begin) + ", " +
+                                                                        std::to_string(buffer_address_range.end) + ')';
+                        error_msg += "Object " + std::to_string(obj_index) + ": buffer device address range is " +
+                                     buffer_address_range_string + '\n';
+                    }
+
+                    if (binding_table.size != 0 && binding_table.stride > buffer_state->createInfo.size) {
+                        vuid_stride_invalid_buffers.buffers.add(buffer_state->Handle());
+
+                        std::string &error_msg = vuid_stride_invalid_buffers.error_msg;
+                        if (error_msg.empty()) {
+                            error_msg += error_msg_prefix + "have a size inferior to " + binding_table_name + "->stride (" +
+                                         std::to_string(binding_table.stride) + "):\n";
+                        }
+                        const auto obj_index = vuid_stride_invalid_buffers.buffers.object_list.size() - 1 + 1;
+                        error_msg += "Object " + std::to_string(obj_index) + ": buffer size is " +
+                                     std::to_string(buffer_state->createInfo.size) + '\n';
+                    }
+                }
+            }
+
+            if (!vuid_binding_table_flag_invalid_buffers.error_msg.empty()) {
+                skip |= LogError(vuid_binding_table_flag_invalid_buffers.buffers, vuid_binding_table_flag, "%s",
+                                 vuid_binding_table_flag_invalid_buffers.error_msg.c_str());
+            }
+
+            if (!vuid_address_range_invalid_buffers.error_msg.empty()) {
+                skip |= LogError(vuid_address_range_invalid_buffers.buffers, "VUID-VkStridedDeviceAddressRegionKHR-size-04631",
+                                 "%s", vuid_address_range_invalid_buffers.error_msg.c_str());
+            }
+
+            if (!vuid_stride_invalid_buffers.error_msg.empty()) {
+                skip |= LogError(vuid_stride_invalid_buffers.buffers, "VUID-VkStridedDeviceAddressRegionKHR-size-04632", "%s",
+                                 vuid_stride_invalid_buffers.error_msg.c_str());
+            }
+        }
+    }
+
+    return skip;
+}
