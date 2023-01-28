@@ -174,6 +174,7 @@ target_sources(VkLayer_khronos_validation PRIVATE
     core_checks/device_memory_validation.cpp
     core_checks/drawdispatch_validation.cpp
     core_checks/external_object_validation.cpp
+    core_checks/image_validation.cpp
     core_checks/pipeline_validation.cpp
     core_checks/query_validation.cpp
     core_checks/ray_tracing_validation.cpp

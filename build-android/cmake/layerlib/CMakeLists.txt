@@ -76,6 +76,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/core_checks/external_object_validation.cpp
         ${SRC_DIR}/layers/state_tracker/image_state.cpp
         ${SRC_DIR}/layers/state_tracker/pipeline_state.cpp
+        ${SRC_DIR}/layers/core_checks/image_validation.cpp
         ${SRC_DIR}/layers/core_checks/pipeline_validation.cpp
         ${SRC_DIR}/layers/state_tracker/queue_state.cpp
         ${SRC_DIR}/layers/state_tracker/render_pass_state.cpp

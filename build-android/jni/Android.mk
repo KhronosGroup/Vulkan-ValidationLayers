@@ -53,6 +53,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/image_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_layout_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/pipeline_sub_state.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/image_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/pipeline_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/queue_state.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/render_pass_state.cpp
