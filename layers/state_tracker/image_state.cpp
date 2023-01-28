@@ -547,6 +547,45 @@ uint32_t IMAGE_VIEW_STATE::GetAttachmentLayerCount() const {
     return create_info.subresourceRange.layerCount;
 }
 
+bool IMAGE_VIEW_STATE::OverlapSubresource(const IMAGE_VIEW_STATE &compare_view) const {
+    if (image_view() == compare_view.image_view()) {
+        return true;
+    }
+    if (image_state->image() != compare_view.image_state->image()) {
+        return false;
+    }
+    if (normalized_subresource_range.aspectMask != compare_view.normalized_subresource_range.aspectMask) {
+        return false;
+    }
+
+    // compare if overlap mip level
+    if ((normalized_subresource_range.baseMipLevel < compare_view.normalized_subresource_range.baseMipLevel) &&
+        ((normalized_subresource_range.baseMipLevel + normalized_subresource_range.levelCount) <=
+         compare_view.normalized_subresource_range.baseMipLevel)) {
+        return false;
+    }
+
+    if ((normalized_subresource_range.baseMipLevel > compare_view.normalized_subresource_range.baseMipLevel) &&
+        (normalized_subresource_range.baseMipLevel >=
+         (compare_view.normalized_subresource_range.baseMipLevel + compare_view.normalized_subresource_range.levelCount))) {
+        return false;
+    }
+
+    // compare if overlap array layer
+    if ((normalized_subresource_range.baseArrayLayer < compare_view.normalized_subresource_range.baseArrayLayer) &&
+        ((normalized_subresource_range.baseArrayLayer + normalized_subresource_range.layerCount) <=
+         compare_view.normalized_subresource_range.baseArrayLayer)) {
+        return false;
+    }
+
+    if ((normalized_subresource_range.baseArrayLayer > compare_view.normalized_subresource_range.baseArrayLayer) &&
+        (normalized_subresource_range.baseArrayLayer >=
+         (compare_view.normalized_subresource_range.baseArrayLayer + compare_view.normalized_subresource_range.layerCount))) {
+        return false;
+    }
+    return true;
+}
+
 static safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInfoKHR *pCreateInfo) {
     auto image_ci = LvlInitStruct<VkImageCreateInfo>();
     // Pull out the format list only. This stack variable will get copied onto the heap
