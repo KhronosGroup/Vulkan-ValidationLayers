@@ -63,6 +63,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/core_checks/render_pass_validation.cpp',
     'layers/state_tracker/shader_module.cpp',
     'layers/core_checks/shader_validation.cpp',
+    'layers/core_checks/synchronization_validation.cpp',
     'layers/stateless/stateless_validation.h',
     'layers/sync/sync_validation.cpp',
     'layers/sync/sync_vuid_maps.cpp',

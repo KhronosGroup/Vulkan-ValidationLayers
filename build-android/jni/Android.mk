@@ -66,6 +66,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_module.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/state_tracker/shader_instruction.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/shader_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/core_checks/synchronization_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_validation_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/spirv_grammar_helper.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/command_validation.cpp
