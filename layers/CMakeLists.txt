@@ -264,8 +264,10 @@ target_sources(VkLayer_khronos_validation PRIVATE
 
 target_compile_definitions(VkLayer_khronos_validation PUBLIC ${KHRONOS_LAYER_COMPILE_DEFINITIONS})
 
-if(WIN32)
+if(MSVC)
     target_link_options(VkLayer_khronos_validation PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
+elseif(MINGW)
+    target_sources(VkLayer_khronos_validation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/VkLayer_khronos_validation.def)
 elseif(APPLE)
     set_target_properties(VkLayer_khronos_validation PROPERTIES SUFFIX ".dylib")
 else()
