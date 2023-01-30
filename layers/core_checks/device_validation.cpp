@@ -653,7 +653,11 @@ VkFormatProperties3KHR CoreChecks::GetPDFormatProperties(const VkFormat format) 
     auto fmt_props_2 = LvlInitStruct<VkFormatProperties2>(&fmt_props_3);
 
     if (has_format_feature2) {
-        DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
+        if (api_version == VK_API_VERSION_1_0) {
+            DispatchGetPhysicalDeviceFormatProperties2KHR(physical_device, format, &fmt_props_2);
+        } else {
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &fmt_props_2);
+        }
     } else {
         VkFormatProperties format_properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
