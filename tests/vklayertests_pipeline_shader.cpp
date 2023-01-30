@@ -4033,7 +4033,8 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_location_00620) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit,
                                       vector<string>{"VUID-VkVertexInputAttributeDescription-location-00620",
-                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615"});
+                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                                     "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
 TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
@@ -4054,7 +4055,8 @@ TEST_F(VkLayerTest, VUID_VkVertexInputAttributeDescription_binding_00621) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_attribute, kErrorBit,
                                       vector<string>{"VUID-VkVertexInputAttributeDescription-binding-00621",
-                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615"});
+                                                     "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                                     "VUID-VkVertexInputAttributeDescription-format-00623"});
 }
 
 TEST_F(VkLayerTest, VertexInputAttributeDescriptionOffset) {
@@ -16350,7 +16352,7 @@ TEST_F(VkLayerTest, MeshShaderEXT) {
             helper.gp_ci_.pInputAssemblyState = nullptr;
         };
         CreatePipelineHelper::OneshotTest(*this, break_vp3, kErrorBit,
-                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+                                          vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-04910",
                                                                "VUID-VkGraphicsPipelineCreateInfo-pStages-02098"}));
 
         // xfb with mesh shader

@@ -309,31 +309,32 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                          pipe_index, string_VkShaderStageFlags(active_shaders).c_str());
     }
 
-    const auto vi_state = pipeline.InputState();
-    if (!vi_state) {
-        if (!pipeline.IsGraphicsLibrary()) {
-            // This is a "regular" pipeline, so vertex input state is required if a vertex stage is present
-            if ((active_shaders & VK_SHADER_STAGE_VERTEX_BIT) && !pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02097",
+    // Check if a Vertex Input State is used
+    // Need to make sure it has a vertex shader and if a GPL, that it contains a GPL vertex input state
+    // vkspec.html#pipelines-graphics-subsets-vertex-input
+    if ((active_shaders & VK_SHADER_STAGE_VERTEX_BIT) &&
+        (!pipeline.IsGraphicsLibrary() || (pipeline.IsGraphicsLibrary() && pipeline.vertex_input_state))) {
+        if (!pipeline.IsDynamic(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+            const auto *input_state = pipeline.InputState();
+            if (!input_state) {
+                const char *vuid = IsExtEnabled(device_extensions.vk_ext_vertex_input_dynamic_state)
+                                       ? "VUID-VkGraphicsPipelineCreateInfo-pVertexInputState-04910"
+                                       : "VUID-VkGraphicsPipelineCreateInfo-pStages-02097";
+                skip |= LogError(device, vuid,
                                  "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Missing pVertexInputState.",
                                  pipe_index);
+            } else if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
+                const auto *binding_descriptions = pipeline.BindingDescriptions();
+                if (binding_descriptions) {
+                    skip |= ValidatePipelineVertexDivisors(*input_state, *binding_descriptions, pipe_index);
+                }
             }
         }
-    }
 
-    if (vi_state) {
-        for (uint32_t j = 0; j < vi_state->vertexAttributeDescriptionCount; j++) {
-            VkFormat format = vi_state->pVertexAttributeDescriptions[j].format;
-            // Internal call to get format info.  Still goes through layers, could potentially go directly to ICD.
-            VkFormatProperties properties;
-            DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &properties);
-            if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
-                skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-format-00623",
-                                 "vkCreateGraphicsPipelines: pCreateInfo[%" PRIu32
-                                 "].pVertexInputState->vertexAttributeDescriptions[%d].format "
-                                 "(%s) is not a supported vertex buffer format.",
-                                 pipe_index, j, string_VkFormat(format));
-            }
+        if (!pipeline.InputAssemblyState()) {
+            skip |=
+                LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
+                         "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Missing pInputAssemblyState.", pipe_index);
         }
     }
 
@@ -829,33 +830,28 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
     return skip;
 }
 
-bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipe_state_vec,
-                                                const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) const {
+bool CoreChecks::ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInputStateCreateInfo &input_state,
+                                                const std::vector<VkVertexInputBindingDescription> &binding_descriptions,
+                                                const uint32_t pipe_index) const {
     bool skip = false;
-    const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
-
-    for (uint32_t i = 0; i < count; i++) {
-        auto pvids_ci = (pipe_cis[i].pVertexInputState)
-                            ? LvlFindInChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(pipe_cis[i].pVertexInputState->pNext)
-                            : nullptr;
-        if (nullptr == pvids_ci) continue;
-
-        const PIPELINE_STATE *pipe_state = pipe_state_vec[i].get();
-        for (uint32_t j = 0; j < pvids_ci->vertexBindingDivisorCount; j++) {
-            const VkVertexInputBindingDivisorDescriptionEXT *vibdd = &(pvids_ci->pVertexBindingDivisors[j]);
+    const auto divisor_state_info = LvlFindInChain<VkPipelineVertexInputDivisorStateCreateInfoEXT>(input_state.pNext);
+    if (divisor_state_info) {
+        const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
+        for (uint32_t j = 0; j < divisor_state_info->vertexBindingDivisorCount; j++) {
+            const VkVertexInputBindingDivisorDescriptionEXT *vibdd = &(divisor_state_info->pVertexBindingDivisors[j]);
             if (vibdd->binding >= device_limits->maxVertexInputBindings) {
                 skip |= LogError(
                     device, "VUID-VkVertexInputBindingDivisorDescriptionEXT-binding-01869",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] binding index of (%1u) exceeds device maxVertexInputBindings (%1u).",
-                    i, j, vibdd->binding, device_limits->maxVertexInputBindings);
+                    pipe_index, j, vibdd->binding, device_limits->maxVertexInputBindings);
             }
             if (vibdd->divisor > phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor) {
                 skip |= LogError(
                     device, "VUID-VkVertexInputBindingDivisorDescriptionEXT-divisor-01870",
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor of (%1u) exceeds extension maxVertexAttribDivisor (%1u).",
-                    i, j, vibdd->divisor, phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
+                    pipe_index, j, vibdd->divisor, phys_dev_ext_props.vtx_attrib_divisor_props.maxVertexAttribDivisor);
             }
             if ((0 == vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateZeroDivisor) {
                 skip |= LogError(
@@ -863,7 +859,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor must not be 0 when vertexAttributeInstanceRateZeroDivisor feature is not "
                     "enabled.",
-                    i, j);
+                    pipe_index, j);
             }
             if ((1 != vibdd->divisor) && !enabled_features.vtx_attrib_divisor_features.vertexAttributeInstanceRateDivisor) {
                 skip |= LogError(
@@ -871,14 +867,14 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] divisor (%1u) must be 1 when vertexAttributeInstanceRateDivisor feature is not "
                     "enabled.",
-                    i, j, vibdd->divisor);
+                    pipe_index, j, vibdd->divisor);
             }
 
             // Find the corresponding binding description and validate input rate setting
             bool failed_01871 = true;
-            for (size_t k = 0; k < pipe_state->vertex_input_state->binding_descriptions.size(); k++) {
-                if ((vibdd->binding == pipe_state->vertex_input_state->binding_descriptions[k].binding) &&
-                    (VK_VERTEX_INPUT_RATE_INSTANCE == pipe_state->vertex_input_state->binding_descriptions[k].inputRate)) {
+            for (size_t k = 0; k < binding_descriptions.size(); k++) {
+                if ((vibdd->binding == binding_descriptions[k].binding) &&
+                    (VK_VERTEX_INPUT_RATE_INSTANCE == binding_descriptions[k].inputRate)) {
                     failed_01871 = false;
                     break;
                 }
@@ -889,7 +885,7 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
                     "vkCreateGraphicsPipelines(): Pipeline[%1u] with chained VkPipelineVertexInputDivisorStateCreateInfoEXT, "
                     "pVertexBindingDivisors[%1u] specifies binding index (%1u), but that binding index's "
                     "VkVertexInputBindingDescription.inputRate member is not VK_VERTEX_INPUT_RATE_INSTANCE.",
-                    i, j, vibdd->binding);
+                    pipe_index, j, vibdd->binding);
             }
         }
     }
@@ -961,10 +957,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
 
     for (uint32_t i = 0; i < count; i++) {
         skip |= ValidatePipeline(cgpl_state->pipe_state, i);
-    }
-
-    if (IsExtEnabled(device_extensions.vk_ext_vertex_attribute_divisor)) {
-        skip |= ValidatePipelineVertexDivisors(cgpl_state->pipe_state, count, pCreateInfos);
     }
 
     if (IsExtEnabled(device_extensions.vk_khr_portability_subset)) {
@@ -1520,17 +1512,6 @@ bool CoreChecks::ValidateGraphicsPipelinePreRasterState(const PIPELINE_STATE &pi
         }
 
         const auto *ia_state = pipeline.InputAssemblyState();
-        if (!ia_state) {
-            if ((!pipeline.IsGraphicsLibrary() &&
-                 (active_shaders & VK_SHADER_STAGE_VERTEX_BIT)) ||  // This is a legacy pipeline with a VS
-                (pipeline.IsGraphicsLibrary() &&
-                 pipeline.vertex_input_state)) {  // This is a graphics library that defines vertex input state
-                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-02098",
-                                 "vkCreateGraphicsPipelines(): pCreateInfos[%" PRIu32 "] State: Missing pInputAssemblyState.",
-                                 pipe_index);
-            }
-        }
-
         // VK_PRIMITIVE_TOPOLOGY_PATCH_LIST primitive topology is only valid for tessellation pipelines.
         // Mismatching primitive topology and tessellation fails graphics pipeline creation.
         // NOTE: For GPL, vertex input state must be present to test this

@@ -396,6 +396,13 @@ class PIPELINE_STATE : public BASE_NODE {
         return nullptr;
     }
 
+    const VertexInputState::VertexBindingVector *BindingDescriptions() const {
+        if (vertex_input_state) {
+            return &vertex_input_state->binding_descriptions;
+        }
+        return nullptr;
+    }
+
     uint32_t Subpass() const {
         // TODO A render pass object is required for all of these sub-states. Which one should be used for an "executable pipeline"?
         if (pre_raster_state) {

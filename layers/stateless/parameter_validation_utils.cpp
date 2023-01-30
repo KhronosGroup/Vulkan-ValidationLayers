@@ -2686,6 +2686,16 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          "greater than VkPhysicalDeviceLimits::maxVertexInputAttributeOffset (%" PRIu32 ").",
                                          i, d, vertex_attrib_desc.offset, device_limits.maxVertexInputAttributeOffset);
                     }
+
+                    VkFormatProperties properties;
+                    DispatchGetPhysicalDeviceFormatProperties(physical_device, vertex_attrib_desc.format, &properties);
+                    if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-format-00623",
+                                         "vkCreateGraphicsPipelines: pCreateInfo[%" PRIu32
+                                         "].pVertexInputState->vertexAttributeDescriptions[%d].format "
+                                         "(%s) is not a supported vertex buffer format.",
+                                         i, d, string_VkFormat(vertex_attrib_desc.format));
+                    }
                 }
             }
 

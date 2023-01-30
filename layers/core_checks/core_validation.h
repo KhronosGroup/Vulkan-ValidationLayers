@@ -423,8 +423,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateUnprotectedBuffer(const CMD_BUFFER_STATE& cb_state, const BUFFER_STATE& buffer_state, const char* cmd_name,
                                    const char* vuid, const char* more_message = "") const;
 
-    bool ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipe_state_vec, const uint32_t count,
-                                        const VkGraphicsPipelineCreateInfo* pipe_cis) const;
+    bool ValidatePipelineVertexDivisors(const safe_VkPipelineVertexInputStateCreateInfo& input_state,
+                                        const std::vector<VkVertexInputBindingDescription>& binding_descriptions,
+                                        const uint32_t pipe_index) const;
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char* caller_name,
                                            const char* vuid) const;
     bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags flags, uint32_t index) const;
