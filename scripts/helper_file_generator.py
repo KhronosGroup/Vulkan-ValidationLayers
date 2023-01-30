@@ -445,7 +445,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             outstring += '        ++index;\n'
             outstring += '        input_value >>= 1;\n'
             outstring += '    }\n'
-            outstring += '    if( ret.empty()) ret.append(string_%s(static_cast<%s>(0)));\n' % (groupName, groupType)
+            outstring += '    if (ret.empty()) ret.append("%s(0)");\n' % flagsName
             outstring += '    return ret;\n'
             outstring += '}\n'
 
