@@ -1087,7 +1087,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
                                          "extendedDynamicState3ColorBlendAdvanced");
     for (uint32_t attachment = 0U; attachment < attachmentCount; ++attachment) {
         VkColorBlendAdvancedEXT const &advanced = pColorBlendAdvanced[attachment];
-        // VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505
         if (advanced.srcPremultiplied != VK_FALSE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedSrcColor) {
             skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-srcPremultiplied-07505",
@@ -1095,7 +1094,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
                              "advancedBlendNonPremultipliedSrcColor is not supported.",
                              attachment);
         }
-        // VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506
         if (advanced.dstPremultiplied != VK_FALSE &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendNonPremultipliedDstColor) {
             skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-dstPremultiplied-07506",
@@ -1103,7 +1101,6 @@ bool CoreChecks::PreCallValidateCmdSetColorBlendAdvancedEXT(VkCommandBuffer comm
                              "advancedBlendNonPremultipliedDstColor is not supported.",
                              attachment);
         }
-        // VUID-VkColorBlendAdvancedEXT-blendOverlap-07507
         if (advanced.blendOverlap != VK_BLEND_OVERLAP_UNCORRELATED_EXT &&
             !phys_dev_ext_props.blend_operation_advanced_props.advancedBlendCorrelatedOverlap) {
             skip |= LogError(cb_state->Handle(), "VUID-VkColorBlendAdvancedEXT-blendOverlap-07507",
