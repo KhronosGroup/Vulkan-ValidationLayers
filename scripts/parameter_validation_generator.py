@@ -429,6 +429,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             write('#pragma once\n', file=self.outFile)
 
         if self.enum_file:
+            write('#include <array>', file=self.outFile)
             write('#include "vulkan/vulkan.h"\n', file=self.outFile)
 
         if not self.source_file:

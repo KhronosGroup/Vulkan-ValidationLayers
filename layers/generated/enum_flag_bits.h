@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <array>
 #include "vulkan/vulkan.h"
 
 const uint32_t GeneratedVulkanHeaderVersion = 240;
