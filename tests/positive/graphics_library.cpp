@@ -437,3 +437,122 @@ TEST_F(VkPositiveGraphicsLibraryLayerTest, DrawWithNullDSLs) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexInputAttributeDescriptionOffset) {
+    TEST_DESCRIPTION("Test VUID-VkVertexInputAttributeDescription-offset-00622: is not trigged with graphics library");
+
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+
+    VkPhysicalDeviceProperties device_props = {};
+    vk::GetPhysicalDeviceProperties(gpu(), &device_props);
+    if (device_props.limits.maxVertexInputAttributeOffset == 0xFFFFFFFF) {
+        GTEST_SKIP() << "maxVertexInputAttributeOffset is max<uint32_t> already";
+    }
+
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>();
+    GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &gpl_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDescription vertex_input_binding_description{};
+    vertex_input_binding_description.binding = 0;
+    vertex_input_binding_description.stride = m_device->props.limits.maxVertexInputBindingStride;
+    vertex_input_binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    // Test when offset is greater than maximum.
+    VkVertexInputAttributeDescription vertex_input_attribute_description{};
+    vertex_input_attribute_description.format = VK_FORMAT_R8_UNORM;
+    vertex_input_attribute_description.offset = device_props.limits.maxVertexInputAttributeOffset + 1;
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    // override vertex input
+    frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
+    frag_shader_lib.InitState();
+    frag_shader_lib.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+    frag_shader_lib.vi_ci_.vertexBindingDescriptionCount = 1;
+    frag_shader_lib.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
+    frag_shader_lib.vi_ci_.vertexAttributeDescriptionCount = 1;
+    frag_shader_lib.gp_ci_.pVertexInputState = &frag_shader_lib.vi_ci_;
+
+    // VUID-VkVertexInputAttributeDescription-offset-00622 shouldn't be trigged
+    frag_shader_lib.CreateGraphicsPipeline();
+}
+
+TEST_F(VkPositiveGraphicsLibraryLayerTest, VertexAttributeDivisorInstanceRateZero) {
+    TEST_DESCRIPTION("VK_EXT_vertex_attribute_divisor is not checked with VK_EXT_graphics_pipeline_library");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    if (!AreRequiredExtensionsEnabled()) {
+        GTEST_SKIP() << RequiredExtensionsNotSupported() << " not supported";
+    }
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        GTEST_SKIP() << "At least Vulkan version 1.2 is required";
+    }
+
+    auto vertex_attr_divisor_features = LvlInitStruct<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>();
+    auto gpl_features = LvlInitStruct<VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT>(&vertex_attr_divisor_features);
+    VkPhysicalDeviceFeatures2 features2 = GetPhysicalDeviceFeatures2(gpl_features);
+    if (!gpl_features.graphicsPipelineLibrary) {
+        GTEST_SKIP() << "VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT::graphicsPipelineLibrary not supported";
+    }
+
+    vertex_attr_divisor_features.vertexAttributeInstanceRateZeroDivisor = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkVertexInputBindingDivisorDescriptionEXT divisor_description = {};
+    divisor_description.binding = 0;
+    divisor_description.divisor = 0;
+    auto divisor_state_create_info = LvlInitStruct<VkPipelineVertexInputDivisorStateCreateInfoEXT>();
+    divisor_state_create_info.vertexBindingDivisorCount = 1;
+    divisor_state_create_info.pVertexBindingDivisors = &divisor_description;
+    VkVertexInputBindingDescription vertex_input_binding_description = {divisor_description.binding, 12,
+                                                                        VK_VERTEX_INPUT_RATE_INSTANCE};
+    VkVertexInputAttributeDescription vertex_input_attribute_description = {0, 0, VK_FORMAT_R8_UNORM, 0};
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, bindStateFragShaderText);
+    auto fs_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
+    fs_ci.codeSize = fs_spv.size() * sizeof(decltype(fs_spv)::value_type);
+    fs_ci.pCode = fs_spv.data();
+
+    auto stage_ci = LvlInitStruct<VkPipelineShaderStageCreateInfo>(&fs_ci);
+    stage_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stage_ci.module = VK_NULL_HANDLE;
+    stage_ci.pName = "main";
+
+    frag_shader_lib.InitFragmentLibInfo(1, &stage_ci);
+    frag_shader_lib.InitState();
+
+    // override vertex input
+    frag_shader_lib.vi_ci_.pNext = &divisor_state_create_info;
+    frag_shader_lib.vi_ci_.pVertexBindingDescriptions = &vertex_input_binding_description;
+    frag_shader_lib.vi_ci_.vertexBindingDescriptionCount = 1;
+    frag_shader_lib.vi_ci_.pVertexAttributeDescriptions = &vertex_input_attribute_description;
+    frag_shader_lib.vi_ci_.vertexAttributeDescriptionCount = 1;
+    frag_shader_lib.gp_ci_.pVertexInputState = &frag_shader_lib.vi_ci_;
+
+    // VUID-VkVertexInputBindingDivisorDescriptionEXT-vertexAttributeInstanceRateZeroDivisor-02228 shouldn't be trigged
+    frag_shader_lib.CreateGraphicsPipeline();
+}
