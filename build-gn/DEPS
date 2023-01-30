@@ -5,41 +5,36 @@ gclient_gn_args_file = 'build/config/gclient_args.gni'
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'build_with_chromium': False,
   'ninja_version': 'version:2@1.11.1.chromium.6',
 }
 
 deps = {
 
-  './build': {
-    'url': '{chromium_git}/chromium/src/build.git@17a38f4bb2c5375815a8c9e1dfb3a36658b29b8a',
-    'condition': 'not build_with_chromium',
+  'build': {
+    'url': '{chromium_git}/chromium/src/build.git@1015724d82945f9ef7e51c6f804034ccf5f79951',
   },
 
-  './buildtools': {
-    'url': '{chromium_git}/chromium/src/buildtools.git@69cc9b8a3ae010e0721c4bea12de7a352d9a93f9',
-    'condition': 'not build_with_chromium',
+  'buildtools': {
+    'url': '{chromium_git}/chromium/src/buildtools.git@3c7e3f1b8b1e4c0b6ec693430379cea682de78d6',
   },
 
   'buildtools/linux64': {
     'packages': [
       {
-        'package': 'gn/gn/linux-amd64',
-        'version': 'git_revision:64b3b9401c1c3ed5f3c43c1cac00b91f83597ab8',
+        'package': 'gn/gn/linux-${{arch}}',
+        'version': 'git_revision:5e19d2fb166fbd4f6f32147fbb2f497091a54ad8',
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'not build_with_chromium and host_os == "linux"',
+    'condition': 'host_os == "linux"',
   },
 
-  './testing': {
-    'url': '{chromium_git}/chromium/src/testing@3b69bfd9403ab6b110a8a853da1e187b29d734f8',
-    'condition': 'not build_with_chromium',
+  'testing': {
+    'url': '{chromium_git}/chromium/src/testing@949b2864b6bd27656753b917c9aa7731dc7a06f6',
   },
 
-  './tools/clang': {
-    'url': '{chromium_git}/chromium/src/tools/clang.git@168ccba7af17161ebcf27f9f138f694fac630fd4',
-    'condition': 'not build_with_chromium',
+  'tools/clang': {
+    'url': '{chromium_git}/chromium/src/tools/clang.git@566877f1ff1a5fa6beaca3ab4b47bd0b92eb614f',
   },
 
   'third_party/ninja': {
@@ -50,7 +45,6 @@ deps = {
       }
     ],
     'dep_type': 'cipd',
-    'condition': 'not build_with_chromium',
   },
 
 }
@@ -59,15 +53,14 @@ hooks = [
   {
     'name': 'sysroot_x64',
     'pattern': '.',
-    'condition': 'checkout_linux and (checkout_x64 and not build_with_chromium)',
-    'action': ['python', './build/linux/sysroot_scripts/install-sysroot.py',
+    'condition': 'checkout_linux and checkout_x64',
+    'action': ['python3', 'build/linux/sysroot_scripts/install-sysroot.py',
                '--arch=x64'],
   },
   {
     # Note: On Win, this should run after win_toolchain, as it may use it.
     'name': 'clang',
     'pattern': '.',
-    'action': ['python', './tools/clang/scripts/update.py'],
-    'condition': 'not build_with_chromium',
+    'action': ['python3', 'tools/clang/scripts/update.py'],
   },
 ]
