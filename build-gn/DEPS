@@ -6,6 +6,7 @@ gclient_gn_args_file = 'build/config/gclient_args.gni'
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'build_with_chromium': False,
+  'ninja_version': 'version:2@1.11.1.chromium.6',
 }
 
 deps = {
@@ -38,6 +39,17 @@ deps = {
 
   './tools/clang': {
     'url': '{chromium_git}/chromium/src/tools/clang.git@168ccba7af17161ebcf27f9f138f694fac630fd4',
+    'condition': 'not build_with_chromium',
+  },
+
+  'third_party/ninja': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/ninja/${{platform}}',
+        'version': Var('ninja_version'),
+      }
+    ],
+    'dep_type': 'cipd',
     'condition': 'not build_with_chromium',
   },
 
