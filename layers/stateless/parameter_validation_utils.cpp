@@ -9018,21 +9018,18 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     const auto *vertex_attribute_divisor_features =
         LvlFindInChain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(device_createinfo_pnext);
 
-    // VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791
     if (vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
         skip |=
             LogError(device, "VUID-vkCmdSetVertexInputEXT-vertexBindingDescriptionCount-04791",
                      "vkCmdSetVertexInputEXT(): vertexBindingDescriptionCount is greater than the maxVertexInputBindings limit");
     }
 
-    // VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792
     if (vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
         skip |= LogError(
             device, "VUID-vkCmdSetVertexInputEXT-vertexAttributeDescriptionCount-04792",
             "vkCmdSetVertexInputEXT(): vertexAttributeDescriptionCount is greater than the maxVertexInputAttributes limit");
     }
 
-    // VUID-vkCmdSetVertexInputEXT-binding-04793
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
         bool binding_found = false;
         for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
@@ -9080,7 +9077,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     }
 
     for (uint32_t binding = 0; binding < vertexBindingDescriptionCount; ++binding) {
-        // VUID-VkVertexInputBindingDescription2EXT-binding-04796
         if (pVertexBindingDescriptions[binding].binding > device_limits.maxVertexInputBindings) {
             skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-binding-04796",
                              "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%" PRIu32
@@ -9088,7 +9084,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              binding);
         }
 
-        // VUID-VkVertexInputBindingDescription2EXT-stride-04797
         if (pVertexBindingDescriptions[binding].stride > device_limits.maxVertexInputBindingStride) {
             skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-stride-04797",
                              "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%" PRIu32
@@ -9096,7 +9091,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              binding);
         }
 
-        // VUID-VkVertexInputBindingDescription2EXT-divisor-04798
         if (pVertexBindingDescriptions[binding].divisor == 0 &&
             (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateZeroDivisor)) {
             skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04798",
@@ -9107,7 +9101,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
         }
 
         if (pVertexBindingDescriptions[binding].divisor > 1) {
-            // VUID-VkVertexInputBindingDescription2EXT-divisor-04799
             if (!vertex_attribute_divisor_features || !vertex_attribute_divisor_features->vertexAttributeInstanceRateDivisor) {
                 skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-04799",
                                  "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%" PRIu32
@@ -9115,7 +9108,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                                  "vertexAttributeInstanceRateDivisor is not enabled",
                                  binding);
             } else {
-                // VUID-VkVertexInputBindingDescription2EXT-divisor-06226
                 if (pVertexBindingDescriptions[binding].divisor >
                     phys_dev_ext_props.vertex_attribute_divisor_props.maxVertexAttribDivisor) {
                     skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-06226",
@@ -9124,7 +9116,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                                      binding);
                 }
 
-                // VUID-VkVertexInputBindingDescription2EXT-divisor-06227
                 if (pVertexBindingDescriptions[binding].inputRate != VK_VERTEX_INPUT_RATE_INSTANCE) {
                     skip |= LogError(device, "VUID-VkVertexInputBindingDescription2EXT-divisor-06227",
                                      "vkCmdSetVertexInputEXT(): pVertexBindingDescriptions[%" PRIu32
@@ -9137,7 +9128,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
     }
 
     for (uint32_t attribute = 0; attribute < vertexAttributeDescriptionCount; ++attribute) {
-        // VUID-VkVertexInputAttributeDescription2EXT-location-06228
         if (pVertexAttributeDescriptions[attribute].location > device_limits.maxVertexInputAttributes) {
             skip |= LogError(device, "VUID-VkVertexInputAttributeDescription2EXT-location-06228",
                              "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%" PRIu32
@@ -9145,7 +9135,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              attribute);
         }
 
-        // VUID-VkVertexInputAttributeDescription2EXT-binding-06229
         if (pVertexAttributeDescriptions[attribute].binding > device_limits.maxVertexInputBindings) {
             skip |= LogError(device, "VUID-VkVertexInputAttributeDescription2EXT-binding-06229",
                              "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%" PRIu32
@@ -9153,7 +9142,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              attribute);
         }
 
-        // VUID-VkVertexInputAttributeDescription2EXT-offset-06230
         if (pVertexAttributeDescriptions[attribute].offset > device_limits.maxVertexInputAttributeOffset) {
             skip |= LogError(device, "VUID-VkVertexInputAttributeDescription2EXT-offset-06230",
                              "vkCmdSetVertexInputEXT(): pVertexAttributeDescriptions[%" PRIu32
@@ -9161,7 +9149,6 @@ bool StatelessValidation::manual_PreCallValidateCmdSetVertexInputEXT(
                              attribute);
         }
 
-        // VUID-VkVertexInputAttributeDescription2EXT-format-04805
         VkFormatProperties properties;
         DispatchGetPhysicalDeviceFormatProperties(physical_device, pVertexAttributeDescriptions[attribute].format, &properties);
         if ((properties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
