@@ -1187,8 +1187,8 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
         VkPipelineObj pipe(m_device);
         pipe.AddShader(&vs);
         pipe.AddDefaultColorAttachment();
-        auto err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
-        ASSERT_VK_SUCCESS(err);
+        auto subcase_err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+        ASSERT_VK_SUCCESS(subcase_err);
 
         m_commandBuffer->begin(&begin_info);
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
@@ -1210,10 +1210,10 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
             if (!test.error.empty()) {
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "access out of bounds");
             }
-            err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-            ASSERT_VK_SUCCESS(err);
-            err = vk::QueueWaitIdle(m_device->m_queue);
-            ASSERT_VK_SUCCESS(err);
+            subcase_err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            ASSERT_VK_SUCCESS(subcase_err);
+            subcase_err = vk::QueueWaitIdle(m_device->m_queue);
+            ASSERT_VK_SUCCESS(subcase_err);
             if (!test.error.empty()) {
                 m_errorMonitor->VerifyFound();
             }
