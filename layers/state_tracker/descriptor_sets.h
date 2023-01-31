@@ -70,6 +70,13 @@ class DESCRIPTOR_POOL_STATE : public BASE_NODE {
         return iter != available_counts_.end() ? iter->second : 0;
     }
 
+    // The type map is only created once so can guarantee this will find if type was used
+    // Unlike GetAvailableCount, this won't give a false positive that it just ran out of an available count
+    bool IsAvailableType(uint32_t type) const {
+        auto guard = ReadLock();
+        return available_counts_.find(type) != available_counts_.end();
+    }
+
     uint32_t GetAvailableSets() const {
         auto guard = ReadLock();
         return available_sets_;
