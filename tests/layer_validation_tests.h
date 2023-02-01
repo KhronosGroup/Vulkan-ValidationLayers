@@ -911,18 +911,21 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
 
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
                                                                        const VkBufferCreateInfo &buffer_create_info,
-                                                                       VkExternalMemoryFeatureFlags requested_features,
-                                                                       bool find_single_flag = false);
+                                                                       VkExternalMemoryFeatureFlags requested_features);
 
 VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkLayerTest &test,
                                                                        const VkImageCreateInfo &image_create_info,
-                                                                       VkExternalMemoryFeatureFlags requested_features,
-                                                                       bool find_single_flag = false);
+                                                                       VkExternalMemoryFeatureFlags requested_features);
 
 VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const VkLayerTest &test,
                                                                            const VkImageCreateInfo &image_create_info,
-                                                                           VkExternalMemoryFeatureFlagsNV requested_features,
-                                                                           bool find_single_flag = false);
+                                                                           VkExternalMemoryFeatureFlagsNV requested_features);
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkBufferCreateInfo &buffer_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkImageCreateInfo &image_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
 
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 

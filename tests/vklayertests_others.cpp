@@ -10602,9 +10602,14 @@ TEST_F(VkLayerTest, ExternalMemoryAndExternalMemoryNV) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    external_mem_nv.handleTypes =
-        FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
-    external_mem.handleTypes = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
+    const auto supported_types_nv =
+        FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (!supported_types_nv || !supported_types) {
+        GTEST_SKIP() << "Cannot find one regular handle type and one nvidia extension's handle type";
+    }
+    external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryFeatureFlagBitsNV>(supported_types_nv);
+    external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-00988");
     VkImage test_image;
@@ -11361,8 +11366,9 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     ici.tiling = VK_IMAGE_TILING_OPTIMAL;
     ici.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    external_mem.handleTypes = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
-    if (external_mem.handleTypes) {
+    const auto supported_types = FindSupportedExternalMemoryHandleTypes(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
+    if (supported_types) {
+        external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
         VkImage test_image;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
         vk::CreateImage(device(), &ici, nullptr, &test_image);
@@ -11370,9 +11376,10 @@ TEST_F(VkLayerTest, ValidateExternalMemoryImageLayout) {
     }
     if (IsExtensionsEnabled(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         auto external_mem_nv = LvlInitStruct<VkExternalMemoryImageCreateInfoNV>();
-        external_mem_nv.handleTypes =
-            FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT, true);
-        if (external_mem.handleTypes) {
+        const auto supported_types_nv =
+            FindSupportedExternalMemoryHandleTypesNV(*this, ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT_NV);
+        if (supported_types_nv) {
+            external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBitsNV>(supported_types_nv);
             ici.pNext = &external_mem_nv;
             VkImage test_image;
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01443");
