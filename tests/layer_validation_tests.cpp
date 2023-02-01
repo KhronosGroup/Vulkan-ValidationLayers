@@ -511,7 +511,6 @@ VkExternalMemoryHandleTypeFlags FindSupportedExternalMemoryHandleTypes(const VkL
     IterateFlags<VkExternalMemoryHandleTypeFlagBits>(
         AllVkExternalMemoryHandleTypeFlagBits, [&](VkExternalMemoryHandleTypeFlagBits flag) {
             external_buffer_info.handleType = flag;
-
             auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
             vk::GetPhysicalDeviceExternalBufferProperties(test.gpu(), &external_buffer_info, &external_buffer_properties);
             const auto external_features = external_buffer_properties.externalMemoryProperties.externalMemoryFeatures;
@@ -576,6 +575,83 @@ VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const
             return true;
         });
     return supported_handle_type;
+}
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkBufferCreateInfo &buffer_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalBufferInfo>();
+    external_info.flags = buffer_create_info.flags;
+    external_info.usage = buffer_create_info.usage;
+    external_info.handleType = handle_type;
+    auto external_buffer_properties = LvlInitStruct<VkExternalBufferProperties>();
+    vk::GetPhysicalDeviceExternalBufferProperties(test.gpu(), &external_info, &external_buffer_properties);
+    return external_buffer_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkImageCreateInfo &image_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type) {
+    auto external_info = LvlInitStruct<VkPhysicalDeviceExternalImageFormatInfo>();
+    external_info.handleType = handle_type;
+    auto image_info = LvlInitStruct<VkPhysicalDeviceImageFormatInfo2>(&external_info);
+    image_info.format = image_create_info.format;
+    image_info.type = image_create_info.imageType;
+    image_info.tiling = image_create_info.tiling;
+    image_info.usage = image_create_info.usage;
+    image_info.flags = image_create_info.flags;
+    auto external_properties = LvlInitStruct<VkExternalImageFormatProperties>();
+    auto image_properties = LvlInitStruct<VkImageFormatProperties2>(&external_properties);
+    if (vk::GetPhysicalDeviceImageFormatProperties2(test.gpu(), &image_info, &image_properties) != VK_SUCCESS) return 0;
+    return external_properties.externalMemoryProperties.compatibleHandleTypes;
+}
+
+bool InitBufferAllocateInfo(const VkLayerTest &test, VkBuffer buffer, VkMemoryPropertyFlags properties,
+                            VkMemoryAllocateInfo &alloc_info) {
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(test.device(), buffer, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    return test.DeviceObj()->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, properties);
+}
+
+bool InitImageAllocateInfo(const VkLayerTest &test, VkImage image, VkMemoryPropertyFlags properties,
+                           VkMemoryAllocateInfo &alloc_info) {
+    VkMemoryRequirements mem_reqs;
+    vk::GetImageMemoryRequirements(test.device(), image, &mem_reqs);
+    alloc_info.allocationSize = mem_reqs.size;
+    return test.DeviceObj()->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, properties);
+}
+
+VkDeviceMemory AllocateBufferMemory(const VkLayerTest &test, VkBuffer buffer, VkMemoryPropertyFlags properties,
+                                    void *p_next_allocate_info) {
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(p_next_allocate_info);
+    if (!InitBufferAllocateInfo(test, buffer, properties, alloc_info)) return VK_NULL_HANDLE;
+    VkDeviceMemory memory;
+    auto result = vk::AllocateMemory(test.device(), &alloc_info, nullptr, &memory);
+    return result == VK_SUCCESS ? memory : VK_NULL_HANDLE;
+}
+
+VkDeviceMemory AllocateImageMemory(const VkLayerTest &test, VkImage image, VkMemoryPropertyFlags properties,
+                                   void *p_next_allocate_info) {
+    auto alloc_info = LvlInitStruct<VkMemoryAllocateInfo>(p_next_allocate_info);
+    if (!InitImageAllocateInfo(test, image, properties, alloc_info)) return VK_NULL_HANDLE;
+    VkDeviceMemory memory;
+    auto result = vk::AllocateMemory(test.device(), &alloc_info, nullptr, &memory);
+    return result == VK_SUCCESS ? memory : VK_NULL_HANDLE;
+}
+
+VkResult BindBufferMemory2(const VkLayerTest &test, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset) {
+    auto bind_info = LvlInitStruct<VkBindBufferMemoryInfo>();
+    bind_info.buffer = buffer;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = offset;
+    return vk::BindBufferMemory2(test.device(), 1, &bind_info);
+}
+
+VkResult BindImageMemory2(const VkLayerTest &test, VkImage image, VkDeviceMemory memory, VkDeviceSize offset) {
+    auto bind_info = LvlInitStruct<VkBindImageMemoryInfo>();
+    bind_info.image = image;
+    bind_info.memory = memory;
+    bind_info.memoryOffset = offset;
+    return vk::BindImageMemory2(test.device(), 1, &bind_info);
 }
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,

@@ -937,6 +937,25 @@ VkExternalMemoryHandleTypeFlagsNV FindSupportedExternalMemoryHandleTypesNV(const
                                                                            VkExternalMemoryFeatureFlagsNV requested_features,
                                                                            bool find_single_flag = false);
 
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkBufferCreateInfo &buffer_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
+
+VkExternalMemoryHandleTypeFlags GetCompatibleHandleTypes(const VkLayerTest &test, const VkImageCreateInfo &image_create_info,
+                                                         VkExternalMemoryHandleTypeFlagBits handle_type);
+
+bool InitBufferAllocateInfo(const VkLayerTest &test, VkBuffer buffer, VkMemoryPropertyFlags properties,
+                            VkMemoryAllocateInfo &alloc_info);
+bool InitImageAllocateInfo(const VkLayerTest &test, VkImage image, VkMemoryPropertyFlags properties,
+                           VkMemoryAllocateInfo &alloc_info);
+
+VkDeviceMemory AllocateBufferMemory(const VkLayerTest &test, VkBuffer buffer, VkMemoryPropertyFlags properties,
+                                    void *p_next_allocate_info = nullptr);
+VkDeviceMemory AllocateImageMemory(const VkLayerTest &test, VkImage image, VkMemoryPropertyFlags properties,
+                                   void *p_next_allocate_info = nullptr);
+
+VkResult BindBufferMemory2(const VkLayerTest &test, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize offset = 0);
+VkResult BindImageMemory2(const VkLayerTest &test, VkImage image, VkDeviceMemory memory, VkDeviceSize offset = 0);
+
 void SetImageLayout(VkDeviceObj *device, VkImageAspectFlags aspect, VkImage image, VkImageLayout image_layout);
 
 void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
