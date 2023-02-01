@@ -88,7 +88,7 @@ struct DescriptorRequirement {
     DescriptorReqFlags reqs;
     bool is_writable;
     // Copy from StageState.ResourceInterfaceVariable. It combines from plural shader stages. The index of array is index of image.
-    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
+    std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
     DescriptorRequirement() : reqs(0), is_writable(false) {}
@@ -198,10 +198,10 @@ class PIPELINE_STATE : public BASE_NODE {
         return false;
     }
 
-    const layer_data::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
+    const vvl::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
 
     // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
-    using ActiveSlotMap = layer_data::unordered_map<uint32_t, BindingReqMap>;
+    using ActiveSlotMap = vvl::unordered_map<uint32_t, BindingReqMap>;
     // NOTE: this map is 'almost' const and used in performance critical code paths.
     // The values of existing entries in the DescriptorRequirement::samplers_used_by_image map
     // are updated at various times. Locking requirements are TBD.
@@ -470,18 +470,18 @@ class PIPELINE_STATE : public BASE_NODE {
         return create_info.graphics.pDynamicState;
     }
 
-    layer_data::span<const safe_VkPipelineShaderStageCreateInfo> GetShaderStages() const {
+    vvl::span<const safe_VkPipelineShaderStageCreateInfo> GetShaderStages() const {
         switch (create_info.graphics.sType) {
             case VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO:
-                return layer_data::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.graphics.pStages,
+                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.graphics.pStages,
                                                                                     create_info.graphics.stageCount};
             case VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO:
-                return layer_data::span<const safe_VkPipelineShaderStageCreateInfo>{&create_info.compute.stage, 1};
+                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{&create_info.compute.stage, 1};
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV:
-                return layer_data::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
+                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
                                                                                     create_info.raytracing.stageCount};
             case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR:
-                return layer_data::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
+                return vvl::span<const safe_VkPipelineShaderStageCreateInfo>{create_info.raytracing.pStages,
                                                                                     create_info.raytracing.stageCount};
             default:
                 assert(false);

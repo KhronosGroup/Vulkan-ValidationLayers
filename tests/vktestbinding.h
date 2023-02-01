@@ -1239,11 +1239,11 @@ inline VkCommandBufferAllocateInfo CommandBuffer::create_info(VkCommandPool cons
 }
 
 struct GraphicsPipelineLibraryStage {
-    layer_data::span<const uint32_t> spv;
+    vvl::span<const uint32_t> spv;
     VkShaderModuleCreateInfo shader_ci;
     VkPipelineShaderStageCreateInfo stage_ci;
 
-    GraphicsPipelineLibraryStage(layer_data::span<const uint32_t> spv, VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT,
+    GraphicsPipelineLibraryStage(vvl::span<const uint32_t> spv, VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT,
                                  const char *name = "main")
         : spv(spv) {
         shader_ci = LvlInitStruct<VkShaderModuleCreateInfo>();
@@ -1258,11 +1258,11 @@ struct GraphicsPipelineLibraryStage {
 };
 
 struct GraphicsPipelineFromLibraries {
-    layer_data::span<VkPipeline> libs;
+    vvl::span<VkPipeline> libs;
     VkPipelineLibraryCreateInfoKHR link_info;
     vk_testing::Pipeline pipe;
 
-    GraphicsPipelineFromLibraries(const Device &dev, layer_data::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo *ci = nullptr)
+    GraphicsPipelineFromLibraries(const Device &dev, vvl::span<VkPipeline> libs, VkGraphicsPipelineCreateInfo *ci = nullptr)
         : libs(libs) {
         link_info = LvlInitStruct<VkPipelineLibraryCreateInfoKHR>();
         link_info.libraryCount = static_cast<uint32_t>(libs.size());

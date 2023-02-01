@@ -16561,44 +16561,44 @@ TEST_F(VkLayerTest, MeshShaderEXTRuntimeSpirv) {
     uint32_t max_mesh_output_vertices = mesh_shader_properties.maxMeshOutputVertices;
     uint32_t max_mesh_output_primitives = mesh_shader_properties.maxMeshOutputPrimitives;
 
-    if (max_task_workgroup_size_x < layer_data::MaxTypeValue(max_task_workgroup_size_x)) {
+    if (max_task_workgroup_size_x < vvl::MaxTypeValue(max_task_workgroup_size_x)) {
         error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07291");
         max_task_workgroup_size_x += 1;
     }
 
-    if (max_task_workgroup_size_y < layer_data::MaxTypeValue(max_task_workgroup_size_y)) {
+    if (max_task_workgroup_size_y < vvl::MaxTypeValue(max_task_workgroup_size_y)) {
         error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07292");
         max_task_workgroup_size_y += 1;
     }
 
-    if (max_task_workgroup_size_z < layer_data::MaxTypeValue(max_task_workgroup_size_z)) {
+    if (max_task_workgroup_size_z < vvl::MaxTypeValue(max_task_workgroup_size_z)) {
         error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07293");
         max_task_workgroup_size_z += 1;
     }
     error_vuids.push_back("VUID-RuntimeSpirv-TaskEXT-07294");
 
-    if (max_mesh_workgroup_size_x < layer_data::MaxTypeValue(max_mesh_workgroup_size_x)) {
+    if (max_mesh_workgroup_size_x < vvl::MaxTypeValue(max_mesh_workgroup_size_x)) {
         error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07295");
         max_mesh_workgroup_size_x += 1;
     }
 
-    if (max_mesh_workgroup_size_y < layer_data::MaxTypeValue(max_mesh_workgroup_size_y)) {
+    if (max_mesh_workgroup_size_y < vvl::MaxTypeValue(max_mesh_workgroup_size_y)) {
         error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07296");
         max_mesh_workgroup_size_y += 1;
     }
 
-    if (max_mesh_workgroup_size_z < layer_data::MaxTypeValue(max_mesh_workgroup_size_z)) {
+    if (max_mesh_workgroup_size_z < vvl::MaxTypeValue(max_mesh_workgroup_size_z)) {
         error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07297");
         max_mesh_workgroup_size_z += 1;
     }
     error_vuids.push_back("VUID-RuntimeSpirv-MeshEXT-07298");
 
-    if (max_mesh_output_vertices < layer_data::MaxTypeValue(max_mesh_output_vertices)) {
+    if (max_mesh_output_vertices < vvl::MaxTypeValue(max_mesh_output_vertices)) {
         error_vuids_1.push_back("VUID-RuntimeSpirv-MeshEXT-07115");
         max_mesh_output_vertices += 1;
     }
 
-    if (max_mesh_output_primitives < layer_data::MaxTypeValue(max_mesh_output_primitives)) {
+    if (max_mesh_output_primitives < vvl::MaxTypeValue(max_mesh_output_primitives)) {
         error_vuids_1.push_back("VUID-RuntimeSpirv-MeshEXT-07116");
         max_mesh_output_primitives += 1;
     }

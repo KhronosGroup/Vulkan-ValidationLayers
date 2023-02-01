@@ -742,7 +742,7 @@ bool SURFACE_STATE::GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) con
 }
 
 // Save data from vkGetPhysicalDeviceSurfacePresentModes
-void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, layer_data::span<const VkPresentModeKHR> modes) {
+void SURFACE_STATE::SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes) {
     auto guard = Lock();
     assert(phys_dev);
     for (auto new_present_mode : modes) {
@@ -813,7 +813,7 @@ VkSurfaceCapabilitiesKHR SURFACE_STATE::GetCapabilities(VkPhysicalDevice phys_de
 }
 
 void SURFACE_STATE::SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                                       layer_data::span<const VkPresentModeKHR> compatible_modes) {
+                                       vvl::span<const VkPresentModeKHR> compatible_modes) {
     auto guard = Lock();
     assert(phys_dev);
 

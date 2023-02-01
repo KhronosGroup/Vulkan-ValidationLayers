@@ -455,20 +455,20 @@ class ValidationStateTracker : public ValidationObject {
     // device address. For purposes of valid usage, if multiple VkBuffer objects can be attributed to
     // a device address, a VkBuffer is selected such that valid usage passes, if it exists.
     using BUFFER_STATE_PTR = std::shared_ptr<BUFFER_STATE>;
-    layer_data::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
+    vvl::span<BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return layer_data::make_span<BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
+            return vvl::make_span<BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
         }
         return found_it->second;
     }
 
-    layer_data::span<const BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) const {
+    vvl::span<const BUFFER_STATE_PTR> GetBuffersByAddress(VkDeviceAddress address) const {
         ReadLockGuard guard(buffer_address_lock_);
         auto found_it = buffer_address_map_.find(address);
         if (found_it == buffer_address_map_.end()) {
-            return layer_data::make_span<const BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
+            return vvl::make_span<const BUFFER_STATE_PTR>(nullptr, static_cast<size_t>(0));
         }
         return found_it->second;
     }
@@ -1526,7 +1526,7 @@ class ValidationStateTracker : public ValidationObject {
 
   protected:
     // tracks which queue family index were used when creating the device for quick lookup
-    layer_data::unordered_set<uint32_t> queue_family_index_set;
+    vvl::unordered_set<uint32_t> queue_family_index_set;
     // The queue count can different for the same queueFamilyIndex if the create flag are different
     struct DeviceQueueInfo {
         uint32_t index;  // from VkDeviceCreateInfo

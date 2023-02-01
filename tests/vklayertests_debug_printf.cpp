@@ -543,7 +543,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPL) {
     ASSERT_VK_SUCCESS(vi.CreateGraphicsPipeline(true, false));
 
     const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source);
-    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(layer_data::span<const uint32_t>{vs_spv});
+    vk_testing::GraphicsPipelineLibraryStage pre_raster_stage(vvl::span<const uint32_t>{vs_spv});
 
     CreatePipelineHelper pre_raster(*this);
     pre_raster.InitPreRasterLibInfo(1, &pre_raster_stage.stage_ci);
@@ -809,7 +809,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
     fragment_set.UpdateDescriptorSets();
 
     {
-        layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
+        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
                                              static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : vert_data) {
             v = 0x01030507;
@@ -817,7 +817,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragment) {
         vs_buffer.memory().unmap();
     }
     {
-        layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
+        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
                                              static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : frag_data) {
             v = 0x02040608;
@@ -968,7 +968,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
     fragment_set.UpdateDescriptorSets();
 
     {
-        layer_data::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
+        vvl::span<uint32_t> vert_data(static_cast<uint32_t *>(vs_buffer.memory().map()),
                                              static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : vert_data) {
             v = 0x01030507;
@@ -976,7 +976,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintfGPLFragmentIndependentSets) {
         vs_buffer.memory().unmap();
     }
     {
-        layer_data::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
+        vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.memory().map()),
                                              static_cast<uint32_t>(buffer_create_info.size) / sizeof(uint32_t));
         for (auto &v : frag_data) {
             v = 0x02040608;

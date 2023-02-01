@@ -102,7 +102,7 @@ struct ResourceInterfaceVariable {
     DecorationSet decorations;
 
     // List of samplers that sample a given image. The index of array is index of image.
-    std::vector<layer_data::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
+    std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
 
     // For storage images - list of < OpImageWrite : Texel component length >
     std::vector<std::pair<Instruction, uint32_t>> write_without_formats_component_count_list;
@@ -197,11 +197,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         const VkShaderStageFlagBits stage;
         const std::string name;
         // All ids that can be accessed from the entry point
-        layer_data::unordered_set<uint32_t> accessible_ids;
+        vvl::unordered_set<uint32_t> accessible_ids;
 
         std::vector<UserDefinedInterfaceVariable> user_defined_interface_variables;
         std::vector<ResourceInterfaceVariable> resource_interface_variables;
-        layer_data::unordered_set<uint32_t> attachment_indexes;
+        vvl::unordered_set<uint32_t> attachment_indexes;
 
         StructInfo push_constant_used_in_shader;
 
@@ -221,11 +221,11 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // Instructions that can be referenced by Ids
         // A mapping of <id> to the first word of its def. this is useful because walking type
         // trees, constant expressions, etc requires jumping all over the instruction stream.
-        layer_data::unordered_map<uint32_t, const Instruction *> definitions;
+        vvl::unordered_map<uint32_t, const Instruction *> definitions;
 
-        layer_data::unordered_map<uint32_t, DecorationSet> decorations;
+        vvl::unordered_map<uint32_t, DecorationSet> decorations;
         // <Specialization constant ID -> target ID> mapping
-        layer_data::unordered_map<uint32_t, uint32_t> spec_const_map;
+        vvl::unordered_map<uint32_t, uint32_t> spec_const_map;
         // Find all decoration instructions to prevent relooping module later - many checks need this info
         std::vector<const Instruction *> decoration_inst;
         std::vector<const Instruction *> member_decoration_inst;
@@ -233,7 +233,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<const Instruction *> variable_inst;
         // Execution are not tied to an entry point and are their own mapping tied to entry point function
         // [OpEntryPoint function <id> operand] : [Execution Mode Instruction list]
-        layer_data::unordered_map<uint32_t, std::vector<const Instruction *>> execution_mode_inst;
+        vvl::unordered_map<uint32_t, std::vector<const Instruction *>> execution_mode_inst;
         // both OpDecorate and OpMemberDecorate builtin instructions
         std::vector<const Instruction *> builtin_decoration_inst;
         std::vector<const Instruction *> atomic_inst;
@@ -250,7 +250,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         // Example: the OpLoad does the "access" but need to know if a OpImageRead uses that OpLoad later
         std::vector<uint32_t> image_read_load_ids;
         std::vector<uint32_t> image_write_load_ids;
-        layer_data::unordered_map<const Instruction *, uint32_t> image_write_load_id_map;  // <OpImageWrite, load id>
+        vvl::unordered_map<const Instruction *, uint32_t> image_write_load_id_map;  // <OpImageWrite, load id>
         std::vector<uint32_t> atomic_pointer_ids;
         std::vector<uint32_t> store_pointer_ids;
         std::vector<uint32_t> atomic_store_pointer_ids;
@@ -259,9 +259,9 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         std::vector<uint32_t> sampler_bias_offset_load_ids;
         std::vector<uint32_t> image_dref_load_ids;
         std::vector<std::pair<uint32_t, uint32_t>> sampled_image_load_ids;                       // <image, sampler>
-        layer_data::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
-        layer_data::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
-        layer_data::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
+        vvl::unordered_map<uint32_t, uint32_t> load_members;                              // <result id, pointer>
+        vvl::unordered_map<uint32_t, std::pair<uint32_t, uint32_t>> accesschain_members;  // <result id, <base,index[0]>>
+        vvl::unordered_map<uint32_t, uint32_t> image_texel_pointer_members;               // <result id, image>
     };
 
     // This is the SPIR-V module data content
@@ -272,7 +272,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     uint32_t gpu_validation_shader_id{std::numeric_limits<uint32_t>::max()};
 
-    explicit SHADER_MODULE_STATE(layer_data::span<const uint32_t> code, spv_target_env env = SPV_ENV_VULKAN_1_0)
+    explicit SHADER_MODULE_STATE(vvl::span<const uint32_t> code, spv_target_env env = SPV_ENV_VULKAN_1_0)
         : BASE_NODE(static_cast<VkShaderModule>(VK_NULL_HANDLE), kVulkanObjectTypeShaderModule),
           words_(code.begin(), code.end()),
           static_data_(*this) {
@@ -302,7 +302,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     const std::vector<const Instruction *> &GetMemberDecorationInstructions() const { return static_data_.member_decoration_inst; }
     const std::vector<const Instruction *> &GetAtomicInstructions() const { return static_data_.atomic_inst; }
     const std::vector<const Instruction *> &GetVariableInstructions() const { return static_data_.variable_inst; }
-    const layer_data::unordered_set<uint32_t> *GetAccessibleIds(const Instruction &entrypoint) const {
+    const vvl::unordered_set<uint32_t> *GetAccessibleIds(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
                 return &entry_point.accessible_ids;
@@ -310,7 +310,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         }
         return nullptr;
     }
-    const layer_data::unordered_set<uint32_t> *GetAttachmentIndexes(const Instruction &entrypoint) const {
+    const vvl::unordered_set<uint32_t> *GetAttachmentIndexes(const Instruction &entrypoint) const {
         for (const auto &entry_point : static_data_.entry_points) {
             if (entry_point.entrypoint_insn == entrypoint) {
                 return &entry_point.attachment_indexes;
@@ -327,13 +327,13 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
         return nullptr;
     }
 
-    const layer_data::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
+    const vvl::unordered_map<uint32_t, std::vector<const Instruction *>> &GetExecutionModeInstructions() const {
         return static_data_.execution_mode_inst;
     }
 
     const std::vector<const Instruction *> &GetBuiltinDecorationList() const { return static_data_.builtin_decoration_inst; }
 
-    const layer_data::unordered_map<uint32_t, uint32_t> &GetSpecConstMap() const { return static_data_.spec_const_map; }
+    const vvl::unordered_map<uint32_t, uint32_t> &GetSpecConstMap() const { return static_data_.spec_const_map; }
 
     bool HasSpecConstants() const { return static_data_.has_specialization_constants; }
     bool HasInvocationRepackInstruction() const { return static_data_.has_invocation_repack_instruction; }
@@ -376,7 +376,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     bool IsBuiltInWritten(const Instruction *builtin_insn, const Instruction &entrypoint) const;
 
     // State tracking helpers for collecting interface information
-    layer_data::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
+    vvl::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const Instruction &entrypoint) const;
     bool CollectInterfaceBlockMembers(std::map<location_t, UserDefinedInterfaceVariable> *out, bool is_array_of_verts,
                                       bool is_patch, const Instruction *variable_insn) const;
     std::map<location_t, UserDefinedInterfaceVariable> CollectInterfaceByLocation(const Instruction &entrypoint,
@@ -420,7 +420,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
                       const Instruction *access_chain, const StructInfo &data) const;
     void RunUsedStruct(uint32_t offset, uint32_t access_chain_word_index, const Instruction *access_chain,
                        const StructInfo &data) const;
-    void SetUsedStructMember(const uint32_t variable_id, layer_data::unordered_set<uint32_t> &accessible_ids,
+    void SetUsedStructMember(const uint32_t variable_id, vvl::unordered_set<uint32_t> &accessible_ids,
                              const StructInfo &data) const;
 };
 

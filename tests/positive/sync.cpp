@@ -2150,7 +2150,7 @@ TEST_F(VkPositiveLayerTest, SubmitFenceButWaitIdle) {
     auto pool_create_info = LvlInitStruct<VkCommandPoolCreateInfo>();
     pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    std::optional<vk_testing::CommandPool> command_pool(layer_data::in_place, *m_device, pool_create_info);
+    std::optional<vk_testing::CommandPool> command_pool(vvl::in_place, *m_device, pool_create_info);
 
     // create a raw command buffer because we'll just the destroy the pool.
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;

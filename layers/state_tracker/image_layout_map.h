@@ -109,7 +109,7 @@ class ImageSubresourceLayoutMap {
         struct Updater {
             bool update(LayoutEntry& dst, const LayoutEntry& src) const { return dst.Update(src); }
             std::optional<LayoutEntry> insert(const LayoutEntry& src) const {
-                return std::optional<LayoutEntry>(layer_data::in_place, src);
+                return std::optional<LayoutEntry>(vvl::in_place, src);
             }
         };
     };

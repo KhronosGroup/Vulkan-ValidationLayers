@@ -51,7 +51,7 @@ class UtilDescriptorSetManager {
     };
     VkDevice device;
     uint32_t num_bindings_in_set;
-    layer_data::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+    vvl::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
     mutable std::mutex lock_;
 };
 
@@ -88,7 +88,7 @@ void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCom
                                const uint32_t *debug_record, const VkShaderModule shader_module_handle,
                                const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
                                const uint32_t operation_index, std::string &msg);
-void UtilGenerateSourceMessages(layer_data::span<const uint32_t> pgm, const uint32_t *debug_record, bool from_printf,
+void UtilGenerateSourceMessages(vvl::span<const uint32_t> pgm, const uint32_t *debug_record, bool from_printf,
                                 std::string &filename_msg, std::string &source_msg);
 
 struct GpuAssistedShaderTracker {
@@ -212,7 +212,7 @@ class GpuAssistedBase : public ValidationStateTracker {
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                          const VkPipelineBindPoint bind_point, const SafeCreateInfo &modified_create_infos);
 
-    virtual bool InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+    virtual bool InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
                                   uint32_t *unique_shader_id) = 0;
 
   public:

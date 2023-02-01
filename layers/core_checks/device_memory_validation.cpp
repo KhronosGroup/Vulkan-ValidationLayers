@@ -947,7 +947,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
     // Track all image sub resources if they are bound for bind_image_mem_2
     // uint32_t[3] is which index in pBindInfos for max 3 planes
     // Non disjoint images act as a single plane
-    layer_data::unordered_map<VkImage, std::array<uint32_t, 3>> resources_bound;
+    vvl::unordered_map<VkImage, std::array<uint32_t, 3>> resources_bound;
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         if (bind_image_mem_2 == true) {

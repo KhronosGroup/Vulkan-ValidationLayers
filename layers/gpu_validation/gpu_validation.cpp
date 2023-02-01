@@ -899,7 +899,7 @@ void GpuAssisted::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass r
     ValidationStateTracker::PreCallRecordDestroyRenderPass(device, renderPass, pAllocator);
 }
 
-bool GpuValidateShader(const layer_data::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
+bool GpuValidateShader(const vvl::span<const uint32_t> &input, bool SetRelaxBlockLayout, bool SetScalerBlockLayout,
                        std::string &error) {
     // Use SPIRV-Tools validator to try and catch any issues with the module
     spv_target_env spirv_environment = SPV_ENV_VULKAN_1_1;
@@ -915,7 +915,7 @@ bool GpuValidateShader(const layer_data::span<const uint32_t> &input, bool SetRe
 }
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
-bool GpuAssisted::InstrumentShader(const layer_data::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
+bool GpuAssisted::InstrumentShader(const vvl::span<const uint32_t> &input, std::vector<uint32_t> &new_pgm,
                                    uint32_t *unique_shader_id) {
     if (aborted) return false;
     if (input[0] != spv::MagicNumber) return false;
@@ -980,7 +980,7 @@ void GpuAssisted::PreCallRecordCreateShaderModule(VkDevice device, const VkShade
                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                   void *csm_state_data) {
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    const bool pass = InstrumentShader(layer_data::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
+    const bool pass = InstrumentShader(vvl::make_span(pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)),
                                        csm_state->instrumented_pgm, &csm_state->unique_shader_id);
     if (pass) {
         csm_state->instrumented_create_info.pCode = csm_state->instrumented_pgm.data();
@@ -1149,7 +1149,7 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
     std::string vuid_msg;
     VkShaderModule shader_module_handle = VK_NULL_HANDLE;
     VkPipeline pipeline_handle = VK_NULL_HANDLE;
-    layer_data::span<const uint32_t> pgm;
+    vvl::span<const uint32_t> pgm;
     // The first record starts at this offset after the total_words.
     const uint32_t *debug_record = &debug_output_buffer[kDebugOutputDataOffset];
     // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned

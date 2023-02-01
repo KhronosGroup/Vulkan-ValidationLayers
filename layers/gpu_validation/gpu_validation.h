@@ -28,7 +28,7 @@ class GpuAssisted;
 struct GpuAssistedDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
-    layer_data::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
+    vvl::unordered_map<uint32_t, const cvdescriptorset::DescriptorBinding*> update_at_submit;
 };
 
 struct GpuAssistedPreDrawResources {
@@ -199,7 +199,7 @@ class GpuAssisted : public GpuAssistedBase {
                                                       VkBuffer scratch, VkDeviceSize scratchOffset) override;
     void ProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, gpuav_state::CommandBuffer* cb_node);
     void PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks* pAllocator) override;
-    bool InstrumentShader(const layer_data::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
+    bool InstrumentShader(const vvl::span<const uint32_t>& input, std::vector<uint32_t>& new_pgm,
                           uint32_t* unique_shader_id) override;
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,

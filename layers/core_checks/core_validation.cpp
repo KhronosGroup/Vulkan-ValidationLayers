@@ -782,7 +782,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE &cb_state, CMD_T
                             std::set_difference(binding_req_map.begin(), binding_req_map.end(),
                                                 set_info.validated_set_binding_req_map.begin(),
                                                 set_info.validated_set_binding_req_map.end(),
-                                                layer_data::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
+                                                vvl::insert_iterator<BindingReqMap>(delta_reqs, delta_reqs.begin()));
                             result |=
                                 ValidateDrawState(*descriptor_set, delta_reqs, set_info.dynamicOffsets, cb_state, function, vuid);
                         } else {
@@ -1197,7 +1197,7 @@ struct CommandBufferSubmitState {
             for (const auto &cmd_info : descriptor_set.second) {
                 // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                 std::vector<uint32_t> dynamic_offsets;
-                std::optional<layer_data::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
+                std::optional<vvl::unordered_map<VkImageView, VkImageLayout>> checked_layouts;
 
                 std::string function = loc.StringFunc();
                 function += ", ";
@@ -2490,7 +2490,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             const VkRenderPassFragmentDensityMapCreateInfoEXT *fdm_attachment;
                             fdm_attachment = LvlFindInChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
                             if (fdm_attachment && fdm_attachment->fragmentDensityMapAttachment.attachment == i) {
-                                uint32_t ceiling_width = layer_data::GetQuotientCeil(
+                                uint32_t ceiling_width = vvl::GetQuotientCeil(
                                     pCreateInfo->width,
                                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
                                 if (mip_width < ceiling_width) {
@@ -2504,7 +2504,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                         "width: %u, the ceiling value: %u\n",
                                         i, subresource_range.baseMipLevel, i, i, mip_width, ceiling_width);
                                 }
-                                uint32_t ceiling_height = layer_data::GetQuotientCeil(
+                                uint32_t ceiling_height = vvl::GetQuotientCeil(
                                     pCreateInfo->height,
                                     phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
                                 if (mip_height < ceiling_height) {
@@ -3065,7 +3065,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
 bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE &cb_state, const CMD_BUFFER_STATE &sub_cb_state) const {
     bool skip = false;
 
-    layer_data::unordered_set<int> active_types;
+    vvl::unordered_set<int> active_types;
     if (!disabled[query_validation]) {
         for (const auto &query_object : cb_state.activeQueries) {
             auto query_pool_state = Get<QUERY_POOL_STATE>(query_object.pool);
@@ -3350,7 +3350,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     auto cb_state = GetRead<CMD_BUFFER_STATE>(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    layer_data::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
+    vvl::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
     ViewportScissorInheritanceTracker viewport_scissor_inheritance{*this};
 
     if (enabled_features.inherited_viewport_scissor_features.inheritedViewportScissor2D) {

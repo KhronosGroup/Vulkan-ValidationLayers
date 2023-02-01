@@ -232,7 +232,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     def OutputExtEnabledFunction(self):
         ext_fcn = ''
         # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
-        ext_fcn += 'const layer_data::unordered_map<std::string, std::string> api_extension_map {\n'
+        ext_fcn += 'const vvl::unordered_map<std::string, std::string> api_extension_map {\n'
         api_ext = dict()
         handles = GetHandleTypes(self.registry.tree)
         features = self.registry.tree.findall('feature') + self.registry.tree.findall('extensions/extension')

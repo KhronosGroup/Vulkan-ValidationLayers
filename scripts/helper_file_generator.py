@@ -776,7 +776,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '       %s requirements;' % req_vec_type,
                 '    };',
                 '',
-                '    typedef layer_data::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
+                '    typedef vvl::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
                 '    static const %s &get_info_map() {' %info_map_type,
                 '        static const %s info_map = {' % info_map_type ])
             struct.extend([

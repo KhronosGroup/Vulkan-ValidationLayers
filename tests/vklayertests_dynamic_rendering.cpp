@@ -2344,13 +2344,13 @@ TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06112");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06112");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2364,13 +2364,13 @@ TEST_F(VkLayerTest, DynamicRenderingTestFragmentDensityMapRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06114");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06114");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2742,14 +2742,14 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06075");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06073");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06075");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06073");
     m_commandBuffer->BeginRendering(begin_rendering_info);
@@ -2764,14 +2764,14 @@ TEST_F(VkLayerTest, DynamicRenderingAreaGreaterThanAttachmentExtent) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06074");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-imageView-06076");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06074");
     m_commandBuffer->BeginRendering(begin_rendering_info);
@@ -2845,13 +2845,13 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06079");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06079");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -2865,13 +2865,13 @@ TEST_F(VkLayerTest, DynamicRenderingDeviceGroupAreaGreaterThanAttachmentExtent) 
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06080");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3834,13 +3834,13 @@ TEST_F(VkLayerTest, DynamicRenderingRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06073");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06073");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -3853,13 +3853,13 @@ TEST_F(VkLayerTest, DynamicRenderingRenderArea) {
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06074");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-renderArea-06074");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -5368,13 +5368,13 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentSizeWithDeviceG
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.x = 1;
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06119");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.x = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
-    begin_rendering_info.renderArea.extent.width = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
+    begin_rendering_info.renderArea.offset.x = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.x);
+    begin_rendering_info.renderArea.extent.width = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.width);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06119");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
@@ -5399,13 +5399,13 @@ TEST_F(VkLayerTest, DynamicRenderingFragmentShadingRateAttachmentSizeWithDeviceG
     m_errorMonitor->VerifyFound();
 
     begin_rendering_info.renderArea.offset.y = 1;
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height) - 1;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06120");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();
 
-    begin_rendering_info.renderArea.offset.y = layer_data::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
-    begin_rendering_info.renderArea.extent.height = layer_data::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
+    begin_rendering_info.renderArea.offset.y = vvl::MaxTypeValue(begin_rendering_info.renderArea.offset.y);
+    begin_rendering_info.renderArea.extent.height = vvl::MaxTypeValue(begin_rendering_info.renderArea.extent.height);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderingInfo-pNext-06120");
     m_commandBuffer->BeginRendering(begin_rendering_info);
     m_errorMonitor->VerifyFound();

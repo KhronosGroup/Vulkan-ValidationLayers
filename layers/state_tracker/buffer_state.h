@@ -43,7 +43,7 @@ class BUFFER_STATE : public BINDABLE {
     const VkMemoryRequirements *const memory_requirements_pointer = &requirements;
     bool memory_requirements_checked;
 
-    layer_data::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
+    vvl::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
     BUFFER_STATE(ValidationStateTracker *dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo);
 

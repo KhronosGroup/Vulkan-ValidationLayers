@@ -113,7 +113,7 @@ static PushConstantRangesId GetCanonicalId(const VkPipelineLayoutCreateInfo *inf
     return push_constant_ranges_dict.look_up(std::move(ranges));
 }
 
-static PushConstantRangesId GetPushConstantRangesFromLayouts(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
+static PushConstantRangesId GetPushConstantRangesFromLayouts(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
     PushConstantRangesId ret{};
     for (const auto *layout : layouts) {
         if (layout && layout->push_constant_ranges) {
@@ -137,7 +137,7 @@ static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(ValidationStateTrack
     return set_layouts;
 }
 
-static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
+static PIPELINE_LAYOUT_STATE::SetLayoutVector GetSetLayouts(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
     PIPELINE_LAYOUT_STATE::SetLayoutVector set_layouts;
     size_t num_layouts = 0;
     for (const auto &layout : layouts) {
@@ -192,7 +192,7 @@ static std::vector<PipelineLayoutCompatId> GetCompatForSet(const PIPELINE_LAYOUT
     return set_compat_ids;
 }
 
-VkPipelineLayoutCreateFlags GetCreateFlags(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
+VkPipelineLayoutCreateFlags GetCreateFlags(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts) {
     VkPipelineLayoutCreateFlags flags = 0;
     for (const auto &layout : layouts) {
         if (layout) {
@@ -210,7 +210,7 @@ PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(ValidationStateTracker *dev_data, V
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)),
       create_flags(pCreateInfo->flags) {}
 
-PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(const layer_data::span<const PIPELINE_LAYOUT_STATE *const> &layouts)
+PIPELINE_LAYOUT_STATE::PIPELINE_LAYOUT_STATE(const vvl::span<const PIPELINE_LAYOUT_STATE *const> &layouts)
     : BASE_NODE(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?

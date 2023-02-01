@@ -10598,19 +10598,19 @@ TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
     uint32_t max_group_count_Y = mesh_shader_properties.maxTaskWorkGroupCount[1];
     uint32_t max_group_count_Z = mesh_shader_properties.maxTaskWorkGroupCount[2];
 
-    if (max_group_count_X < layer_data::MaxTypeValue(max_group_count_X)) {
+    if (max_group_count_X < vvl::MaxTypeValue(max_group_count_X)) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07322");
-        max_group_count_X = layer_data::MaxTypeValue(max_group_count_X);
+        max_group_count_X = vvl::MaxTypeValue(max_group_count_X);
     }
 
-    if (max_group_count_Y < layer_data::MaxTypeValue(max_group_count_Y)) {
+    if (max_group_count_Y < vvl::MaxTypeValue(max_group_count_Y)) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07323");
-        max_group_count_Y = layer_data::MaxTypeValue(max_group_count_Y);
+        max_group_count_Y = vvl::MaxTypeValue(max_group_count_Y);
     }
 
-    if (max_group_count_Z < layer_data::MaxTypeValue(max_group_count_Z)) {
+    if (max_group_count_Z < vvl::MaxTypeValue(max_group_count_Z)) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07324");
-        max_group_count_Z = layer_data::MaxTypeValue(max_group_count_Z);
+        max_group_count_Z = vvl::MaxTypeValue(max_group_count_Z);
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
@@ -10621,7 +10621,7 @@ TEST_F(VkLayerTest, MeshShaderEXTDrawCmds) {
     vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.limits.maxDrawIndirectCount < layer_data::MaxTypeValue(m_device->props.limits.maxDrawIndirectCount)) {
+    if (m_device->props.limits.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->props.limits.maxDrawIndirectCount)) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
         vkCmdDrawMeshTasksIndirectEXT(m_commandBuffer->handle(), buffer.handle(), 0,

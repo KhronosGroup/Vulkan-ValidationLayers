@@ -281,7 +281,7 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
 
     const uint32_t active_shaders = pipeline.active_shaders;
     if (pipeline.pre_raster_state || pipeline.fragment_shader_state) {
-        layer_data::unordered_set<VkShaderStageFlags> unique_stage_set;
+        vvl::unordered_set<VkShaderStageFlags> unique_stage_set;
         const auto stages = pipeline.GetShaderStages();
         for (const auto &stage : stages) {
             if (!unique_stage_set.insert(stage.stage).second) {
@@ -642,9 +642,9 @@ bool CoreChecks::ValidatePipeline(std::vector<std::shared_ptr<PIPELINE_STATE>> c
                 for (size_t i = 0; i < num_set_layouts; ++i) {
                     const auto pre_raster_dsl = (i < pre_raster_set_layouts.size())
                                                     ? pre_raster_set_layouts[i]
-                                                    : layer_data::base_type<decltype(pre_raster_set_layouts)>::value_type{};
+                                                    : vvl::base_type<decltype(pre_raster_set_layouts)>::value_type{};
                     const auto fs_dsl = (i < fs_set_layouts.size()) ? fs_set_layouts[i]
-                                                                    : layer_data::base_type<decltype(fs_set_layouts)>::value_type{};
+                                                                    : vvl::base_type<decltype(fs_set_layouts)>::value_type{};
                     const char *vuid_tmp = nullptr;
                     std::ostringstream msg("vkCreateGraphicsPipelines(): ");
                     msg << "pCreateInfos[" << pipe_index << "] ";
@@ -1158,7 +1158,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
         if (!pipeline) {
             continue;
         }
-        using CIType = layer_data::base_type<decltype(pCreateInfos)>;
+        using CIType = vvl::base_type<decltype(pCreateInfos)>;
         if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
             const auto bpi = pipeline->BasePipelineIndex<CIType>();
@@ -1197,7 +1197,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
         if (!pipeline) {
             continue;
         }
-        using CIType = layer_data::base_type<decltype(pCreateInfos)>;
+        using CIType = vvl::base_type<decltype(pCreateInfos)>;
         if (pipeline->GetPipelineCreateFlags() & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
             std::shared_ptr<const PIPELINE_STATE> base_pipeline;
             const auto bpi = pipeline->BasePipelineIndex<CIType>();

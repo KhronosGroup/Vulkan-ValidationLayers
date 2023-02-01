@@ -47,7 +47,7 @@ struct VertexInputState {
     using VertexBindingVector = std::vector<VkVertexInputBindingDescription>;
     VertexBindingVector binding_descriptions;
 
-    using VertexBindingIndexMap = layer_data::unordered_map<uint32_t, uint32_t>;
+    using VertexBindingIndexMap = vvl::unordered_map<uint32_t, uint32_t>;
     VertexBindingIndexMap binding_to_index_map;
 
     using VertexAttrVector = std::vector<VkVertexInputAttributeDescription>;

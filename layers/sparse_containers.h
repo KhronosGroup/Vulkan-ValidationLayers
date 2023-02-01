@@ -1,6 +1,6 @@
 /* Copyright (c) 2020-2021 The Khronos Group Inc.
- * Copyright (c) 2020-2021 Valve Corporation
- * Copyright (c) 2020-2021 LunarG, Inc.
+ * Copyright (c) 2020-2023 Valve Corporation
+ * Copyright (c) 2020-2023 LunarG, Inc.
  * Copyright (C) 2020-2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -90,7 +90,7 @@ class SparseVector {
     typedef IndexType_ IndexType;
     typedef T value_type;
     typedef value_type ValueType;
-    typedef layer_data::unordered_map<IndexType, ValueType> SparseType;
+    typedef vvl::unordered_map<IndexType, ValueType> SparseType;
     typedef std::vector<ValueType> DenseType;
 
     SparseVector(IndexType start, IndexType end)

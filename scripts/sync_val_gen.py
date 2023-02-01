@@ -692,7 +692,7 @@ def StageAccessEnums(stage_accesses, config):
 
     map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
-    typename = 'layer_data::unordered_map<{}, {}>'.format(sync_mask_name, ordinal_name)
+    typename = 'vvl::unordered_map<{}, {}>'.format(sync_mask_name, ordinal_name)
     if config['is_source']:
         output.append('const {}& {}() {{'.format(typename, map_name))
         output.append('{}static const {} variable = {{'.format(indent, typename))

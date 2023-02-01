@@ -252,7 +252,7 @@ bool CoreChecks::ValidateDecodeH264ParametersAddInfo(const VkVideoDecodeH264Sess
                                                      const VIDEO_SESSION_PARAMETERS_STATE *template_state) const {
     bool skip = false;
 
-    layer_data::unordered_set<VIDEO_SESSION_PARAMETERS_STATE::ParameterKey> keys;
+    vvl::unordered_set<VIDEO_SESSION_PARAMETERS_STATE::ParameterKey> keys;
     auto template_data = template_state ? template_state->Lock() : VIDEO_SESSION_PARAMETERS_STATE::ReadOnlyAccessor();
 
     if (add_info) {
@@ -320,7 +320,7 @@ bool CoreChecks::ValidateDecodeH265ParametersAddInfo(const VkVideoDecodeH265Sess
                                                      const VIDEO_SESSION_PARAMETERS_STATE *template_state) const {
     bool skip = false;
 
-    layer_data::unordered_set<VIDEO_SESSION_PARAMETERS_STATE::ParameterKey> keys;
+    vvl::unordered_set<VIDEO_SESSION_PARAMETERS_STATE::ParameterKey> keys;
     auto template_data = template_state ? template_state->Lock() : VIDEO_SESSION_PARAMETERS_STATE::ReadOnlyAccessor();
 
     if (add_info) {
@@ -908,7 +908,7 @@ bool CoreChecks::PreCallValidateBindVideoSessionMemoryKHR(VkDevice device, VkVid
 
     if (pBindSessionMemoryInfos) {
         {
-            layer_data::unordered_set<uint32_t> memory_bind_indices;
+            vvl::unordered_set<uint32_t> memory_bind_indices;
             for (uint32_t i = 0; i < bindSessionMemoryInfoCount; ++i) {
                 uint32_t mem_bind_index = pBindSessionMemoryInfos[i].memoryBindIndex;
                 if (memory_bind_indices.find(mem_bind_index) != memory_bind_indices.end()) {

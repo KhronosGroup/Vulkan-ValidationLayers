@@ -367,7 +367,7 @@ class SignaledSemaphores {
         // TODO add timeline semaphore support.
     };
 
-    using SignalMap = layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
+    using SignalMap = vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>>;
     using iterator = SignalMap::iterator;
     using const_iterator = SignalMap::const_iterator;
     using mapped_type = SignalMap::mapped_type;
@@ -390,7 +390,7 @@ class SignaledSemaphores {
     void Import(VkSemaphore sem, std::shared_ptr<Signal> &&move_from);
     void Reset();
     std::shared_ptr<const Signal> GetPrev(VkSemaphore sem) const;
-    layer_data::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
+    vvl::unordered_map<VkSemaphore, std::shared_ptr<Signal>> signaled_;
     const SignaledSemaphores *prev_;  // Allowing this type to act as a writable overlay
 };
 
@@ -1259,7 +1259,7 @@ struct SyncEventState {
 
 class SyncEventsContext {
   public:
-    using Map = layer_data::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
+    using Map = vvl::unordered_map<const EVENT_STATE *, std::shared_ptr<SyncEventState>>;
     using iterator = Map::iterator;
     using const_iterator = Map::const_iterator;
 
@@ -1347,7 +1347,7 @@ class RenderPassAccessContext {
 class CommandExecutionContext {
   public:
     using AccessLog = std::vector<ResourceUsageRecord>;
-    using CommandBufferSet = layer_data::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>>;
+    using CommandBufferSet = vvl::unordered_set<std::shared_ptr<const CMD_BUFFER_STATE>>;
     CommandExecutionContext() : sync_state_(nullptr) {}
     CommandExecutionContext(const SyncValidator *sync_validator) : sync_state_(sync_validator) {}
     virtual ~CommandExecutionContext() = default;
@@ -1750,8 +1750,8 @@ class QueueBatchContext : public CommandExecutionContext {
         std::string func_name_;
     };
 
-    using ConstBatchSet = layer_data::unordered_set<std::shared_ptr<const QueueBatchContext>>;
-    using BatchSet = layer_data::unordered_set<std::shared_ptr<QueueBatchContext>>;
+    using ConstBatchSet = vvl::unordered_set<std::shared_ptr<const QueueBatchContext>>;
+    using BatchSet = vvl::unordered_set<std::shared_ptr<QueueBatchContext>>;
     static constexpr bool TruePred(const std::shared_ptr<const QueueBatchContext> &) { return true; }
     struct CmdBufferEntry {
         uint32_t index = 0;
@@ -1913,12 +1913,12 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     mutable std::atomic<ResourceUsageTag> tag_limit_{1};  // This is reserved in Validation phase, thus mutable and atomic
     ResourceUsageRange ReserveGlobalTagRange(size_t tag_count) const;  // Note that the tag_limit_ is mutable this has side effects
 
-    using QueueSyncStatesMap = layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
-    layer_data::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
+    using QueueSyncStatesMap = vvl::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>>;
+    vvl::unordered_map<VkQueue, std::shared_ptr<QueueSyncState>> queue_sync_states_;
     QueueId queue_id_limit_ = QueueSyncState::kQueueIdBase;
     SignaledSemaphores signaled_semaphores_;
 
-    using SignaledFences = layer_data::unordered_map<VkFence, FenceSyncState>;
+    using SignaledFences = vvl::unordered_map<VkFence, FenceSyncState>;
     using SignaledFence = SignaledFences::value_type;
     SignaledFences waitable_fences_;
 

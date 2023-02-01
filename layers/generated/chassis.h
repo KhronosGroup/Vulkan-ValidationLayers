@@ -61,7 +61,7 @@ struct HashedUint64 {
     size_t operator()(const uint64_t &t) const { return t >> HASHED_UINT64_SHIFT; }
 
     static uint64_t hash(uint64_t id) {
-        uint64_t h = (uint64_t)layer_data::hash<uint64_t>()(id);
+        uint64_t h = (uint64_t)vvl::hash<uint64_t>()(id);
         id |= h << HASHED_UINT64_SHIFT;
         return id;
     }
@@ -4074,18 +4074,18 @@ class ValidationObject {
         // Reverse map display handles
         vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
         // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-        layer_data::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
+        vvl::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
         struct SubpassesUsageStates {
-            layer_data::unordered_set<uint32_t> subpasses_using_color_attachment;
-            layer_data::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+            vvl::unordered_set<uint32_t> subpasses_using_color_attachment;
+            vvl::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
         };
         // Uses unwrapped handles
-        layer_data::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+        vvl::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
         // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
         // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-        layer_data::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+        vvl::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
         // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-        layer_data::unordered_map<VkDescriptorPool, layer_data::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+        vvl::unordered_map<VkDescriptorPool, vvl::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
 
         // Unwrap a handle.

@@ -133,7 +133,7 @@ class IMAGE_STATE : public BINDABLE {
 
     std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
 
-    layer_data::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
+    vvl::unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
     IMAGE_STATE(const ValidationStateTracker *dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo,
                 VkFormatFeatureFlags2KHR features);
@@ -373,7 +373,7 @@ class SURFACE_STATE : public BASE_NODE {
     void SetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi, bool supported);
     bool GetQueueSupport(VkPhysicalDevice phys_dev, uint32_t qfi) const;
 
-    void SetPresentModes(VkPhysicalDevice phys_dev, layer_data::span<const VkPresentModeKHR> modes);
+    void SetPresentModes(VkPhysicalDevice phys_dev, vvl::span<const VkPresentModeKHR> modes);
     std::vector<VkPresentModeKHR> GetPresentModes(VkPhysicalDevice phys_dev) const;
 
     void SetFormats(VkPhysicalDevice phys_dev, std::vector<VkSurfaceFormatKHR> &&fmts);
@@ -383,7 +383,7 @@ class SURFACE_STATE : public BASE_NODE {
     VkSurfaceCapabilitiesKHR GetCapabilities(VkPhysicalDevice phys_dev) const;
 
     void SetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
-                            layer_data::span<const VkPresentModeKHR> compatible_modes);
+                            vvl::span<const VkPresentModeKHR> compatible_modes);
     std::vector<VkPresentModeKHR> GetCompatibleModes(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode) const;
     void SetPresentModeCapabilities(VkPhysicalDevice phys_dev, const VkPresentModeKHR present_mode,
                                     const VkSurfaceCapabilitiesKHR &caps,
@@ -397,10 +397,10 @@ class SURFACE_STATE : public BASE_NODE {
   private:
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
     mutable std::mutex lock_;
-    mutable layer_data::unordered_map<GpuQueue, bool> gpu_queue_support_;
-    mutable layer_data::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
-    mutable layer_data::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
-    mutable layer_data::unordered_map<VkPhysicalDevice,
-                                      layer_data::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
+    mutable vvl::unordered_map<GpuQueue, bool> gpu_queue_support_;
+    mutable vvl::unordered_map<VkPhysicalDevice, std::vector<VkSurfaceFormatKHR>> formats_;
+    mutable vvl::unordered_map<VkPhysicalDevice, VkSurfaceCapabilitiesKHR> capabilities_;
+    mutable vvl::unordered_map<VkPhysicalDevice,
+                                      vvl::unordered_map<VkPresentModeKHR, std::optional<std::shared_ptr<PresentModeState>>>>
         present_modes_data_;
 };

@@ -615,7 +615,7 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdDrawMeshTasksIndirectCountEXT(VkCommand
 
 
 
-const layer_data::unordered_map<std::string, std::string> api_extension_map {
+const vvl::unordered_map<std::string, std::string> api_extension_map {
     {"vkAcquireFullScreenExclusiveModeEXT", "VK_EXT_full_screen_exclusive"},
     {"vkAcquireNextImage2KHR", "VK_KHR_swapchain"},
     {"vkAcquireNextImageKHR", "VK_KHR_swapchain"},

@@ -100,7 +100,7 @@ struct MEM_BINDING {
 class BindableMemoryTracker {
   public:
     using BoundMemoryRange = std::map<VkDeviceMemory, std::vector<sparse_container::range<VkDeviceSize>>>;
-    using DeviceMemoryState = layer_data::unordered_set<std::shared_ptr<DEVICE_MEMORY_STATE>>;
+    using DeviceMemoryState = vvl::unordered_set<std::shared_ptr<DEVICE_MEMORY_STATE>>;
 };
 
 // Dummy memory tracker for swapchains

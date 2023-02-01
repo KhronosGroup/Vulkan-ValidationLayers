@@ -43,7 +43,7 @@ struct ObjTrackState {
     VulkanObjectType object_type;                                  // Object type identifier
     ObjectStatusFlags status;                                      // Object state
     uint64_t parent_object;                                        // Parent object
-    std::unique_ptr<layer_data::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
+    std::unique_ptr<vvl::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
 };
 
 typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
@@ -200,7 +200,7 @@ class ObjectLifetimes : public ValidationObject {
             num_total_objects++;
 
             if (object_type == kVulkanObjectTypeDescriptorPool) {
-                pNewObjNode->child_objects.reset(new layer_data::unordered_set<uint64_t>);
+                pNewObjNode->child_objects.reset(new vvl::unordered_set<uint64_t>);
             }
         }
     }

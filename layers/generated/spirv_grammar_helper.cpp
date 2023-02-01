@@ -43,7 +43,7 @@ struct InstructionInfo {
 // of a given SPIR-V opcode instruction
 //
 // clang-format off
-static const layer_data::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
+static const vvl::unordered_map<uint32_t, InstructionInfo> kInstructionTable {
     {spv::OpNop, {"OpNop", false, false, 0, 0, 0}},
     {spv::OpUndef, {"OpUndef", true, true, 0, 0, 0}},
     {spv::OpSourceContinued, {"OpSourceContinued", false, false, 0, 0, 0}},

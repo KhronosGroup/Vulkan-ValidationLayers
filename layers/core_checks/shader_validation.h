@@ -150,7 +150,7 @@ class ValidationCache {
     // we don't store negative results, as we would have to also store what was
     // wrong with them; also, we expect they will get fixed, so we're less
     // likely to see them again.
-    layer_data::unordered_set<uint32_t> good_shader_hashes_;
+    vvl::unordered_set<uint32_t> good_shader_hashes_;
     mutable std::shared_mutex lock_;
 };
 

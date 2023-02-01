@@ -130,7 +130,7 @@ class PHYSICAL_DEVICE_STATE : public BASE_NODE {
     uint32_t display_plane_property_count = 0;
 
     // Map of queue family index to QUEUE_FAMILY_PERF_COUNTERS
-    layer_data::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
+    vvl::unordered_map<uint32_t, std::unique_ptr<QUEUE_FAMILY_PERF_COUNTERS>> perf_counters;
 
     // Surfaceless Query extension needs 'global' surface_state data
     SURFACELESS_QUERY_STATE surfaceless_query_state{};
