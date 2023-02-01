@@ -29,14 +29,14 @@
         },
         {
             "name": "SPIRV-Tools",
-            "url": "https://github.com/KhronosGroup/SPIRV-Tools.git",
+            "url": "https://github.com/jeremyg-lunarg/SPIRV-Tools.git",
             "sub_dir": "SPIRV-Tools",
             "build_dir": "SPIRV-Tools/build",
             "install_dir": "SPIRV-Tools/build/install",
             "cmake_options": [
                 "-DSPIRV-Headers_SOURCE_DIR={repo_dir}/../SPIRV-Headers"
             ],
-            "commit": "63de608daeb7e91fbea6d7477a50debe7cac57ce"
+            "commit": "7fac1e93fda756eaa5c72c37c22528da7c694cf7"
         },
         {
             "name": "robin-hood-hashing",
